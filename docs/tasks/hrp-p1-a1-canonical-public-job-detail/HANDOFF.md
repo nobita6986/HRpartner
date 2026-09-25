@@ -6,30 +6,30 @@
 |---|---|
 | Task | `hrp-p1-a1-canonical-public-job-detail` |
 | Delivery protocol | `V2_FAST_FREEZE` |
-| Spec version | `v1.6` |
+| Spec version | `v1.7` |
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
 | Audit mode (phải khớp TASK) | `LIGHT` |
-| Execution round | `3` |
+| Execution round | `4` |
 | Baseline | `91525013fc2720a3803e808baac39e1c4497daf6` |
-| Implementation SHA | `cb31044ac3ef1d56f23750ea7caad790f533d2c9` |
+| Implementation SHA | `487cd14ca293eaef6a4db0ddd75908234888a465` |
 
-> Implementation SHA note. `cb31044ac3ef1d56f23750ea7caad790f533d2c9` is the T0 semantic DB-gate closure commit. It preserves the original implementation history and supersedes the earlier env-blocked semantic pin `a55c97c916c1f3d147dbc529cf6054955150a574` for audit purposes.
+> Implementation SHA note. `487cd14ca293eaef6a4db0ddd75908234888a465` is the narrow PR #49 CI correction over the prior T3-reviewed delivery. Delta `279ce27a8a7f821eac5e7039ab7c5f98c6b5da42..487cd14ca293eaef6a4db0ddd75908234888a465` contains only the A1 migration and its migration-chain test.
 | Frozen delivery | `YES` |
 | Canonical gates | `PASS` |
 
-> Canonical gates note. T0 supplied the dedicated synthetic admin/writer pair. `CI_INTEGRATION_STRICT=1 npm run test:integration` passed 30/30 files with 528 passed, 2 Redis-only skipped, and 0 failed. Production credentials/data were not used.
+> Canonical gates note. After the CI portability correction, `CI_INTEGRATION_STRICT=1 npm run test:integration` passed 30/30 files with 529 passed, 2 Redis-only skipped, and 0 failed. Production credentials/data were not used.
 | Audit eligibility | `ELIGIBLE` |
 | Correction batches used | `1` |
 | Status | `READY_FOR_AUDIT` |
 
-> **Cumulative semantic diff range = `91525013fc2720a3803e808baac39e1c4497daf6..cb31044ac3ef1d56f23750ea7caad790f533d2c9` = 26 files, +5549 / -1581.**
+> **Cumulative delivery diff range = `91525013fc2720a3803e808baac39e1c4497daf6..487cd14ca293eaef6a4db0ddd75908234888a465` = 27 files, +5725 / -1580.**
 
 > **Integration lane note.** Preflight verified writer=`app_user_writer` (non-superuser, non-BYPASSRLS), admin=`neondb_owner` (BYPASSRLS), and same synthetic target. Both P1-A1 DB suites ran for real; missing credentials still fail closed. The two skips are the pre-existing Upstash Redis TEST cases in OPS06A and do not weaken the P1-A1 DB proof.
 
 ## 1. Outcome and changed surface
 
-- **Delivered (semantic implementation = `cb31044ac3ef1d56f23750ea7caad790f533d2c9` — T0 DB-gate closure, round 3).**
+- **Delivered (semantic implementation = `487cd14ca293eaef6a4db0ddd75908234888a465` — narrow CI portability correction, round 4).**
   - Continuous cutover sang `JobPosting PUBLISHED`: `getPublicJobDetail`, `listPublicJobs`, route handlers, service-level DTO mapping đọc đúng canonical table, derive siteAddress/clientCompanyName/staffingOrder thông qua `JobOpening → StaffingOrder → Project` (xem `src/domains/job-board/public.service.ts` — `staffingOrder: { select: { ... project: { ... } } }`). Public service CHỈ map linked `JobOpening.staffingOrderSlot` vào DTO, KHÔNG fetch toàn bộ `staffingOrder.slots` (C-02 atomic canonical slot).
   - Canonical slot join trong `prisma/migrations/20260925000000_p1a1_canonical_apply_jobpostings/migration.sql`: chain `s.id = jo.staffing_order_slot_id AND s.staffing_order_id = jo.staffing_order_id AND s.job_opening_id = jo.id` — sibling slot trên cùng StaffingOrder bị reject; nếu chain thiếu hoặc drift thì fail closed.
   - Migration grant: `GRANT SELECT ON job_postings, job_openings TO hrp_public_rpc` (chỉ SELECT, không INSERT/UPDATE/DELETE). Function body wrap trong `BEGIN;` ... `COMMIT;` với pre/post assertions (predecessor function signature, role posture, required tables/columns, owner, prosecdef=true, proconfig chứa `search_path=public, pg_temp`, EXECUTE grants, dependency SELECTs).
@@ -53,7 +53,7 @@
   - Distribution/notification bằng n8n là task riêng sau canonical commit.
   - Không tự gọi Tier 3; T0 owns the next audit dispatch.
   - Production migration/deploy remains not executed.
-- **Changed.** Cumulative semantic diff range = `91525013fc2720a3803e808baac39e1c4497daf6..cb31044ac3ef1d56f23750ea7caad790f533d2c9` = 26 files, +5549 / -1581. Round-3 semantic commit message: `fix(p1-a1): close synthetic DB gate and canonical fixtures`. In addition to the original A1 files, round 3 changed:
+- **Changed.** Cumulative delivery diff range = `91525013fc2720a3803e808baac39e1c4497daf6..487cd14ca293eaef6a4db0ddd75908234888a465` = 27 files, +5725 / -1580. The audit-to-correction delta `279ce27..487cd14` changes exactly two semantic files: the migration and migration-chain test. Earlier round-3 changes remain:
   - `app/(jobs)/viec-lam/[slug]/page.tsx` (bỏ demo fixtures; render rich qua `renderJobPostingRichText`; SEO metadata từ canonical; RichTextSection helper local fail-closed; legacy PRJ-xxx in-segment handler).
   - `app/api/public/jobs/[slug]/applications/route.ts` (reject browser-supplied IDs).
   - `src/domains/job-board/public.service.ts` (refactor to JobPosting PUBLISHED; `projectRowFromPosting`; DTO mapping chỉ map linked `JobOpening.staffingOrderSlot`; sibling slot không xuất hiện trong DTO).
@@ -96,7 +96,7 @@
 | `AC-09` | `E-11`, `E-14` | Legacy filtered-list behavior and no DRAFT leak pass in unit/integration evidence. | `None` |
 | `AC-10` | `E-07`, `E-02` | Rich content render qua `renderJobPostingRichText`; SEO từ canonical JobPosting; JSON-LD từ field validator pass; typecheck PASS | `None` |
 | `AC-11` | `E-10`, `E-11` | 18/18 P1-A1 behavior cases PASS, including replay/mismatch/duplicate and canonical-slot negatives. | `None` |
-| `AC-12` | `E-09`, `E-16`, `E-20` | 10/10 isolated migration-chain assertions PASS, including catalog posture and complete rollback after forced post-assert failure. | `None` |
+| `AC-12` | `E-09`, `E-16`, `E-20` | 11/11 isolated migration-chain assertions PASS, including explicit SET-capable membership cleanup, catalog posture and complete rollback after forced post-assert failure. | `None` |
 
 ## 3. Evidence registry
 
@@ -112,7 +112,7 @@
 | `E-08` | đọc `src/shared/content/job-posting-rich-text/renderer.tsx` + `validator.ts` | fail-closed trên schemaVersion mismatch + doc không qua validator | `src/shared/content/job-posting-rich-text/renderer.tsx` |
 | `E-09` | `cat prisma/migrations/20260925000000_p1a1_canonical_apply_jobpostings/migration.sql` | DROP/CREATE FUNCTION giữ signature + owner + grants + SECURITY DEFINER + search_path; body mới derive canonical IDs server-side với canonical slot chain C-02; `GRANT SELECT ON job_postings, job_openings TO hrp_public_rpc`; wrap `BEGIN; ... COMMIT;`; pre/post assertions | `prisma/migrations/20260925000000_p1a1_canonical_apply_jobpostings/migration.sql` |
 | `E-10` | `rg "slotId\|projectId\|jobOpeningId" app/api/public/jobs/[slug]/applications/route.ts` | chỉ validate để reject (HTTP 400 typed error code), không pass-through | `app/api/public/jobs/[slug]/applications/route.ts` |
-| `E-11` | `CI_INTEGRATION_STRICT=1 npm run test:integration` trên dedicated synthetic DB | exit 0; 30/30 files, 528 passed, 2 Redis-only skipped, 0 failed. P1-A1 public-apply suite 18/18 PASS; migration-chain proof 10/10 PASS. Production DB không được dùng. | inline |
+| `E-11` | `CI_INTEGRATION_STRICT=1 npm run test:integration` trên dedicated synthetic DB | exit 0; 30/30 files, 529 passed, 2 Redis-only skipped, 0 failed. P1-A1 public-apply suite 18/18 PASS; migration-chain proof 11/11 PASS. Production DB không được dùng. | inline |
 | `E-12` | `npm list @tiptap/static-renderer@3.31.3 --depth=0` | `3.31.3` (read-only); `package.json` không sửa | inline |
 | `E-13` | `rg "fork" src/shared/content/job-posting-rich-text/ src/domains/job-board/` | 0 hits trong profile/wrapper source | inline |
 | `E-14` | 18 behavior cases trong `tests/db/p1a1-jobposting-public-apply.integration.test.ts` (đăng ký trong `vitest.integration-files.ts`) | PUBLISHED+OPEN canonical success; DRAFT/ARCHIVED posting, non-OPEN opening, old Project-only slug, sibling/wrong/expired/full slot và browser provenance đều fail closed; replay/mismatch/duplicate semantics và exact row counts được chứng minh; public listing/detail qua `withPublicDb` chỉ thấy PUBLISHED và canonical linked slot. | `tests/db/p1a1-jobposting-public-apply.integration.test.ts` |
@@ -121,20 +121,21 @@
 | `E-17` | `git diff --check 91525013fc2720a3803e808baac39e1c4497daf6..HEAD` | exit 0 (no whitespace errors) | inline |
 | `E-18` | strict UTF-8/LF/no-BOM/mojibake scan qua `node -e "..."` script | exit 0 (no mojibake / CRLF / BOM in changed files) | inline |
 | `E-19` | `powershell -NoProfile -ExecutionPolicy Bypass -File .\.ai-pipeline\scripts\verify-handoff.ps1 -HandoffPath 'docs/tasks/hrp-p1-a1-canonical-public-job-detail/HANDOFF.md'` | exit 0; HANDOFF substantive gate PASS after semantic SHA freeze. | inline |
-| `E-20` | `npx vitest run tests/db/p1a1-migration-chain-proof.integration.test.ts` trên isolated synthetic predecessor DB | exit 0; 10/10 assertions PASS, including byte-identical migration apply, catalog posture and transaction rollback under injected postflight fault. | `tests/db/p1a1-migration-chain-proof.integration.test.ts` |
+| `E-20` | `npx vitest run --config vitest.integration.config.ts tests/db/p1a1-migration-chain-proof.integration.test.ts` trên isolated synthetic predecessor DB | exit 0; 11/11 assertions PASS, including byte-identical migration apply, explicit membership cleanup, catalog posture and transaction rollback under injected postflight fault. | `tests/db/p1a1-migration-chain-proof.integration.test.ts` |
 
 ## 4. Deviations and blockers
 
 | ID | Type | Description | Resolution |
 |---|---|---|---|
-| `BLK-01` | `CLOSED` | T0 provisioned the dedicated synthetic admin/writer pair through the restricted local credential channel. The canonical strict integration lane ran against that synthetic DB only. | 30/30 files, 528 passed, 2 Redis-only skips, 0 failed; public-apply 18/18 and migration-chain 10/10 PASS. Production credentials/database were not used or mutated. |
+| `BLK-01` | `CLOSED` | T0 provisioned the dedicated synthetic admin/writer pair through the restricted local credential channel. The canonical strict integration lane ran against that synthetic DB only. | 30/30 files, 529 passed, 2 Redis-only skips, 0 failed; public-apply 18/18 and migration-chain 11/11 PASS. Production credentials/database were not used or mutated. |
+| `CI-01` | `CLOSED — DELTA_RECHECK_REQUIRED` | PR #49 PostgreSQL 16 superuser runner exposed a false-positive postflight assertion: superusers inherently pass `pg_has_role(..., 'SET')`. | Migration now checks only explicit `pg_auth_members.set_option=true` leakage. Targeted 11/11 and full 529-test integration PASS; T3 must review the two-file delta before the prior PASS can govern the new SHA. |
 | `BLK-02` | `CORRECTION_BATCH_USED_1/1` | T0 verdict `CHANGES_REQUIRED` trên reviewed HEAD `915dd2737082ea5437232fdf6c9a56d61e710d10`. Toàn bộ directive C-01..C-08 đã được apply trong semantic commit tiếp theo (`0ae001d...`); HANDOFF/TASK đồng bộ v1.4. | Correction batch đã đóng; không còn correction budget. Nếu sau này T0 mở round mới, cần mở task additive (KHÔNG amend/force-push round cũ). |
 
 ## 5. Final status
 
-Status: `READY_FOR_AUDIT`. Implementation SHA `cb31044ac3ef1d56f23750ea7caad790f533d2c9` is the semantic DB-gate closure commit on branch `codex/t0-p1a1-db-gate-correction`. Correction batches used = 1. Frozen delivery = YES. Canonical gates = PASS: typecheck, lint, build, unit, Prisma validate, targeted DB suites and full strict integration. Lane CRITICAL + LIGHT audit remains unchanged. No production migration or deployment was performed.
+Status: `READY_FOR_AUDIT`. Implementation SHA `487cd14ca293eaef6a4db0ddd75908234888a465` is the narrow CI portability correction on branch `codex/t0-p1a1-db-gate-correction`. Correction batches used = 1. Frozen delivery = YES. Canonical gates = PASS: typecheck, lint, unit, Prisma validate, targeted DB suites and full strict integration. The prior T3 PASS remains immutable evidence for the earlier SHA; a LIGHT delta recheck is required for `279ce27..487cd14`. No production migration or deployment was performed.
 
-Cumulative semantic diff range awaiting Tier 3 audit: `91525013fc2720a3803e808baac39e1c4497daf6..cb31044ac3ef1d56f23750ea7caad790f533d2c9` = 26 files, +5549 / -1581.
+Cumulative delivery diff range awaiting Tier 3 delta recheck: `91525013fc2720a3803e808baac39e1c4497daf6..487cd14ca293eaef6a4db0ddd75908234888a465` = 27 files, +5725 / -1580.
 
 Tier 3 may now open a LIGHT audit on the frozen semantic SHA and the following docs-only freeze commit. Merge, production migration and deploy authority remain with T0/Owner.
 
