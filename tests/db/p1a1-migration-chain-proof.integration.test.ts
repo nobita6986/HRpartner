@@ -268,6 +268,21 @@ describe("P1-A1 migration chain proof (C-05)", () => {
     const staging = buildPredecessorStaging();
     try {
       applyAllMigrations(ephemeralUrl, staging.schemaPath);
+      // hrp-p1-a0-1: apply the P1-A0.1 ADD-only migration SQL on top of the predecessor DB.
+      // The current Prisma client (generated from REPO_ROOT's schema.prisma) emits INSERT
+      // with `is_hot`/`is_urgent` columns; without this step the column does not exist in
+      // the ephemeral DB and Prisma throws P2022. The chain proof's intent is preserved
+      // because P1-A0.1 is purely additive (NOT NULL DEFAULT false) and independent of A1.
+      applyMigrationFile(
+        ephemeralUrl,
+        path.join(
+          REPO_ROOT,
+          "prisma",
+          "migrations",
+          "20260926120000_p1a01_jobposting_stamps",
+          "migration.sql",
+        ),
+      );
     } finally {
       rmSync(staging.root, { recursive: true, force: true });
     }

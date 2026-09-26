@@ -492,6 +492,10 @@ model JobOpening {
 // P1-A0 contract add: title + salaryDisplay + 4 rich-content JSON fields + contentSchemaVersion.
 // Tất cả nullable (draft/existing rows OK); publish mới bắt buộc title + description.
 // Migration: prisma/migrations/20260924180000_p1a0_jobposting_content_fields
+//
+// P1-A0.1 contract add: isHot + isUrgent stamp flags (canonical boolean columns).
+// NOT NULL DEFAULT false → existing rows giữ false (không backfill từ Project legacy).
+// Migration: prisma/migrations/20260926120000_p1a01_jobposting_stamps
 model JobPosting {
   id                          String    @id @default(uuid())
   jobOpeningId                String    @unique @map("job_opening_id")
@@ -508,6 +512,10 @@ model JobPosting {
   benefitsJson                Json?     @map("benefits_json")
   applicationInstructionsJson Json?     @map("application_instructions_json")
   contentSchemaVersion        Int       @default(1) @map("content_schema_version")
+  // P1-A0.1 stamp flags — canonical source of truth cho "Hot" + "Tuyển gấp" trên public surface.
+  // KHÔNG heuristic backfill từ Project.isPublic / urgency / salary / postedAt / hash.
+  isHot                       Boolean   @default(false) @map("is_hot")
+  isUrgent                    Boolean   @default(false) @map("is_urgent")
   createdAt                   DateTime  @default(now()) @map("created_at")
   updatedAt                   DateTime  @updatedAt @map("updated_at")
 
