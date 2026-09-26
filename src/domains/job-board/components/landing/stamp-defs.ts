@@ -85,3 +85,30 @@ export const STAMP_RANK: Record<StampKey, number> = {
   'thuong-cao': 2,
   'moi': 3,
 };
+
+/**
+ * hrp-p1-a0-1 (DEC-05, T0 §1.4): derive stamps TỪ canonical boolean `isHot`/`isUrgent`.
+ * KHÔNG heuristic từ urgency, salary, postedAt, hash, hay metadata khác.
+ *
+ * Multi-stamp layout sort theo STAMP_RANK (`tuyen-gap` trước `hot`) để stamp quan trọng
+ * nhất ở index 0.
+ *
+ * C-05 (correction batch 1/1): helper này là CỦA stamp-defs.ts để mọi bề mặt render
+ * job stamp share một implementation duy nhất. Trước đó helper này duplicate ở ba
+ * điểm: `app/(jobs)/viec-lam/page.tsx`, `app/(jobs)/viec-lam/[slug]/page.tsx`, và
+ * `app/(portal)/page.tsx`. Giờ đây chỉ một.
+ *
+ * Stamp type: `tuyen-gap` <-> `isUrgent=true`; `hot` <-> `isHot=true`.
+ * Stamp `thuong-cao` / `moi` giữ lại trong registry (cho legacy callers) nhưng
+ * predicate hiện không sinh chúng — chúng là feature flag cho tương lai.
+ */
+export function deriveStampsFromFlags(
+  isHot: boolean,
+  isUrgent: boolean,
+): StampKey[] {
+  const out: StampKey[] = [];
+  if (isUrgent) out.push('tuyen-gap');
+  if (isHot) out.push('hot');
+  out.sort((a, b) => STAMP_RANK[a] - STAMP_RANK[b]);
+  return out;
+}

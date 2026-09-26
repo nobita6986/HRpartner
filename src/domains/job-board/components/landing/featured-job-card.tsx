@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { MapPin, Clock3, Banknote } from 'lucide-react';
 import type { EnrichedJob } from '@/app/(portal)/page';
 import { HrMonogram } from './hr-monogram';
-import { STAMPS, STAMP_RANK, type StampKey } from './stamp-defs';
+import { STAMPS, STAMP_RANK, type StampKey, deriveStampsFromFlags } from './stamp-defs';
 
 export interface FeaturedJobCardProps {
   /** Job data — EnrichedJob shape from page.tsx */
@@ -73,6 +73,11 @@ function deriveMonogram(title: string): string {
  *
  * `index` dùng để lệch vị trí các stamp khi có 2+ cùng lúc (offset `translate-x`)
  * — không chồng lên nhau.
+ *
+ * C-05 (correction batch 1/1): helper phái sinh stamp từ flags sống ở
+ * `stamp-defs.ts` (`deriveStampsFromFlags`) — chia sẻ với listing + detail page.
+ * Hero RubberStamp giữ art direction riêng (con dấu tilted có offset + grunge ink);
+ * các bề mặt phẳng (chip) dùng `<JobStampBadge>` cũng từ cùng registry.
  */
 function RubberStamp({ stampKey, idx }: { stampKey: StampKey; idx: number }) {
   const def = STAMPS[stampKey];
@@ -176,11 +181,17 @@ export function FeaturedJobCard({ job, href, onApply }: FeaturedJobCardProps) {
           - Reduced-motion tắt animation cho TẤT CẢ stamp cùng lúc.
           - Multi-stamp có offset (index × 18px X, index × 8px Y) để không chồng nhau. */}
       {(() => {
-        // Lấy tất cả stamp từ job.stamps (canonical `isHot`/`isUrgent` mapping ở service layer),
-        // sort theo STAMP_RANK để stamp quan trọng nhất ở index 0.
-        const stamps: StampKey[] = (job.stamps && job.stamps.length > 0)
-          ? [...job.stamps].sort((a, b) => STAMP_RANK[a] - STAMP_RANK[b])
-          : [];
+        // C-05 (correction batch 1/1): canonical derivation lives in `stamp-defs.ts`
+        // (`deriveStampsFromFlags`). FeaturedJobCard giữ override path (job.stamps) cho
+        // service-layer callers; default derive dùng helper chung để listing +
+        // detail + homepage đều share một conversion logic.
+        const stamps: StampKey[] =
+          job.stamps && job.stamps.length > 0
+            ? [...job.stamps].sort((a, b) => STAMP_RANK[a] - STAMP_RANK[b])
+            : deriveStampsFromFlags(
+                Boolean((job as { isHot?: boolean }).isHot),
+                Boolean((job as { isUrgent?: boolean }).isUrgent),
+              );
         if (stamps.length === 0) return null;
         return (
           <>

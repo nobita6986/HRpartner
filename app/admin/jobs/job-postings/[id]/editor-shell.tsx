@@ -409,7 +409,9 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
         {/* hrp-p1-a0-1 (DEC-07): stamp toggles — 2 boolean độc lập "Hot" và "Tuyển gấp".
             Lưu cùng draft update authority (PATCH). DRAFT-only editing semantics theo
             lifecycle P1-A0; nếu muốn đổi stamp của PUBLISHED phải đi qua lifecycle canonical.
-            Disabled khi status = ARCHIVED. */}
+            C-04 (correction batch 1/1): disabled unless status === 'DRAFT'. Trước đây chỉ
+            disable cho ARCHIVED — giờ PUBLISHED cũng bị disable để đảm bảo stamp chỉ edit
+            được ở DRAFT. Đổi stamp của PUBLISHED phải unpublish trước. */}
         <div className="mt-4 flex flex-wrap items-center gap-4 text-sm">
           <span className="font-medium" style={{ color: 'var(--on-surface-variant)' }}>
             Stamp:
@@ -418,7 +420,7 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
             label="Hot"
             ariaLabel="Đánh dấu JobPosting là Hot"
             checked={isHot}
-            disabled={!canMutate || isSaving || status === 'ARCHIVED'}
+            disabled={!canMutate || isSaving || status !== 'DRAFT'}
             onChange={setIsHot}
             testId="stamp-toggle-hot"
           />
@@ -426,12 +428,13 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
             label="Tuyển gấp"
             ariaLabel="Đánh dấu JobPosting là Tuyển gấp"
             checked={isUrgent}
-            disabled={!canMutate || isSaving || status === 'ARCHIVED'}
+            disabled={!canMutate || isSaving || status !== 'DRAFT'}
             onChange={setIsUrgent}
             testId="stamp-toggle-urgent"
           />
           <span className="ml-auto text-xs italic" style={{ color: 'var(--on-surface-variant)' }}>
             Public render stamp theo `isHot` + `isUrgent` (canonical boolean), không heuristic.
+            Stamp chỉ edit được ở DRAFT.
           </span>
         </div>
       </section>

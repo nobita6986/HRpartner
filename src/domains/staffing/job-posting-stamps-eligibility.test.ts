@@ -30,8 +30,16 @@ describe('hrp-p1-a0-1 — eligible-slot predicate (DEC-03)', () => {
     expect(code).toMatch(/s\.valid_to\s+IS\s+NULL\s+OR\s+s\.valid_to\s+>=\s*\$\{now\}/i);
     // Mệnh đề 4: slotsFilled < slotsNeeded
     expect(code).toMatch(/s\.slots_filled\s+<\s*s\.slots_needed/);
-    // Mệnh đề 5: jobOpeningId IS NULL
-    expect(code).toMatch(/s\.job_opening_id\s+IS\s+NULL/);
+    // Mệnh đề 5 (C-02 correction batch 1/1): exclude only slots whose
+    // JobOpening already has a canonical JobPosting. The predicate uses
+    // NOT EXISTS joining job_postings ← job_openings, NOT a literal
+    // `s.job_opening_id IS NULL` — a slot with a JobOpening but no
+    // JobPosting stays ELIGIBLE because POST reuses the JobOpening and
+    // creates the missing posting.
+    expect(code).toMatch(/NOT\s+EXISTS/i);
+    expect(code).toMatch(/FROM\s+job_postings\s+jp/i);
+    expect(code).toMatch(/INNER\s+JOIN\s+job_openings\s+jo/i);
+    expect(code).toMatch(/jo\.staffing_order_slot_id\s*=\s*s\.id/i);
   });
 
   it('KHÔNG yêu cầu validFrom <= hôm nay (HR được prep draft trước ngày bắt đầu tuyển)', () => {
@@ -43,5 +51,23 @@ describe('hrp-p1-a0-1 — eligible-slot predicate (DEC-03)', () => {
 
   it('raw SQL có LIMIT để cap scan (default 100, max 500)', () => {
     expect(code).toMatch(/LIMIT\s+\$\{limit\}/i);
+  });
+
+  it('canonical predicate SQL helper covers all four legs (C-02 single source)', () => {
+    // C-02: BOTH selector and POST re-read path consume `eligibleSlotPredicateSql(now)`
+    // so they cannot drift. The helper must exist + be exported + be used by
+    // `listEligibleSlotsForNewJobPosting` selector AND the write-path
+    // `assertSlotEligibleForNewJobPosting` (defined in
+    // `job-posting-authoring.service.ts`).
+    expect(code).toMatch(/export\s+function\s+eligibleSlotPredicateSql/);
+    expect(code).toMatch(/listEligibleSlotsForNewJobPosting[\s\S]{0,2000}eligibleSlotPredicateSql\s*\(/);
+    // Import of the helper must also be present in the authoring service so
+    // the write-path can re-read eligibility with the same predicate.
+    const authoring = readFileSync(
+      join(process.cwd(), 'src/domains/staffing/job-posting-authoring.service.ts'),
+      'utf8',
+    );
+    expect(authoring).toMatch(/eligibleSlotPredicateSql/);
+    expect(authoring).toMatch(/assertSlotEligibleForNewJobPosting/);
   });
 });

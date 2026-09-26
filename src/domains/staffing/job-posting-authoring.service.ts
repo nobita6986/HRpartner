@@ -111,6 +111,22 @@ export interface CreateOrReuseJobOpeningForSlotInput {
   slotId: string;
 }
 
+/**
+ * C-02: revalidation context returned by the write-path authority. Carries the
+ * LIVE StaffingOrder status so the route can echo it back to the client (no
+ * hard-coded `orderStatus: 'OPEN'`). Always present when the slot is eligible.
+ */
+export interface SlotRevalidationContext {
+  readonly slotId: string;
+  readonly staffingOrderId: string;
+  readonly slotsFilled: number;
+  readonly slotsNeeded: number;
+  readonly validTo: Date | null;
+  readonly deadlineDate: Date | null;
+  /** Actual `StaffingOrder.status` as observed under the transaction's RLS scope. */
+  readonly orderStatus: string;
+}
+
 export interface CreateOrReuseJobPostingDraftForOpeningInput {
   jobOpeningId: string;
 }
@@ -341,6 +357,124 @@ function ensureUniqueSlug(
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
+ * C-02: write-path authority for slot eligibility. Reads the slot + its staffing
+ * order under the caller's transaction (RLS already applied by `withDbContext`)
+ * and throws `AuthoringError('INVALID_INPUT', 400)` with a precise code if the
+ * slot does NOT satisfy the canonical predicate.
+ *
+ * The predicate is shared with the selector (`listEligibleSlotsForNewJobPosting`)
+ * via `eligibleSlotPredicateSql`. Re-reading + re-validating inside the
+ * transaction means a stale selector (or a direct POST with an ineligible slot)
+ * fails closed with zero mutation.
+ *
+ * Critically: "exclude only slots with a canonical JobPosting". A slot that
+ * already has a `JobOpening` bound but no `JobPosting` remains ELIGIBLE — the
+ * POST path will reuse that `JobOpening` and create the missing posting.
+ */
+export async function assertSlotEligibleForNewJobPosting(
+  tx: PrismaTypes.TransactionClient,
+  slotId: string,
+  now: Date = new Date(),
+): Promise<SlotRevalidationContext> {
+  if (typeof slotId !== 'string' || slotId.length === 0) {
+    throw new AuthoringError('INVALID_INPUT', 'slotId là bắt buộc.', 400);
+  }
+
+  type SlotRow = {
+    id: string;
+    staffing_order_id: string;
+    slots_filled: number;
+    slots_needed: number;
+    valid_to: Date | null;
+    deadline_date: Date | null;
+    order_status: string;
+    /** C-02: id của JobOpening bound nếu có; null nếu slot chưa có opening. */
+    job_opening_id: string | null;
+    /** C-02: id của JobPosting qua JobOpening; null nếu chưa có canonical posting. */
+    has_posting: boolean;
+  };
+
+  const rows = await tx.$queryRaw<SlotRow[]>(Prisma.sql`
+    SELECT
+      s.id,
+      s.staffing_order_id,
+      s.slots_filled,
+      s.slots_needed,
+      s.valid_to,
+      so.deadline_date,
+      so.status AS order_status,
+      s.job_opening_id,
+      EXISTS (
+        SELECT 1 FROM job_postings jp
+        WHERE jp.job_opening_id = (
+          SELECT jo.id FROM job_openings jo
+          WHERE jo.staffing_order_slot_id = s.id
+          LIMIT 1
+        )
+      ) AS has_posting
+    FROM staffing_order_slots s
+    INNER JOIN staffing_orders so ON so.id = s.staffing_order_id
+    WHERE s.id = ${slotId}
+    FOR UPDATE OF s
+  `);
+  const slot = rows[0];
+  if (!slot) {
+    throw new AuthoringError('NOT_FOUND', `StaffingOrderSlot ${slotId} không tồn tại.`, 404);
+  }
+
+  if (slot.order_status !== 'OPEN' && slot.order_status !== 'CLOSING_SOON') {
+    throw new AuthoringError(
+      'INVALID_INPUT',
+      `StaffingOrder không còn mở (status=${slot.order_status}). Không thể tạo JobPosting mới.`,
+      400,
+      { orderStatus: slot.order_status },
+    );
+  }
+  if (slot.deadline_date !== null && slot.deadline_date < now) {
+    throw new AuthoringError(
+      'INVALID_INPUT',
+      'StaffingOrder đã quá hạn nộp (deadlineDate < now).',
+      400,
+      { deadlineDate: slot.deadline_date.toISOString() },
+    );
+  }
+  if (slot.valid_to !== null && slot.valid_to < now) {
+    throw new AuthoringError(
+      'INVALID_INPUT',
+      'StaffingOrderSlot đã quá hạn (validTo < now).',
+      400,
+      { validTo: slot.valid_to.toISOString() },
+    );
+  }
+  if (slot.slots_filled >= slot.slots_needed) {
+    throw new AuthoringError(
+      'INVALID_INPUT',
+      'StaffingOrderSlot đã đủ chỉ tiêu (slotsFilled >= slotsNeeded).',
+      400,
+      { slotsFilled: slot.slots_filled, slotsNeeded: slot.slots_needed },
+    );
+  }
+  if (slot.has_posting) {
+    throw new AuthoringError(
+      'INVALID_INPUT',
+      'StaffingOrderSlot đã có canonical JobPosting — không thể tạo JobPosting mới.',
+      400,
+      { slotId },
+    );
+  }
+
+  return {
+    slotId: slot.id,
+    staffingOrderId: slot.staffing_order_id,
+    slotsFilled: slot.slots_filled,
+    slotsNeeded: slot.slots_needed,
+    validTo: slot.valid_to,
+    deadlineDate: slot.deadline_date,
+    orderStatus: slot.order_status,
+  };
+}
+
+/**
  * Create or reuse exactly one JobOpening bound to the given StaffingOrderSlot.
  *
  * Algorithm (OD-P1A-06 / DEC-07):
@@ -366,6 +500,13 @@ export async function createOrReuseJobOpeningForSlot(
   if (typeof input.slotId !== 'string' || input.slotId.length === 0) {
     throw new AuthoringError('INVALID_INPUT', 'slotId là bắt buộc.', 400);
   }
+
+  // C-02: re-read + revalidate eligibility INSIDE the transaction. The selector
+  // (client dropdown) is NEVER the authorization authority — a stale selector
+  // must fail closed with zero mutation. `assertSlotEligibleForNewJobPosting`
+  // shares the predicate with `listEligibleSlotsForNewJobPosting` so the two
+  // paths cannot drift.
+  await assertSlotEligibleForNewJobPosting(tx, input.slotId);
 
   // 1. Lock the slot row.
   const slotRows = await tx.$queryRaw<

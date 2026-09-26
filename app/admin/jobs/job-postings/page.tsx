@@ -148,10 +148,11 @@ export default async function AdminJobPostingsListPage({ searchParams }: PagePro
         positionTitle: slot.positionTitle,
         positionCode: slot.positionCode,
         location: slot.workLocation,
-        // Service predicate đã bảo đảm `slots_filled < slots_needed` nên hiệu luôn >= 1.
-        slotsAvailable: Math.max(0, slot.slotsNeeded - slot.slotsFilled),
-        // Service predicate đã filter `status IN ('OPEN','CLOSING_SOON')` — đây là type narrowing.
-        orderStatus: 'OPEN' as const,
+        // C-02: server-computed from predicate; canonical source of truth.
+        slotsAvailable: slot.slotsAvailable,
+        // C-02: echo ACTUAL StaffingOrder.status from server-side predicate. The DTO
+        // narrows to 'OPEN' | 'CLOSING_SOON' but UI must never assume.
+        orderStatus: slot.orderStatus,
       }));
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';

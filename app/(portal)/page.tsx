@@ -26,7 +26,7 @@ import type {
 } from '@/src/domains/job-board/public.service';
 import { BEST_JOBS_PAGE_SIZE_DEFAULT } from '@/src/domains/job-board/public-types';
 import {
-  STAMP_RANK,
+  deriveStampsFromFlags,
   type StampKey,
 } from '@/src/domains/job-board/components/landing/stamp-defs';
 
@@ -74,16 +74,13 @@ export interface EnrichedJob {
  * KHÔNG heuristic từ urgency, salary, postedAt, hash, hay bất kỳ metadata nào khác
  * (T0 §2 "Public rendering" — fail closed nếu `JobPosting.isHot`/`isUrgent` drift).
  *
- * Caller phải sort stamps theo STAMP_RANK trước khi truyền vào component để wrapper render
- * stamp quan trọng nhất ở vị trí đầu tiên (T0 §1.4 — multi-stamp layout).
+ * C-05 (correction batch 1/1): helper này đã được giao cho
+ * `@/src/domains/job-board/components/landing/stamp-defs` để toàn bộ stamp rendering
+ * surface (homepage, `/viec-lam`, `/viec-lam/[slug]`, FeaturedJobCard) chia sẻ MỘT
+ * implementation duy nhất. Không có bản duplicate inline ở đây.
+ *
+ * Caller truyền `stamps` cho FeaturedJobCard (sort theo STAMP_RANK đã được helper đảm bảo).
  */
-function deriveStampsFromFlags(isHot: boolean, isUrgent: boolean): StampKey[] {
-  const result: StampKey[] = [];
-  if (isUrgent) result.push('tuyen-gap');
-  if (isHot) result.push('hot');
-  // Stable order: STAMP_RANK ascending (tuyen-gap < hot) — đã đúng thứ tự trên.
-  return result.sort((a, b) => STAMP_RANK[a] - STAMP_RANK[b]);
-}
 
 function enrichJob(job: PublicJobDto): EnrichedJob {
   const { salaryMinVnd, salaryMaxVnd, urgency, postedAt, companyName, isHot, isUrgent } = job;

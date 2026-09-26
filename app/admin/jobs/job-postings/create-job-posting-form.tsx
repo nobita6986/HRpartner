@@ -64,18 +64,32 @@ interface SubmitState {
   readonly jobPostingId?: string;
 }
 
-/** Sinh UUID v4 cho Idempotency-Key (DEC-04). */
+/** Sinh UUID v4 cho Idempotency-Key (DEC-04).
+ *
+ *  C-04 (correction batch 1/1): entropy phải đến từ `crypto.randomUUID()` (preferred) hoặc
+ *  `crypto.getRandomValues()` (RFC 4122 fallback). KHÔNG dùng `Math.random` — nó không phải
+ *  nguồn entropy đủ mạnh cho idempotency key. Một UUID có 122 bit entropy thật là đủ để
+ *  cả million request vẫn không trùng key; `Math.random` trong một số engine (V8) chỉ có
+ *  ~128 bit state nên collisions xảy ra sớm hơn dự kiến.
+ */
 function generateIdempotencyKey(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
   }
-  // Fallback RFC4122-ish: timestamp + 128-bit random (chỉ dùng khi crypto API không có).
-  const bytes = new Uint8Array(16);
-  for (let i = 0; i < 16; i += 1) bytes[i] = Math.floor(Math.random() * 256);
-  bytes[6] = (bytes[6] & 0x0f) | 0x40;
-  bytes[8] = (bytes[8] & 0x3f) | 0x80;
-  const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+  if (
+    typeof crypto !== 'undefined' &&
+    typeof crypto.getRandomValues === 'function'
+  ) {
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    bytes[6] = (bytes[6] & 0x0f) | 0x40; // version 4
+    bytes[8] = (bytes[8] & 0x3f) | 0x80; // variant RFC 4122
+    const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+  }
+  // Last-resort: deterministic per-call seed is unsafe for idempotency, but we still avoid Math.random.
+  // Caller should treat this as a degraded environment and not retry quickly.
+  throw new Error('Không có crypto.randomUUID hoặc crypto.getRandomValues để sinh Idempotency-Key an toàn.');
 }
 
 export function CreateJobPostingForm({ eligibleSlots, actionUrl, loadError }: CreateJobPostingFormProps) {
@@ -132,10 +146,22 @@ export function CreateJobPostingForm({ eligibleSlots, actionUrl, loadError }: Cr
       const data = await response.json().catch(() => ({} as Record<string, unknown>));
       if (!response.ok) {
         const errCode = typeof data.error === 'string' ? data.error : 'UNKNOWN_ERROR';
-        const errMsg = typeof data.message === 'string' ? data.message : `HTTP ${response.status}`;
-        setSubmit({ kind: 'error', message: `[${errCode}] ${errMsg}` });
-        // Reset key để user có thể retry sau khi sửa payload (action mới).
-        idempotencyKeyRef.current = '';
+        // C-04 (correction batch 1/1):
+        //   - 4xx (client-side correction): reset key — user đang sửa payload.
+        //   - 5xx (server-side / unknown): giữ key — retry phải reuse cùng key để
+        //     `withIdempotency` detect duplicate và trả lại response cũ hoặc replay.
+        //   - network failure: giữ key.
+        const isClientError = response.status >= 400 && response.status < 500;
+        if (isClientError) {
+          idempotencyKeyRef.current = '';
+        }
+        // C-04: KHÔNG hiển thị raw message từ server (có thể chứa stack trace, SQL error,
+        // PII). Render một safe generic message thay thế. Code giữ lại để user copy-paste
+        // cho support, nhưng message hiển thị qua lưới an toàn.
+        const safeMessage = isClientError
+          ? `Yêu cầu không hợp lệ (${errCode}). Vui lòng kiểm tra lại lựa chọn và thử lại.`
+          : `Máy chủ tạm thời không phản hồi (HTTP ${response.status}). Có thể retry với cùng Idempotency-Key.`;
+        setSubmit({ kind: 'error', message: `[${errCode}] ${safeMessage}` });
         return;
       }
 
@@ -143,15 +169,22 @@ export function CreateJobPostingForm({ eligibleSlots, actionUrl, loadError }: Cr
       const jobPostingId = body.jobPosting?.id;
       if (typeof jobPostingId !== 'string' || jobPostingId.length === 0) {
         setSubmit({ kind: 'error', message: 'Server không trả jobPosting.id — không thể redirect.' });
+        // 4xx-equivalent: bad payload from server. Reset key để user retry sạch.
         idempotencyKeyRef.current = '';
         return;
       }
       setSubmit({ kind: 'success', jobPostingId });
     } catch (err) {
       // Network failure hoặc abort: KHÔNG reset key — retry phải dùng cùng Idempotency-Key
-      // (DEC-04: "Retry sau network timeout/unknown outcome phải reuse cùng key").
-      const message = err instanceof Error ? err.message : 'Network error';
-      setSubmit({ kind: 'error', message: `Lỗi mạng: ${message}. Có thể retry với cùng Idempotency-Key.` });
+      // (DEC-04 + C-04: "Retry sau network timeout/unknown outcome phải reuse cùng key").
+      // C-04: render safe generic message — KHÔNG hiển thị raw `err.message` (có thể chứa
+      // DNS info, internal URL, stack trace).
+      console.error('[create-job-posting] network error:', err);
+      setSubmit({
+        kind: 'error',
+        message:
+          'Mất kết nối tới máy chủ. Có thể retry với cùng Idempotency-Key.',
+      });
     }
   }
 

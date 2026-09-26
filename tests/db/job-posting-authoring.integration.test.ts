@@ -349,9 +349,24 @@ describe.skipIf(!HAS_TEST_DB)('P1-A0 JobPosting authoring — DB-touching proof'
   // ───────────────────────────────────────────────────────────────────────────
 
   it('AC-07 updateDraftContent rejects stale revision and bumps revision on success', async () => {
+    // C-02: Use a fresh slot so the eligibility predicate (canonical JobPosting
+    // check) does not gate against AC-06's pre-existing posting on ref.slotId.
+    const freshSlotId = `slot-ac07-${runId}`;
+    await admin.staffingOrderSlot.create({
+      data: {
+        id: freshSlotId,
+        staffingOrderId: ref.staffingOrderId,
+        positionCode: 'AC07',
+        positionTitle: `AC07 slot ${runId}`,
+        slotsNeeded: 1,
+        slotsFilled: 0,
+        validFrom: new Date(),
+        validTo: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      },
+    });
     const opening = await withRoleContext(writer, ref.hrManagerUserId, 'HR_MANAGER', async (tx) =>
       createOrReuseJobOpeningForSlot(tx, { userId: ref.hrManagerUserId, role: 'HR_MANAGER' }, {
-        slotId: ref.slotId,
+        slotId: freshSlotId,
       }),
     );
     const draft = await withRoleContext(writer, ref.hrManagerUserId, 'HR_MANAGER', async (tx) =>
@@ -609,9 +624,24 @@ describe.skipIf(!HAS_TEST_DB)('P1-A0 JobPosting authoring — DB-touching proof'
   });
 
   it('AC-14 updateDraftContent rejects rich payload with image node (no raw HTML persistence)', async () => {
+    // C-02: Use a fresh slot so the eligibility predicate does not gate
+    // against AC-06/AC-07's prior postings on ref.slotId / slot-ac07.
+    const freshSlotId = `slot-ac14-${runId}`;
+    await admin.staffingOrderSlot.create({
+      data: {
+        id: freshSlotId,
+        staffingOrderId: ref.staffingOrderId,
+        positionCode: 'AC14',
+        positionTitle: `AC14 slot ${runId}`,
+        slotsNeeded: 1,
+        slotsFilled: 0,
+        validFrom: new Date(),
+        validTo: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      },
+    });
     const opening = await withRoleContext(writer, ref.hrManagerUserId, 'HR_MANAGER', async (tx) =>
       createOrReuseJobOpeningForSlot(tx, { userId: ref.hrManagerUserId, role: 'HR_MANAGER' }, {
-        slotId: ref.slotId,
+        slotId: freshSlotId,
       }),
     );
     const draft = await withRoleContext(writer, ref.hrManagerUserId, 'HR_MANAGER', async (tx) =>

@@ -58,31 +58,15 @@ import {
 } from '@/src/domains/job-board/public-listing.params';
 import { salaryLabel, summaryLabel } from '@/src/domains/job-board/public-listing.labels';
 import {
-  STAMPS,
-  STAMP_RANK,
-  type StampKey,
+  deriveStampsFromFlags,
 } from '@/src/domains/job-board/components/landing/stamp-defs';
+import { JobStampBadge } from '@/src/domains/job-board/components/landing/stamp-badge';
 
 /**
- * hrp-p1-a0-1 (DEC-05): derive stamps TỪ canonical boolean flags `JobPosting.isHot`/`isUrgent`.
- * KHÔNG heuristic từ urgency, salary, postedAt, hash, hay metadata khác. Multi-stamp layout sort
- * theo STAMP_RANK (tuyen-gap trước hot) để stamp quan trọng nhất ở index 0.
- *
- * Helper này CỐ Ý ở trong `viec-lam/page.tsx` thay vì import từ `app/(portal)/page.tsx` vì hai bề
- * mặt render độc lập và file page.tsx này đã được `public-listing.static.test.ts` AC-05 fence cấm
- * mọi `const X = [...]` literal — tách helper để array literal ở đây là kết quả của một function
- * call, không phải khai báo binding trực tiếp.
+ * NOTE: `deriveStampsFromFlags` is now owned by `stamp-defs.ts` (C-05) and shared
+ * with the homepage FeaturedJobCard and the detail `/viec-lam/[slug]` page —
+ * không còn local copy.
  */
-function deriveStampsFromFlags(isHot: boolean, isUrgent: boolean): StampKey[] {
-  const result = Array.from(
-    (function* () {
-      if (isUrgent) yield 'tuyen-gap';
-      if (isHot) yield 'hot';
-    })(),
-  );
-  result.sort((a, b) => STAMP_RANK[a] - STAMP_RANK[b]);
-  return result;
-}
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
@@ -308,9 +292,8 @@ function FilterForm({ params, facets }: { params: ListingParams; facets: Listing
  */
 function JobCard({ job }: { job: ListingJob }) {
   const isPreview = job.id.startsWith('preview-');
-  // Tính danh sách stamp từ canonical boolean (DEC-05).
-  // NOTE: tránh `const X = [...]` vì `public-listing.static.test.ts` AC-05 cấm mảng hằng
-  // — gộp tính toán vào helper dưới.
+  // Derive từ canonical boolean (DEC-05). Bề mặt này dùng shared
+  // `<JobStampBadge>` (C-05) thay vì inline IIFE — single source of truth.
   const stamps = deriveStampsFromFlags(job.isHot, job.isUrgent);
   return (
     <article
@@ -327,27 +310,16 @@ function JobCard({ job }: { job: ListingJob }) {
             {job.title}
           </Link>
         </h3>
-        {/* hrp-p1-a0-1: stamps từ canonical boolean, KHÔNG từ legacy urgency. Multi-stamp
-            wrapper mỗi stamp có `.job-stamp-attention` + reduced-motion disable riêng. */}
-        {stamps.length > 0 ? (
-          <div className="flex shrink-0 items-start gap-1">
-            {stamps.map((stampKey, idx) => {
-              const def = STAMPS[stampKey];
-              return (
-                <span
-                  key={`stamp-${stampKey}-${idx}`}
-                  className={`job-stamp-attention motion-reduce:animate-none motion-reduce:opacity-100 ${def.bgClass} ${def.fgClass} inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium`}
-                  data-testid="job-stamp"
-                  data-stamp-key={stampKey}
-                  data-stamp-index={idx}
-                  aria-label={def.ariaLabel}
-                >
-                  {def.label}
-                </span>
-              );
-            })}
-          </div>
-        ) : null}
+        {/* hrp-p1-a0-1 (DEC-05): shared `<JobStampBadge>` render từ canonical boolean,
+            0.7↔1.0 animation + reduced-motion disable (C-05). */}
+        {stamps.length === 0 ? null : (
+          <JobStampBadge
+            isHot={job.isHot}
+            isUrgent={job.isUrgent}
+            stamps={stamps}
+            size="sm"
+          />
+        )}
       </header>
       <dl className="flex flex-col gap-1 text-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
         <div className="flex flex-wrap gap-x-1">

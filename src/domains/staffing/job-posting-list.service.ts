@@ -280,12 +280,14 @@ export async function getJobPostingForAdmin(
  * dropdown selector trong client form (T0 §2 "Slot selector" — single source
  * of truth ở server, selector client không phải authorization authority).
  *
- * Eligibility predicate (DEC-03, locked T0 §2):
+ * Eligibility predicate (DEC-03, locked T0 §2 + C-02 correction batch 1/1):
  *   - StaffingOrder.status ∈ {OPEN, CLOSING_SOON}
  *   - `deadlineDate` IS NULL OR `deadlineDate >= now()`
  *   - `validTo` IS NULL OR `validTo >= now()`  (HR được prep draft trước `validFrom`)
  *   - `slotsFilled < slotsNeeded`
- *   - slot chưa có JobPosting canonical (qua `jobOpeningId` → `JobOpening.posting` IS NULL)
+ *   - slot không resolve sang một canonical JobPosting đã tồn tại
+ *     (qua `jobOpeningId` → `JobOpening.posting` IS NULL — slot có JobOpening chưa có
+ *     JobPosting VẪN đủ điều kiện vì POST sẽ reuse JobOpening và tạo posting).
  *
  * POST endpoint (`/api/admin/jobs/job-postings`) sẽ re-read + revalidate
  * predicate trong transaction — selector client KHÔNG phải authorization authority.
@@ -297,9 +299,45 @@ export interface JobPostingSlotSelectorDto {
   workLocation: string | null;
   slotsNeeded: number;
   slotsFilled: number;
+  /** C-02: derived slotsAvailable = slotsNeeded - slotsFilled. Server-computed, không UI suy. */
+  slotsAvailable: number;
   validTo: string | null;
   staffingOrderId: string;
   staffingOrderCode: string;
+  /**
+   * C-02: actual StaffingOrder.status tại thời điểm đọc — `'OPEN' | 'CLOSING_SOON'`.
+   * Predicate đã giới hạn 2 giá trị này, nhưng DTO vẫn carry để UI render chip badge
+   * "Đang tuyển" / "Sắp hết hạn" mà KHÔNG hard-code trong client.
+   */
+  orderStatus: 'OPEN' | 'CLOSING_SOON';
+}
+
+/**
+ * Canonical eligibility predicate (hrp-p1-a0-1 C-02 correction batch 1/1).
+ *
+ * One repo-owned helper consumed by BOTH:
+ *  - `listEligibleSlotsForNewJobPosting` (selector for admin create form).
+ *  - `assertSlotEligibleForNewJobPosting` (write-path authority inside the
+ *    `createOrReuseJobOpeningForSlot` transaction).
+ *
+ * Two drifting copies caused v1.0 drift: selector said `job_opening_id IS NULL`
+ * but the write path semantics require "no canonical JobPosting". C-02 fixes
+ * this by sharing one predicate function on the same SQL fragment.
+ *
+ * Returns the SQL `Prisma.sql` fragment for direct embedding into a query.
+ */
+export function eligibleSlotPredicateSql(now: Date): Prisma.Sql {
+  return Prisma.sql`
+    so.status IN ('OPEN', 'CLOSING_SOON')
+    AND (so.deadline_date IS NULL OR so.deadline_date >= ${now})
+    AND (s.valid_to IS NULL OR s.valid_to >= ${now})
+    AND s.slots_filled < s.slots_needed
+    AND NOT EXISTS (
+      SELECT 1 FROM job_postings jp
+      INNER JOIN job_openings jo ON jo.id = jp.job_opening_id
+      WHERE jo.staffing_order_slot_id = s.id
+    )
+  `;
 }
 
 /**
@@ -307,12 +345,10 @@ export interface JobPostingSlotSelectorDto {
  *
  * Predicate dịch sang SQL qua `prisma.$queryRaw` — Prisma findMany không có
  * field-to-field comparison cho `slotsFilled < slotsNeeded`, nên ta viết
- * raw SQL để giữ predicate atomic ở DB (DEC-03, locked T0 §2):
- *   - StaffingOrder.status ∈ {OPEN, CLOSING_SOON}
- *   - `deadlineDate` IS NULL OR `deadlineDate >= $now`
- *   - `validTo` IS NULL OR `validTo >= $now`  (HR được prep draft trước `validFrom`)
- *   - `slotsFilled < slotsNeeded`
- *   - slot chưa có JobOpening bound (`job_opening_id IS NULL`)
+ * raw SQL để giữ predicate atomic ở DB (DEC-03, locked T0 §2 + C-02).
+ *
+ * Predicate được compose từ `eligibleSlotPredicateSql(now)` — CẢ selector và write
+ * path (POST) chia sẻ đúng MỘT helper để tránh drift (C-02).
  *
  * POST endpoint (`/api/admin/jobs/job-postings`) sẽ re-read + revalidate
  * predicate trong transaction — selector client KHÔNG phải authorization authority.
@@ -341,6 +377,7 @@ export async function listEligibleSlotsForNewJobPosting(
     valid_to: Date | null;
     staffing_order_id: string;
     staffing_order_code: string;
+    order_status: string;
   };
 
   const rows = await tx.$queryRaw<EligibleRow[]>(Prisma.sql`
@@ -353,14 +390,11 @@ export async function listEligibleSlotsForNewJobPosting(
       s.slots_filled,
       s.valid_to,
       s.staffing_order_id,
-      so.code AS staffing_order_code
+      so.code AS staffing_order_code,
+      so.status AS order_status
     FROM staffing_order_slots s
     INNER JOIN staffing_orders so ON so.id = s.staffing_order_id
-    WHERE so.status IN ('OPEN', 'CLOSING_SOON')
-      AND (so.deadline_date IS NULL OR so.deadline_date >= ${now})
-      AND (s.valid_to IS NULL OR s.valid_to >= ${now})
-      AND s.slots_filled < s.slots_needed
-      AND s.job_opening_id IS NULL
+    WHERE ${eligibleSlotPredicateSql(now)}
     ORDER BY so.code ASC, s.position_code ASC
     LIMIT ${limit}
   `);
@@ -372,8 +406,11 @@ export async function listEligibleSlotsForNewJobPosting(
     workLocation: row.work_location,
     slotsNeeded: row.slots_needed,
     slotsFilled: row.slots_filled,
+    slotsAvailable: Math.max(0, row.slots_needed - row.slots_filled),
     validTo: row.valid_to ? row.valid_to.toISOString() : null,
     staffingOrderId: row.staffing_order_id,
     staffingOrderCode: row.staffing_order_code,
+    // Predicate đã giới hạn {OPEN, CLOSING_SOON}, nhưng giữ narrowing để TS narrowing chuẩn.
+    orderStatus: row.order_status === 'CLOSING_SOON' ? 'CLOSING_SOON' : 'OPEN',
   }));
 }

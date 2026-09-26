@@ -89,9 +89,10 @@ const EXPECTED_HITS = [
   'src/domains/staffing/job-opening-read.service.ts:46 project',
   // P1-A0 STEP-04 (hrp-p1-a0-jobposting-authoring-publish): publishJobPosting
   // reads the linked JobOpening to gate JobOpening.status = OPEN. RLS-covered.
-  // hrp-p1-a0-1 (2026-09-26): line number shifted because updateDraftContent
-  // added `isHot`/`isUrgent` branches and DTO mapper extended.
-  'src/domains/staffing/job-posting-authoring.service.ts:646 jobOpening',
+  // hrp-p1-a0-1 (2026-09-26): line number shifted to 787 because updateDraftContent
+  // added `isHot`/`isUrgent` branches, eligibility guard was added, and DTO mapper
+  // extended.
+  'src/domains/staffing/job-posting-authoring.service.ts:787 jobOpening',
   // P1-A0 STEP-03: line numbers in job-posting-list.service.ts shifted because
   // the DTOs grew (added title, salaryDisplay, *Json, contentSchemaVersion,
   // hasContent). The four select-clauses themselves are unchanged.
