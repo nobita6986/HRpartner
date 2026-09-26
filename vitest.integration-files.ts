@@ -120,4 +120,12 @@ export const INTEGRATION_TEST_FILES: string[] = [
   // draft round-trip, public projection filter, idempotency, role/field guards.
   // Self-skips when DATABASE_URL_TEST + DATABASE_URL_ADMIN_TEST absent (ENV_BLOCKED).
   'tests/db/job-posting-stamps.integration.test.ts',
+  // hrp-p1-e0-recruiter-workbench-read-model: canonical read-only list of
+  // placement cases for the recruiter workbench. Covers RLS posture, role × view
+  // matrix, PII masking per CAN_VIEW_WORKER_SENSITIVE, deriveNextAction enum,
+  // deriveHandler active window, deriveLastInteraction (submissions vs
+  // application_status_history), computeAge + HANDLER_EXPIRED precedence, and
+  // DTO nested shape (no top-level aliases). Self-skips when DATABASE_URL_TEST
+  // + DATABASE_URL_ADMIN_TEST absent (ENV_BLOCKED).
+  'tests/db/recruiter-workbench.integration.test.ts',
 ];
