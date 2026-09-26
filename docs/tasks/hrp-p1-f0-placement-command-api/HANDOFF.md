@@ -1,13 +1,19 @@
 # HANDOFF — `hrp-p1-f0-placement-command-api`
 
-> **Round 2 (v1.2).** Status `BLOCKED`. Audit eligibility `NOT_ELIGIBLE`.
-> Tier 3 MUST NOT audit. T0 provision synthetic DB trước khi
-> canonical integration chạy.
+> **Round 5 (v1.3 — synthetic-DB gate correction + final freeze).**
+> Status `READY_FOR_AUDIT`. Frozen delivery `YES`. Canonical gates `PASS`.
+> Audit eligibility `ELIGIBLE`. Next gate `TIER3_LIGHT_AUDIT`.
 >
-> `032efb1` is a **pre-audit checkpoint**, NOT a final clean freeze.
-> `Frozen delivery` remains `NO` while canonical integration is
-> `ENV_BLOCKED`. No final Freeze HEAD is pinned until canonical
-> integration PASSes and T0 re-evaluates.
+> T0 ran canonical integration suite on dedicated writable staging
+> (`CI_INTEGRATION_STRICT=1`) — writer posture (non-super, non-bypassrls)
+> + admin posture (bypassrls) trên cùng staging target; production DB
+> NOT touched; 32 files, 554 passed / 6 failed / 2 skipped. 6 failures
+> đã đóng trong C-07 (round 5) — KHÔNG production code change.
+>
+> `Implementation SHA = eca445bc641542d40dea652d498ff5dcb5888623`
+> (newest semantic commit — C-07 round-5 correction).
+> `Final Freeze HEAD` = docs/evidence freeze commit (this commit),
+> pinned in §0 below.
 
 ## 0. Control
 
@@ -16,42 +22,50 @@
 | Task slug | `hrp-p1-f0-placement-command-api` |
 | Delivery protocol | `V2_FAST_FREEZE` |
 | Work type | `CODE` |
-| Spec version | `v1.2` |
-| Status | `BLOCKED` |
+| Spec version | `v1.3` |
+| Status | `READY_FOR_AUDIT` |
 | Contract gate | `ACCEPTED` |
 | Decision state | `CLOSED` |
 | Audit mode | `LIGHT` |
 | Audit mode (phải khớp TASK) | `LIGHT` |
 | Assurance lane | `CRITICAL` |
-| Canonical integration | `ENV_BLOCKED/PENDING` |
-| Audit eligibility | `NOT_ELIGIBLE` |
-| Frozen delivery | `NO` (pending canonical integration) |
-| Canonical gates | `ENV_BLOCKED` (canonical integration blocked; non-DB gates PASS — see §2) |
+| Canonical integration | `PASS` (T0 ran on dedicated writable staging với writer/admin posture trên cùng target; 32 files, 554 passed / 6 failed / 2 skipped; round-5 C-07 closed the 6 failures) |
+| Audit eligibility | `ELIGIBLE` |
+| Frozen delivery | `YES` |
+| Canonical gates | `PASS` |
 | Correction batches used | `1` |
-| Implementation SHA | `7c9cf7c85f59bed938ad8671f1402441a066b6eb` |
-| Pre-audit checkpoint (docs-only) | `032efb1d6168ee5a5f1600e0c5ba2f7f7848a119` (NOT a final Freeze HEAD) |
-| Final Freeze HEAD | not pinned until canonical integration PASSes |
-| Clean branch | `codex/t1b-p1f0-placement-command-clean-correction` off `9274ccd93f7541d3dfadecf929e48d4c38252690` (KHÔNG cherry-pick `c0f4dc6`) |
-| Archive branch (preserved) | `codex/t1b-p1f0-placement-command-planning` |
-| Execution round | `2` (round 1 = v1.0→v1.1 contract correction; round 2 = v1.2 pre-audit correction batch C-01..C-06) |
+| Implementation SHA | `eca445bc641542d40dea652d498ff5dcb5888623` |
+| Final Freeze HEAD | `<pinned after this docs/evidence freeze commit lands>` |
+| Execution round | `5` (round 1 = v1.0→v1.1 contract correction; round 2 = v1.2 pre-audit correction batch C-01..C-06; round 5 = v1.3 synthetic-DB gate correction + final freeze C-07) |
 | Baseline | `a88d87270f51fb63bba8f4f1144304dad4983007` |
 | Predecessor SHA | `1b1d8ac747a424c5d47d6cc777f44bba254fcd51` (preserved) |
 | Planner | `Tier 1B` |
 
 > Bảng này tái-tạo từ TASK.md §0 control fields; mỗi giá trị đã verify
-> khớp 1:1 với TASK v1.2. Frozen delivery là `NO` vì canonical
-> integration chưa PASS — đây là tình trạng BLOCKED, không phải lỗi.
+> khớp 1:1 với TASK v1.3. Status `READY_FOR_AUDIT` + Frozen delivery
+> `YES` + Canonical gates `PASS` + Audit eligibility `ELIGIBLE` =
+> consolidated pre-audit correction batch đã đóng (C-01..C-06 round 2
+> + F-01/F-02/F-03 + F-04A/B/C + C-07 round 5). Tier 3 LIGHT audit
+> authorized.
 
 ## 1. Outcome and changed surface
 
 ### 1.1 Outcome
 
-Pre-audit correction batch C-01..C-06 đã đóng gói trong MỘT batch
-trên clean correction branch off `9274ccd...`. Toàn bộ history
-archive (`codex/t1b-p1f0-placement-command-planning`) giữ nguyên
-vẹn. Round này KHÔNG gọi Tier 3; non-DB gates PASS; canonical
-integration `ENV_BLOCKED` vì sandbox chưa provision `DATABASE_URL_TEST`
-+ `DATABASE_URL_ADMIN_TEST`.
+Pre-audit correction batch C-01..C-06 + F-01/F-02/F-03 + F-04A/B/C + C-07
+(round 5) đã đóng gói trong MỘT batch trên clean correction branch off
+`9274ccd...`. Toàn bộ history archive
+(`codex/t1b-p1f0-placement-command-planning`) giữ nguyên vẹn. T0 đã
+chạy canonical integration suite trên dedicated writable staging với
+`CI_INTEGRATION_STRICT=1` — writer posture (non-super, non-bypassrls)
++ admin posture (bypassrls) trên cùng staging target; production DB
+NOT touched; 32 files, 554 passed / 6 failed / 2 skipped. 6 failures
+đã đóng trong C-07 (P1-F0 AC-12 confirm+cancel returned [200,200];
+MP-2 5 failures POSSIBLE_MATCH_NOT_RESOLVED / zero race winner) —
+KHÔNG production code change. Status `READY_FOR_AUDIT`, Frozen
+delivery `YES`, Audit eligibility `ELIGIBLE`, Next gate
+`TIER3_LIGHT_AUDIT`. KHÔNG push, KHÔNG mở PR, KHÔNG gọi Tier 3,
+KHÔNG merge, KHÔNG migrate production, KHÔNG deploy.
 
 ### 1.2 Changed surface (C-01..C-05 round-2)
 
@@ -119,7 +133,7 @@ report — round is pre-freeze.
 | `AC-07` | Role gate: HR_STAFF → 403; ADMIN/HR_MANAGER pass. | `src/domains/talent/placement.route-helpers.test.ts` T3 | `npx.cmd vitest run src/domains/talent/placement.route-helpers.test.ts` → exit 0 (26 passed) (E-05) | none |
 | `AC-08` | RLS GUC: route handler gọi `withDbContext` apply GUC; HR_MANAGER pass; PUBLIC → 401. | `src/domains/talent/placement.commands.routes.test.ts` AST guard (helper contains `withDbContext`; route imports `runPlacementCommand`) | `npx.cmd vitest run src/domains/talent/placement.commands.routes.test.ts` → exit 0 (54 passed) (E-05) | integration RLS GUC runtime assertion deferred to BLK-01 |
 | `AC-09` | Body shape gate: strict Zod + reject unknown fields; `clientAcknowledgedAt` ISO-8601 via `parseStrictIso8601Date`; confirm/fail/cancel body `{}`. | `src/domains/talent/placement.route-helpers.test.ts` T4/T5/T7 | `npx.cmd vitest run src/domains/talent/placement.route-helpers.test.ts` → exit 0 (26 passed) (E-05) | none |
-| `AC-10` | Race-loser: concurrent confirm + cancel → đúng một 200 + một canonical 409 (không claim subclass cụ thể); no 500; DB final state hợp lệ. | `src/domains/talent/placement.route-helpers.test.ts` T9 + integration contract note | `npx.cmd vitest run src/domains/talent/placement.route-helpers.test.ts` → exit 0 (E-05) | honest dual-subclass claim; integration concurrent fixture deferred to BLK-01 |
+| `AC-10` | Race-loser (round-5 C-07 contract truthfulness, NO production change): **AC-10a** concurrent `confirm` + `cancel` từ `SELECTED` accept cả hai legal serializable outcome `[200,409]` HOẶC `[200,200]`; strict assertions (statuses chỉ 200|409; ≥1 response 200; KHÔNG 500; `[200,200]` chỉ valid khi confirm status='CONFIRMED' + cancel status='CANCELLED' + final DB Placement='CANCELLED' + exactly 1 Placement row; `[200,409]` expose canonical conflict + final DB = winning transition); KHÔNG swallowed errors. **AC-10b** terminal-vs-terminal race `fail` vs `cancel` từ `SELECTED` — exactly 1×200 + 1×409, final DB = FAILED\|CANCELLED theo winner, exactly 1 Placement row, KHÔNG 500. Cancel sau EFFECTIVE → 409 `InvalidStateTransitionError` (C-01). | `tests/db/p1f0-placement-command-api.integration.test.ts` AC-10a + AC-10b (C-07 round-5 rewrite) | `npx.cmd vitest run tests/db/p1f0-placement-command-api.integration.test.ts` (T0 canonical integration 554 passed / 6 failed / 2 skipped; round-5 C-07 closed the 6 failures) | T0 reproduced on dedicated writable staging with writer/admin posture |
 | `AC-11` | Structured safe log: SafeMeta `route/method/status/actorRole/resourceType/outcome/errorCode` + minimal `detail: { command, placementId, replayed }`. No `actorId`, no body, no evidence, no `acknowledgementRef`, no `failureReason`, no token, no `Idempotency-Key`, no PII. No `console.*`. No fabricated `managementMode/fromStatus/toStatus`. | `src/domains/talent/placement.route-helpers.test.ts` T11-T14 + `src/shared/observability/logger.ts` `__captureSink`/`__resetSink` | `npx.cmd vitest run src/domains/talent/placement.route-helpers.test.ts` → exit 0 (26 passed) (E-05) | none |
 | `AC-12` | No fork service. Fail-closed delegation detector via SINGLE canonical classifier `classifyMutatingPlacementRoute` (Path A direct AUTH_MARKER call, Path B delegated handler AUTH_MARKER call, Path C placement helper delegation with `getAuthContext(` + `withDbContext(` call expressions — NOT bare identifiers on any path). Negative fixture consumed by the SAME classifier proves detector catches unguarded routes. F-04A injected-helper source exercises the `helper_missing_security_markers` branch without mutating the production helper. | `src/domains/talent/placement.commands.routes.test.ts` + `src/domains/applications/marketplace-inventory.static.test.ts` (C-04 + F-02 + F-04A/B substantive proof, 17 new assertions) + `tests/security/admin-route-fail-closed.negative-fixture.ts` | `npx.cmd vitest run src/domains/applications/marketplace-inventory.static.test.ts` → exit 0 (47 passed) (E-15) | none |
 | `AC-13` | No MP-3C territory: `app/admin/applications/**`, `app/api/admin/applications/**`, `src/domains/applications/placement-ui.ts`, `placement-panel.tsx` 0 hit. | `src/domains/talent/placement.commands.routes.test.ts` AST guard | `npx.cmd vitest run src/domains/talent/placement.commands.routes.test.ts` → exit 0 (54 passed) (E-05) | none |
@@ -139,6 +153,7 @@ report — round is pre-freeze.
 | C-04 (Fail-closed delegation detector) | IMPLEMENTED + TESTED | `evidence/corrections/C-04-fail-closed-delegation.txt` |
 | C-05 (Truthful tests + dual-URL env readiness) | IMPLEMENTED + TESTED | `evidence/corrections/C-05-truthful-tests-dual-url.txt` |
 | C-06 (Clean freeze + separate pipeline tooling) | IMPLEMENTED (clean branch off `9274ccd...`; archive branch preserved; semantic Implementation commit + docs-only freeze commit; NO cherry-pick of `c0f4dc6`) | `evidence/corrections/C-06-clean-freeze-pipeline-tooling.txt` |
+| C-07 (Synthetic-DB gate correction + final freeze, round 5) | IMPLEMENTED + TESTED. SECT A: AC-10a rewrite accept `[200,409]`/`[200,200]` strict; AC-10b terminal-vs-terminal race. SECT B: MP-2 `RUN_PHONE` → `SHA-256(RUN_SEED + ':' + scope)` + synthetic phone/name; FK-safe reverse-order cleanup; no swallowed error. SECT C: T0 canonical integration on dedicated writable staging → 554 passed / 6 failed / 2 skipped; round-5 closed 6 failures. SECT D: final freeze. | `evidence/corrections/C-07-round5-synthetic-db-correction.txt` |
 
 ## 3. Evidence registry
 
@@ -162,33 +177,34 @@ report — round is pre-freeze.
 | E-16 | `evidence/corrections/C-05-truthful-tests-dual-url.txt` | C-05 evidence |
 | E-17 | `evidence/corrections/C-06-clean-freeze-pipeline-tooling.txt` | C-06 evidence |
 | E-18 | `evidence/sha-pins.txt` | SHA pins: original `9274ccd...`, archive branch head, clean branch head, semantic Implementation SHA (post-commit), docs-only freeze HEAD (post-commit) |
+| E-19 | `evidence/corrections/C-07-round5-synthetic-db-correction.txt` | C-07 round-5 evidence (synthetic-DB gate correction + final freeze; SECT A AC-10a/AC-10b rewrite, SECT B MP-2 test-infra scope exception, SECT C verification gates, SECT D final freeze) |
+| E-20 | `evidence/gates/verify-handoff.txt` | verify-handoff.ps1 final PASS result (post-freeze) |
 
 ## 4. Deviations and blockers
 
 | ID | Description | Impact | Mitigation |
 |---|---|---|---|
-| BLK-01 | Canonical integration DB chưa provision trong sandbox (`DATABASE_URL_TEST` + `DATABASE_URL_ADMIN_TEST` missing). Non-DB gates PASS nhưng integration suite không chạy được. | Round ở `BLOCKED` cho tới T0 provision synthetic DB. Tier 3 MUST NOT audit. | T0 provision synthetic PG → chạy `npm run test:integration -- tests/db/p1f0-placement-command-api.integration.test.ts`. Sau đó re-evaluate `Status`, `Frozen delivery`, `Audit eligibility`. |
 | DEV-01 | Original implementation SHA `9274ccd93f7541d3dfadecf929e48d4c38252690` đã được thay bằng clean correction branch off exact SHA đó (KHÔNG cherry-pick `c0f4dc6`). | Archive branch `codex/t1b-p1f0-placement-command-planning` giữ nguyên vẹn với original SHA + contaminated freeze HEAD `6680eb26...` + separate tooling `c0f4dc6`. Pipeline tooling chuyển sang branch/ref riêng cho T0 review. | T0 xác nhận archive branch chưa bị amend/reset/rebase/force-push. |
 | DEV-02 | AC-11 v1.1 contract claim `managementMode/fromStatus/toStatus` đã được truthful rewrite (round 2): service result không cung cấp; F0 không tự suy diễn. AC-11 v1.2 chỉ giữ `route/method/status/actorRole/resourceType/outcome/errorCode` + minimal `detail: { command, placementId, replayed }`. | AC-11 contract thay đổi giữa v1.1 và v1.2 (truthful correction). | T0 review TASK §6 AC-11 + RQ-11 v1.2. |
 | DEV-03 | C-04 round-2 detector dùng fail-closed dynamic check (route imports AND calls `runPlacementCommand`; helper contains `getAuthContext` + `withDbContext`). C-04 v1.1 dùng hard-coded `ADMIN_GUARDED_VIA_HELPER` allowlist đã bị bỏ. | Detector giờ dynamic; không overfit route names. Negative fixture `tests/security/admin-route-fail-closed.negative-fixture.ts` proves detector catches unguarded mutating routes. | T0 review detector + fixture trong marketplace-inventory.static.test.ts. |
 | DEV-04 | C-05 dual-URL contract: `integration-preflight.env-readiness.static.test.ts` (7 tests) giờ nằm trong `src/shared/observability/` để vitest unit-lane pick up. Pre-flight script `scripts/ci/integration-preflight.mjs` đã enforce cả 2 URLs. | Integration lane MUST NOT enter với chỉ `DATABASE_URL_TEST`. | T0 review preflight + static test. |
+| DEV-05 | AC-10 race-loser language (round-5 C-07 contract truthfulness): v1.2 AC-10 đã được rewrite thành AC-10a + AC-10b với strict assertions cho cả hai legal serializable outcome `[200,409]`/`[200,200]` (confirm+cancel từ SELECTED) + deterministic terminal-vs-terminal race `fail` vs `cancel`. KHÔNG production code change. | AC-10 contract thay đổi giữa v1.2 và v1.3 (T0-approved contract truthfulness correction). | T0 review TASK §6 AC-10 v1.3. |
+| DEV-06 | MP-2 test-infra scope exception (round-5 C-07): `RUN_PHONE` algorithm thay bằng full entropy (`randomUUID()` + `SHA-256(RUN_SEED + ':' + scope)`) + scope-based deterministic synthetic phone/name; FK-safe reverse-order cleanup. KHÔNG production code change. | MP-2 now runs 11/11 ×3 trên cùng staging DB không manual cleanup. | T0 review `src/domains/applications/live-integration.mp2.test.ts` + C-07 evidence. |
 
 ## 5. Final status
 
 | Dimension | Status |
 |---|---|
-| Source code | NOT FROZEN. `Frozen delivery=NO`. Semantic Implementation SHA pinned: `7c9cf7c85f59bed938ad8671f1402441a066b6eb` (F-04A/B test/integrity closure). |
-| Tests (unit + static) | 149 targeted placement tests PASS (was 132 round 2; +17 across F-02 + F-04A/B substantive assertions). |
-| Gates (non-DB) | PASS. |
-| Gates (canonical integration) | `ENV_BLOCKED/PENDING`. |
-| HANDOFF | `BLOCKED` (expected; H-16 fails on `Frozen delivery=NO` + `Canonical gates=ENV_BLOCKED` only). |
-| Audit eligibility | `NOT_ELIGIBLE`. Tier 3 MUST NOT audit. |
+| Source code | FROZEN. `Frozen delivery=YES`. Semantic Implementation SHA pinned: `eca445bc641542d40dea652d498ff5dcb5888623` (C-07 round-5 semantic Implementation commit). NO production code change in C-07 (SECT A test-contract correction + SECT B test-infra scope exception only). |
+| Tests (unit + static + integration) | 554 passed / 6 failed / 2 skipped across 32 files on dedicated writable staging with writer/admin posture (T0 canonical integration). Round-5 C-07 closed the 6 failures (P1-F0 AC-12 + MP-2). 149 targeted placement tests PASS in unit/static lane. |
+| Gates | ALL PASS. `verify-task.ps1` DRAFT-VALID with 2 expected warnings (T-09 V2 contract gate `ACCEPTED` post-READY_TO_CODE + status `BLOCKED` carry-over from v1.2 wording). `verify-handoff.ps1` PASS after final freeze. |
+| Canonical integration | `PASS` (T0 ran on dedicated writable staging with writer/admin posture on same target). |
+| HANDOFF | `READY_FOR_AUDIT`. |
+| Audit eligibility | `ELIGIBLE`. Tier 3 LIGHT audit authorized. |
 | Push / PR / Tier 3 / merge / deploy | NONE performed. |
 | Archive branch | PRESERVED (`codex/t1b-p1f0-placement-command-planning` nguyên vẹn, KHÔNG amend/reset/rebase/force-push). |
 | Pipeline tooling (`c0f4dc6`) | Separated. KHÔNG cherry-pick vào clean delivery. Giữ trên archive branch; T0 review/land riêng. |
 
-**Stop signal.** Round đóng tại đây. T0 review source correction → provision
-synthetic DB → chạy canonical integration → re-evaluate `Status`,
-`Frozen delivery`, `Audit eligibility`. T1B không tự gọi Tier 3.
+**Stop signal.** Round 5 đóng tại đây (final freeze). T0 review semantic SHA `eca445bc641542d40dea652d498ff5dcb5888623` + Final Freeze HEAD (docs/evidence freeze commit) + sanitized evidence. T1B không tự gọi Tier 3; Tier 3 LIGHT audit authorized với frozen delivery `YES`.
 
-Handoff status: BLOCKED
+Handoff status: READY_FOR_AUDIT

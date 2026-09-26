@@ -1,8 +1,12 @@
+P1-F0 round-5 final freeze evidence
+====================================
+Command: pwsh -NoProfile verify-task.ps1 -TaskPath docs/tasks/hrp-p1-f0-placement-command-api/TASK.md
+
 TASK CONTRACT GATE
   subject: docs/tasks/hrp-p1-f0-placement-command-api/TASK.md
 
   [OK]   A-01 all 11 required sections present.
-  [OK]   A-02 control fields present (status: BLOCKED).
+  [OK]   A-02 control fields present (status: READY_FOR_AUDIT).
   [OK]   A-02 assurance lane: CRITICAL.
   [OK]   A-02 audit mode: LIGHT.
   [OK]   A-02 audit selection has a recorded reason.
@@ -10,13 +14,15 @@ TASK CONTRACT GATE
   [OK]   T-10 Build vs adopt decision is explicit: ADOPT.
   [OK]   T-11 Build vs automate decision is explicit: N/A.
   [OK]   T-09 V2 draft fields are structurally valid.
-  [WARN] A-04 status is 'BLOCKED' - placeholder and dry-run checks are non-blocking.
+  [WARN] A-04 status is 'READY_FOR_AUDIT' - placeholder and dry-run checks are non-blocking.
   [OK]   A-05 19 requirement(s) traceable to STEP and AC.
   [OK]   T-01 4 referenced npm script(s) all exist.
   [OK]   T-02 11 file:line reference(s) resolve.
   [OK]   T-03 no AC proves scope with a bare 'git diff'.
   [OK]   T-05 all 18 AC row(s) name a measurable method.
   [OK]   T-06 no plaintext secret in TASK.md.
-  [OK]   T-07 control field change (Current execution round) is accompanied by a section 9/10 entry.
+  [OK]   T-07 control field change (Status, Current execution round, Spec version) is accompanied by a section 9/10 entry.
 
 RESULT: DRAFT-VALID (2 warning(s)).
+
+Exit code: 0

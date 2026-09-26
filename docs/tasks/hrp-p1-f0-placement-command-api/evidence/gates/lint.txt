@@ -1,30 +1,12 @@
-ESLint — P1-F0 round-2 v1.2 correction batch
-==============================================
-
+P1-F0 round-5 freeze evidence
+================================
 Command: npm run lint
-CWD: C:\CodeApp\HrP-worktrees\t1b-p1f0-placement-command-planning
 
-Final run summary:
-------------------
-✖ 708 problems (0 errors, 708 warnings)
-0 errors and 16 warnings potentially fixable with the `--fix` option.
 
-Placement-specific lint surface:
-- src/domains/talent/placement.commands.ts          : 0 errors / 0 placement-related warnings
-- src/domains/talent/placement.route-helpers.ts    : 0 errors / 0 placement-related warnings
-- src/domains/talent/placement.commands.test.ts     : 0 errors / 0 placement-related warnings
-- src/domains/talent/placement.route-helpers.test.ts: 0 errors / 0 placement-related warnings
-                                                  (removed unused `PlacementError` base-class import)
-- src/domains/talent/placement.commands.routes.test.ts: 0 errors / 0 placement-related warnings
-- src/domains/applications/marketplace-inventory.static.test.ts: 0 errors / 0 placement-related warnings
-- tests/security/admin-route-fail-closed.negative-fixture.ts: 0 errors / 0 placement-related warnings
-                                                       (cleaned up residual `eslint-disable` comments
-                                                        and renamed unused `tx`/`req` to `_tx`/`_req`)
-- src/shared/observability/integration-preflight.env-readiness.static.test.ts: 0 errors / 0 warnings
+C:\CodeApp\HrP-worktrees\t1b-p1f0-placement-command-planning\src\domains\job-board\components\landing\recruitment-highlight.tsx
+  58:5  warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/exhaustive-deps')
 
-Remaining 708 warnings are pre-existing baseline across the broader repo
-(unused imports, `any` usage, `_arg` patterns) — unrelated to P1-F0.
+C:\CodeApp\HrP-worktrees\t1b-p1f0-placement-command-planning\src\domains\job-board\mp1.contract.test.ts
+   41:8   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
-Exit code: 0
-
-Round: 2 (v1.2)
+Exit code: 0 (0 = pass; lint runs as warnings-only policy per eslint.config.mjs §warning policy)

@@ -1,17 +1,8 @@
-Prisma schema validation — P1-F0 round-2 v1.2 correction batch
-============================================================
+P1-F0 round-5 freeze evidence
+================================
+Command: DATABASE_URL=…placeholder DATABASE_URL_ADMIN=…placeholder npx prisma validate
 
-Command: npx prisma validate
-CWD: C:\CodeApp\HrP-worktrees\t1b-p1f0-placement-command-planning
-
-Output:
--------
 Prisma schema loaded from prisma\schema.prisma
 The schema at prisma\schema.prisma is valid 🚀
 
-Exit code: 0
-
-Round: 2 (v1.2)
-Spec: v1.2
-Branch: codex/t1b-p1f0-placement-command-clean-correction
-Baseline: a88d87270f51fb63bba8f4f1144304dad4983007
+Round: 5 (round-5 freeze)

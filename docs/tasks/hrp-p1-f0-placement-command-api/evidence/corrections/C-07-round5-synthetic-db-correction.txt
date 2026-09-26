@@ -1,0 +1,119 @@
+C-07 (round-5) - synthetic-DB gate correction + final freeze
+==================================================================
+
+Directive: T0 round-5 (synthetic-DB gate correction and final freeze)
+applied after F-04A/B/C closure. T0 executed the canonical integration
+suite on a dedicated writable staging DB with the writer/admin posture
+pair (writer non-super + non-bypassrls, admin bypassrls, same host+port
++db). 32 files / 554 passed / 6 failed / 2 skipped. The 6 failures were:
+
+  1. P1-F0 AC-12 - concurrent confirm+cancel returned [200,200], which
+     the previous AC-12 contract rejected as out-of-spec.
+
+  2. MP-2 - 5 failures: POSSIBLE_MATCH_NOT_RESOLVED + zero race winner,
+     caused by RUN_PHONE derivation taking the first digits of Date.now
+     which collide across runs on the shared synthetic DB and leave a
+     stale LaborProfile row from the prior run.
+
+C-07 scope (this evidence file):
+
+  - No production source change.
+  - No production schema change.
+  - No production migration.
+  - Only:
+      * tests/db/p1f0-placement-command-api.integration.test.ts
+      * src/domains/applications/live-integration.mp2.test.ts
+
+This is the same consolidated pre-audit correction batch; no new
+audit correction batch is counted. Per T0 directive: "khong tang
+correction-batch count".
+
+Section A — P1-F0 canonical lifecycle + terminal-state race-loser proof:
+
+  Lifecycle (DEC-02, DEC-05): SELECTED -> CONFIRMED -> CANCELLED is
+  intentionally permitted. Concurrent confirm+cancel therefore has TWO
+  legal serializable outcomes:
+
+    (a) [200,409]: both observe SELECTED; one conditional UPDATE wins
+                    and the other receives canonical conflict.
+    (b) [200,200]: confirm commits first; cancel then legally observes
+                    CONFIRMED -> CANCELLED.
+
+  AC-12 was rewritten to assert the truthful contract:
+    - statuses in {200, 409}; at least one 200; never 500.
+    - [200,200] accepted ONLY when confirm.status='CONFIRMED' AND
+      cancel.status='CANCELLED' AND final DB Placement.status='CANCELLED'
+      AND exactly one Placement row.
+    - [200,409] must expose canonical conflict (INVALID_STATE_TRANSITION
+      or PLACEMENT_IDEMPOTENCY_CONFLICT — taxonomy frozen).
+    - Final DB Placement.status matches winning 200; exactly one row.
+    - Runs K=5 to confirm both branches are reachable.
+
+  AC-12b (NEW) — deterministic terminal-vs-terminal race-loser proof
+  (fail vs cancel from SELECTED). FAILED and CANCELLED are both terminal
+  and cannot legally chain, so this fixture MUST yield exactly one 200
+  + one canonical 409 with final DB state matching the winner. This is
+  the real race-loser proof independent of the confirm-then-cancel path.
+
+Section B — MP-2 narrow test-infrastructure scope exception:
+
+  Identity derivation: RUN_ID replaced with RUN_SEED = randomUUID().
+  Phone + full_name derived from SHA-256(RUN_SEED + ":" + scope). Full
+  256-bit entropy; no longer dominated by Date.now/base36 time prefix.
+
+  Per-AC identity model:
+    - Per-AC scope ensures AC-02, AC-03-replay, AC-03-mismatch, AC-03-dup,
+      AC-03-race, AC-04 each get a distinct 10-digit synthetic phone
+      and a distinct synthetic full_name (no PII, no real-name words).
+    - Intentionally shared identity is allowed ONLY inside AC-03 replay
+      (same key + same payload) and AC-03 dup (same slot+phone) which
+      is exactly what those assertions need to prove.
+
+  Phone derivation: deterministic per-process; produces a valid
+  VN-shape 10-digit synthetic number ("09" + 9 digits). full_name
+  derivation: "MP2-LIVE <8-hex-char>" — obviously synthetic.
+
+  AC-04 full_name anchored to fullNameFromSeed("ac04"); AC-04 phone
+  anchored to its own scope so it no longer collides with the racer
+  identity across runs.
+
+  Committed-race cleanup rewritten:
+    - tracks run-owned CandidateSubmission IDs via idempotency_key_hash
+    - tracks run-owned LaborProfile IDs via (normalized_phone, slot_id)
+    - tracks run-owned PlacementCase IDs via labor_profile_id
+    - updates candidate_submissions.placement_case_id to NULL before
+      deleting placement_cases (FK chain fix)
+    - FK-safe reverse order:
+        application_status_history -> candidate_submissions -> placement_cases
+        -> labor_profiles -> candidate_submissions (root) -> job_postings
+        -> job_openings -> staffing_order_slots -> staffing_orders
+        -> outsourcing_projects -> client_companies
+    - cleanupError captured OUTSIDE finally (no-unsafe-finally compliance)
+    - no swallowed errors in cleanup path (.catch(()=>{}) removed)
+    - disconnects always run before cleanup
+
+  No blanket delete, no production-like PII, no swallowed cleanup error.
+
+Non-DB gates PASS locally:
+  - prisma validate: schema valid
+  - tsc --noEmit: exit 0
+  - eslint .: 0 errors (warnings count unchanged from baseline)
+  - test:unit: 173 files / 2756 passed / 9 skipped (unchanged - these
+    test files are integration-lane excluded from unit)
+  - git diff --check: exit 0
+  - strict UTF-8 no-BOM/NUL/CR/U+FFFD scan on changed surface: 2/2 OK
+
+T0 next action: re-provision synthetic PG and re-run canonical integration
+suite. The round-2 baseline F-04A/B/C closure + this round-5 synthetic-DB
+correction together close the canonical-integration gate contract:
+
+  - F-04A: bare-identifier bypass CLOSED (AUTH_MARKER call-expression
+    enforcement) — independent verification reproduced 149/149 PASS.
+  - F-04B: injected helper for helper_missing_security_markers — same.
+  - F-04C: control truthfulness — verify-handoff no longer reports
+    semantic-delta-after-Implementation-SHA.
+  - C-07 (this): truthful lifecycle + terminal-state race-loser proof +
+    per-AC scope identity + FK-safe reverse-order cleanup.
+
+Round: 5 (synthetic-DB gate correction + final freeze)
+Semantic Implementation SHA: eca445bc641542d40dea652d498ff5dcb5888623

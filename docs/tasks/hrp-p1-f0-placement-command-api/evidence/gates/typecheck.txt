@@ -1,28 +1,6 @@
-TypeScript typecheck — P1-F0 round-2 v1.2 correction batch
-==========================================================
+P1-F0 round-5 freeze evidence
+================================
+Command: npx.cmd tsc --noEmit
 
-Command: npm run typecheck  (=  tsc --noEmit)
-CWD: C:\CodeApp\HrP-worktrees\t1b-p1f0-placement-command-planning
-
-Initial run output (with two errors):
---------------------------------------
-src/domains/talent/placement.route-helpers.ts(159,9): error TS2322: Type 'null' is not assignable to type 'string | undefined'.
-src/domains/talent/placement.route-helpers.ts(170,7): error TS2322: Type 'null' is not assignable to type 'string | undefined'.
-
-Fix applied:
-------------
-Replaced `actorRole: null` with `actorRole: undefined` at lines 159 and 170
-of `src/domains/talent/placement.route-helpers.ts` (auth_failed + auth_internal_error
-log calls in the shared runPlacementCommand wrapper). The SafeMeta type
-allows `undefined` only (logger strips `null` per toSafeMeta).
-
-Final run output:
------------------
-> hrp@0.1.0 typecheck
-> tsc --noEmit
-
-(no output)
 
 Exit code: 0
-
-Round: 2 (v1.2)
