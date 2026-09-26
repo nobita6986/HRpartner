@@ -1,0 +1,51 @@
+C-06 — Clean freeze & separate pipeline tooling
+==================================================
+
+Round: 2 (v1.2)
+
+Branch layout (preserved + new):
+---------------------------------
+1. Archive branch (PRESERVED, untouched, no amend/reset/rebase/force-push):
+     `codex/t1b-p1f0-placement-command-planning`
+     - HEAD: `6680eb26baefd9775a96a76a18c018ac454d022b` (contaminated freeze)
+     - carries original implementation `9274ccd93f7541d3dfadecf929e48d4c38252690`
+     - carries separate pipeline tooling `c0f4dc6925f8cb8f6679c275ad183c37fd66878b`
+
+2. Clean correction branch (NEW, off exact `9274ccd...`):
+     `codex/t1b-p1f0-placement-command-clean-correction`
+     - off exact `9274ccd93f7541d3dfadecf929e48d4c38252690`
+     - NO cherry-pick of `c0f4dc6` (separate pipeline tooling stays on archive branch)
+     - 1 semantic Implementation commit (C-01..C-05 code + tests)
+     - 1 docs-only freeze commit (TASK v1.2 + HANDOFF + evidence + AUDIT scaffold)
+
+Pipeline tooling (`c0f4dc6`) handling:
+--------------------------------------
+- Kept on archive branch for T0 review/land separately
+- NOT in clean delivery branch
+- T0 can land it on its own branch/ref via a separate operation
+
+Pins (TBD until C-06 commit applied — placeholder for HANDOFF §0):
+------------------------------------------------------------------
+- Implementation SHA: semantic commit mới trên `codex/t1b-p1f0-placement-command-clean-correction`
+                       (will be filled by Tier 1B after applying the commit)
+- Freeze HEAD:        docs-only freeze commit trên cùng clean branch
+                       (will be filled by Tier 1B after applying the commit)
+- Original implementation SHA: `9274ccd93f7541d3dfadecf929e48d4c38252690` (preserved)
+- Archive branch HEAD: `6680eb26baefd9775a96a76a18c018ac454d022b` (preserved)
+
+TASK / HANDOFF state (round 2):
+-------------------------------
+- Spec version: v1.2
+- Status: BLOCKED (DB chưa provision)
+- Canonical integration: ENV_BLOCKED/PENDING
+- Audit eligibility: NOT_ELIGIBLE
+- Frozen delivery: NO (pending canonical integration)
+- Tier 3 MUST NOT audit
+
+Forbidden operations:
+---------------------
+- NO amend, NO reset, NO rebase, NO force-push on archive branch
+- NO cherry-pick of `c0f4dc6` into clean delivery
+- NO push, NO PR, NO merge, NO deploy until T0 reviews and authorizes
+
+Round: 2 (v1.2)

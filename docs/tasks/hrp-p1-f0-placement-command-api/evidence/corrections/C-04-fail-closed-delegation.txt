@@ -1,0 +1,58 @@
+C-04 — Fail-closed delegation detector
+=========================================
+
+Round: 2 (v1.2)
+
+Change:
+-------
+File: `src/domains/applications/marketplace-inventory.static.test.ts`
+
+Removed hard-coded `ADMIN_GUARDED_VIA_HELPER` allowlist (which v1.1 used
+to enumerate specific route file names). Replaced with dynamic
+fail-closed checks:
+
+  guardedViaPlacementHelper(routeSource):
+    1. route imports `runPlacementCommand` (static AST/regex check)
+    2. route CALLS `runPlacementCommand` (not just imports it)
+    Both conditions required — `import` alone does NOT count.
+
+  placementHelperHasSecurityMarkers(helperSource):
+    1. helper contains `getAuthContext`
+    2. helper contains `withDbContext`
+    Both required.
+
+Negative fixture (new file): `tests/security/admin-route-fail-closed.negative-fixture.ts`
+  - declares `export async function POST`
+  - does NOT import placement.route-helpers
+  - does NOT call `runPlacementCommand`
+  - does NOT contain `getAuthContext` or `withDbContext`
+  - proves detector flags unguarded mutating routes
+
+Evidence:
+---------
+1. Static reading — `src/domains/applications/marketplace-inventory.static.test.ts`:
+   - `guardedViaPlacementHelper` function: imports-and-calls check
+   - `placementHelperHasSecurityMarkers` function: marker check
+   - negative test consumes `tests/security/admin-route-fail-closed.negative-fixture.ts`
+2. Negative fixture — `tests/security/admin-route-fail-closed.negative-fixture.ts`:
+   - uses `_req`/`_tx` (eslint-clean) to avoid unused-var warnings
+   - exports `POST` mutating handler with no auth
+   - detector must flag this if ever copied into `app/api/admin/**`
+3. Unit test — `npx vitest run src/domains/applications/marketplace-inventory.static.test.ts`:
+   - 30 tests PASS
+   - includes negative-fixture test that proves detector catches
+     unguarded mutating routes
+4. Helper marker contract — `src/domains/talent/placement.route-helpers.ts`:
+   - exports `runPlacementCommand`
+   - imports `getAuthContext` from `@/src/shared/auth/auth-context`
+   - imports `withDbContext` from `@/src/shared/auth/with-db-context`
+
+Gates:
+------
+- `npm run test:unit -- src/domains/applications/marketplace-inventory.static.test.ts` : 30 PASS
+
+References:
+-----------
+- TASK §6 AC-12
+- TASK §4.1.1 STEP-05c (v1.2)
+- HANDOFF §2.2 AC-12 row

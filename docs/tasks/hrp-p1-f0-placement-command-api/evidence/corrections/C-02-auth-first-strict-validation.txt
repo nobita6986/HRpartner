@@ -1,0 +1,61 @@
+C-02 — Auth-first & strict validation
+======================================
+
+Round: 2 (v1.2)
+
+Change:
+-------
+New file: `src/domains/talent/placement.route-helpers.ts`
+
+The 4 transition routes previously validated `placementId` before
+`getAuthContext`. Round 2 introduces a shared `runPlacementCommand`
+wrapper that enforces strict execution order:
+
+  1. getAuthContext(req)                          → 401 (including malformed placementId)
+  2. Role gate (ADMIN | HR_MANAGER)               → 403
+  3. placementId UUID v4 check                    → 400 VALIDATION (only if auth passed)
+  4. Zod body parsing (strict)                    → 400 VALIDATION
+     - `clientAcknowledgedAt` via `parseStrictIso8601Date`
+       (= `z.string().datetime({ offset: true })`) — rejects
+       `Date.parse`-loose strings such as `"Jan 1 2026"`
+  5. Idempotency-Key UUID v4                      → 400 IDEMPOTENCY_REQUIRED
+  6. withIdempotency(...) → withDbContext(...)    → 500 on tx failure
+  7. placement.commands[command](tx, input)
+  8. error → canonical HTTP mapping
+  9. structured safe log
+
+Routes delegate fully into the wrapper. No auth boilerplate copied into
+the 4 route files.
+
+Evidence:
+---------
+1. Static reading — `src/domains/talent/placement.route-helpers.ts:runPlacementCommand`:
+   - `getAuthContext` is the first await call
+   - role gate immediately after
+   - `isUuidV4(placementId)` check inside wrapper
+   - `STRICT_ISO8601` Zod validator exported for body parsers
+   - `parseStrictIso8601Date` rejects Date.parse-loose strings
+   - `withIdempotency` wraps `withDbContext` (no nested tx)
+2. Static reading — `app/api/admin/placements/[id]/actions/{confirm,effective,fail,cancel}/route.ts`:
+   - route handler delegates to `runPlacementCommand` from helper
+   - no inline `isUuidV4` early return
+   - no inline `getAuthContext` call
+3. Unit tests — `src/domains/talent/placement.route-helpers.test.ts` (26 tests):
+   - T1: 401 unauthenticated
+   - T2: 401 malformed placementId even before role gate
+   - T3: 403 disallowed role (HR_STAFF, CTV, PUBLIC)
+   - T4: 400 strict body (unknown fields rejected)
+   - T5: 400 strict ISO-8601 (rejects `Date.parse`-loose)
+   - T6: 400 missing/invalid Idempotency-Key (non-UUID)
+   - T7: 400 clientAcknowledgedAt accepted only when offset present
+
+Gates:
+------
+- `npm run test:unit -- src/domains/talent/placement.route-helpers.test.ts` : 26 PASS
+- `npm run typecheck` : PASS
+
+References:
+-----------
+- TASK §6 AC-05 / AC-09
+- TASK §4.1.1 STEP-02 (auth-first)
+- HANDOFF §2.2 AC-05, AC-09 rows

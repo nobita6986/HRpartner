@@ -1,0 +1,20 @@
+verify-encoding.ps1 -- P1-F0 round-2 v1.2 correction batch
+========================================================
+
+Status: SCRIPT NOT PRESENT ON THIS BRANCH.
+
+The original repo has .ai-pipeline/scripts/verify-encoding.ps1 as an
+untracked file in the parent worktree. On the clean correction branch
+codex/t1b-p1f0-placement-command-clean-correction, the script is NOT present.
+
+Mitigation: the round-2 instruction asks for "strict UTF-8 no-BOM scan
+tren toan changed surface" -- this is performed manually via a Node.js
+scan over all changed surface files (see encoding-bom-scan.txt).
+
+Scan result: ALL CHANGED FILES CLEAN (no BOM, no CRLF, valid UTF-8).
+
+If T0 wants verify-encoding.ps1 on the clean branch, T1B can stage it
+in a separate docs/tooling commit (NOT part of the semantic Implementation
+commit). For now, manual scan suffices.
+
+Round: 2 (v1.2)

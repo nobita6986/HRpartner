@@ -1,0 +1,22 @@
+SHA pins — P1-F0 round-2 v1.2 correction batch
+=================================================
+
+Archive branch (PRESERVED):
+---------------------------
+Branch:               codex/t1b-p1f0-placement-command-planning
+HEAD:                 6680eb26baefd9775a96a76a18c018ac454d022b (contaminated freeze)
+Original impl SHA:    9274ccd93f7541d3dfadecf929e48d4c38252690
+Pipeline tooling:     c0f4dc6925f8cb8f6679c275ad183c37fd66878b (NOT cherry-picked into clean delivery)
+Baseline:             a88d87270f51fb63bba8f4f1144304dad4983007
+Predecessor SHA:      1b1d8ac747a424c5d47d6cc777f44bba254fcd51
+
+Clean correction branch (NEW — off exact 9274ccd):
+--------------------------------------------------
+Branch:               codex/t1b-p1f0-placement-command-clean-correction
+Off:                  9274ccd93f7541d3dfadecf929e48d4c38252690
+NO cherry-pick of:    c0f4dc6925f8cb8f6679c275ad183c37fd66878b
+
+Semantic Implementation SHA: 70047d047dd6089270999f70f02615f9569a0ba9 (applied)
+Docs-only freeze HEAD:        TBD (filled after C-06 docs commit applied)
+
+Round: 2 (v1.2)

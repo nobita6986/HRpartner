@@ -1,0 +1,27 @@
+git diff --check -- P1-F0 round-2 v1.2 correction batch
+=====================================================
+
+Command: git diff --check
+CWD:     C:\CodeApp\HrP-worktrees\t1b-p1f0-placement-command-planning
+
+Output (initial run):
+---------------------
+src/domains/talent/placement.route-helpers.ts:371: new blank line at EOF.
+
+Fix applied:
+------------
+Removed trailing blank line at EOF of src/domains/talent/placement.route-helpers.ts.
+File now ends with the export type line + single LF.
+
+Final run:
+----------
+(no output)
+
+Exit code: 0
+
+Rule: git diff --check fails on:
+- LF/CRLF conflicts (mixed line endings)
+- Trailing whitespace
+- New blank line at EOF
+
+Round: 2 (v1.2)

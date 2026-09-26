@@ -1,0 +1,34 @@
+Strict UTF-8 no-BOM scan — P1-F0 round-2 v1.2 correction batch
+================================================================
+
+Tool:    Node.js fs.readFileSync + Buffer.toString('utf8') (verifies UTF-8 decode)
+CWD:     C:\CodeApp\HrP-worktrees\t1b-p1f0-placement-command-planning
+Scan:    BOM check + CRLF check + UTF-8 decode check
+
+Changed-surface files scanned:
+------------------------------
+src/domains/talent/placement.commands.ts                                              OK LF utf8
+src/domains/talent/placement.commands.test.ts                                         OK LF utf8
+src/domains/talent/placement.route-helpers.ts                                         OK LF utf8
+src/domains/talent/placement.route-helpers.test.ts                                    OK LF utf8
+src/domains/talent/placement.commands.routes.test.ts                                  OK LF utf8
+src/domains/applications/marketplace-inventory.static.test.ts                         OK LF utf8
+tests/security/admin-route-fail-closed.negative-fixture.ts                            OK LF utf8
+src/shared/observability/integration-preflight.env-readiness.static.test.ts           OK LF utf8
+app/api/admin/placements/route.ts                                                     OK LF utf8
+app/api/admin/placements/[id]/actions/confirm/route.ts                                OK LF utf8
+app/api/admin/placements/[id]/actions/effective/route.ts                              OK LF utf8
+app/api/admin/placements/[id]/actions/fail/route.ts                                   OK LF utf8
+app/api/admin/placements/[id]/actions/cancel/route.ts                                 OK LF utf8
+docs/tasks/hrp-p1-f0-placement-command-api/TASK.md                                    OK LF utf8
+docs/tasks/hrp-p1-f0-placement-command-api/HANDOFF.md                                 OK LF utf8
+
+Result: files with encoding issues = 0
+
+Rules followed (per AGENTS.md + global rules):
+- No temporary Python scripts used for encoding verification
+- No PowerShell 5.1 Set-Content/Out-File with -Encoding utf8 (would emit BOM)
+- All writes via first-class Write tool (Node fs.writeFileSync-equivalent UTF-8)
+- No BOM normalization of unrelated legacy files
+
+Round: 2 (v1.2)

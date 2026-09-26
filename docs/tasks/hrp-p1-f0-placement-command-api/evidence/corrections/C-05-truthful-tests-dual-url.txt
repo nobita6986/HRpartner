@@ -1,0 +1,72 @@
+C-05 — Truthful tests & dual-URL env readiness
+================================================
+
+Round: 2 (v1.2)
+
+Change:
+-------
+1. `src/domains/talent/placement.route-helpers.test.ts` (new, 26 tests):
+   - T1: 401 unauthenticated
+   - T2: 401 malformed placementId (auth-first)
+   - T3: 403 disallowed role (HR_STAFF, CTV, PUBLIC)
+   - T4: 400 strict body (reject unknown fields via Zod)
+   - T5: 400 strict ISO-8601 (reject Date.parse-loose strings)
+   - T6: 400 missing/invalid Idempotency-Key (UUID v4 required)
+   - T7: 400 clientAcknowledgedAt must include offset
+   - T8: PlacementError × 4 mapping
+         PlacementValidationError           → 400
+         InvalidStateTransitionError        → 409
+         PlacementNotFoundError             → 404
+         PlacementIdempotencyConflictError  → 409
+   - T9: IdempotencyConflictError → 409
+   - T10: unexpected error → 500 generic, NO message leak
+   - T11: success event via __captureSink (assert SafeMeta shape)
+   - T12: canonical error event via __captureSink
+   - T13: unexpected error event via __captureSink
+   - T14: forbidden fields NOT in any captured entry
+         (actorId, body, evidence, acknowledgementRef, failureReason,
+          Idempotency-Key, PII)
+
+2. `src/shared/observability/integration-preflight.env-readiness.static.test.ts`
+   (new, 7 tests):
+   - preflight reads DATABASE_URL_TEST
+   - preflight reads DATABASE_URL_ADMIN_TEST
+   - preflight blocks when DATABASE_URL_TEST missing
+   - posture script refuses when EITHER URL missing
+   - posture script enforces same host+port+db
+   - integration lane never falls back to dev/prod DATABASE_URL
+   - integration lane emits ENV_BLOCKED, never fake PASS
+
+3. Race-loser language honest rewrite (TASK §6 AC-10 v1.2):
+   - removed fabrication that conflict = exactly PlacementIdempotencyConflictError
+   - now: "đúng một 200 + một canonical 409 (không claim subclass cụ thể
+     nếu scheduler cho phép cả INVALID_STATE_TRANSITION hoặc
+     PLACEMENT_IDEMPOTENCY_CONFLICT)"
+
+4. Removed all unproven HANDOFF claims:
+   - "structured logger test PASS" — replaced with concrete
+     __captureSink tests
+   - test count used as coverage proxy — replaced with explicit
+     per-AC mapping
+
+Evidence:
+---------
+1. `npx vitest run src/domains/talent/placement.route-helpers.test.ts`:
+   - 26 tests PASS
+2. `npx vitest run src/shared/observability/integration-preflight.env-readiness.static.test.ts`:
+   - 7 tests PASS
+3. `scripts/ci/integration-preflight.mjs`: BLOCKED branch verified
+   (lines 76-78) — exits with `ENV_BLOCKED` if DATABASE_URL_TEST missing;
+   posture probe spawn on lines 109-118
+4. `scripts/ci/assert-test-db-posture.mjs`: both URLs required (lines 35-36),
+   same-host+port+db enforced (lines 42-46), role posture probe (lines 64-77)
+
+Gates:
+------
+- `npm run test:unit` : 2739 tests PASS (9 skipped)
+- Targeted placement tests : 132 PASS
+
+References:
+-----------
+- TASK §6 AC-05, AC-09, AC-10 (race-loser honest rewrite), AC-11, AC-18
+- HANDOFF §2.2 AC-05, AC-09, AC-10, AC-11, AC-18 rows

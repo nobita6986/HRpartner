@@ -1,0 +1,79 @@
+C-03 — Structured safe logging & truthful AC-11
+===================================================
+
+Round: 2 (v1.2)
+
+Change:
+-------
+File: `src/domains/talent/placement.route-helpers.ts`
+
+Replaced `console.*` with canonical `src/shared/observability/logger.ts`
++ `src/shared/observability/correlation-id.ts`. Helper now emits:
+
+  Success:  info    "placement.command.success"
+            route, method, status, actorRole, resourceType, outcome,
+            errorCode (omitted), detail: { command, placementId, replayed }
+
+  Auth fail: warn   "placement.command.auth_failed"
+            route, method, actorRole=undefined, resourceType, outcome=auth_failed,
+            errorCode: <AuthSessionError.code>, detail: { command }
+
+  Auth 500: error  "placement.command.auth_internal_error"
+            route, method, actorRole=undefined, resourceType, outcome=auth_internal_error,
+            errorCode: 'INTERNAL', detail: { command }
+
+  Canonical error: warn "placement.command.canonical_error"
+            route, method, status, actorRole, resourceType, outcome, errorCode,
+            detail: { command, placementId: '[REDACTED]' (sensitive UUID), replayed }
+
+  Unexpected: error "placement.command.unexpected_error"
+            route, method, status, actorRole, resourceType, outcome,
+            errorCode: 'INTERNAL', detail: { command }
+
+All metadata respects SafeMeta allow-list. Detail object is the designated
+overflow container (per logger.ts §PLN-03).
+
+Forbidden fields — explicitly NOT logged:
+  raw `actorId`
+  request body
+  evidence values
+  `acknowledgementRef`
+  `failureReason` (may contain PII)
+  tokens
+  `Idempotency-Key`
+  any PII
+
+AC-11 / RQ-11 v1.2 truthful rewrite:
+  - Dropped fabricated `managementMode/fromStatus/toStatus` (service result
+    does not provide them; F0 must NOT fabricate)
+  - Field set reduced to what the implementation actually supports
+
+Evidence:
+---------
+1. Static reading — `src/domains/talent/placement.route-helpers.ts`:
+   - imports `info/warn/error` from `@/src/shared/observability/logger`
+   - imports `getCorrelationId` from `@/src/shared/observability/correlation-id`
+   - zero `console.*` calls in the helper
+2. AST guard — `src/domains/talent/placement.commands.routes.test.ts`:
+   - assert no `console.error`/`console.warn`/`console.info` in pipeline
+3. Unit tests — `src/domains/talent/placement.route-helpers.test.ts` T11-T14:
+   - T11: success event captured via `__captureSink`
+   - T12: canonical error event captured; assert SafeMeta shape
+   - T13: unexpected error event captured; assert errorCode='INTERNAL', message NOT in meta
+   - T14: assert forbidden fields (`actorId`, body, evidence,
+          `acknowledgementRef`, `failureReason`, `Idempotency-Key`, PII)
+          do NOT appear in any captured entry
+4. Logger sanitizer defense-in-depth — long opaque identifiers (UUIDs)
+   are redacted to `[REDACTED]` by `SENSITIVE_VALUE_RE` in logger.ts,
+   even if a caller accidentally passes them.
+
+Gates:
+------
+- `npm run test:unit -- src/domains/talent/placement.route-helpers.test.ts` : 26 PASS
+- `npm run test:unit -- src/domains/talent/placement.commands.routes.test.ts` : 54 PASS
+
+References:
+-----------
+- TASK §6 AC-11 / RQ-11 (v1.2 truthful rewrite)
+- TASK §10 Revision Log v1.2 narrative
+- HANDOFF §2.2 AC-11 row
