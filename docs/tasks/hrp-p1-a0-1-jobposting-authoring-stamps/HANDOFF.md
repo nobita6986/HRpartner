@@ -4,16 +4,18 @@
 
 | Field | Value |
 |---|---|
-| Spec version | `v1.2` |
+| Spec version | `v1.3` |
 | Audit mode | LIGHT |
 | Audit mode (phải khớp TASK) | LIGHT |
 | Delivery protocol | V2_FAST_FREEZE |
 | Assurance lane | CRITICAL |
 | Execution round | 2 (correction batch 1/1 + post-audit integrity correction R2) |
-| Status | READY_FOR_AUDIT |
+| Status | ACCEPTED |
 | Baseline | `152c0fdaa4d28934acfbacb540a207aee686e1ad` (latest `origin/main` full SHA, includes completed P1-A0/A1/B as of 2026-09-26) |
 | Original semantic commit | `1465f0d990518d09ae72f3845499ce5f8baee573` |
-| Implementation SHA | `2c1bd1694121f822956c76e8024df9ef42dce9ad` |
+| Implementation SHA | `34d364609a2bb1f80a524fc9924ae23b37b20aaf` |
+| Implementation SHA role | Accepted main integration SHA after PR #55 merge |
+| Stamps-only semantic SHA | `2c1bd1694121f822956c76e8024df9ef42dce9ad` (R2 post-audit correction) |
 | Docs freeze commits | `0f881079` (R0), `29cb9e74` (R1), `cfffa939` (R1 freeze), `6db58fa6` (R1 reconcile), (this commit) |
 | Frozen delivery | YES |
 | Canonical gates | PASS |
@@ -293,5 +295,23 @@ shifts, slug, statusLabel, title, urgency
 | 2 | 2026-09-26 | T0 post-audit integrity correction exception (AUD-001 RELEASE-BLOCKING + AUD-002 P3 + AUD-003 P3 accepted debt). Pre-audit correction budget was exhausted. No further rounds permitted. | T1C R2 closes AUD-001 + AUD-002; AUD-003 carried as DEV-04 P3 debt |
 | 2 | 2026-09-26 | R2 semantic commit (AUD-001: write-path consumes canonical helper + tightened static test) | `2c1bd1694121f822956c76e8024df9ef42dce9ad` |
 | 2 | 2026-09-26 | R2 docs freeze commit (AUD-002: HANDOFF unit gate counts, new Implementation SHA, control/revision rows updated) | (this commit) |
+| 2 | 2026-09-26 | T0 closeout (docs-only; no new execution round): conflict reconciliation, PR #55 merge, production migration, post-deploy verification, and read-only smoke | ACCEPTED |
 
-Handoff status: READY_FOR_AUDIT
+## 8. Production closeout
+
+| Gate | Evidence | Result |
+|---|---|---|
+| Conflict reconciliation | `73a9ed3ed6258f839f82b4437ecbce334dc14976` preserved both stamp and P1-E0 registrations | PASS |
+| PR merge | PR #55 merged to `main` at `34d364609a2bb1f80a524fc9924ae23b37b20aaf` | PASS |
+| PR CI | GitHub Actions run `36252588635`: Quality, Integration, Vercel, and Preview Comments passed | PASS |
+| Post-merge CI | GitHub Actions run `36252758780`: Quality and Integration passed; integration applied all 39 migrations on a clean container | PASS |
+| Recovery point | Neon snapshot branch `br-icy-night-azmankdx` created from production before migration | PASS |
+| Production migration | Applied only `20260926120000_p1a01_jobposting_stamps`; Prisma status reports schema up to date | PASS |
+| Schema post-condition | `job_postings.is_hot` and `job_postings.is_urgent` are NOT NULL with default `false`; migration row finished with one applied step and no rollback | PASS |
+| Data impact | Production contained zero existing `job_postings` rows at deployment; no legacy-row backfill impact | PASS |
+| Public smoke | `/`, `/viec-lam`, and `/api/jobs` returned HTTP 200 | PASS |
+| Admin/auth smoke | `/admin/jobs/job-postings` redirected unauthenticated access to login; mutation endpoint rejected GET with HTTP 405 | PASS |
+
+No source, test, schema, migration, package, or `AUDIT.md` bytes changed during this docs-only closeout. `DEV-04` / `AUD-003` remains accepted non-blocking P3 tooling debt for a dedicated pipeline cleanup task.
+
+Handoff status: ACCEPTED
