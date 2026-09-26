@@ -114,4 +114,10 @@ export const INTEGRATION_TEST_FILES: string[] = [
   // DB idempotency/concurrency and atomic rollback. Fails closed when either
   // synthetic writer/admin URL is absent.
   'tests/db/p1b-public-apply-slug-bound.integration.test.ts',
+  // hrp-p1-a0-1-jobposting-authoring-stamps: canonical `is_hot`/`is_urgent` stamp
+  // flags on JobPosting. Covers slot eligibility (OPEN|CLOSING_SOON, deadline/validTo
+  // not expired, slotsFilled<slotsNeeded, no existing canonical JobPosting), PATCH
+  // draft round-trip, public projection filter, idempotency, role/field guards.
+  // Self-skips when DATABASE_URL_TEST + DATABASE_URL_ADMIN_TEST absent (ENV_BLOCKED).
+  'tests/db/job-posting-stamps.integration.test.ts',
 ];

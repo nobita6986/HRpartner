@@ -89,14 +89,18 @@ const EXPECTED_HITS = [
   'src/domains/staffing/job-opening-read.service.ts:46 project',
   // P1-A0 STEP-04 (hrp-p1-a0-jobposting-authoring-publish): publishJobPosting
   // reads the linked JobOpening to gate JobOpening.status = OPEN. RLS-covered.
-  'src/domains/staffing/job-posting-authoring.service.ts:603 jobOpening',
+  // hrp-p1-a0-1 (2026-09-26): line number shifted because updateDraftContent
+  // added `isHot`/`isUrgent` branches and DTO mapper extended.
+  'src/domains/staffing/job-posting-authoring.service.ts:646 jobOpening',
   // P1-A0 STEP-03: line numbers in job-posting-list.service.ts shifted because
   // the DTOs grew (added title, salaryDisplay, *Json, contentSchemaVersion,
   // hasContent). The four select-clauses themselves are unchanged.
-  'src/domains/staffing/job-posting-list.service.ts:136 jobOpening',
-  'src/domains/staffing/job-posting-list.service.ts:139 staffingOrder',
-  'src/domains/staffing/job-posting-list.service.ts:218 jobOpening',
-  'src/domains/staffing/job-posting-list.service.ts:226 staffingOrder',
+  // hrp-p1-a0-1 (2026-09-26): line numbers shifted again because DTOs grew
+  // (`isHot`, `isUrgent`) and eligibility selector was added.
+  'src/domains/staffing/job-posting-list.service.ts:143 jobOpening',
+  'src/domains/staffing/job-posting-list.service.ts:146 staffingOrder',
+  'src/domains/staffing/job-posting-list.service.ts:230 jobOpening',
+  'src/domains/staffing/job-posting-list.service.ts:238 staffingOrder',
   'src/domains/staffing/order.service.ts:153 project',
   'src/domains/staffing/order.service.ts:179 project',
   'src/domains/staffing/submission.service.ts:204 project',
@@ -109,8 +113,8 @@ const EXPECTED_HITS = [
   // `staffingOrder.slots`. Cả hai là BẮT BUỘC trong schema (không optional, không list) — sweep phải
   // đếm. An toàn vì đã chặn trước bằng `status: 'PUBLISHED'` (JobPosting) + RLS `hrp_project_visible_for`
   // mà MKT thoả khi `Project.is_public=true` (migration s1_rls_project 2026-08-16).
-  'src/domains/job-board/public.service.ts:666 staffingOrder',
-  'src/domains/job-board/public.service.ts:673 project',
+  'src/domains/job-board/public.service.ts:702 staffingOrder',
+  'src/domains/job-board/public.service.ts:709 project',
 ] as const;
 
 interface SourceEntry {

@@ -124,6 +124,13 @@ export interface UpdateDraftContentInput {
   requirementsJson?: unknown | null;
   benefitsJson?: unknown | null;
   applicationInstructionsJson?: unknown | null;
+  /**
+   * P1-A0.1 stamp flags. `undefined` → giữ giá trị hiện tại trên row (theo `DEC-04`,
+   * giống pattern `salaryDisplay` hiện hữu — client không truyền = không đổi).
+   * Field xuất hiện nhưng không phải boolean bị `assertBoolean` reject 400.
+   */
+  isHot?: boolean;
+  isUrgent?: boolean;
   contentSchemaVersion: number;
 }
 
@@ -155,6 +162,9 @@ export interface JobPostingDto {
   benefitsJson: unknown | null;
   applicationInstructionsJson: unknown | null;
   contentSchemaVersion: number;
+  /** P1-A0.1 stamp flags — canonical source of truth for public "Hot" + "Tuyển gấp" stamps. */
+  isHot: boolean;
+  isUrgent: boolean;
   publishedAt: string | null;
   archivedAt: string | null;
   createdAt: string;
@@ -285,6 +295,23 @@ function assertSalaryDisplay(salaryDisplay: string | null | undefined): void {
   if (salaryDisplay === null || salaryDisplay === undefined) return;
   if (salaryDisplay.length > 200) {
     throw new AuthoringError('INVALID_INPUT', 'salaryDisplay tối đa 200 ký tự.', 400);
+  }
+}
+
+/**
+ * P1-A0.1 stamp flag validator. `undefined` = field bị bỏ qua (giữ giá trị hiện tại).
+ * Mọi giá trị khác phải là boolean thật; string/number/null/object/array bị reject.
+ * Cho phép `true`/`false`; KHÔNG ép truthy của string 'true' → bắt buộc JSON boolean.
+ */
+function assertBoolean(label: 'isHot' | 'isUrgent', value: unknown): void {
+  if (value === undefined) return;
+  if (typeof value !== 'boolean') {
+    throw new AuthoringError(
+      'INVALID_INPUT',
+      `${label} phải là boolean (true/false) hoặc bị bỏ qua.`,
+      400,
+      { field: label, receivedType: typeof value },
+    );
   }
 }
 
@@ -497,6 +524,8 @@ export async function updateDraftContent(
   assertMutationRole(ctx);
   assertValidTitle(input.title);
   assertSalaryDisplay(input.salaryDisplay);
+  assertBoolean('isHot', input.isHot);
+  assertBoolean('isUrgent', input.isUrgent);
 
   validateRichContentField('descriptionJson', input.descriptionJson, input.contentSchemaVersion);
   if (input.requirementsJson !== null && input.requirementsJson !== undefined) {
@@ -519,7 +548,15 @@ export async function updateDraftContent(
 
   const current = await tx.jobPosting.findUnique({
     where: { id: input.jobPostingId },
-    select: { id: true, status: true, revision: true, slug: true, publishedAt: true },
+    select: {
+      id: true,
+      status: true,
+      revision: true,
+      slug: true,
+      publishedAt: true,
+      isHot: true,
+      isUrgent: true,
+    },
   });
   if (!current) {
     throw new AuthoringError(
@@ -550,6 +587,10 @@ export async function updateDraftContent(
   // first publish and stable suffix for traceability. Future schema for
   // "rename before publish" is intentionally out of scope (DEC-08 + RISK-03).
   const nextRevision = current.revision + 1;
+  // P1-A0.1 (DEC-04): `undefined` → giữ giá trị hiện tại (giống pattern `salaryDisplay`).
+  // Client không truyền field = không đổi row. Field truyền true/false = cập nhật.
+  const nextIsHot = input.isHot !== undefined ? input.isHot : current.isHot;
+  const nextIsUrgent = input.isUrgent !== undefined ? input.isUrgent : current.isUrgent;
 
   const updated = await tx.jobPosting.update({
     where: {
@@ -574,6 +615,8 @@ export async function updateDraftContent(
           ? Prisma.JsonNull
           : (input.applicationInstructionsJson as PrismaTypes.InputJsonValue),
       contentSchemaVersion: input.contentSchemaVersion,
+      isHot: nextIsHot,
+      isUrgent: nextIsUrgent,
       revision: nextRevision,
     },
   });
@@ -818,6 +861,9 @@ interface JobPostingModelRow {
   benefitsJson: unknown;
   applicationInstructionsJson: unknown;
   contentSchemaVersion: number;
+  // P1-A0.1 stamp flags — readonly; Prisma returns `boolean` for non-nullable columns.
+  isHot: boolean;
+  isUrgent: boolean;
   publishedAt: Date | null;
   archivedAt: Date | null;
   createdAt: Date;
@@ -849,6 +895,8 @@ function toJobPostingDto(row: JobPostingModelRow): JobPostingDto {
     benefitsJson: row.benefitsJson,
     applicationInstructionsJson: row.applicationInstructionsJson,
     contentSchemaVersion: row.contentSchemaVersion,
+    isHot: row.isHot,
+    isUrgent: row.isUrgent,
     publishedAt: row.publishedAt ? row.publishedAt.toISOString() : null,
     archivedAt: row.archivedAt ? row.archivedAt.toISOString() : null,
     createdAt: row.createdAt.toISOString(),

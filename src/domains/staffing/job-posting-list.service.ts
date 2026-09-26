@@ -45,13 +45,17 @@
  *  - Tất cả giá trị take/skip phải là số nguyên dương có giới hạn — nếu
  *    NaN/âm/quá lớn sẽ được clamp thay vì để caller phải xử lý.
  */
-import type { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 
 /** View-model hiển thị ở admin list. Date đã được serialize thành ISO string.
  *
  *  P1-A0 extension: thêm `title`, `salaryDisplay`, `hasContent` flag,
  *  `contentSchemaVersion`. Tất cả OPTIONAL — bản cũ (DRAFT rows from V6 Phase 1)
- *  vẫn đọc được. Consumers hiện hữu chỉ cần check optional chain. */
+ *  vẫn đọc được. Consumers hiện hữu chỉ cần check optional chain.
+ *
+ *  P1-A0.1 extension: thêm `isHot` + `isUrgent` stamp flags — canonical source
+ *  of truth cho public "Hot" + "Tuyển gấp" stamps. Default false cho row cũ
+ *  (P1-A0.1 migration) và row mới. */
 export interface JobPostingListItemDto {
   id: string;
   jobOpeningId: string;
@@ -72,6 +76,9 @@ export interface JobPostingListItemDto {
   hasContent: boolean;
   /** P1-A0: contentSchemaVersion mà row này được author (default 1 cho legacy rows). */
   contentSchemaVersion: number;
+  /** P1-A0.1 stamp flags — được dùng cho chip "Hot" + "Tuyển gấp" trên admin list row. */
+  isHot: boolean;
+  isUrgent: boolean;
 }
 
 export interface JobPostingListPage {
@@ -165,6 +172,8 @@ export async function listJobPostingsForAdmin(
       row.benefitsJson != null ||
       row.applicationInstructionsJson != null,
     contentSchemaVersion: row.contentSchemaVersion,
+    isHot: row.isHot,
+    isUrgent: row.isUrgent,
   }));
 
   return { items, total, take, skip };
@@ -196,6 +205,9 @@ export interface JobPostingDetailDto {
   benefitsJson: unknown | null;
   applicationInstructionsJson: unknown | null;
   contentSchemaVersion: number;
+  /** P1-A0.1 stamp flags — đồng bộ với `JobPostingDto.isHot` / `isUrgent`. */
+  isHot: boolean;
+  isUrgent: boolean;
   opening: {
     id: string;
     status: string;
@@ -246,6 +258,8 @@ export async function getJobPostingForAdmin(
     benefitsJson: row.benefitsJson,
     applicationInstructionsJson: row.applicationInstructionsJson,
     contentSchemaVersion: row.contentSchemaVersion,
+    isHot: row.isHot,
+    isUrgent: row.isUrgent,
     opening: row.jobOpening
       ? {
           id: row.jobOpening.id,
@@ -258,4 +272,108 @@ export async function getJobPostingForAdmin(
         }
       : null,
   };
+}
+
+/**
+ * P1-A0.1 — DTO cho một StaffingOrderSlot đủ điều kiện tạo JobPosting mới.
+ * Trả về cho Server Component `app/admin/jobs/job-postings/page.tsx` để render
+ * dropdown selector trong client form (T0 §2 "Slot selector" — single source
+ * of truth ở server, selector client không phải authorization authority).
+ *
+ * Eligibility predicate (DEC-03, locked T0 §2):
+ *   - StaffingOrder.status ∈ {OPEN, CLOSING_SOON}
+ *   - `deadlineDate` IS NULL OR `deadlineDate >= now()`
+ *   - `validTo` IS NULL OR `validTo >= now()`  (HR được prep draft trước `validFrom`)
+ *   - `slotsFilled < slotsNeeded`
+ *   - slot chưa có JobPosting canonical (qua `jobOpeningId` → `JobOpening.posting` IS NULL)
+ *
+ * POST endpoint (`/api/admin/jobs/job-postings`) sẽ re-read + revalidate
+ * predicate trong transaction — selector client KHÔNG phải authorization authority.
+ */
+export interface JobPostingSlotSelectorDto {
+  id: string;
+  positionTitle: string;
+  positionCode: string;
+  workLocation: string | null;
+  slotsNeeded: number;
+  slotsFilled: number;
+  validTo: string | null;
+  staffingOrderId: string;
+  staffingOrderCode: string;
+}
+
+/**
+ * Đọc danh sách StaffingOrderSlot đủ điều kiện tạo JobPosting mới.
+ *
+ * Predicate dịch sang SQL qua `prisma.$queryRaw` — Prisma findMany không có
+ * field-to-field comparison cho `slotsFilled < slotsNeeded`, nên ta viết
+ * raw SQL để giữ predicate atomic ở DB (DEC-03, locked T0 §2):
+ *   - StaffingOrder.status ∈ {OPEN, CLOSING_SOON}
+ *   - `deadlineDate` IS NULL OR `deadlineDate >= $now`
+ *   - `validTo` IS NULL OR `validTo >= $now`  (HR được prep draft trước `validFrom`)
+ *   - `slotsFilled < slotsNeeded`
+ *   - slot chưa có JobOpening bound (`job_opening_id IS NULL`)
+ *
+ * POST endpoint (`/api/admin/jobs/job-postings`) sẽ re-read + revalidate
+ * predicate trong transaction — selector client KHÔNG phải authorization authority.
+ *
+ * Caller phải mở transaction đã set GUC qua `withDbContext` trước khi gọi — RLS
+ * policy của `staffing_order_slots` / `staffing_orders` chỉ chạy khi GUC đã có.
+ *
+ * @param tx — Prisma TransactionClient (KHÔNG phải PrismaClient — đã qua `withDbContext`).
+ * @param options.now — override thời điểm "now" cho predicate; default `new Date()`.
+ * @param options.limit — cap để tránh scan lớn; default 100, max 500.
+ */
+export async function listEligibleSlotsForNewJobPosting(
+  tx: Prisma.TransactionClient,
+  options: { now?: Date; limit?: number } = {},
+): Promise<JobPostingSlotSelectorDto[]> {
+  const now = options.now ?? new Date();
+  const limit = options.limit && options.limit > 0 ? Math.min(options.limit, 500) : 100;
+
+  type EligibleRow = {
+    id: string;
+    position_title: string;
+    position_code: string;
+    work_location: string | null;
+    slots_needed: number;
+    slots_filled: number;
+    valid_to: Date | null;
+    staffing_order_id: string;
+    staffing_order_code: string;
+  };
+
+  const rows = await tx.$queryRaw<EligibleRow[]>(Prisma.sql`
+    SELECT
+      s.id,
+      s.position_title,
+      s.position_code,
+      s.work_location,
+      s.slots_needed,
+      s.slots_filled,
+      s.valid_to,
+      s.staffing_order_id,
+      so.code AS staffing_order_code
+    FROM staffing_order_slots s
+    INNER JOIN staffing_orders so ON so.id = s.staffing_order_id
+    WHERE so.status IN ('OPEN', 'CLOSING_SOON')
+      AND (so.deadline_date IS NULL OR so.deadline_date >= ${now})
+      AND (s.valid_to IS NULL OR s.valid_to >= ${now})
+      AND s.slots_filled < s.slots_needed
+      AND s.job_opening_id IS NULL
+    ORDER BY so.code ASC, s.position_code ASC
+    LIMIT ${limit}
+  `);
+
+  return rows.map((row) => ({
+    id: row.id,
+    positionTitle: row.position_title,
+    positionCode: row.position_code,
+    workLocation: row.work_location,
+    slotsNeeded: row.slots_needed,
+    slotsFilled: row.slots_filled,
+    validTo: row.valid_to ? row.valid_to.toISOString() : null,
+    staffingOrderId: row.staffing_order_id,
+    staffingOrderCode: row.staffing_order_code,
+  }));
 }

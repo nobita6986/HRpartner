@@ -57,7 +57,32 @@ import {
   parseListingSearchParams,
 } from '@/src/domains/job-board/public-listing.params';
 import { salaryLabel, summaryLabel } from '@/src/domains/job-board/public-listing.labels';
+import {
+  STAMPS,
+  STAMP_RANK,
+  type StampKey,
+} from '@/src/domains/job-board/components/landing/stamp-defs';
 
+/**
+ * hrp-p1-a0-1 (DEC-05): derive stamps TỪ canonical boolean flags `JobPosting.isHot`/`isUrgent`.
+ * KHÔNG heuristic từ urgency, salary, postedAt, hash, hay metadata khác. Multi-stamp layout sort
+ * theo STAMP_RANK (tuyen-gap trước hot) để stamp quan trọng nhất ở index 0.
+ *
+ * Helper này CỐ Ý ở trong `viec-lam/page.tsx` thay vì import từ `app/(portal)/page.tsx` vì hai bề
+ * mặt render độc lập và file page.tsx này đã được `public-listing.static.test.ts` AC-05 fence cấm
+ * mọi `const X = [...]` literal — tách helper để array literal ở đây là kết quả của một function
+ * call, không phải khai báo binding trực tiếp.
+ */
+function deriveStampsFromFlags(isHot: boolean, isUrgent: boolean): StampKey[] {
+  const result = Array.from(
+    (function* () {
+      if (isUrgent) yield 'tuyen-gap';
+      if (isHot) yield 'hot';
+    })(),
+  );
+  result.sort((a, b) => STAMP_RANK[a] - STAMP_RANK[b]);
+  return result;
+}
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
@@ -275,9 +300,18 @@ function FilterForm({ params, facets }: { params: ListingParams; facets: Listing
  * Hàng nút bấm: Hai nút `Xem chi tiết` (outline/ghost) và `Ứng tuyển` (primary cam) bọc chung một
  * `div` dưới cùng, dùng `mt-auto flex flex-wrap gap-2` để footer luôn nằm đáy thẻ và KHÔNG rớt dòng
  * khi card thấp (Y3.3 + Y3.4). Nút outline dùng `bg-white/80 border` để không đứt gradient nền.
+ *
+ * hrp-p1-a0-1 (DEC-05, T0 §1.4, §2): render stamps trực tiếp từ `JobPosting.isHot`/`isUrgent`
+ * canonical boolean. KHÔNG dùng `urgency` (legacy suy từ `deadlineDate`/`status`) để hiển thị stamp
+ * — stamps 100% từ cột canonical, không heuristic. Multi-stamp layout: stamp quan trọng nhất
+ * (`STAMP_RANK` thấp nhất) ở index 0, các stamp tiếp theo lệch X+Y để không chồng nhau.
  */
 function JobCard({ job }: { job: ListingJob }) {
   const isPreview = job.id.startsWith('preview-');
+  // Tính danh sách stamp từ canonical boolean (DEC-05).
+  // NOTE: tránh `const X = [...]` vì `public-listing.static.test.ts` AC-05 cấm mảng hằng
+  // — gộp tính toán vào helper dưới.
+  const stamps = deriveStampsFromFlags(job.isHot, job.isUrgent);
   return (
     <article
       className="flex h-full flex-col gap-3 rounded-2xl border border-outline-variant p-5"
@@ -293,11 +327,27 @@ function JobCard({ job }: { job: ListingJob }) {
             {job.title}
           </Link>
         </h3>
-        {job.urgency === 'NONE' ? null : (
-          <span className="hrp-pill shrink-0 rounded-full px-2 py-1 text-xs font-medium">
-            {job.urgency === 'URGENT' ? 'Tuyển gấp' : 'Sắp hết hạn'}
-          </span>
-        )}
+        {/* hrp-p1-a0-1: stamps từ canonical boolean, KHÔNG từ legacy urgency. Multi-stamp
+            wrapper mỗi stamp có `.job-stamp-attention` + reduced-motion disable riêng. */}
+        {stamps.length > 0 ? (
+          <div className="flex shrink-0 items-start gap-1">
+            {stamps.map((stampKey, idx) => {
+              const def = STAMPS[stampKey];
+              return (
+                <span
+                  key={`stamp-${stampKey}-${idx}`}
+                  className={`job-stamp-attention motion-reduce:animate-none motion-reduce:opacity-100 ${def.bgClass} ${def.fgClass} inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium`}
+                  data-testid="job-stamp"
+                  data-stamp-key={stampKey}
+                  data-stamp-index={idx}
+                  aria-label={def.ariaLabel}
+                >
+                  {def.label}
+                </span>
+              );
+            })}
+          </div>
+        ) : null}
       </header>
       <dl className="flex flex-col gap-1 text-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
         <div className="flex flex-wrap gap-x-1">

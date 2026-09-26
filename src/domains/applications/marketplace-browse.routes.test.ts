@@ -112,6 +112,9 @@ const PUBLISHED_JOB: PublicJobDto = {
   salaryMaxVnd: 45000,
   urgency: 'NONE',
   postedAt: '2026-09-01T00:00:00.000Z',
+  // hrp-p1-a0-1 (DEC-05): stamp flags từ canonical boolean JobPosting.isHot/isUrgent.
+  isHot: false,
+  isUrgent: false,
   // go-live-05 / RQ-02: ba field đơn ở trên là PHẦN TỬ ĐẦU của ba mảng này, không phải giá trị rời.
   // Fixture giữ đúng quan hệ đó để nó vẫn là hình dạng mà service thật có thể sinh ra.
   positionTitles: ['Công nhân sản xuất', 'Nhân viên kho'],

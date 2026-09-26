@@ -77,6 +77,11 @@ import { EmployerSidebar } from '@/src/domains/job-board/components/detail/emplo
 import { RelatedJobsSection } from '@/src/domains/job-board/components/detail/related-jobs-section';
 import { renderJobPostingRichText } from '@/src/shared/content/job-posting-rich-text';
 import { CtvInfoSectionContent, EmployerSidebarContent, GallerySectionContent } from '@/src/domains/job-board/public-types';
+import {
+  STAMPS,
+  STAMP_RANK,
+  type StampKey,
+} from '@/src/domains/job-board/components/landing/stamp-defs';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -351,7 +356,39 @@ export default async function PublicJobDetailPage({ params }: PageProps) {
         style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-outline-variant)' }}
       >
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <h1 className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--color-on-surface)' }}>{job.title}</h1>
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--color-on-surface)' }}>{job.title}</h1>
+            {/* hrp-p1-a0-1 (DEC-05, T0 §1.4): detail page render stamps từ canonical boolean
+                `JobPosting.isHot`/`isUrgent` — KHÔNG từ legacy `urgency`. Mỗi stamp có wrapper
+                `.job-stamp-attention` riêng để chỉ stamp animate (0.7↔1.0), KHÔNG animate toàn page,
+                và reduced-motion tắt animation. */}
+            {(() => {
+              const detailStamps: StampKey[] = [
+                ...(job.isUrgent ? (['tuyen-gap'] as const) : []),
+                ...(job.isHot ? (['hot'] as const) : []),
+              ].sort((a, b) => STAMP_RANK[a] - STAMP_RANK[b]);
+              if (detailStamps.length === 0) return null;
+              return (
+                <div className="flex items-start gap-1">
+                  {detailStamps.map((stampKey, idx) => {
+                    const def = STAMPS[stampKey];
+                    return (
+                      <span
+                        key={`detail-stamp-${stampKey}-${idx}`}
+                        className={`job-stamp-attention motion-reduce:animate-none motion-reduce:opacity-100 ${def.bgClass} ${def.fgClass} inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold`}
+                        data-testid="job-stamp"
+                        data-stamp-key={stampKey}
+                        data-stamp-index={idx}
+                        aria-label={def.ariaLabel}
+                      >
+                        {def.label}
+                      </span>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+          </div>
           <span
             className="text-[11px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap"
             style={

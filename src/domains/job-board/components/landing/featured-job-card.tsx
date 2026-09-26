@@ -64,17 +64,38 @@ function deriveMonogram(title: string): string {
  * chỉ dùng mực cam HRP + grunge ink texture + concentric rings.
  *
  * Style: con dấu cao su thật — không border đen, chỉ ink + shadow 3D.
+ *
+ * hrp-p1-a0-1 (DEC-06, T0 §1.5): mỗi stamp render trong wrapper riêng có class
+ * `job-stamp-attention motion-reduce:animate-none motion-reduce:opacity-100`.
+ * Animation `job-stamp-blink` (CSS keyframe 0.7↔1.0, đã có sẵn ở `app/globals.css`)
+ * chỉ áp dụng lên wrapper từng stamp — KHÔNG animate toàn card. Reduced-motion
+ * (`prefers-reduced-motion: reduce`) tắt animation và set opacity về 1.0 ngay.
+ *
+ * `index` dùng để lệch vị trí các stamp khi có 2+ cùng lúc (offset `translate-x`)
+ * — không chồng lên nhau.
  */
-function RubberStamp({ stampKey }: { stampKey: StampKey }) {
+function RubberStamp({ stampKey, idx }: { stampKey: StampKey; idx: number }) {
   const def = STAMPS[stampKey];
   const Icon = def.Icon;
+  // idx 0: góc trên trái như cũ. idx 1: lệch phải + xuống 12px. idx 2: lệch thêm.
+  const offsetX = idx * 18;
+  const offsetY = idx * 8;
   return (
     <div
-      /* Y10.8+: -top-2 -left-2 (tràn 8px ra ngoài card) — đủ nổi mà không quá xa. */
-      className="job-stamp-attention motion-reduce:animate-none motion-reduce:opacity-100 pointer-events-none absolute -top-2 -left-2 z-30"
+      /* Y10.8+: -top-2 -left-2 (tràn 8px ra ngoài card) — đủ nổi mà không quá xa.
+         hrp-p1-a0-1: className giữ animation keyframe + reduced-motion disable ở wrapper riêng
+         để stamp là phần tử animate duy nhất. `pointer-events-none` để không chặn card CTA. */
+      className="job-stamp-attention motion-reduce:animate-none motion-reduce:opacity-100 pointer-events-none absolute z-30"
       data-testid="job-stamp"
+      data-stamp-key={stampKey}
+      data-stamp-index={idx}
       aria-label={def.ariaLabel}
-      style={{ transform: `rotate(${def.rotateDeg}deg) scale(0.7)`, transformOrigin: 'top left' }}
+      style={{
+        top: `${-8 + offsetY}px`,
+        left: `${-8 + offsetX}px`,
+        transform: `rotate(${def.rotateDeg}deg) scale(0.7)`,
+        transformOrigin: 'top left',
+      }}
     >
       {/* Stamp body: hình tròn, không viền đen, chỉ có mực + shadow-2xl 3D */}
       <div
@@ -84,6 +105,7 @@ function RubberStamp({ stampKey }: { stampKey: StampKey }) {
           // - Opacity giảm từ 0.35→0.28, 0.18→0.14, v.v.
           // - Các blob radial gradient nhỏ tập trung ở TÂM, rìa stamp giữ nguyên màu mực đặc.
           // - Dùng radial-gradient mask effect: blend mực sáng/tối ở tâm, rìa mực đều.
+          // - Shadow mạnh để 3D pop khỏi card
           backgroundImage:
             `radial-gradient(ellipse 80% 80% at 50% 50%, rgba(0,0,0,0.22) 0%, transparent 100%),` +
             `radial-gradient(ellipse at 30% 35%, rgba(255,255,255,0.28) 0%, transparent 30%),` +
@@ -92,7 +114,6 @@ function RubberStamp({ stampKey }: { stampKey: StampKey }) {
             `radial-gradient(ellipse at 20% 75%, rgba(255,255,255,0.22) 0%, transparent 25%),` +
             `radial-gradient(ellipse at 80% 25%, rgba(0,0,0,0.12) 0%, transparent 22%),` +
             `radial-gradient(ellipse at 50% 20%, rgba(255,255,255,0.18) 0%, transparent 30%)`,
-          // Shadow mạnh để 3D pop khỏi card
           boxShadow: `0 8px 20px -4px ${def.ringClass.includes('amber') ? 'rgba(217,119,6,0.6)' : def.ringClass.includes('orange') ? 'rgba(249,115,22,0.6)' : 'rgba(239,68,68,0.6)'}, 0 4px 8px -2px rgba(0,0,0,0.3)`,
         }}
       >
@@ -149,14 +170,25 @@ export function FeaturedJobCard({ job, href, onApply }: FeaturedJobCardProps) {
       className="hrp-focus group relative flex h-full flex-col rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:shadow-md"
     >
       {/* Y10.4/UI04g: Single rubber stamp badge — tilted stamp style với tone cam HRP.
-          Chỉ hiển thị 1 stamp (admin chọn khi tạo job). */}
+          hrp-p1-a0-1 (DEC-06): render TẤT CẢ stamps trong wrapper riêng (mỗi stamp có class
+          `.job-stamp-attention` + `motion-reduce:animate-none`) để:
+          - Chỉ stamp animate (opacity 0.7↔1.0), KHÔNG animate toàn card.
+          - Reduced-motion tắt animation cho TẤT CẢ stamp cùng lúc.
+          - Multi-stamp có offset (index × 18px X, index × 8px Y) để không chồng nhau. */}
       {(() => {
-        // Lấy stamp đầu tiên (quan trọng nhất theo STAMP_RANK)
+        // Lấy tất cả stamp từ job.stamps (canonical `isHot`/`isUrgent` mapping ở service layer),
+        // sort theo STAMP_RANK để stamp quan trọng nhất ở index 0.
         const stamps: StampKey[] = (job.stamps && job.stamps.length > 0)
           ? [...job.stamps].sort((a, b) => STAMP_RANK[a] - STAMP_RANK[b])
-          : (job.badgeType === 'urgent' ? ['tuyen-gap'] : []);
+          : [];
         if (stamps.length === 0) return null;
-        return <RubberStamp stampKey={stamps[0]} />;
+        return (
+          <>
+            {stamps.map((stampKey, idx) => (
+              <RubberStamp key={`stamp-${stampKey}-${idx}`} stampKey={stampKey} idx={idx} />
+            ))}
+          </>
+        );
       })()}
 
       {/* ─── Header ─────────────────────────────────────────────────────── */}

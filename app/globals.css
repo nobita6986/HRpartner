@@ -664,10 +664,13 @@ body {
   }
 }
 
-/* Public job-card attention cue: a quiet 70% ↔ 100% ink pulse. */
+/* Public job-card attention cue: a quiet 70% ↔ 100% ink pulse.
+   Default opacity 1 (visible at rest); animation dips to 0.7 at 50% then returns.
+   When reduced-motion is active, the global rule at `:651` shortens the animation
+   to 0.01ms once, so the stamp stays fully visible at opacity 1 (no flicker). */
 @keyframes job-stamp-blink {
-  0%, 100% { opacity: 0.7; }
-  50% { opacity: 1; }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
 }
 
 .job-stamp-attention {

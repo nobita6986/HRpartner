@@ -25,6 +25,10 @@ import type {
   PublicJobOverview,
 } from '@/src/domains/job-board/public.service';
 import { BEST_JOBS_PAGE_SIZE_DEFAULT } from '@/src/domains/job-board/public-types';
+import {
+  STAMP_RANK,
+  type StampKey,
+} from '@/src/domains/job-board/components/landing/stamp-defs';
 
 // ─── UI-adapter: projection công khai → props của card ───────────────────────
 
@@ -48,67 +52,54 @@ export interface EnrichedJob {
   slug: string;
   title: string;
   locations: string[];
+  /** Backward-compat single-urgent flag — used by old tests. Prefer `stamps`. */
   badgeType: 'urgent' | 'closing' | null;
   salaryMinVnd: number | null;
   salaryMaxVnd: number | null;
   availableSlots: number;
   /** RQ-20 / STEP-10: postedAt from PublicJobDto for recruitment time display */
   postedAt: string | null;
-  /** Y10.4/UI04g: stamp tags render góc trên phải card (UI-only mock distribution). */
+  /**
+   * hrp-p1-a0-1 (DEC-05): derive TỪ `job.isHot` + `job.isUrgent` — KHÔNG heuristic.
+   * Trả `['tuyen-gap']` khi `isUrgent`, `['hot']` khi `isHot`, cả hai khi both, `[]` khi neither.
+   * Sort theo STAMP_RANK (`tuyen-gap` trước `hot`) để wrapper render quan trọng nhất trước.
+   */
   stamps: StampKey[];
   /** Y10.4/UI04g fix: tên công ty/nhà máy (project.name), hiển thị dưới title job. */
   companyName: string | null;
 }
 
-import type { StampKey } from '@/src/domains/job-board/components/landing/stamp-defs';
-
-/** Y10.4/UI04g: hash-based stamp distribution để mock cards trên UI.
-    Khi admin form ready → thay bằng server-provided stamps[] từ DB. */
-function deriveStamps(args: {
-  /** Stable seed từ job (id hoặc slug). */
-  seed: string;
-  urgency: 'URGENT' | 'CLOSING' | 'NONE';
-  salaryMinVnd: number | null;
-  salaryMaxVnd: number | null;
-  postedAt: string | null;
-}): StampKey[] {
-  const stamps: StampKey[] = [];
-  if (args.urgency === 'URGENT') stamps.push('tuyen-gap');
-  // "thuong-cao" nếu max >= 30k VND/giờ
-  if (args.salaryMaxVnd !== null && args.salaryMaxVnd >= 30000) stamps.push('thuong-cao');
-  // "moi" nếu posted trong 3 ngày gần đây
-  if (args.postedAt) {
-    const d = new Date(args.postedAt).getTime();
-    if (Date.now() - d < 3 * 24 * 60 * 60 * 1000) stamps.push('moi');
-  }
-  // "tuyen-gap" distributed qua hash (50% jobs) — đảm bảo ~một nửa card có tuyển gấp.
-  // Y10.8: bỏ stamp "hot", đổi sang "tuyen-gap" để đồng bộ nhánh brand HRP (Tiếng Việt).
-  let h = 0;
-  for (let i = 0; i < args.seed.length; i++) h = (h * 31 + args.seed.charCodeAt(i)) | 0;
-  if (Math.abs(h) % 2 === 0) stamps.push('tuyen-gap');
-  return stamps;
+/**
+ * hrp-p1-a0-1 (DEC-05): derive stamps TỪ canonical boolean flags của JobPosting.
+ * KHÔNG heuristic từ urgency, salary, postedAt, hash, hay bất kỳ metadata nào khác
+ * (T0 §2 "Public rendering" — fail closed nếu `JobPosting.isHot`/`isUrgent` drift).
+ *
+ * Caller phải sort stamps theo STAMP_RANK trước khi truyền vào component để wrapper render
+ * stamp quan trọng nhất ở vị trí đầu tiên (T0 §1.4 — multi-stamp layout).
+ */
+function deriveStampsFromFlags(isHot: boolean, isUrgent: boolean): StampKey[] {
+  const result: StampKey[] = [];
+  if (isUrgent) result.push('tuyen-gap');
+  if (isHot) result.push('hot');
+  // Stable order: STAMP_RANK ascending (tuyen-gap < hot) — đã đúng thứ tự trên.
+  return result.sort((a, b) => STAMP_RANK[a] - STAMP_RANK[b]);
 }
 
 function enrichJob(job: PublicJobDto): EnrichedJob {
-  const { salaryMinVnd, salaryMaxVnd, urgency, postedAt, companyName } = job;
+  const { salaryMinVnd, salaryMaxVnd, urgency, postedAt, companyName, isHot, isUrgent } = job;
   return {
     id: job.id,
     slug: job.slug ?? job.id,
     title: job.title,
     locations: job.locations,
+    // Backward-compat: badgeType mirror `isUrgent` (legacy call sites vẫn đọc).
     badgeType: urgency === 'URGENT' ? 'urgent' : urgency === 'CLOSING' ? 'closing' : null,
     salaryMinVnd,
     salaryMaxVnd,
     availableSlots: job.availableSlots,
     postedAt: postedAt ?? null,
-    // Y10.4/UI04g: derive stamps from urgency + salary + postedAt + seed-based hash.
-    stamps: deriveStamps({
-      seed: job.id,
-      urgency,
-      salaryMinVnd,
-      salaryMaxVnd,
-      postedAt: postedAt ?? null,
-    }),
+    // hrp-p1-a0-1 (DEC-05): canonical flags từ JobPosting row.
+    stamps: deriveStampsFromFlags(isHot, isUrgent),
     // Y10.4/UI04g fix: companyName = tên nhà máy từ API, hiển thị dưới title.
     companyName: companyName ?? null,
   };
