@@ -114,6 +114,43 @@ describe('projects master — role matrix (RQ-03 / AC-03)', () => {
     expect(res.status).toBe(403);
   });
 
+  it('GET: serializes populated Project budgetVnd bigint as a decimal string', async () => {
+    mocks.getAuthContext.mockResolvedValue({ userId: 'u', role: 'ADMIN' });
+    mocks.findMany.mockResolvedValueOnce([
+      {
+        id: 'p1',
+        code: 'P01',
+        clientCompanyId: 'c1',
+        name: 'Dự án 1',
+        pmUserId: null,
+        subPmUserId1: null,
+        subPmUserId2: null,
+        siteAddress: null,
+        startDate: new Date('2026-01-01T00:00:00.000Z'),
+        endDate: null,
+        status: 'ACTIVE',
+        budgetVnd: 900_000_000n,
+        billingTerms: null,
+        quota: 10,
+        filled: 2,
+        version: 1,
+        isPublic: false,
+        clientCompanyName: 'Công ty ABC',
+        createdAt: new Date('2026-01-01T00:00:00.000Z'),
+        clientCompany: { id: 'c1', name: 'Công ty ABC', code: 'ABC' },
+      },
+    ]);
+
+    const res = await GET(getReq());
+    const payload = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(payload.projects[0].budgetVnd).toBe('900000000');
+    expect(mocks.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ select: expect.objectContaining({ budgetVnd: true }) }),
+    );
+  });
+
   it.each(['ADMIN', 'PM', 'HR_MANAGER'])('POST: %s → 201 tạo qua boundary', async (role) => {
     mocks.getAuthContext.mockResolvedValue({ userId: 'u', role });
     const res = await POST(postReq({ code: 'P01', name: 'DA 1', clientCompanyId: 'c1', startDate: '2026-01-01' }));
