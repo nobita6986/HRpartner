@@ -21,7 +21,8 @@
 | Test environment | `NOT_READY` (ENV_BLOCKED — synthetic DB chưa được cung cấp cho P1-E0) |
 | Correction budget | `1` |
 | Correction budget note | T0-authorized integrity exception #2 is OUTSIDE the base budget — recorded truthfully as `Correction batches used = 2` (1 planned batch E0-F01..E0-F09 + 1 T0-authorized integrity exception E0-F10..E0-F12). Base budget V2 remains `1` per `verify-task.ps1` T-09 invariant. |
-| Correction batches used | `2` (1 planned batch E0-F01..E0-F09 + 1 T0-authorized integrity exception E0-F10..E0-F12) || Audit eligibility | `NOT_ELIGIBLE` |
+| Correction batches used | `2` (1 planned batch E0-F01..E0-F09 + 1 T0-authorized integrity exception E0-F10..E0-F12). The T0-authorized test-evidence integrity follow-up (E0-F14..E0-F16) is recorded in HANDOFF.md §4.4 BLK-02 as a documentation-only follow-up under the same batch 2 — it adds NO new correction batch, only strengthens the test surface awaiting the synthetic DB. |
+| Audit eligibility | `NOT_ELIGIBLE` |
 | Frozen delivery | `NO` (per F-13: until canonical integration PASS and final evidence freeze commit is created) |
 | Implementation SHA (post-F-10..F-12) | `9eb0fbe085d118093b01e6167b0219e780fc7d70` (pinned after F-10..F-12 semantic correction commit landed) |
 | Docs checkpoint SHA | `pending` — pinned after the post-DB freeze (F-13: docs commit must not self-pin) |

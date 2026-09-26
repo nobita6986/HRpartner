@@ -27,7 +27,7 @@
 | Worktree | `C:\CodeApp\HrP-worktrees\t1a-p1e-recruiter-workbench` |
 | Branch | `codex/t1a-p1e-recruiter-workbench` |
 | Next gate | `T0_CI_SYNTHETIC_DB_GATE` |
-| Docs checkpoint SHA | `pending` — pinned AFTER post-DB freeze (F-13: docs commit must not self-pin; pinning here creates an infinite amend loop). The current docs commit SHA is `37f1873` (per `git rev-parse HEAD`) but is not recorded inside this HANDOFF per F-13. |
+| Docs checkpoint SHA | `pending` — pinned AFTER post-DB freeze (F-13: docs commit must not self-pin; pinning here creates an infinite amend loop). The current docs commit SHA is recorded in the round-2 docs checkpoint commit message but is NOT recorded inside this HANDOFF per F-13. |
 
 ## 1. Outcome and changed surface
 
@@ -157,6 +157,7 @@ Round-2 changes ONLY touch the four files below. No other files are modified. No
 | ID | Blocker | Mitigation / Decision Tier 1 must make |
 |---|---|---|
 | `BLK-01` | Synthetic test DB credentials not provisioned in this worktree → integration lane `ENV_BLOCKED`. `tests/db/recruiter-workbench.integration.test.ts` self-skips per `describe.skipIf(!HAS_TEST_DB)` pattern (matching `tests/db/handling-assignment.integration.test.ts`, `tests/db/job-posting-authoring.integration.test.ts`, etc.). No fake PASS. | T0 / Owner provision a dedicated `DATABASE_URL_TEST` + `DATABASE_URL_ADMIN_TEST` synthetic test DB (PostgreSQL 18) — distinct from any dev/prod. CI `integration-preflight.mjs` will then run `tests/db/recruiter-workbench.integration.test.ts` end-to-end (writes a RLS GUC, calls `getRecruiterWorkbenchList`, verifies nested DTO, PII mask matrix, view authority). Until then, BLK-01 stands and AC-09..AC-13 are design-verified, unit-covered. **Decision required**: prioritize DB provisioning OR accept design-verified unit coverage as audit-eligible for this round. |
+| `BLK-02` | T0-authorized test-evidence integrity follow-up (E0-F14..E0-F16). T0 verdict `CHANGES_REQUIRED` against round-2 docs checkpoint SHA `ff1c58e0` identified vacuity / papering-over in the prior test evidence and DEV-03 wording. Round-3 (this docs checkpoint) adds exactly 2 new commits after `ff1c58e0`: a test-only follow-up adding 4 non-vacuous integration test cases (3 overdue-fixture membership proofs + 2 F-11 newest-wins regression + 2 F-15 explicit-fixture route proofs), plus a docs-only checkpoint that splits the malformed TASK §0 row, removes the stale `37f1873` SHA reference, and records the truthful `verify-handoff.ps1` H-16 fail list under `Frozen delivery = NO`. No new correction batch is opened; this is a strengthening of the test surface pending the synthetic DB. | E0-F14 + E0-F15 commit lands; E0-F16 docs checkpoint commit lands; the 2 SHAs are reported up to T0 together with the BLK-01 status. |
 
 ### 4.3 Deviations
 
@@ -164,7 +165,8 @@ Round-2 changes ONLY touch the four files below. No other files are modified. No
 |---|---|---|
 | `DEV-01` | Reworded the audit-rejection warning line `Không để NEED_USER_DECISION khi chuyển READY_FOR_EXECUTION` to `Không chứa token quyết-định-đang-chờ bất kỳ khi chuyển READY_FOR_EXECUTION (v1.3 đã CLOSED toàn bộ Owner decision ở §3, RECON §3)`. Also escaped literal `<br>` to `&#x3C;br&#x3E;` (HTML entity; GH renders as `<br>`), and `<laborProfileId>` / `<caseId>` / `<id>` / `<{ id: string }>` template tokens in RQ-12 / §10 revision log to `{laborProfileId}` / `{caseId}` / `{id}` / `[Next.js params: { id: string }]`. Same pattern applied to RECONCILIATION.md. | `verify-task.ps1` strict mode (when status `READY_FOR_EXECUTION`) regex-scans for placeholder `<...>` whose inner fails UPPERCASE whitelist — false-positives on legitimate URL-template tokens. Semantic is unchanged: URL template syntax preserved (curly braces / entity reference render visually identical). See Decision Log §10 v1.3 entry's note. |
 | `DEV-02` | `src/shared/security/required-relation-sweep.static.test.ts` allowlist expanded from 21 → 22 entries, src-count assertion bumped `18 → 19`. Closed-set invariant preserved. | The new `recruiter-workbench.read-service.ts:475` adds a `placement_case.labor_profile` select that the sweep detects as a RLS-required relation. Per the static test's design (allowlist = exhaustive enumeration), every legitimate new select must be registered. Sweep guard reasoning documented inline. |
-| `DEV-03` | `verify-handoff.ps1` H-16 errors: (a) "source/test/migration remains dirty after freeze" and (b) "committed semantic delta exists after Implementation SHA" pointing to `app/api/projects/route.ts`, `src/shared/auth/projects-master.route.test.ts`, `src/shared/security/required-relation-sweep.static.test.ts`. Also Canonical-gates accepted value is `PASS`/`NOT_REQUIRED` literal — `ENV_BLOCKED` literal would be more truthful but is not in the script's allowed set, so we report `NOT_REQUIRED` + a separate `Canonical gates note` row. | Tier 0 correction instruction explicitly required "Normal merge `origin/main` (`152c0fda`) cleanly" (introduces 3 upstream files: `app/api/projects/route.ts`, `src/shared/auth/projects-master.route.test.ts`, `src/shared/security/required-relation-sweep.static.test.ts` via PR #53) AND "deliver exactly 2 new commits after merge" (1 fix + 1 docs-freeze). The 3 files are NOT in P1-E0 changed surface — they are upstream semantically unrelated changes. H-16's "no semantic delta after Implementation SHA" check has no carve-out for merged origin/main, so by construction the gate fails after a Tier-0-mandated merge. Status remains `BLOCKED`; Tier 0's prior rejection did not require us to "fix" this gate because it is a gate scope mismatch with Tier 0's instructions, not a defect in P1-E0. Documented here so Tier 3 sees the full truth. |
+| `DEV-03` | `verify-handoff.ps1` H-16 reports 4 known failures under the current `Frozen delivery = NO` state: (a) `Frozen delivery must be YES before review/audit, got 'NO'`; (b) `Canonical gates must be PASS or NOT_REQUIRED, got 'ENV_BLOCKED'`; (c) `Correction batches used must be 0 or 1, got '2'`; (d) `committed semantic delta exists after Implementation SHA` referencing the F-14..F-16 test-only commit. These are not semantic defects in P1-E0 — they are the explicit pre-DB integrity condition. The HANDOFF does NOT paper over by reporting `NOT_REQUIRED` (as the prior round did): `Canonical gates = ENV_BLOCKED` is recorded truthfully per F-13, `Correction batches used = 2` is honest about the T0-authorized exception, and `Frozen delivery = NO` is honest about pending `T0_CI_SYNTHETIC_DB_GATE`. After T0 CI synthetic DB PASS, a docs-only evidence freeze commit will switch `Frozen delivery → YES`, `Canonical gates → PASS`, `Audit eligibility → ELIGIBLE`, `Next gate → TIER3_LIGHT_AUDIT`, at which point H-16 will pass cleanly. | Pre-DB integrity assertion — by design. |
+|| `DEV-04` | The 3 files `app/api/projects/route.ts`, `src/shared/auth/projects-master.route.test.ts`, `src/shared/security/required-relation-sweep.static.test.ts` (introduced by the Tier-0-mandated `origin/main` (`152c0fda`) merge via PR #53, present in `Implementation SHA = 9eb0fbe0`'s parent commit `aa62d834`) appear inside `git diff --name-only 9eb0fbe0..HEAD` once round-2 commits land. They are NOT P1-E0 changed surface — they are upstream semantically unrelated changes merged before F-10..F-12. H-16's "no semantic delta after Implementation SHA" check has no carve-out for upstream-merged files carried by the parent. Status remains `BLOCKED`; Tier 0's prior rejection did not require us to "fix" this gate because it is a gate scope mismatch with Tier 0's instructions, not a defect in P1-E0. | Gate scope mismatch — documented so Tier 3 sees the full truth. |
 
 ### 4.4 Post-correction results
 
@@ -198,6 +200,23 @@ Round-2 changes ONLY touch the four files below. No other files are modified. No
 | `pwsh verify-task.ps1` | exit 0 (v1.3) | E-09 |
 | `pwsh verify-encoding.ps1` | exit 0 | E-10 |
 | `pwsh verify-handoff.ps1` | exit 0 | E-16 |
+
+### 4.4 Post-correction results — T0-authorized test-evidence integrity follow-up (E0-F14..F-16)
+
+This is NOT a new correction batch (BLK-02); it is a documentation-and-test-evidence checkpoint that strengthens the surface awaiting the synthetic DB.
+
+| Suite | Result | Evidence |
+|---|---|---|
+| Targeted derive/read-service/route/sweep tests | `Test Files 4 passed (4)` / `Tests 126 passed (126)` (green) | E-12 |
+| Full unit suite (lane-scoped, integration exclude) | `Test Files 172 passed (172)` / `Tests 2751 passed | 9 skipped (2760)` | E-13 |
+| `npm run typecheck` | exit 0 | E-14 |
+| `npm run lint` | exit 0 | E-15 |
+| `npx prisma validate` | exit 0 | E-16 |
+| `git diff --check` | exit 0 | E-17 |
+| Strict UTF-8 no-BOM/NUL/U+FFFD scan on changed surface | clean | E-18 |
+| `pwsh verify-task.ps1` | `RESULT: DRAFT-VALID (1 warning)` — the warning is the intentional `BLOCKED` placeholder note (per F-13) | E-19 |
+| `pwsh verify-handoff.ps1` | `RESULT: FAIL (4 error(s))` — all 4 are H-16 expected pre-DB failures documented honestly in DEV-03. NOT semantic defects. | E-20 |
+| `npm run test:integration` | `ENV_BLOCKED` (BLK-01) | E-21 |
 
 `git show --numstat e7793af7e8855d86c0cf2cab1038c6c5d4605549` (round-1 post-correction) and `git show --numstat 20819f93ab05863108c91f8fdb1ee00b3ce197fc` (round-0 original delivery): round-0 modified the 7 in-scope new + 1 in-scope modified files in `app/` + `src/` + `tests/`; round-1 added corrections. Round-2 will modify the same 4 files (`recruiter-workbench.read-service.ts`, `recruiter-workbench.read-service.test.ts`, `recruiter-workbench.derive.test.ts`, `tests/db/recruiter-workbench.integration.test.ts`) for F-10/F-11/F-12. NO migration change. NO schema change. NO package/lockfile change. NO production migration applied. NO PR opened. Tier 3 NOT called. Tier 1 stopped.
 
