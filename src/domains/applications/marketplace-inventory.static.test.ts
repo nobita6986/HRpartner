@@ -91,6 +91,17 @@ const MARKETPLACE_ANON = [
 ];
 // Vòng đời phiên: login xác thực credential, logout chỉ xoá cookie (không ghi business).
 const SESSION_ROUTES = ['app/api/auth/login/route.ts', 'app/api/auth/logout/route.ts'];
+// hrp-p1-f0-placement-command-api (P1-F0): 5 admin placement commands. Mỗi route
+// ủy quyền sang `placement.route-helpers.ts` (`runPlacementCommand` helper)
+// chứa cùng auth-marker (`getAuthContext` + `withDbContext`); detector mặc
+// định chỉ nhận delegation `../handler`, nên F0 cần một allowlist riêng.
+const ADMIN_GUARDED_VIA_HELPER = [
+  'app/api/admin/placements/route.ts',
+  'app/api/admin/placements/[id]/actions/confirm/route.ts',
+  'app/api/admin/placements/[id]/actions/effective/route.ts',
+  'app/api/admin/placements/[id]/actions/fail/route.ts',
+  'app/api/admin/placements/[id]/actions/cancel/route.ts',
+];
 
 /** Có auth marker trực tiếp, hoặc uỷ quyền sang module `handler` cùng cây có marker. */
 function guarded(file: string): boolean {
@@ -131,7 +142,7 @@ describe('RQ-08 — inventory đường ghi ẩn danh', () => {
   });
 
   it('mọi route mutating khác đều có auth marker (trực tiếp hoặc qua handler)', () => {
-    const allowed = new Set([...MARKETPLACE_ANON, ...SESSION_ROUTES]);
+    const allowed = new Set([...MARKETPLACE_ANON, ...SESSION_ROUTES, ...ADMIN_GUARDED_VIA_HELPER]);
     const mutating = API_FILES.filter((p) => MUTATING.test(strip(read(p))));
     expect(mutating.map(rel)).toEqual(expect.arrayContaining(MARKETPLACE_ANON));
     const unguarded = mutating.filter((p) => !allowed.has(rel(p))).filter((p) => !guarded(p));

@@ -114,4 +114,14 @@ export const INTEGRATION_TEST_FILES: string[] = [
   // DB idempotency/concurrency and atomic rollback. Fails closed when either
   // synthetic writer/admin URL is absent.
   'tests/db/p1b-public-apply-slug-bound.integration.test.ts',
+  // hrp-p1-f0-placement-command-api: 5 named canonical admin commands
+  // (placement.{create,confirm,effective,fail,cancel}) wrapping the frozen
+  // `placement.service.ts`. Mocks only `getAuthContext`; the rest flows
+  // through real `withDbContext`, real `withIdempotency`, real Prisma tx.
+  // Covers AC-01..AC-13 (role gate, strict body, replay, source-CS
+  // integrity, Client-managed EFFECTIVE atomic close, HRP-managed
+  // REJECT, EFFECTIVE terminal, fail/cancel concurrency, RLS GUC).
+  // Self-skips when DATABASE_URL_TEST + DATABASE_URL_ADMIN_TEST absent
+  // (ENV_BLOCKED — Tier 0/Owner cung cấp DB trước khi xét merge).
+  'tests/db/p1f0-placement-command-api.integration.test.ts',
 ];
