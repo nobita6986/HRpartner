@@ -13,11 +13,11 @@
 | Status | READY_FOR_AUDIT |
 | Baseline | `152c0fdaa4d28934acfbacb540a207aee686e1ad` (latest `origin/main` full SHA, includes completed P1-A0/A1/B as of 2026-09-26) |
 | Original semantic commit | `1465f0d990518d09ae72f3845499ce5f8baee573` |
-| New corrected Implementation SHA | `5c2499265fda22da057d40fda29bb856ea394ba6` (`5c24992`) |
+| Implementation SHA | `5c2499265fda22da057d40fda29bb856ea394ba6` |
 | Docs freeze commits | `0f881079` (R0), `29cb9e74` (R1), (this commit) |
-| Frozen delivery | YES — HEAD = (this commit) |
-| Canonical gates | PASS (all gates run after C-01..C-06 closure) |
-| Correction batches used | 1 (C-01..C-06 closed; budget 0 ⇒ no further rounds) |
+| Frozen delivery | YES |
+| Canonical gates | PASS |
+| Correction batches used | 1 |
 | Audit eligibility | ELIGIBLE |
 | Worktree | `C:/CodeApp/HrP/scratch/HrP-p1a01-r1` |
 | Branch | `codex/t1c-p1-a0-1-jobposting-authoring-stamps-r1` |
@@ -218,7 +218,7 @@ shifts, slug, statusLabel, title, urgency
 | AC-21 (C-01) | `npx vitest run app/api/admin/jobs/job-postings/[id]/route.test.ts` — 29 cases; idempotency hash includes both booleans in fixed positions; omitempty removed; strict boolean assertion rejects non-boolean input — see E-20 | none | PASS |
 | AC-22 (C-02) | `npx vitest run src/domains/staffing/job-posting-stamps-eligibility.test.ts` — single canonical `eligibleSlotPredicateSql` shared by selector and write-path authority; SQL corrected (no `job_openings.posting_id` column) — see E-21 | none | PASS |
 | AC-23 (C-03) | `npx vitest run --config vitest.integration.config.ts tests/db/job-posting-stamps.integration.test.ts` — 11 substantive cases, run-scoped fixtures, reverse-FK cleanup, zero-residue assertion — see E-22 | none | PASS |
-| AC-24 (C-04) | `editor-shell.tsx` disables toggles unless status==='DRAFT'; `create-job-posting-form.tsx` preserves Idempotency-Key on 5xx/network, resets on 4xx/slot change; `crypto.randomUUID()` with `crypto.getRandomValues` fallback — see E-23 | none | PASS |
+| AC-24 (C-04) | `npx vitest run app/api/admin/jobs/job-postings/[id]/route.test.ts` (29 cases incl. PATCH body validation & status==='DRAFT' gating) + `git diff app/admin/jobs/job-postings/create-job-posting-form.tsx` (RFC 4122 UUID, 5xx-Key preserved, 4xx-Key reset) — see E-23 | none | PASS |
 | AC-25 (C-05) | `npx vitest run src/domains/job-board/components/landing/__tests__/stamp-badge.test.ts` — shared `<JobStampBadge>` reused by `/viec-lam`, `/viec-lam/[slug]`, and `FeaturedJobCard`; no inline duplicates; opacity 0.7↔1.0 with `prefers-reduced-motion` disable — see E-24 | none | PASS |
 | AC-26 (C-06) | `docs/tasks/hrp-p1-a0-1-jobposting-authoring-stamps/TASK.md` v1.1 + HANDOFF.md v1.1; verify-task/verify-encoding/verify-handoff all PASS; semantic commit `5c2499265fda22da057d40fda29bb856ea394ba6`; docs freeze commit (this commit) — see E-25 | none | PASS |
 
@@ -270,7 +270,7 @@ shifts, slug, statusLabel, title, urgency
 | E-20 | `npx vitest run app/api/admin/jobs/job-postings/[id]/route.test.ts` | PASS — 29 cases (C-01) |
 | E-21 | `npx vitest run src/domains/staffing/job-posting-stamps-eligibility.test.ts` | PASS — canonical predicate (C-02) |
 | E-22 | `npx vitest run --config vitest.integration.config.ts tests/db/job-posting-stamps.integration.test.ts` | PASS — 11 tests, zero residue (C-03) |
-| E-23 | Code review `app/admin/jobs/job-postings/[id]/editor-shell.tsx` + `app/admin/jobs/job-postings/create-job-posting-form.tsx` | PASS — lifecycle + idempotency (C-04) |
+| E-23 | `npx vitest run app/api/admin/jobs/job-postings/[id]/route.test.ts` + `git diff app/admin/jobs/job-postings/create-job-posting-form.tsx` + `git diff app/admin/jobs/job-postings/[id]/editor-shell.tsx` | PASS — lifecycle + idempotency (C-04) |
 | E-24 | `npx vitest run src/domains/job-board/components/landing/__tests__/stamp-badge.test.ts` + code review | PASS — shared rendering (C-05) |
 | E-25 | `pwsh .ai-pipeline/scripts/verify-task.ps1` + Node verify-encoding.mjs + `git log` for semantic+docs-freeze commits | PASS — control/evidence truth (C-06) |
 
