@@ -71,5 +71,83 @@ History PRESERVED (point 10):
   d688b66... (round-5 implementation chain)
   All reachable; NO amend/reset/rebase/force-push.
 
+=====================================================================
+ROUND-5 C-07 CLOSURE CORRECTION (2026-09-26 — T0 directive)
+=====================================================================
+
+C-07 closure correction commits (in order, HEAD=7ca1cd5):
+
+  7ca1cd58 docs(p1-f0): update encoding-bom-scan to 16/16 (E-21 added)
+  3081f931 docs(p1-f0): T1B sandbox LIVE integration transparency
+                       + E-21 evidence registry
+  813015cb test(p1-f0, mp2): submission-driven FK-safe teardown
+  d176057d docs(p1-f0): control-field rollback to BLOCKED
+
+Test-infra edit:
+  src/domains/applications/live-integration.mp2.test.ts:585-695
+    Defect 1 (line 604): buggy query referencing labor_profiles.slot_id
+                          (column lives on candidate_submissions).
+                          Replaced with:
+        SELECT id, labor_profile_id, placement_case_id
+          FROM candidate_submissions
+         WHERE idempotency_key_hash = $1
+    Defect 2 (FK-safe order): wrong sequence that deleted LaborProfile
+                                before clearing candidate_submissions
+                                .labor_profile_id. Replaced with the
+                                canonical reverse order:
+        application_status_history (FK → candidate_submissions)
+        → candidate_submissions (clear FK cols first, then DELETE)
+        → placements (defensive DELETE on run-owned LP/PC refs)
+        → placement_case (FK → labor_profiles)
+        → labor_profiles (children cleared above)
+        → job fixture hierarchy (unchanged)
+
+Verification (T1B sandbox; LIVE staging owned by T0):
+  prisma validate:                       PASS
+  tsc --noEmit:                          PASS (0 errors)
+  npm run lint:                          0 errors, 732 warnings (unchanged)
+  npm run test:unit:                     173 files / 2756 passed / 9 skipped
+  npm run test:integration:              ENV_BLOCKED (DATABASE_URL_TEST not set)
+  placement-targeted unit:               5 files / 165 tests PASS
+  git diff --check HEAD:                 clean
+  UTF-8 no-BOM/LF-only scan:             16/16 clean, 0 fail
+  verify-task.ps1:                       DRAFT-VALID (2 expected WARN)
+  verify-handoff.ps1:                    FAIL (3 H-16 + 1 H-15, expected
+                                          under BLOCKED per directive point 8)
+
+LIVE integration attempts (T1B sandbox — transparent, not fake PASS):
+  MP-2 targeted:                  11 skipped (ENV_BLOCKED)
+  P1-F0 targeted:                 1 passed (ENV_BLOCKED honest report,
+                                       DEC-13 / C-05 dual-URL contract)
+                                  + 19 skipped
+  placement-lifecycle targeted:   1 passed (ENV_BLOCKED honest report)
+                                  + 15 skipped
+  Full canonical CI_INTEGRATION_STRICT=1:
+                                  ENV_BLOCKED (CI_INTEGRATION_STRICT
+                                  surfaces the block as failure)
+
+Evidence file changes (C-07 closure correction commit surface):
+  Modified:
+    docs/tasks/hrp-p1-f0-placement-command-api/TASK.md
+    docs/tasks/hrp-p1-f0-placement-command-api/HANDOFF.md
+    docs/tasks/hrp-p1-f0-placement-command-api/evidence/sha-pins.txt
+    docs/tasks/hrp-p1-f0-placement-command-api/evidence/corrections/C-07-round5-synthetic-db-correction.txt
+    docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/verify-task.txt
+    docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/verify-handoff.txt
+    docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/verify-encoding.txt
+    docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/encoding-bom-scan.txt
+    docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/git-diff-check.txt
+    docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/integration-env-readiness.txt
+    docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/prisma-validate.txt
+    docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/typecheck.txt
+    docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/lint.txt
+    docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/test-unit.txt
+  Added:
+    docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/live-integration-attempts-t1b-sandbox.txt
+
+Production code / schema / migration: UNCHANGED.
+Archive branch (codex/t1b-p1f0-placement-command-planning): UNCHANGED.
+
 No push, no PR, no Tier 3, no merge, no migration, no deploy.
+
 
