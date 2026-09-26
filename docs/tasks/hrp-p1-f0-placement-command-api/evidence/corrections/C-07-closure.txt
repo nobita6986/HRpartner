@@ -1,0 +1,67 @@
+P1-F0 C-07 CLOSURE — T0 SYNTHETIC STAGING RUNTIME GATE
+Date: 2026-09-26
+Implementation SHA: adbd28f711ccf4f53807fb44a9beb98ba5e22ac4
+Production DB/migration: NOT_RUN
+
+SCOPE
+
+- Test-infrastructure corrections only:
+  - src/domains/applications/live-integration.mp2.test.ts
+  - tests/db/p1f0-placement-command-api.integration.test.ts
+- Production placement service, routes, schema, migrations, auth/RLS,
+  idempotency and package files were not modified by the final correction.
+- History through 241e635016ab2d741fb25529d96a5fc308cd2a3a is preserved.
+
+CLOSED DEFECTS
+
+1. MP-2 teardown no longer queries nonexistent labor_profiles.slot_id.
+   Run-owned CandidateSubmission rows provide labor_profile_id and
+   placement_case_id. Cleanup follows the FK-safe reverse hierarchy and
+   does not swallow errors.
+2. AC-12b reflects canonical terminal-transition behavior. Both FAILED and
+   CANCELLED receive a server-built failureReason in placement.service.ts.
+   The test now asserts a non-empty reason containing the winning terminal
+   status and canonical run actor; it does not hard-code a timestamp.
+
+T0 ENVIRONMENT POSTURE
+
+- Dedicated synthetic staging only: ep-empty-forest.
+- Writer: non-superuser, non-bypassrls.
+- Admin: bypassrls administrative role.
+- Writer/admin target the same host, port and database.
+- Synthetic database was reset cleanly and all 53 migrations from this
+  branch were applied before runtime verification.
+- Production target was not touched.
+
+RUNTIME RESULTS
+
+- MP-2 targeted run 1: 11/11 PASS.
+- MP-2 targeted run 2: 11/11 PASS.
+- MP-2 targeted run 3: 11/11 PASS.
+- P1-F0 targeted run 1: 20/20 PASS.
+- P1-F0 targeted run 2: 20/20 PASS.
+- P1-F0 targeted run 3: 20/20 PASS.
+- Full canonical integration, CI_INTEGRATION_STRICT=1:
+  - POSTURE_OK writer_is_writer admin_is_admin same_target.
+  - 32/32 test files PASS.
+  - 561 passed, 0 failed, 2 skipped.
+  - The two skips are the already-identified Redis EVAL environment skips.
+
+RAW EVIDENCE
+
+- evidence/gates/live-integration-run-staging.txt
+  contains fresh stdout for MP-2 x3, P1-F0 x3 and full canonical strict.
+
+DISPOSITION
+
+C-07 is CLOSED. Runtime evidence supports restoring:
+
+- Status: READY_FOR_AUDIT
+- Frozen delivery: YES
+- Canonical gates: PASS
+- Audit eligibility: ELIGIBLE
+- Next gate: TIER3_LIGHT_AUDIT
+
+The correction remains inside the single consolidated correction budget.
+No push, PR, Tier 3 invocation, merge, production migration or deployment
+was performed by this runtime verification.

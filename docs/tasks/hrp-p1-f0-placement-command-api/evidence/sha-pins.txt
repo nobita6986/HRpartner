@@ -1,153 +1,53 @@
-SHA pins - P1-F0 round-5 synthetic-DB correction + final freeze
-=====================================================================
+P1-F0 PLACEMENT COMMAND API — FINAL SHA PINS
+Date: 2026-09-26
 
-Archive branch (PRESERVED):
----------------------------
-Branch:               codex/t1b-p1f0-placement-command-planning
-HEAD:                 6680eb26baefd9775a96a76a18c018ac454d022b (contaminated freeze)
-Original impl SHA:    9274ccd93f7541d3dfadecf929e48d4c38252690
-Pipeline tooling:     c0f4dc6925f8cb8f6679c275ad183c37fd66878b (NOT cherry-picked into clean delivery)
-Baseline:             a88d87270f51fb63bba8f4f1144304dad4983007
-Predecessor SHA:      1b1d8ac747a424c5d47d6cc777f44bba254fcd51 (preserved)
+Branch:
+  codex/t1b-p1f0-placement-command-clean-correction
 
-Clean correction branch (off exact 9274ccd):
---------------------------------------------
-Branch:               codex/t1b-p1f0-placement-command-clean-correction
-Off:                  9274ccd93f7541d3dfadecf929e48d4c38252690
-NO cherry-pick of:    c0f4dc6925f8cb8f6679c275ad183c37fd66878b
+Baseline:
+  a88d87270f51fb63bba8f4f1144304dad4983007
 
-Implementation SHA chain (latest first, used for HANDOFF pin):
-  eca445bc641542d40dea652d498ff5dcb5888623 - round-5 semantic Implementation SHA (C-07 synthetic-DB correction)
-  7c9cf7c85f59bed938ad8671f1402441a066b6eb - F-04A/B (test/integrity semantic)
-  c8d7bfa61595b3c1f01eb5ab6d50125729603b45 - F-02 substantive proof
-  70047d047dd6089270999f70f02615f9569a0ba9 - round 2 C-01..C-05 (semantic)
-  9274ccd93f7541d3dfadecf929e48d4c38252690 - original implementation
+Predecessor:
+  1b1d8ac747a424c5d47d6cc777f44bba254fcd51
 
-Docs-only commits (NOT source/test/tooling/config):
-  45bc5ec5ad49a6555e3e3c54aa79d409b033cab9 - docs(p1-f0): round-5 final freeze (TASK v1.3 + HANDOFF READY_FOR_AUDIT + sanitized evidence)
-  9fcf69f0f8d1822cdf9a3301f21f7fce315103df - F-04C docs checkpoint
-  336486cb60ff4a3c0e5e51e3b7e43356a428c80a - F-01/F-03 round-2 follow-up
-  032efb1d6168ee5a5f1600e0c5ba2f7f7848a119 - round-2 docs freeze v1.2 (PRE-AUDIT CHECKPOINT)
+Semantic Implementation SHA:
+  adbd28f711ccf4f53807fb44a9beb98ba5e22ac4
 
-HANDOFF Implementation SHA:  eca445bc641542d40dea652d498ff5dcb5888623  (round-5 C-07)
-HANDOFF Pre-audit checkpoint: 032efb1d6168ee5a5f1600e0c5ba2f7f7848a119 (round-2 docs freeze)
-HANDOFF Final Freeze HEAD:    45bc5ec5ad49a6555e3e3c54aa79d409b033cab9  (round-5 docs/evidence freeze commit)
+Final docs/evidence freeze commit:
+  PENDING_DOCS_FREEZE_COMMIT
 
-Next gate: TIER3_LIGHT_AUDIT (T0 owns the post-freeze audit handoff)
-
-Correction-batch count: 1 (F-04A/B/C + C-07 round-5 = same consolidated
-pre-audit correction batch; no new audit correction batch counted per T0
-directive "khong tang correction-batch count").
-
-Round: 5 (round-5 synthetic-DB correction + final freeze)
-
-=====================================================================
-ROUND-5 REVERSAL — T0 verdict CHANGES_REQUIRED / NOT_READY_FOR_AUDIT
-=====================================================================
-
-Status:            BLOCKED
-Frozen delivery:   NO
-Canonical gates:   FAIL/PENDING
-Audit eligibility: NOT_ELIGIBLE
-Next gate:         T0_CI_SYNTHETIC_DB_GATE
-
-Implementation SHA pin (pre-reversal, preserved):
-  eca445bc641542d40dea652d498ff5dcb5888623 (round-5 semantic)
-  -> NOT to be cited as PASS evidence; superseded by C-07-closure
-     correction in-progress.
-
-Final Freeze HEAD (pre-reversal, preserved):
-  45bc5ec5ad49a6555e3e3c54aa79d409b033cab9
-  -> NOT to be cited as frozen-delivery; superseded.
-
-New Implementation SHA + New Final Freeze HEAD will be pinned AFTER
-the C-07-closure correction (live-integration.mp2.test.ts slot_id
-fix + FK-safe reverse-order cleanup) achieves runtime PASS on T0's
-dedicated synthetic staging writer/admin pair.
-
-History PRESERVED (point 10):
+Preserved correction history includes:
+  927e32057d59655a6f0775b81ba628ef72f13baf
+  75462f59ee92a61d5766eb79a3e96c52843fa97c
+  5b131ac52752364f80fa3957c5ccae1d8fe8e9fd
+  fa9530a456ba1e68ab993d31915bc549b55e3f83
+  0a403ef837656b89f6e87cfbbc87c515a3c7e318
+  a4db06f57cab4ba2135b7fab0f09d21e97023ed5
   eca445bc641542d40dea652d498ff5dcb5888623
   45bc5ec5ad49a6555e3e3c54aa79d409b033cab9
-  d688b66... (round-5 implementation chain)
-  All reachable; NO amend/reset/rebase/force-push.
+  d688b66229980fd5449cbd882691c8105458dbf3
+  813015cb
+  241e635016ab2d741fb25529d96a5fc308cd2a3a
+  adbd28f711ccf4f53807fb44a9beb98ba5e22ac4
 
-=====================================================================
-ROUND-5 C-07 CLOSURE CORRECTION (2026-09-26 — T0 directive)
-=====================================================================
+Final control state:
+  Status: READY_FOR_AUDIT
+  Frozen delivery: YES
+  Canonical gates: PASS
+  Audit eligibility: ELIGIBLE
+  Next gate: TIER3_LIGHT_AUDIT
+  Correction batches used: 1
 
-C-07 closure correction commits (in order, HEAD=7ca1cd5):
+Fresh T0 runtime evidence:
+  evidence/corrections/C-07-closure.txt
+  evidence/gates/live-integration-run-staging.txt
 
-  7ca1cd58 docs(p1-f0): update encoding-bom-scan to 16/16 (E-21 added)
-  3081f931 docs(p1-f0): T1B sandbox LIVE integration transparency
-                       + E-21 evidence registry
-  813015cb test(p1-f0, mp2): submission-driven FK-safe teardown
-  d176057d docs(p1-f0): control-field rollback to BLOCKED
+Measured results:
+  MP-2: 11/11 PASS x3
+  P1-F0: 20/20 PASS x3
+  Canonical integration: 32/32 files; 561 passed; 0 failed; 2 skipped
+  Writer/admin posture: PASS
+  Production DB/migration: NOT_RUN
 
-Test-infra edit:
-  src/domains/applications/live-integration.mp2.test.ts:585-695
-    Defect 1 (line 604): buggy query referencing labor_profiles.slot_id
-                          (column lives on candidate_submissions).
-                          Replaced with:
-        SELECT id, labor_profile_id, placement_case_id
-          FROM candidate_submissions
-         WHERE idempotency_key_hash = $1
-    Defect 2 (FK-safe order): wrong sequence that deleted LaborProfile
-                                before clearing candidate_submissions
-                                .labor_profile_id. Replaced with the
-                                canonical reverse order:
-        application_status_history (FK → candidate_submissions)
-        → candidate_submissions (clear FK cols first, then DELETE)
-        → placements (defensive DELETE on run-owned LP/PC refs)
-        → placement_case (FK → labor_profiles)
-        → labor_profiles (children cleared above)
-        → job fixture hierarchy (unchanged)
-
-Verification (T1B sandbox; LIVE staging owned by T0):
-  prisma validate:                       PASS
-  tsc --noEmit:                          PASS (0 errors)
-  npm run lint:                          0 errors, 732 warnings (unchanged)
-  npm run test:unit:                     173 files / 2756 passed / 9 skipped
-  npm run test:integration:              ENV_BLOCKED (DATABASE_URL_TEST not set)
-  placement-targeted unit:               5 files / 165 tests PASS
-  git diff --check HEAD:                 clean
-  UTF-8 no-BOM/LF-only scan:             16/16 clean, 0 fail
-  verify-task.ps1:                       DRAFT-VALID (2 expected WARN)
-  verify-handoff.ps1:                    FAIL (3 H-16 + 1 H-15, expected
-                                          under BLOCKED per directive point 8)
-
-LIVE integration attempts (T1B sandbox — transparent, not fake PASS):
-  MP-2 targeted:                  11 skipped (ENV_BLOCKED)
-  P1-F0 targeted:                 1 passed (ENV_BLOCKED honest report,
-                                       DEC-13 / C-05 dual-URL contract)
-                                  + 19 skipped
-  placement-lifecycle targeted:   1 passed (ENV_BLOCKED honest report)
-                                  + 15 skipped
-  Full canonical CI_INTEGRATION_STRICT=1:
-                                  ENV_BLOCKED (CI_INTEGRATION_STRICT
-                                  surfaces the block as failure)
-
-Evidence file changes (C-07 closure correction commit surface):
-  Modified:
-    docs/tasks/hrp-p1-f0-placement-command-api/TASK.md
-    docs/tasks/hrp-p1-f0-placement-command-api/HANDOFF.md
-    docs/tasks/hrp-p1-f0-placement-command-api/evidence/sha-pins.txt
-    docs/tasks/hrp-p1-f0-placement-command-api/evidence/corrections/C-07-round5-synthetic-db-correction.txt
-    docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/verify-task.txt
-    docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/verify-handoff.txt
-    docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/verify-encoding.txt
-    docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/encoding-bom-scan.txt
-    docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/git-diff-check.txt
-    docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/integration-env-readiness.txt
-    docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/prisma-validate.txt
-    docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/typecheck.txt
-    docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/lint.txt
-    docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/test-unit.txt
-  Added:
-    docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/live-integration-attempts-t1b-sandbox.txt
-
-Production code / schema / migration: UNCHANGED.
-Archive branch (codex/t1b-p1f0-placement-command-planning): UNCHANGED.
-
-No push, no PR, no Tier 3, no merge, no migration, no deploy.
-
-
+No amend, reset, rebase or force-push was used. No push, PR, Tier 3,
+merge, production migration or deployment was performed during this freeze.
