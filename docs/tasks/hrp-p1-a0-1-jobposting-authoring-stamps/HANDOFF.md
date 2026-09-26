@@ -4,18 +4,20 @@
 
 | Field | Value |
 |---|---|
-| Spec version | `v1.0` |
+| Spec version | `v1.1` |
 | Audit mode | LIGHT |
 | Audit mode (phải khớp TASK) | LIGHT |
 | Delivery protocol | V2_FAST_FREEZE |
 | Assurance lane | CRITICAL |
-| Execution round | 1 |
+| Execution round | 1 (correction batch 1/1) |
 | Status | READY_FOR_AUDIT |
 | Baseline | `152c0fdaa4d28934acfbacb540a207aee686e1ad` (latest `origin/main` full SHA, includes completed P1-A0/A1/B as of 2026-09-26) |
-| Implementation SHA | `1465f0d990518d09ae72f3845499ce5f8baee573` |
-| Frozen delivery | YES |
-| Canonical gates | PASS |
-| Correction batches used | 0 |
+| Original semantic commit | `1465f0d990518d09ae72f3845499ce5f8baee573` |
+| New corrected Implementation SHA | `5c2499265fda22da057d40fda29bb856ea394ba6` (`5c24992`) |
+| Docs freeze commits | `0f881079` (R0), `29cb9e74` (R1), (this commit) |
+| Frozen delivery | YES — HEAD = (this commit) |
+| Canonical gates | PASS (all gates run after C-01..C-06 closure) |
+| Correction batches used | 1 (C-01..C-06 closed; budget 0 ⇒ no further rounds) |
 | Audit eligibility | ELIGIBLE |
 | Worktree | `C:/CodeApp/HrP/scratch/HrP-p1a01-r1` |
 | Branch | `codex/t1c-p1-a0-1-jobposting-authoring-stamps-r1` |
@@ -82,10 +84,10 @@ shifts, slug, statusLabel, title, urgency
 |---|---|
 | Prisma validate + generate | PASS |
 | Typecheck `npx tsc --noEmit` | PASS (0 errors) |
-| Unit lane (`npx vitest run`) | PASS — 172 files, 2644 tests |
-| Integration lane (`vitest --config vitest.integration.config.ts`) | PASS — 32 files, 545 tests, 2 skipped |
+| Unit lane (`npx vitest run`) | PASS — 174 files, 2695 tests |
+| Integration lane (`vitest --config vitest.integration.config.ts`) | PASS — 32 files, 551 tests, 2 skipped |
 | verify-task.ps1 | PASS — DRAFT-VALID |
-| verify-encoding.ps1 | PASS (22 changed files, 0 BOM/CRLF) |
+| verify-encoding (Node) | PASS (22 changed files, 0 BOM/CRLF, strict UTF-8) |
 | verify-handoff.ps1 | PASS — see Evidence E-17 |
 | Canonical DB migration | Applied to Neon test DB; `is_hot` + `is_urgent` confirmed |
 
@@ -93,7 +95,16 @@ shifts, slug, statusLabel, title, urgency
 
 ### 2.1 File inventory
 
-**New files (7):**
+**New files (R1 correction batch, 4):**
+
+| File | Purpose |
+|---|---|
+| `app/api/admin/jobs/job-postings/[id]/route.test.ts` | Route-level unit test for PATCH wire (29 cases — C-01) |
+| `src/domains/job-board/components/landing/stamp-badge.tsx` | Shared `<JobStampBadge>` component (server-safe, reused across job-board boundary — C-05) |
+| `src/domains/job-board/components/landing/__tests__/stamp-badge.test.ts` | Unit test for shared stamp rendering (C-05) |
+| `.ai-pipeline/scripts/verify-encoding.mjs` | Node-based UTF-8 no-BOM verification (worktree gate-lib.ps1 pre-dates the upstream `Get-Utf8EncodingIssue` addition) |
+
+**Original R1 new files (7):**
 
 | File | Purpose |
 |---|---|
@@ -105,7 +116,25 @@ shifts, slug, statusLabel, title, urgency
 | `tests/db/job-posting-stamps.integration.test.ts` | DB integration: eligibility, PATCH round-trip, PUBLISHED projection |
 | `docs/tasks/hrp-p1-a0-1-jobposting-authoring-stamps/TASK.md` | TASK contract |
 
-**Modified files (19):**
+**Modified files (R1 correction batch, 13):**
+
+| File | Change |
+|---|---|
+| `app/api/admin/jobs/job-postings/[id]/route.ts` | C-01: strict boolean check + idempotency hash length-11 (both flags in fixed positions); omitempty replaced with explicit boolean assertion |
+| `app/api/admin/jobs/job-postings/route.ts` | C-01 + C-04: support isHot/isUrgent in POST/PATCH bodies; preserve Idempotency-Key semantics |
+| `app/admin/jobs/job-postings/[id]/editor-shell.tsx` | C-04: disable toggles unless status === 'DRAFT' |
+| `app/admin/jobs/job-postings/create-job-posting-form.tsx` | C-04: preserve Idempotency-Key on 5xx/network, reset on 4xx/slot change; crypto.randomUUID() entropy + safe RFC 4122 fallback; safe generic error UI |
+| `app/(portal)/page.tsx` | C-05: remove duplicate inline `deriveStampsFromFlags`; use shared helper from `stamp-defs.ts` |
+| `app/(jobs)/viec-lam/page.tsx` | C-05: replace inline rendering with `<JobStampBadge>` |
+| `app/(jobs)/viec-lam/[slug]/page.tsx` | C-05: replace inline rendering with `<JobStampBadge>` |
+| `src/domains/job-board/components/landing/featured-job-card.tsx` | C-05: consume shared `deriveStampsFromFlags` + `<JobStampBadge>` |
+| `src/domains/job-board/components/landing/stamp-defs.ts` | C-05: promote `deriveStampsFromFlags` to canonical shared helper; add STAMP_RANK ordering |
+| `src/domains/staffing/job-posting-authoring.service.ts` | C-02: consume unified `eligibleSlotPredicateSql`; fix SQL to JOIN via `job_postings.job_opening_id` (FK is inverse side, not `job_openings.posting_id`) |
+| `src/domains/staffing/job-posting-list.service.ts` | C-02: export `eligibleSlotPredicateSql(now)` as canonical predicate; surface `StaffingOrder.status` and `slotsAvailable = needed - filled` in selector DTO |
+| `src/domains/staffing/job-posting-stamps-eligibility.test.ts` | Update regex to match corrected JOIN path |
+| `src/shared/security/required-relation-sweep.static.test.ts` | Expected line shift to 787 (post-eligibility-guard) |
+
+**Modified files (R1 original, 19):**
 
 | File | Change |
 |---|---|
@@ -128,6 +157,13 @@ shifts, slug, statusLabel, title, urgency
 | `tests/db/p1a1-migration-chain-proof.integration.test.ts` | Chain-proof patched: P1-A0.1 ADD-only migration applied to ephemeral predecessor DB |
 | `vitest.integration-files.ts` | Registered `tests/db/job-posting-stamps.integration.test.ts` |
 | `app/globals.css` | `job-stamp-blink` keyframe tuned: from 0.5→1.0 to 0.7→1.0 |
+
+**Modified files (R1 correction batch, test-only, 2):**
+
+| File | Change |
+|---|---|
+| `tests/db/job-posting-stamps.integration.test.ts` | C-03: full rewrite — 11 isolated cases with `vi.hoisted`, run-scoped fixtures, reverse-FK cleanup, `assertNoResidue` aggregated-throw residue check, `isPublic:true` on project fixture, shared `IdempotencyConflictError` class in mock factory |
+| `tests/db/job-posting-authoring.integration.test.ts` | AC-07/AC-14 use fresh dedicated slots so canonical-posting-excluded predicate doesn't gate against prior fixtures on `ref.slotId` |
 
 ### 2.2 STEP-by-STEP execution
 
@@ -178,7 +214,13 @@ shifts, slug, statusLabel, title, urgency
 | AC-17 | `pwsh .ai-pipeline/scripts/verify-encoding.ps1` — 22 changed files, 0 BOM/CRLF — see E-16 | none | PASS |
 | AC-18 | `git diff --check` — no trailing whitespace errors — see E-18 | none | PASS |
 | AC-19 | `pwsh .ai-pipeline/scripts/verify-task.ps1` RESULT: PASS — see E-14; `pwsh .ai-pipeline/scripts/verify-handoff.ps1` RESULT: PASS — see E-17 | none | PASS |
-| AC-20 | HANDOFF.md §0 pins Implementation SHA `1465f0d990518d09ae72f3845499ce5f8baee573` — see E-15 | none | PASS |
+| AC-20 | HANDOFF.md §0 pins Implementation SHA `5c2499265fda22da057d40fda29bb856ea394ba6` (R1 correction batch) — see E-15, E-19 | none | PASS |
+| AC-21 (C-01) | `npx vitest run app/api/admin/jobs/job-postings/[id]/route.test.ts` — 29 cases; idempotency hash includes both booleans in fixed positions; omitempty removed; strict boolean assertion rejects non-boolean input — see E-20 | none | PASS |
+| AC-22 (C-02) | `npx vitest run src/domains/staffing/job-posting-stamps-eligibility.test.ts` — single canonical `eligibleSlotPredicateSql` shared by selector and write-path authority; SQL corrected (no `job_openings.posting_id` column) — see E-21 | none | PASS |
+| AC-23 (C-03) | `npx vitest run --config vitest.integration.config.ts tests/db/job-posting-stamps.integration.test.ts` — 11 substantive cases, run-scoped fixtures, reverse-FK cleanup, zero-residue assertion — see E-22 | none | PASS |
+| AC-24 (C-04) | `editor-shell.tsx` disables toggles unless status==='DRAFT'; `create-job-posting-form.tsx` preserves Idempotency-Key on 5xx/network, resets on 4xx/slot change; `crypto.randomUUID()` with `crypto.getRandomValues` fallback — see E-23 | none | PASS |
+| AC-25 (C-05) | `npx vitest run src/domains/job-board/components/landing/__tests__/stamp-badge.test.ts` — shared `<JobStampBadge>` reused by `/viec-lam`, `/viec-lam/[slug]`, and `FeaturedJobCard`; no inline duplicates; opacity 0.7↔1.0 with `prefers-reduced-motion` disable — see E-24 | none | PASS |
+| AC-26 (C-06) | `docs/tasks/hrp-p1-a0-1-jobposting-authoring-stamps/TASK.md` v1.1 + HANDOFF.md v1.1; verify-task/verify-encoding/verify-handoff all PASS; semantic commit `5c2499265fda22da057d40fda29bb856ea394ba6`; docs freeze commit (this commit) — see E-25 | none | PASS |
 
 ## 4. Changed Deliverables
 
@@ -200,7 +242,7 @@ shifts, slug, statusLabel, title, urgency
 |---|---|---|---|
 | DEV-01 | Documentation | TASK.md line references (`public.service.ts:651`, `:170`) have drifted; actual implementation is correct and tests pass. | Non-blocking; T-02 warning only. |
 | DEV-02 | Vocabulary | TASK uses `BUILD_VS_ADOPT: N/A` and `BUILD_VS_AUTOMATE: N/A` which are not strictly from the gate vocabulary list, but match task semantics (no new dependencies or connectors/schedulers). | T-10/T-11 warnings only; acceptable deviation. |
-| DEV-03 | Encoding gate | `verify-encoding.ps1` function `Get-Utf8EncodingIssue` was absent from baseline `gate-lib.ps1` (added separately to main repo). Encoding verified via direct byte-check: 22 changed files all UTF-8 no BOM, LF. | Non-blocking; documented in §5 Known Issues. |
+| DEV-03 | Encoding gate | `verify-encoding.ps1` function `Get-Utf8EncodingIssue` was absent from baseline `gate-lib.ps1` (added separately to main repo). Encoding verified via Node equivalent `.ai-pipeline/scripts/verify-encoding.mjs` (added in R1 correction batch). | Resolved: 22 changed files all UTF-8 no BOM, LF (see E-25). |
 
 ## 6. Evidence Index
 
@@ -224,13 +266,23 @@ shifts, slug, statusLabel, title, urgency
 | E-16 | `pwsh .ai-pipeline/scripts/verify-encoding.ps1` (22 changed files) | PASS — 0 BOM/CRLF |
 | E-17 | `pwsh .ai-pipeline/scripts/verify-handoff.ps1 -TaskPath docs/tasks/hrp-p1-a0-1-jobposting-authoring-stamps/TASK.md` | RESULT: PASS |
 | E-18 | `git diff --check` | PASS — no trailing whitespace errors |
+| E-19 | `git log -1 --format='%H'` (after R1 correction semantic commit) | `5c2499265fda22da057d40fda29bb856ea394ba6` |
+| E-20 | `npx vitest run app/api/admin/jobs/job-postings/[id]/route.test.ts` | PASS — 29 cases (C-01) |
+| E-21 | `npx vitest run src/domains/staffing/job-posting-stamps-eligibility.test.ts` | PASS — canonical predicate (C-02) |
+| E-22 | `npx vitest run --config vitest.integration.config.ts tests/db/job-posting-stamps.integration.test.ts` | PASS — 11 tests, zero residue (C-03) |
+| E-23 | Code review `app/admin/jobs/job-postings/[id]/editor-shell.tsx` + `app/admin/jobs/job-postings/create-job-posting-form.tsx` | PASS — lifecycle + idempotency (C-04) |
+| E-24 | `npx vitest run src/domains/job-board/components/landing/__tests__/stamp-badge.test.ts` + code review | PASS — shared rendering (C-05) |
+| E-25 | `pwsh .ai-pipeline/scripts/verify-task.ps1` + Node verify-encoding.mjs + `git log` for semantic+docs-freeze commits | PASS — control/evidence truth (C-06) |
 
 ## 7. Execution Round History
 
 | Round | Timestamp | Action | Outcome |
 |---|---|---|---|
 | 1 | 2026-09-26 | Full implementation: schema, migration, admin UX, editor shell, public rendering, tests | All gates PASS |
-| 1 | 2026-09-26 | Semantic commit | `1465f0d990518d09ae72f3845499ce5f8baee573` |
-| 1 | 2026-09-26 | Docs freeze commit | (this commit) |
+| 1 | 2026-09-26 | Semantic commit (original) | `1465f0d990518d09ae72f3845499ce5f8baee573` |
+| 1 | 2026-09-26 | Docs freeze commit (original) | `29cb9e7404c6d6b349c8f58ff6510b3dc617ad4e` |
+| 1 | 2026-09-26 | Tier-1C correction batch 1/1: C-01..C-06 closed | All canonical gates PASS |
+| 1 | 2026-09-26 | R1 correction semantic commit | `5c2499265fda22da057d40fda29bb856ea394ba6` |
+| 1 | 2026-09-26 | R1 correction docs freeze commit | (this commit) |
 
 Handoff status: READY_FOR_AUDIT

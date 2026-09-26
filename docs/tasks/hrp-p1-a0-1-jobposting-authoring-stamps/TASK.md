@@ -12,22 +12,22 @@
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
 | Audit reason | `Public marketplace stamp rendering is a customer-facing surface backed by JobPosting; HR-only mutation authority + public projection rewrite + animated stamp component touch both admin and public rendering paths. LIGHT audit đảm bảo changed surface (schema migration, two service contracts, two admin UI screens, three public render paths) được đối chiếu sau khi implementation freeze SHA. Risk acceptance: T0 chấp nhận LIGHT audit cho thin slice này (T0 directive 2026-09-26, "Quyết định đã khóa" §2-§4 đã chốt đủ để Tier 1 tự review). Người chấp nhận rủi ro: T0.` |
-| Spec version | `v1.0` |
-| Status | `ACCEPTED` |
+| Spec version | `v1.1` |
+| Status | `READY_FOR_AUDIT` (recorded after C-01..C-06 semantic correction batch 1/1) |
 | Planner | `Tier 1C` |
 | Baseline | `152c0fdaa4d28934acfbacb540a207aee686e1ad` (latest `origin/main` full SHA, includes completed P1-A0/A1/B as of 2026-09-26) |
 | Baseline/diff range | `152c0fdaa4d28934acfbacb540a207aee686e1ad..<implementation SHA>` (T0 freeze HEAD recorded in HANDOFF §0) |
-| Contract gate | `READY_TO_CODE` |
-| Decision state | `CLOSED` (no new Owner decision; T0 §2-§4 already locks semantics) |
-| Test environment | `READY` (canonical integration lane per `package.json` `test:integration`; DB integration MUST PASS trước `READY_FOR_AUDIT` — synthetic DB theo `tests/db/*` pattern; thiếu synthetic DB → `Status = BLOCKED`, `Canonical DB gate = ENV_BLOCKED`) |
-| Correction budget | `1` |
-| In-scope roots | `prisma/schema.prisma` (additive 2 boolean columns only); đúng một forward-only migration mới; `src/domains/staffing/job-posting-authoring.service.ts` (extend `UpdateDraftContentInput`, DTO, persistence); `src/domains/staffing/job-posting-list.service.ts` (extend DTO + add eligibility-slot selector query); `src/domains/job-board/public.service.ts` (extend `publicSelect`, mapper, DTO; replace heuristic in landing page caller); `app/admin/jobs/job-postings/page.tsx` (create form with slot selector); `app/admin/jobs/job-postings/[id]/editor-shell.tsx` (stamp toggles); `app/admin/jobs/job-postings/[id]/page.tsx` (host server-loaded eligibility slots); `app/(portal)/page.tsx` (replace `deriveStamps` heuristic with canonical flags); `app/(jobs)/viec-lam/page.tsx` + `app/(jobs)/viec-lam/[slug]/page.tsx` (render stamps via shared component); `src/domains/job-board/components/landing/featured-job-card.tsx` + `src/domains/job-board/components/landing/stamp-defs.ts` (multi-stamp layout, opacity 0.7↔1.0 animation, reduced-motion); `app/globals.css` (animation keyframe — already exists, no-op if correct); `tests/db/job-posting-stamps.integration.test.ts` (new DB integration); targeted unit + static tests; `package.json` nếu cần thêm test script entry |
+| Contract gate | `ACCEPTED` (T0 directive §C-01..C-06 reconciliation closed; corrections batch 1/1 delivered) |
+| Decision state | `CLOSED` (no new Owner decision; T0 §2-§4 already locks semantics; T0 §corrections (1/1) confirmed v1 contract) |
+| Test environment | `READY` (canonical integration lane per `package.json` `test:integration`; synthetic DB per `tests/db/*` pattern; rewrite covers 11 substantive cases (C-03)) |
+| Correction budget | `0` (correction batch 1/1 = max budget; no further rounds permitted) |
+| In-scope roots (correction batch 1/1) | **C-01**: `app/api/admin/jobs/job-postings/[id]/route.ts` (`isHot`/`isUrgent` actual PATCH wire + idempotency hash); `app/api/admin/jobs/job-postings/[id]/route.test.ts` (route-level test). **C-02**: `src/domains/staffing/job-posting-list.service.ts` (`eligibleSlotPredicateSql`, `JobPostingSlotSelectorDto`, `listEligibleSlotsForNewJobPosting`); `src/domains/staffing/job-posting-authoring.service.ts` (`SlotRevalidationContext`, `assertSlotEligibleForNewJobPosting`, write-path re-read); `app/api/admin/jobs/job-postings/route.ts` (re-validate before return); `app/admin/jobs/job-postings/page.tsx` (passes `slotsAvailable` + `orderStatus`). **C-03**: `tests/db/job-posting-stamps.integration.test.ts` (rewritten, 11 cases). **C-04**: `app/admin/jobs/job-postings/[id]/editor-shell.tsx` (disable stamp toggles unless status='DRAFT'); `app/admin/jobs/job-postings/create-job-posting-form.tsx` (idempotency key retention on 5xx/network, reset on 4xx/slot change, crypto UUID entropy, safe generic error). **C-05**: `src/domains/job-board/components/landing/stamp-defs.ts` (canonical `deriveStampsFromFlags` helper); `src/domains/job-board/components/landing/stamp-badge.tsx` (new shared component); `src/domains/job-board/components/landing/__tests__/stamp-badge.test.ts` (single-source fence); reuse in `app/(jobs)/viec-lam/page.tsx` + `app/(jobs)/viec-lam/[slug]/page.tsx`; FeaturedJobCard keeps `RubberStamp` art direction but reads from shared helper. **C-06**: TASK.md v1.1 + HANDOFF.md freeze |
 | Forbidden paths | `src/domains/talent/recruiter-workbench.*`; `app/api/admin/recruiter-workbench/**`; `tests/db/recruiter-workbench.integration.test.ts`; `src/domains/media/**`; `src/domains/referrals/**` ngoài `attribution-redirect.service` + `redirect-token` (read-only); `src/domains/crm/**`; bất kỳ frozen command contract nào (`hrp-p1-a0`, `hrp-p1-a1`, `hrp-p1-b` TASK/AUDIT/HANDOFF files); production `.env*` files; production DB/migration/deploy scripts; **sidebar, navigation, menu, IA routes** (T0 §4 forbidden); any path outside the in-scope roots above |
-| Required gates | `npx prisma validate`; `npx prisma generate`; `npm run typecheck`; `npm run lint`; `npm run test:unit`; `npm run test:integration`; `git diff --check`; `pwsh .ai-pipeline/scripts/verify-encoding.ps1`; `pwsh .ai-pipeline/scripts/verify-task.ps1`; `pwsh .ai-pipeline/scripts/verify-handoff.ps1`; `pwsh .ai-pipeline/scripts/verify-pipeline.ps1`; `pwsh .ai-pipeline/scripts/verify-gates.selftest.ps1` (audit self-test only — KHÔNG audit tĩnh) |
-| Current execution round | `1` |
-| Current audit round | `1` |
-| Implementation SHA | `<filled by HANDOFF §0>` |
-| Frozen delivery | `NO` (filled at HANDOFF freeze) |
+| Required gates | `npx prisma validate`; `npx prisma generate`; `npm run typecheck`; `npm run lint`; targeted route/component/service tests; `npm run test:unit`; deterministic targeted DB integration; full canonical integration with strict synthetic DB; p1a1 migration-chain proof; `git diff --check`; `pwsh .ai-pipeline/scripts/verify-encoding.ps1`; `pwsh .ai-pipeline/scripts/verify-task.ps1`; `pwsh .ai-pipeline/scripts/verify-handoff.ps1`. Audit self-test only — KHÔNG audit tĩnh. |
+| Current execution round | `1` (correction batch 1/1) |
+| Current audit round | `0` (Tier 3 NOT YET audited; awaits T0 review per protocol — Tier 3 may only be called after T0 reviews this correction delivery) |
+| Implementation SHA | `<filled by HANDOFF §0>` (new corrected SHA after C-01..C-06 closure) |
+| Frozen delivery | `NO` until new corrected Implementation SHA is pinned at HANDOFF freeze |
 | Next gate | `T0_REVIEW` |
 
 > Lane CRITICAL mặc định LIGHT. Risk acceptance: T0 chấp nhận LIGHT audit cho thin slice này; người chấp nhận rủi ro ghi rõ trong `Audit reason`.
@@ -258,14 +258,21 @@ Chỉ liệt kê evidence cần để Tier 1 implement.
 
 ## 8. Open Questions
 
-- None. All decisions locked by T0 directive §2-§4.
+- None. All decisions locked by T0 directive §2-§4. Correction batch 1/1 (C-01..C-06) closed every finding without new Owner decisions; no further rounds permitted (correction budget = 0).
 
 ## 9. Planner Resolution
 
 - T0 directive (2026-09-26) provided complete locked decision set covering storage, create/reuse semantics, slot eligibility, idempotency, stamp editing, and public rendering.
+- Correction batch 1/1 (2026-09-26, T0 directive §corrections) closed five findings (C-01, C-02, C-04, C-05, C-06) and rewrote C-03 integration test for determinism. Plan:
+  - C-01 PATCH route wire → `app/api/admin/jobs/job-postings/[id]/route.ts` adds `isHot`/`isUrgent` to `PatchBody`, validator, idempotency hash, and route-level test in `[id]/route.test.ts`.
+  - C-02 selector/write-path drift → one canonical predicate `eligibleSlotPredicateSql(now)` consumed by both `listEligibleSlotsForNewJobPosting` (selector) and `assertSlotEligibleForNewJobPosting` (write path inside transaction).
+  - C-03 deterministic DB integration → rewrote `tests/db/job-posting-stamps.integration.test.ts` with run-scoped fixtures, reverse-FK cleanup, zero residue assertion, 11 substantive cases.
+  - C-04 UI lifecycle + idempotency → disable stamp toggles on non-DRAFT statuses; preserve `Idempotency-Key` on 5xx/network errors, reset on 4xx/slot change, `crypto.randomUUID()` entropy, safe generic error UI.
+  - C-05 shared stamp renderer → new `stamp-badge.tsx` + canonical `deriveStampsFromFlags` in `stamp-defs.ts`; reuse in `/viec-lam` + `/viec-lam/[slug]`; FeaturedJobCard keeps `RubberStamp` art-direction but uses shared helper.
+  - C-06 evidence → TASK.md updated to v1.1; HANDOFF.md will be re-frozen after semantic commit.
+- **Existing migration `20260926120000_p1a01_jobposting_stamps/migration.sql` MUST NOT be edited** (T0 §corrections batch 1/1, "Do not edit the existing migration bytes" — T0 chấp nhận additive migration đã apply).
 - No Owner decisions required beyond those already locked.
-- T1C executor used V2_FAST_FREEZE protocol; corrections budget = 1.
-- TASK section naming corrected to match `verify-task.ps1` required structure: `## 5. Execution Plan`, `## 6. Acceptance`, `## 7. Risk`, `## 8. Open Questions`, `## 9. Planner Resolution`, `## 10. Revision Log`.
+- T1C executor used V2_FAST_FREEZE protocol; corrections budget = 1 (now exhausted).
 
 ## 10. Revision Log
 
@@ -273,3 +280,17 @@ Chỉ liệt kê evidence cần để Tier 1 implement.
 |---|---|---|---|
 | R0 (draft) | 2026-09-26 | Initial TASK.md authored | Baseline for implementation |
 | R1 (implementation) | 2026-09-26 | TASK section names corrected to match `verify-task.ps1` required structure; RQ→STEP→AC traceability table added (T-05 failure fix); Execution Plan + Acceptance + Risk + Open Questions + Planner Resolution + Revision Log sections added per required section list | `verify-task.ps1` requires `## 5. Execution Plan` and `## 6. Acceptance`; T-05 requires RQ→STEP→AC traceability |
+| R1.1 (correction batch 1/1) | 2026-09-26 | TASK bumped to v1.1. Status → `READY_FOR_AUDIT`. Contract gate → `ACCEPTED`. In-scope roots expanded with C-01..C-06 deliverables. Required gates refined (route/component/service tests; deterministic targeted DB integration; p1a1 migration-chain proof). Current audit round → `0` (Tier 3 not yet invoked). Correction budget → `0` (batch 1/1 closed all findings; no further rounds). | T0 directive §corrections batch 1/1: five findings + C-03 integration rewrite closed. Frozen delivery still pending new Implementation SHA pin (HANDOFF §0). |
+
+## 11. DEV-01 — Refreshed Line References (correction batch 1/1)
+
+The original TASK.md DEV-01 entries referenced the v1 file/line landscape. After C-01..C-06 fixes, the relevant DEV points sit at:
+
+| ID | v1 (now stale) | v1.1 (current) |
+|---|---|---|
+| PATCH wire | `route.ts` v1 omitted `isHot`/`isUrgent`; idempotency hash 9 slots only | `app/api/admin/jobs/job-postings/[id]/route.ts` adds `PatchBody.isHot/isUrgent`, `assertStrictBoolean`, both fields in `requestBody` (length 11). Test: `route.test.ts` covers false→true, combinations, omitted-undefined, invalid flag rejection (NULL/string/number/object), 409 idempotency conflict, hash stability. |
+| Selector predicate | `listEligibleSlotsForNewJobPosting` typed with `orderStatus: 'OPEN'` hard-coded | `JobPostingSlotSelectorDto.orderStatus` is `'OPEN' \| 'CLOSING_SOON'` (actual DB-read). Selector runs `eligibleSlotPredicateSql(now)`. POST re-reads + revalidates via `assertSlotEligibleForNewJobPosting` inside `withDbContext`. |
+| Editor stamp toggles | Toggles enabled regardless of `status` | `editor-shell.tsx` `disabled={!canMutate \|\| isSaving \|\| status !== 'DRAFT'}` — toggles locked on PUBLISHED + ARCHIVED. |
+| Create form idempotency | Network error message showed raw `err.message` | `create-job-posting-form.tsx` uses `crypto.randomUUID()` entropy (RFC 4122 fallback); preserves Idempotency-Key on 5xx/network; resets on 4xx/slot-change; renders safe generic message + log safe diagnostics via existing safe logger. |
+| Stamp renderer duplication | Inline `<span>` with `job-stamp-attention` duplicated across listing + detail | Single `<JobStampBadge>` at `src/domains/job-board/components/landing/stamp-badge.tsx`; `deriveStampsFromFlags` in `stamp-defs.ts` shared with homepage FeaturedJobCard. Listing + detail use badge; hero card keeps `RubberStamp` style but reads shared helper. |
+| Integration test | 4 cases mostly seed-dependent; early `return` on missing fixture = fake PASS | 11 cases with run-scoped deterministic fixtures; reverse-FK cleanup; zero residue assertion; **REBUILD synthetic DB before final canonical run** (per T0 §C-03 last bullet). |
