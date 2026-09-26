@@ -37,9 +37,15 @@ import { getPrisma } from '@/src/lib/db';
 import { withDbContext } from '@/src/shared/auth/with-db-context';
 import {
   listJobPostingsForAdmin,
+  listEligibleSlotsForNewJobPosting,
   clampPositiveInt,
   type JobPostingListItemDto,
+  type JobPostingSlotSelectorDto,
 } from '@/src/domains/staffing/job-posting-list.service';
+import {
+  CreateJobPostingForm,
+  type EligibleSlotDto,
+} from './create-job-posting-form';
 import type { SystemRole } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
@@ -49,13 +55,32 @@ export const metadata = {
   title: 'JobPosting viewer — Admin',
 };
 
-// AV2 editor shell — đồng bộ với RLS HRP matrix (hrp_project_visible_for).
+/**
+ * hrp-p1-a0-1 (T0 §1, §2): mở rộng VIEWER_ROLES để HR_STAFF có thể vào `/admin/jobs/job-postings`
+ * để chọn StaffingOrderSlot đủ điều kiện và tạo/reuse JobPosting DRAFT.
+ *
+ * HR_STAFF KHÔNG có nhánh đọc JobPosting trong RLS `hrp_project_visible_for` (xem comment cũ ở
+ * `:18..22`), nên bảng danh sách hiển thị 0 hàng với role này — đó là kết quả ĐÚNG, không phải UX
+ * xấu. Trang này vẫn hữu ích cho HR_STAFF vì họ cần form tạo draft. Khi tạo xong, họ chuyển sang
+ * editor `/admin/jobs/job-postings/[id]` (POST đã authorize HR_STAFF qua `ALLOWED_MUTATION_ROLES`).
+ *
+ * `CREATE_ROLES` (subset) — chỉ những role này MỚI thấy nút "+ Tạo JobPosting mới" và form tạo.
+ * Mutation authority đã freeze ở P1-A0 (`ALLOWED_MUTATION_ROLES` trong
+ * `job-posting-authoring.service.ts`); trang này chỉ REUSE cùng tập role.
+ */
 const VIEWER_ROLES: ReadonlySet<SystemRole> = new Set([
   'ADMIN',
   'HR_MANAGER',
   'PM',
   'SALE',
   'DIRECTOR',
+  'HR_STAFF',
+]);
+
+const CREATE_ROLES: ReadonlySet<SystemRole> = new Set([
+  'ADMIN',
+  'HR_MANAGER',
+  'HR_STAFF',
 ]);
 
 const DEFAULT_TAKE = 25;
@@ -101,6 +126,39 @@ export default async function AdminJobPostingsListPage({ searchParams }: PagePro
   const result = await withDbContext(prisma, ctx, async (tx) => {
     return listJobPostingsForAdmin(tx, { take, skip, status: statusFilter });
   });
+
+  /**
+   * hrp-p1-a0-1 (DEC-02, DEC-03): load eligible-slot DTO qua service canonical
+   * `listEligibleSlotsForNewJobPosting`. Server Component truyền DTO vào client form;
+   * selector client KHÔNG phải authorization authority. Nếu service lỗi (vd ENV_BLOCKED
+   * khi thiếu synthetic DB), truyền `loadError` xuống form để hiển thị banner thay vì
+   * crash toàn trang.
+   */
+  let eligibleSlots: EligibleSlotDto[] = [];
+  let slotLoadError: { code: string; message: string } | null = null;
+  if (CREATE_ROLES.has(session.role)) {
+    try {
+      const rawSlots: JobPostingSlotSelectorDto[] = await withDbContext(prisma, ctx, async (tx) =>
+        listEligibleSlotsForNewJobPosting(tx, { limit: 100 }),
+      );
+      eligibleSlots = rawSlots.map((slot) => ({
+        slotId: slot.id,
+        staffingOrderId: slot.staffingOrderId,
+        staffingOrderCode: slot.staffingOrderCode,
+        positionTitle: slot.positionTitle,
+        positionCode: slot.positionCode,
+        location: slot.workLocation,
+        // C-02: server-computed from predicate; canonical source of truth.
+        slotsAvailable: slot.slotsAvailable,
+        // C-02: echo ACTUAL StaffingOrder.status from server-side predicate. The DTO
+        // narrows to 'OPEN' | 'CLOSING_SOON' but UI must never assume.
+        orderStatus: slot.orderStatus,
+      }));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      slotLoadError = { code: 'ELIGIBLE_SLOTS_LOAD_FAILED', message };
+    }
+  }
 
   const totalPages = Math.max(1, Math.ceil(result.total / take));
   const showingFrom = result.total === 0 ? 0 : skip + 1;
@@ -169,6 +227,20 @@ export default async function AdminJobPostingsListPage({ searchParams }: PagePro
             </Link>
           )}
         </form>
+
+        {/* hrp-p1-a0-1 (DEC-01..04): form tạo JobPosting mới — chỉ hiển thị cho
+            CREATE_ROLES (ADMIN/HR_MANAGER/HR_STAFF), dùng POST endpoint hiện hữu,
+            idempotency handled ở client form (UUID per submit attempt) + server
+            (withIdempotency). */}
+        {CREATE_ROLES.has(session.role) ? (
+          <div className="mb-6">
+            <CreateJobPostingForm
+              eligibleSlots={eligibleSlots}
+              actionUrl="/api/admin/jobs/job-postings"
+              loadError={slotLoadError}
+            />
+          </div>
+        ) : null}
 
         {/* Bảng dữ liệu */}
         <div className="overflow-hidden rounded-lg border" style={{ borderColor: 'var(--outline)' }}>

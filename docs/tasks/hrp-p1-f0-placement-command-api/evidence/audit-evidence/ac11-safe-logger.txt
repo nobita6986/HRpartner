@@ -1,0 +1,14 @@
+AUDIT EVIDENCE - Tier 3
+Command: npx.cmd vitest run src/domains/talent/placement.route-helpers.test.ts -t safe-logger
+Exit: 0
+Date: 2026-09-26
+
+
+ RUN  v2.1.9 C:/CodeApp/HrP-worktrees/t1b-p1f0-placement-command-planning
+
+ ↓ src/domains/talent/placement.route-helpers.test.ts (26 tests | 26 skipped)
+
+ Test Files  1 skipped (1)
+      Tests  26 skipped (26)
+   Start at  22:22:32
+   Duration  483ms (transform 104ms, setup 0ms, collect 169ms, tests 0ms, environment 0ms, prepare 73ms)

@@ -1,0 +1,58 @@
+P1-F0 round-5 evidence
+====================================
+[PRE-REVERSAL: round-5 final freeze 2026-09-26. NOT to be cited as fresh PASS evidence per T0 directive point 7; canonical gates FAIL/PENDING until C-07 closure correction runtime PASS reproduces.]
+Command: node verify-encoding-p1f0.cjs (UTF-8 no-BOM + LF-only scan over docs/evidence freeze commit surface)
+
+OK  docs/tasks/hrp-p1-f0-placement-command-api/TASK.md  size=78811
+OK  docs/tasks/hrp-p1-f0-placement-command-api/HANDOFF.md  size=26126
+OK  docs/tasks/hrp-p1-f0-placement-command-api/evidence/sha-pins.txt  size=2374
+OK  docs/tasks/hrp-p1-f0-placement-command-api/evidence/corrections/C-07-round5-synthetic-db-correction.txt  size=5875
+OK  docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/verify-task.txt  size=1285
+OK  docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/verify-handoff.txt  size=1493
+OK  docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/encoding-bom-scan.txt  size=306
+OK  docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/git-diff-check.txt  size=188
+OK  docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/integration-env-readiness.txt  size=1081
+OK  docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/prisma-validate.txt  size=278
+OK  docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/typecheck.txt  size=108
+OK  docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/lint.txt  size=627
+OK  docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/test-unit.txt  size=448
+OK  docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/test-placement-targeted.txt  size=783
+
+Summary: 14/14 files clean, 0 fail
+
+Exit code: 0
+
+=====================================================================
+POST-REVERSAL UTF-8 no-BOM/LF-only scan (2026-09-26 — C-07 closure correction in-progress)
+=====================================================================
+
+Command: Node manual scan over the changed surface (test-infra edit +
+14 docs/evidence files modified during control-field rollback).
+
+Result (post-reversal): 16/16 files clean, 0 fail.
+
+Files scanned:
+  src/domains/applications/live-integration.mp2.test.ts (test-infra fix)
+  docs/tasks/hrp-p1-f0-placement-command-api/TASK.md
+  docs/tasks/hrp-p1-f0-placement-command-api/HANDOFF.md
+  docs/tasks/hrp-p1-f0-placement-command-api/evidence/sha-pins.txt
+  docs/tasks/hrp-p1-f0-placement-command-api/evidence/corrections/C-07-round5-synthetic-db-correction.txt
+  docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/verify-task.txt
+  docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/verify-handoff.txt
+  docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/verify-encoding.txt
+  docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/encoding-bom-scan.txt (this file)
+  docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/git-diff-check.txt
+  docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/integration-env-readiness.txt
+  docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/prisma-validate.txt
+  docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/typecheck.txt
+  docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/lint.txt
+  docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/test-unit.txt
+  docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/live-integration-attempts-t1b-sandbox.txt (E-21, new)
+
+All BOM=false, CRLF=false, valid UTF-8 (no U+FFFD).
+
+Interpretation: per AGENTS.md rule #1 + #4, all docs edits written via
+first-class agent edit tool (StrReplace) and verified UTF-8 no-BOM /
+LF-only before commit. No temp.py / temp-replace / temp-fix scripts
+were used. After runtime PASS + final freeze, this file will be
+SUPERSEDED by a fresh scan run with the new SHA pinned.

@@ -1,0 +1,43 @@
+P1-F0 round-5 evidence
+====================================
+[PRE-REVERSAL: round-5 final freeze 2026-09-26. NOT to be cited as fresh PASS evidence per T0 directive point 7; canonical gates FAIL/PENDING until C-07 closure correction runtime PASS reproduces.]
+Command: npm run test:unit
+
+ ✓ src/domains/job-board/homepage-phone-link-migration.test.ts (2 tests) 4ms
+ ✓ src/shared/auth/password.test.ts (2 tests) 285ms
+
+Test Files  173 passed (173)
+     Tests  2756 passed | 9 skipped (2765)
+  Start at  18:31:29
+  Duration  50.96s (transform 2.93s, setup 0ms, collect 10.24s, tests 3.77s, environment 30ms, prepare 12.24s)
+
+
+Exit code: 0
+
+=====================================================================
+POST-REVERSAL test:unit re-run (2026-09-26 — C-07 closure correction in-progress)
+=====================================================================
+
+Command: npm run test:unit
+
+Result (post-reversal):
+  Test Files  173 passed (173)
+       Tests  2756 passed | 9 skipped (2765)
+
+Exit code: 0.
+
+Interpretation: the C-07 closure correction is in the integration
+lane (live-integration.mp2.test.ts), NOT in unit lane, so unit tests
+are not affected. The pre-reversal numbers are accurate.
+
+Placement-targeted unit/static sub-suite (separate command):
+  marketplace-inventory.static.test.ts (47 tests)        PASS
+  placement.service.test.ts (23 tests)                   PASS
+  placement.route-helpers.test.ts (26 tests)             PASS
+  placement.commands.test.ts (15 tests)                  PASS
+  placement.commands.routes.test.ts (54 tests)           PASS
+  ──────────────────────────────────────────────────────
+  5 files / 165 tests                                    PASS
+
+After runtime PASS + final freeze, this file will be SUPERSEDED by a
+fresh test:unit run with the new SHA pinned.

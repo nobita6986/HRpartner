@@ -57,6 +57,10 @@ export interface PublicJobDto {
    * không phải "gấp", và một đơn 3 chỗ mở từ tháng trước cũng không phải "gấp".
    */
   urgency: 'NONE' | 'CLOSING' | 'URGENT';
+  /** hrp-p1-a0-1 (DEC-05): stamp flag "Hot" — canonical boolean từ `JobPosting.isHot`. */
+  isHot: boolean;
+  /** hrp-p1-a0-1 (DEC-05): stamp flag "Tuyển gấp" — canonical boolean từ `JobPosting.isUrgent`. */
+  isUrgent: boolean;
   /** go-live-09 / RQ-02 — ISO của `createdAt` ĐƠN còn hiệu lực mới nhất; trục sắp của `overview.newest`. */
   postedAt: string | null;
   /**
@@ -274,7 +278,23 @@ type PublicOrderRow = { status: string; title: string; description: string | nul
  * `toDetailDto`,...) tiếp tục xài `PublicOrderRow`.
  */
 type PublicOrderRowRaw = Omit<PublicOrderRow, 'canonicalSlot'>;
-type PublicProjectRow = { id: string; code: string; name: string; siteAddress: string | null; clientCompanyName: string | null; staffingOrders: PublicOrderRow[]; /** hrp-p1-a1 (correction batch 1/1, C-06): dùng cho lọc legacy `PRJ-xxx` ở listing, KHÔNG phát ra DTO. */ projectCode: string };
+type PublicProjectRow = {
+  id: string;
+  code: string;
+  name: string;
+  siteAddress: string | null;
+  clientCompanyName: string | null;
+  staffingOrders: PublicOrderRow[];
+  /** hrp-p1-a1 (correction batch 1/1, C-06): dùng cho lọc legacy `PRJ-xxx` ở listing, KHÔNG phát ra DTO. */
+  projectCode: string;
+  /**
+   * hrp-p1-a0-1 (DEC-05): canonical stamp flags từ JobPosting row — KHÔNG phát ra DTO cho đến khi
+   * mapper `toDto` / `toDetailDto` copy vào output. Field dùng internal-only, mapper là gate duy
+   * nhất giữa Prisma row và public DTO.
+   */
+  isHot: boolean;
+  isUrgent: boolean;
+};
 
 /**
  * hrp-p1-a1 — RAW SELECT payload từ Prisma cho JobPosting chain.
@@ -297,6 +317,9 @@ type PublicJobPostingSelectPayload = {
   benefitsJson: unknown | null;
   applicationInstructionsJson: unknown | null;
   contentSchemaVersion: number;
+  // hrp-p1-a0-1: canonical stamp flags từ JobPosting row (DEC-05 / DEC-06).
+  isHot: boolean;
+  isUrgent: boolean;
   jobOpening: {
     staffingOrder: PublicOrderRowRaw & {
       project: { code: string; siteAddress: string | null; clientCompanyName: string | null };
@@ -536,6 +559,9 @@ function toDto(project: PublicProjectRow, now: Date): PublicJobDto | null {
     positionTitles: summary.positionTitles,
     locations: summary.locations,
     shifts: summary.shifts,
+    // hrp-p1-a0-1 (DEC-05): stamp flags từ JobPosting canonical row.
+    isHot: project.isHot,
+    isUrgent: project.isUrgent,
   };
 }
 
@@ -625,6 +651,10 @@ function toDetailDto(
     applicationSteps: rich.applicationInstructionsJson,
     contentSchemaVersion: rich.contentSchemaVersion,
     salaryDisplay: rich.salaryDisplay,
+    // hrp-p1-a0-1 (DEC-05): stamp flags từ JobPosting canonical row (override sau spread `...jobHeadline`
+    // để đảm bảo cùng nguồn `project.isHot` / `project.isUrgent` cho cả card và detail).
+    isHot: project.isHot,
+    isUrgent: project.isUrgent,
   };
 }
 
@@ -661,6 +691,12 @@ const publicSelect = Prisma.validator<Prisma.JobPostingSelect>()({
   benefitsJson: true,
   applicationInstructionsJson: true,
   contentSchemaVersion: true,
+  // hrp-p1-a0-1 (DEC-05 / DEC-06 / T0 §2): canonical stamp flags. Public projection
+  // chỉ đọc boolean — KHÔNG suy từ Project legacy, urgency, salary, postedAt hay hash.
+  // Static test fence ở `public-select.static.test.ts` allowlist top-level keys;
+  // thêm field ở đây phải cập nhật allowlist MỘT CÁCH CÓ Ý THỨC.
+  isHot: true,
+  isUrgent: true,
   jobOpening: {
     select: {
       staffingOrder: {
@@ -703,10 +739,10 @@ const publicSelect = Prisma.validator<Prisma.JobPostingSelect>()({
 });
 
 /**
- * hrp-p1-a1 — Map một dòng JobPosting (Prisma payload) sang hình `PublicProjectRow` mà mapper phía
+ * hrp-p1-a0-1 — Map một dòng JobPosting (Prisma payload) sang hình `PublicProjectRow` mà mapper phía
  * dưới đang dùng. Duy trì tính đối xứng: hai đường đọc (`listPublicJobProjection` /
- * `getPublicJobDetail`) cùng phải chạy qua map này, nếu không số chỗ trống / facet / urgency của
- * card và trang chi tiết sẽ lệch nhau trong im lặng — đúng defect go-live-09 / RQ-24.
+ * `getPublicJobDetail`) cùng phải chạy qua map này, nếu không số chỗ trống / facet / urgency / stamp
+ * của card và trang chi tiết sẽ lệch nhau trong im lặng — đúng defect go-live-09 / RQ-24.
  *
  * C-02 (correction batch 1/1): `canonicalSlot` được derive TỪ `jobOpening.staffingOrderSlot`
  * (một Prisma relation 0..1 tới `StaffingOrderSlot` qua FK `job_openings.staffing_order_slot_id`).
@@ -732,6 +768,11 @@ function projectRowFromPosting(posting: PublicJobPostingSelectPayload): PublicPr
     // hrp-p1-a1 (C-06): mapping internal Project.code cho lọc legacy ở listing. KHÔNG bao giờ
     // chạm DTO.
     projectCode: project.code,
+    // hrp-p1-a0-1 (DEC-05): canonical stamp flags từ JobPosting row. Mapper `toDto` /
+    // `toDetailDto` đọc thẳng từ đây để gắn vào DTO — KHÔNG heuristic suy từ urgency / salary /
+    // postedAt / hash. Default false cho row pre-P1-A0.1 (migration backfilled via DEFAULT).
+    isHot: posting.isHot,
+    isUrgent: posting.isUrgent,
   };
 }
 

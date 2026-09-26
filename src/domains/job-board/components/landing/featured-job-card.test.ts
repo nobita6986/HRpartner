@@ -190,10 +190,16 @@ describe('Y10.6/UI04j r2: Rubber stamp redesign — không viền đen, ink text
     expect(cardClassLine![0]).not.toContain('overflow-hidden');
   });
 
-  it('chỉ hiển thị 1 stamp duy nhất', () => {
-    // Y10.6/UI04j r2: vẫn chỉ render stamps[0]
-    const stampRenderIdx = CARD.indexOf('stamps[0]');
-    expect(stampRenderIdx).toBeGreaterThanOrEqual(0);
+  it('render nhiều stamp — mỗi stamp có wrapper riêng có data-testid="job-stamp"', () => {
+    // hrp-p1-a0-1 (DEC-06, T0 §1.4): multi-stamp layout — wrapper TỪNG stamp có class
+    // `.job-stamp-attention` riêng để chỉ stamp animate (KHÔNG animate toàn card).
+    // `stamps.map(...)` render tất cả stamp đã sort theo STAMP_RANK.
+    expect(CARD).toMatch(/stamps\.map\(/);
+    expect(CARD).toContain('data-testid="job-stamp"');
+    // Mỗi stamp có wrapper riêng có `data-stamp-key` và `data-stamp-index` để test có thể verify
+    // multi-stamp ordering. Index dùng để lệch vị trí các stamp.
+    expect(CARD).toContain('data-stamp-key={stampKey}');
+    expect(CARD).toContain('data-stamp-index={idx}');
   });
 
   it('stamp có pointer-events-none trên wrapper', () => {

@@ -459,12 +459,15 @@ describe.skipIf(!enabled)(
       // bản thứ hai ở `public-card-truth.test.ts`. Sót một bản là hàng rào hở.
       // go-live-09 / RQ-02, RQ-22: 14 lên 18 — thêm ĐÚNG bốn tên của `RQ-02`, `toEqual` giữ nguyên nên
       // phép so vẫn là so tập khóa CHÍNH XÁC trên DB THẬT.
+      // hrp-p1-a0-1: thêm `isHot` + `isUrgent` (canonical boolean cho "Hot" + "Tuyển gấp" stamps).
       expect(Object.keys(job).sort()).toEqual(
         [
           "availableSlots",
           "companyName",
           "deadline",
           "id",
+          "isHot",
+          "isUrgent",
           "jobType",
           "location",
           "locations",

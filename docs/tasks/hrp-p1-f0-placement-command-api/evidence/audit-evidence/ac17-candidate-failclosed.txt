@@ -1,0 +1,14 @@
+AUDIT EVIDENCE - Tier 3
+Command: npx.cmd vitest run src/domains/talent/placement.commands.test.ts
+Exit: 0
+Date: 2026-09-26
+
+
+ RUN  v2.1.9 C:/CodeApp/HrP-worktrees/t1b-p1f0-placement-command-planning
+
+ ✓ src/domains/talent/placement.commands.test.ts (15 tests) 9ms
+
+ Test Files  1 passed (1)
+      Tests  15 passed (15)
+   Start at  22:22:34
+   Duration  338ms (transform 51ms, setup 0ms, collect 58ms, tests 9ms, environment 0ms, prepare 63ms)

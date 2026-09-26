@@ -1,0 +1,42 @@
+C-01 — CandidateSubmission fail-closed
+========================================
+
+Round: 2 (v1.2)
+
+Change:
+-------
+File: `src/domains/talent/placement.commands.ts`
+
+`assertSourceCandidateSubmissionIntegrity` previously wrapped
+`tx.candidateSubmission.findUnique(...)` in a try/catch that swallowed
+DB / RLS / query / connection errors and silently continued the
+adapter. Round 2 removes the catch-all: the integrity helper calls
+the underlying Prisma method directly. Missing/mismatch throws
+`PlacementValidationError` (400); any DB error propagates → transaction
+rollback → route returns generic 500. `createPlacement` is NEVER called
+when the source submission lookup fails.
+
+Evidence:
+---------
+1. Static reading — `src/domains/talent/placement.commands.ts:assertSourceCandidateSubmissionIntegrity`:
+   - direct `tx.candidateSubmission.findUnique({ where: { id }, select: { placementCaseId: true } })`
+   - no try/catch wrapper
+   - mismatched `placementCaseId` throws `PlacementValidationError`
+2. Unit test — `src/domains/talent/placement.commands.test.ts` (it-block "findUnique reject"):
+   - mock `tx.candidateSubmission.findUnique` to reject
+   - assert `createPlacement` spy NOT called
+   - assert error propagates out of `placementCreate`
+   - assert no new `placement` row
+3. AST guard — `src/domains/talent/placement.commands.routes.test.ts`:
+   - `placement.commands.ts` does NOT wrap `tx.candidateSubmission.findUnique` in try/catch
+
+Gates:
+------
+- `npm run typecheck`  : PASS (no TS error in `placement.commands.ts`)
+- `npx vitest run src/domains/talent/placement.commands.test.ts` : 15 tests PASS
+
+References:
+-----------
+- TASK §6 AC-17 (v1.2)
+- TASK §6 RQ-11/C-01 round-2 narrative
+- HANDOFF §2.2 AC-17 row
