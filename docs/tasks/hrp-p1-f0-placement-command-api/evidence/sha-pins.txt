@@ -1,5 +1,5 @@
-SHA pins — P1-F0 round-2 v1.2 correction batch
-=================================================
+SHA pins — P1-F0 round-2 v1.2 correction batch + F-04A/B/C
+=============================================================
 
 Archive branch (PRESERVED):
 ---------------------------
@@ -10,21 +10,35 @@ Pipeline tooling:     c0f4dc6925f8cb8f6679c275ad183c37fd66878b (NOT cherry-picke
 Baseline:             a88d87270f51fb63bba8f4f1144304dad4983007
 Predecessor SHA:      1b1d8ac747a424c5d47d6cc777f44bba254fcd51
 
-Clean correction branch (NEW — off exact 9274ccd):
---------------------------------------------------
+Clean correction branch (off exact 9274ccd):
+--------------------------------------------
 Branch:               codex/t1b-p1f0-placement-command-clean-correction
 Off:                  9274ccd93f7541d3dfadecf929e48d4c38252690
 NO cherry-pick of:    c0f4dc6925f8cb8f6679c275ad183c37fd66878b
 
-Semantic Implementation SHA:        70047d047dd6089270999f70f02615f9569a0ba9 (round 2, applied)
-Pre-audit checkpoint (round 2):      032efb1d6168ee5a5f1600e0c5ba2f7f7848a119 (NOT a final Freeze HEAD)
-Semantic test/integrity follow-up:   c8d7bfa61595b3c1f01eb5ab6d50125729603b45 (F-02 substantive proof)
-Docs/evidence follow-up checkpoint:  ba0c4c0... (F-01 encoding regen + F-03 pre-audit checkpoint language)
-Final Freeze HEAD:                   NOT PINNED — round remains BLOCKED until canonical integration PASSes
+Implementation SHA chain (latest first, used for HANDOFF pin):
+  7c9cf7c85f59bed938ad8671f1402441a066b6eb — F-04A/B (test/integrity semantic, current)
+  c8d7bfa61595b3c1f01eb5ab6d50125729603b45 — F-02 substantive proof
+  70047d047dd6089270999f70f02615f9569a0ba9 — round 2 C-01..C-05 (semantic)
+  9274ccd93f7541d3dfadecf929e48d4c38252690 — original implementation
+
+Docs-only commits (NOT source/test/tooling/config):
+  9fcf69f0f8d1822cdf9a3301f21f7fce315103df — F-04C docs checkpoint (current)
+  336486cb60ff4a3c0e5e51e3b7e43356a428c80a — F-01/F-03 round-2 follow-up
+  032efb1d6168ee5a5f1600e0c5ba2f7f7848a119 — round-2 docs freeze v1.2 (PRE-AUDIT CHECKPOINT)
+
+HANDOFF Implementation SHA:  7c9cf7c85f59bed938ad8671f1402441a066b6eb (F-04A/B)
+HANDOFF Pre-audit checkpoint: 032efb1d6168ee5a5f1600e0c5ba2f7f7848a119 (NOT a final Freeze HEAD)
+HANDOFF Final Freeze HEAD:    NOT PINNED — round remains BLOCKED until canonical integration PASSes
+
+Next gate: T0_CI_SYNTHETIC_DB_GATE
 
 Note (F-03): the docs/evidence checkpoint SHAs above may shift across
 amend cycles because sha-pins.txt itself contributes to the commit
 content. After this final write, the SHA is pinned as documented in
 the T0 final report.
 
-Round: 2 (v1.2) + F-01/F-02/F-03 follow-up
+Correction-batch count: 1 (F-04A/B/C is part of the same consolidated
+pre-audit correction batch — T0 directive: "không tăng correction-batch count").
+
+Round: 2 (v1.2) + F-01/F-02/F-03 + F-04A/B/C follow-up

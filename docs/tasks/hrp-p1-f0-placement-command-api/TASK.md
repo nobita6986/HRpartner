@@ -32,11 +32,11 @@
 | Required gates | `npx prisma validate`; `npm run typecheck`; `npm run lint`; `npm run test:unit` (cover `placement.commands.test.ts` + `placement.commands.routes.test.ts`); `npm run test:integration` (cover `tests/db/p1f0-placement-command-api.integration.test.ts` — local thiếu `DATABASE_URL_TEST` phải `ENV_BLOCKED`, không fake PASS); `pwsh .ai-pipeline/scripts/verify-encoding.ps1` (UTF-8 no-BOM trên changed surface); `pwsh .ai-pipeline/scripts/verify-task.ps1`; `git diff --check` (LF-only) |
 | Current execution round | `0` (planning only — implementation round mở sau khi contract accepted) |
 | Current audit round | `0` |
-| Next gate | `TIER1_IMPLEMENTATION` (implementation round mở sau khi contract accepted; correction budget đã consumed ở v1.0→v1.1) |
+| Next gate | `T0_CI_SYNTHETIC_DB_GATE` (T0 provisions `DATABASE_URL_TEST` + `DATABASE_URL_ADMIN_TEST`, then runs canonical integration suite — round-2 F-04A/B/C closed in pre-audit correction batch) |
 
 > Lane CRITICAL mặc định LIGHT. Risk acceptance: T0 chấp nhận LIGHT audit cho thin adapter wrapping production-ready placement.service; F0 KHÔNG đụng catalog/seed (C-02); F0 wrap `withDbContext` cho create/write (KHÔNG `withAuthorizedDb`) theo DEC-03.
 
-> F0 = thin contract + planning đã ACCEPTED ở v1.1. Round này CHƯA implementation; correction budget đã consumed; next gate `TIER1_IMPLEMENTATION`.
+> F0 = thin contract + planning đã ACCEPTED ở v1.1. Implementation đã hoàn tất (round 2); pre-audit correction batch C-01..C-06 + F-01/F-02/F-03 + F-04A/B/C closed; canonical integration vẫn `ENV_BLOCKED/PENDING`. Next gate `T0_CI_SYNTHETIC_DB_GATE` — T0 provisions `DATABASE_URL_TEST` + `DATABASE_URL_ADMIN_TEST` rồi chạy canonical integration suite.
 
 > T0 chấp nhận CRITICAL/LIGHT và lock baseline `a88d8727`. F0 đảm bảo KHÔNG chạm P1-B/E0/E1/runtime khi implementation bắt đầu.
 

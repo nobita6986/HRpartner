@@ -1,0 +1,97 @@
+Final gates — P1-F0 round-2 F-04A/B/C closure
+================================================
+
+Round: 2 (v1.2) + F-04A/B/C follow-up (correction-batch count remains 1)
+Branch: codex/t1b-p1f0-placement-command-clean-correction
+Branch base: 9274ccd93f7541d3dfadecf929e48d4c38252690 (NO cherry-pick of c0f4dc6)
+
+Commit chain (in order, newest first):
+- TBD — docs(p1-f0): F-04C control-truthfulness + final-gates summary
+- 7c9cf7c — test(p1-f0): F-04A/B closure (AUTH_MARKER call-expression enforcement + injectable helper)
+- 336486c — docs(p1-f0): round-2 follow-up checkpoint (F-01 + F-03)
+- c8d7bfa — test(p1-f0): F-02 substantive proof (single canonical classifier + 10 negative-fixture assertions)
+- 032efb1 — docs(p1-f0): round-2 docs freeze v1.2 (PRE-AUDIT CHECKPOINT, NOT final Freeze HEAD)
+- 70047d0 — feat(p1-f0): round-2 C-01..C-05 (semantic Implementation)
+- 9274ccd — feat(p1-f0): placement command API (original implementation)
+
+Implementation SHA (latest semantic): 7c9cf7c85f59bed938ad8671f1402441a066b6eb
+
+GATE 1 — Targeted C-04/static tests
+-----------------------------------
+5 files, 149 tests PASS (was 132 round 2; +17 across F-02 + F-04A/B
+substantive assertions)
+
+GATE 2 — Complete targeted placement suite (= Gate 1, 149 tests)
+-----------------------------------
+
+GATE 3 — npm run test:unit
+--------------------------
+173 test files PASS, 2756 tests PASSED | 9 SKIPPED (2765 total)
+(was 2749 round 2; +7 new F-04A/B substantive assertions)
+
+GATE 4 — npm run typecheck (via tsc --noEmit)
+---------------------------------------------
+Exit code: 0
+No diagnostics.
+
+GATE 5 — npm run lint
+---------------------
+Exit code: 0
+Only pre-existing warnings (not introduced by F-04).
+
+GATE 6 — git diff --check
+-------------------------
+Exit code: 0
+No LF/CRLF conflicts, no trailing-blank-line issues.
+
+GATE 7 — strict encoding/NUL/U+FFFD/CRLF scan
+---------------------------------------------
+Surface: 35+ files across 4-commit round (HEAD~4..HEAD, +F-04 changes)
+- NUL bytes: 0
+- BOMs: 0
+- U+FFFD: 0
+- CR bytes: 0
+
+GATE 8 — verify-task
+--------------------
+RESULT: DRAFT-VALID (2 warnings — expected for round-2 pre-canonical-integration)
+
+GATE 9 — verify-handoff
+-----------------------
+RESULT: FAIL (2 errors, 1 warning)
+- H-16 Frozen delivery must be YES: got 'NO (PENDING CANONICAL INTEGRATION)' — EXPECTED
+- H-16 Canonical gates must be PASS: got 'ENV_BLOCKED' — EXPECTED
+- H-15 TASK.md Next gate differs from HANDOFF: 'Next gate' (T0_CI_SYNTHETIC_DB_GATE) — minor, non-blocking
+NO SEMANTIC DELTA after Implementation SHA pin.
+
+Per F-04C directive: verify-handoff chỉ được fail vì Frozen delivery=NO
+và Canonical gates=ENV_BLOCKED. No other H-16 errors. ✓
+
+F-04A NEGATIVE-ASSERTION RESULTS (each test in marketplace-inventory.static.test.ts):
+- "F-04A Path A — direct route imports `getAuthContext` but never calls it → UNGUARDED": PASS
+- "F-04A Path A — direct route has bare `getAuthContext` identifier only (in comment) → UNGUARDED": PASS
+- "F-04A Path A — direct route ACTUALLY calls `getAuthContext(...)` → GUARDED via Path A": PASS
+- "F-04A Path B — delegated handler imports marker but never calls it → UNGUARDED": PASS
+  reason: 'no_delegate_handler_auth_call'
+- "F-04A Path B — delegated handler ACTUALLY calls marker → GUARDED via Path B": PASS
+  path: 'B'
+
+F-04B NEGATIVE-ASSERTION RESULTS:
+- "helper-missing-call-expressions case: helper with bare identifiers is rejected": PASS
+  reason: 'helper_missing_security_markers'
+- "helper-missing-call-expressions case: helper missing BOTH markers is rejected": PASS
+  reason: 'helper_missing_security_markers'
+- "helper-missing-call-expressions case: helperExists=false simulates missing helper": PASS
+  reason: 'helper_missing_security_markers'
+
+Bare-identifier bypass closure: confirmed. AUTH_MARKER detection now
+requires call expressions (`\bMARKER\s*\(`) for Path A, Path B, AND Path C.
+No route or delegated handler can satisfy the detector by merely
+importing or naming the auth markers without calling them.
+
+SUMMARY
+-------
+Non-DB gates PASS. Canonical integration ENV_BLOCKED. No fake PASS.
+Frozen delivery remains NO. No final Freeze HEAD pinned.
+Implementation SHA pinned to latest semantic: 7c9cf7c85f59bed938ad8671f1402441a066b6eb
+Next gate: T0_CI_SYNTHETIC_DB_GATE (T0 provisions DB then runs canonical integration).
