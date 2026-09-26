@@ -16,7 +16,15 @@ Branch:               codex/t1b-p1f0-placement-command-clean-correction
 Off:                  9274ccd93f7541d3dfadecf929e48d4c38252690
 NO cherry-pick of:    c0f4dc6925f8cb8f6679c275ad183c37fd66878b
 
-Semantic Implementation SHA: 70047d047dd6089270999f70f02615f9569a0ba9 (applied)
-Docs-only freeze HEAD:        TBD (filled after C-06 docs commit applied)
+Semantic Implementation SHA:        70047d047dd6089270999f70f02615f9569a0ba9 (round 2, applied)
+Pre-audit checkpoint (round 2):      032efb1d6168ee5a5f1600e0c5ba2f7f7848a119 (NOT a final Freeze HEAD)
+Semantic test/integrity follow-up:   c8d7bfa61595b3c1f01eb5ab6d50125729603b45 (F-02 substantive proof)
+Docs/evidence follow-up checkpoint:  ba0c4c0... (F-01 encoding regen + F-03 pre-audit checkpoint language)
+Final Freeze HEAD:                   NOT PINNED — round remains BLOCKED until canonical integration PASSes
 
-Round: 2 (v1.2)
+Note (F-03): the docs/evidence checkpoint SHAs above may shift across
+amend cycles because sha-pins.txt itself contributes to the commit
+content. After this final write, the SHA is pinned as documented in
+the T0 final report.
+
+Round: 2 (v1.2) + F-01/F-02/F-03 follow-up

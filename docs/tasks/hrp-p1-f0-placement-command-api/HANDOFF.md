@@ -3,6 +3,11 @@
 > **Round 2 (v1.2).** Status `BLOCKED`. Audit eligibility `NOT_ELIGIBLE`.
 > Tier 3 MUST NOT audit. T0 provision synthetic DB trước khi
 > canonical integration chạy.
+>
+> `032efb1` is a **pre-audit checkpoint**, NOT a final clean freeze.
+> `Frozen delivery` remains `NO` while canonical integration is
+> `ENV_BLOCKED`. No final Freeze HEAD is pinned until canonical
+> integration PASSes and T0 re-evaluates.
 
 ## 0. Control
 
@@ -24,7 +29,8 @@
 | Canonical gates | `ENV_BLOCKED` (canonical integration blocked; non-DB gates PASS — see §2) |
 | Correction batches used | `1` |
 | Implementation SHA | `70047d047dd6089270999f70f02615f9569a0ba9` |
-| Freeze HEAD | `pending` — pinned sau khi docs-only freeze commit |
+| Pre-audit checkpoint (docs-only) | `032efb1d6168ee5a5f1600e0c5ba2f7f7848a119` (NOT a final Freeze HEAD) |
+| Final Freeze HEAD | not pinned until canonical integration PASSes |
 | Clean branch | `codex/t1b-p1f0-placement-command-clean-correction` off `9274ccd93f7541d3dfadecf929e48d4c38252690` (KHÔNG cherry-pick `c0f4dc6`) |
 | Archive branch (preserved) | `codex/t1b-p1f0-placement-command-planning` |
 | Execution round | `2` (round 1 = v1.0→v1.1 contract correction; round 2 = v1.2 pre-audit correction batch C-01..C-06) |
@@ -115,7 +121,7 @@ report — round is pre-freeze.
 | `AC-09` | Body shape gate: strict Zod + reject unknown fields; `clientAcknowledgedAt` ISO-8601 via `parseStrictIso8601Date`; confirm/fail/cancel body `{}`. | `src/domains/talent/placement.route-helpers.test.ts` T4/T5/T7 | `npx.cmd vitest run src/domains/talent/placement.route-helpers.test.ts` → exit 0 (26 passed) (E-05) | none |
 | `AC-10` | Race-loser: concurrent confirm + cancel → đúng một 200 + một canonical 409 (không claim subclass cụ thể); no 500; DB final state hợp lệ. | `src/domains/talent/placement.route-helpers.test.ts` T9 + integration contract note | `npx.cmd vitest run src/domains/talent/placement.route-helpers.test.ts` → exit 0 (E-05) | honest dual-subclass claim; integration concurrent fixture deferred to BLK-01 |
 | `AC-11` | Structured safe log: SafeMeta `route/method/status/actorRole/resourceType/outcome/errorCode` + minimal `detail: { command, placementId, replayed }`. No `actorId`, no body, no evidence, no `acknowledgementRef`, no `failureReason`, no token, no `Idempotency-Key`, no PII. No `console.*`. No fabricated `managementMode/fromStatus/toStatus`. | `src/domains/talent/placement.route-helpers.test.ts` T11-T14 + `src/shared/observability/logger.ts` `__captureSink`/`__resetSink` | `npx.cmd vitest run src/domains/talent/placement.route-helpers.test.ts` → exit 0 (26 passed) (E-05) | none |
-| `AC-12` | No fork service. Fail-closed delegation detector (route imports AND calls `runPlacementCommand`; helper contains `getAuthContext`+`withDbContext`). Negative fixture proves detector catches unguarded routes. | `src/domains/talent/placement.commands.routes.test.ts` + `src/domains/applications/marketplace-inventory.static.test.ts` (C-04 round-2) + `tests/security/admin-route-fail-closed.negative-fixture.ts` | `npx.cmd vitest run src/domains/applications/marketplace-inventory.static.test.ts` → exit 0 (30 passed) (E-15) | none |
+| `AC-12` | No fork service. Fail-closed delegation detector via SINGLE canonical classifier `classifyMutatingPlacementRoute` (route imports AND calls `runPlacementCommand`; helper contains `getAuthContext(` + `withDbContext(` call expressions, NOT bare identifiers). Negative fixture consumed by the SAME classifier proves detector catches unguarded routes. | `src/domains/talent/placement.commands.routes.test.ts` + `src/domains/applications/marketplace-inventory.static.test.ts` (C-04 + F-02 substantive proof, 10 new assertions) + `tests/security/admin-route-fail-closed.negative-fixture.ts` | `npx.cmd vitest run src/domains/applications/marketplace-inventory.static.test.ts` → exit 0 (40 passed) (E-15) | none |
 | `AC-13` | No MP-3C territory: `app/admin/applications/**`, `app/api/admin/applications/**`, `src/domains/applications/placement-ui.ts`, `placement-panel.tsx` 0 hit. | `src/domains/talent/placement.commands.routes.test.ts` AST guard | `npx.cmd vitest run src/domains/talent/placement.commands.routes.test.ts` → exit 0 (54 passed) (E-05) | none |
 | `AC-14` | No E0/E1/P1-A0/A1/B docs: `docs/tasks/hrp-p1-{a0,a1,b,e0,e1}-*/**`, `docs/PLANNER_HANDOVER.md` 0 hit. No `permission-catalog.ts` or `prisma/seed.mjs` edit. | `src/domains/talent/placement.commands.routes.test.ts` AST guard + git status | `npx.cmd vitest run src/domains/talent/placement.commands.routes.test.ts` → exit 0 (54 passed) (E-05) | none |
 | `AC-15` | No outbox/event producer: route KHÔNG import `@/src/shared/integrity/outbox/**`. | `src/domains/talent/placement.commands.routes.test.ts` AST guard | `npx.cmd vitest run src/domains/talent/placement.commands.routes.test.ts` → exit 0 (54 passed) (E-05) | none |
