@@ -1,19 +1,27 @@
 # HANDOFF — `hrp-p1-f0-placement-command-api`
 
-> **Round 5 (v1.3 — synthetic-DB gate correction + final freeze).**
-> Status `READY_FOR_AUDIT`. Frozen delivery `YES`. Canonical gates `PASS`.
-> Audit eligibility `ELIGIBLE`. Next gate `TIER3_LIGHT_AUDIT`.
+> **Round 5 REVERSAL (v1.3-revoked — T0 verdict CHANGES_REQUIRED /
+> NOT_READY_FOR_AUDIT).**
+> Status `BLOCKED`. Frozen delivery `NO`. Canonical gates `FAIL/PENDING`.
+> Audit eligibility `NOT_ELIGIBLE`. Next gate `T0_CI_SYNTHETIC_DB_GATE`.
 >
-> T0 ran canonical integration suite on dedicated writable staging
-> (`CI_INTEGRATION_STRICT=1`) — writer posture (non-super, non-bypassrls)
-> + admin posture (bypassrls) trên cùng staging target; production DB
-> NOT touched; 32 files, 554 passed / 6 failed / 2 skipped. 6 failures
-> đã đóng trong C-07 (round 5) — KHÔNG production code change.
+> T0 re-ran MP-2 (`npx vitest run src/domains/applications/live-integration.mp2.test.ts
+> --config vitest.integration.config.ts`) trên dedicated synthetic staging
+> writer/admin pair — 10 passed / 1 failed. Failure: AC-03 REAL concurrent
+> race; PostgreSQL `column "slot_id" does not exist` at
+> `src/domains/applications/live-integration.mp2.test.ts:604`. Root cause:
+> cleanup query `SELECT id FROM labor_profiles WHERE normalized_phone = $1
+> AND slot_id = $2` — `slot_id` thực tế ở `candidate_submissions`, không
+> ở `labor_profiles`. Cleanup FK-safe order chưa đúng (xóa LaborProfile
+> trước khi clear `candidate_submissions.labor_profile_id`).
 >
-> `Implementation SHA = eca445bc641542d40dea652d498ff5dcb5888623`
-> (newest semantic commit — C-07 round-5 correction).
-> `Final Freeze HEAD` = docs/evidence freeze commit (this commit),
-> pinned in §0 below.
+> Round-5 final freeze (`READY_FOR_AUDIT`/`ELIGIBLE`, Implementation SHA
+> `eca445bc641542d40dea652d498ff5dcb5888623`, Final Freeze HEAD
+> `45bc5ec5ad49a6555e3e3c54aa79d409b033cab9`) **đảo ngược** trên branch
+> planning này. History eca445bc/45bc5ec/d688b66 PRESERVED — KHÔNG
+> amend/reset/rebase/force-push. KHÔNG push/PR/Tier 3/merge/migrate/deploy.
+> Đợi directive tiếp theo sau khi T0 verify `live-integration.mp2.test.ts`
+> correction runtime PASS.
 
 ## 0. Control
 
@@ -22,31 +30,33 @@
 | Task slug | `hrp-p1-f0-placement-command-api` |
 | Delivery protocol | `V2_FAST_FREEZE` |
 | Work type | `CODE` |
-| Spec version | `v1.3` |
-| Status | `READY_FOR_AUDIT` |
+| Spec version | `v1.3` (round-5 final freeze REVERSED; control fields đảo ngược BLOCKED branch per T0 verdict CHANGES_REQUIRED) |
+| Status | `BLOCKED` |
 | Contract gate | `ACCEPTED` |
 | Decision state | `CLOSED` |
 | Audit mode | `LIGHT` |
 | Audit mode (phải khớp TASK) | `LIGHT` |
 | Assurance lane | `CRITICAL` |
-| Canonical integration | `PASS` (T0 ran on dedicated writable staging với writer/admin posture trên cùng target; 32 files, 554 passed / 6 failed / 2 skipped; round-5 C-07 closed the 6 failures) |
-| Audit eligibility | `ELIGIBLE` |
-| Frozen delivery | `YES` |
-| Canonical gates | `PASS` |
-| Correction batches used | `1` |
-| Implementation SHA | `eca445bc641542d40dea652d498ff5dcb5888623` |
-| Final Freeze HEAD | `45bc5ec5ad49a6555e3e3c54aa79d409b033cab9` |
-| Execution round | `5` (round 1 = v1.0→v1.1 contract correction; round 2 = v1.2 pre-audit correction batch C-01..C-06; round 5 = v1.3 synthetic-DB gate correction + final freeze C-07) |
+| Canonical integration | `FAIL/PENDING` (round-5 final freeze reversed; MP-2 runtime failed — `column "slot_id" does not exist` at `live-integration.mp2.test.ts:604`; cleanup FK-safe order chưa đúng) |
+| Audit eligibility | `NOT_ELIGIBLE` (T0 verdict CHANGES_REQUIRED / NOT_READY_FOR_AUDIT; C-07 closure correction reopens) |
+| Frozen delivery | `NO` (round-5 final freeze đảo ngược; runtime chưa PASS) |
+| Canonical gates | `FAIL/PENDING` (MP-2 ×3 + P1-F0 ×3 + full canonical CI_INTEGRATION_STRICT=1 + prisma validate + typecheck + lint + full unit + git diff --check + UTF-8 no-BOM/LF-only scan + verify-task + verify-handoff CHƯA re-attempt với bug fixed) |
+| Correction batches used | `1` (round-5 C-07 thuộc cùng consolidated pre-audit correction batch theo T0 directive, KHÔNG tăng budget; round-5 C-07 closure correction vẫn thuộc cùng batch, KHÔNG tăng budget) |
+| Implementation SHA | `eca445bc641542d40dea652d498ff5dcb5888623` (pre-reversal; sẽ pin Implementation SHA MỚI sau khi runtime PASS) |
+| Final Freeze HEAD | `45bc5ec5ad49a6555e3e3c54aa79d409b033cab9` (pre-reversal; sẽ pin Final Freeze HEAD MỚI sau khi runtime PASS) |
+| Execution round | `5` (round 1 = v1.0→v1.1 contract correction; round 2 = v1.2 pre-audit correction batch C-01..C-06; round 5 = v1.3 synthetic-DB gate correction + final freeze C-07; round 5 reversal = C-07 closure correction — bug runtime tại `live-integration.mp2.test.ts:604`) |
 | Baseline | `a88d87270f51fb63bba8f4f1144304dad4983007` |
 | Predecessor SHA | `1b1d8ac747a424c5d47d6cc777f44bba254fcd51` (preserved) |
 | Planner | `Tier 1B` |
 
 > Bảng này tái-tạo từ TASK.md §0 control fields; mỗi giá trị đã verify
-> khớp 1:1 với TASK v1.3. Status `READY_FOR_AUDIT` + Frozen delivery
-> `YES` + Canonical gates `PASS` + Audit eligibility `ELIGIBLE` =
-> consolidated pre-audit correction batch đã đóng (C-01..C-06 round 2
-> + F-01/F-02/F-03 + F-04A/B/C + C-07 round 5). Tier 3 LIGHT audit
-> authorized.
+> khớp 1:1 với TASK. Status `BLOCKED` + Frozen delivery `NO` + Canonical
+> gates `FAIL/PENDING` + Audit eligibility `NOT_ELIGIBLE` = round-5
+> final freeze đã đảo ngược bởi T0 verdict CHANGES_REQUIRED sau khi
+> re-run MP-2 phát hiện bug runtime + FK-safe cleanup order chưa đúng.
+> C-07 closure correction đang mở; chưa freeze lại đến khi MP-2 ×3 PASS
+> + P1-F0 ×3 PASS + full canonical PASS + zero residue. Tier 3 MUST
+> NOT audit.
 
 ## 1. Outcome and changed surface
 
@@ -154,6 +164,7 @@ report — round is pre-freeze.
 | C-05 (Truthful tests + dual-URL env readiness) | IMPLEMENTED + TESTED | `evidence/corrections/C-05-truthful-tests-dual-url.txt` |
 | C-06 (Clean freeze + separate pipeline tooling) | IMPLEMENTED (clean branch off `9274ccd...`; archive branch preserved; semantic Implementation commit + docs-only freeze commit; NO cherry-pick of `c0f4dc6`) | `evidence/corrections/C-06-clean-freeze-pipeline-tooling.txt` |
 | C-07 (Synthetic-DB gate correction + final freeze, round 5) | IMPLEMENTED + TESTED. SECT A: AC-10a rewrite accept `[200,409]`/`[200,200]` strict; AC-10b terminal-vs-terminal race. SECT B: MP-2 `RUN_PHONE` → `SHA-256(RUN_SEED + ':' + scope)` + synthetic phone/name; FK-safe reverse-order cleanup; no swallowed error. SECT C: T0 canonical integration on dedicated writable staging → 554 passed / 6 failed / 2 skipped; round-5 closed 6 failures. SECT D: final freeze. | `evidence/corrections/C-07-round5-synthetic-db-correction.txt` |
+| C-07-closure (round 5 reversal — T0 verdict CHANGES_REQUIRED) | OPEN — re-applying SECT B with two corrections: (a) drop `labor_profiles.slot_id` reference — collect `labor_profile_id` + `placement_case_id` from `candidate_submissions WHERE id = ANY($1::text[])`; (b) FK-safe reverse order: clear `candidate_submissions.labor_profile_id` + `.placement_case_id` → `application_status_history` → `candidate_submissions` → `placement_cases` → `labor_profiles` → job fixture hierarchy. KHÔNG production code change. KHÔNG rebase/amend/reset/force-push. | (chưa có evidence — chờ runtime PASS) |
 
 ## 3. Evidence registry
 
@@ -195,16 +206,16 @@ report — round is pre-freeze.
 
 | Dimension | Status |
 |---|---|
-| Source code | FROZEN. `Frozen delivery=YES`. Semantic Implementation SHA pinned: `eca445bc641542d40dea652d498ff5dcb5888623` (C-07 round-5 semantic Implementation commit). NO production code change in C-07 (SECT A test-contract correction + SECT B test-infra scope exception only). |
-| Tests (unit + static + integration) | 554 passed / 6 failed / 2 skipped across 32 files on dedicated writable staging with writer/admin posture (T0 canonical integration). Round-5 C-07 closed the 6 failures (P1-F0 AC-12 + MP-2). 149 targeted placement tests PASS in unit/static lane. |
-| Gates | ALL PASS. `verify-task.ps1` DRAFT-VALID with 2 expected warnings (T-09 V2 contract gate `ACCEPTED` post-READY_TO_CODE + status `BLOCKED` carry-over from v1.2 wording). `verify-handoff.ps1` PASS after final freeze. |
-| Canonical integration | `PASS` (T0 ran on dedicated writable staging with writer/admin posture on same target). |
-| HANDOFF | `READY_FOR_AUDIT`. |
-| Audit eligibility | `ELIGIBLE`. Tier 3 LIGHT audit authorized. |
+| Source code | FROZEN. `Frozen delivery=NO` (round-5 final freeze reversed). Semantic Implementation SHA pinned pre-reversal: `eca445bc641542d40dea652d498ff5dcb5888623` (C-07 round-5 semantic Implementation commit; vẫn preserved). NO production code change in C-07 reversal — chỉ test-infra correction tại `src/domains/applications/live-integration.mp2.test.ts`. |
+| Tests (unit + static + integration) | MP-2 targeted failed 1/11 ở lần chạy T0 re-run (`column "slot_id" does not exist` at `live-integration.mp2.test.ts:604`); 554 passed / 6 failed / 2 skipped pre-reversal đã đóng trong C-07 round-5; round-5 reversal mở C-07 closure correction lại. |
+| Gates | FAIL/PENDING — C-07 closure correction reopens. `verify-task.ps1` / `verify-handoff.ps1` chưa re-attempt với bug fixed. Status `BLOCKED`. |
+| Canonical integration | `FAIL/PENDING` (T0 re-run MP-2 failed; chờ runtime PASS với correction để re-evaluate). |
+| HANDOFF | `BLOCKED` (round-5 reversal). |
+| Audit eligibility | `NOT_ELIGIBLE`. Tier 3 MUST NOT audit. |
 | Push / PR / Tier 3 / merge / deploy | NONE performed. |
 | Archive branch | PRESERVED (`codex/t1b-p1f0-placement-command-planning` nguyên vẹn, KHÔNG amend/reset/rebase/force-push). |
 | Pipeline tooling (`c0f4dc6`) | Separated. KHÔNG cherry-pick vào clean delivery. Giữ trên archive branch; T0 review/land riêng. |
 
-**Stop signal.** Round 5 đóng tại đây (final freeze). T0 review semantic SHA `eca445bc641542d40dea652d498ff5dcb5888623` + Final Freeze HEAD (docs/evidence freeze commit) + sanitized evidence. T1B không tự gọi Tier 3; Tier 3 LIGHT audit authorized với frozen delivery `YES`.
+**Stop signal.** Round 5 reversal đóng tại đây (control fields BLOCKED). T0 chờ runtime PASS sau C-07 closure correction (`live-integration.mp2.test.ts` slot_id fix + FK-safe reverse-order cleanup) mới pin Implementation SHA MỚI + Final Freeze HEAD MỚI + READY_FOR_AUDIT. History eca445bc/45bc5ec/d688b66 PRESERVED. T1B không tự gọi Tier 3; Tier 3 MUST NOT audit trong khi status `BLOCKED`.
 
-Handoff status: READY_FOR_AUDIT
+Handoff status: BLOCKED

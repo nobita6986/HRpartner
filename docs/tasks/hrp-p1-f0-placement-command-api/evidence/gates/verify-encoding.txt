@@ -1,7 +1,7 @@
 verify-encoding.ps1 -- P1-F0 round-2 v1.2 correction batch
 ========================================================
 
-Status: SCRIPT NOT PRESENT ON THIS BRANCH.
+Status: SCRIPT NOT PRESENT ON THIS BRANCH. (pre-reversal; will be re-attempted after C-07 closure correction runtime PASS.)
 
 The original repo has .ai-pipeline/scripts/verify-encoding.ps1 as an
 untracked file in the parent worktree. On the clean correction branch

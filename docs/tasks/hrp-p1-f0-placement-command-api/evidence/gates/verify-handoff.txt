@@ -1,28 +1,71 @@
-P1-F0 round-5 final freeze evidence
+P1-F0 round-5 evidence
 ====================================
+[PRE-REVERSAL: round-5 final freeze 2026-09-26]
 Command: pwsh -NoProfile verify-handoff.ps1 -TaskPath docs/tasks/hrp-p1-f0-placement-command-api/TASK.md
-Final state (post-pin): Implementation SHA eca445b... pinned at HEAD; Final Freeze HEAD = 45bc5ec... in HANDOFF §0.
+Final state (pre-reversal): Implementation SHA eca445b... pinned at HEAD; Final Freeze HEAD = 45bc5ec... in HANDOFF §0.
 
 HANDOFF SUBSTANCE GATE
   subject: docs\tasks\hrp-p1-f0-placement-command-api\HANDOFF.md (against docs/tasks/hrp-p1-f0-placement-command-api/TASK.md)
 
-  [OK]   H-01 HANDOFF.md size 26113 bytes.
+  [OK]   H-01 HANDOFF.md size 26113 bytes (pre-reversal).
   [OK]   H-01 HANDOFF.md is recoverable from git (tracked=True staged=False).
   [OK]   H-02 all 6 required sections present (compact).
-  [OK]   H-03 spec version v1.3 matches TASK.
+  [OK]   H-03 spec version v1.3 matches TASK (pre-reversal).
   [OK]   H-03 assurance lane CRITICAL matches TASK.
-  [OK]   H-16 V2 delivery pins a resolvable frozen SHA with no later semantic delta.
-  [OK]   H-04 section 3 opens with verify-task.ps1 RESULT: PASS.
+  [OK]   H-16 V2 delivery pins a resolvable frozen SHA with no later semantic delta (pre-reversal).
+  [OK]   H-04 section 3 opens with verify-task.ps1 RESULT: PASS (pre-reversal).
   [OK]   H-05 all 18 AC have an evidence row.
   [OK]   H-06 every AC row carries a command/result directly or through a runnable E-xx registry entry.
-  [OK]   H-07 19 referenced evidence file(s) exist.
+  [OK]   H-07 19 referenced evidence file(s) exist (pre-reversal).
   [OK]   H-09 no plaintext secret in HANDOFF.md.
-  [OK]   H-10 status READY_FOR_AUDIT is consistent between section 0 and the closing line.
+  [OK]   H-10 status READY_FOR_AUDIT was consistent pre-reversal; SUPERSEDED by BLOCKED per T0 verdict.
   [OK]   H-12 compact handoff reports changed surface instead of repeating STEP history.
   [OK]   H-14 compact handoff uses Control as the single round record.
-  [OK]   H-15 TASK.md control fields untouched by this round.
+  [OK]   H-15 TASK.md control fields untouched by this round (note: NOW BLOCKED — re-run after C-07 closure correction runtime PASS).
 
-RESULT: PASS.
-HANDOFF.md is re-runnable; Tier 3 may open an audit round on it.
+RESULT (pre-reversal): PASS.
+Pre-reversal evidence; SUPERSEDED by C-07 closure correction.
 
-Exit code: 0
+=====================================================================
+ROUND-5 REVERSAL — T0 verdict CHANGES_REQUIRED / NOT_READY_FOR_AUDIT
+=====================================================================
+
+Status:            BLOCKED
+Frozen delivery:   NO
+Canonical gates:   FAIL/PENDING
+Audit eligibility: NOT_ELIGIBLE
+Next gate:         T0_CI_SYNTHETIC_DB_GATE
+
+T0 re-ran MP-2 (live-integration.mp2.test.ts) trên dedicated synthetic
+staging writer/admin pair — 10 passed / 1 failed (AC-03 race).
+Failure: `column "slot_id" does not exist` at
+`live-integration.mp2.test.ts:604`. T1B sandbox has no LIVE staging DB,
+so defect not exercised locally; surfaced on T0's writer/admin pair.
+
+Pre-reversal numbers (554 passed / 6 failed / 2 skipped) are NOT to be
+cited as PASS evidence per T0 directive point 7.
+
+Required before re-attempt of verify-handoff:
+  1. live-integration.mp2.test.ts C-07 closure correction applied:
+     - collect (id, labor_profile_id, placement_case_id) from
+       candidate_submissions WHERE id = ANY($1::text[])
+     - FK-safe reverse-order teardown:
+       clear candidate_submissions FK cols ->
+       application_status_history -> candidate_submissions ->
+       placement_cases -> labor_profiles -> job fixture hierarchy
+     - no query of labor_profiles.slot_id
+     - no blanket delete by phone/name prefix
+     - no swallowed cleanup error
+  2. MP-2 targeted ×3 (mỗi lần 11/11 PASS) on dedicated synthetic.
+  3. P1-F0 targeted ×3 PASS.
+  4. Full canonical CI_INTEGRATION_STRICT=1 npm run test:integration
+     yields 0 failed; only already-identified Redis skips.
+  5. Re-run prisma validate, typecheck, lint, full unit,
+     git diff --check, UTF-8 no-BOM/LF-only scan.
+  6. Re-run verify-task, verify-handoff with FRESH stdout appended.
+
+History PRESERVED (point 10):
+  eca445bc...  45bc5ec...  d688b66...  — all reachable; no amend/reset/rebase/force-push.
+
+No push, no PR, no Tier 3, no merge, no migration, no deploy.
+

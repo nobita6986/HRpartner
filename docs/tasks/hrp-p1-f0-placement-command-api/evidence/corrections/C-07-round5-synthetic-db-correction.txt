@@ -117,3 +117,104 @@ correction together close the canonical-integration gate contract:
 
 Round: 5 (synthetic-DB gate correction + final freeze)
 Semantic Implementation SHA: eca445bc641542d40dea652d498ff5dcb5888623
+
+==================================================================
+ROUND-5 REVERSAL — T0 verdict CHANGES_REQUIRED / NOT_READY_FOR_AUDIT
+==================================================================
+
+T0 re-ran after this evidence was finalized and discovered a runtime
+bug in SECT B that was not caught locally because no LIVE staging DB
+was available in the T1B sandbox. T0 re-run on dedicated synthetic
+staging:
+
+  npx vitest run src/domains/applications/live-integration.mp2.test.ts \
+    --config vitest.integration.config.ts
+
+Result:
+  Test Files: 1 failed
+  Tests:      10 passed / 1 failed
+  Failing:    AC-03 REAL concurrent race: N simultaneous same-key
+              applies create exactly ONE row
+  PostgreSQL: column "slot_id" does not exist
+  Source:     src/domains/applications/live-integration.mp2.test.ts:604
+
+ROOT CAUSE (corrected understanding):
+
+  The SECT B implementation contained two latent defects:
+
+  Defect 1 (line 604 query):
+    Code path: SELECT id FROM labor_profiles
+               WHERE normalized_phone = $1 AND slot_id = $2
+
+    `slot_id` lives on `candidate_submissions`, NOT on
+    `labor_profiles`. The query therefore fails at SQL parse with
+    `column "slot_id" does not exist`. The T1B local sandbox does
+    NOT have a LIVE synthetic DB, so this defect was not exercised
+    during in-unit verification; it only surfaced on T0's staging
+    writer/admin pair.
+
+    Correct resolution: collect labor_profile_id and
+    placement_case_id from candidate_submissions BEFORE delete:
+
+      SELECT id, labor_profile_id, placement_case_id
+      FROM candidate_submissions
+      WHERE id = ANY($1::text[])
+
+    then derive `lpIds` and `pcIds` from those rows (no need to
+    re-query labor_profiles for slot_id).
+
+  Defect 2 (FK-safe reverse order incomplete):
+    The previous teardown deletes `labor_profiles` BEFORE clearing
+    `candidate_submissions.labor_profile_id`. With RestrictOnDelete
+    semantics on the candidate_submissions.labor_profile_id FK, that
+    sequence cannot succeed. The cleanup also deletes
+    `application_status_history` BEFORE deleting
+    `candidate_submissions`, which violates the
+    application_status_history.submission_id -> candidate_submissions.id
+    FK direction.
+
+    Correct FK-safe reverse order:
+      1. Clear candidate_submissions.labor_profile_id + .placement_case_id
+         (NULL them) for any rows that point at the lpIds / pcIds.
+      2. DELETE FROM application_status_history WHERE submission_id = ANY($1).
+      3. DELETE FROM candidate_submissions WHERE id = ANY($1).
+      4. DELETE FROM placement_cases WHERE id = ANY($2).
+      5. DELETE FROM labor_profiles WHERE id = ANY($3).
+      6. (job fixture hierarchy, unchanged):
+         DELETE FROM job_postings WHERE id = $post.
+         UPDATE staffing_order_slots SET job_opening_id = NULL.
+         DELETE FROM job_openings WHERE id = $open.
+         DELETE FROM staffing_order_slots WHERE id = $slot.
+         DELETE FROM staffing_orders WHERE id = $order.
+         DELETE FROM outsourcing_projects WHERE id = $proj.
+         DELETE FROM client_companies WHERE id = $cc.
+
+DIRECTIVE POINT 8 — control fields until runtime PASS:
+  Status:            BLOCKED
+  Frozen delivery:   NO
+  Canonical gates:   FAIL/PENDING
+  Audit eligibility: NOT_ELIGIBLE
+  Next gate:         T0_CI_SYNTHETIC_DB_GATE
+
+DIRECTIVE POINT 10 — history preserved:
+  eca445bc...  45bc5ec...  d688b66...
+  All preserved. NO amend/reset/rebase/force-push.
+
+DIRECTIVE POINT 11 — strict no-go list:
+  - No push, no PR, no Tier 3, no merge, no migration, no deploy.
+  - No query of labor_profiles.slot_id.
+  - No blanket delete by phone/name prefix.
+  - No swallowed cleanup error.
+  - No production code / schema / migration change.
+  - No manual DB cleanup substituting for deterministic teardown.
+
+After C-07 closure correction (Defect 1 + Defect 2) is implemented
+AND runtime PASS is reproduced (MP-2 ×3 + P1-F0 ×3 + full canonical
+CI_INTEGRATION_STRICT=1 npm run test:integration with 0 failed, only
+already-identified Redis skips), this evidence file will be REPLACED
+with a fresh `C-07-closure.txt` capturing new stdout + zero residue.
+
+Current state of this evidence file: SUPERSEDED by C-07-closure
+correction in-progress. Pre-reversal numbers (554 passed / 6 failed /
+2 skipped) are NOT to be cited as PASS evidence per directive point 7.
+

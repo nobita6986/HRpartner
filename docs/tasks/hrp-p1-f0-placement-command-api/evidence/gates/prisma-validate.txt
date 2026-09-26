@@ -1,8 +1,9 @@
-P1-F0 round-5 freeze evidence
-================================
+P1-F0 round-5 evidence
+====================================
+[PRE-REVERSAL: round-5 final freeze 2026-09-26. NOT to be cited as fresh PASS evidence per T0 directive point 7; canonical gates FAIL/PENDING until C-07 closure correction runtime PASS reproduces.]
 Command: DATABASE_URL=…placeholder DATABASE_URL_ADMIN=…placeholder npx prisma validate
 
 Prisma schema loaded from prisma\schema.prisma
 The schema at prisma\schema.prisma is valid 🚀
 
-Round: 5 (round-5 freeze)
+Round: 5 (round-5 freeze; pre-reversal)

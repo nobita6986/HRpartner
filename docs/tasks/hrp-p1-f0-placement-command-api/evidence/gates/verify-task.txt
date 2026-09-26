@@ -1,12 +1,13 @@
-P1-F0 round-5 final freeze evidence
+P1-F0 round-5 evidence
 ====================================
+[PRE-REVERSAL: round-5 final freeze 2026-09-26]
 Command: pwsh -NoProfile verify-task.ps1 -TaskPath docs/tasks/hrp-p1-f0-placement-command-api/TASK.md
 
 TASK CONTRACT GATE
   subject: docs/tasks/hrp-p1-f0-placement-command-api/TASK.md
 
   [OK]   A-01 all 11 required sections present.
-  [OK]   A-02 control fields present (status: READY_FOR_AUDIT).
+  [OK]   A-02 control fields present (status: READY_FOR_AUDIT — pre-reversal).
   [OK]   A-02 assurance lane: CRITICAL.
   [OK]   A-02 audit mode: LIGHT.
   [OK]   A-02 audit selection has a recorded reason.
@@ -14,15 +15,47 @@ TASK CONTRACT GATE
   [OK]   T-10 Build vs adopt decision is explicit: ADOPT.
   [OK]   T-11 Build vs automate decision is explicit: N/A.
   [OK]   T-09 V2 draft fields are structurally valid.
-  [WARN] A-04 status is 'READY_FOR_AUDIT' - placeholder and dry-run checks are non-blocking.
+  [WARN] A-04 status is 'READY_FOR_AUDIT' — pre-reversal placeholder; SUPERSEDED by BLOCKED per T0 verdict.
   [OK]   A-05 19 requirement(s) traceable to STEP and AC.
   [OK]   T-01 4 referenced npm script(s) all exist.
   [OK]   T-02 11 file:line reference(s) resolve.
   [OK]   T-03 no AC proves scope with a bare 'git diff'.
   [OK]   T-05 all 18 AC row(s) name a measurable method.
   [OK]   T-06 no plaintext secret in TASK.md.
-  [OK]   T-07 control field change (Status, Current execution round, Spec version) is accompanied by a section 9/10 entry.
+  [OK]   T-07 control field change (Status, Current execution round, Spec version) is accompanied by a section 9/10 entry (pre-reversal; now BLOCKED — re-run after C-07 closure correction).
 
-RESULT: DRAFT-VALID (2 warning(s)).
+RESULT (pre-reversal): DRAFT-VALID (2 warning(s)).
+Pre-reversal evidence; SUPERSEDED by C-07 closure correction.
 
-Exit code: 0
+=====================================================================
+ROUND-5 REVERSAL — T0 verdict CHANGES_REQUIRED / NOT_READY_FOR_AUDIT
+=====================================================================
+
+Status:            BLOCKED
+Frozen delivery:   NO
+Canonical gates:   FAIL/PENDING
+Audit eligibility: NOT_ELIGIBLE
+Next gate:         T0_CI_SYNTHETIC_DB_GATE
+
+T0 re-ran MP-2 (live-integration.mp2.test.ts) trên dedicated synthetic
+staging writer/admin pair — 10 passed / 1 failed (AC-03 race).
+Failure: `column "slot_id" does not exist` at
+`live-integration.mp2.test.ts:604`.
+
+Pre-reversal numbers (554 passed / 6 failed / 2 skipped) are NOT to be
+cited as PASS evidence per T0 directive point 7.
+
+Required before re-attempt of verify-task with READY_FOR_AUDIT:
+  1. live-integration.mp2.test.ts C-07 closure correction applied
+     (slot_id fix + FK-safe reverse-order cleanup).
+  2. MP-2 ×3 PASS, P1-F0 ×3 PASS, full canonical
+     CI_INTEGRATION_STRICT=1 npm run test:integration 0 failed.
+  3. Re-run prisma validate, typecheck, lint, full unit,
+     git diff --check, UTF-8 no-BOM/LF-only scan.
+  4. Re-run verify-task + verify-handoff with FRESH stdout.
+
+History PRESERVED (point 10):
+  eca445bc...  45bc5ec...  d688b66...  — all reachable; no amend/reset/rebase/force-push.
+
+No push, no PR, no Tier 3, no merge, no migration, no deploy.
+

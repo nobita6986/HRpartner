@@ -1,5 +1,6 @@
-P1-F0 round-5 freeze evidence
-================================
+P1-F0 round-5 evidence
+====================================
+[PRE-REVERSAL: round-5 final freeze 2026-09-26. NOT to be cited as fresh PASS evidence per T0 directive point 7; canonical gates FAIL/PENDING until C-07 closure correction runtime PASS reproduces.]
 Command: npm run lint
 
 

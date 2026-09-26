@@ -40,3 +40,36 @@ pre-audit correction batch; no new audit correction batch counted per T0
 directive "khong tang correction-batch count").
 
 Round: 5 (round-5 synthetic-DB correction + final freeze)
+
+=====================================================================
+ROUND-5 REVERSAL — T0 verdict CHANGES_REQUIRED / NOT_READY_FOR_AUDIT
+=====================================================================
+
+Status:            BLOCKED
+Frozen delivery:   NO
+Canonical gates:   FAIL/PENDING
+Audit eligibility: NOT_ELIGIBLE
+Next gate:         T0_CI_SYNTHETIC_DB_GATE
+
+Implementation SHA pin (pre-reversal, preserved):
+  eca445bc641542d40dea652d498ff5dcb5888623 (round-5 semantic)
+  -> NOT to be cited as PASS evidence; superseded by C-07-closure
+     correction in-progress.
+
+Final Freeze HEAD (pre-reversal, preserved):
+  45bc5ec5ad49a6555e3e3c54aa79d409b033cab9
+  -> NOT to be cited as frozen-delivery; superseded.
+
+New Implementation SHA + New Final Freeze HEAD will be pinned AFTER
+the C-07-closure correction (live-integration.mp2.test.ts slot_id
+fix + FK-safe reverse-order cleanup) achieves runtime PASS on T0's
+dedicated synthetic staging writer/admin pair.
+
+History PRESERVED (point 10):
+  eca445bc641542d40dea652d498ff5dcb5888623
+  45bc5ec5ad49a6555e3e3c54aa79d409b033cab9
+  d688b66... (round-5 implementation chain)
+  All reachable; NO amend/reset/rebase/force-push.
+
+No push, no PR, no Tier 3, no merge, no migration, no deploy.
+
