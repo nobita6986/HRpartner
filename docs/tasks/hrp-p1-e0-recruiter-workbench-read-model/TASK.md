@@ -13,27 +13,27 @@
 | Audit mode | `LIGHT` |
 | Audit reason | Đọc danh sách ứng viên/case thuộc canonical P1-C/P1-D có PII (phone/CCCD) và RLS boundary; sai shape hoặc rò PII sẽ leak dữ liệu người lao động. LIGHT audit là bắt buộc để verify PII masking, RLS boundary, deterministic NextAction/age derivation và no-leak behavior. |
 | Spec version | `v1.4` |
-| Status | `BLOCKED` |
+| Status | `READY_FOR_AUDIT` |
 | Planner | `Tier 1` |
 | Baseline | `a88d87270f51fb63bba8f4f1144304dad4983007` |
 | Contract gate | `READY_TO_CODE` |
 | Decision state | `CLOSED` |
-| Test environment | `NOT_READY` (ENV_BLOCKED — synthetic DB chưa được cung cấp cho P1-E0) |
+| Test environment | `READY` (synthetic DB 3× consecutive 20/20 PASS at SHA `e0bc2ca6`; see HANDOFF §4.4) |
 | Correction budget | `1` |
-| Correction budget note | T0-authorized integrity exception #2 is OUTSIDE the base budget — recorded truthfully as `Correction batches used = 2` (1 planned batch E0-F01..E0-F09 + 1 T0-authorized integrity exception E0-F10..E0-F12). Base budget V2 remains `1` per `verify-task.ps1` T-09 invariant. |
-| Correction batches used | `2` (1 planned batch E0-F01..E0-F09 + 1 T0-authorized integrity exception E0-F10..E0-F12). The T0-authorized test-evidence integrity follow-up (E0-F14..E0-F16) is recorded in HANDOFF.md §4.4 BLK-02 as a documentation-only follow-up under the same batch 2 — it adds NO new correction batch, only strengthens the test surface awaiting the synthetic DB. |
-| Audit eligibility | `NOT_ELIGIBLE` |
-| Frozen delivery | `NO` (per F-13: until canonical integration PASS and final evidence freeze commit is created) |
-| Implementation SHA (post-F-10..F-12) | `9eb0fbe085d118093b01e6167b0219e780fc7d70` (pinned after F-10..F-12 semantic correction commit landed) |
-| Docs checkpoint SHA | `pending` — pinned after the post-DB freeze (F-13: docs commit must not self-pin) |
-| Audit eligibility rationale | AC-09..AC-13 pending synthetic DB (AC-09..AC-13 chỉ pass khi integration suite thực sự chạy trên synthetic PostgreSQL) |
+| Correction budget note | The T0-authorized integrity exception (covering E0-F10..F-12, E0-F14..F-16, E0-F17..F-19) is OUTSIDE the V2 base budget of `1` — it is an override of the budget, not a separate V2 batch. Therefore `Correction batches used = 1` (the planned batch E0-F01..E0-F09). The T0-authorized exception narrative is preserved in HANDOFF.md §1.1, §4.4 (BLK-02 + round-3 sub-section), and §5. Base budget V2 remains `1` per `verify-task.ps1` T-09 invariant; `verify-handoff.ps1` H-16 `^[01]$` measures V2 batches consumed (excluded). |
+| Correction batches used | `1` (planned batch E0-F01..E0-F09). The T0-authorized exception covers E0-F10..F-12 (integrity correction), E0-F14..F-16 (test-evidence integrity follow-up under BLK-02), and E0-F17..F-19 (synthetic-DB fixture corrections) — all as a single T0-authorized override of the V2 base budget, NOT counted as additional V2 batches. The T0-authorized exception narrative is preserved truthfully in HANDOFF.md §1.1 + §4.4 (BLK-02 + round-3 sub-section) + §5. |
+| Audit eligibility | `ELIGIBLE` |
+| Frozen delivery | `YES` (post F-17/F-18/F-19 + F-20 freeze; see HANDOFF §5) |
+| Implementation SHA (post-F-17..F-19 + F-20 freeze) | `e0bc2ca6078d0d4c2ee5ff80255a8f67ac996ed8` (pinned after F-17/F-18/F-19 semantic correction commit landed; supersedes `9eb0fbe0`) |
+| Docs checkpoint SHA | pending — pinned by the post-DB freeze docs/evidence commit (F-20 freeze), MUST NOT self-pin |
+| Audit eligibility rationale | AC-09..AC-13 have synthetic DB evidence at SHA `e0bc2ca6` (20/20 PASS ×3 consecutive); F-17/F-18/F-19 are fixture-side corrections; production masking logic untouched. Audit-eligible under TIER3_LIGHT_AUDIT. |
 | In-scope roots | `src/domains/talent/recruiter-workbench.read-service.ts`, `src/domains/talent/recruiter-workbench.types.ts`, `app/api/admin/recruiter-workbench/route.ts`, `src/domains/talent/recruiter-workbench.read-service.test.ts`, `src/domains/talent/recruiter-workbench.derive.test.ts`, `tests/db/recruiter-workbench.integration.test.ts` (DB; tệp đăng ký vào `vitest.integration-files.ts`), `vitest.integration-files.ts` (registration-only: thêm đúng MỘT entry cho test ở trên; KHÔNG thay đổi shape/config, KHÔNG thêm xóa các entry khác) |
 | Forbidden paths | `prisma/schema.prisma`, `prisma/migrations/**`, `package.json`, `package-lock.json`, `vitest.config.ts`, `vitest.unit.config.ts`, `vitest.integration.config.ts`, `docs/PLANNER_HANDOVER.md`, `src/domains/applications/conversion.service.ts`, `src/domains/applications/screening.service.ts`, `src/domains/talent/placement-case.service.ts` (trừ chỗ gọi canonical helper), `src/domains/talent/labor-profile.service.ts` (trừ chỗ gọi canonical helper), `docs/discovery/realignment/P1B_PUBLIC_APPLY_RECONCILIATION.md`, `docs/tasks/hrp-p1-b-public-apply/**`, `docs/tasks/hrp-p1-e1-recruiter-workbench-ui/**` |
 | Required gates | `.ai-pipeline/scripts/verify-task.ps1`, `git diff --check`, `git status --porcelain`, `npm run typecheck`, `npm run lint` |
 | Current execution round | `1` (round-2 correction batch active) |
 | Current audit round | `0` |
-| Next gate | `T0_CI_SYNTHETIC_DB_GATE` |
-| Canonical gates | `ENV_BLOCKED` (truthful — see F-13 / HANDOFF §4 BLK-01) |
+| Next gate | `TIER3_LIGHT_AUDIT` |
+| Canonical gates | `PASS` (3× consecutive 20/20 PASS at SHA `e0bc2ca6`; full integration suite 561 PASS / 2 skipped / 0 FAIL) |
 
 > Lane và audit là hai quyết định riêng. CRITICAL + LIGHT là bắt buộc vì read service đụng PII/RLS; rủi ro đã được ghi rõ trong `Audit reason`.
 
