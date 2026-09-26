@@ -77,6 +77,10 @@ import { EmployerSidebar } from '@/src/domains/job-board/components/detail/emplo
 import { RelatedJobsSection } from '@/src/domains/job-board/components/detail/related-jobs-section';
 import { renderJobPostingRichText } from '@/src/shared/content/job-posting-rich-text';
 import { CtvInfoSectionContent, EmployerSidebarContent, GallerySectionContent } from '@/src/domains/job-board/public-types';
+import {
+  deriveStampsFromFlags,
+} from '@/src/domains/job-board/components/landing/stamp-defs';
+import { JobStampBadge } from '@/src/domains/job-board/components/landing/stamp-badge';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -351,7 +355,19 @@ export default async function PublicJobDetailPage({ params }: PageProps) {
         style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-outline-variant)' }}
       >
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <h1 className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--color-on-surface)' }}>{job.title}</h1>
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--color-on-surface)' }}>{job.title}</h1>
+            {/* hrp-p1-a0-1 (DEC-05, C-05): detail page render stamps từ canonical boolean
+                `JobPosting.isHot`/`isUrgent` qua shared `<JobStampBadge>` — single source
+                với listing + homepage FeaturedJobCard. 0.7↔1.0 animation per stamp qua class
+                `.job-stamp-attention`; reduced-motion tắt animation. */}
+            <JobStampBadge
+              isHot={job.isHot}
+              isUrgent={job.isUrgent}
+              stamps={deriveStampsFromFlags(job.isHot, job.isUrgent)}
+              size="md"
+            />
+          </div>
           <span
             className="text-[11px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap"
             style={

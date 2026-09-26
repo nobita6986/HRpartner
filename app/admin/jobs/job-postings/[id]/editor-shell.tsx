@@ -95,6 +95,10 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
   // ----- Local form state ------------------------------------------------
   const [title, setTitle] = useState<string>(initial.title ?? '');
   const [salaryDisplay, setSalaryDisplay] = useState<string>(initial.salaryDisplay ?? '');
+  // hrp-p1-a0-1 (DEC-07): stamp toggles "Hot" + "Tuyển gấp" — lưu cùng draft update authority
+  // (PATCH `/api/admin/jobs/job-postings/[id]`), optimistic revision giữ nguyên pattern.
+  const [isHot, setIsHot] = useState<boolean>(initial.isHot ?? false);
+  const [isUrgent, setIsUrgent] = useState<boolean>(initial.isUrgent ?? false);
   const [descriptionJson, setDescriptionJson] = useState<JSONContent>(() =>
     asRichDoc(initial.descriptionJson),
   );
@@ -121,6 +125,8 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
   const initialSnapshotRef = useRef<{
     title: string;
     salaryDisplay: string;
+    isHot: boolean;
+    isUrgent: boolean;
     descriptionJson: JSONContent;
     requirementsJson: JSONContent;
     benefitsJson: JSONContent;
@@ -128,6 +134,8 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
   }>({
     title: initial.title ?? '',
     salaryDisplay: initial.salaryDisplay ?? '',
+    isHot: initial.isHot ?? false,
+    isUrgent: initial.isUrgent ?? false,
     descriptionJson: asRichDoc(initial.descriptionJson),
     requirementsJson: asRichDoc(initial.requirementsJson),
     benefitsJson: asRichDoc(initial.benefitsJson),
@@ -140,6 +148,8 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
     const dirty =
       title !== init.title ||
       salaryDisplay !== init.salaryDisplay ||
+      isHot !== init.isHot ||
+      isUrgent !== init.isUrgent ||
       JSON.stringify(descriptionJson) !== JSON.stringify(init.descriptionJson) ||
       JSON.stringify(requirementsJson) !== JSON.stringify(init.requirementsJson) ||
       JSON.stringify(benefitsJson) !== JSON.stringify(init.benefitsJson) ||
@@ -149,6 +159,8 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
   }, [
     title,
     salaryDisplay,
+    isHot,
+    isUrgent,
     descriptionJson,
     requirementsJson,
     benefitsJson,
@@ -169,6 +181,10 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
       expectedRevision: revision,
       title: title.trim(),
       salaryDisplay: salaryDisplay.trim() === '' ? null : salaryDisplay,
+      // hrp-p1-a0-1 (DEC-07): stamp flags gửi cùng draft update authority — server
+      // service `updateDraftContent` đã có `assertBoolean` validator, không cần UI validator.
+      isHot,
+      isUrgent,
       descriptionJson,
       requirementsJson,
       benefitsJson,
@@ -198,6 +214,8 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
       initialSnapshotRef.current = {
         title: updated.title ?? '',
         salaryDisplay: updated.salaryDisplay ?? '',
+        isHot: updated.isHot ?? false,
+        isUrgent: updated.isUrgent ?? false,
         descriptionJson: asRichDoc(updated.descriptionJson),
         requirementsJson: asRichDoc(updated.requirementsJson),
         benefitsJson: asRichDoc(updated.benefitsJson),
@@ -205,6 +223,8 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
       };
       setTitle(initialSnapshotRef.current.title);
       setSalaryDisplay(initialSnapshotRef.current.salaryDisplay);
+      setIsHot(initialSnapshotRef.current.isHot);
+      setIsUrgent(initialSnapshotRef.current.isUrgent);
       setDescriptionJson(initialSnapshotRef.current.descriptionJson);
       setRequirementsJson(initialSnapshotRef.current.requirementsJson);
       setBenefitsJson(initialSnapshotRef.current.benefitsJson);
@@ -220,6 +240,8 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
     revision,
     title,
     salaryDisplay,
+    isHot,
+    isUrgent,
     descriptionJson,
     requirementsJson,
     benefitsJson,
@@ -355,7 +377,7 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
         </div>
       )}
 
-      {/* Title + salary */}
+      {/* Title + salary + stamp toggles */}
       <section className="rounded-xl border p-4" style={{ borderColor: 'var(--outline-variant)', backgroundColor: 'var(--color-surface)' }}>
         <div className="grid gap-3 sm:grid-cols-2">
           <FieldShell label="Tiêu đề JobPosting (bắt buộc khi publish)">
@@ -382,6 +404,38 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
               placeholder="Ví dụ: 25–35 triệu VNĐ hoặc Thoả thuận"
             />
           </FieldShell>
+        </div>
+
+        {/* hrp-p1-a0-1 (DEC-07): stamp toggles — 2 boolean độc lập "Hot" và "Tuyển gấp".
+            Lưu cùng draft update authority (PATCH). DRAFT-only editing semantics theo
+            lifecycle P1-A0; nếu muốn đổi stamp của PUBLISHED phải đi qua lifecycle canonical.
+            C-04 (correction batch 1/1): disabled unless status === 'DRAFT'. Trước đây chỉ
+            disable cho ARCHIVED — giờ PUBLISHED cũng bị disable để đảm bảo stamp chỉ edit
+            được ở DRAFT. Đổi stamp của PUBLISHED phải unpublish trước. */}
+        <div className="mt-4 flex flex-wrap items-center gap-4 text-sm">
+          <span className="font-medium" style={{ color: 'var(--on-surface-variant)' }}>
+            Stamp:
+          </span>
+          <StampToggle
+            label="Hot"
+            ariaLabel="Đánh dấu JobPosting là Hot"
+            checked={isHot}
+            disabled={!canMutate || isSaving || status !== 'DRAFT'}
+            onChange={setIsHot}
+            testId="stamp-toggle-hot"
+          />
+          <StampToggle
+            label="Tuyển gấp"
+            ariaLabel="Đánh dấu JobPosting là Tuyển gấp"
+            checked={isUrgent}
+            disabled={!canMutate || isSaving || status !== 'DRAFT'}
+            onChange={setIsUrgent}
+            testId="stamp-toggle-urgent"
+          />
+          <span className="ml-auto text-xs italic" style={{ color: 'var(--on-surface-variant)' }}>
+            Public render stamp theo `isHot` + `isUrgent` (canonical boolean), không heuristic.
+            Stamp chỉ edit được ở DRAFT.
+          </span>
         </div>
       </section>
 
@@ -428,6 +482,46 @@ function FieldShell({ label, children }: { label: string; children: React.ReactN
         {label}
       </span>
       {children}
+    </label>
+  );
+}
+
+/**
+ * hrp-p1-a0-1 (DEC-07): toggle cho stamp boolean (`isHot` / `isUrgent`). UI controlled
+ * (props-driven), gửi giá trị qua PATCH draft update cùng các field khác. Native
+ * `<input type="checkbox">` để giữ accessibility (label click, keyboard, screen reader).
+ */
+function StampToggle({
+  label,
+  ariaLabel,
+  checked,
+  disabled,
+  onChange,
+  testId,
+}: {
+  label: string;
+  ariaLabel: string;
+  checked: boolean;
+  disabled: boolean;
+  onChange: (next: boolean) => void;
+  testId: string;
+}) {
+  return (
+    <label
+      className="inline-flex items-center gap-2"
+      style={{ cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.6 : 1 }}
+    >
+      <input
+        type="checkbox"
+        checked={checked}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.checked)}
+        aria-label={ariaLabel}
+        data-testid={testId}
+        className="h-4 w-4"
+        style={{ accentColor: 'var(--color-primary)' }}
+      />
+      <span style={{ color: 'var(--on-surface)' }}>{label}</span>
     </label>
   );
 }

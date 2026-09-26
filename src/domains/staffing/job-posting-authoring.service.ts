@@ -60,7 +60,7 @@ import {
   type RichTextErrorCode,
 } from '@/src/shared/content/job-posting-rich-text';
 import type { AuthContext } from '@/src/shared/auth/auth-context';
-
+import { eligibleSlotPredicateSql } from './job-posting-list.service';
 // ─────────────────────────────────────────────────────────────────────────────
 // Errors
 // ─────────────────────────────────────────────────────────────────────────────
@@ -111,6 +111,22 @@ export interface CreateOrReuseJobOpeningForSlotInput {
   slotId: string;
 }
 
+/**
+ * C-02: revalidation context returned by the write-path authority. Carries the
+ * LIVE StaffingOrder status so the route can echo it back to the client (no
+ * hard-coded `orderStatus: 'OPEN'`). Always present when the slot is eligible.
+ */
+export interface SlotRevalidationContext {
+  readonly slotId: string;
+  readonly staffingOrderId: string;
+  readonly slotsFilled: number;
+  readonly slotsNeeded: number;
+  readonly validTo: Date | null;
+  readonly deadlineDate: Date | null;
+  /** Actual `StaffingOrder.status` as observed under the transaction's RLS scope. */
+  readonly orderStatus: string;
+}
+
 export interface CreateOrReuseJobPostingDraftForOpeningInput {
   jobOpeningId: string;
 }
@@ -124,6 +140,13 @@ export interface UpdateDraftContentInput {
   requirementsJson?: unknown | null;
   benefitsJson?: unknown | null;
   applicationInstructionsJson?: unknown | null;
+  /**
+   * P1-A0.1 stamp flags. `undefined` → giữ giá trị hiện tại trên row (theo `DEC-04`,
+   * giống pattern `salaryDisplay` hiện hữu — client không truyền = không đổi).
+   * Field xuất hiện nhưng không phải boolean bị `assertBoolean` reject 400.
+   */
+  isHot?: boolean;
+  isUrgent?: boolean;
   contentSchemaVersion: number;
 }
 
@@ -155,6 +178,9 @@ export interface JobPostingDto {
   benefitsJson: unknown | null;
   applicationInstructionsJson: unknown | null;
   contentSchemaVersion: number;
+  /** P1-A0.1 stamp flags — canonical source of truth for public "Hot" + "Tuyển gấp" stamps. */
+  isHot: boolean;
+  isUrgent: boolean;
   publishedAt: string | null;
   archivedAt: string | null;
   createdAt: string;
@@ -288,6 +314,23 @@ function assertSalaryDisplay(salaryDisplay: string | null | undefined): void {
   }
 }
 
+/**
+ * P1-A0.1 stamp flag validator. `undefined` = field bị bỏ qua (giữ giá trị hiện tại).
+ * Mọi giá trị khác phải là boolean thật; string/number/null/object/array bị reject.
+ * Cho phép `true`/`false`; KHÔNG ép truthy của string 'true' → bắt buộc JSON boolean.
+ */
+function assertBoolean(label: 'isHot' | 'isUrgent', value: unknown): void {
+  if (value === undefined) return;
+  if (typeof value !== 'boolean') {
+    throw new AuthoringError(
+      'INVALID_INPUT',
+      `${label} phải là boolean (true/false) hoặc bị bỏ qua.`,
+      400,
+      { field: label, receivedType: typeof value },
+    );
+  }
+}
+
 function ensureUniqueSlug(
   tx: PrismaTypes.TransactionClient,
   slug: string,
@@ -312,6 +355,124 @@ function ensureUniqueSlug(
 // ─────────────────────────────────────────────────────────────────────────────
 // Commands
 // ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * C-02: write-path authority for slot eligibility. Reads the slot + its staffing
+ * order under the caller's transaction (RLS already applied by `withDbContext`)
+ * and throws `AuthoringError('INVALID_INPUT', 400)` with a precise code if the
+ * slot does NOT satisfy the canonical predicate. AUD-001: fail-closed
+ * `is_eligible` gate at end of function.
+ *
+ * Critically: "exclude only slots with a canonical JobPosting". A slot that
+ * already has a `JobOpening` bound but no `JobPosting` remains ELIGIBLE — the
+ * POST path will reuse that `JobOpening` and create the missing posting.
+ */
+export async function assertSlotEligibleForNewJobPosting(
+  tx: PrismaTypes.TransactionClient,
+  slotId: string,
+  now: Date = new Date(),
+): Promise<SlotRevalidationContext> {
+  if (typeof slotId !== 'string' || slotId.length === 0) {
+    throw new AuthoringError('INVALID_INPUT', 'slotId là bắt buộc.', 400);
+  }
+
+  type SlotRow = {
+    id: string;
+    staffing_order_id: string;
+    slots_filled: number;
+    slots_needed: number;
+    valid_to: Date | null;
+    deadline_date: Date | null;
+    order_status: string;
+    /** C-02: id của JobOpening bound nếu có; null nếu slot chưa có opening. */
+    job_opening_id: string | null;
+    /** C-02: id của JobPosting qua JobOpening; null nếu chưa có canonical posting. */
+    has_posting: boolean;
+    is_eligible: boolean;
+  };
+
+  const rows = await tx.$queryRaw<SlotRow[]>(Prisma.sql`
+    SELECT
+      s.id,
+      s.staffing_order_id,
+      s.slots_filled,
+      s.slots_needed,
+      s.valid_to,
+      so.deadline_date,
+      so.status AS order_status,
+      s.job_opening_id,
+      EXISTS (
+        SELECT 1 FROM job_postings jp
+        WHERE jp.job_opening_id = (
+          SELECT jo.id FROM job_openings jo
+          WHERE jo.staffing_order_slot_id = s.id
+          LIMIT 1
+        )
+      ) AS has_posting,
+      (${eligibleSlotPredicateSql(now)}) AS is_eligible
+    FROM staffing_order_slots s
+    INNER JOIN staffing_orders so ON so.id = s.staffing_order_id
+    WHERE s.id = ${slotId}
+    FOR UPDATE OF s
+  `);
+  const slot = rows[0];
+  if (!slot) {
+    throw new AuthoringError('NOT_FOUND', `StaffingOrderSlot ${slotId} không tồn tại.`, 404);
+  }
+
+  if (slot.order_status !== 'OPEN' && slot.order_status !== 'CLOSING_SOON') {
+    throw new AuthoringError(
+      'INVALID_INPUT',
+      `StaffingOrder không còn mở (status=${slot.order_status}). Không thể tạo JobPosting mới.`,
+      400,
+      { orderStatus: slot.order_status },
+    );
+  }
+  if (slot.deadline_date !== null && slot.deadline_date < now) {
+    throw new AuthoringError(
+      'INVALID_INPUT',
+      'StaffingOrder đã quá hạn nộp (deadlineDate < now).',
+      400,
+      { deadlineDate: slot.deadline_date.toISOString() },
+    );
+  }
+  if (slot.valid_to !== null && slot.valid_to < now) {
+    throw new AuthoringError(
+      'INVALID_INPUT',
+      'StaffingOrderSlot đã quá hạn (validTo < now).',
+      400,
+      { validTo: slot.valid_to.toISOString() },
+    );
+  }
+  if (slot.slots_filled >= slot.slots_needed) {
+    throw new AuthoringError(
+      'INVALID_INPUT',
+      'StaffingOrderSlot đã đủ chỉ tiêu (slotsFilled >= slotsNeeded).',
+      400,
+      { slotsFilled: slot.slots_filled, slotsNeeded: slot.slots_needed },
+    );
+  }
+  if (slot.has_posting) {
+    throw new AuthoringError(
+      'INVALID_INPUT',
+      'StaffingOrderSlot đã có canonical JobPosting — không thể tạo JobPosting mới.',
+      400,
+      { slotId },
+    );
+  }
+  // AUD-001: fail-closed mutation authority — never return success when canonical helper reports false.
+  if (slot.is_eligible !== true) throw new AuthoringError('INVALID_INPUT', `StaffingOrderSlot ${slotId} không đủ điều kiện canonical eligibility (is_eligible=false).`, 400, { slotId, is_eligible: slot.is_eligible });
+
+  return {
+    slotId: slot.id,
+    staffingOrderId: slot.staffing_order_id,
+    slotsFilled: slot.slots_filled,
+    slotsNeeded: slot.slots_needed,
+    validTo: slot.valid_to,
+    deadlineDate: slot.deadline_date,
+    orderStatus: slot.order_status,
+  };
+}
 
 /**
  * Create or reuse exactly one JobOpening bound to the given StaffingOrderSlot.
@@ -339,6 +500,13 @@ export async function createOrReuseJobOpeningForSlot(
   if (typeof input.slotId !== 'string' || input.slotId.length === 0) {
     throw new AuthoringError('INVALID_INPUT', 'slotId là bắt buộc.', 400);
   }
+
+  // C-02: re-read + revalidate eligibility INSIDE the transaction. The selector
+  // (client dropdown) is NEVER the authorization authority — a stale selector
+  // must fail closed with zero mutation. `assertSlotEligibleForNewJobPosting`
+  // shares the predicate with `listEligibleSlotsForNewJobPosting` so the two
+  // paths cannot drift.
+  await assertSlotEligibleForNewJobPosting(tx, input.slotId);
 
   // 1. Lock the slot row.
   const slotRows = await tx.$queryRaw<
@@ -497,6 +665,8 @@ export async function updateDraftContent(
   assertMutationRole(ctx);
   assertValidTitle(input.title);
   assertSalaryDisplay(input.salaryDisplay);
+  assertBoolean('isHot', input.isHot);
+  assertBoolean('isUrgent', input.isUrgent);
 
   validateRichContentField('descriptionJson', input.descriptionJson, input.contentSchemaVersion);
   if (input.requirementsJson !== null && input.requirementsJson !== undefined) {
@@ -519,7 +689,15 @@ export async function updateDraftContent(
 
   const current = await tx.jobPosting.findUnique({
     where: { id: input.jobPostingId },
-    select: { id: true, status: true, revision: true, slug: true, publishedAt: true },
+    select: {
+      id: true,
+      status: true,
+      revision: true,
+      slug: true,
+      publishedAt: true,
+      isHot: true,
+      isUrgent: true,
+    },
   });
   if (!current) {
     throw new AuthoringError(
@@ -550,6 +728,10 @@ export async function updateDraftContent(
   // first publish and stable suffix for traceability. Future schema for
   // "rename before publish" is intentionally out of scope (DEC-08 + RISK-03).
   const nextRevision = current.revision + 1;
+  // P1-A0.1 (DEC-04): `undefined` → giữ giá trị hiện tại (giống pattern `salaryDisplay`).
+  // Client không truyền field = không đổi row. Field truyền true/false = cập nhật.
+  const nextIsHot = input.isHot !== undefined ? input.isHot : current.isHot;
+  const nextIsUrgent = input.isUrgent !== undefined ? input.isUrgent : current.isUrgent;
 
   const updated = await tx.jobPosting.update({
     where: {
@@ -574,6 +756,8 @@ export async function updateDraftContent(
           ? Prisma.JsonNull
           : (input.applicationInstructionsJson as PrismaTypes.InputJsonValue),
       contentSchemaVersion: input.contentSchemaVersion,
+      isHot: nextIsHot,
+      isUrgent: nextIsUrgent,
       revision: nextRevision,
     },
   });
@@ -818,6 +1002,9 @@ interface JobPostingModelRow {
   benefitsJson: unknown;
   applicationInstructionsJson: unknown;
   contentSchemaVersion: number;
+  // P1-A0.1 stamp flags — readonly; Prisma returns `boolean` for non-nullable columns.
+  isHot: boolean;
+  isUrgent: boolean;
   publishedAt: Date | null;
   archivedAt: Date | null;
   createdAt: Date;
@@ -849,6 +1036,8 @@ function toJobPostingDto(row: JobPostingModelRow): JobPostingDto {
     benefitsJson: row.benefitsJson,
     applicationInstructionsJson: row.applicationInstructionsJson,
     contentSchemaVersion: row.contentSchemaVersion,
+    isHot: row.isHot,
+    isUrgent: row.isUrgent,
     publishedAt: row.publishedAt ? row.publishedAt.toISOString() : null,
     archivedAt: row.archivedAt ? row.archivedAt.toISOString() : null,
     createdAt: row.createdAt.toISOString(),

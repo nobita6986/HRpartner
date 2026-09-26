@@ -57,7 +57,16 @@ import {
   parseListingSearchParams,
 } from '@/src/domains/job-board/public-listing.params';
 import { salaryLabel, summaryLabel } from '@/src/domains/job-board/public-listing.labels';
+import {
+  deriveStampsFromFlags,
+} from '@/src/domains/job-board/components/landing/stamp-defs';
+import { JobStampBadge } from '@/src/domains/job-board/components/landing/stamp-badge';
 
+/**
+ * NOTE: `deriveStampsFromFlags` is now owned by `stamp-defs.ts` (C-05) and shared
+ * with the homepage FeaturedJobCard and the detail `/viec-lam/[slug]` page —
+ * không còn local copy.
+ */
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
@@ -275,9 +284,17 @@ function FilterForm({ params, facets }: { params: ListingParams; facets: Listing
  * Hàng nút bấm: Hai nút `Xem chi tiết` (outline/ghost) và `Ứng tuyển` (primary cam) bọc chung một
  * `div` dưới cùng, dùng `mt-auto flex flex-wrap gap-2` để footer luôn nằm đáy thẻ và KHÔNG rớt dòng
  * khi card thấp (Y3.3 + Y3.4). Nút outline dùng `bg-white/80 border` để không đứt gradient nền.
+ *
+ * hrp-p1-a0-1 (DEC-05, T0 §1.4, §2): render stamps trực tiếp từ `JobPosting.isHot`/`isUrgent`
+ * canonical boolean. KHÔNG dùng `urgency` (legacy suy từ `deadlineDate`/`status`) để hiển thị stamp
+ * — stamps 100% từ cột canonical, không heuristic. Multi-stamp layout: stamp quan trọng nhất
+ * (`STAMP_RANK` thấp nhất) ở index 0, các stamp tiếp theo lệch X+Y để không chồng nhau.
  */
 function JobCard({ job }: { job: ListingJob }) {
   const isPreview = job.id.startsWith('preview-');
+  // Derive từ canonical boolean (DEC-05). Bề mặt này dùng shared
+  // `<JobStampBadge>` (C-05) thay vì inline IIFE — single source of truth.
+  const stamps = deriveStampsFromFlags(job.isHot, job.isUrgent);
   return (
     <article
       className="flex h-full flex-col gap-3 rounded-2xl border border-outline-variant p-5"
@@ -293,10 +310,15 @@ function JobCard({ job }: { job: ListingJob }) {
             {job.title}
           </Link>
         </h3>
-        {job.urgency === 'NONE' ? null : (
-          <span className="hrp-pill shrink-0 rounded-full px-2 py-1 text-xs font-medium">
-            {job.urgency === 'URGENT' ? 'Tuyển gấp' : 'Sắp hết hạn'}
-          </span>
+        {/* hrp-p1-a0-1 (DEC-05): shared `<JobStampBadge>` render từ canonical boolean,
+            0.7↔1.0 animation + reduced-motion disable (C-05). */}
+        {stamps.length === 0 ? null : (
+          <JobStampBadge
+            isHot={job.isHot}
+            isUrgent={job.isUrgent}
+            stamps={stamps}
+            size="sm"
+          />
         )}
       </header>
       <dl className="flex flex-col gap-1 text-sm" style={{ color: 'var(--color-on-surface-variant)' }}>

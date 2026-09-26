@@ -5,12 +5,16 @@
  *   - slotId: string (UUID of an existing StaffingOrderSlot) — required
  *   - idempotency-key: provided as header `Idempotency-Key` (UUID required)
  *
- * Algorithm (DEC-07):
+ * Algorithm (DEC-07 + C-02 correction batch 1/1):
  *   1. withDbContext(prisma, ctx, ...) for RLS GUC.
- *   2. withIdempotency → wrap the create-or-reuse chain (JobOpening + JobPosting DRAFT).
- *   3. createOrReuseJobOpeningForSlot → idempotent at service layer (race-safe).
- *   4. createOrReuseJobPostingDraftForOpening → idempotent.
- *   5. Return both as {jobOpening, jobPosting}.
+ *   2. assertSlotEligibleForNewJobPosting — re-read + revalidate eligibility INSIDE the
+ *      transaction (selector client is NEVER the authorization authority).
+ *   3. withIdempotency → wrap the create-or-reuse chain (JobOpening + JobPosting DRAFT).
+ *   4. createOrReuseJobOpeningForSlot → idempotent at service layer (race-safe).
+ *   5. createOrReuseJobPostingDraftForOpening → idempotent.
+ *   6. Return {jobOpening, jobPosting, slotRevalidation} where slotRevalidation carries
+ *      the LIVE orderStatus so the client can render the correct chip without
+ *      hard-coding.
  *
  * Auth (DEC-09): mutation roles = ADMIN/HR_MANAGER/HR_STAFF. Read stays in
  * the admin list route (`job-postings/route.ts` GET — A1 future).
@@ -27,9 +31,11 @@ import { AuthSessionError, getAuthContext } from '@/src/shared/auth/auth-context
 import { withDbContext } from '@/src/shared/auth/with-db-context';
 import { IdempotencyConflictError, withIdempotency } from '@/src/shared/integrity/idempotency';
 import {
+  assertSlotEligibleForNewJobPosting,
   AuthoringError,
   createOrReuseJobOpeningForSlot,
   createOrReuseJobPostingDraftForOpening,
+  type SlotRevalidationContext,
 } from '@/src/domains/staffing/job-posting-authoring.service';
 
 export const dynamic = 'force-dynamic';
@@ -84,8 +90,16 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const requestBody = [slotId];
 
   try {
-    const outcome = await withDbContext(getPrisma(), ctx, async (tx) =>
-      withIdempotency({
+    // C-02: eligibility revalidation runs INSIDE the same transaction as the
+    // idempotent create-or-reuse chain. If eligibility fails, `assertSlotEligible...`
+    // throws BEFORE any mutation → 400 + zero side effects. The selector dropdown
+    // is informational only.
+    const outcome = await withDbContext(getPrisma(), ctx, async (tx) => {
+      const slotRevalidation: SlotRevalidationContext = await assertSlotEligibleForNewJobPosting(
+        tx,
+        slotId,
+      );
+      return withIdempotency({
         prisma: tx,
         route: ROUTE_KEY,
         actorId: ctx.userId,
@@ -96,10 +110,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
           const jobPosting = await createOrReuseJobPostingDraftForOpening(tx, ctx, {
             jobOpeningId: jobOpening.id,
           });
-          return { body: { jobOpening, jobPosting } };
+          return {
+            body: { jobOpening, jobPosting, slotRevalidation },
+          };
         },
-      }),
-    );
+      });
+    });
     return NextResponse.json(
       { ...(outcome.body as Record<string, unknown>), replayed: outcome.replayed },
       { status: outcome.statusCode },
