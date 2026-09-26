@@ -13,21 +13,26 @@
 | Audit mode | `LIGHT` |
 | Audit reason | Đọc danh sách ứng viên/case thuộc canonical P1-C/P1-D có PII (phone/CCCD) và RLS boundary; sai shape hoặc rò PII sẽ leak dữ liệu người lao động. LIGHT audit là bắt buộc để verify PII masking, RLS boundary, deterministic NextAction/age derivation và no-leak behavior. |
 | Spec version | `v1.3` |
-| Status | `READY_FOR_EXECUTION` |
+| Status | `BLOCKED` |
 | Planner | `Tier 1` |
 | Baseline | `a88d87270f51fb63bba8f4f1144304dad4983007` |
 | Contract gate | `READY_TO_CODE` |
 | Decision state | `CLOSED` |
-| Test environment | `READY` |
+| Test environment | `NOT_READY` (ENV_BLOCKED — synthetic DB chưa được cung cấp cho P1-E0) |
 | Correction budget | `1` |
+| Correction batches used | `1` (E0-F01..E0-F09) |
+| Audit eligibility | `NOT_ELIGIBLE` |
+| Audit eligibility rationale | AC-09..AC-13 pending synthetic DB (AC-09..AC-13 chỉ pass khi integration suite thực sự chạy trên synthetic PostgreSQL) |
 | In-scope roots | `src/domains/talent/recruiter-workbench.read-service.ts`, `src/domains/talent/recruiter-workbench.types.ts`, `app/api/admin/recruiter-workbench/route.ts`, `src/domains/talent/recruiter-workbench.read-service.test.ts`, `src/domains/talent/recruiter-workbench.derive.test.ts`, `tests/db/recruiter-workbench.integration.test.ts` (DB; tệp đăng ký vào `vitest.integration-files.ts`), `vitest.integration-files.ts` (registration-only: thêm đúng MỘT entry cho test ở trên; KHÔNG thay đổi shape/config, KHÔNG thêm xóa các entry khác) |
 | Forbidden paths | `prisma/schema.prisma`, `prisma/migrations/**`, `package.json`, `package-lock.json`, `vitest.config.ts`, `vitest.unit.config.ts`, `vitest.integration.config.ts`, `docs/PLANNER_HANDOVER.md`, `src/domains/applications/conversion.service.ts`, `src/domains/applications/screening.service.ts`, `src/domains/talent/placement-case.service.ts` (trừ chỗ gọi canonical helper), `src/domains/talent/labor-profile.service.ts` (trừ chỗ gọi canonical helper), `docs/discovery/realignment/P1B_PUBLIC_APPLY_RECONCILIATION.md`, `docs/tasks/hrp-p1-b-public-apply/**`, `docs/tasks/hrp-p1-e1-recruiter-workbench-ui/**` |
 | Required gates | `.ai-pipeline/scripts/verify-task.ps1`, `git diff --check`, `git status --porcelain`, `npm run typecheck`, `npm run lint` |
 | Current execution round | `1` |
 | Current audit round | `0` |
-| Next gate | `TIER1_IMPLEMENTATION_FREEZE` |
+| Next gate | `T0_CI_SYNTHETIC_DB_GATE` |
 
 > Lane và audit là hai quyết định riêng. CRITICAL + LIGHT là bắt buộc vì read service đụng PII/RLS; rủi ro đã được ghi rõ trong `Audit reason`.
+
+> **Correction batch 1/1 freeze (E0-F09)**: Status chuyển sang `BLOCKED` do AC-09..AC-13 (route authority, real route coverage, DB integration evidence) đòi hỏi synthetic PostgreSQL DB mà Tier 0/Owner chưa cung cấp cho P1-E0. Canonical gates = `ENV_BLOCKED`. Audit eligibility = `NOT_ELIGIBLE` cho đến khi `T0_CI_SYNTHETIC_DB_GATE` pass. Correction batches used = 1. Sau khi T0 CI ephemeral integration PASS, một docs-only evidence freeze riêng sẽ chuyển Status → `READY_FOR_AUDIT`, Canonical gates → `PASS`, Audit eligibility → `ELIGIBLE`, Next gate → `TIER3_LIGHT_AUDIT`.
 
 > Chỉ chuyển `READY_FOR_EXECUTION` sau khi `WAIT_P1_B_ACCEPTED` đã mở. Trong round planning v1.2, trạng thái giữ `PROPOSED_ONLY` / `Contract gate = DRAFT`. Tại v1.3, `P1-B` đã `ACCEPTED` tại main `a88d872`, nên E0 được bump `READY_FOR_EXECUTION` / `READY_TO_CODE` / `CLOSED`. V2 chỉ có một consolidated correction batch sau audit.
 
@@ -235,11 +240,11 @@ NONE
 | `AC-06` | Service áp dụng đúng filter (`caseStatus`, `view`, `overdue`, `handlerUserId`, `search`) theo RQ-03; `view=MINE` chỉ trả case có `LaborProfileHandlingAssignment` ACTIVE với `assigneeUserId = ctx.userId`. | `npx vitest run src/domains/talent/recruiter-workbench.read-service.test.ts`. |
 | `AC-07` | Service sort deterministic, tie-break bằng `placementCase.id`. | `npx vitest run src/domains/talent/recruiter-workbench.read-service.test.ts`. |
 | `AC-08` | Service paging đúng (page ≥ 1, pageSize ∈ {20, 50, 100}; default 20). | `npx vitest run src/domains/talent/recruiter-workbench.read-service.test.ts`. |
-| `AC-09` | `GET /api/admin/recruiter-workbench` validate query bằng zod; trả 400 nếu explicit invalid; **không** gọi DB khi invalid. | `npx vitest run tests/db/recruiter-workbench.integration.test.ts`. |
-| `AC-10` | Endpoint trả 401 nếu thiếu auth; 403 nếu role ngoài allowlist (`ADMIN \| HR_MANAGER \| HR_STAFF`) hoặc requested view vượt authority. | `npx vitest run tests/db/recruiter-workbench.integration.test.ts`. |
-| `AC-11` | DB integration: `withDbContext` với `app_user_writer` + transaction-local GUC chứng minh (a) ADMIN/HR_MANAGER `view=ALL` thấy đủ case ACTIVE; (b) HR_STAFF `view=MINE` chỉ thấy case mình handle; (c) HR_STAFF `view=ALL` bị 403; (d) thiếu `CAN_VIEW_UNASSIGNED_POOL` mà gọi `view=UNASSIGNED` bị 403. | `npx vitest run tests/db/recruiter-workbench.integration.test.ts`. |
-| `AC-12` | User không có `CAN_VIEW_WORKER_SENSITIVE` thấy `candidate.phone` và `candidate.cccdNumber` được mask; có permission thì thấy raw. Search không có sensitive permission chỉ tìm `fullName`; phone/CCCD search hoặc exact lookup với thiếu permission bị schema từ chối (400) hoặc 403 — không bao giờ raw. | `npx vitest run tests/db/recruiter-workbench.integration.test.ts`. |
-| `AC-13` | Endpoint không trả field nào ngoài `RecruiterWorkbenchRow` schema (no-leak); DTO nested shape `candidate.phone` / `candidate.cccdNumber`; KHÔNG có top-level alias. | `npx vitest run tests/db/recruiter-workbench.integration.test.ts`. |
+| `AC-09` | `GET /api/admin/recruiter-workbench` validate query bằng zod; trả 400 nếu explicit invalid; **không** gọi DB khi invalid. | `npx vitest run tests/db/recruiter-workbench.integration.test.ts` (**ENV_BLOCKED** — pending `T0_CI_SYNTHETIC_DB_GATE`); unit-level route gate đã cover bởi `app/api/admin/recruiter-workbench/route.test.ts`. |
+| `AC-10` | Endpoint trả 401 nếu thiếu auth; 403 nếu role ngoài allowlist (`ADMIN \| HR_MANAGER \| HR_STAFF`) hoặc requested view vượt authority. | `npx vitest run tests/db/recruiter-workbench.integration.test.ts` (**ENV_BLOCKED**); unit-level route gate đã cover bởi `app/api/admin/recruiter-workbench/route.test.ts`. |
+| `AC-11` | DB integration: `withDbContext` với `app_user_writer` + transaction-local GUC chứng minh (a) ADMIN/HR_MANAGER `view=ALL` thấy đủ case ACTIVE; (b) HR_STAFF `view=MINE` chỉ thấy case mình handle; (c) HR_STAFF `view=ALL` bị 403; (d) thiếu `CAN_VIEW_UNASSIGNED_POOL` mà gọi `view=UNASSIGNED` bị 403. | `npx vitest run tests/db/recruiter-workbench.integration.test.ts` (**ENV_BLOCKED** — pending `T0_CI_SYNTHETIC_DB_GATE`). |
+| `AC-12` | User không có `CAN_VIEW_WORKER_SENSITIVE` thấy `candidate.phone` và `candidate.cccdNumber` được mask; có permission thì thấy raw. Search không có sensitive permission chỉ tìm `fullName`; phone/CCCD search hoặc exact lookup với thiếu permission bị schema từ chối (400) hoặc 403 — không bao giờ raw. | `npx vitest run tests/db/recruiter-workbench.integration.test.ts` (**ENV_BLOCKED** — pending `T0_CI_SYNTHETIC_DB_GATE`); masking logic unit-test trong `src/domains/talent/recruiter-workbench.read-service.test.ts`. |
+| `AC-13` | Endpoint không trả field nào ngoài `RecruiterWorkbenchRow` schema (no-leak); DTO nested shape `candidate.phone` / `candidate.cccdNumber`; KHÔNG có top-level alias. | `npx vitest run tests/db/recruiter-workbench.integration.test.ts` (**ENV_BLOCKED** — pending `T0_CI_SYNTHETIC_DB_GATE`); DTO shape unit-test trong `src/domains/talent/recruiter-workbench.read-service.test.ts`. |
 | `AC-14` | HANDOFF.md có bảng changed file (`git status --porcelain`) và verify output; chỉ liệt kê file trong §4.2 In. | `git status --porcelain`; document review. |
 
 ### 6.2 Traceability
