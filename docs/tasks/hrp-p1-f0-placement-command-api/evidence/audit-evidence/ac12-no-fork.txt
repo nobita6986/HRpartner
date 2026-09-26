@@ -1,0 +1,15 @@
+AUDIT EVIDENCE - Tier 3
+Command: npx.cmd vitest run src/domains/applications/marketplace-inventory.static.test.ts src/domains/talent/placement.commands.routes.test.ts
+Exit: 0
+Date: 2026-09-26
+
+
+ RUN  v2.1.9 C:/CodeApp/HrP-worktrees/t1b-p1f0-placement-command-planning
+
+ ✓ src/domains/applications/marketplace-inventory.static.test.ts (47 tests) 77ms
+ ✓ src/domains/talent/placement.commands.routes.test.ts (54 tests) 23ms
+
+ Test Files  2 passed (2)
+      Tests  101 passed (101)
+   Start at  22:22:35
+   Duration  747ms (transform 58ms, setup 0ms, collect 88ms, tests 100ms, environment 0ms, prepare 172ms)
