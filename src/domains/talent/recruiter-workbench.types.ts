@@ -84,23 +84,29 @@ export const RECRUITER_WORKBENCH_PAGE_SIZES = ['20', '50', '100'] as const;
  *   - `view`    : `ALL` for ADMIN/HR_MANAGER, `MINE` for HR_STAFF (route sets).
  *   - `sort`    : `ageDesc` (service sets).
  *   - `pageSize`: `20` (service sets).
+ *
+ * `.strict()` (RQ-16 + E0-F02): unknown query keys are rejected with 400, not
+ * silently stripped. This prevents a typo or an undeclared client parameter
+ * from being accepted without the route's knowledge.
  */
-export const RecruiterWorkbenchQuerySchema = z.object({
-  search: z.string().trim().min(1).max(255).optional(),
-  caseStatus: z.enum(CASE_STATUS_VALUES).optional(),
-  handlerUserId: z.string().uuid().optional(),
-  view: z.enum(RECRUITER_WORKBENCH_VIEW_VALUES).optional(),
-  overdue: z
-    .enum(['true', 'false'])
-    .optional()
-    .transform((v) => (v === undefined ? undefined : v === 'true')),
-  sort: z.enum(RECRUITER_WORKBENCH_SORT_VALUES).optional(),
-  page: z.coerce.number().int().min(1).optional().default(1),
-  pageSize: z
-    .enum(RECRUITER_WORKBENCH_PAGE_SIZES)
-    .optional()
-    .default('20'),
-});
+export const RecruiterWorkbenchQuerySchema = z
+  .object({
+    search: z.string().trim().min(1).max(255).optional(),
+    caseStatus: z.enum(CASE_STATUS_VALUES).optional(),
+    handlerUserId: z.string().uuid().optional(),
+    view: z.enum(RECRUITER_WORKBENCH_VIEW_VALUES).optional(),
+    overdue: z
+      .enum(['true', 'false'])
+      .optional()
+      .transform((v) => (v === undefined ? undefined : v === 'true')),
+    sort: z.enum(RECRUITER_WORKBENCH_SORT_VALUES).optional(),
+    page: z.coerce.number().int().min(1).optional().default(1),
+    pageSize: z
+      .enum(RECRUITER_WORKBENCH_PAGE_SIZES)
+      .optional()
+      .default('20'),
+  })
+  .strict();
 
 export type RecruiterWorkbenchQuery = z.infer<typeof RecruiterWorkbenchQuerySchema>;
 
@@ -185,4 +191,15 @@ export interface RecruiterWorkbenchListResponse {
   total: number;
   page: number;
   pageSize: number;
+}
+
+/**
+ * Pre-resolved permission flag passed from the route handler into the read
+ * service (E0-F06 — resolve permissions exactly once). The route handler
+ * performs the single `resolveEffectivePermissions` call after Zod validation
+ * succeeds and forwards the result here so the service MUST NOT call
+ * `resolveEffectivePermissions` itself.
+ */
+export interface RecruiterWorkbenchPermissionContext {
+  canSeeSensitive: boolean;
 }

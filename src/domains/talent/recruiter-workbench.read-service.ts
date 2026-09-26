@@ -9,21 +9,20 @@
  *      - `deriveHandler`      — active-handler selection (AC-03).
  *      - `deriveLastInteraction` — newest STATUS_CHANGE vs newest SUBMISSION (AC-04).
  *      - `computeAge`         — `ageHours` + `isOverdue` + `overdueReason` (AC-04).
+ *      - `extractJobContextFromPlacement` — canonical job chain pull (AC-05/F05).
  *
  *   2. **`getRecruiterWorkbenchList`** (Prisma transaction client):
  *      - RLS-aware via `withDbContext` caller.
- *      - Permission-aware masking (CAN_VIEW_WORKER_SENSITIVE).
+ *      - Permission-aware masking (`canSeeSensitive` is resolved exactly ONCE by
+ *        the route handler and forwarded here — E0-F06).
  *      - Filter / sort / page semantics per RQ-03, RQ-11.
  *      - DTO assembly with deterministic tie-breakers (AC-11, RQ-11).
  */
 
 import { Prisma } from '@prisma/client';
 
-import { AuthContext } from '@/src/shared/auth/auth-context';
-import {
-  resolveEffectivePermissions,
-  AuthError,
-} from '@/src/shared/auth/permission-resolver';
+import type { AuthContext } from '@/src/shared/auth/auth-context';
+
 import { maskCccd, maskPhone } from '@/src/shared/privacy/mask';
 
 import {
@@ -32,6 +31,7 @@ import {
   RecruiterWorkbenchFilter,
   RecruiterWorkbenchListResponse,
   RecruiterWorkbenchOverdueReason,
+  RecruiterWorkbenchPermissionContext,
   RecruiterWorkbenchRow,
   SERVER_DERIVED_NEXT_ACTION_VALUES,
   ServerDerivedNextAction,
@@ -61,10 +61,13 @@ export interface HandlerResolution {
 /**
  * Select the active handler for a placement case (AC-03, §4.3, rule C-03).
  *
- * Filter:
+ * Filter (E0-F03 — UNASSIGNED semantics):
  *   - `status = 'ACTIVE'`
  *   - `startsAt <= now`
  *   - `expiresAt IS NULL OR expiresAt > now`
+ *
+ * Future ACTIVE (`startsAt > now`) and expired ACTIVE (`expiresAt <= now`)
+ * must NOT remove UNASSIGNED status — they fall outside the active window.
  *
  * Deterministic order (RQ-11 tie-breaker):
  *   `startsAt DESC, createdAt DESC, id DESC` → take 1.
@@ -301,12 +304,117 @@ export function assertEnumInvariant(): void {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// Job context projection (E0-F05)
+// ═══════════════════════════════════════════════════════════════════════════
+
+export interface PlacementLike {
+  id: string;
+  selectedAt: Date;
+  jobOpening?: {
+    id: string;
+    posting?: {
+      id: string;
+      title: string | null;
+    } | null;
+    staffingOrder?: {
+      project?: {
+        name: string;
+        clientCompanyName: string | null;
+      } | null;
+    } | null;
+  } | null;
+}
+
+export interface JobContextResolution {
+  jobPostingId: string | null;
+  jobPostingTitle: string | null;
+  projectName: string | null;
+  companyName: string | null;
+}
+
+/**
+ * Pick the latest placement by `selectedAt DESC, id DESC` and project its job
+ * chain into the canonical DTO `job` block. Returns all-null when the case
+ * has no placement, no JobOpening, no Posting, no StaffingOrder, or no
+ * Project (E0-F05 — no 500 from missing optional relations).
+ */
+export function extractJobContextFromPlacement(
+  placements: ReadonlyArray<PlacementLike>,
+): JobContextResolution {
+  if (placements.length === 0) {
+    return {
+      jobPostingId: null,
+      jobPostingTitle: null,
+      projectName: null,
+      companyName: null,
+    };
+  }
+  let latest: PlacementLike = placements[0]!;
+  for (let i = 1; i < placements.length; i++) {
+    const cur = placements[i]!;
+    if (cur.selectedAt.getTime() > latest.selectedAt.getTime()) {
+      latest = cur;
+      continue;
+    }
+    if (
+      cur.selectedAt.getTime() === latest.selectedAt.getTime() &&
+      cur.id > latest.id
+    ) {
+      latest = cur;
+    }
+  }
+  const opening = latest.jobOpening;
+  const posting = opening?.posting;
+  const project = opening?.staffingOrder?.project;
+  return {
+    jobPostingId: posting?.id ?? null,
+    jobPostingTitle: posting?.title ?? null,
+    projectName: project?.name ?? null,
+    companyName: project?.clientCompanyName ?? null,
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // Read service — runs inside a Prisma transaction (RLS GUC set by caller).
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
+ * Active-handler membership filter used by both `MINE` (current ctx.userId)
+ * and `handlerUserId` (the explicit filter arg). Mirrors rule C-03:
+ * `status = 'ACTIVE' AND startsAt <= now AND (expiresAt IS NULL OR expiresAt > now)`.
+ */
+function activeAssignmentForUser(userId: string, now: Date): Prisma.LaborProfileHandlingAssignmentWhereInput {
+  return {
+    assigneeUserId: userId,
+    status: 'ACTIVE',
+    startsAt: { lte: now },
+    OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+  };
+}
+
+/**
+ * Active-handler membership filter with no assignee constraint. Used by
+ * `view=UNASSIGNED` (the inverse — see `buildPlacementCaseWhere`) and by
+ * `overdue=true` (handler expired but still ACTIVE).
+ */
+function activeAssignment(now: Date): Prisma.LaborProfileHandlingAssignmentWhereInput {
+  return {
+    status: 'ACTIVE',
+    startsAt: { lte: now },
+    OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+  };
+}
+
+/**
  * Build the Prisma `where` clause for `placement_case` given the validated
  * filter. Centralised here so tests can mirror the exact shape.
+ *
+ * E0-F01 — composable AND clauses. Every filter is a separate `AND:` arm
+ * under `laborProfile`. The previous implementation merged `laborProfile`
+ * objects via last-write-wins, which silently dropped earlier clauses
+ * (MINE auth bypass when `handlerUserId` / `overdue=false` / `search` was
+ * applied on top). Each clause here is independent; Prisma AND-combines
+ * them, so all five filters are preserved concurrently.
  */
 export function buildPlacementCaseWhere(
   filter: RecruiterWorkbenchFilter,
@@ -320,86 +428,89 @@ export function buildPlacementCaseWhere(
     where.status = filter.caseStatus;
   }
 
-  // View filter (RQ-04, DEC-06):
-  //   MINE       → placementCase has at least one ACTIVE handlingAssignment
-  //                (via LaborProfile) whose assignee = ctx.userId.
-  //   UNASSIGNED → placementCase's LaborProfile has NO ACTIVE handlingAssignment.
-  //   ALL        → no extra filter at this layer (RBAC gated at route).
+  // Compose top-level `AND` arms for every clause that touches the labor
+  // profile. Each arm is independent; Prisma AND-combines them. This is the
+  // fix for E0-F01 — the old implementation merged these objects via spread
+  // and dropped earlier clauses.
+  const laborProfileAnd: Prisma.LaborProfileWhereInput[] = [];
+
+    // View filter (RQ-04, DEC-06):
+  //   MINE       → LaborProfile has at least one ACTIVE handlingAssignment
+  //                (active window) whose assignee = ctx.userId.
+  //   UNASSIGNED → LaborProfile has NO handlingAssignment whose active window
+  //                contains `now` (E0-F03: status='ACTIVE' AND startsAt<=now AND
+  //                (expiresAt IS NULL OR expiresAt>now)). Future ACTIVE and expired
+  //                ACTIVE must NOT remove UNASSIGNED status.
+  //   ALL        → no view-driven filter at this layer (RBAC gated at route).
   if (filter.view === 'MINE') {
-    where.laborProfile = {
+    laborProfileAnd.push({
       handlingAssignments: {
-        some: {
-          assigneeUserId: ctx.userId,
-          status: 'ACTIVE',
-          startsAt: { lte: now },
-          OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
-        },
+        some: activeAssignmentForUser(ctx.userId, now),
       },
-    };
+    });
   } else if (filter.view === 'UNASSIGNED') {
-    where.laborProfile = {
-      handlingAssignments: { none: { status: 'ACTIVE' } },
-    };
-  }
-
-  // Handler filter (RQ-03): placementCase.laborProfile.handlingAssignments has
-  // any row matching the given userId with the active window.
-  if (filter.handlerUserId) {
-    where.laborProfile = {
-      ...(where.laborProfile as Prisma.LaborProfileWhereInput | undefined),
+    // Exclude any profile that HAS an active-window assignment.
+    // Must check temporal bounds: future ACTIVE and expired ACTIVE are not "active".
+    laborProfileAnd.push({
       handlingAssignments: {
-        some: {
-          assigneeUserId: filter.handlerUserId,
-          status: 'ACTIVE',
-          startsAt: { lte: now },
-          OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
-        },
+        none: activeAssignment(now),
       },
-    };
+    });
   }
 
-  // Search filter (RQ-05): fullName contains (no-oracle on phone/cccd).
+  // Handler filter (RQ-03): LaborProfile has any active-window handling
+  // assignment matching the explicit `handlerUserId`. This composes
+  // orthogonally with `view=MINE` (the route layer enforces `handlerUserId`
+  // === ctx.userId for HR_STAFF in E0-F02).
+  if (filter.handlerUserId) {
+    laborProfileAnd.push({
+      handlingAssignments: {
+        some: activeAssignmentForUser(filter.handlerUserId, now),
+      },
+    });
+  }
+
+  // Search filter (RQ-05): `fullName` contains (no-oracle on phone/cccd).
   if (filter.search) {
-    where.laborProfile = {
-      ...(where.laborProfile as Prisma.LaborProfileWhereInput | undefined),
+    laborProfileAnd.push({
       fullName: { contains: filter.search, mode: 'insensitive' },
-    };
+    });
   }
 
   // Overdue filter (RQ-08):
-  //   - `true`  → ageHours >= 72  OR  handlerExpiresAt < now.
-  //   - `false` → neither condition.
-  if (filter.overdue !== undefined) {
-    if (filter.overdue) {
-      where.OR = [
-        // openedAt older than 72h
-        { openedAt: { lt: new Date(now.getTime() - CASE_AGE_OVERDUE_HOURS * 60 * 60 * 1000) } },
-        // any active handling assignment whose expiresAt < now
-        {
-          laborProfile: {
-            handlingAssignments: {
-              some: {
-                status: 'ACTIVE',
-                expiresAt: { lt: now },
-              },
-            },
-          },
+  //   - `true`  → openedAt older than 72h OR any ACTIVE handler whose expiresAt < now.
+  //     (The active-window constraint is NOT required here — expired-but-ACTIVE handlers
+  //     cause overdue regardless of whether they're still technically "active".)
+  //   - `false` → openedAt within last 72h AND no ACTIVE row whose expiresAt < now.
+  // The two halves compose orthogonally with view/handler/search via laborProfileAnd.
+  if (filter.overdue === true) {
+    laborProfileAnd.push({
+      handlingAssignments: {
+        some: {
+          status: 'ACTIVE',
+          expiresAt: { lt: now },
         },
-      ];
-    } else {
-      where.openedAt = {
-        gte: new Date(now.getTime() - CASE_AGE_OVERDUE_HOURS * 60 * 60 * 1000),
-      };
-      where.laborProfile = {
-        ...(where.laborProfile as Prisma.LaborProfileWhereInput | undefined),
-        handlingAssignments: {
-          none: {
-            status: 'ACTIVE',
-            expiresAt: { lt: now },
-          },
+      },
+    });
+    where.OR = [
+      { openedAt: { lt: new Date(now.getTime() - CASE_AGE_OVERDUE_HOURS * 60 * 60 * 1000) } },
+    ];
+  } else if (filter.overdue === false) {
+    laborProfileAnd.push({
+      handlingAssignments: {
+        none: {
+          status: 'ACTIVE',
+          expiresAt: { lt: now },
         },
-      };
-    }
+      },
+    });
+    where.openedAt = {
+      gte: new Date(now.getTime() - CASE_AGE_OVERDUE_HOURS * 60 * 60 * 1000),
+    };
+  }
+
+  if (laborProfileAnd.length > 0) {
+    where.laborProfile = { AND: laborProfileAnd };
   }
 
   return where;
@@ -408,21 +519,31 @@ export function buildPlacementCaseWhere(
 /**
  * Sort spec → Prisma `orderBy`. The tie-breaker `placement_case.id DESC` is
  * required by RQ-11 for deterministic pagination.
+ *
+ * E0-F04 — `ageHours = now - openedAt`, so the deterministic mapping is:
+ *
+ *   - `ageDesc`   → openedAt ASC  (largest age first = oldest openedAt first).
+ *   - `ageAsc`    → openedAt DESC (smallest age first = newest openedAt first).
+ *   - `openedDesc`→ openedAt DESC.
+ *   - `openedAsc` → openedAt ASC.
+ *
+ * The previous implementation had `ageDesc → openedAt DESC` (inverted). This
+ * correction matches the §4.3 RQ-11 deterministic sort.
  */
 export function buildOrderBy(
   sort: RecruiterWorkbenchFilter['sort'],
 ): Prisma.PlacementCaseOrderByWithRelationInput[] {
   const tie = { id: 'desc' as const };
   switch (sort) {
+    case 'ageAsc':
+      return [{ openedAt: 'desc' }, tie]; // smallest age first
     case 'openedAsc':
       return [{ openedAt: 'asc' }, tie];
     case 'openedDesc':
       return [{ openedAt: 'desc' }, tie];
-    case 'ageAsc':
-      return [{ openedAt: 'asc' }, tie]; // oldest first = lowest age first
     case 'ageDesc':
     case undefined:
-      return [{ openedAt: 'desc' }, tie]; // default
+      return [{ openedAt: 'asc' }, tie]; // largest age first (default)
   }
 }
 
@@ -430,31 +551,34 @@ export function buildOrderBy(
  * Get a paginated list of placement cases for the recruiter workbench, with
  * nested DTO shape per TASK.md RQ-02.
  *
- * IMPORTANT:
+ * IMPORTANT (E0-F06 — resolve permissions exactly once):
+ *   - The route handler MUST compute `canSeeSensitive` ONCE (after Zod parse
+ *     succeeds) and pass it via `permissions`. This function MUST NOT call
+ *     `resolveEffectivePermissions` itself.
  *   - Caller MUST wrap with `withDbContext` so that RLS GUCs are set.
  *   - Caller MUST gate `view = UNASSIGNED` permission at the route layer.
  *   - Caller MUST gate `role === HR_STAFF && view === ALL` at the route.
  *
- * @param tx          Prisma transaction client (RLS GUC must already be set).
- * @param ctx         AuthContext.
- * @param filter      Validated filter.
- * @param nowOverride Optional pinned `Date.now()` for tests. Defaults to
- *                    `new Date()` at call time. Service never mutates this.
+ * @param tx            Prisma transaction client (RLS GUC must already be set).
+ * @param _ctx          AuthContext. (Reserved for future use; current logic uses
+ *                      `filter.view` to scope, which the route has already
+ *                      authority-gated.)
+ * @param filter        Validated filter.
+ * @param permissions   Pre-resolved `canSeeSensitive` from route handler.
+ * @param nowOverride   Optional pinned `Date.now()` for tests. Defaults to
+ *                      `new Date()` at call time. Service never mutates this.
  */
 export async function getRecruiterWorkbenchList(
   tx: Prisma.TransactionClient,
-  ctx: AuthContext,
+  _ctx: AuthContext,
   filter: RecruiterWorkbenchFilter,
+  permissions: RecruiterWorkbenchPermissionContext,
   nowOverride?: Date,
 ): Promise<RecruiterWorkbenchListResponse> {
-  const permissions = await resolveEffectivePermissions({
-    userId: ctx.userId,
-    role: ctx.role,
-  });
-  const canSeeSensitive = permissions.has('CAN_VIEW_WORKER_SENSITIVE');
+  const canSeeSensitive = permissions.canSeeSensitive;
 
   const now = nowOverride ?? new Date();
-  const where = buildPlacementCaseWhere(filter, ctx, now);
+  const where = buildPlacementCaseWhere(filter, _ctx, now);
   const orderBy = buildOrderBy(filter.sort);
 
   const page = filter.page;
@@ -496,6 +620,25 @@ export async function getRecruiterWorkbenchList(
           orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
           select: { id: true, createdAt: true },
         },
+        placements: {
+          orderBy: [{ selectedAt: 'desc' }, { id: 'desc' }],
+          take: 1,
+          select: {
+            id: true,
+            selectedAt: true,
+            jobOpening: {
+              select: {
+                id: true,
+                posting: { select: { id: true, title: true } },
+                staffingOrder: {
+                  select: {
+                    project: { select: { name: true, clientCompanyName: true } },
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     }),
   ]);
@@ -527,7 +670,8 @@ export async function getRecruiterWorkbenchList(
   }
 
   // Job denorm: each case can have 0..N placements; we expose the most
-  // recent placement's jobOpening (if any) + posting title.
+  // recent placement's job chain (jobOpening.posting + staffingOrder.project)
+  // per E0-F05 — no N+1, no raw client-company crossing.
   const items: RecruiterWorkbenchRow[] = rawCases.map((c) => {
     const profile = c.laborProfile;
     const assignments = profile.handlingAssignments as Array<
@@ -574,6 +718,12 @@ export async function getRecruiterWorkbenchList(
       lastInteractionKind: lastInteraction.kind,
     });
 
+    // E0-F05: derive canonical job context from the case's latest placement
+    // (Prisma already returned `placements: { take: 1, orderBy: selectedAt DESC, id DESC }`).
+    const job = extractJobContextFromPlacement(
+      c.placements as unknown as ReadonlyArray<PlacementLike>,
+    );
+
     return {
       caseId: c.id,
       caseStatus: c.status as RecruiterWorkbenchCaseStatus,
@@ -595,12 +745,7 @@ export async function getRecruiterWorkbenchList(
         identityVerification: profile.identityVerification,
         completeness: profile.completeness,
       },
-      job: {
-        jobPostingId: null,
-        jobPostingTitle: null,
-        projectName: null,
-        companyName: null,
-      },
+      job,
       lastInteraction: {
         at: lastInteraction.at ? lastInteraction.at.toISOString() : null,
         kind: lastInteraction.kind,

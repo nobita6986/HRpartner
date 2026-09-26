@@ -12,6 +12,7 @@ import {
   deriveHandler,
   deriveLastInteraction,
   deriveNextAction,
+  extractJobContextFromPlacement,
   type HandlerAssignmentLike,
 } from '@/src/domains/talent/recruiter-workbench.read-service';
 import {
@@ -481,6 +482,170 @@ describe('computeAge — AC-04', () => {
       ageHours: 0,
       isOverdue: false,
       overdueReason: null,
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// extractJobContextFromPlacement — E0-F05
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('extractJobContextFromPlacement — E0-F05', () => {
+  it('no placements → all null', () => {
+    expect(extractJobContextFromPlacement([])).toEqual({
+      jobPostingId: null,
+      jobPostingTitle: null,
+      projectName: null,
+      companyName: null,
+    });
+  });
+
+  it('one placement with full chain → all populated', () => {
+    const placement = {
+      id: 'p1',
+      selectedAt: new Date(NOW.getTime() - 1000),
+      jobOpening: {
+        id: 'jo1',
+        posting: { id: 'posting-1', title: 'Nhân viên pha chế' },
+        staffingOrder: {
+          project: { name: 'Project Alpha', clientCompanyName: 'Công ty TNHH ABC' },
+        },
+      },
+    };
+    expect(extractJobContextFromPlacement([placement])).toEqual({
+      jobPostingId: 'posting-1',
+      jobPostingTitle: 'Nhân viên pha chế',
+      projectName: 'Project Alpha',
+      companyName: 'Công ty TNHH ABC',
+    });
+  });
+
+  it('multiple placements → picks latest by selectedAt DESC, id DESC', () => {
+    const older = {
+      id: 'p-old',
+      selectedAt: new Date(NOW.getTime() - 10000),
+      jobOpening: {
+        id: 'jo-old',
+        posting: { id: 'old-posting', title: 'Old Title' },
+        staffingOrder: {
+          project: { name: 'Old Project', clientCompanyName: 'Old Corp' },
+        },
+      },
+    };
+    const newer = {
+      id: 'p-new',
+      selectedAt: new Date(NOW.getTime() - 100),
+      jobOpening: {
+        id: 'jo-new',
+        posting: { id: 'new-posting', title: 'New Title' },
+        staffingOrder: {
+          project: { name: 'New Project', clientCompanyName: 'New Corp' },
+        },
+      },
+    };
+    // Pass out-of-order to prove deterministic selection
+    expect(extractJobContextFromPlacement([older, newer])).toEqual({
+      jobPostingId: 'new-posting',
+      jobPostingTitle: 'New Title',
+      projectName: 'New Project',
+      companyName: 'New Corp',
+    });
+    expect(extractJobContextFromPlacement([newer, older])).toEqual({
+      jobPostingId: 'new-posting',
+      jobPostingTitle: 'New Title',
+      projectName: 'New Project',
+      companyName: 'New Corp',
+    });
+  });
+
+  it('same selectedAt → tie-breaks by id DESC', () => {
+    const a = {
+      id: 'aaa',
+      selectedAt: new Date(NOW.getTime() - 5000),
+      jobOpening: {
+        id: 'jo-a',
+        posting: { id: 'posting-a', title: 'Title A' },
+        staffingOrder: {
+          project: { name: 'Project A', clientCompanyName: 'Corp A' },
+        },
+      },
+    };
+    const b = {
+      id: 'zzz',
+      selectedAt: new Date(NOW.getTime() - 5000),
+      jobOpening: {
+        id: 'jo-b',
+        posting: { id: 'posting-b', title: 'Title B' },
+        staffingOrder: {
+          project: { name: 'Project B', clientCompanyName: 'Corp B' },
+        },
+      },
+    };
+    expect(extractJobContextFromPlacement([a, b])).toEqual({
+      jobPostingId: 'posting-b',
+      jobPostingTitle: 'Title B',
+      projectName: 'Project B',
+      companyName: 'Corp B',
+    });
+  });
+
+  it('placement with missing optional relations → null fields, no 500', () => {
+    const partial = {
+      id: 'p-partial',
+      selectedAt: new Date(NOW.getTime() - 1000),
+      // jobOpening undefined
+    };
+    expect(extractJobContextFromPlacement([partial])).toEqual({
+      jobPostingId: null,
+      jobPostingTitle: null,
+      projectName: null,
+      companyName: null,
+    });
+
+    const noPosting = {
+      id: 'p-no-posting',
+      selectedAt: new Date(NOW.getTime() - 1000),
+      jobOpening: { id: 'jo-1' },
+    };
+    expect(extractJobContextFromPlacement([noPosting])).toEqual({
+      jobPostingId: null,
+      jobPostingTitle: null,
+      projectName: null,
+      companyName: null,
+    });
+
+    const noProject = {
+      id: 'p-no-project',
+      selectedAt: new Date(NOW.getTime() - 1000),
+      jobOpening: {
+        id: 'jo-2',
+        posting: { id: 'posting-x', title: 'Title X' },
+        staffingOrder: {},
+      },
+    };
+    expect(extractJobContextFromPlacement([noProject])).toEqual({
+      jobPostingId: 'posting-x',
+      jobPostingTitle: 'Title X',
+      projectName: null,
+      companyName: null,
+    });
+
+    const nullTitle = {
+      id: 'p-null-title',
+      selectedAt: new Date(NOW.getTime() - 1000),
+      jobOpening: {
+        id: 'jo-3',
+        posting: { id: 'posting-y', title: null },
+        staffingOrder: {
+          project: { name: 'Project Y', clientCompanyName: null },
+        },
+      },
+    };
+    expect(extractJobContextFromPlacement([nullTitle])).toEqual({
+      jobPostingId: 'posting-y',
+      jobPostingTitle: null,
+      projectName: 'Project Y',
+      companyName: null,
     });
   });
 });

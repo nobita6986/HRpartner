@@ -22,13 +22,18 @@
  *   - tests/db/placement-lifecycle-integration.test.ts (N3 fixture builder)
  */
 
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { randomUUID } from 'node:crypto';
 import { PrismaClient, type Prisma } from '@prisma/client';
 
+import { GET as recruiterWorkbenchGET } from '@/app/api/admin/recruiter-workbench/route';
 import { getRecruiterWorkbenchList } from '@/src/domains/talent/recruiter-workbench.read-service';
 import { SERVER_DERIVED_NEXT_ACTION_VALUES } from '@/src/domains/talent/recruiter-workbench.types';
 import type { AuthContext } from '@/src/shared/auth/auth-context';
+import { getAuthContext } from '@/src/shared/auth/auth-context';
+import { resolveEffectivePermissions } from '@/src/shared/auth/permission-resolver';
+import { withDbContext } from '@/src/shared/auth/with-db-context';
+import { getPrisma } from '@/src/lib/db';
 
 const adminUrl = process.env.DATABASE_URL_ADMIN_TEST ?? '';
 const writerUrl = process.env.DATABASE_URL_TEST ?? '';
@@ -39,6 +44,12 @@ const HAS_TEST_DB =
   !writerUrl.includes('placeholder');
 
 const runId = `p1e0-${randomUUID().slice(0, 8)}`;
+
+// E0-F06: integration tests must pass an explicit permission context to the
+// service. Manager/admin roles in this suite have full permissions
+// (CAN_VIEW_WORKER_SENSITIVE + CAN_VIEW_UNASSIGNED_POOL); staff have none.
+const FULL_PERMS = { canSeeSensitive: true };
+const NO_PERMS = { canSeeSensitive: false };
 
 function makeClient(url: string): PrismaClient {
   return new PrismaClient({
@@ -286,7 +297,7 @@ describe.skipIf(!HAS_TEST_DB)('P1-E0 RecruiterWorkbench integration', () => {
         view: 'ALL',
         page: 1,
         pageSize: 20,
-      }),
+      }, FULL_PERMS),
     );
     const adminRow = adminOut.items.find((r) => r.caseId === c.id);
     expect(adminRow).toBeDefined();
@@ -308,7 +319,7 @@ describe.skipIf(!HAS_TEST_DB)('P1-E0 RecruiterWorkbench integration', () => {
         // explicitly request ALL in a separate scenario via handler assignment.
         page: 1,
         pageSize: 20,
-      }),
+      }, NO_PERMS),
     );
     // MINE for staff with no active assignment → row not visible.
     const staffRowMine = staffOut.items.find((r) => r.caseId === c.id);
@@ -335,7 +346,7 @@ describe.skipIf(!HAS_TEST_DB)('P1-E0 RecruiterWorkbench integration', () => {
         view: 'MINE',
         page: 1,
         pageSize: 20,
-      }),
+      }, FULL_PERMS),
     );
     const row = out.items.find((r) => r.caseId === c.id);
     expect(row).toBeDefined();
@@ -366,7 +377,7 @@ describe.skipIf(!HAS_TEST_DB)('P1-E0 RecruiterWorkbench integration', () => {
         view: 'ALL',
         page: 1,
         pageSize: 20,
-      }),
+      }, FULL_PERMS),
     );
     const row = out.items.find((r) => r.caseId === c.id);
     expect(row).toBeDefined();
@@ -390,7 +401,7 @@ describe.skipIf(!HAS_TEST_DB)('P1-E0 RecruiterWorkbench integration', () => {
         view: 'ALL',
         page: 1,
         pageSize: 20,
-      }),
+      }, FULL_PERMS),
     );
     const row = out.items.find((r) => r.caseId === c.id);
     expect(row).toBeDefined();
@@ -410,7 +421,7 @@ describe.skipIf(!HAS_TEST_DB)('P1-E0 RecruiterWorkbench integration', () => {
         view: 'ALL',
         page: 1,
         pageSize: 20,
-      }),
+      }, FULL_PERMS),
     );
     const row = out.items.find((r) => r.caseId === c.id);
     expect(row).toBeDefined();
@@ -428,7 +439,7 @@ describe.skipIf(!HAS_TEST_DB)('P1-E0 RecruiterWorkbench integration', () => {
         view: 'ALL',
         page: 1,
         pageSize: 100,
-      }),
+      }, FULL_PERMS),
     );
     const byProfile = Object.fromEntries(
       out.items.map((r) => [r.candidate.laborProfileId, r]),
@@ -456,7 +467,7 @@ describe.skipIf(!HAS_TEST_DB)('P1-E0 RecruiterWorkbench integration', () => {
         view: 'ALL',
         page: 1,
         pageSize: 100,
-      }),
+      }, FULL_PERMS),
     );
     const row = out.items.find((r) => r.caseId === c.id);
     expect(row).toBeDefined();
@@ -483,7 +494,7 @@ describe.skipIf(!HAS_TEST_DB)('P1-E0 RecruiterWorkbench integration', () => {
         view: 'ALL',
         page: 1,
         pageSize: 100,
-      }),
+      }, FULL_PERMS),
     );
     const row = out.items.find((r) => r.caseId === c.id);
     expect(row).toBeDefined();
@@ -499,7 +510,7 @@ describe.skipIf(!HAS_TEST_DB)('P1-E0 RecruiterWorkbench integration', () => {
         overdue: true,
         page: 1,
         pageSize: 100,
-      }),
+      }, FULL_PERMS),
     );
     const no = await withContext(writer, ctx, (tx) =>
       getRecruiterWorkbenchList(tx, ctx, {
@@ -507,7 +518,7 @@ describe.skipIf(!HAS_TEST_DB)('P1-E0 RecruiterWorkbench integration', () => {
         overdue: false,
         page: 1,
         pageSize: 100,
-      }),
+      }, FULL_PERMS),
     );
     // All rows in `yes` must be overdue.
     for (const r of yes.items) {
@@ -526,7 +537,7 @@ describe.skipIf(!HAS_TEST_DB)('P1-E0 RecruiterWorkbench integration', () => {
         view: 'ALL',
         page: 1,
         pageSize: 100,
-      }),
+      }, FULL_PERMS),
     );
     expect(allOut.total).toBe(allOut.items.length);
     expect(allOut.total).toBeGreaterThan(0);
@@ -539,7 +550,7 @@ describe.skipIf(!HAS_TEST_DB)('P1-E0 RecruiterWorkbench integration', () => {
         view: 'ALL',
         page: 1,
         pageSize: 100,
-      }),
+      }, FULL_PERMS),
     );
     // Find at least one row WITH submissions (the `last-int` test created one).
     const withSub = out.items.find(
@@ -559,4 +570,73 @@ describe.skipIf(!HAS_TEST_DB)('P1-E0 RecruiterWorkbench integration', () => {
       expect(withoutSub.primaryActions.submissionHref).toBeNull();
     }
   }, 30_000);
+
+  // ── E0-F07: Real GET handler coverage on synthetic DB ────────────────────
+  // These tests bypass the unit-only mocking strategy in route.test.ts by
+  // calling the actual production GET handler, with auth and DB context
+  // wired to the live test DB. They prove the route → service → DB chain
+  // works end-to-end for an authenticated HR_MANAGER against the synthetic DB.
+  it('E0-F07: real GET handler returns 200 with the synthetic DB-backed list', async () => {
+    // Wire auth + permission resolver to the test DB context.
+    (getAuthContext as unknown as ReturnType<typeof vi.fn>).mockImplementation(
+      async () => ({ userId: managerId, role: 'HR_MANAGER' }),
+    );
+    (
+      resolveEffectivePermissions as unknown as ReturnType<typeof vi.fn>
+    ).mockImplementation(async () => {
+      const set = new Set<string>();
+      set.add('CAN_VIEW_WORKER_SENSITIVE');
+      set.add('CAN_VIEW_UNASSIGNED_POOL');
+      return set;
+    });
+    (
+      withDbContext as unknown as ReturnType<typeof vi.fn>
+    ).mockImplementation(
+      async (
+        prisma: unknown,
+        session: unknown,
+        fn: (tx: Prisma.TransactionClient) => Promise<unknown>,
+      ) => {
+        // Use the test writer client and set RLS GUCs the same way as
+        // production code (mirrors src/shared/auth/rls-context).
+        return (prisma as PrismaClient).$transaction(async (tx) => {
+          await tx.$executeRawUnsafe(
+            `SELECT set_config('app.user_id', $1, true)`,
+            (session as AuthContext).userId,
+          );
+          await tx.$executeRawUnsafe(
+            `SELECT set_config('app.role', $1, true)`,
+            (session as AuthContext).role,
+          );
+          await tx.$executeRawUnsafe(
+            `SELECT set_config('app.vendor_id', '', true)`,
+          );
+          await tx.$executeRawUnsafe(
+            `SELECT set_config('app.worker_id', '', true)`,
+          );
+          return fn(tx as unknown as Prisma.TransactionClient);
+        });
+      },
+    );
+    (getPrisma as unknown as ReturnType<typeof vi.fn>).mockReturnValue(writer);
+
+    // Call the real route handler with a synthetic request.
+    const req = new Request(
+      'http://localhost/api/admin/recruiter-workbench?view=ALL',
+      { method: 'GET' },
+    );
+    const res = await recruiterWorkbenchGET(req as unknown as import('next/server').NextRequest);
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body).toHaveProperty('items');
+    expect(body).toHaveProperty('total');
+    expect(body).toHaveProperty('page');
+    expect(body).toHaveProperty('pageSize');
+    // Items should follow the nested DTO shape (no top-level aliases).
+    if (body.items.length > 0) {
+      const first = body.items[0];
+      expect(first).toHaveProperty('candidate');
+      expect(first).not.toHaveProperty('candidatePhone');
+    }
+  }, 60_000);
 });
