@@ -74,7 +74,7 @@ const CONTEXT_LOOKBACK = 25;
  * service không đổi — tổng còn 5 + 3 + 4 = 12.
  */
 const EXPECTED_HITS = [
-  'app/api/projects/route.ts:65 clientCompany',
+  'app/api/projects/route.ts:55 clientCompany',
   'app/api/vendor/orders/route.ts:44 project',
   'app/api/vendor/submissions/route.ts:62 project',
   'src/domains/applications/application-queue.service.ts:183 project',
