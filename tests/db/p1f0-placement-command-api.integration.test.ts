@@ -944,20 +944,19 @@ describeIf(
       });
       expect(placementCount).toBe(1);
 
-      // Failure reason (when FAILED won) is server-built; cancel leaves it null.
-      if (winningBody.status === 'FAILED') {
-        const p = await admin.placement.findUnique({
-          where: { id: b1.placementId },
-          select: { failureReason: true },
-        });
-        expect(p?.failureReason).toBeTruthy();
-      } else {
-        const p = await admin.placement.findUnique({
-          where: { id: b1.placementId },
-          select: { failureReason: true },
-        });
-        expect(p?.failureReason).toBeNull();
-      }
+      // Failure reason: BOTH FAILED and CANCELLED terminal transitions receive a
+      // server-built reason (`Marked <STATUS> by <actorId> at <ISO>`) per the
+      // canonical placement.service.ts terminal-state handler. The reason must
+      // therefore be non-empty, must echo the winning terminal status, and must
+      // carry the canonical actor id used by this run.
+      const p = await admin.placement.findUnique({
+        where: { id: b1.placementId },
+        select: { failureReason: true },
+      });
+      expect(typeof p?.failureReason).toBe('string');
+      expect(p?.failureReason).toBeTruthy();
+      expect(p?.failureReason).toContain(`Marked ${winningBody.status}`);
+      expect(p?.failureReason).toContain(`p1f0-admin-${runId}`);
     });
 
     // ─────────────────────────────────────────────────────────────────────
