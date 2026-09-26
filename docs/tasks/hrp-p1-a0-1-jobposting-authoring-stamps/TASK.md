@@ -12,8 +12,8 @@
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
 | Audit reason | `Public marketplace stamp rendering is a customer-facing surface backed by JobPosting; HR-only mutation authority + public projection rewrite + animated stamp component touch both admin and public rendering paths. LIGHT audit đảm bảo changed surface (schema migration, two service contracts, two admin UI screens, three public render paths) được đối chiếu sau khi implementation freeze SHA. Risk acceptance: T0 chấp nhận LIGHT audit cho thin slice này (T0 directive 2026-09-26, "Quyết định đã khóa" §2-§4 đã chốt đủ để Tier 1 tự review). Người chấp nhận rủi ro: T0.` |
-| Spec version | `v1.2` |
-| Status | `READY_FOR_AUDIT` (recorded after post-audit integrity correction R2; AUD-001 RELEASE-BLOCKING closed; AUD-002 P3 closed; AUD-003 P3 accepted as DEV-04 debt) |
+| Spec version | `v1.3` |
+| Status | `ACCEPTED` (PR #55 merged; production migration and read-only smoke verified by T0; AUD-003 remains accepted P3 tooling debt) |
 | Planner | `Tier 1C` |
 | Baseline | `152c0fdaa4d28934acfbacb540a207aee686e1ad` (latest `origin/main` full SHA, includes completed P1-A0/A1/B as of 2026-09-26) |
 | Baseline/diff range | `152c0fdaa4d28934acfbacb540a207aee686e1ad..2c1bd1694121f822956c76e8024df9ef42dce9ad` (T0 freeze HEAD recorded in HANDOFF §0) |
@@ -25,10 +25,10 @@
 | Forbidden paths | `src/domains/talent/recruiter-workbench.*`; `app/api/admin/recruiter-workbench/**`; `tests/db/recruiter-workbench.integration.test.ts`; `src/domains/media/**`; `src/domains/referrals/**` ngoài `attribution-redirect.service` + `redirect-token` (read-only); `src/domains/crm/**`; bất kỳ frozen command contract nào (`hrp-p1-a0`, `hrp-p1-a1`, `hrp-p1-b` TASK/AUDIT/HANDOFF files); production `.env*` files; production DB/migration/deploy scripts; **sidebar, navigation, menu, IA routes** (T0 §4 forbidden); any path outside the in-scope roots above |
 | Required gates | `npx prisma validate`; `npx prisma generate`; `npm run typecheck`; `npm run lint`; targeted route/component/service tests; `npm run test:unit`; deterministic targeted DB integration; full canonical integration with strict synthetic DB; p1a1 migration-chain proof; `git diff --check`; `pwsh .ai-pipeline/scripts/verify-encoding.ps1`; `pwsh .ai-pipeline/scripts/verify-task.ps1`; `pwsh .ai-pipeline/scripts/verify-handoff.ps1`. Audit self-test only — KHÔNG audit tĩnh. |
 | Current execution round | `2` (correction batch 1/1 + post-audit integrity correction R2; R2 closes AUD-001 RELEASE-BLOCKING) |
-| Current audit round | `1` (Tier 3 LIGHT audit verdict CONDITIONAL; AUDIT.md adopted at commit `b2b71a2`) |
-| Implementation SHA | `2c1bd1694121f822956c76e8024df9ef42dce9ad` (R2 semantic commit; was `5c2499265fda22da057d40fda29bb856ea394ba6` at R1) |
+| Current audit round | `2` (Tier 3 R2 DELTA audit verdict CONDITIONAL; AUD-001/AUD-002 closed; AUD-003 accepted as P3 debt; byte-exact audit adopted at `732d5a4`) |
+| Implementation SHA | `34d364609a2bb1f80a524fc9924ae23b37b20aaf` (accepted main integration SHA; stamps-only R2 semantic SHA remains `2c1bd1694121f822956c76e8024df9ef42dce9ad`) |
 | Frozen delivery | `YES` (Implementation SHA pinned at HANDOFF §0; source/test/migration frozen after R2 semantic commit) |
-| Next gate | `T0_REVIEW` |
+| Next gate | `NONE — MERGED_AND_PRODUCTION_VERIFIED` |
 
 > Lane CRITICAL mặc định LIGHT. Risk acceptance: T0 chấp nhận LIGHT audit cho thin slice này; người chấp nhận rủi ro ghi rõ trong `Audit reason`.
 
@@ -274,6 +274,7 @@ Chỉ liệt kê evidence cần để Tier 1 implement.
 - **Existing migration `20260926120000_p1a01_jobposting_stamps/migration.sql` MUST NOT be edited** (T0 §corrections batch 1/1, "Do not edit the existing migration bytes" — T0 chấp nhận additive migration đã apply).
 - **R2 post-audit integrity correction (2026-09-26, T0 exception):** Tier 3 audit verdict CONDITIONAL (1 P1 RELEASE-BLOCKING + 2 P3) on R1 correction batch 1/1. T0 granted ONE post-audit integrity exception because the pre-audit correction budget was exhausted. R2 closes AUD-001 (write-path canonical helper consumption) and AUD-002 (HANDOFF counts + SHA pin). AUD-003 is P3 accepted debt (`verify-encoding.mjs` kept until rebase onto canonical main); will be resolved in a dedicated tooling-cleanup PR. No Owner decisions required beyond those already locked.
 - T1C executor used V2_FAST_FREEZE protocol; corrections budget = 1 (now exhausted by R2).
+- **T0 production closeout (2026-09-26):** PR #55 was reconciled with accepted P1-E0 by merge commit `73a9ed3ed6258f839f82b4437ecbce334dc14976`, then merged to `main` at `34d364609a2bb1f80a524fc9924ae23b37b20aaf`. PR CI and post-merge main CI passed. T0 created pre-migration Neon snapshot branch `br-icy-night-azmankdx`, deployed only migration `20260926120000_p1a01_jobposting_stamps`, verified migration status and both NOT NULL/default-false columns, then completed read-only HTTP smoke. Task state is now `ACCEPTED`; AUD-003 remains non-blocking P3 tooling debt.
 
 ## 10. Revision Log
 
@@ -283,6 +284,7 @@ Chỉ liệt kê evidence cần để Tier 1 implement.
 | R1 (implementation) | 2026-09-26 | TASK section names corrected to match `verify-task.ps1` required structure; RQ→STEP→AC traceability table added (T-05 failure fix); Execution Plan + Acceptance + Risk + Open Questions + Planner Resolution + Revision Log sections added per required section list | `verify-task.ps1` requires `## 5. Execution Plan` and `## 6. Acceptance`; T-05 requires RQ→STEP→AC traceability |
 | R1.1 (correction batch 1/1) | 2026-09-26 | TASK bumped to v1.1. Status → `READY_FOR_AUDIT`. Contract gate → `ACCEPTED`. In-scope roots expanded with C-01..C-06 deliverables. Required gates refined (route/component/service tests; deterministic targeted DB integration; p1a1 migration-chain proof). Current audit round → `0` (Tier 3 not yet invoked). Correction budget → `0` (batch 1/1 closed all findings; no further rounds). | T0 directive §corrections batch 1/1: five findings + C-03 integration rewrite closed. Frozen delivery still pending new Implementation SHA pin (HANDOFF §0). |
 | R2 (post-audit integrity correction) | 2026-09-26 | TASK bumped to v1.2. Status → `READY_FOR_AUDIT` (audit round 1 verdict CONDITIONAL; AUD-001 RELEASE-BLOCKING closed). Contract gate → `ACCEPTED`. In-scope roots expanded with **AUD-001 R2** (real import + `(eligibleSlotPredicateSql(now)) AS is_eligible` computed column + fail-closed `slot.is_eligible !== true` gate in `assertSlotEligibleForNewJobPosting`), **AUD-002 R2** (HANDOFF unit gate counts + new Implementation SHA `2c1bd1694121f822956c76e8024df9ef42dce9ad`), **AUD-003 R2 (P3 accepted debt)** (keep `verify-encoding.mjs`; cleanup deferred to dedicated PR after rebase onto main). Current execution round → `2`. Current audit round → `1` (Tier 3 audit recorded at AUDIT.md commit `b2b71a2`). Frozen delivery → `YES`. | T0 post-audit integrity exception (R1 pre-audit correction budget exhausted; no further rounds permitted). AUD-001 was the only RELEASE-BLOCKING finding (selector/write-path drift risk; authorization/runtime already intact, but drift-safety needed). AUD-002 P3 documentation debt (HANDOFF counts + SHA pin). AUD-003 P3 tooling drift (canonical `verify-encoding.ps1` exists upstream; keep Node variant until rebase). |
+| R3 (T0 closeout) | 2026-09-26 | TASK bumped to v1.3. Status → `ACCEPTED`; audit round corrected to `2`; Next gate → `NONE — MERGED_AND_PRODUCTION_VERIFIED`. Recorded PR #55 merge, green CI, production snapshot, exact migration deployment, schema verification, and read-only smoke. | T0 completed merge and production gate at main merge commit `34d364609a2bb1f80a524fc9924ae23b37b20aaf`. No source, test, schema, migration, package, or audit artifact changed in this closeout. |
 
 ## 11. DEV-01 — Refreshed Line References (correction batch 1/1)
 
