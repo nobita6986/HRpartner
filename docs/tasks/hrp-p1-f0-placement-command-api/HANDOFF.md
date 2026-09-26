@@ -188,8 +188,9 @@ report — round is pre-freeze.
 | E-16 | `evidence/corrections/C-05-truthful-tests-dual-url.txt` | C-05 evidence |
 | E-17 | `evidence/corrections/C-06-clean-freeze-pipeline-tooling.txt` | C-06 evidence |
 | E-18 | `evidence/sha-pins.txt` | SHA pins: original `9274ccd...`, archive branch head, clean branch head, semantic Implementation SHA (post-commit), docs-only freeze HEAD (post-commit) |
-| E-19 | `evidence/corrections/C-07-round5-synthetic-db-correction.txt` | C-07 round-5 evidence (synthetic-DB gate correction + final freeze; SECT A AC-10a/AC-10b rewrite, SECT B MP-2 test-infra scope exception, SECT C verification gates, SECT D final freeze) |
-| E-20 | `evidence/gates/verify-handoff.txt` | verify-handoff.ps1 final PASS result (post-freeze) |
+| E-19 | `evidence/corrections/C-07-round5-synthetic-db-correction.txt` | C-07 round-5 evidence (synthetic-DB gate correction + final freeze; SECT A AC-10a/AC-10b rewrite, SECT B MP-2 test-infra scope exception, SECT C verification gates, SECT D final freeze; SUPERSEDED by C-07 closure correction in-progress) |
+| E-20 | `evidence/gates/verify-handoff.txt` | verify-handoff.ps1 FAIL under BLOCKED (4 H-16 + 1 H-15, expected per directive point 8); pre-reversal PASS captured for reference |
+| E-21 | `evidence/gates/live-integration-attempts-t1b-sandbox.txt` | T1B sandbox LIVE integration attempts: MP-2 / P1-F0 / placement-lifecycle / full canonical all ENV_BLOCKED (DATABASE_URL_TEST not provisioned); NOT a fake PASS — T0 owns the dedicated synthetic staging target |
 
 ## 4. Deviations and blockers
 
