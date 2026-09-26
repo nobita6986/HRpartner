@@ -584,55 +584,105 @@ describe.skipIf(!process.env.MP2_LIVE_SECURITY_CHECK)(
       // body's own assertion failure.
       try {
         if (job) {
-          // Capture run-owned submission ID set so we delete EXACTLY those rows.
+          // C-07 closure correction (round 5 reversal): collect run-owned
+          // CandidateSubmission IDs AND their FK columns in ONE query so we
+          // can deterministically reverse every dependent FK before deleting
+          // the parent rows. `slot_id` lives on candidate_submissions, NOT
+          // on labor_profiles — querying labor_profiles.slot_id was the
+          // original bug. We now drive LP/PC resolution from the submissions
+          // themselves, which is the authoritative source of truth for
+          // run-owned dependents.
           const subsRes = await admin.query(
-            `SELECT id FROM candidate_submissions WHERE idempotency_key_hash = $1`,
+            `SELECT id, labor_profile_id, placement_case_id
+               FROM candidate_submissions
+              WHERE idempotency_key_hash = $1`,
             [key],
           );
           const submissionIds: string[] = subsRes.rows.map((r: any) => r.id);
+          const lpIds: string[] = Array.from(
+            new Set(
+              subsRes.rows
+                .map((r: any) => r.labor_profile_id)
+                .filter((v: unknown) => typeof v === "string" && v.length > 0),
+            ),
+          );
+          const pcIds: string[] = Array.from(
+            new Set(
+              subsRes.rows
+                .map((r: any) => r.placement_case_id)
+                .filter((v: unknown) => typeof v === "string" && v.length > 0),
+            ),
+          );
 
           if (submissionIds.length > 0) {
-            // application_status_history → candidate_submissions
+            // FK-safe reverse order. The candidate_submissions table has
+            // RESTRICT FKs to labor_profiles and placement_case, so we
+            // MUST clear those FKs on every referencing row before
+            // deleting the parents. application_status_history also has
+            // a RESTRICT FK to candidate_submissions, so its rows must
+            // be deleted FIRST.
+            //
+            //   application_status_history
+            //   → candidate_submissions
+            //   → (clear candidate_submissions FK cols → labor_profiles
+            //      is no longer referenced by any row of ours)
+            //   → placements (defensive: clear Placement rows pointing at
+            //      the run-owned LP/PC, in case a prior-run residue exists)
+            //   → placement_case
+            //   → labor_profiles
+            //   → job fixture hierarchy
+            //
+            // (1) application_status_history first — its FK points AT
+            //     candidate_submissions, so it must be removed before
+            //     the submission rows.
             await admin.query(
               `DELETE FROM application_status_history WHERE submission_id = ANY($1::text[])`,
               [submissionIds],
             );
-            // NEW_PROFILE branch may have created a LaborProfile tied to
-            // (slot_id, normalized_phone). Look it up by racePhone and
-            // delete ONLY the one created by THIS run (matched by
-            // normalized_phone + slot_id + recently-created).
-            const laborProfilesRes = await admin.query(
-              `SELECT id FROM labor_profiles WHERE normalized_phone = $1 AND slot_id = $2`,
-              [norm, job.slotId],
+            // (2) candidate_submissions — but FIRST NULL the FK columns
+            //     on every row that still points at a run-owned
+            //     LP/PC. We scope the UPDATE to `id = ANY(...)` so we
+            //     never touch rows from other runs.
+            await admin.query(
+              `UPDATE candidate_submissions
+                  SET placement_case_id = NULL,
+                      labor_profile_id  = NULL
+                WHERE id = ANY($1::text[])`,
+              [submissionIds],
             );
-            const lpIds: string[] = laborProfilesRes.rows.map((r: any) => r.id);
-            // FK chain for placement_cases → labor_profile_id
+            await admin.query(
+              `DELETE FROM candidate_submissions WHERE id = ANY($1::text[])`,
+              [submissionIds],
+            );
+            // (3) Defensive: clear any Placement rows that reference
+            //     run-owned LP/PC. The apply RPC never creates Placements,
+            //     but if a prior failed run left a stale Placement row
+            //     pointing at the LP/PC, the next DELETE on the parents
+            //     would hit the RESTRICT FK and surface as the cleanup
+            //     error we are catching one block below.
             if (lpIds.length > 0) {
-              const pcRes = await admin.query(
-                `SELECT id FROM placement_cases WHERE labor_profile_id = ANY($1::text[])`,
+              await admin.query(
+                `DELETE FROM placements WHERE labor_profile_id = ANY($1::text[])`,
                 [lpIds],
               );
-              const pcIds: string[] = pcRes.rows.map((r: any) => r.id);
-              if (pcIds.length > 0) {
-                // candidate_submissions also references placement_case_id; clear it.
-                await admin.query(
-                  `UPDATE candidate_submissions SET placement_case_id = NULL WHERE placement_case_id = ANY($1::text[])`,
-                  [pcIds],
-                );
-                await admin.query(
-                  `DELETE FROM placement_cases WHERE id = ANY($1::text[])`,
-                  [pcIds],
-                );
-              }
+            }
+            if (pcIds.length > 0) {
+              await admin.query(
+                `DELETE FROM placements WHERE placement_case_id = ANY($1::text[])`,
+                [pcIds],
+              );
+              await admin.query(
+                `DELETE FROM placement_case WHERE id = ANY($1::text[])`,
+                [pcIds],
+              );
+            }
+            // (4) labor_profiles last (children removed above).
+            if (lpIds.length > 0) {
               await admin.query(
                 `DELETE FROM labor_profiles WHERE id = ANY($1::text[])`,
                 [lpIds],
               );
             }
-            await admin.query(
-              `DELETE FROM candidate_submissions WHERE id = ANY($1::text[])`,
-              [submissionIds],
-            );
           }
           // Job fixture cleanup (FK-safe reverse order).
           await admin.query(`DELETE FROM job_postings WHERE id = $1`, [job.postingId]);

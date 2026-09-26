@@ -69,3 +69,57 @@ History PRESERVED (point 10):
 
 No push, no PR, no Tier 3, no merge, no migration, no deploy.
 
+=====================================================================
+POST-REVERSAL verify-handoff re-run (2026-09-26 — in-progress C-07 closure correction)
+=====================================================================
+
+Command: pwsh -NoProfile .ai-pipeline/scripts/verify-handoff.ps1 \
+  -TaskPath docs/tasks/hrp-p1-f0-placement-command-api/TASK.md
+
+HANDOFF SUBSTANCE GATE
+  subject: docs\tasks\hrp-p1-f0-placement-command-api\HANDOFF.md (against docs/tasks/hrp-p1-f0-placement-command-api/TASK.md)
+
+  [OK]   H-01 HANDOFF.md size 28400 bytes.
+  [OK]   H-01 HANDOFF.md is recoverable from git (tracked=True staged=False).
+  [OK]   H-02 all 6 required sections present (compact).
+  [OK]   H-03 spec version v1.3 (round-5 final freeze REVERSED; control fields
+        d?o ngu?c BLOCKED branch per T0 verdict CHANGES_REQUIRED) matches TASK.
+  [OK]   H-03 assurance lane CRITICAL matches TASK.
+  [FAIL] H-16 V2 HANDOFF must pin an exact 40-character Implementation SHA.
+  [FAIL] H-16 Frozen delivery must be YES before review/audit, got
+        'NO (ROUND-5 FINAL FREEZE D?O NGU?C; RUNTIME CHUA PASS)'.
+  [FAIL] H-16 Canonical gates must be PASS or NOT_REQUIRED, got
+        'FAIL/PENDING (... ch?a re-attempt v?i bug fixed)'.
+  [FAIL] H-16 source/test/migration remains dirty after freeze:
+        src/domains/applications/live-integration.mp2.test.ts.
+  [OK]   H-04 section 3 opens with verify-task.ps1 RESULT: PASS.
+  [OK]   H-05 all 18 AC have an evidence row.
+  [OK]   H-06 every AC row carries a command/result directly or through a
+        runnable E-xx registry entry.
+  [OK]   H-07 19 referenced evidence file(s) exist.
+  [OK]   H-09 no plaintext secret in HANDOFF.md.
+  [OK]   H-10 status BLOCKED is consistent between section 0 and the closing line.
+  [OK]   H-12 compact handoff reports changed surface instead of repeating STEP history.
+  [OK]   H-14 compact handoff uses Control as the single round record.
+  [WARN] H-15 TASK.md control field(s) differ from HEAD: Next gate, Spec
+        version. Ensure Tier 1 recorded the reason in Planner Resolution or
+        Revision Log.
+
+RESULT: FAIL (4 error(s), 1 warning(s)).
+Do NOT write "Handoff status: READY_FOR_AUDIT" until these fail items are fixed.
+
+Interpretation:
+  - 4 H-16 failures are EXPECTED under the BLOCKED control field per
+    T0 directive point 8. They reflect the canonical gates being FAIL/PENDING
+    and the live-integration.mp2.test.ts C-07 closure correction
+    not yet having been committed.
+  - The 1 H-15 WARN is also expected: control fields Next gate and Spec
+    version in TASK.md differ from HEAD (pre-reversal) and were
+    intentionally re-aligned to BLOCKED state per directive point 8.
+  - This verify-handoff run is intentionally captured so the BLOCKED
+    state is traceable in evidence. After runtime PASS + final freeze,
+    this run will be SUPERSEDED by a fresh verify-handoff run with
+    RESULT: PASS.
+
+Exit code: 2 (expected under BLOCKED control field).
+

@@ -59,3 +59,46 @@ History PRESERVED (point 10):
 
 No push, no PR, no Tier 3, no merge, no migration, no deploy.
 
+=====================================================================
+POST-REVERSAL verify-task re-run (2026-09-26 — in-progress C-07 closure correction)
+=====================================================================
+
+Command: pwsh -NoProfile .ai-pipeline/scripts/verify-task.ps1 \
+  -TaskPath docs/tasks/hrp-p1-f0-placement-command-api/TASK.md
+
+TASK CONTRACT GATE
+  subject: docs/tasks/hrp-p1-f0-placement-command-api/TASK.md
+
+  [OK]   A-01 all 11 required sections present.
+  [OK]   A-02 control fields present (status: BLOCKED).
+  [OK]   A-02 assurance lane: CRITICAL.
+  [OK]   A-02 audit mode: LIGHT.
+  [OK]   A-02 audit selection has a recorded reason.
+  [WARN] T-09 V2 Contract gate 'ACCEPTED' must be DRAFT or READY_TO_CODE.
+  [OK]   T-10 Build vs adopt decision is explicit: ADOPT.
+  [OK]   T-11 Build vs automate decision is explicit: N/A.
+  [OK]   T-09 V2 draft fields are structurally valid.
+  [WARN] A-04 status is 'BLOCKED' - placeholder and dry-run checks are
+        non-blocking.
+  [OK]   A-05 19 requirement(s) traceable to STEP and AC.
+  [OK]   T-01 4 referenced npm script(s) all exist.
+  [OK]   T-02 12 file:line reference(s) resolve.
+  [OK]   T-03 no AC proves scope with a bare 'git diff'.
+  [OK]   T-05 all 18 AC row(s) name a measurable method.
+  [OK]   T-06 no plaintext secret in TASK.md.
+  [OK]   T-07 control field change (Current execution round, Spec version)
+        is accompanied by a section 9/10 entry.
+
+RESULT: DRAFT-VALID (2 warning(s)).
+Exit code: 0.
+
+Interpretation:
+  - 2 WARN (T-09 + A-04) are EXPECTED under the BLOCKED control field
+    per T0 directive point 8.
+  - DRAFT-VALID is acceptable: the static contract gate passes; the
+    BLOCKED state only fails the runtime H-16 gates in verify-handoff.
+  - After runtime PASS + final freeze, control fields will be reset
+    to READY_FOR_AUDIT, Frozen delivery YES, Canonical gates PASS,
+    Audit eligibility ELIGIBLE, Next gate TIER3_LIGHT_AUDIT, and this
+    verify-task will be re-run as part of the final freeze.
+

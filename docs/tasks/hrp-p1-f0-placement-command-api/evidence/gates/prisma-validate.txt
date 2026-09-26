@@ -7,3 +7,22 @@ Prisma schema loaded from prisma\schema.prisma
 The schema at prisma\schema.prisma is valid 🚀
 
 Round: 5 (round-5 freeze; pre-reversal)
+
+=====================================================================
+POST-REVERSAL prisma validate re-run (2026-09-26 — C-07 closure correction in-progress)
+=====================================================================
+
+Command: DATABASE_URL=…placeholder DATABASE_URL_ADMIN=…placeholder npx prisma validate
+
+Prisma schema loaded from prisma\schema.prisma
+The schema at prisma\schema.prisma is valid 🚀
+
+Result (post-reversal): schema valid (unchanged from pre-reversal baseline).
+
+Exit code: 0.
+
+Interpretation: per directive point 4, the production schema/migration
+is NOT modified by the C-07 closure correction. The fix is test-infra
+only (src/domains/applications/live-integration.mp2.test.ts). After
+runtime PASS + final freeze, this file will be SUPERSEDED by a
+fresh prisma validate run with the new SHA pinned.

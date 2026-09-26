@@ -41,7 +41,7 @@
 | Audit eligibility | `NOT_ELIGIBLE` (T0 verdict CHANGES_REQUIRED / NOT_READY_FOR_AUDIT; C-07 closure correction reopens) |
 | Frozen delivery | `NO` (round-5 final freeze đảo ngược; runtime chưa PASS) |
 | Canonical gates | `FAIL/PENDING` (MP-2 ×3 + P1-F0 ×3 + full canonical CI_INTEGRATION_STRICT=1 + prisma validate + typecheck + lint + full unit + git diff --check + UTF-8 no-BOM/LF-only scan + verify-task + verify-handoff CHƯA re-attempt với bug fixed) |
-| Correction batches used | `1` (round-5 C-07 thuộc cùng consolidated pre-audit correction batch theo T0 directive, KHÔNG tăng budget; round-5 C-07 closure correction vẫn thuộc cùng batch, KHÔNG tăng budget) |
+| Correction batches used | `1` |
 | Implementation SHA | `eca445bc641542d40dea652d498ff5dcb5888623` (pre-reversal; sẽ pin Implementation SHA MỚI sau khi runtime PASS) |
 | Final Freeze HEAD | `45bc5ec5ad49a6555e3e3c54aa79d409b033cab9` (pre-reversal; sẽ pin Final Freeze HEAD MỚI sau khi runtime PASS) |
 | Execution round | `5` (round 1 = v1.0→v1.1 contract correction; round 2 = v1.2 pre-audit correction batch C-01..C-06; round 5 = v1.3 synthetic-DB gate correction + final freeze C-07; round 5 reversal = C-07 closure correction — bug runtime tại `live-integration.mp2.test.ts:604`) |

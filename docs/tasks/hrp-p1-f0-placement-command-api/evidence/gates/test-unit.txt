@@ -13,3 +13,20 @@ Command: npm run test:unit
 
 
 Exit code: 0
+
+=====================================================================
+POST-REVERSAL test:unit re-run (2026-09-26 — C-07 closure correction in-progress)
+=====================================================================
+
+Command: npm run test:unit
+
+Result (post-reversal): 173 files / 2756 passed / 9 skipped (unchanged
+from pre-reversal baseline).
+
+Exit code: 0.
+
+Interpretation: the C-07 closure correction is in the integration
+lane (live-integration.mp2.test.ts), NOT in unit lane, so unit tests
+are not affected. The pre-reversal numbers are accurate. After
+runtime PASS + final freeze, this file will be SUPERSEDED by a
+fresh test:unit run with the new SHA pinned.

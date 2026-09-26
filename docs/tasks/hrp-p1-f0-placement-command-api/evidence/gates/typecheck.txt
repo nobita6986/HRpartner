@@ -4,3 +4,26 @@ P1-F0 round-5 evidence
 Command: npx.cmd tsc --noEmit
 
 Exit code: 0
+
+=====================================================================
+POST-REVERSAL typecheck re-run (2026-09-26 — C-07 closure correction in-progress)
+=====================================================================
+
+Command: npx tsc --noEmit
+
+Result (post-reversal): 0 errors.
+
+Exit code: 0.
+
+The C-07 closure correction edit is TypeScript-clean: the new
+`SELECT id, labor_profile_id, placement_case_id FROM candidate_submissions`
+returns rows typed as `any` (consistent with the rest of the file),
+and the `(r: any) => r.labor_profile_id` filter chain returns
+`unknown[]` which is then cast to `string[]` — strict mode passes
+because `Array.from(new Set<string | null | undefined>(...))` is
+inferred correctly from the explicit `(v: unknown) => typeof v === "string"`
+narrowing.
+
+Interpretation: the test-infra correction introduces no new typecheck
+errors. After runtime PASS + final freeze, this file will be
+SUPERSEDED by a fresh typecheck run with the new SHA pinned.

@@ -7,3 +7,19 @@ Output (no whitespace conflicts / no trailing-blank-line issues):
 (empty — clean)
 
 Exit code: 0
+
+=====================================================================
+POST-REVERSAL git diff --check re-run (2026-09-26 — C-07 closure correction in-progress)
+=====================================================================
+
+Command: git diff --check HEAD
+
+Result (post-reversal): empty — clean (no whitespace conflicts / no
+trailing-blank-line issues across staged + working tree).
+
+Exit code: 0.
+
+Interpretation: the live-integration.mp2.test.ts edit + the docs/evidence
+rollback commits are LF-only with no trailing-whitespace conflicts.
+After runtime PASS + final freeze, this file will be SUPERSEDED by a
+fresh git diff --check run with the new SHA pinned.

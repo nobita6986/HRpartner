@@ -18,3 +18,18 @@ in a separate docs/tooling commit (NOT part of the semantic Implementation
 commit). For now, manual scan suffices.
 
 Round: 2 (v1.2)
+
+=====================================================================
+POST-REVERSAL UTF-8 status (2026-09-26 — C-07 closure correction in-progress)
+=====================================================================
+
+Command: Node manual UTF-8 no-BOM / LF-only scan over the post-reversal
+changed surface (test-infra edit + 14 docs/evidence files modified
+during control-field rollback).
+
+Result: ALL CHANGED FILES CLEAN (no BOM, no CRLF, valid UTF-8). See
+`encoding-bom-scan.txt` for the canonical scan output.
+
+After runtime PASS + final freeze, this file will be SUPERSEDED by
+a fresh verify-encoding.ps1 run (if T0 stages the script on the
+clean branch per T0's option in the pre-reversal evidence).

@@ -11,3 +11,38 @@ C:\CodeApp\HrP-worktrees\t1b-p1f0-placement-command-planning\src\domains\job-boa
    41:8   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
 Exit code: 0 (0 = pass; lint runs as warnings-only policy per eslint.config.mjs §warning policy)
+
+=====================================================================
+POST-REVERSAL lint re-run (2026-09-26 — C-07 closure correction in-progress)
+=====================================================================
+
+Command: npm run lint
+
+Result (post-reversal): 0 errors, 732 warnings (unchanged from pre-reversal
+baseline; no new warnings introduced by the live-integration.mp2.test.ts
+C-07 closure correction edit).
+
+Exit code: 0.
+
+The C-07 closure correction edit replaces:
+  - Buggy: SELECT id FROM labor_profiles
+           WHERE normalized_phone = $1 AND slot_id = $2
+  - Fixed: SELECT id, labor_profile_id, placement_case_id
+           FROM candidate_submissions
+           WHERE idempotency_key_hash = $1
+
+plus an FK-safe reverse-order teardown that:
+  1. clears candidate_submissions FK cols,
+  2. deletes application_status_history,
+  3. deletes candidate_submissions,
+  4. defensively deletes placements referencing run-owned LP/PC,
+  5. deletes placement_case,
+  6. deletes labor_profiles,
+
+and a `(r: any)` typed map (consistent with the rest of the file)
+that lints as a single `Unexpected any` warning per map (counted in
+the existing 732 warning baseline, not a new warning).
+
+Interpretation: the test-infra correction introduces no new lint
+errors. After runtime PASS + final freeze, this file will be
+SUPERSEDED by a fresh lint run with the new SHA pinned.
