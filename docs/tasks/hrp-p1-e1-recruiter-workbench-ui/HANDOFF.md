@@ -20,9 +20,10 @@
 | Baseline note | T0 → T1A reconciliation: origin/main HEAD đã được forward-merge vào E1 branch. Baseline trong TASK/HANDOFF ghi nhận reconciled origin/main SHA. Pre-reconciliation baseline `224a4d9f` preserved trong Revision Log v1.3 + v1.0/v1.1/v1.2 history. |
 | E1 semantic Implementation SHA | `36fb9d22b1cc097ba7bf685f38b74a729dbc15b5` |
 | E1 semantic Implementation SHA note | Semantic UI + tests commit trên branch `codex/t1a-p1e1-recruiter-workbench-ui`. Contract materialization pinned at `b57fa5de`. Docs-freeze commit pinned at `b81f5b94`. Cả 3 commit preserved unmodified trên branch qua ordinary merge. |
-| Implementation SHA | `f5f8a0116a1ea5a4b9a2dd3154ed93b586a202e8` |
-| Implementation SHA note | Merge commit (T1A reconciliation) — ordinary forward-merge `origin/main` (40 commits ahead) vào E1 branch; merge clean, no conflicts. Range `f5f8a011..HEAD` empty. E1 semantic commit `36fb9d22` preserved unmodified bên trong merge (reachable từ HEAD~). |
+| Implementation SHA | `56d461695bb47c0ae607444551cca45558313b04` |
+| Implementation SHA note | T1A reconciliation freeze commit — final docs-only commit that lands after merge commit `f5f8a0116a1ea5a4b9a2dd3154ed93b586a202e8`. Ordinary forward-merge `origin/main` (40 commits ahead) vào E1 branch; merge clean, no conflicts. Range `56d46169..HEAD` empty. E1 semantic commit `36fb9d22` preserved unmodified bên trong merge (reachable từ HEAD~3). |
 | Reconciliation merge SHA | `f5f8a0116a1ea5a4b9a2dd3154ed93b586a202e8` |
+| Final freeze HEAD | `56d461695bb47c0ae607444551cca45558313b04` |
 | Origin/main merged SHA | `4970f47d481c185f655242e3e91480e4117241dd` |
 | Origin/main commits merged | `40` |
 | Frozen delivery | `YES` |
@@ -193,8 +194,9 @@ No blockers. `verify-task.ps1` PASS. `verify-handoff.ps1` PASS. All 19 AC have e
 | Item | Value |
 |---|---|
 | Branch | `codex/t1a-p1e1-recruiter-workbench-ui` |
-| **Implementation SHA** (final freeze HEAD) | `f5f8a0116a1ea5a4b9a2dd3154ed93b586a202e8` (merge commit, T1A reconciliation) |
-| **E1 semantic Implementation SHA** (preserved unmodified) | `36fb9d22b1cc097ba7bf685f38b74a729dbc15b5` (semantic UI + tests commit) |
+| **Implementation SHA** (final freeze HEAD) | `56d461695bb47c0ae607444551cca45558313b04` (T1A reconciliation freeze docs-only commit) |
+| **Reconciliation merge SHA** | `f5f8a0116a1ea5a4b9a2dd3154ed93b586a202e8` (parent of final freeze HEAD; ordinary forward-merge of `origin/main`) |
+| **E1 semantic Implementation SHA** (preserved unmodified) | `36fb9d22b1cc097ba7bf685f38b74a729dbc15b5` (semantic UI + tests commit; reachable as `HEAD~3`) |
 | **Contract-materialization SHA** (preserved unmodified) | `b57fa5ded863c280033c53cfc613e2cccb8b551e` |
 | **Docs-freeze SHA** (preserved unmodified) | `b81f5b94401fc14af9d07c7eefd2e94d55e17096` |
 | **Origin/main merged SHA** | `4970f47d481c185f655242e3e91480e4117241dd` |
@@ -209,7 +211,8 @@ No blockers. `verify-task.ps1` PASS. `verify-handoff.ps1` PASS. All 19 AC have e
 ### 5.3 Tier 3 stop / handoff
 
 - No PR opened, no production merge, no deploy, no Tier 3 call, no `ACCEPTED` flip performed by Tier 1.
-- T0 → T1A reconciliation: ordinary forward-merge of `origin/main` (40 commits ahead) into E1 branch; merge commit `f5f8a0116a1ea5a4b9a2dd3154ed93b586a202e8`. No conflicts. E1 semantic commit `36fb9d22b1cc097ba7bf685f38b74a729dbc15b5` preserved unmodified (reachable from `HEAD~`); contract-materialization commit `b57fa5de` preserved unmodified; docs-freeze commit `b81f5b94` preserved unmodified.
+- T0 → T1A reconciliation: ordinary forward-merge of `origin/main` (40 commits ahead) into E1 branch; merge commit `f5f8a0116a1ea5a4b9a2dd3154ed93b586a202e8`. No conflicts. E1 semantic commit `36fb9d22b1cc097ba7bf685f38b74a729dbc15b5` preserved unmodified (reachable from `HEAD~3`); contract-materialization commit `b57fa5de` preserved unmodified; docs-freeze commit `b81f5b94` preserved unmodified.
+- Final freeze HEAD: `56d461695bb47c0ae607444551cca45558313b04` (T1A docs-freeze commit; only modifies doc files in `docs/tasks/hrp-p1-e1-recruiter-workbench-ui/`). No semantic delta exists after `56d46169` (H-16 invariant).
 - Branch will be pushed to `origin` after the T1A docs-freeze commit lands (so the resulting `verify-handoff.ps1` runs against the committed HANDOFF with the new freeze identity).
 
 Handoff status: READY_FOR_AUDIT
