@@ -1,15 +1,17 @@
 /**
  * POST /api/admin/placements/[id]/actions/fail — placement.fail
- * (RQ-01..RQ-19, contract v1.1 §4.1.1).
+ * (RQ-01..RQ-19, contract v1.2 §4.1.1).
  *
  * SELECTED | CONFIRMED → FAILED. Service builds `failureReason` server-side;
  * route MUST NOT accept or silently ignore `reason` (C-06). Body must be `{}`.
  *
  * Single transaction boundary (C-03) via `runPlacementCommand`.
+ *
+ * Round-2 (C-02): placementId validation lives in the helper, after auth.
  */
 import { NextRequest } from 'next/server';
 import { placementFail, PLACEMENT_COMMAND_ROUTES } from '@/src/domains/talent/placement.commands';
-import { isUuidV4, runPlacementCommand } from '@/src/domains/talent/placement.route-helpers';
+import { runPlacementCommand } from '@/src/domains/talent/placement.route-helpers';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -37,15 +39,11 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id: placementId } = await params;
-  if (!isUuidV4(placementId)) {
-    return new Response(
-      JSON.stringify({ error: 'VALIDATION', message: 'placementId phải là UUID v4' }),
-      { status: 400, headers: { 'content-type': 'application/json' } },
-    );
-  }
 
   return runPlacementCommand(req, {
     route: PLACEMENT_COMMAND_ROUTES.fail,
+    command: 'placement.fail',
+    placementId,
     statusCode: 200,
     parseBody: validateEmptyBody,
     run: (tx, ctx) => placementFail(tx, { actorId: ctx.userId, placementId }),

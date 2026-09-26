@@ -1,8 +1,16 @@
 /**
- * placement.commands.routes.test.ts — AST/static guard for F0 route layer.
+ * placement.commands.routes.test.ts — AST/static guard for F0 route layer
+ * (P1-F0 contract v1.2 — round-2 correction batch).
  *
  * Lane: unit (no DB). Reads source files + runs grep-style assertions to
  * enforce C-02..C-08 contract guards WITHOUT executing the routes.
+ *
+ * Round-2 additions (C-02, C-03, C-04):
+ *   - All 5 routes MUST delegate to `runPlacementCommand` (no inline
+ *     placementId pre-validation, no inline `isUuidV4` early return).
+ *   - Route files MUST NOT call `console.*` (C-03).
+ *   - The route-helper MUST export `runPlacementCommand`, contain
+ *     `getAuthContext` + `withDbContext` (C-04 detector invariant).
  *
  * The regex checks operate on the file's CODE only — comments and JSDoc
  * are stripped before assertions. This guards against forbidden symbols
@@ -25,6 +33,9 @@
  *      boundary helper directly, does NOT use the L1+write boundary, and
  *      does NOT open a `prisma.$transaction` (C-08 — adapter is a pure
  *      function mapper, tx comes from the route).
+ *  10. (Round-2) Route files MUST delegate to `runPlacementCommand` and
+ *      MUST NOT inline `isUuidV4(placementId)` early-return.
+ *  11. (Round-2) Route files MUST NOT call `console.*` (C-03).
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -168,6 +179,71 @@ describe('F0 route layer — static guards', () => {
       expect(src).toContain("effective: 'POST:/api/admin/placements/[id]/actions/effective'");
       expect(src).toContain("fail: 'POST:/api/admin/placements/[id]/actions/fail'");
       expect(src).toContain("cancel: 'POST:/api/admin/placements/[id]/actions/cancel'");
+    });
+  });
+
+  // ─── Round-2 (C-02) ──────────────────────────────────────────────────────────
+  describe('C-02 round-2: auth-first ordering — all routes delegate to runPlacementCommand', () => {
+    it.each(ROUTE_FILES)('%s — calls runPlacementCommand exactly once', (file) => {
+      const code = readCode(file);
+      // Each route delegates the full pipeline to the helper. The helper
+      // owns auth → role → placementId → body → idempotency → tx → log → error.
+      const calls = code.match(/runPlacementCommand\s*\(/g) ?? [];
+      expect(calls.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it.each([
+      'app/api/admin/placements/[id]/actions/confirm/route.ts',
+      'app/api/admin/placements/[id]/actions/effective/route.ts',
+      'app/api/admin/placements/[id]/actions/fail/route.ts',
+      'app/api/admin/placements/[id]/actions/cancel/route.ts',
+    ])('%s — KHÔNG inline `isUuidV4(placementId)` early-return', (file) => {
+      const code = readCode(file);
+      // Round-2: placementId validation must run AFTER auth (inside the helper).
+      // A route that does its own `if (!isUuidV4(placementId))` short-circuits
+      // the auth gate → 400 instead of 401 for unauthenticated requests.
+      expect(code).not.toMatch(/if\s*\(\s*!\s*isUuidV4\s*\(\s*placementId\s*\)\s*\)/);
+    });
+  });
+
+  // ─── Round-2 (C-03) ──────────────────────────────────────────────────────────
+  describe('C-03 round-2: structured safe logging replaces console.*', () => {
+    it.each([...ROUTE_FILES, ADAPTER_FILE])(
+      '%s — KHÔNG dùng console.* trong route/adapter',
+      (file) => {
+        const code = readCode(file);
+        // C-03: every log line MUST come from the canonical logger. A
+        // console.* call anywhere in the placement command pipeline is a
+        // contract violation.
+        expect(code).not.toMatch(/console\./);
+      },
+    );
+
+    it('route-helper imports canonical logger (NOT console.error)', () => {
+      const code = readCode(HELPER_FILE);
+      // The helper uses the canonical logger + correlation-id helper.
+      expect(code).toMatch(/@\/src\/shared\/observability\/logger/);
+      expect(code).toMatch(/@\/src\/shared\/observability\/correlation-id/);
+    });
+  });
+
+  // ─── Round-2 (C-04) ──────────────────────────────────────────────────────────
+  describe('C-04 round-2: helper export + markers invariant', () => {
+    it('placement.route-helpers.ts — exports runPlacementCommand and contains BOTH getAuthContext + withDbContext', () => {
+      const code = readCode(HELPER_FILE);
+      expect(code).toMatch(/export\s+(?:async\s+)?function\s+runPlacementCommand\b/);
+      expect(code).toMatch(/\bgetAuthContext\b/);
+      expect(code).toMatch(/\bwithDbContext\b/);
+    });
+
+    it('placement.route-helpers.ts — DOES NOT log raw actorId/body/evidence (no extra-meta from outside SafeMeta allow-list)', () => {
+      const code = readCode(HELPER_FILE);
+      // C-03: helper must not bypass the canonical SafeMeta envelope.
+      // It must NEVER pass `actorId:` (raw) or `body:` or `evidence:` at top level
+      // to the logger.
+      expect(code).not.toMatch(/\blog(?:Info|Warn|Error)\s*\([^)]*\bactorId:/);
+      expect(code).not.toMatch(/\blog(?:Info|Warn|Error)\s*\([^)]*\bbody:/);
+      expect(code).not.toMatch(/\blog(?:Info|Warn|Error)\s*\([^)]*\bevidence:/);
     });
   });
 });

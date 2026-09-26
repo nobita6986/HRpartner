@@ -1,22 +1,24 @@
 /**
  * POST /api/admin/placements/[id]/actions/effective — placement.effective
- * (RQ-01..RQ-19, contract v1.1 §4.1.1).
+ * (RQ-01..RQ-19, contract v1.2 §4.1.1).
  *
  * Client-managed only (DEC-07). HRP-managed → service throws
  * `PlacementValidationError` → route maps HTTP 400 (C-07 — NO 422; taxonomy
  * freeze; no synthetic HRP-rejection code).
  *
- * Evidence shape (strict):
- *   { clientAcknowledgedAt: ISO-8601 string,
+ * Evidence shape (strict — C-02 round 2):
+ *   { clientAcknowledgedAt: strict ISO-8601 (RFC 3339) string,
  *     clientAcknowledgedByUserId: string,
  *     acknowledgementRef: string }
- * Reject unknown fields and non-ISO timestamps (C-06).
+ * Reject unknown fields and non-ISO timestamps. The Zod schema lives in
+ * the helper (`STRICT_ISO8601`) and the route uses `parseStrictIso8601Date`
+ * so we never reach for `Date.parse` (which accepts loose strings).
  *
  * Single transaction boundary (C-03) via `runPlacementCommand`.
  */
 import { NextRequest } from 'next/server';
 import { placementEffective, PLACEMENT_COMMAND_ROUTES } from '@/src/domains/talent/placement.commands';
-import { isUuidV4, runPlacementCommand } from '@/src/domains/talent/placement.route-helpers';
+import { parseStrictIso8601Date, runPlacementCommand } from '@/src/domains/talent/placement.route-helpers';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -65,12 +67,15 @@ function validateEvidence(raw: unknown):
     }
   }
 
+  // C-02 round 2: strict ISO-8601 via Zod. Reject loose `Date.parse`-able strings.
   if (typeof e.clientAcknowledgedAt !== 'string') {
     return { ok: false, error: 'VALIDATION', message: 'evidence.clientAcknowledgedAt phải là ISO-8601 string' };
   }
-  const ts = new Date(e.clientAcknowledgedAt);
-  if (Number.isNaN(ts.getTime())) {
-    return { ok: false, error: 'VALIDATION', message: 'evidence.clientAcknowledgedAt không phải ISO-8601 hợp lệ' };
+  let ts: Date;
+  try {
+    ts = parseStrictIso8601Date(e.clientAcknowledgedAt);
+  } catch {
+    return { ok: false, error: 'VALIDATION', message: 'evidence.clientAcknowledgedAt không phải ISO-8601 nghiêm ngặt (RFC 3339)' };
   }
 
   if (typeof e.clientAcknowledgedByUserId !== 'string' || !e.clientAcknowledgedByUserId.trim()) {
@@ -97,15 +102,11 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id: placementId } = await params;
-  if (!isUuidV4(placementId)) {
-    return new Response(
-      JSON.stringify({ error: 'VALIDATION', message: 'placementId phải là UUID v4' }),
-      { status: 400, headers: { 'content-type': 'application/json' } },
-    );
-  }
 
   return runPlacementCommand(req, {
     route: PLACEMENT_COMMAND_ROUTES.effective,
+    command: 'placement.effective',
+    placementId,
     statusCode: 200,
     parseBody: validateEvidence,
     run: (tx, ctx, value) =>

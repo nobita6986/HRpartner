@@ -197,6 +197,71 @@ describe('placementCreate', () => {
     expect(createPlacement).not.toHaveBeenCalled();
   });
 
+  it('C-01 (round 2): findUnique rejection → DB error propagates AND createPlacement NOT called', async () => {
+    // C-01 round-2 contract: when `tx.candidateSubmission.findUnique`
+    // rejects (RLS rejection, broken connection, missing schema field),
+    // the helper must NOT swallow the error. The surrounding transaction
+    // rolls back and `createPlacement` is never reached.
+    const tx = makeMockTx();
+    (tx.placementCase.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: 'pc-abc',
+      laborProfileId: 'lp-derived-123',
+    });
+    const dbError = new Error('PrismaClientKnownRequestError: RLS rejected');
+    (tx.candidateSubmission.findUnique as ReturnType<typeof vi.fn>).mockRejectedValue(dbError);
+
+    let thrown: unknown;
+    try {
+      await placementCreate(tx, {
+        actorId: 'a',
+        placementCaseId: 'pc-abc',
+        jobOpeningId: 'jo-uuid',
+        sourceCandidateSubmissionId: 'cs-uuid',
+      });
+    } catch (e) {
+      thrown = e;
+    }
+
+    // The DB error itself must propagate (NOT a PlacementValidationError;
+    // not a swallowed fallback). The route layer maps this generic Error
+    // to a generic 500 (no leak of message).
+    expect(thrown).toBe(dbError);
+    expect(thrown).toBeInstanceOf(Error);
+    expect(thrown).not.toBeInstanceOf(PlacementValidationError);
+
+    // Zero-mutation proof: `createPlacement` MUST NOT be called.
+    expect(createPlacement).not.toHaveBeenCalled();
+
+    // Bonus: `findUnique` is called exactly once with the supplied id.
+    expect(tx.candidateSubmission.findUnique).toHaveBeenCalledTimes(1);
+    expect(tx.candidateSubmission.findUnique).toHaveBeenCalledWith({
+      where: { id: 'cs-uuid' },
+      select: { placementCaseId: true },
+    });
+  });
+
+  it('C-01 (round 2): PlacementCase findUnique rejection → error propagates AND createPlacement NOT called', async () => {
+    // Symmetric coverage: if PlacementCase lookup fails, the entire
+    // placementCreate path must fail closed.
+    const tx = makeMockTx();
+    const dbError = new Error('PrismaClientKnownRequestError: connection terminated');
+    (tx.placementCase.findUnique as ReturnType<typeof vi.fn>).mockRejectedValue(dbError);
+
+    let thrown: unknown;
+    try {
+      await placementCreate(tx, {
+        actorId: 'a',
+        placementCaseId: 'pc-broken-conn',
+        jobOpeningId: 'jo-uuid',
+      });
+    } catch (e) {
+      thrown = e;
+    }
+
+    expect(thrown).toBe(dbError);
+    expect(createPlacement).not.toHaveBeenCalled();
+  });
+
   it('T0 clarification: sourceCandidateSubmissionId matching → service called with that field', async () => {
     const tx = makeMockTx();
     (tx.placementCase.findUnique as ReturnType<typeof vi.fn>).mockResolvedValue({

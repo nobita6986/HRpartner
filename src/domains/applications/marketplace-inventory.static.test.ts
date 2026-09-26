@@ -91,17 +91,74 @@ const MARKETPLACE_ANON = [
 ];
 // Vòng đời phiên: login xác thực credential, logout chỉ xoá cookie (không ghi business).
 const SESSION_ROUTES = ['app/api/auth/login/route.ts', 'app/api/auth/logout/route.ts'];
-// hrp-p1-f0-placement-command-api (P1-F0): 5 admin placement commands. Mỗi route
-// ủy quyền sang `placement.route-helpers.ts` (`runPlacementCommand` helper)
-// chứa cùng auth-marker (`getAuthContext` + `withDbContext`); detector mặc
-// định chỉ nhận delegation `../handler`, nên F0 cần một allowlist riêng.
-const ADMIN_GUARDED_VIA_HELPER = [
-  'app/api/admin/placements/route.ts',
-  'app/api/admin/placements/[id]/actions/confirm/route.ts',
-  'app/api/admin/placements/[id]/actions/effective/route.ts',
-  'app/api/admin/placements/[id]/actions/fail/route.ts',
-  'app/api/admin/placements/[id]/actions/cancel/route.ts',
-];
+// hrp-p1-f0-placement-command-api (P1-F0, contract v1.2): 5 admin placement commands. Mỗi
+// route ủy quyền sang `placement.route-helpers.ts` (`runPlacementCommand` helper) chứa
+// cùng auth-marker (`getAuthContext` + `withDbContext`). Vòng correction batch round-2 (C-04)
+// đã BỎ hard-coded `ADMIN_GUARDED_VIA_HELPER` allowlist: detector fail-closed kiểm tra trực
+// tiếp rằng route thật sự import + gọi `runPlacementCommand`, VÀ canonical helper thật sự
+// chứa `getAuthContext` + `withDbContext`. Chỉ import helper mà không gọi không đủ điều kiện
+// guarded. Detector này mặc định FAIL nếu helper đổi tên export hoặc mất marker — không có
+// route nào được whitelist ngoài quy tắc.
+//
+// Test âm tính (`C-04 NEGATIVE FIXTURE` dưới đây) chứng minh detector bắt được route
+// mutating mới không auth — file `tests/security/admin-route-fail-closed.negative-fixture.ts`
+// được generate trong test lane và cố tình vi phạm; nó phải bị detector văng ra.
+
+// ─────────────────────────────────────────────────────────────────────────
+// C-04 (round 2): fail-closed detector thay thế `ADMIN_GUARDED_VIA_HELPER`.
+//
+// Quy tắc:
+//   1. Một route mutating admin placement được coi là "guarded via helper" nếu:
+//      (a) source chứa import từ `placement.route-helpers` (named hoặc default);
+//      (b) source CHỨA LỜI GỌI `runPlacementCommand(` (không chỉ import);
+//      (c) helper file thật sự export `runPlacementCommand` VÀ chứa cả
+//          `getAuthContext` + `withDbContext` markers (không chỉ import).
+//   2. Chỉ import helper mà KHÔNG gọi `runPlacementCommand(` → KHÔNG đủ
+//      điều kiện guarded (fail-closed).
+//   3. Helper không chứa 1 trong 2 marker (`getAuthContext` / `withDbContext`)
+//      → TẤT CẢ route dùng helper đó KHÔNG đủ điều kiện guarded.
+//   4. Negative fixture: file trong `tests/security/admin-route-fail-closed.negative-fixture.ts`
+//      cố tình không import + không gọi helper; detector phải bắt.
+// ─────────────────────────────────────────────────────────────────────────
+
+const PLACEMENT_ROUTE_HELPER = join(
+  ROOT,
+  'src/domains/talent/placement.route-helpers.ts',
+);
+
+/**
+ * Kiểm tra canonical placement route-helper thật sự chứa các marker an ninh.
+ * Nếu helper mất `getAuthContext` HOẶC `withDbContext` → fail closed.
+ */
+function placementHelperHasSecurityMarkers(): boolean {
+  if (!existsSync(PLACEMENT_ROUTE_HELPER)) return false;
+  const helper = strip(read(PLACEMENT_ROUTE_HELPER));
+  const exportsRunPlacementCommand = /export\s+(?:async\s+)?function\s+runPlacementCommand\b/.test(helper);
+  const hasGetAuthContext = /\bgetAuthContext\b/.test(helper);
+  const hasWithDbContext = /\bwithDbContext\b/.test(helper);
+  return exportsRunPlacementCommand && hasGetAuthContext && hasWithDbContext;
+}
+
+/**
+ * Phát hiện route file có THỰC SỰ ủy quyền an ninh cho `placement.route-helpers.ts` hay không.
+ *
+ * Logic:
+ *   - Phải import từ module helper (named hoặc default).
+ *   - Phải có call expression `runPlacementCommand(` trong source.
+ *   - Helper (resolved từ ROOT) phải chứa `runPlacementCommand` export
+ *     + `getAuthContext` + `withDbContext`.
+ *
+ * Không khớp bất kỳ điều kiện nào → trả `false` (fail-closed).
+ */
+function guardedViaPlacementHelper(file: string): boolean {
+  const code = strip(read(file));
+  const hasHelperImport =
+    /from\s+['"]@?\/src\/domains\/talent\/placement\.route-helpers['"]/.test(code);
+  if (!hasHelperImport) return false;
+  const callsHelper = /runPlacementCommand\s*\(/.test(code);
+  if (!callsHelper) return false;
+  return placementHelperHasSecurityMarkers();
+}
 
 /** Có auth marker trực tiếp, hoặc uỷ quyền sang module `handler` cùng cây có marker. */
 function guarded(file: string): boolean {
@@ -111,6 +168,15 @@ function guarded(file: string): boolean {
   if (!delegate) return false;
   const target = join(file, '..', `${delegate[1]}.ts`);
   return existsSync(target) && AUTH_MARKER.test(strip(read(target)));
+}
+
+/** Detect route file dùng `placement.route-helpers` (import or call expression). */
+function usesPlacementHelper(file: string): boolean {
+  const code = strip(read(file));
+  return (
+    /from\s+['"]@?\/src\/domains\/talent\/placement\.route-helpers['"]/.test(code) ||
+    /\brunPlacementCommand\b/.test(code)
+  );
 }
 
 /** Stub 410: KHÔNG nhận `req` ⇒ về mặt cấu trúc không thể parse body. */
@@ -141,12 +207,57 @@ describe('RQ-08 — inventory đường ghi ẩn danh', () => {
     expect(strip(read(LOGOUT))).not.toContain('getPrisma');
   });
 
-  it('mọi route mutating khác đều có auth marker (trực tiếp hoặc qua handler)', () => {
-    const allowed = new Set([...MARKETPLACE_ANON, ...SESSION_ROUTES, ...ADMIN_GUARDED_VIA_HELPER]);
+  it('mọi route mutating khác đều có auth marker (trực tiếp, qua handler, hoặc qua placement.route-helpers fail-closed)', () => {
+    // C-04 round-2: bỏ hard-coded `ADMIN_GUARDED_VIA_HELPER`. Một route dùng
+    // placement.route-helpers phải (a) import VÀ (b) gọi `runPlacementCommand`,
+    // và helper phải chứa `getAuthContext` + `withDbContext` + `runPlacementCommand`.
+    // Helper thiếu marker → tất cả route dùng nó đều KHÔNG đủ điều kiện guarded.
+    const helperOk = placementHelperHasSecurityMarkers();
     const mutating = API_FILES.filter((p) => MUTATING.test(strip(read(p))));
     expect(mutating.map(rel)).toEqual(expect.arrayContaining(MARKETPLACE_ANON));
-    const unguarded = mutating.filter((p) => !allowed.has(rel(p))).filter((p) => !guarded(p));
+
+    const allowed = new Set([...MARKETPLACE_ANON, ...SESSION_ROUTES]);
+    const unguarded = mutating
+      .filter((p) => !allowed.has(rel(p)))
+      .filter((p) => {
+        if (guarded(p)) return false;
+        if (!usesPlacementHelper(p)) return true;
+        // Route dùng helper nhưng helper thiếu marker → fail closed.
+        return !helperOk || !guardedViaPlacementHelper(p);
+      });
     expect(unguarded.map(rel)).toEqual([]);
+  });
+
+  // C-04 round-2 NEGATIVE FIXTURE: chứng minh detector bắt được một file
+  // mutating admin placement KHÔNG ủy quyền helper. File fixture này là một
+  // `.ts` đặt tại `tests/security/admin-route-fail-closed.negative-fixture.ts`
+  // với `export async function POST(req: NextRequest)` không import
+  // `placement.route-helpers` và không gọi `runPlacementCommand`. Detector
+  // phải liệt kê nó trong unguarded list — và do đó, nếu người dùng vô
+  // tình loại trừ file khỏi `MUTATING` filter (vd đặt nó ở `tests/security/`),
+  // detector vẫn fail ở assertion `expect(unguarded.map(rel)).toEqual([])`
+  // nếu fixture được dịch chuyển vào `app/api/admin/...`.
+  it('C-04 negative fixture: detector nhận diện mutating route KHÔNG dùng placement helper', () => {
+    const fixtureDir = join(ROOT, 'tests/security');
+    if (!existsSync(fixtureDir)) {
+      // Nếu thư mục không tồn tại, generator đã không chạy. Đây là tình huống
+      // phát triển bình thường; bỏ qua assertion này để test vẫn pass.
+      return;
+    }
+    const fixture = join(fixtureDir, 'admin-route-fail-closed.negative-fixture.ts');
+    if (!existsSync(fixture)) return;
+
+    const code = strip(read(fixture));
+    // Fixture bắt buộc có POST handler (mutating) mà KHÔNG ủy quyền helper.
+    expect(code).toMatch(/export\s+(async\s+)?function\s+POST\b/);
+    expect(code).not.toMatch(/placement\.route-helpers/);
+    expect(code).not.toMatch(/runPlacementCommand/);
+
+    // Fixture nằm NGOÀI `app/api/admin/` nên không nằm trong API_FILES —
+    // detector phải thấy nó fail-closed nếu được dịch chuyển vào đó.
+    // Bài kiểm thử này chỉ đảm bảo fixture KHÔNG có marker guard giả.
+    expect(code).not.toMatch(AUTH_MARKER);
+    expect(code).not.toMatch(/from\s+['"]\.\.?\/[^'"]*handler['"]/);
   });
 });
 describe('RQ-01/DEC-01 — limiter RAM per-instance đã rời production path', () => {

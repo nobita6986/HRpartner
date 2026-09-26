@@ -1,5 +1,12 @@
 /**
- * placement.commands.ts — P1-F0 thin adapter (RQ-01..RQ-19, contract v1.1 §0).
+ * placement.commands.ts — P1-F0 thin adapter (RQ-01..RQ-19, contract v1.2 §0).
+ *
+ * Round-2 correction batch (C-01..C-05):
+ *   - C-01: `assertSourceCandidateSubmissionIntegrity` no longer swallows
+ *     Prisma errors — every DB-side failure (RLS rejection, broken
+ *     connection, missing schema field) propagates so the transaction
+ *     rolls back and the route returns a generic 500. `createPlacement`
+ *     is never reached on failure.
  *
  * Boundary contract (C-08, T0 clarifications):
  *   - Pure thin adapter: 5 named functions, each takes a Prisma transaction
@@ -114,34 +121,35 @@ async function reReadLaborProfileIdForCase(
 }
 
 /**
- * Boundary integrity check (T0 clarifications / C-08):
+ * Boundary integrity check (T0 clarifications / C-08 / C-01 round-2):
  * when the route hands us `sourceCandidateSubmissionId`, we MUST re-read
  * the submission inside the SAME transaction and verify it actually points
  * to the supplied `placementCaseId`. If the row is missing, OR its
- * `placementCaseId` does not match, OR the row is missing the FK — fail
- * closed with `PlacementValidationError` BEFORE touching `createPlacement`.
- * This is in addition to the service's own internal check (defense-in-depth).
+ * `placementCaseId` does not match — fail closed with
+ * `PlacementValidationError` BEFORE touching `createPlacement`.
  *
- * Schema assumption (verified via prisma/schema.prisma):
- *   - `CandidateSubmission.placementCaseId` is the canonical FK field.
- *   - If the schema column name differs, this check is a no-op (silent
- *     pass-through) and the service's own check is the single authority.
- *     Either path produces the same fail-closed outcome on mismatch.
+ * C-01 (correction batch round 2): the previous implementation wrapped the
+ * `findUnique` call in a `try/catch` that swallowed DB/RLS/query errors.
+ * That violated the contract: any DB-side failure must propagate so the
+ * transaction rolls back and the route returns a generic 500 — never a
+ * silent pass-through to `createPlacement`. This helper now lets ALL
+ * Prisma errors bubble up to the caller (which is `placementCreate` →
+ * `withDbContext` → route mapper → generic 500). The schema field
+ * `CandidateSubmission.placementCaseId` is authoritative (verified via
+ * `prisma/schema.prisma`); the service-layer re-read remains the second
+ * line of defense (defense-in-depth).
  */
 async function assertSourceCandidateSubmissionIntegrity(
   tx: Prisma.TransactionClient,
   args: { sourceCandidateSubmissionId: string; placementCaseId: string },
 ): Promise<void> {
-  let row: { placementCaseId: string | null } | null = null;
-  try {
-    row = await tx.candidateSubmission.findUnique({
-      where: { id: args.sourceCandidateSubmissionId },
-      select: { placementCaseId: true },
-    });
-  } catch {
-    // Schema field not present (older migration) → service layer is sole authority.
-    return;
-  }
+  // C-01: do NOT catch DB errors. If the connection is broken, the query
+  // is rejected by RLS, or the schema field is missing — the error
+  // propagates and the surrounding `withDbContext` transaction rolls back.
+  const row = await tx.candidateSubmission.findUnique({
+    where: { id: args.sourceCandidateSubmissionId },
+    select: { placementCaseId: true },
+  });
   if (!row) {
     throw new PlacementValidationError(
       `CandidateSubmission ${args.sourceCandidateSubmissionId} không tồn tại`,

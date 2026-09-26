@@ -1,15 +1,19 @@
 /**
  * POST /api/admin/placements/[id]/actions/confirm — placement.confirm
- * (RQ-01..RQ-19, contract v1.1 §4.1.1).
+ * (RQ-01..RQ-19, contract v1.2 §4.1.1).
  *
  * SELECTED → CONFIRMED. Service writes `confirmedAt` only (C-01).
  * Body must be `{}` — any field is rejected (C-06 strict allowlist).
  *
  * Single transaction boundary (C-03) via `runPlacementCommand`.
+ *
+ * Round-2 (C-02): auth + role + placementId validation all live in the
+ * helper. This route just extracts the URL param and forwards to the
+ * pipeline so an unauthenticated request with a malformed id yields 401.
  */
 import { NextRequest } from 'next/server';
 import { placementConfirm, PLACEMENT_COMMAND_ROUTES } from '@/src/domains/talent/placement.commands';
-import { isUuidV4, runPlacementCommand } from '@/src/domains/talent/placement.route-helpers';
+import { runPlacementCommand } from '@/src/domains/talent/placement.route-helpers';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -43,18 +47,11 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id: placementId } = await params;
-  if (!isUuidV4(placementId)) {
-    // Surface 400 before role gate so a malformed URL never reaches the auth path.
-    // The 400 message intentionally does NOT include the raw URL fragment to avoid
-    // logging PII / leaking request shape. Body-shape validation lives below.
-    return new Response(
-      JSON.stringify({ error: 'VALIDATION', message: 'placementId phải là UUID v4' }),
-      { status: 400, headers: { 'content-type': 'application/json' } },
-    );
-  }
 
   return runPlacementCommand(req, {
     route: PLACEMENT_COMMAND_ROUTES.confirm,
+    command: 'placement.confirm',
+    placementId,
     statusCode: 200,
     parseBody: validateEmptyBody,
     run: (tx, ctx) => placementConfirm(tx, { actorId: ctx.userId, placementId }),

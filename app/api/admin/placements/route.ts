@@ -1,5 +1,5 @@
 /**
- * POST /api/admin/placements — placement.create (RQ-01..RQ-19, contract v1.1 §4.1.1).
+ * POST /api/admin/placements — placement.create (RQ-01..RQ-19, contract v1.2 §4.1.1).
  *
  * Single transaction boundary (C-03) via `runPlacementCommand`:
  *   getAuthContext → role gate (ADMIN/HR_MANAGER) → strict body parsing
@@ -16,6 +16,9 @@
  *   - Service returns exact `CreatePlacementResult` (placementId, status,
  *     serviceModelSnapshot, clientCompanyId, projectId, replayed).
  *   - Route does NOT add or rename fields.
+ *
+ * Round-2 (C-02): auth + role validation runs in the helper BEFORE body
+ * parsing, so an unauthenticated POST returns 401, not 400.
  */
 import { NextRequest } from 'next/server';
 import { placementCreate, PLACEMENT_COMMAND_ROUTES } from '@/src/domains/talent/placement.commands';
@@ -89,6 +92,7 @@ function validateCreateBody(raw: unknown):
 export async function POST(req: NextRequest) {
   return runPlacementCommand(req, {
     route: PLACEMENT_COMMAND_ROUTES.create,
+    command: 'placement.create',
     statusCode: 201,
     parseBody: validateCreateBody,
     run: (tx, ctx, value) =>
