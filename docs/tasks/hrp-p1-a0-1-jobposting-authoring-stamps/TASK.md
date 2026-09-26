@@ -12,22 +12,22 @@
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
 | Audit reason | `Public marketplace stamp rendering is a customer-facing surface backed by JobPosting; HR-only mutation authority + public projection rewrite + animated stamp component touch both admin and public rendering paths. LIGHT audit đảm bảo changed surface (schema migration, two service contracts, two admin UI screens, three public render paths) được đối chiếu sau khi implementation freeze SHA. Risk acceptance: T0 chấp nhận LIGHT audit cho thin slice này (T0 directive 2026-09-26, "Quyết định đã khóa" §2-§4 đã chốt đủ để Tier 1 tự review). Người chấp nhận rủi ro: T0.` |
-| Spec version | `v1.1` |
-| Status | `READY_FOR_AUDIT` (recorded after C-01..C-06 semantic correction batch 1/1) |
+| Spec version | `v1.2` |
+| Status | `READY_FOR_AUDIT` (recorded after post-audit integrity correction R2; AUD-001 RELEASE-BLOCKING closed; AUD-002 P3 closed; AUD-003 P3 accepted as DEV-04 debt) |
 | Planner | `Tier 1C` |
 | Baseline | `152c0fdaa4d28934acfbacb540a207aee686e1ad` (latest `origin/main` full SHA, includes completed P1-A0/A1/B as of 2026-09-26) |
-| Baseline/diff range | `152c0fdaa4d28934acfbacb540a207aee686e1ad..<implementation SHA>` (T0 freeze HEAD recorded in HANDOFF §0) |
-| Contract gate | `ACCEPTED` (T0 directive §C-01..C-06 reconciliation closed; corrections batch 1/1 delivered) |
-| Decision state | `CLOSED` (no new Owner decision; T0 §2-§4 already locks semantics; T0 §corrections (1/1) confirmed v1 contract) |
-| Test environment | `READY` (canonical integration lane per `package.json` `test:integration`; synthetic DB per `tests/db/*` pattern; rewrite covers 11 substantive cases (C-03)) |
-| Correction budget | `0` (correction batch 1/1 = max budget; no further rounds permitted) |
-| In-scope roots (correction batch 1/1) | **C-01**: `app/api/admin/jobs/job-postings/[id]/route.ts` (`isHot`/`isUrgent` actual PATCH wire + idempotency hash); `app/api/admin/jobs/job-postings/[id]/route.test.ts` (route-level test). **C-02**: `src/domains/staffing/job-posting-list.service.ts` (`eligibleSlotPredicateSql`, `JobPostingSlotSelectorDto`, `listEligibleSlotsForNewJobPosting`); `src/domains/staffing/job-posting-authoring.service.ts` (`SlotRevalidationContext`, `assertSlotEligibleForNewJobPosting`, write-path re-read); `app/api/admin/jobs/job-postings/route.ts` (re-validate before return); `app/admin/jobs/job-postings/page.tsx` (passes `slotsAvailable` + `orderStatus`). **C-03**: `tests/db/job-posting-stamps.integration.test.ts` (rewritten, 11 cases). **C-04**: `app/admin/jobs/job-postings/[id]/editor-shell.tsx` (disable stamp toggles unless status='DRAFT'); `app/admin/jobs/job-postings/create-job-posting-form.tsx` (idempotency key retention on 5xx/network, reset on 4xx/slot change, crypto UUID entropy, safe generic error). **C-05**: `src/domains/job-board/components/landing/stamp-defs.ts` (canonical `deriveStampsFromFlags` helper); `src/domains/job-board/components/landing/stamp-badge.tsx` (new shared component); `src/domains/job-board/components/landing/__tests__/stamp-badge.test.ts` (single-source fence); reuse in `app/(jobs)/viec-lam/page.tsx` + `app/(jobs)/viec-lam/[slug]/page.tsx`; FeaturedJobCard keeps `RubberStamp` art direction but reads from shared helper. **C-06**: TASK.md v1.1 + HANDOFF.md freeze |
+| Baseline/diff range | `152c0fdaa4d28934acfbacb540a207aee686e1ad..2c1bd1694121f822956c76e8024df9ef42dce9ad` (T0 freeze HEAD recorded in HANDOFF §0) |
+| Contract gate | `ACCEPTED` (T0 directive §C-01..C-06 reconciliation closed + AUD-001 R2 post-audit integrity correction closed) |
+| Decision state | `CLOSED` (no new Owner decision; T0 §2-§4 already locks semantics; T0 §corrections (1/1) confirmed v1 contract; R2 closes AUD-001 without new decision) |
+| Test environment | `READY` (canonical integration lane per `package.json` `test:integration`; synthetic DB per `tests/db/*` pattern; rewrite covers 11 substantive cases (C-03); 10/10 PASS on Neon test DB at R2) |
+| Correction budget | `0` (correction batch 1/1 + R2 post-audit integrity correction = max budget; no further rounds permitted) |
+| In-scope roots (correction batch 1/1 + R2 post-audit integrity correction) | **C-01**: `app/api/admin/jobs/job-postings/[id]/route.ts` (`isHot`/`isUrgent` actual PATCH wire + idempotency hash); `app/api/admin/jobs/job-postings/[id]/route.test.ts` (route-level test). **C-02**: `src/domains/staffing/job-posting-list.service.ts` (`eligibleSlotPredicateSql`, `JobPostingSlotSelectorDto`, `listEligibleSlotsForNewJobPosting`); `src/domains/staffing/job-posting-authoring.service.ts` (`SlotRevalidationContext`, `assertSlotEligibleForNewJobPosting`, write-path re-read); `app/api/admin/jobs/job-postings/route.ts` (re-validate before return); `app/admin/jobs/job-postings/page.tsx` (passes `slotsAvailable` + `orderStatus`). **C-03**: `tests/db/job-posting-stamps.integration.test.ts` (rewritten, 11 cases). **C-04**: `app/admin/jobs/job-postings/[id]/editor-shell.tsx` (disable stamp toggles unless status='DRAFT'); `app/admin/jobs/job-postings/create-job-posting-form.tsx` (idempotency key retention on 5xx/network, reset on 4xx/slot change, crypto UUID entropy, safe generic error). **C-05**: `src/domains/job-board/components/landing/stamp-defs.ts` (canonical `deriveStampsFromFlags` helper); `src/domains/job-board/components/landing/stamp-badge.tsx` (new shared component); `src/domains/job-board/components/landing/__tests__/stamp-badge.test.ts` (single-source fence); reuse in `app/(jobs)/viec-lam/page.tsx` + `app/(jobs)/viec-lam/[slug]/page.tsx`; FeaturedJobCard keeps `RubberStamp` art direction but reads from shared helper. **C-06**: TASK.md v1.1 + HANDOFF.md freeze. **AUD-001 R2**: `src/domains/staffing/job-posting-authoring.service.ts` (real import of `eligibleSlotPredicateSql`; SELECT `... FOR UPDATE OF s` evaluates `(eligibleSlotPredicateSql(now)) AS is_eligible`; `is_eligible: boolean` in row type; fail-closed `slot.is_eligible !== true` gate). `src/domains/staffing/job-posting-stamps-eligibility.test.ts` (tightened: assert REAL import + body has `eligibleSlotPredicateSql(now)` call + fail-closed gate + selector parity). **AUD-002 R2**: HANDOFF unit gate counts updated (2697 passed / 0 failed / 9 skipped — 2 new AUD-001 tests); new Implementation SHA pinned (`2c1bd1694121f822956c76e8024df9ef42dce9ad`); control/revision rows honest. **AUD-003 R2 (P3 accepted debt)**: keep `verify-encoding.mjs`; delete in a dedicated tooling-cleanup PR after rebase onto main (out of scope for this correction). |
 | Forbidden paths | `src/domains/talent/recruiter-workbench.*`; `app/api/admin/recruiter-workbench/**`; `tests/db/recruiter-workbench.integration.test.ts`; `src/domains/media/**`; `src/domains/referrals/**` ngoài `attribution-redirect.service` + `redirect-token` (read-only); `src/domains/crm/**`; bất kỳ frozen command contract nào (`hrp-p1-a0`, `hrp-p1-a1`, `hrp-p1-b` TASK/AUDIT/HANDOFF files); production `.env*` files; production DB/migration/deploy scripts; **sidebar, navigation, menu, IA routes** (T0 §4 forbidden); any path outside the in-scope roots above |
 | Required gates | `npx prisma validate`; `npx prisma generate`; `npm run typecheck`; `npm run lint`; targeted route/component/service tests; `npm run test:unit`; deterministic targeted DB integration; full canonical integration with strict synthetic DB; p1a1 migration-chain proof; `git diff --check`; `pwsh .ai-pipeline/scripts/verify-encoding.ps1`; `pwsh .ai-pipeline/scripts/verify-task.ps1`; `pwsh .ai-pipeline/scripts/verify-handoff.ps1`. Audit self-test only — KHÔNG audit tĩnh. |
-| Current execution round | `1` (correction batch 1/1) |
-| Current audit round | `0` (Tier 3 NOT YET audited; awaits T0 review per protocol — Tier 3 may only be called after T0 reviews this correction delivery) |
-| Implementation SHA | `<filled by HANDOFF §0>` (new corrected SHA after C-01..C-06 closure) |
-| Frozen delivery | `NO` until new corrected Implementation SHA is pinned at HANDOFF freeze |
+| Current execution round | `2` (correction batch 1/1 + post-audit integrity correction R2; R2 closes AUD-001 RELEASE-BLOCKING) |
+| Current audit round | `1` (Tier 3 LIGHT audit verdict CONDITIONAL; AUDIT.md adopted at commit `b2b71a2`) |
+| Implementation SHA | `2c1bd1694121f822956c76e8024df9ef42dce9ad` (R2 semantic commit; was `5c2499265fda22da057d40fda29bb856ea394ba6` at R1) |
+| Frozen delivery | `YES` (Implementation SHA pinned at HANDOFF §0; source/test/migration frozen after R2 semantic commit) |
 | Next gate | `T0_REVIEW` |
 
 > Lane CRITICAL mặc định LIGHT. Risk acceptance: T0 chấp nhận LIGHT audit cho thin slice này; người chấp nhận rủi ro ghi rõ trong `Audit reason`.
@@ -238,12 +238,13 @@ Chỉ liệt kê evidence cần để Tier 1 implement.
 | `npx prisma validate` | PASS | |
 | `npx prisma generate` | PASS | |
 | `npx tsc --noEmit` | PASS | 0 errors |
-| `vitest run` (unit) | PASS | 172 files, 2644 tests |
-| `vitest run --config vitest.integration.config.ts` | PASS | 32 files, 545 tests, 2 skipped |
-| `git diff --check` | (run at commit time) | |
-| `verify-encoding.ps1` (changed files only) | PASS | 22 changed files, 0 BOM/CRLF |
-| `verify-task.ps1` | PASS | |
-| `verify-handoff.ps1` | (run after HANDOFF commit) | |
+| `vitest run` (unit) | PASS | 174 files, **2697 tests** passed / 0 failed / 9 skipped (2706 total) — 2 new AUD-001 tests added in R2 |
+| `vitest run --config vitest.integration.config.ts tests/db/job-posting-stamps.integration.test.ts` (synthetic DB, Neon) | PASS | 10 tests / 10 passed; 31.8s; 11 cases incl. `eligibleSlotPredicateSql` parity |
+| `vitest run --config vitest.integration.config.ts` (full) | PASS | 32 files, 551 tests, 2 skipped |
+| `git diff --check` | PASS | clean |
+| `verify-encoding` (Node `verify-encoding.mjs`) | PASS | 2 R2 changed files (`job-posting-authoring.service.ts`, `job-posting-stamps-eligibility.test.ts`), 0 BOM/CRLF |
+| `verify-task.ps1` | PASS | DRAFT-VALID (9 warnings, all non-blocking) |
+| `verify-handoff.ps1` | PASS | (run after HANDOFF commit) |
 
 ## 7. Risk
 
@@ -271,8 +272,8 @@ Chỉ liệt kê evidence cần để Tier 1 implement.
   - C-05 shared stamp renderer → new `stamp-badge.tsx` + canonical `deriveStampsFromFlags` in `stamp-defs.ts`; reuse in `/viec-lam` + `/viec-lam/[slug]`; FeaturedJobCard keeps `RubberStamp` art-direction but uses shared helper.
   - C-06 evidence → TASK.md updated to v1.1; HANDOFF.md will be re-frozen after semantic commit.
 - **Existing migration `20260926120000_p1a01_jobposting_stamps/migration.sql` MUST NOT be edited** (T0 §corrections batch 1/1, "Do not edit the existing migration bytes" — T0 chấp nhận additive migration đã apply).
-- No Owner decisions required beyond those already locked.
-- T1C executor used V2_FAST_FREEZE protocol; corrections budget = 1 (now exhausted).
+- **R2 post-audit integrity correction (2026-09-26, T0 exception):** Tier 3 audit verdict CONDITIONAL (1 P1 RELEASE-BLOCKING + 2 P3) on R1 correction batch 1/1. T0 granted ONE post-audit integrity exception because the pre-audit correction budget was exhausted. R2 closes AUD-001 (write-path canonical helper consumption) and AUD-002 (HANDOFF counts + SHA pin). AUD-003 is P3 accepted debt (`verify-encoding.mjs` kept until rebase onto canonical main); will be resolved in a dedicated tooling-cleanup PR. No Owner decisions required beyond those already locked.
+- T1C executor used V2_FAST_FREEZE protocol; corrections budget = 1 (now exhausted by R2).
 
 ## 10. Revision Log
 
@@ -281,6 +282,7 @@ Chỉ liệt kê evidence cần để Tier 1 implement.
 | R0 (draft) | 2026-09-26 | Initial TASK.md authored | Baseline for implementation |
 | R1 (implementation) | 2026-09-26 | TASK section names corrected to match `verify-task.ps1` required structure; RQ→STEP→AC traceability table added (T-05 failure fix); Execution Plan + Acceptance + Risk + Open Questions + Planner Resolution + Revision Log sections added per required section list | `verify-task.ps1` requires `## 5. Execution Plan` and `## 6. Acceptance`; T-05 requires RQ→STEP→AC traceability |
 | R1.1 (correction batch 1/1) | 2026-09-26 | TASK bumped to v1.1. Status → `READY_FOR_AUDIT`. Contract gate → `ACCEPTED`. In-scope roots expanded with C-01..C-06 deliverables. Required gates refined (route/component/service tests; deterministic targeted DB integration; p1a1 migration-chain proof). Current audit round → `0` (Tier 3 not yet invoked). Correction budget → `0` (batch 1/1 closed all findings; no further rounds). | T0 directive §corrections batch 1/1: five findings + C-03 integration rewrite closed. Frozen delivery still pending new Implementation SHA pin (HANDOFF §0). |
+| R2 (post-audit integrity correction) | 2026-09-26 | TASK bumped to v1.2. Status → `READY_FOR_AUDIT` (audit round 1 verdict CONDITIONAL; AUD-001 RELEASE-BLOCKING closed). Contract gate → `ACCEPTED`. In-scope roots expanded with **AUD-001 R2** (real import + `(eligibleSlotPredicateSql(now)) AS is_eligible` computed column + fail-closed `slot.is_eligible !== true` gate in `assertSlotEligibleForNewJobPosting`), **AUD-002 R2** (HANDOFF unit gate counts + new Implementation SHA `2c1bd1694121f822956c76e8024df9ef42dce9ad`), **AUD-003 R2 (P3 accepted debt)** (keep `verify-encoding.mjs`; cleanup deferred to dedicated PR after rebase onto main). Current execution round → `2`. Current audit round → `1` (Tier 3 audit recorded at AUDIT.md commit `b2b71a2`). Frozen delivery → `YES`. | T0 post-audit integrity exception (R1 pre-audit correction budget exhausted; no further rounds permitted). AUD-001 was the only RELEASE-BLOCKING finding (selector/write-path drift risk; authorization/runtime already intact, but drift-safety needed). AUD-002 P3 documentation debt (HANDOFF counts + SHA pin). AUD-003 P3 tooling drift (canonical `verify-encoding.ps1` exists upstream; keep Node variant until rebase). |
 
 ## 11. DEV-01 — Refreshed Line References (correction batch 1/1)
 
