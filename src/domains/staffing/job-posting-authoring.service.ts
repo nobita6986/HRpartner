@@ -60,7 +60,7 @@ import {
   type RichTextErrorCode,
 } from '@/src/shared/content/job-posting-rich-text';
 import type { AuthContext } from '@/src/shared/auth/auth-context';
-
+import { eligibleSlotPredicateSql } from './job-posting-list.service';
 // ─────────────────────────────────────────────────────────────────────────────
 // Errors
 // ─────────────────────────────────────────────────────────────────────────────
@@ -360,12 +360,8 @@ function ensureUniqueSlug(
  * C-02: write-path authority for slot eligibility. Reads the slot + its staffing
  * order under the caller's transaction (RLS already applied by `withDbContext`)
  * and throws `AuthoringError('INVALID_INPUT', 400)` with a precise code if the
- * slot does NOT satisfy the canonical predicate.
- *
- * The predicate is shared with the selector (`listEligibleSlotsForNewJobPosting`)
- * via `eligibleSlotPredicateSql`. Re-reading + re-validating inside the
- * transaction means a stale selector (or a direct POST with an ineligible slot)
- * fails closed with zero mutation.
+ * slot does NOT satisfy the canonical predicate. AUD-001: fail-closed
+ * `is_eligible` gate at end of function.
  *
  * Critically: "exclude only slots with a canonical JobPosting". A slot that
  * already has a `JobOpening` bound but no `JobPosting` remains ELIGIBLE — the
@@ -392,6 +388,7 @@ export async function assertSlotEligibleForNewJobPosting(
     job_opening_id: string | null;
     /** C-02: id của JobPosting qua JobOpening; null nếu chưa có canonical posting. */
     has_posting: boolean;
+    is_eligible: boolean;
   };
 
   const rows = await tx.$queryRaw<SlotRow[]>(Prisma.sql`
@@ -411,7 +408,8 @@ export async function assertSlotEligibleForNewJobPosting(
           WHERE jo.staffing_order_slot_id = s.id
           LIMIT 1
         )
-      ) AS has_posting
+      ) AS has_posting,
+      (${eligibleSlotPredicateSql(now)}) AS is_eligible
     FROM staffing_order_slots s
     INNER JOIN staffing_orders so ON so.id = s.staffing_order_id
     WHERE s.id = ${slotId}
@@ -462,6 +460,8 @@ export async function assertSlotEligibleForNewJobPosting(
       { slotId },
     );
   }
+  // AUD-001: fail-closed mutation authority — never return success when canonical helper reports false.
+  if (slot.is_eligible !== true) throw new AuthoringError('INVALID_INPUT', `StaffingOrderSlot ${slotId} không đủ điều kiện canonical eligibility (is_eligible=false).`, 400, { slotId, is_eligible: slot.is_eligible });
 
   return {
     slotId: slot.id,
