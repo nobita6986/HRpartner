@@ -117,7 +117,7 @@ const EXPECTED_HITS = [
   // đếm là đúng. An toàn vì query chạy trong `withDbContext(... role=ADMIN | HR_MANAGER | HR_STAFF)`
   // với GUC session-scoped nên RLS `hrp_labor_profile_visible_for` đã lọc theo role/handler pool.
   // PII `phone`/`cccdNumber` được mask khi thiếu `CAN_VIEW_WORKER_SENSITIVE` (DEC-05).
-  'src/domains/talent/recruiter-workbench.read-service.ts:599 laborProfile',
+  'src/domains/talent/recruiter-workbench.read-service.ts:649 laborProfile',
   // hrp-p1-e0 STEP-06 (2026-09-26): E0-F05 job context projection cần đọc
   // `placement.jobOpening.posting.title` và `placement.jobOpening.staffingOrder.project.name`/
   // `.clientCompanyName`. `JobOpening` (qua `Placement.jobOpening`) là quan hệ BẮT BUỘC trong schema
@@ -126,9 +126,9 @@ const EXPECTED_HITS = [
   // quyền `ADMIN`/`HR_MANAGER`/`HR_STAFF` theo GUC); `StaffingOrder` qua `Project` có RLS
   // `hrp_project_visible_for` nhưng MKT/HR đã thoả khi JOIN từ `placement_case` đã qua
   // `withDbContext` RLS `placement_case_visible_for`. Test integration T0 CI sẽ xác nhận.
-  'src/domains/talent/recruiter-workbench.read-service.ts:629 jobOpening',
-  'src/domains/talent/recruiter-workbench.read-service.ts:633 staffingOrder',
-  'src/domains/talent/recruiter-workbench.read-service.ts:635 project',
+  'src/domains/talent/recruiter-workbench.read-service.ts:679 jobOpening',
+  'src/domains/talent/recruiter-workbench.read-service.ts:683 staffingOrder',
+  'src/domains/talent/recruiter-workbench.read-service.ts:685 project',
 ] as const;
 
 interface SourceEntry {
@@ -324,15 +324,18 @@ describe('quan hệ BẮT BUỘC trên bảng bị RLS che: tập vị trí sele
     // → 136/139/218/226) — không đếm thêm, không trừ.
     // Sau P1-A1 (2026-09-25): +2 dòng ở public.service.ts (staffingOrder, project) do nguồn
     // chuyển từ Project sang JobPosting chain. Tổng src = 18, tổng all = 21.
-    // Sau P1-E0 (2026-09-26): +1 dòng ở recruiter-workbench.read-service.ts:599 (laborProfile) — quan hệ
+    // Sau P1-E0 (2026-09-26): +1 dòng ở recruiter-workbench.read-service.ts:649 (laborProfile) — quan hệ
     // bắt buộc trong schema `placement_case`, cần thiết để project `fullName`/`phone`/`cccdNumber`/
     // `identityVerification`/`completeness` (§4.3 RQ-02). Chạy trong `withDbContext` nên RLS
     // `hrp_labor_profile_visible_for` đã lọc; PII được mask khi thiếu `CAN_VIEW_WORKER_SENSITIVE`.
     // Tổng src = 19, tổng all = 22.
     // Sau P1-E0 STEP-06 (2026-09-26): E0-F05 job context projection. Số dòng recruiter-workbench cũ
     // (475) đã lệch vì E0-F01/E0-F06 chèn thêm composable AND clauses + permissions param; dòng thật
-    // bây giờ là 599. Thêm 3 dòng cho JobOpening → StaffingOrder → Project chain
-    // (629 jobOpening, 633 staffingOrder, 635 project). Tổng src = 22, tổng all = 25.
+    // bây giờ là 649. Thêm 3 dòng cho JobOpening → StaffingOrder → Project chain
+    // (679 jobOpening, 683 staffingOrder, 685 project). Tổng src = 22, tổng all = 25.
+    // Sau P1-E0 correction round-2 (2026-09-26): F-10/F-11 không thêm quan hệ, chỉ thay đổi
+    // hình thức OR; line numbers shift vì code reorganization. Sweep dùng line literals nên
+    // bumped 599 → 649 và 629/633/635 → 679/683/685. Tổng vẫn = 22, không đổi invariant.
     expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(22);
   });
 });

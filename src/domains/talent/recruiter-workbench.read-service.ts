@@ -7,7 +7,7 @@
  *   1. **Pure derive functions** (no Prisma, no IO):
  *      - `deriveNextAction`   — closed 7-value enum decision table (AC-02).
  *      - `deriveHandler`      — active-handler selection (AC-03).
- *      - `deriveLastInteraction` — newest STATUS_CHANGE vs newest SUBMISSION (AC-04).
+ *      - `deriveLastInteraction` — global newest across candidate_submissions and application_status_history (DEC-07 / F-11).
  *      - `computeAge`         — `ageHours` + `isOverdue` + `overdueReason` (AC-04).
  *      - `extractJobContextFromPlacement` — canonical job chain pull (AC-05/F05).
  *
@@ -142,6 +142,17 @@ export interface LastInteractionResolution {
  *
  * NOTE — there is no `NOTE` kind (TASK.md RQ-10).
  */
+/**
+ * Pick the global newest row across both `candidate_submissions` and
+ * `application_status_history`. The kind is derived from which set the
+ * winner came from.
+ *
+ * DEC-07 / F-11: the previous implementation always preferred STATUS_CHANGE
+ * over SUBMISSION when any history row existed, even when a SUBMISSION was
+ * chronologically newer. Correct shape: compare `pickNewest(submissions)`
+ * against `pickNewest(statusHistory)` and return whichever has the larger
+ * `createdAt` (deterministic tie-break by `id DESC`).
+ */
 export function deriveLastInteraction(
   submissions: ReadonlyArray<SubmissionLike>,
   statusHistory: ReadonlyArray<StatusHistoryLike>,
@@ -153,29 +164,48 @@ export function deriveLastInteraction(
     let best = rows[0]!;
     for (let i = 1; i < rows.length; i++) {
       const cur = rows[i]!;
-      if (cur.createdAt.getTime() > best.createdAt.getTime()) {
+      const bestTime = best.createdAt.getTime();
+      const curTime = cur.createdAt.getTime();
+      if (curTime > bestTime) {
         best = cur;
         continue;
       }
-      if (
-        cur.createdAt.getTime() === best.createdAt.getTime() &&
-        cur.id > best.id
-      ) {
+      if (curTime === bestTime && cur.id > best.id) {
         best = cur;
       }
     }
     return best;
   }
 
-  const newestStatus = pickNewest(statusHistory);
-  if (newestStatus !== null) {
-    return { at: newestStatus.createdAt, kind: 'STATUS_CHANGE' };
-  }
   const newestSubmission = pickNewest(submissions);
-  if (newestSubmission !== null) {
+  const newestStatus = pickNewest(statusHistory);
+
+  // Both empty → null
+  if (newestSubmission === null && newestStatus === null) {
+    return { at: null, kind: null };
+  }
+  // Only one side has rows → that side wins
+  if (newestSubmission === null) {
+    return { at: newestStatus!.createdAt, kind: 'STATUS_CHANGE' };
+  }
+  if (newestStatus === null) {
     return { at: newestSubmission.createdAt, kind: 'SUBMISSION' };
   }
-  return { at: null, kind: null };
+  // Both have rows → pick global newest by createdAt, tie-break by id DESC.
+  const subTime = newestSubmission.createdAt.getTime();
+  const statTime = newestStatus.createdAt.getTime();
+  if (subTime > statTime) {
+    return { at: newestSubmission.createdAt, kind: 'SUBMISSION' };
+  }
+  if (statTime > subTime) {
+    return { at: newestStatus.createdAt, kind: 'STATUS_CHANGE' };
+  }
+  // Equal timestamp → tie-break by id DESC across kinds (the kind with the
+  // lexicographically larger id wins; kinds themselves are not compared).
+  if (newestSubmission.id > newestStatus.id) {
+    return { at: newestSubmission.createdAt, kind: 'SUBMISSION' };
+  }
+  return { at: newestStatus.createdAt, kind: 'STATUS_CHANGE' };
 }
 
 export interface ComputeAgeInput {
@@ -478,24 +508,47 @@ export function buildPlacementCaseWhere(
   }
 
   // Overdue filter (RQ-08):
-  //   - `true`  → openedAt older than 72h OR any ACTIVE handler whose expiresAt < now.
-  //     (The active-window constraint is NOT required here — expired-but-ACTIVE handlers
-  //     cause overdue regardless of whether they're still technically "active".)
-  //   - `false` → openedAt within last 72h AND no ACTIVE row whose expiresAt < now.
-  // The two halves compose orthogonally with view/handler/search via laborProfileAnd.
+  //   isOverdue = openedAt age ≥ 72h OR any ACTIVE handler whose expiresAt < now.
+  //
+  // F-10: the previous shape put the expired-handler branch inside
+  // laborProfileAnd (AND-composed with view/handler/search) AND a separate
+  // openedAt branch on where.OR — producing an intersection (AND-of-OR) that
+  // excludes cases where ONLY ONE condition holds. The correct shape is a
+  // top-level `where.OR` with exactly two branches for overdue=true. The
+  // existing view/search/handler clauses (built into laborProfileAnd) still
+  // compose via Prisma's default top-level AND — they remain outside the OR.
+  //
+  // The expired-handler branch is encoded as a relation traversal
+  // `laborProfile: { handlingAssignments: { some: { status, expiresAt } } }`
+  // inside the OR — Prisma applies each OR branch as a top-level predicate
+  // AND-composed with the rest of the `where` (including laborProfileAnd).
+  // Prisma constraint: when a single relation field appears in multiple OR
+  // branches, each branch is treated independently, so the AND of the OR
+  // holds correctly across both branches.
   if (filter.overdue === true) {
-    laborProfileAnd.push({
-      handlingAssignments: {
-        some: {
-          status: 'ACTIVE',
-          expiresAt: { lt: now },
+    const ageThreshold = new Date(
+      now.getTime() - CASE_AGE_OVERDUE_HOURS * 60 * 60 * 1000,
+    );
+    where.OR = [
+      { openedAt: { lt: ageThreshold } },
+      {
+        laborProfile: {
+          is: {
+            handlingAssignments: {
+              some: {
+                status: 'ACTIVE',
+                expiresAt: { lt: now },
+              },
+            },
+          },
         },
       },
-    });
-    where.OR = [
-      { openedAt: { lt: new Date(now.getTime() - CASE_AGE_OVERDUE_HOURS * 60 * 60 * 1000) } },
     ];
   } else if (filter.overdue === false) {
+    const ageThreshold = new Date(
+      now.getTime() - CASE_AGE_OVERDUE_HOURS * 60 * 60 * 1000,
+    );
+    where.openedAt = { gte: ageThreshold };
     laborProfileAnd.push({
       handlingAssignments: {
         none: {
@@ -504,9 +557,6 @@ export function buildPlacementCaseWhere(
         },
       },
     });
-    where.openedAt = {
-      gte: new Date(now.getTime() - CASE_AGE_OVERDUE_HOURS * 60 * 60 * 1000),
-    };
   }
 
   if (laborProfileAnd.length > 0) {

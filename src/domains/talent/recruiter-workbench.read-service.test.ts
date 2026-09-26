@@ -289,18 +289,29 @@ describe('buildPlacementCaseWhere', () => {
     });
   });
 
-  it('overdue=true builds openedAt OR active expired assignment', () => {
+  it('overdue=true builds openedAt OR active expired assignment (F-10: 2 branches, top-level OR)', () => {
     const ctx = makeAdminCtx();
     const where = buildPlacementCaseWhere(
       { ...baseFilter, overdue: true },
       ctx,
       NOW,
     );
+    // F-10: overdue=true must produce exactly two top-level OR branches:
+    //   1. openedAt older than threshold (case-age form).
+    //   2. laborProfile.handlingAssignments.some { ACTIVE, expiresAt < now }.
     expect(where.OR).toBeDefined();
     expect(Array.isArray(where.OR)).toBe(true);
-    expect(where.OR!.length).toBe(1);
+    expect(where.OR!.length).toBe(2);
     const firstBranch = where.OR![0] as { openedAt: { lt: Date } };
     expect(firstBranch.openedAt.lt).toBeInstanceOf(Date);
+    // Second branch is the expired-handler relation traversal.
+    const secondBranch = where.OR![1] as {
+      laborProfile: { is: { handlingAssignments: { some: unknown } } };
+    };
+    expect(secondBranch.laborProfile.is.handlingAssignments.some).toMatchObject({
+      status: 'ACTIVE',
+      expiresAt: { lt: NOW },
+    });
   });
 
   it('overdue=false builds openedAt gte 72h AND no expired active handler', () => {
@@ -347,7 +358,11 @@ describe('buildPlacementCaseWhere', () => {
   });
 
   // E0-F01: AND composition — MINE + overdue=true.
-  it('E0-F01 MINE + overdue=true composes via AND', () => {
+  // F-10: overdue=true no longer pushes an arm into laborProfileAnd (it
+  // now lives at top-level OR). MINE auth stays in AND, and the OR is
+  // applied as a top-level predicate. So laborProfileAnd for view=MINE
+  // alone is exactly one arm.
+  it('E0-F01 MINE + overdue=true composes via AND (MINE in AND, OR at top level)', () => {
     const ctx = makeStaffCtx();
     const where = buildPlacementCaseWhere(
       { ...baseFilter, view: 'MINE', overdue: true },
@@ -363,9 +378,13 @@ describe('buildPlacementCaseWhere', () => {
         },
       ]),
     });
-    // overdue=true must also add a laborProfile clause
+    // F-10: only MINE adds to laborProfileAnd; overdue=true lives at the
+    // top-level OR. So AND has exactly one arm in this combination.
     const andArr = (where.laborProfile as { AND: unknown[] }).AND;
-    expect(andArr.length).toBeGreaterThanOrEqual(2);
+    expect(andArr.length).toBe(1);
+    // The top-level OR must still have the two overdue branches.
+    expect(Array.isArray(where.OR)).toBe(true);
+    expect(where.OR!.length).toBe(2);
   });
 
   // E0-F01: AND composition — MINE + search.
@@ -487,6 +506,137 @@ describe('buildPlacementCaseWhere', () => {
     expect(Array.isArray(lp.AND)).toBe(true);
     expect(lp.AND.length).toBe(1);
   });
+
+  // ═════════════════════════════════════════════════════════════════════════
+  // F-10 — overdue=true must be a top-level OR of two branches (NOT AND).
+  // RQ-08: isOverdue = openedAt age >= 72h OR expired ACTIVE handler exists.
+  // The two branches are joined by OR; view/handler/search still AND-compose.
+  // ═════════════════════════════════════════════════════════════════════════
+  const F10_AGE_THRESHOLD = new Date(NOW.getTime() - 72 * 60 * 60 * 1000);
+
+  it('F-10 overdue=true has exactly two top-level OR branches (age OR expired handler)', () => {
+    const ctx = makeManagerCtx();
+    const where = buildPlacementCaseWhere(
+      { ...baseFilter, overdue: true },
+      ctx,
+      NOW,
+    );
+    expect(Array.isArray(where.OR)).toBe(true);
+    expect((where.OR as unknown[]).length).toBe(2);
+
+    // Branch 1: openedAt older than 72h threshold.
+    expect(where.OR?.[0]).toEqual({ openedAt: { lt: F10_AGE_THRESHOLD } });
+
+    // Branch 2: relation traversal to a LaborProfile that has at least one
+    // ACTIVE handlingAssignment with expiresAt < now.
+    expect(where.OR?.[1]).toEqual({
+      laborProfile: {
+        is: {
+          handlingAssignments: {
+            some: {
+              status: 'ACTIVE',
+              expiresAt: { lt: NOW },
+            },
+          },
+        },
+      },
+    });
+  });
+
+  it('F-10 overdue=true: MINE auth still composes via laborProfile.AND (NOT OR)', () => {
+    // MINE auth must be a separate AND-composed predicate. It must NOT live
+    // inside one of the OR branches — otherwise HR_STAFF would bypass the
+    // MINE auth check whenever the age branch holds.
+    const ctx = makeStaffCtx();
+    const where = buildPlacementCaseWhere(
+      { ...baseFilter, view: 'MINE', overdue: true },
+      ctx,
+      NOW,
+    );
+    // MINE arm must be in laborProfile.AND, not anywhere in OR.
+    expect(where.laborProfile).toBeDefined();
+    const andArr = (where.laborProfile as { AND: unknown[] }).AND;
+    expect(Array.isArray(andArr)).toBe(true);
+    expect(andArr.length).toBe(1);
+    expect(andArr[0]).toMatchObject({
+      handlingAssignments: {
+        some: expect.objectContaining({ assigneeUserId: ctx.userId }),
+      },
+    });
+    // OR must not contain any assigneeUserId predicate — that would mean
+    // MINE was moved into the OR and would be bypassed by the age branch.
+    const orStr = JSON.stringify(where.OR);
+    expect(orStr).not.toContain(ctx.userId);
+    expect(orStr).not.toContain('assigneeUserId');
+  });
+
+  it('F-10 overdue=true: search still composes via laborProfile.AND', () => {
+    const ctx = makeManagerCtx();
+    const where = buildPlacementCaseWhere(
+      { ...baseFilter, overdue: true, search: 'nguyen' },
+      ctx,
+      NOW,
+    );
+    const andArr = (where.laborProfile as { AND: unknown[] }).AND;
+    expect(andArr.length).toBe(1);
+    expect(andArr[0]).toEqual({
+      fullName: { contains: 'nguyen', mode: 'insensitive' },
+    });
+    // search must NOT appear in OR — otherwise the age-only branch could
+    // return rows whose fullName does not contain the search term.
+    const orStr = JSON.stringify(where.OR);
+    expect(orStr).not.toContain('nguyen');
+    expect(orStr).not.toContain('fullName');
+  });
+
+  it('F-10 overdue=true: handlerUserId still composes via laborProfile.AND', () => {
+    const ctx = makeManagerCtx();
+    const where = buildPlacementCaseWhere(
+      { ...baseFilter, overdue: true, handlerUserId: 'staff-42' },
+      ctx,
+      NOW,
+    );
+    const andArr = (where.laborProfile as { AND: unknown[] }).AND;
+    expect(andArr.length).toBe(1);
+    expect(andArr[0]).toMatchObject({
+      handlingAssignments: {
+        some: expect.objectContaining({ assigneeUserId: 'staff-42' }),
+      },
+    });
+    // handlerUserId must NOT appear in OR.
+    const orStr = JSON.stringify(where.OR);
+    expect(orStr).not.toContain('staff-42');
+  });
+
+  it('F-10 overdue=false: openedAt gte threshold + no expired ACTIVE in AND', () => {
+    const ctx = makeManagerCtx();
+    const where = buildPlacementCaseWhere(
+      { ...baseFilter, overdue: false },
+      ctx,
+      NOW,
+    );
+    // openedAt gte age threshold.
+    expect(where.openedAt).toEqual({ gte: F10_AGE_THRESHOLD });
+    // No top-level OR for overdue=false.
+    expect(where.OR).toBeUndefined();
+    // AND arm contains the "no expired ACTIVE" predicate.
+    const andArr = (where.laborProfile as { AND: unknown[] }).AND;
+    expect(andArr.length).toBe(1);
+    expect(andArr[0]).toEqual({
+      handlingAssignments: {
+        none: {
+          status: 'ACTIVE',
+          expiresAt: { lt: NOW },
+        },
+      },
+    });
+  });
+
+  // F-10 inclusion/exclusion semantics are documented in HANDOFF.md §1.0
+  // and tested at the DB layer in tests/db/recruiter-workbench.integration.test.ts
+  // (gated behind `describe.skipIf(!HAS_TEST_DB)`). The unit-level proof
+  // here is the WHERE-clause shape — Prisma applies the two OR branches
+  // independently against the rest of the where clause.
 });
 
 // ═══════════════════════════════════════════════════════════════════════════

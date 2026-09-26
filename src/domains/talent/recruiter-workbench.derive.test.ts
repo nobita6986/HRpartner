@@ -333,10 +333,16 @@ describe('deriveHandler — AC-03 active handler', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
-// deriveLastInteraction — AC-04 newest STATUS_CHANGE wins over SUBMISSION
+// deriveLastInteraction — AC-04 / DEC-07 / F-11
+//
+// F-11: the previous implementation always preferred STATUS_CHANGE over
+// SUBMISSION whenever any history row existed, even when a SUBMISSION was
+// chronologically newer. Correct behavior: pick the global newest row
+// across BOTH sets using createdAt DESC, id DESC. The kind comes from
+// which set the winner came from.
 // ═══════════════════════════════════════════════════════════════════════════
 
-describe('deriveLastInteraction — AC-04', () => {
+describe('deriveLastInteraction — AC-04 / DEC-07 / F-11', () => {
   it('returns null kind when no submissions and no status history', () => {
     expect(deriveLastInteraction([], [])).toEqual({
       at: null,
@@ -360,7 +366,8 @@ describe('deriveLastInteraction — AC-04', () => {
     });
   });
 
-  it('STATUS_CHANGE wins over SUBMISSION regardless of which is newer', () => {
+  // F-11: the five required tests
+  it('F-11 (1) newer submission vs older status → SUBMISSION wins', () => {
     const newerSub = {
       id: 's-newer',
       createdAt: new Date(NOW.getTime() - 100),
@@ -370,12 +377,42 @@ describe('deriveLastInteraction — AC-04', () => {
       createdAt: new Date(NOW.getTime() - 10000),
     };
     expect(deriveLastInteraction([newerSub], [olderHistory])).toEqual({
-      at: olderHistory.createdAt,
+      at: newerSub.createdAt,
+      kind: 'SUBMISSION',
+    });
+  });
+
+  it('F-11 (2) newer status vs older submission → STATUS_CHANGE wins', () => {
+    const olderSub = {
+      id: 's-older',
+      createdAt: new Date(NOW.getTime() - 10000),
+    };
+    const newerHistory = {
+      id: 'h-newer',
+      createdAt: new Date(NOW.getTime() - 100),
+    };
+    expect(deriveLastInteraction([olderSub], [newerHistory])).toEqual({
+      at: newerHistory.createdAt,
       kind: 'STATUS_CHANGE',
     });
   });
 
-  it('picks the newest STATUS_CHANGE by createdAt DESC, id DESC', () => {
+  it('F-11 (3) same-kind newest selection (SUBMISSION newer than other SUBMISSION)', () => {
+    const olderSub = {
+      id: 's-older',
+      createdAt: new Date(NOW.getTime() - 10000),
+    };
+    const newerSub = {
+      id: 's-newer',
+      createdAt: new Date(NOW.getTime() - 100),
+    };
+    expect(deriveLastInteraction([olderSub, newerSub], [])).toEqual({
+      at: newerSub.createdAt,
+      kind: 'SUBMISSION',
+    });
+  });
+
+  it('F-11 (3b) same-kind newest selection (STATUS_CHANGE newest by createdAt DESC)', () => {
     const a = { id: 'a', createdAt: new Date(NOW.getTime() - 10000) };
     const b = { id: 'b', createdAt: new Date(NOW.getTime() - 5000) };
     const c = { id: 'c', createdAt: new Date(NOW.getTime() - 2000) };
@@ -383,21 +420,46 @@ describe('deriveLastInteraction — AC-04', () => {
     expect(deriveLastInteraction([], [c, a, b]).at).toEqual(c.createdAt);
   });
 
-  it('picks the newest SUBMISSION by createdAt DESC, id DESC', () => {
-    const a = { id: 'a', createdAt: new Date(NOW.getTime() - 10000) };
-    const b = { id: 'b', createdAt: new Date(NOW.getTime() - 5000) };
-    expect(deriveLastInteraction([b, a], []).at).toEqual(b.createdAt);
+  it('F-11 (4) equal timestamp → deterministic id DESC tie-breaker', () => {
+    const ts = new Date(NOW.getTime() - 5000);
+    const sub = { id: 'aaa', createdAt: ts };
+    const hist = { id: 'zzz', createdAt: ts };
+    // 'zzz' > 'aaa' → STATUS_CHANGE wins.
+    expect(deriveLastInteraction([sub], [hist])).toEqual({
+      at: ts,
+      kind: 'STATUS_CHANGE',
+    });
+    // Reverse: 'aaa' < 'zzz' for the SUBMISSION side, so SUBMISSION wins.
+    expect(deriveLastInteraction([hist], [sub])).toEqual({
+      at: ts,
+      kind: 'SUBMISSION',
+    });
   });
 
-  it('tie-breaks by id DESC when createdAt identical', () => {
+  it('F-11 (4b) equal timestamp → id DESC tie-breaker within one kind', () => {
     const ts = new Date(NOW.getTime() - 5000);
     const a = { id: 'aaa', createdAt: ts };
     const b = { id: 'zzz', createdAt: ts };
+    expect(deriveLastInteraction([a, b], []).at).toEqual(ts);
     expect(deriveLastInteraction([a, b], [])).toEqual({
       at: ts,
       kind: 'SUBMISSION',
     });
     expect(deriveLastInteraction([], [a, b]).at).toEqual(ts);
+  });
+
+  it('F-11 (5) no rows → null', () => {
+    expect(deriveLastInteraction([], []).at).toBeNull();
+    expect(deriveLastInteraction([], []).kind).toBeNull();
+  });
+
+  it('F-11 boundary: only one side populated must return that side, not the other', () => {
+    // Regression guard: the original buggy implementation incorrectly returned
+    // STATUS_CHANGE when any history row existed. Lock that down here.
+    const sub = { id: 's-only', createdAt: new Date(NOW.getTime() - 100) };
+    expect(deriveLastInteraction([sub], []).kind).toBe('SUBMISSION');
+    const hist = { id: 'h-only', createdAt: new Date(NOW.getTime() - 100) };
+    expect(deriveLastInteraction([], [hist]).kind).toBe('STATUS_CHANGE');
   });
 });
 
