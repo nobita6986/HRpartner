@@ -5,7 +5,7 @@
 | Field | Value |
 |---|---|
 | Task slug | `hrp-p1-b-public-apply` |
-| Spec version | `v1.4` |
+| Spec version | `v1.5` |
 | Audit mode (phải khớp TASK) | `LIGHT` |
 | Assurance lane | `CRITICAL` |
 | Delivery protocol | `V2_FAST_FREEZE` |
@@ -14,15 +14,15 @@
 | Frozen delivery | `YES` |
 | Canonical gates | `PASS` |
 | Audit eligibility | `ELIGIBLE` |
-| Audit eligibility rationale | Round 3 T0 final correction: 0 failed in canonical integration suite (539/541 pass, 0 failed, 2 Redis-skip pre-existing); synthetic DB integration PASS; all quality gates green; production DB/migration NOT_RUN per T0 directive; tier1.md §audit selection: CRITICAL → LIGHT applies. |
+| Audit eligibility rationale | Tier 3 LIGHT PASS adopted; canonical integration 31/31 files with 541 passed, 0 failed and 2 pre-existing Redis skips; production migration, catalog postflight, writer-role smoke, main CI and Vercel production deployment all PASS. |
 | Correction batches used | `1` |
 | Execution round | `1` (round 1) / `2` (round 2 — T0 correction on C-01..C-05) / `3` (round 3 — T0 final correction: test-maintenance scope exception on `tests/db/p1a1-jobposting-public-apply.integration.test.ts` only) |
-| Current audit round | `0` |
-| Status | `READY_FOR_AUDIT` (round 3; 0 failed in canonical integration; all gates green; T0 → T1B final correction complete; T1B dừng cho T0 review trước TIER3_LIGHT_AUDIT) |
+| Current audit round | `1` |
+| Status | `ACCEPTED` |
 | Executor | `Tier 1B` (independent takeover from in-progress dirty surface at branch `codex/t1b-p1b-public-apply`) |
 | Worktree | `C:\CodeApp\HrP-worktrees\t1b-p1b-public-apply` |
 | Branch | `codex/t1b-p1b-public-apply` |
-| Next gate | `TIER3_LIGHT_AUDIT` (after T0 review; T1B stopped for T0 review — do NOT call T3, push, PR, or merge) |
+| Next gate | `NONE — MERGED_AND_PRODUCTION_VERIFIED` |
 
 ## 1. Outcome and changed surface
 
@@ -94,7 +94,7 @@ Node runtime không gọi `createOrMatchLaborProfile`/`openPlacementCase`/tác v
 | `E-R2-11` | `pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-p1-b-public-apply/TASK.md` (round 2) | exit `0` — `RESULT: PASS` (`gate-verify-task.log`). |
 | `E-R2-12` | `git rev-parse --verify 927e32057d59655a6f0775b81ba628ef72f13baf^{commit}` (round 2 Implementation SHA) | exit `0` — Implementation SHA resolves to commit `test(p1-b): canonical integration correction round (C-01..C-05)` on branch `codex/t1b-p1b-public-apply`. Commit touches exactly 4 in-scope test files (239 insertions, 58 deletions); no migration change, no schema change, no package/lockfile change. |
 | `E-R2-13` | `git status --porcelain` (round 2 post-implementation-freeze) | Lists exactly 4 `M` test files + 2 `M` doc files (`docs/tasks/hrp-p1-b-public-apply/{TASK.md,HANDOFF.md}`). UTF-8 no-BOM PASS on all 6. LF-only PASS on all 6. Forbidden paths (per TASK §0 list) all untouched. `prisma/schema.prisma` / `package.json` / `package-lock.json` 0-hit diff. |
-| `E-R2-14` | Synthetic PostgreSQL 18 evidence (T0 provisioned) | T0 confirmed: bootstrap pre/post PASS, `prisma migrate deploy` 53/53 PASS, `prisma migrate status` schema up to date, `app_user_writer` rolsuper=false rolbypassrls=false, admin + writer same synthetic DB. Production DB NOT used. See `evidence/r2-correction/migrate-deploy-p1b.log`. |
+| `E-R2-14` | Synthetic PostgreSQL 18 evidence (T0 provisioned) | T0 confirmed: bootstrap pre/post PASS, `prisma migrate deploy` 53/53 PASS, `prisma migrate status` schema up to date, `app_user_writer` rolsuper=false rolbypassrls=false, admin + writer same synthetic DB. Production DB NOT used. This inline result is the retained round-2 record; no external log path is claimed. |
 | `E-R3-01` | `CI_INTEGRATION_STRICT=1 npm run test:integration` (round 3 final; synthetic DB; full canonical suite) | exit `0` — `Test Files 31 passed (31)`, `Tests 541 passed | 0 failed | 2 skipped (543)`. 0 failed. 2 skipped: Redis EVAL preflight (pre-existing, identified). Evidence: `docs/tasks/hrp-p1-b-public-apply/evidence/r3-correction/canonical-full.log`. |
 | `E-R3-02` | `npx vitest run --config vitest.integration.config.ts tests/db/p1a1-jobposting-public-apply.integration.test.ts` (3 consecutive runs on synthetic DB) | Run 1: `Tests 18 passed (18)`. Run 2: `Tests 18 passed (18)`. Run 3: `Tests 18 passed (18)`. All 3 PASS with 0 residue collision. Evidence: `docs/tasks/hrp-p1-b-public-apply/evidence/r3-correction/a1-targeted-run-1.log`, `a1-targeted-run-2.log`, `a1-targeted-run-3.log`. |
 | `E-R3-03` | `npx vitest run --config vitest.integration.config.ts tests/db/p1b-public-apply-slug-bound.integration.test.ts` (round 3 targeted P1-B) | exit `0` — `Tests 10 passed (10)`. Evidence: `docs/tasks/hrp-p1-b-public-apply/evidence/r3-correction/p1b-targeted.log`. |
@@ -205,7 +205,7 @@ Node runtime không gọi `createOrMatchLaborProfile`/`openPlacementCase`/tác v
 | `DEV-R2-02` | Round-2 implementation freeze SHA = `927e32057d59655a6f0775b81ba628ef72f13baf` (see §0 `Implementation SHA (round 2 — T0 correction; new)`). Post-freeze docs-only delta follows in next commit (TASK.md + HANDOFF.md). | Tier 1. |
 
 
-## 5. Final status (round 3 final — T0 pre-audit freeze integrity correction)
+## 5. Final status
 
 Round 3 final (T0 pre-audit directive) applied test-maintenance scope exception to `tests/db/p1a1-jobposting-public-apply.integration.test.ts` only. The `runPhone` v1 (1-digit suffix) was tightened to `runPhone v2` (6 run-scoped decimal digits + 2 zero-padded scenario-index digits → 10 digits starting with `09`). This guarantees 13 unique phones for scenarios 1..13 within a single run, and no collision across runs. Validation now fails closed on non-integer / non-finite / out-of-range inputs. Two new pure-invariant tests (no DB) prove uniqueness and fail-closed behavior. Canonical integration: **31/31 files PASS, 541 tests PASS, 0 failed, 2 Redis-skip pre-identified**. No A1/P1-B migration change, no schema change, no package/lockfile change. No production migration applied. NO push, NO PR, NO merge, NO deploy. Tier 3 NOT called.
 
@@ -231,6 +231,21 @@ Round 3 final (T0 pre-audit directive) applied test-maintenance scope exception 
 
 `git show --numstat 0a403ef837656b89f6e87cfbbc87c515a3c7e318` → `91	10	tests/db/p1a1-jobposting-public-apply.integration.test.ts`. T1B modified only `tests/db/p1a1-jobposting-public-apply.integration.test.ts` in round 3 final scope exception. NO migration change. NO schema change. NO package/lockfile change. NO production migration applied. NO PR opened. NO push performed. Tier 3 NOT called. T1B stopped for T0 review.
 
-**Status: READY_FOR_AUDIT** (round 3 final; 0 failed in canonical integration; all gates green; T0 review required before TIER3_LIGHT_AUDIT).
+**Historical freeze status: READY_FOR_AUDIT** (round 3 final; superseded by the `ACCEPTED` production closeout in §6).
 
-`Handoff status: READY_FOR_AUDIT` (round 3 final; Audit eligibility ELIGIBLE per canonical integration PASS; next gate TIER3_LIGHT_AUDIT; synthetic DB PASS, production DB/migration NOT_RUN; T0 pre-audit freeze integrity closure — does NOT count as a new correction batch).
+`Handoff status: ACCEPTED` (Tier 3 LIGHT PASS adopted; merged, migrated and production-verified by T0; no further P1-B gate).
+
+## 6. Production closeout
+
+| Evidence | Result |
+|---|---|
+| Tier 3 audit adoption | Commit `14e95c31a7fbc9b52b59a34d74d65fadc5a4b442`; verdict PASS; P3 documentation/evidence debt remains non-blocking. |
+| Merge | PR #51 squash-merged to `main` at `b59cd1d629d4e2e914d7a023d9ba4edb7ef4e569` on 2026-09-26. |
+| Main CI | GitHub Actions run `36211911476` completed `success` for merge SHA `b59cd1d…`. |
+| Production migration | `prisma migrate deploy` applied `20260925120000_p1b_public_apply_lifecycle`; production now records 53 completed migrations, exactly one completed P1-B record and zero incomplete migrations. |
+| Catalog postflight | Apply function owner=`hrp_public_rpc`, `SECURITY DEFINER=true`, `search_path=public, pg_temp`; PUBLIC EXECUTE revoked; `app_user` and `app_user_writer` EXECUTE present; helper call retained; classifier not copied; no explicit SAVEPOINT; temporary schema CREATE and SET-role membership cleaned; no JobPosting/JobOpening mutation privilege gained. |
+| Data preservation | `candidate_submissions` remained 10 and `job_postings` remained 0 across deploy/postflight. |
+| Runtime smoke | Synthetic nonexistent slug invoked as `app_user_writer` inside rollback transaction; returned expected SQLSTATE `P0011` / `JOB_NOT_AVAILABLE`; no record was written. |
+| Production deployment | Vercel deployment `6673675223` for merge SHA `b59cd1d…` completed `success`. |
+
+P1-B is `ACCEPTED`. This closeout authorizes downstream planning to release the `WAIT_P1_B_ACCEPTED` dependency; it does not broaden P1-B scope or reopen runtime semantics.
