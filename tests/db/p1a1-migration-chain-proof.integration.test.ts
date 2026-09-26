@@ -165,9 +165,16 @@ function buildPredecessorStaging(): { root: string; schemaPath: string } {
     path.join(migrationsRoot, "migration_lock.toml"),
   );
   const sourceMigrations = path.join(REPO_ROOT, "prisma", "migrations");
+  // C-05: copy ONLY migrations lexicographically strictly before the A1
+  // directory name (`20260925000000_p1a1_canonical_apply_jobpostings`). The
+  // predecessor proof asserts that the predecessor chain (everything strictly
+  // before A1) does NOT yet contain `job_postings`. Copying A1's successors
+  // (e.g. `20260925120000_p1b_public_apply_lifecycle`) into the staging
+  // directory would smuggle `job_postings` (or any post-A1 schema change) into
+  // the predecessor tree and break that proof.
+  const a1Name = path.basename(A1_MIGRATION_DIR);
   for (const entry of readdirSync(sourceMigrations, { withFileTypes: true })) {
-    if (!entry.isDirectory() || entry.name === path.basename(A1_MIGRATION_DIR))
-      continue;
+    if (!entry.isDirectory() || entry.name >= a1Name) continue;
     cpSync(
       path.join(sourceMigrations, entry.name),
       path.join(migrationsRoot, entry.name),

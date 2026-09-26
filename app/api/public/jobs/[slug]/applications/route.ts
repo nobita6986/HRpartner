@@ -31,7 +31,6 @@ interface ApplyBody {
   experience?: string | null;
   consentAt?: string | null;
   consent?: boolean;
-  idempotencyKey?: string;
   cv?: unknown;
 }
 
@@ -47,7 +46,6 @@ const ACCEPTED_FIELDS = new Set([
   'experience',
   'consentAt',
   'consent',
-  'idempotencyKey',
   'cv',
 ]);
 const STRING_FIELDS = [
@@ -58,7 +56,6 @@ const STRING_FIELDS = [
   'gender',
   'experience',
   'consentAt',
-  'idempotencyKey',
 ] as const;
 
 /**
@@ -90,14 +87,13 @@ function shapeViolation(body: Record<string, unknown>): string | null {
   return null;
 }
 
-/** Idempotency key: header (standard or x- variant) then body. */
-function extractIdempotencyKey(req: NextRequest, body: ApplyBody): string {
-  return (
-    req.headers.get('idempotency-key') ??
-    req.headers.get('x-idempotency-key') ??
-    body.idempotencyKey ??
-    ''
-  ).trim();
+/** P1-B: one canonical transport — standard Idempotency-Key header, UUID only. */
+function extractIdempotencyKey(req: NextRequest): string {
+  return (req.headers.get('idempotency-key') ?? '').trim();
+}
+
+function isUuidLike(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 }
 
 function badRequest(message: string): NextResponse {
@@ -152,7 +148,13 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     if (phoneDenied) return phoneDenied;
   }
 
-  const idempotencyKey = extractIdempotencyKey(req, body);
+  const idempotencyKey = extractIdempotencyKey(req);
+  if (!idempotencyKey || !isUuidLike(idempotencyKey)) {
+    return NextResponse.json(
+      { error: 'IDEMPOTENCY_KEY_REQUIRED', message: 'Header Idempotency-Key (UUID) is required' },
+      { status: 400, headers: { 'Cache-Control': 'no-store' } },
+    );
+  }
   // consent may arrive as a boolean flag or an explicit timestamp.
   const consentAt = body.consentAt ?? (body.consent === true ? new Date().toISOString() : null);
 

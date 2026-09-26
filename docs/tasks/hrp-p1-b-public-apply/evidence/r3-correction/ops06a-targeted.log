@@ -1,0 +1,23 @@
+
+ RUN  v2.1.9 C:/CodeApp/HrP-worktrees/t1b-p1b-public-apply
+
+ ✓ src/domains/applications/live-integration.ops06a.test.ts (6 tests | 2 skipped) 2867ms
+   ✓ AC-04/05/08 LIVE — chặn ⇒ zero write trên TEST DB thật > AC-08: apply hợp lệ tạo ĐÚNG 1 submission + 1 history; replay cùng key ⇒ zero row mới 1048ms
+
+ Test Files  1 passed (1)
+      Tests  4 passed | 2 skipped (6)
+   Start at  00:13:29
+   Duration  3.83s (transform 214ms, setup 0ms, collect 421ms, tests 2.87s, environment 0ms, prepare 138ms)
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+(node:39064) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+(Use `node --trace-warnings ...` to show where the warning was created)
+stderr | src/domains/applications/live-integration.ops06a.test.ts > AC-04/05/08 LIVE — chặn ⇒ zero write trên TEST DB thật > AC-04: limiter deny ⇒ 429 và KHÔNG có row nào được tạo (before/after bằng nhau)
+{"schemaVersion":"1.0","timestamp":"2026-09-25T17:13:31.144Z","level":"warn","event":"rate_limit.denied","requestId":"c1ff9604-db2b-4e9d-96af-923b8578bbd5","meta":{"route":"POST /api/public/jobs/[slug]/applications","status":429,"outcome":"rate_limited","detail":{"surface":"APPLY_IP","retryAfterSec":30}}}

@@ -1,0 +1,101 @@
+
+ RUN  v2.1.9 C:/CodeApp/HrP-worktrees/t1b-p1b-public-apply
+
+stdout | tests/db/p1a1-jobposting-public-apply.integration.test.ts > P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.2 — DRAFT / ARCHIVED posting → fail closed > apply với slug của DRAFT posting → JOB_NOT_AVAILABLE (P0011), 0 submissions
+prisma:error
+Invalid `prisma.$queryRawUnsafe()` invocation:
+
+
+Raw query failed. Code: `P0011`. Message: `ERROR: JOB_NOT_AVAILABLE`
+
+stdout | tests/db/p1a1-jobposting-public-apply.integration.test.ts > P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.2 — DRAFT / ARCHIVED posting → fail closed > apply với slug của ARCHIVED posting → JOB_NOT_AVAILABLE (P0011), 0 submissions
+prisma:error
+Invalid `prisma.$queryRawUnsafe()` invocation:
+
+
+Raw query failed. Code: `P0011`. Message: `ERROR: JOB_NOT_AVAILABLE`
+
+stdout | tests/db/p1a1-jobposting-public-apply.integration.test.ts > P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.3 — JobOpening.status NOT OPEN → fail closed > apply với slug của posting mà JobOpening.status=DRAFT → JOB_NOT_AVAILABLE (P0011)
+prisma:error
+Invalid `prisma.$queryRawUnsafe()` invocation:
+
+
+Raw query failed. Code: `P0011`. Message: `ERROR: JOB_NOT_AVAILABLE`
+
+stdout | tests/db/p1a1-jobposting-public-apply.integration.test.ts > P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.3 — JobOpening.status NOT OPEN → fail closed > mở opening A sang FILLED → apply với slug A tiếp theo → JOB_NOT_AVAILABLE
+prisma:error
+Invalid `prisma.$queryRawUnsafe()` invocation:
+
+
+Raw query failed. Code: `P0011`. Message: `ERROR: JOB_NOT_AVAILABLE`
+
+stdout | tests/db/p1a1-jobposting-public-apply.integration.test.ts > P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.3 — JobOpening.status NOT OPEN → fail closed > mở opening A sang CANCELLED → apply với slug A → JOB_NOT_AVAILABLE
+prisma:error
+Invalid `prisma.$queryRawUnsafe()` invocation:
+
+
+Raw query failed. Code: `P0011`. Message: `ERROR: JOB_NOT_AVAILABLE`
+
+stdout | tests/db/p1a1-jobposting-public-apply.integration.test.ts > P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.4 — old Project.code-only slug → fail closed > apply với slug = Project.code → JOB_NOT_AVAILABLE (P0011) — RPC KHÔNG còn resolve qua Project
+prisma:error
+Invalid `prisma.$queryRawUnsafe()` invocation:
+
+
+Raw query failed. Code: `P0011`. Message: `ERROR: JOB_NOT_AVAILABLE`
+
+stdout | tests/db/p1a1-jobposting-public-apply.integration.test.ts > P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.5 — sibling / wrong / expired / full slot → fail closed > apply với p_slot_id = sibling slot B → JOB_NOT_AVAILABLE (canonical chain reject)
+prisma:error
+Invalid `prisma.$queryRawUnsafe()` invocation:
+
+
+Raw query failed. Code: `P0011`. Message: `ERROR: JOB_NOT_AVAILABLE`
+
+stdout | tests/db/p1a1-jobposting-public-apply.integration.test.ts > P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.5 — sibling / wrong / expired / full slot → fail closed > apply với p_slot_id = non-existent → JOB_NOT_AVAILABLE
+prisma:error
+Invalid `prisma.$queryRawUnsafe()` invocation:
+
+
+Raw query failed. Code: `P0011`. Message: `ERROR: JOB_NOT_AVAILABLE`
+
+stdout | tests/db/p1a1-jobposting-public-apply.integration.test.ts > P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.5 — sibling / wrong / expired / full slot → fail closed > apply với p_slot_id = expired slot → JOB_NOT_AVAILABLE
+prisma:error
+Invalid `prisma.$queryRawUnsafe()` invocation:
+
+
+Raw query failed. Code: `P0011`. Message: `ERROR: JOB_NOT_AVAILABLE`
+
+stdout | tests/db/p1a1-jobposting-public-apply.integration.test.ts > P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.5 — sibling / wrong / expired / full slot → fail closed > apply với p_slot_id = full slot → JOB_NOT_AVAILABLE
+prisma:error
+Invalid `prisma.$queryRawUnsafe()` invocation:
+
+
+Raw query failed. Code: `P0011`. Message: `ERROR: JOB_NOT_AVAILABLE`
+
+stdout | tests/db/p1a1-jobposting-public-apply.integration.test.ts > P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.7/8/9 — idempotency replay / payload mismatch / duplicate > C-05.8 — replay với payload khác → P0010 (IDEMPOTENCY_PAYLOAD_MISMATCH)
+prisma:error
+Invalid `prisma.$queryRawUnsafe()` invocation:
+
+
+Raw query failed. Code: `P0010`. Message: `ERROR: IDEMPOTENCY_PAYLOAD_MISMATCH`
+
+stdout | tests/db/p1a1-jobposting-public-apply.integration.test.ts > P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.7/8/9 — idempotency replay / payload mismatch / duplicate > C-05.9 — duplicate application cùng slot + cùng normalized phone → P0012
+prisma:error
+Invalid `prisma.$queryRawUnsafe()` invocation:
+
+
+Raw query failed. Code: `P0012`. Message: `ERROR: DUPLICATE_APPLICATION`
+
+ ✓ tests/db/p1a1-jobposting-public-apply.integration.test.ts (20 tests) 10416ms
+   ✓ P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.1 — PUBLISHED + OPEN canonical slot → success > apply với slug A → 1 CandidateSubmission, 1 history row, status=NEW 993ms
+   ✓ P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.7/8/9 — idempotency replay / payload mismatch / duplicate > C-05.7 — replay cùng key hash + cùng payload → cùng trackingCode/status, không duplicate row 521ms
+   ✓ P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.11/12 — public projection qua withPublicDb > PUBLIC listing chỉ thấy PUBLISHED; DRAFT/ARCHIVED không xuất hiện 896ms
+   ✓ P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.11/12 — public projection qua withPublicDb > PUBLIC detail query theo slug A chỉ trả 1 row 586ms
+   ✓ P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.11/12 — public projection qua withPublicDb > C-05.12 — JobOpening.staffingOrderSlot của posting A = slot A (canonical, KHÔNG slot B) 777ms
+   ✓ P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.11/12 — public projection qua withPublicDb > C-05.12 — JobOpening.staffingOrderSlot của posting B = slot B (canonical) 818ms
+
+ Test Files  1 passed (1)
+      Tests  20 passed (20)
+   Start at  00:14:18
+   Duration  11.05s (transform 124ms, setup 0ms, collect 171ms, tests 10.42s, environment 0ms, prepare 143ms)
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m

@@ -1,0 +1,17 @@
+
+ RUN  v2.1.9 C:/CodeApp/HrP-worktrees/t1b-p1b-public-apply
+
+ ✓ tests/db/p1a1-migration-chain-proof.integration.test.ts (11 tests) 32409ms
+   ✓ P1-A1 migration chain proof (C-05) > applies byte-identical A1 migration file (forward-only replacement) 1919ms
+   ✓ P1-A1 migration chain proof (C-05) > post-apply catalog: PUBLIC has NO EXECUTE; app_user/app_user_writer retain EXECUTE 477ms
+   ✓ P1-A1 migration chain proof (C-05) > behavior: apply via canonical chain PUBLISHED + OPEN slot A succeeds 846ms
+   ✓ P1-A1 migration chain proof (C-05) > NEGATIVE ROLLBACK proof: post-assert failure rolls back the ENTIRE migration file 1686ms
+
+ Test Files  1 passed (1)
+      Tests  11 passed (11)
+   Start at  00:13:29
+   Duration  33.08s (transform 88ms, setup 0ms, collect 131ms, tests 32.41s, environment 0ms, prepare 129ms)
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+(node:40744) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)

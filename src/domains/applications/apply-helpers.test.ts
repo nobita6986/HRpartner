@@ -100,6 +100,7 @@ describe('mapApplySqlState', () => {
     expect(mapApplySqlState('P0010')).toEqual({ status: 409, error: 'IDEMPOTENCY_PAYLOAD_MISMATCH' });
     expect(mapApplySqlState('P0011')).toEqual({ status: 404, error: 'JOB_NOT_AVAILABLE' });
     expect(mapApplySqlState('P0012')).toEqual({ status: 409, error: 'DUPLICATE_APPLICATION' });
+    expect(mapApplySqlState('P0014')).toEqual({ status: 409, error: 'POSSIBLE_MATCH_NOT_RESOLVED' });
   });
   it('returns null for unknown states', () => {
     expect(mapApplySqlState('23505')).toBeNull();

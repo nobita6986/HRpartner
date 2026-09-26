@@ -1,0 +1,773 @@
+---
+pid: 8424
+cwd: "C:\\CodeApp\\HrP-worktrees\\t1b-p1b-public-apply"
+command: "pwsh -NoProfile -File \"C:\\Users\\Admin\\with-env.ps1\" -Cmd \"cd 'C:\\CodeApp\\HrP-worktrees\\t1b-p1b-public-apply'; node scripts/ci/integration-preflight.mjs 2>&1; Write-Host 'EXIT:' `$LASTEXITCODE\" 2>&1"
+title: "Run preflight directly"
+status: succeeded
+started_at: 2026-09-25T16:54:25.312Z
+running_for_ms: 690886
+---
+[env-loader] Loaded from C:\CodeApp\HrP-worktrees\t1b-p1b-public-apply\.env.t1b-synth.local
+[env-loader] DATABASE_URL_TEST set: postgresql://app_user_writer:e92cfbe47e4...
+[env-loader] MP2_LIVE_SECURITY_CHECK set: False
+(node:22344) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+(Use `node --trace-warnings ...` to show where the warning was created)
+WRITER_POSTURE user=app_user_writer session=app_user_writer super=false bypassrls=false
+ADMIN_POSTURE  user=neondb_owner  session=neondb_owner  super=false  bypassrls=true
+POSTURE_OK writer_is_writer admin_is_admin same_target
+[integration-preflight] Test DB accepted (guards passed).
+[integration-preflight]   writer: postgresql://****@ep-empty-forest-azlhfyo9.c-3.ap-southeast-1.aws.neon.tech/neondb  fp=7a9347ab8cd3
+[integration-preflight]   admin : postgresql://****@ep-empty-forest-azlhfyo9.c-3.ap-southeast-1.aws.neon.tech/neondb  fp=69c2a1fed8cc
+The CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.
+
+ RUN  v2.1.9 C:/CodeApp/HrP-worktrees/t1b-p1b-public-apply
+
+stdout | tests/db/aff03-public-intake.integration.test.ts > AFF-03B public anon intake — RUNTIME ROLE (production mirror)
+[aff03-public-intake] beforeAll rerun-cleanup runId=aff03b-219941264 lps=0 lps_preserved=0 lpha=0 pc=0 ra=0 cs=0
+
+stdout | tests/db/aff03-public-intake.integration.test.ts > AFF-03B public anon intake — RUNTIME ROLE (production mirror)
+[aff03-public-intake] cleanupLaborProfile 7b7cfc23-b56d-422c-ae37-f4d16959581d: LP bound to RA — LP preserved by schema invariant (FK RESTRICT + audit history); referral_attributions rows = 1
+
+stdout | tests/db/aff03-public-intake.integration.test.ts > AFF-03B public anon intake — RUNTIME ROLE (production mirror)
+[aff03-public-intake] cleanupLaborProfile 58bff3a0-7552-4290-bf1d-bca0c4db7a8f: LP bound to RA — LP preserved by schema invariant (FK RESTRICT + audit history); referral_attributions rows = 1
+
+stdout | tests/db/aff03-public-intake.integration.test.ts > AFF-03B public anon intake — RUNTIME ROLE (production mirror)
+[aff03-public-intake] cleanupLaborProfile 509f99df-ec29-4561-86f7-edf42b4acacb: LP bound to RA — LP preserved by schema invariant (FK RESTRICT + audit history); referral_attributions rows = 1
+
+stdout | tests/db/aff03-public-intake.integration.test.ts > AFF-03B public anon intake — RUNTIME ROLE (production mirror)
+[aff03-public-intake] afterAll user aff03b-219941264-referrer: bound to RA rows — preserved by schema invariant (FK RESTRICT + audit history)
+
+stdout | tests/db/aff03-public-intake.integration.test.ts > AFF-03B writer policies — MASKED HR_MANAGER regression > hrp_ra_update_writer permits the masked writer role to UPDATE ACTIVE→CONSUMED with labor_profile_id bound
+[aff03-public-intake] hrp_ra_update_writer LP 220f1baf-e039-46af-9712-b2c6cff6b13e: preserved (FK RESTRICT; 1 RA row(s) bound) — schema invariant
+
+stdout | tests/db/aff03-public-intake.integration.test.ts > AFF-05A-R1 — Canonical initial handling window (R1)
+[aff03-public-intake] afterAll LP db745c24-9ad6-4925-870d-2cf70e7fc894: preserved (bound: RA=1, LPHA=0) — schema invariant
+
+stdout | tests/db/aff03-public-intake.integration.test.ts > AFF-05A-R1 — Canonical initial handling window (R1)
+[aff03-public-intake] afterAll LP 6dc2d1e9-b1dc-472c-a602-0a1476cf8bdf: preserved (bound: RA=1, LPHA=1) — schema invariant
+
+stdout | tests/db/aff03-public-intake.integration.test.ts > AFF-05A-R1 — Canonical initial handling window (R1)
+[aff03-public-intake] afterAll LP 3cab747f-4d84-4835-8960-80ff950008c7: preserved (bound: RA=1, LPHA=0) — schema invariant
+
+stdout | tests/db/aff03-public-intake.integration.test.ts > AFF-05A-R1 — Canonical initial handling window (R1)
+[aff03-public-intake] afterAll LP ae543e89-4828-4bee-939a-c2047780a9e8: preserved (bound: RA=1, LPHA=0) — schema invariant
+
+stdout | tests/db/aff03-public-intake.integration.test.ts > AFF-05A-R1 — Canonical initial handling window (R1)
+[aff03-public-intake] afterAll LP fbb73250-81b9-48fe-82e3-ad664bf175ec: preserved (bound: RA=1, LPHA=1) — schema invariant
+
+ ✓ tests/db/aff03-public-intake.integration.test.ts (26 tests) 54434ms
+   ✓ AFF-03B public anon intake — RUNTIME ROLE (production mirror) > AC-01 (runtime role): valid cookie → status=CONSUMED, labor_profile_id bound, LPHA created (source=AFF_INITIAL) 1302ms
+   ✓ AFF-03B public anon intake — RUNTIME ROLE (production mirror) > AC-02 (runtime role): forged cookie → no mutation, no LPHA, candidate_submissions still created (non-attributed) 1136ms
+   ✓ AFF-03B public anon intake — RUNTIME ROLE (production mirror) > AC-03 (runtime role): no cookie → non-attributed LaborProfile created, no LPHA 1120ms
+   ✓ AFF-03B public anon intake — RUNTIME ROLE (production mirror) > AC-04 (runtime role): row expiresAt <= now() → status UNCHANGED, no LPHA 1046ms
+   ✓ AFF-03B public anon intake — RUNTIME ROLE (production mirror) > AC-05 (runtime role): row status=CONSUMED → consumedAt NOT overwritten, no second LPHA 1271ms
+   ✓ AFF-03B public anon intake — RUNTIME ROLE (production mirror) > AC-06 (runtime role): TOKEN_SIGNING_ERROR → 201 no mutation, no log distinguishes from missing 954ms
+   ✓ AFF-03B public anon intake — RUNTIME ROLE (production mirror) > AC-07 (runtime role): guard (a) service-level pre-filter rejects non-ACTIVE row → no UPDATE 1101ms
+   ✓ AFF-03B public anon intake — RUNTIME ROLE (production mirror) > AC-08 (runtime role): guard (b) RPC-body probe rejects row bound to a DIFFERENT LP 1152ms
+   ✓ AFF-03B public anon intake — RUNTIME ROLE (production mirror) > AC-09 (runtime role): guard (c) RPC-body WHERE predicate — second consume blocked at WHERE (row already CONSUMED, status=ACTIVE no longer matches) 1321ms
+   ✓ AFF-03B public anon intake — RUNTIME ROLE (production mirror) > AC-10 (runtime role): scoring parity — phone+name+cccd match existing LP → EXACT_MATCH, no duplicate row 1009ms
+   ✓ AFF-03B public anon intake — RUNTIME ROLE (production mirror) > AC-11 (runtime role): phone-only applicant → NEW_PROFILE (not POSSIBLE_MATCH) 761ms
+   ✓ AFF-03B public anon intake — RUNTIME ROLE (production mirror) > AC-12 (runtime role): returning applicant (phone+name match) → EXACT_MATCH, NO duplicate labor_profiles row 1173ms
+   ✓ AFF-03B public anon intake — RUNTIME ROLE (production mirror) > AC-13 (static): 24-fixture normalization parity corpus — TS and PL/pgSQL must agree 3674ms
+   ✓ AFF-03B writer policies — MASKED HR_MANAGER regression > hrp_ra_select_writer permits the masked writer role to SELECT an ACTIVE row 1184ms
+   ✓ AFF-03B writer policies — MASKED HR_MANAGER regression > hrp_ra_update_writer permits the masked writer role to UPDATE ACTIVE→CONSUMED with labor_profile_id bound 1578ms
+   ✓ AFF-05A-R1 — Canonical initial handling window (R1) > AC-01 (R1): valid attribution → submission, consumed attr, LPHA ACTIVE with 168h deadline 1269ms
+   ✓ AFF-05A-R1 — Canonical initial handling window (R1) > AC-02 (R1): unattributed intake → submission, no LPHA, no consumption 885ms
+   ✓ AFF-05A-R1 — Canonical initial handling window (R1) > AC-03 (R1 replay): same key+payload via withIdempotency() → 1 submission, no new LPHA 1438ms
+   ✓ AFF-05A-R1 — Canonical initial handling window (R1) > AC-03 (R1 preserve): existing attribution+LPHA → new submission, attribution untouched, LPHA untouched 1590ms
+   ✓ AFF-05A-R1 — Canonical initial handling window (R1) > AC-03b (R1 preserve CONSUMED): bound CONSUMED attribution → new submission preserves, inbound untouched 1411ms
+   ✓ AFF-05A-R1 — Canonical initial handling window (R1) > AC-03c (R1 preserve MANAGER): active MANAGER handling indefinite → new submission preserves, no AFF_INITIAL 2242ms
+   ✓ AFF-05A-R1 — Canonical initial handling window (R1) > AC-03d (R1 fresh no attribution): fresh LP, no inbound → submission, no LPHA, no consumption 862ms
+   ✓ AFF-05A-R1 — Canonical initial handling window (R1) > AC-05 (R1 race): two connections racing on same LP → both submissions, one LPHA 1707ms
+   ✓ AFF-05A-R1 — Canonical initial handling window (R1) > AC-06 (backfill R1): legacy AFF_INITIAL NULL-deadline rows get deadline from starts_at 2693ms
+   ✓ AFF-05A-R1 — Canonical initial handling window (R1) > AC-07 (forced abort): future starts_at anomaly → rollback 1482ms
+   ✓ AFF-05A-R1 — Canonical initial handling window (R1) > AC-08 (clean chain): owner/SECURITY DEFINER/search_path/EXECUTE ACL + handling SELECT+INSERT only 1582ms
+stdout | tests/db/p1a1-jobposting-public-apply.integration.test.ts > P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.2 — DRAFT / ARCHIVED posting → fail closed > apply với slug của DRAFT posting → JOB_NOT_AVAILABLE (P0011), 0 submissions
+prisma:error
+Invalid `prisma.$queryRawUnsafe()` invocation:
+
+
+Raw query failed. Code: `P0011`. Message: `ERROR: JOB_NOT_AVAILABLE`
+
+stdout | tests/db/p1a1-jobposting-public-apply.integration.test.ts > P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.2 — DRAFT / ARCHIVED posting → fail closed > apply với slug của ARCHIVED posting → JOB_NOT_AVAILABLE (P0011), 0 submissions
+prisma:error
+Invalid `prisma.$queryRawUnsafe()` invocation:
+
+
+Raw query failed. Code: `P0011`. Message: `ERROR: JOB_NOT_AVAILABLE`
+
+stdout | tests/db/p1a1-jobposting-public-apply.integration.test.ts > P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.3 — JobOpening.status NOT OPEN → fail closed > apply với slug của posting mà JobOpening.status=DRAFT → JOB_NOT_AVAILABLE (P0011)
+prisma:error
+Invalid `prisma.$queryRawUnsafe()` invocation:
+
+
+Raw query failed. Code: `P0011`. Message: `ERROR: JOB_NOT_AVAILABLE`
+
+stdout | tests/db/p1a1-jobposting-public-apply.integration.test.ts > P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.3 — JobOpening.status NOT OPEN → fail closed > mở opening A sang FILLED → apply với slug A tiếp theo → JOB_NOT_AVAILABLE
+prisma:error
+Invalid `prisma.$queryRawUnsafe()` invocation:
+
+
+Raw query failed. Code: `P0011`. Message: `ERROR: JOB_NOT_AVAILABLE`
+
+stdout | tests/db/p1a1-jobposting-public-apply.integration.test.ts > P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.3 — JobOpening.status NOT OPEN → fail closed > mở opening A sang CANCELLED → apply với slug A → JOB_NOT_AVAILABLE
+prisma:error
+Invalid `prisma.$queryRawUnsafe()` invocation:
+
+
+Raw query failed. Code: `P0011`. Message: `ERROR: JOB_NOT_AVAILABLE`
+
+stdout | tests/db/p1a1-jobposting-public-apply.integration.test.ts > P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.4 — old Project.code-only slug → fail closed > apply với slug = Project.code → JOB_NOT_AVAILABLE (P0011) — RPC KHÔNG còn resolve qua Project
+prisma:error
+Invalid `prisma.$queryRawUnsafe()` invocation:
+
+
+Raw query failed. Code: `P0011`. Message: `ERROR: JOB_NOT_AVAILABLE`
+
+stdout | tests/db/p1a1-jobposting-public-apply.integration.test.ts > P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.5 — sibling / wrong / expired / full slot → fail closed > apply với p_slot_id = sibling slot B → JOB_NOT_AVAILABLE (canonical chain reject)
+prisma:error
+Invalid `prisma.$queryRawUnsafe()` invocation:
+
+
+Raw query failed. Code: `P0011`. Message: `ERROR: JOB_NOT_AVAILABLE`
+
+stdout | tests/db/p1a1-jobposting-public-apply.integration.test.ts > P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.5 — sibling / wrong / expired / full slot → fail closed > apply với p_slot_id = non-existent → JOB_NOT_AVAILABLE
+prisma:error
+Invalid `prisma.$queryRawUnsafe()` invocation:
+
+
+Raw query failed. Code: `P0011`. Message: `ERROR: JOB_NOT_AVAILABLE`
+
+stdout | tests/db/p1a1-jobposting-public-apply.integration.test.ts > P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.5 — sibling / wrong / expired / full slot → fail closed > apply với p_slot_id = expired slot → JOB_NOT_AVAILABLE
+prisma:error
+Invalid `prisma.$queryRawUnsafe()` invocation:
+
+
+Raw query failed. Code: `P0011`. Message: `ERROR: JOB_NOT_AVAILABLE`
+
+stdout | tests/db/p1a1-jobposting-public-apply.integration.test.ts > P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.5 — sibling / wrong / expired / full slot → fail closed > apply với p_slot_id = full slot → JOB_NOT_AVAILABLE
+prisma:error
+Invalid `prisma.$queryRawUnsafe()` invocation:
+
+
+Raw query failed. Code: `P0011`. Message: `ERROR: JOB_NOT_AVAILABLE`
+
+stdout | tests/db/p1a1-jobposting-public-apply.integration.test.ts > P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.7/8/9 — idempotency replay / payload mismatch / duplicate > C-05.8 — replay với payload khác → P0010 (IDEMPOTENCY_PAYLOAD_MISMATCH)
+prisma:error
+Invalid `prisma.$queryRawUnsafe()` invocation:
+
+
+Raw query failed. Code: `P0010`. Message: `ERROR: IDEMPOTENCY_PAYLOAD_MISMATCH`
+
+stdout | tests/db/p1a1-jobposting-public-apply.integration.test.ts > P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.7/8/9 — idempotency replay / payload mismatch / duplicate > C-05.9 — duplicate application cùng slot + cùng normalized phone → P0012
+prisma:error
+Invalid `prisma.$queryRawUnsafe()` invocation:
+
+
+Raw query failed. Code: `P0012`. Message: `ERROR: DUPLICATE_APPLICATION`
+
+ ✓ tests/db/p1a1-jobposting-public-apply.integration.test.ts (20 tests) 9275ms
+   ✓ P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.1 — PUBLISHED + OPEN canonical slot → success > apply với slug A → 1 CandidateSubmission, 1 history row, status=NEW 978ms
+   ✓ P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.7/8/9 — idempotency replay / payload mismatch / duplicate > C-05.7 — replay cùng key hash + cùng payload → cùng trackingCode/status, không duplicate row 473ms
+   ✓ P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.11/12 — public projection qua withPublicDb > PUBLIC listing chỉ thấy PUBLISHED; DRAFT/ARCHIVED không xuất hiện 850ms
+   ✓ P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.11/12 — public projection qua withPublicDb > PUBLIC detail query theo slug A chỉ trả 1 row 551ms
+   ✓ P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.11/12 — public projection qua withPublicDb > C-05.12 — JobOpening.staffingOrderSlot của posting A = slot A (canonical, KHÔNG slot B) 729ms
+   ✓ P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.11/12 — public projection qua withPublicDb > C-05.12 — JobOpening.staffingOrderSlot của posting B = slot B (canonical) 625ms
+stdout | tests/db/placement-lifecycle-integration.test.ts > N3 placement-lifecycle integration — DB-touching proof > (vii) RLS: HR_MANAGER GUC thấy rows; PUBLIC (no GUC) thấy 0 — FORCE RLS enforced
+prisma:error
+Invalid `tx.placement.create()` invocation in
+C:\CodeApp\HrP-worktrees\t1b-p1b-public-apply\tests\db\placement-lifecycle-integration.test.ts:692:24
+
+  689 let publicInsertErr: Error | null = null;
+  690 try {
+  691   await withPublicContext(writer, (tx) =>
+→ 692     tx.placement.create(
+Error occurred during query execution:
+ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "42501", message: "new row violates row-level security policy for table \"placements\"", severity: "ERROR", detail: None, column: None, hint: None }), transient: false })
+
+stdout | tests/db/placement-lifecycle-integration.test.ts > N3 placement-lifecycle integration — DB-touching proof > (viii) UNIQUE partial index race: concurrent INSERT cùng (case,opening) → both fulfilled, one winner one replayed
+prisma:error
+Invalid `tx.placement.create()` invocation in
+C:\CodeApp\HrP-worktrees\t1b-p1b-public-apply\src\domains\talent\placement.service.ts:168:40
+
+  165 const sp = `n3pl_insert_${Math.random().toString(36).slice(2, 10)}`;
+  166 await tx.$executeRawUnsafe(`SAVEPOINT ${sp}`);
+  167 try {
+→ 168   const created = await tx.placement.create(
+Unique constraint failed on the (not available)
+
+stdout | tests/db/placement-lifecycle-integration.test.ts > N3 placement-lifecycle integration — DB-touching proof > (xiii) RLS/privilege: app_user_writer DELETE bị REVOKE — Placement lịch sử bất khả xóa
+prisma:error
+Invalid `tx.placement.delete()` invocation in
+C:\CodeApp\HrP-worktrees\t1b-p1b-public-apply\tests\db\placement-lifecycle-integration.test.ts:1053:24
+
+  1050 let deleteErr: Error | null = null;
+  1051 try {
+  1052   await withHrManagerContext(writer, actorId, (tx) =>
+→ 1053     tx.placement.delete(
+Error occurred during query execution:
+ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "42501", message: "permission denied for table placements", severity: "ERROR", detail: None, column: None, hint: None }), transient: false })
+
+ ✓ tests/db/placement-lifecycle-integration.test.ts (16 tests) 53926ms
+   ✓ N3 placement-lifecycle integration — DB-touching proof > (i) createPlacement → SELECTED; confirmPlacement → CONFIRMED 3884ms
+   ✓ N3 placement-lifecycle integration — DB-touching proof > (ii) client-managed: SELECTED → CONFIRMED → EFFECTIVE with evidence 4679ms
+   ✓ N3 placement-lifecycle integration — DB-touching proof > (iii) HRP-managed markPlacementEffective REJECT — N4 owns EFFECTIVE 4011ms
+   ✓ N3 placement-lifecycle integration — DB-touching proof > (iv) retry cùng (case, opening) khi SELECTED → trả placement hiện tại (idempotent) 3096ms
+   ✓ N3 placement-lifecycle integration — DB-touching proof > (v) sau FAILED: retry tạo Placement mới (index slot giải phóng) 3995ms
+   ✓ N3 placement-lifecycle integration — DB-touching proof > (vi) FK chain broken → PlacementValidationError (JobOpening không tồn tại) 1806ms
+   ✓ N3 placement-lifecycle integration — DB-touching proof > (vii) RLS: HR_MANAGER GUC thấy rows; PUBLIC (no GUC) thấy 0 — FORCE RLS enforced 4609ms
+   ✓ N3 placement-lifecycle integration — DB-touching proof > (viii) UNIQUE partial index race: concurrent INSERT cùng (case,opening) → both fulfilled, one winner one replayed 2776ms
+   ✓ N3 placement-lifecycle integration — DB-touching proof > (ix) createPlacement: case thuộc LaborProfile khác → PlacementValidationError (N1 invariant) 1577ms
+   ✓ N3 placement-lifecycle integration — DB-touching proof > (x) createPlacement: case CLOSED → PlacementValidationError 1886ms
+   ✓ N3 placement-lifecycle integration — DB-touching proof > (xi) client-managed EFFECTIVE: evidence persisted to DB columns + PlacementCase closed SUCCESS 3913ms
+   ✓ N3 placement-lifecycle integration — DB-touching proof > (xii) HRP-managed EFFECTIVE reject → case vẫn OPEN (atomic N4 boundary) 3826ms
+   ✓ N3 placement-lifecycle integration — DB-touching proof > (xiii) RLS/privilege: app_user_writer DELETE bị REVOKE — Placement lịch sử bất khả xóa 3073ms
+   ✓ N3 placement-lifecycle integration — DB-touching proof > (xiv) race-loser transition: caller confirm, concurrent cancel → PlacementIdempotencyConflictError 3353ms
+   ✓ N3 placement-lifecycle integration — DB-touching proof > (xv) Client-managed EFFECTIVE khi case đã CLOSED đồng thời → PlacementIdempotencyConflictError + Placement KHÔNG EFFECTIVE (transaction rollback) 3621ms
+(node:9688) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ tests/db/aff05a-r2-bounded-manager-assignment.integration.test.ts (6 tests) 139875ms
+   ✓ AFF-05A-R2 bounded manager assignment > AC-02 clean chain: predecessor built from real chain (R2 excluded); byte-identical R2 apply succeeds; conditional CHECK on target table in pg_constraint 25807ms
+   ✓ AFF-05A-R2 bounded manager assignment > AC-04 scope: a same-named CHECK on another table does NOT prevent R2 from adding its target CHECK 29929ms
+   ✓ AFF-05A-R2 bounded manager assignment > AC-03 narrow backfill on predecessor state: deadline = starts_at + 7 days; overdue ACTIVE -> EXPIRED; terminal preserved; AFF_INITIAL/CASE_RESOLUTION untouched 26846ms
+   ✓ AFF-05A-R2 bounded manager assignment > AC-05 race: two independent DB connections race on the same LaborProfile; exactly one ACTIVE winner, loser gets typed conflict, no duplicate row, no orphan history 28997ms
+   ✓ AFF-05A-R2 bounded manager assignment > AC-06 fail-closed: future starts_at aborts the migration with a typed exception; the conditional CHECK is rolled back 28167ms
+ ✓ src/shared/auth/live-ticket-rls-scope.m1-07a.test.ts (32 tests) 20816ms
+   ✓ V5-M1-07a LIVE — Ticket RLS scope (AC-01..AC-06) > AC-02: WORKER A can INSERT own new ticket (positive) 848ms
+   ✓ V5-M1-07a LIVE — Ticket RLS scope (AC-01..AC-06) > AC-02: WORKER A can UPDATE own ticket (positive — cancel PENDING) 673ms
+   ✓ V5-M1-07a LIVE — Ticket RLS scope (AC-01..AC-06) > AC-02: WORKER A sees own tickets (self SELECT positive) 507ms
+   ✓ V5-M1-07a LIVE — Ticket RLS scope (AC-01..AC-06) > AC-02: WORKER A does NOT see tickets of WORKER B (cross-worker SELECT deny) 618ms
+   ✓ V5-M1-07a LIVE — Ticket RLS scope (AC-01..AC-06) > AC-02: WORKER A cannot UPDATE ticket of WORKER B (cross-worker UPDATE deny) 511ms
+   ✓ V5-M1-07a LIVE — Ticket RLS scope (AC-01..AC-06) > AC-02: WORKER A cannot INSERT ticket for WORKER B (cross-worker INSERT deny) 447ms
+   ✓ V5-M1-07a LIVE — Ticket RLS scope (AC-01..AC-06) > AC-02: HR_STAFF sees global PENDING queue (all workers, not assigned_to_id=self) 489ms
+   ✓ V5-M1-07a LIVE — Ticket RLS scope (AC-01..AC-06) > AC-02: HR_STAFF can approve a PENDING ticket (canonical HR action positive) 546ms
+   ✓ V5-M1-07a LIVE — Ticket RLS scope (AC-01..AC-06) > AC-03: ACCOUNTANT sees ADVANCE_SALARY at HR_APPROVED+ (positive) 492ms
+   ✓ V5-M1-07a LIVE — Ticket RLS scope (AC-01..AC-06) > AC-03: ACCOUNTANT does NOT see non-ADVANCE_SALARY tickets (PENDING/LEAVE/DISPUTE) 503ms
+   ✓ V5-M1-07a LIVE — Ticket RLS scope (AC-01..AC-06) > AC-03: ACCOUNTANT cannot INSERT non-ADVANCE ticket (deny) 446ms
+   ✓ V5-M1-07a LIVE — Ticket RLS scope (AC-01..AC-06) > AC-03: ACCOUNTANT can UPDATE ADVANCE_SALARY at HR_APPROVED → APPROVED (positive finance workflow) 487ms
+   ✓ V5-M1-07a LIVE — Ticket RLS scope (AC-01..AC-06) > AC-03: PM sees tickets of workers assigned to their project (positive) 431ms
+   ✓ V5-M1-07a LIVE — Ticket RLS scope (AC-01..AC-06) > AC-03: PM cannot INSERT tickets (read-only role) 431ms
+   ✓ V5-M1-07a LIVE — Ticket RLS scope (AC-01..AC-06) > AC-03: PM cannot UPDATE tickets (read-only role) 433ms
+   ✓ V5-M1-07a LIVE — Ticket RLS scope (AC-01..AC-06) > AC-03: DIRECTOR sees ALL tickets regardless of worker/status (read-only full) 486ms
+   ✓ V5-M1-07a LIVE — Ticket RLS scope (AC-01..AC-06) > AC-03: DIRECTOR cannot INSERT tickets (read-only role, DEC-06) 488ms
+   ✓ V5-M1-07a LIVE — Ticket RLS scope (AC-01..AC-06) > AC-03: denied roles (SALE, MKT, VENDOR_ADMIN, CTV, EMPLOYEE) see zero tickets 2167ms
+   ✓ V5-M1-07a LIVE — Ticket RLS scope (AC-01..AC-06) > AC-04: WORKER cannot read internal comments 494ms
+   ✓ V5-M1-07a LIVE — Ticket RLS scope (AC-01..AC-06) > AC-04: HR_STAFF can read both internal and non-internal comments 429ms
+   ✓ V5-M1-07a LIVE — Ticket RLS scope (AC-01..AC-06) > AC-04: ACCOUNTANT cannot read internal comments 477ms
+   ✓ V5-M1-07a LIVE — Ticket RLS scope (AC-01..AC-06) > AC-04: notification recipient isolation — ACCOUNTANT sees only ACCOUNTANT notifications 546ms
+   ✓ V5-M1-07a LIVE — Ticket RLS scope (AC-01..AC-06) > AC-04: WORKER cannot insert internal comment 481ms
+   ✓ V5-M1-07a LIVE — Ticket RLS scope (AC-01..AC-06) > AC-04: ACCOUNTANT status update writes parent+TicketHistory atomically (PLN-02) 1341ms
+   ✓ V5-M1-07a LIVE — Ticket RLS scope (AC-01..AC-06) > AC-05: GUC transaction-local — concurrent tx do not leak 1236ms
+stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE — card việc làm trên dữ liệu thật > AC-12 — publicSelect chạy dưới principal MKT, đúng hai dự án public lọt qua
+[gl05 list] total=2 nextOffset=null slugs=["GL05-ELEC-gl05-1790355550387-408789703","GL05-WARE-gl05-1790355550387-408789703"]
+
+stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE — card việc làm trên dữ liệu thật > AC-02/RQ-04 — summary chỉ phản ánh canonical slot của JobPosting
+[gl05 card GL05-ELEC-gl05-1790355550387-408789703] positionTitles=["Công nhân lắp ráp"] locations=["KCN VSIP 1 gl05-1790355550387-408789703"] shifts=["07:00-16:00"] availableSlots=4 shiftType=ca_ngay
+
+stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE — card việc làm trên dữ liệu thật > AC-01/RISK-01/RISK-07 — hourlyRateVnd là BigInt THẬT nhưng DTO chỉ có 18 khóa allow-list
+[gl05 bigint] hourlyRateVnd=45000 typeof=bigint
+
+stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE — card việc làm trên dữ liệu thật > AC-07/DEC-08 — facet dựng từ toàn tập public hợp lệ và KHÔNG co lại theo filter
+[gl05 facets] keys=["areas","shifts"] areas(RUN)=["KCN Đình Vũ gl05-1790355550387-408789703","KCN VSIP 1 gl05-1790355550387-408789703"] total(before)=2 total(area=dinhVu)=1
+
+stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE — card việc làm trên dữ liệu thật > AC-12/go-live-12 DEC-14 — card và detail dùng cùng canonical slot
+[gl05 detail GL05-ELEC-gl05-1790355550387-408789703] positions=[["GL05-ASSY",4]] availableSlots=4 needed=5 filled=1 shiftType=ca_ngay
+
+stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE — card việc làm trên dữ liệu thật > AC-12 — dự án nội bộ không có card, không facet, và trang chi tiết trả null
+[gl05 non-public] getPublicJobDetail(GL05-PRIV-gl05-1790355550387-408789703) => null
+
+stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE — card việc làm trên dữ liệu thật > AC-05 — q fold dấu, không khớp description; area đọc tập slot SAU lifecycle
+[gl05 q] fold=["GL05-ELEC-gl05-1790355550387-408789703"] description=0 slotDaDu=0
+
+stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE — card việc làm trên dữ liệu thật > AC-05 — q fold dấu, không khớp description; area đọc tập slot SAU lifecycle
+[gl05 area] vsip=["GL05-ELEC-gl05-1790355550387-408789703"] yenPhong=0 quangChau=0 dinhVu=["GL05-WARE-gl05-1790355550387-408789703"]
+
+stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE — card việc làm trên dữ liệu thật > AC-06 — shift canonical khớp, shift của sibling slot không khớp
+[gl05 filter] shift(07:00-16:00)=["GL05-ELEC-gl05-1790355550387-408789703"] shift(14:00-22:00)=0 shift(18:00-02:00)=0
+
+stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE — card việc làm trên dữ liệu thật > AC-04 — total/nextOffset và hai trang thật khớp nhau, limit bị kẹp [1,50]
+[gl05 page] p1=["GL05-WARE-gl05-1790355550387-408789703"] next=1 p2=["GL05-ELEC-gl05-1790355550387-408789703"] next=null past(offset=2)=0 total=2
+
+stdout | src/domains/job-board/public-card-truth.integration.test.ts > V5-go-live-05 LIVE — card việc làm trên dữ liệu thật
+[gl05 cleanup] projects còn lại=0 slots còn lại=0 (RUN=gl05-1790355550387-408789703)
+
+ ✓ src/domains/job-board/public-card-truth.integration.test.ts (10 tests) 23786ms
+   ✓ V5-go-live-05 LIVE — card việc làm trên dữ liệu thật > AC-12 — publicSelect chạy dưới principal MKT, đúng hai dự án public lọt qua 1700ms
+   ✓ V5-go-live-05 LIVE — card việc làm trên dữ liệu thật > AC-02/RQ-04 — summary chỉ phản ánh canonical slot của JobPosting 768ms
+   ✓ V5-go-live-05 LIVE — card việc làm trên dữ liệu thật > DEC-05 — slot hết hạn, slot đủ chỉ tiêu và đơn CLOSED đều không lên card 768ms
+   ✓ V5-go-live-05 LIVE — card việc làm trên dữ liệu thật > AC-01/RISK-01/RISK-07 — hourlyRateVnd là BigInt THẬT nhưng DTO chỉ có 18 khóa allow-list 801ms
+   ✓ V5-go-live-05 LIVE — card việc làm trên dữ liệu thật > AC-07/DEC-08 — facet dựng từ toàn tập public hợp lệ và KHÔNG co lại theo filter 1304ms
+   ✓ V5-go-live-05 LIVE — card việc làm trên dữ liệu thật > AC-12/go-live-12 DEC-14 — card và detail dùng cùng canonical slot 1634ms
+   ✓ V5-go-live-05 LIVE — card việc làm trên dữ liệu thật > AC-12 — dự án nội bộ không có card, không facet, và trang chi tiết trả null 431ms
+   ✓ V5-go-live-05 LIVE — card việc làm trên dữ liệu thật > AC-05 — q fold dấu, không khớp description; area đọc tập slot SAU lifecycle 4909ms
+   ✓ V5-go-live-05 LIVE — card việc làm trên dữ liệu thật > AC-06 — shift canonical khớp, shift của sibling slot không khớp 3231ms
+   ✓ V5-go-live-05 LIVE — card việc làm trên dữ liệu thật > AC-04 — total/nextOffset và hai trang thật khớp nhau, limit bị kẹp [1,50] 3400ms
+ ✓ tests/db/job-posting-authoring.integration.test.ts (13 tests) 17958ms
+   ✓ P1-A0 JobPosting authoring — DB-touching proof > AC-06 create-or-reuse JobOpening: 2 sequential calls return the same JobOpening 2083ms
+   ✓ P1-A0 JobPosting authoring — DB-touching proof > AC-06 race: 2 concurrent transactions on the same unbound slot produce exactly 1 JobOpening 1527ms
+   ✓ P1-A0 JobPosting authoring — DB-touching proof > AC-09 create-or-reuse JobPosting DRAFT: idempotent for same JobOpening 1658ms
+   ✓ P1-A0 JobPosting authoring — DB-touching proof > AC-07 updateDraftContent rejects stale revision and bumps revision on success 1837ms
+   ✓ P1-A0 JobPosting authoring — DB-touching proof > AC-08 publish blocked when JobOpening status is DRAFT 2503ms
+   ✓ P1-A0 JobPosting authoring — DB-touching proof > AC-08 publish succeeds when JobOpening status is OPEN 3897ms
+   ✓ P1-A0 JobPosting authoring — DB-touching proof > AC-14 updateDraftContent rejects rich payload with image node (no raw HTML persistence) 1487ms
+   ✓ P1-A0 JobPosting authoring — DB-touching proof > AC-09 RLS positive: HR_MANAGER can read+write job_postings inside the transaction 442ms
+   ✓ P1-A0 JobPosting authoring — DB-touching proof > AC-09 RLS negative: PUBLIC role (no GUC) cannot read job_postings rows (FORCE RLS deny USING) 448ms
+(node:16616) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/domains/applications/live-integration.mp2.test.ts (11 tests) 15882ms
+   ✓ MP-2 LIVE integration (AC-02/03/04/05) > AC-02 valid apply creates exactly one submission + initial history (no Worker/SourceClaim) 1083ms
+   ✓ MP-2 LIVE integration (AC-02/03/04/05) > AC-02 rejects private / non-active / closed / expired / full jobs (P0011) 3989ms
+   ✓ MP-2 LIVE integration (AC-02/03/04/05) > AC-03 same key+payload replays the same tracking with no second row 988ms
+   ✓ MP-2 LIVE integration (AC-02/03/04/05) > AC-03 same key + DIFFERENT payload → IDEMPOTENCY_PAYLOAD_MISMATCH (P0010) 854ms
+   ✓ MP-2 LIVE integration (AC-02/03/04/05) > AC-03 duplicate active slot+phone (different key) → DUPLICATE_APPLICATION (P0012) 856ms
+   ✓ MP-2 LIVE integration (AC-02/03/04/05) > AC-03 a second row with the same idempotency key hash is rejected by the DB (23505) 388ms
+   ✓ MP-2 LIVE integration (AC-02/03/04/05) > AC-03 REAL concurrent race: N simultaneous same-key applies create exactly ONE row 3644ms
+   ✓ MP-2 LIVE integration (AC-02/03/04/05) > AC-04 tracking projection exposes only DEC-02 allow-list columns and no PII 902ms
+   ✓ MP-2 LIVE integration (AC-02/03/04/05) > AC-05 RLS read scope: privileged roles see an unscoped row; others do not 2034ms
+stdout | src/shared/auth/live-rls-posture.m1-07b.test.ts > V5-M1-07b LIVE — RLS runtime-posture closure (29 tables, 5 gap tables) > PLN-02: writer grants on the 29 tables are least-privilege (CRUD subset, none grantable)
+[PLN-02 grants] grantee=app_user_writer privileges=["DELETE","INSERT","SELECT","UPDATE"] tables_with_grants=29/29 is_grantable=NONE
+
+ ✓ src/shared/auth/live-rls-posture.m1-07b.test.ts (32 tests) 25200ms
+   ✓ V5-M1-07b LIVE — RLS runtime-posture closure (29 tables, 5 gap tables) > PLN-02: writer grants on the 29 tables are least-privilege (CRUD subset, none grantable) 377ms
+   ✓ V5-M1-07b LIVE — RLS runtime-posture closure (29 tables, 5 gap tables) > AC-07: ACCOUNTANT sees deduction rows (positive — exact IDs, >=1 row) 808ms
+   ✓ V5-M1-07b LIVE — RLS runtime-posture closure (29 tables, 5 gap tables) > AC-07: WORKER A sees ONLY own deduction (self positive, cross zero) 472ms
+   ✓ V5-M1-07b LIVE — RLS runtime-posture closure (29 tables, 5 gap tables) > AC-08: denied role (SALE) sees zero deductions (no exception→0 masking) 531ms
+   ✓ V5-M1-07b LIVE — RLS runtime-posture closure (29 tables, 5 gap tables) > AC-05: HR_MANAGER can INSERT a deduction (positive write) 530ms
+   ✓ V5-M1-07b LIVE — RLS runtime-posture closure (29 tables, 5 gap tables) > AC-05: WORKER cannot INSERT a deduction (deny → throw) 549ms
+   ✓ V5-M1-07b LIVE — RLS runtime-posture closure (29 tables, 5 gap tables) > AC-05: ACCOUNTANT can UPDATE a deduction (positive), HR_STAFF cannot (count 0) 1011ms
+   ✓ V5-M1-07b LIVE — RLS runtime-posture closure (29 tables, 5 gap tables) > AC-05: HR_STAFF and PM can SELECT client company (broad-read positive) 1000ms
+   ✓ V5-M1-07b LIVE — RLS runtime-posture closure (29 tables, 5 gap tables) > AC-08: CTV/WORKER/VENDOR_ADMIN see zero client companies (deny) 1463ms
+   ✓ V5-M1-07b LIVE — RLS runtime-posture closure (29 tables, 5 gap tables) > AC-05: HR_MANAGER can INSERT a client company (positive write) 534ms
+   ✓ V5-M1-07b LIVE — RLS runtime-posture closure (29 tables, 5 gap tables) > AC-05: HR_STAFF can read but NOT INSERT a client company (command-aware deny → throw) 524ms
+   ✓ V5-M1-07b LIVE — RLS runtime-posture closure (29 tables, 5 gap tables) > AC-05: DIRECTOR can UPDATE, ACCOUNTANT cannot (command-aware split) 1001ms
+   ✓ V5-M1-07b LIVE — RLS runtime-posture closure (29 tables, 5 gap tables) > AC-07: ACCOUNTANT sees client_rate_card (positive); SALE/PM see zero 1528ms
+   ✓ V5-M1-07b LIVE — RLS runtime-posture closure (29 tables, 5 gap tables) > AC-07: HR_MANAGER sees vendor_rate_card (positive); SALE/PM see zero 1609ms
+   ✓ V5-M1-07b LIVE — RLS runtime-posture closure (29 tables, 5 gap tables) > AC-05: rate cards are read-only at runtime — INSERT denied even for a finance reader (throw) 1105ms
+   ✓ V5-M1-07b LIVE — RLS runtime-posture closure (29 tables, 5 gap tables) > AC-07: ACCOUNTANT sees withdrawal rows (finance oversight positive) 517ms
+   ✓ V5-M1-07b LIVE — RLS runtime-posture closure (29 tables, 5 gap tables) > AC-07: CTV A sees ONLY own withdrawal (self positive, A→B cross zero) 470ms
+   ✓ V5-M1-07b LIVE — RLS runtime-posture closure (29 tables, 5 gap tables) > AC-05: CTV A can INSERT own withdrawal (positive); CTV A cannot INSERT for B (throw) 1067ms
+   ✓ V5-M1-07b LIVE — RLS runtime-posture closure (29 tables, 5 gap tables) > AC-08: non-CTV role cannot INSERT a withdrawal (WITH CHECK role=CTV → throw) 464ms
+   ✓ V5-M1-07b LIVE — RLS runtime-posture closure (29 tables, 5 gap tables) > AC-05: withdrawal has NO runtime UPDATE path — approve denied (count 0) 534ms
+   ✓ V5-M1-07b LIVE — RLS runtime-posture closure (29 tables, 5 gap tables) > AC-05: DELETE is denied on every seeded gap table (count 0, rows survive) 3368ms
+   ✓ V5-M1-07b LIVE — RLS runtime-posture closure (29 tables, 5 gap tables) > AC-04: missing GUC → empty role AND zero rows (deny-by-default, not masked) 461ms
+   ✓ V5-M1-07b LIVE — RLS runtime-posture closure (29 tables, 5 gap tables) > AC-04: 4 GUCs are transaction-local — concurrent tx do not leak A→B 1239ms
+(node:14840) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ tests/db/p1a1-migration-chain-proof.integration.test.ts (11 tests) 35974ms
+   ✓ P1-A1 migration chain proof (C-05) > applies byte-identical A1 migration file (forward-only replacement) 1756ms
+   ✓ P1-A1 migration chain proof (C-05) > post-apply catalog: PUBLIC has NO EXECUTE; app_user/app_user_writer retain EXECUTE 595ms
+   ✓ P1-A1 migration chain proof (C-05) > behavior: apply via canonical chain PUBLISHED + OPEN slot A succeeds 922ms
+   ✓ P1-A1 migration chain proof (C-05) > NEGATIVE ROLLBACK proof: post-assert failure rolls back the ENTIRE migration file 1796ms
+(node:21124) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+(Use `node --trace-warnings ...` to show where the warning was created)
+stderr | src/domains/applications/live-integration.ops06a.test.ts > AC-04/05/08 LIVE — chặn ⇒ zero write trên TEST DB thật > AC-04: limiter deny ⇒ 429 và KHÔNG có row nào được tạo (before/after bằng nhau)
+{"schemaVersion":"1.0","timestamp":"2026-09-25T17:01:12.195Z","level":"warn","event":"rate_limit.denied","requestId":"b04936b7-32ce-4791-b50f-5b28efc5f428","meta":{"route":"POST /api/public/jobs/[slug]/applications","status":429,"outcome":"rate_limited","detail":{"surface":"APPLY_IP","retryAfterSec":30}}}
+
+ ✓ src/domains/applications/live-integration.ops06a.test.ts (6 tests | 2 skipped) 3744ms
+   ✓ AC-04/05/08 LIVE — chặn ⇒ zero write trên TEST DB thật > AC-08: apply hợp lệ tạo ĐÚNG 1 submission + 1 history; replay cùng key ⇒ zero row mới 1159ms
+ ✓ src/domains/applications/live-integration.mp3c.test.ts (7 tests) 31747ms
+   ✓ MP-3C LIVE assignment placement > activates one submission: ACTIVE assignment, +1 counters, one audit, one outbox, counter == live ACTIVE 6315ms
+   ✓ MP-3C LIVE assignment placement > last-slot race (two workers, slotsNeeded=1): exactly one ACTIVE, loser SLOT_UNAVAILABLE, counter == 1 4723ms
+   ✓ MP-3C LIVE assignment placement > same submission raced twice: one ACTIVE, loser ASSIGNMENT_EXISTS, counters move once 3901ms
+   ✓ MP-3C LIVE assignment placement > idempotent replay: same key+payload replays (no double counter/audit/outbox); different payload conflicts 4527ms
+   ✓ MP-3C LIVE assignment placement > DB indexes backstop the app: duplicate ACTIVE-worker, submission, and project+employeeCode all reject (P2002) 4089ms
+   ✓ MP-3C LIVE assignment placement > role deny (IDOR): DIRECTOR and SALE are FORBIDDEN (403) on preview and activate, and write nothing 3324ms
+   ✓ MP-3C LIVE assignment placement > referral guard R1 blocks placement; a valid override activates and writes exactly one OVERRIDE_S2 audit 4391ms
+ ✓ tests/db/er003-evidence-record-metadata.integration.test.ts (19 tests) 5024ms
+   ✓ ER-003 EvidenceRecord metadata > evidence_records has ENABLE+FORCE RLS and no policy for any role 398ms
+   ✓ ER-003 EvidenceRecord metadata > writer (FORCE RLS, no policy) SELECT is rejected SQLSTATE 42501 regardless of ADMIN GUC 1067ms
+ ✓ tests/db/p1b-public-apply-slug-bound.integration.test.ts (10 tests) 14282ms
+   ✓ P1-B canonical slug-bound lifecycle > AC-01/03 happy NEW_PROFILE links submission, case, profile and initial history 918ms
+   ✓ P1-B canonical slug-bound lifecycle > AC-02 EXACT_MATCH reuses LaborProfile and active PlacementCase 936ms
+   ✓ P1-B canonical slug-bound lifecycle > AC-04 POSSIBLE_MATCH maps generic 409 and creates zero lifecycle rows 1244ms
+   ✓ P1-B canonical slug-bound lifecycle > AC-05 duplicate application remains P0012/409 350ms
+   ✓ P1-B canonical slug-bound lifecycle > AC-06/07 DB idempotency replays same payload and rejects different payload 948ms
+   ✓ P1-B canonical slug-bound lifecycle > AC-08 concurrent same-key yields one mutation and one replay result 1014ms
+   ✓ P1-B canonical slug-bound lifecycle > AC-09 A1 DRAFT/ARCHIVED/FILLED guards create zero lifecycle rows 1321ms
+   ✓ P1-B canonical slug-bound lifecycle > AC-10 RPC revalidates an unpublish that happens before invocation 563ms
+   ✓ P1-B canonical slug-bound lifecycle > AC-11 history failure rolls back profile, case and submission atomically 919ms
+stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-01: valid active code creates attribution row via engine and returns REDIRECT_NEW
+{"schemaVersion":"1.0","timestamp":"2026-09-25T17:02:09.946Z","level":"info","event":"referral.redirect.new","requestId":"itest-f90198cd-842d-4505-89d3-9e44b69fa3cd","meta":{"route":"GET /r/[code]","outcome":"redirect_new"}}
+
+stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-02: forged code → NOT_FOUND (constant /jobs), no attribution row
+{"schemaVersion":"1.0","timestamp":"2026-09-25T17:02:10.203Z","level":"info","event":"referral.redirect.referrer_not_found","requestId":"itest-4068dfd4-b313-40ff-83bb-00d72a6f5130","meta":{"route":"GET /r/[code]","outcome":"not_found"}}
+
+stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-02: inactive user code → NOT_FOUND, no attribution row
+{"schemaVersion":"1.0","timestamp":"2026-09-25T17:02:10.394Z","level":"info","event":"referral.redirect.referrer_not_found","requestId":"itest-d70a7f3a-ee8d-4dd7-8d5f-4dd5ecfdc863","meta":{"route":"GET /r/[code]","outcome":"not_found"}}
+
+stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-03: valid cookie + existing active row → REDIRECT_EXISTING (existing wins, no new row)
+{"schemaVersion":"1.0","timestamp":"2026-09-25T17:02:11.426Z","level":"info","event":"referral.redirect.new","requestId":"itest-26ebdee6-da71-4e7e-a266-80f869bb5e95","meta":{"route":"GET /r/[code]","outcome":"redirect_new"}}
+
+stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-03: valid cookie + existing active row → REDIRECT_EXISTING (existing wins, no new row)
+{"schemaVersion":"1.0","timestamp":"2026-09-25T17:02:12.036Z","level":"info","event":"referral.redirect.existing_wins","requestId":"itest-b0b1b7f2-f1f3-406c-a2be-3bf94054dc21","meta":{"route":"GET /r/[code]","outcome":"redirect_existing"}}
+
+stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-03b: cookie from code A + click code B → REDIRECT_EXISTING (first click wins)
+{"schemaVersion":"1.0","timestamp":"2026-09-25T17:02:12.953Z","level":"info","event":"referral.redirect.new","requestId":"itest-6e7aec98-d24f-4087-80a2-25df0cb6577c","meta":{"route":"GET /r/[code]","outcome":"redirect_new"}}
+
+stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-03b: cookie from code A + click code B → REDIRECT_EXISTING (first click wins)
+{"schemaVersion":"1.0","timestamp":"2026-09-25T17:02:13.432Z","level":"info","event":"referral.redirect.existing_wins","requestId":"itest-0c249460-2d8d-479d-a703-1bdc5d2d65b3","meta":{"route":"GET /r/[code]","outcome":"redirect_existing"}}
+
+stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-06: ?job=/jobs/vietnam-senior-dev → allowlisted prefix preserved
+{"schemaVersion":"1.0","timestamp":"2026-09-25T17:02:15.350Z","level":"info","event":"referral.redirect.new","requestId":"itest-d39bf1f9-6870-4211-a0e7-66e9f47f7720","meta":{"route":"GET /r/[code]","outcome":"redirect_new"}}
+
+stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-06: ?job=/jobs?page=2 → query stripped, prefix preserved
+{"schemaVersion":"1.0","timestamp":"2026-09-25T17:02:16.291Z","level":"info","event":"referral.redirect.new","requestId":"itest-00d25158-39fa-41b3-a4a0-bb33c320d2e4","meta":{"route":"GET /r/[code]","outcome":"redirect_new"}}
+
+stdout | tests/db/attribution-redirect.integration.test.ts > N2-2 Attribution Redirect Integration > AC-01 + expires: created attribution has expires_at = now + 30 days
+{"schemaVersion":"1.0","timestamp":"2026-09-25T17:02:18.243Z","level":"info","event":"referral.redirect.new","requestId":"itest-06d6a30a-e7f2-42f8-a61c-53386bb9967f","meta":{"route":"GET /r/[code]","outcome":"redirect_new"}}
+
+ ✓ tests/db/attribution-redirect.integration.test.ts (15 tests) 11023ms
+   ✓ N2-2 Attribution Redirect Integration > AC-01: valid active code creates attribution row via engine and returns REDIRECT_NEW 1618ms
+   ✓ N2-2 Attribution Redirect Integration > AC-03: valid cookie + existing active row → REDIRECT_EXISTING (existing wins, no new row) 1644ms
+   ✓ N2-2 Attribution Redirect Integration > AC-03b: cookie from code A + click code B → REDIRECT_EXISTING (first click wins) 1398ms
+   ✓ N2-2 Attribution Redirect Integration > AC-04: hrp.engine_context set inside engine tx, cleared after COMMIT 921ms
+   ✓ N2-2 Attribution Redirect Integration > AC-06: ?job=/jobs/vietnam-senior-dev → allowlisted prefix preserved 884ms
+   ✓ N2-2 Attribution Redirect Integration > AC-06: ?job=/jobs?page=2 → query stripped, prefix preserved 942ms
+   ✓ N2-2 Attribution Redirect Integration > AC-08: writer cannot INSERT referral_attributions (RLS deny) 1076ms
+   ✓ N2-2 Attribution Redirect Integration > AC-01 + expires: created attribution has expires_at = now + 30 days 973ms
+ ✓ src/shared/auth/live-vendor-idor.m1-08.test.ts (13 tests) 17612ms
+   ✓ V5-M1-08 LIVE — vendor object-scope/IDOR (L1) + guarded write & RLS backstop (L2) > L1: VENDOR chỉ thấy order trên project public hoặc có submission; KHÔNG thấy private-no-submission; status lọc OPEN/CLOSING_SOON 943ms
+   ✓ V5-M1-08 LIVE — vendor object-scope/IDOR (L1) + guarded write & RLS backstop (L2) > L1: VENDOR where thủ công trỏ order vô hình (private-no-sub) vẫn rỗng (AND self-scope, chống enumeration) 588ms
+   ✓ V5-M1-08 LIVE — vendor object-scope/IDOR (L1) + guarded write & RLS backstop (L2) > L1: VENDOR chỉ đọc CandidateSubmission của mình; where trỏ vendor khác rỗng 1177ms
+   ✓ V5-M1-08 LIVE — vendor object-scope/IDOR (L1) + guarded write & RLS backstop (L2) > L1: VENDOR chỉ đọc VendorStatement của mình; where trỏ vendor khác rỗng (IDOR) 1164ms
+   ✓ V5-M1-08 LIVE — vendor object-scope/IDOR (L1) + guarded write & RLS backstop (L2) > L1: VENDOR_STAFF (cùng vendor A) đọc ĐÚNG own-scope như VENDOR_ADMIN — scope key là vendorId server-derived, không phải role 1606ms
+   ✓ V5-M1-08 LIVE — vendor object-scope/IDOR (L1) + guarded write & RLS backstop (L2) > L1: VENDOR_ADMIN vendor B thấy đối xứng — order/submission/statement của B; KHÔNG thấy của A (cách ly hai chiều) 1521ms
+   ✓ V5-M1-08 LIVE — vendor object-scope/IDOR (L1) + guarded write & RLS backstop (L2) > L1: vendor context sở hữu rỗng chỉ thấy order public; submission/statement rỗng (empty/invalid-scope actor) 1678ms
+   ✓ V5-M1-08 LIVE — vendor object-scope/IDOR (L1) + guarded write & RLS backstop (L2) > L2: GUC transaction-local đúng danh tính vendor A (vendor_id, role, worker_id rỗng) 870ms
+   ✓ V5-M1-08 LIVE — vendor object-scope/IDOR (L1) + guarded write & RLS backstop (L2) > L2 RLS backstop: dưới GUC vendor A, plain findMany chỉ trả row vendor A (không lộ vendor B) 554ms
+   ✓ V5-M1-08 LIVE — vendor object-scope/IDOR (L1) + guarded write & RLS backstop (L2) > L2 RLS backstop: BỎ where.vendorId, dưới GUC vendor A vẫn KHÔNG update được row vendor B (count=0, row nguyên vẹn) 684ms
+   ✓ V5-M1-08 LIVE — vendor object-scope/IDOR (L1) + guarded write & RLS backstop (L2) > L2 guarded confirm: {id,vendorId,status:SENT} của A → count=1, flip CONFIRMED 610ms
+   ✓ V5-M1-08 LIVE — vendor object-scope/IDOR (L1) + guarded write & RLS backstop (L2) > L2 race: hai confirm đồng thời trên 1 statement SENT → đúng một winner (count=1), một loser (count=0) 1326ms
+   ✓ V5-M1-08 LIVE — vendor object-scope/IDOR (L1) + guarded write & RLS backstop (L2) > L2 guarded dispute: 2 vòng tăng disputeCount 0→1→2; vòng 3 bị guard {lt:2} chặn (count=0) 1779ms
+(node:3748) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ tests/db/aff04-conversion-propagation-upgrade-path.integration.test.ts (7 tests) 31979ms
+   ✓ AFF-04 predecessor upgrade-path (T0 directive F-P4-2) > rolls back to the true predecessor state (no AFF-04 artifacts present) 351ms
+   ✓ AFF-04 predecessor upgrade-path (T0 directive F-P4-2) > applies the byte-identical AFF-04 migration file 1515ms
+ ✓ src/domains/security/security-matrix.integration.test.ts (124 tests) 55789ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: ADMIN > ADMIN × workers → sees exact fixture 1134ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: ADMIN > ADMIN × outsourcing_projects → sees exact fixture 477ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: ADMIN > ADMIN × staffing_orders → sees exact fixture 472ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: ADMIN > ADMIN × vendors → sees exact fixture 468ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: ADMIN > ADMIN × attendance_events → sees exact fixture 465ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: ADMIN > ADMIN × timesheet_periods → sees exact fixture 463ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: ADMIN > ADMIN × vendor_statements → sees exact fixture 466ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: ADMIN > ADMIN × client_statements → sees exact fixture 469ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: HR_MANAGER > HR_MANAGER × workers → sees exact fixture 408ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: HR_MANAGER > HR_MANAGER × outsourcing_projects → sees exact fixture 406ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: HR_MANAGER > HR_MANAGER × staffing_orders → sees exact fixture 404ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: HR_MANAGER > HR_MANAGER × vendors → sees exact fixture 418ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: HR_MANAGER > HR_MANAGER × attendance_events → sees exact fixture 400ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: HR_MANAGER > HR_MANAGER × timesheet_periods → sees exact fixture 409ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: HR_MANAGER > HR_MANAGER × vendor_statements → sees exact fixture 406ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: HR_MANAGER > HR_MANAGER × client_statements → sees exact fixture 404ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: DIRECTOR > DIRECTOR × workers → sees exact fixture 403ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: DIRECTOR > DIRECTOR × outsourcing_projects → sees exact fixture 424ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: DIRECTOR > DIRECTOR × staffing_orders → sees exact fixture 412ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: DIRECTOR > DIRECTOR × vendors → sees exact fixture 402ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: DIRECTOR > DIRECTOR × attendance_events → exact zero rows 396ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: DIRECTOR > DIRECTOR × timesheet_periods → sees exact fixture 406ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: DIRECTOR > DIRECTOR × vendor_statements → sees exact fixture 542ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: DIRECTOR > DIRECTOR × client_statements → sees exact fixture 477ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: HR_STAFF > HR_STAFF × workers → sees exact fixture 853ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: HR_STAFF > HR_STAFF × outsourcing_projects → exact zero rows 409ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: HR_STAFF > HR_STAFF × staffing_orders → exact zero rows 413ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: HR_STAFF > HR_STAFF × vendors → exact zero rows 397ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: HR_STAFF > HR_STAFF × attendance_events → sees exact fixture 414ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: HR_STAFF > HR_STAFF × timesheet_periods → sees exact fixture 404ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: HR_STAFF > HR_STAFF × vendor_statements → exact zero rows 407ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: HR_STAFF > HR_STAFF × client_statements → exact zero rows 403ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: SALE > SALE × workers → sees exact fixture 407ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: SALE > SALE × outsourcing_projects → sees exact fixture 404ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: SALE > SALE × staffing_orders → sees exact fixture 468ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: SALE > SALE × vendors → sees exact fixture 398ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: SALE > SALE × attendance_events → exact zero rows 410ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: SALE > SALE × timesheet_periods → exact zero rows 410ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: SALE > SALE × vendor_statements → exact zero rows 407ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: SALE > SALE × client_statements → sees exact fixture 403ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: PM > PM × workers → sees exact fixture 404ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: PM > PM × outsourcing_projects → sees exact fixture 411ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: PM > PM × staffing_orders → sees exact fixture 405ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: PM > PM × vendors → exact zero rows 405ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: PM > PM × attendance_events → sees exact fixture 412ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: PM > PM × timesheet_periods → sees exact fixture 403ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: PM > PM × vendor_statements → exact zero rows 510ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: PM > PM × client_statements → exact zero rows 409ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: ACCOUNTANT > ACCOUNTANT × workers → exact zero rows 412ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: ACCOUNTANT > ACCOUNTANT × outsourcing_projects → exact zero rows 404ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: ACCOUNTANT > ACCOUNTANT × staffing_orders → exact zero rows 412ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: ACCOUNTANT > ACCOUNTANT × vendors → sees exact fixture 417ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: ACCOUNTANT > ACCOUNTANT × attendance_events → exact zero rows 408ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: ACCOUNTANT > ACCOUNTANT × timesheet_periods → sees exact fixture 400ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: ACCOUNTANT > ACCOUNTANT × vendor_statements → sees exact fixture 405ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: ACCOUNTANT > ACCOUNTANT × client_statements → sees exact fixture 410ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: MKT > MKT × workers → exact zero rows 406ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: MKT > MKT × outsourcing_projects → sees exact fixture 404ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: MKT > MKT × staffing_orders → sees exact fixture 404ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: MKT > MKT × vendors → exact zero rows 410ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: MKT > MKT × attendance_events → exact zero rows 405ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: MKT > MKT × timesheet_periods → exact zero rows 411ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: MKT > MKT × vendor_statements → exact zero rows 408ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: MKT > MKT × client_statements → exact zero rows 405ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: VENDOR_ADMIN > VENDOR_ADMIN × workers → sees exact fixture 402ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: VENDOR_ADMIN > VENDOR_ADMIN × outsourcing_projects → sees exact fixture 409ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: VENDOR_ADMIN > VENDOR_ADMIN × staffing_orders → sees exact fixture 403ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: VENDOR_ADMIN > VENDOR_ADMIN × vendors → sees exact fixture 410ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: VENDOR_ADMIN > VENDOR_ADMIN × attendance_events → exact zero rows 408ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: VENDOR_ADMIN > VENDOR_ADMIN × timesheet_periods → exact zero rows 412ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: VENDOR_ADMIN > VENDOR_ADMIN × vendor_statements → sees exact fixture 408ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: VENDOR_ADMIN > VENDOR_ADMIN × client_statements → exact zero rows 528ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: VENDOR_STAFF > VENDOR_STAFF × workers → sees exact fixture 410ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: VENDOR_STAFF > VENDOR_STAFF × outsourcing_projects → sees exact fixture 396ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: VENDOR_STAFF > VENDOR_STAFF × staffing_orders → sees exact fixture 402ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: VENDOR_STAFF > VENDOR_STAFF × vendors → sees exact fixture 412ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: VENDOR_STAFF > VENDOR_STAFF × attendance_events → exact zero rows 408ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: VENDOR_STAFF > VENDOR_STAFF × timesheet_periods → exact zero rows 411ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: VENDOR_STAFF > VENDOR_STAFF × vendor_statements → sees exact fixture 588ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: VENDOR_STAFF > VENDOR_STAFF × client_statements → exact zero rows 410ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: CTV > CTV × workers → sees exact fixture 404ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: CTV > CTV × outsourcing_projects → sees exact fixture 398ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: CTV > CTV × staffing_orders → sees exact fixture 417ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: CTV > CTV × vendors → exact zero rows 411ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: CTV > CTV × attendance_events → exact zero rows 411ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: CTV > CTV × timesheet_periods → exact zero rows 414ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: CTV > CTV × vendor_statements → exact zero rows 405ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: CTV > CTV × client_statements → exact zero rows 411ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: WORKER > WORKER × workers → sees exact fixture 406ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: WORKER > WORKER × outsourcing_projects → sees exact fixture 409ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: WORKER > WORKER × staffing_orders → sees exact fixture 402ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: WORKER > WORKER × vendors → exact zero rows 408ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: WORKER > WORKER × attendance_events → sees exact fixture 415ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: WORKER > WORKER × timesheet_periods → exact zero rows 413ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: WORKER > WORKER × vendor_statements → exact zero rows 412ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: WORKER > WORKER × client_statements → exact zero rows 391ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: EMPLOYEE > EMPLOYEE × workers → exact zero rows 401ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: EMPLOYEE > EMPLOYEE × outsourcing_projects → exact zero rows 463ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: EMPLOYEE > EMPLOYEE × staffing_orders → exact zero rows 406ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: EMPLOYEE > EMPLOYEE × vendors → exact zero rows 408ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: EMPLOYEE > EMPLOYEE × attendance_events → exact zero rows 406ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: EMPLOYEE > EMPLOYEE × timesheet_periods → exact zero rows 403ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: EMPLOYEE > EMPLOYEE × vendor_statements → exact zero rows 407ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: EMPLOYEE > EMPLOYEE × client_statements → exact zero rows 412ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: UNKNOWN_ROLE > UNKNOWN_ROLE × workers → exact zero rows 403ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: UNKNOWN_ROLE > UNKNOWN_ROLE × outsourcing_projects → exact zero rows 410ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: UNKNOWN_ROLE > UNKNOWN_ROLE × staffing_orders → exact zero rows 410ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: UNKNOWN_ROLE > UNKNOWN_ROLE × vendors → exact zero rows 415ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: UNKNOWN_ROLE > UNKNOWN_ROLE × attendance_events → exact zero rows 456ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: UNKNOWN_ROLE > UNKNOWN_ROLE × timesheet_periods → exact zero rows 400ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: UNKNOWN_ROLE > UNKNOWN_ROLE × vendor_statements → exact zero rows 401ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: UNKNOWN_ROLE > UNKNOWN_ROLE × client_statements → exact zero rows 405ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: EMPTY_ROLE > EMPTY_ROLE × workers → exact zero rows 409ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: EMPTY_ROLE > EMPTY_ROLE × outsourcing_projects → exact zero rows 401ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: EMPTY_ROLE > EMPTY_ROLE × staffing_orders → exact zero rows 409ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: EMPTY_ROLE > EMPTY_ROLE × vendors → exact zero rows 408ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: EMPTY_ROLE > EMPTY_ROLE × attendance_events → exact zero rows 405ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: EMPTY_ROLE > EMPTY_ROLE × timesheet_periods → exact zero rows 401ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: EMPTY_ROLE > EMPTY_ROLE × vendor_statements → exact zero rows 402ms
+   ✓ V5-M1-07b PLN-01 — truthful security matrix (13+2 roles × 8 tables) > context: EMPTY_ROLE > EMPTY_ROLE × client_statements → exact zero rows 409ms
+ ✓ tests/db/aff04-conversion-propagation.integration.test.ts (10 tests) 5160ms
+   ✓ AFF-04 conversion & propagation > backfills accepted CTV_REFERRAL with ctvId -> referrer_user_id = ctv_id 420ms
+   ✓ AFF-04 conversion & propagation > does NOT backfill HRP_DIRECT or VENDOR_SUPPLIED claims (referrerUserId stays NULL) 543ms
+   ✓ AFF-04 conversion & propagation > partial unique indexes prevent a second accepted claim for the same worker (no source-steal) 427ms
+ ✓ src/domains/staffing/4role-staffing.integration.test.ts (11 tests) 793ms
+   ✓ 4-role scoping — Talent Pool (DEC-13) > WORKER — bị chặn talent pool (CAN_VIEW_UNASSIGNED_POOL) 777ms
+stdout | src/shared/auth/live-public-read-rls.go-live-04.test.ts > V5-go-live-04 LIVE — đường đọc công khai dưới FORCE RLS > AC-10(a): current_user không BYPASSRLS và không SUPERUSER
+[go-live-04][AC-10a] current_user=app_user_writer rolbypassrls=false rolsuper=false
+
+stdout | src/shared/auth/live-public-read-rls.go-live-04.test.ts > V5-go-live-04 LIVE — đường đọc công khai dưới FORCE RLS > AC-08: cùng kết nối, KHÔNG set GUC ⇒ app.role rỗng và 0 dòng
+[go-live-04][AC-08] no-GUC app.role="" total=0 jobs=0 detail(GL04-PUB-gl04-1790355852039-755p3qi)=null
+
+stdout | src/shared/auth/live-public-read-rls.go-live-04.test.ts > V5-go-live-04 LIVE — đường đọc công khai dưới FORCE RLS > AC-10(c): helper trả ≥ 1 job và mọi dòng nhìn thấy được đều is_public = true
+[go-live-04][AC-10c] app.role="MKT" app.user_id="system:public-job-board-read" transaction_read_only=on total=1 jobs=1 visibleRows=6 leaked=[]
+
+stdout | src/shared/auth/live-public-read-rls.go-live-04.test.ts > V5-go-live-04 LIVE — đường đọc công khai dưới FORCE RLS > AC-06: dự án is_public = false vắng mặt ở mọi đường đọc công khai
+[go-live-04][AC-06] fixture non-public id=prj-priv-gl04-1790355852039-755p3qi code=GL04-PRIV-gl04-1790355852039-755p3qi isPublic=false status=ACTIVE
+
+stdout | src/shared/auth/live-public-read-rls.go-live-04.test.ts > V5-go-live-04 LIVE — đường đọc công khai dưới FORCE RLS > AC-06: dự án is_public = false vắng mặt ở mọi đường đọc công khai
+[go-live-04][AC-06] qua helper: detail(GL04-PRIV-gl04-1790355852039-755p3qi)=null rlsRows=0 slugs=["GL04-PUB-gl04-1790355852039-755p3qi"]
+
+stdout | src/shared/auth/live-public-read-rls.go-live-04.test.ts > V5-go-live-04 LIVE — đường đọc công khai dưới FORCE RLS > AC-07: DELETE phát trong transaction của helper bị từ chối SQLSTATE 25006
+[go-live-04][AC-07] sqlstate=25006 message= Invalid `prisma.$executeRawUnsafe()` invocation: Raw query failed. Code: `25006`. Message: `ERROR: cannot execute DELETE in a read-only transaction`
+
+stdout | src/shared/auth/live-public-read-rls.go-live-04.test.ts > V5-go-live-04 LIVE — đường đọc công khai dưới FORCE RLS
+[go-live-04][cleanup] fixture còn lại = 0 (kỳ vọng 0)
+
+ ✓ src/shared/auth/live-public-read-rls.go-live-04.test.ts (5 tests) 7645ms
+   ✓ V5-go-live-04 LIVE — đường đọc công khai dưới FORCE RLS > AC-08: cùng kết nối, KHÔNG set GUC ⇒ app.role rỗng và 0 dòng 472ms
+   ✓ V5-go-live-04 LIVE — đường đọc công khai dưới FORCE RLS > AC-10(c): helper trả ≥ 1 job và mọi dòng nhìn thấy được đều is_public = true 1858ms
+   ✓ V5-go-live-04 LIVE — đường đọc công khai dưới FORCE RLS > AC-06: dự án is_public = false vắng mặt ở mọi đường đọc công khai 987ms
+   ✓ V5-go-live-04 LIVE — đường đọc công khai dưới FORCE RLS > AC-07: DELETE phát trong transaction của helper bị từ chối SQLSTATE 25006 656ms
+ ✓ src/shared/auth/live-vendor-worker-scope.m1-06b.test.ts (10 tests) 9510ms
+   ✓ V5-M1-06b LIVE — worker/vendor scope (L1) + RLS context (L2) > L1: WORKER chỉ đọc Ticket của mình (inject { workerId: ctx.workerId }); không thấy của worker khác 707ms
+   ✓ V5-M1-06b LIVE — worker/vendor scope (L1) + RLS context (L2) > L1: WORKER where thủ công { workerId: <worker khác> } vẫn rỗng (AND self-scope, chống IDOR) 465ms
+   ✓ V5-M1-06b LIVE — worker/vendor scope (L1) + RLS context (L2) > L1: WORKER chỉ đọc AttendanceEvent của mình; không thấy của worker khác 464ms
+   ✓ V5-M1-06b LIVE — worker/vendor scope (L1) + RLS context (L2) > L1: VENDOR chỉ đọc CandidateSubmission của vendor mình; where trỏ vendor khác vẫn rỗng 934ms
+   ✓ V5-M1-06b LIVE — worker/vendor scope (L1) + RLS context (L2) > L1: VENDOR chỉ đọc VendorStatement của vendor mình; không thấy statement vendor khác 462ms
+   ✓ V5-M1-06b LIVE — worker/vendor scope (L1) + RLS context (L2) > L1: role ngoài scope → DENY_BY_DEFAULT trên Ticket/Attendance/CandidateSubmission/VendorStatement 1420ms
+   ✓ V5-M1-06b LIVE — worker/vendor scope (L1) + RLS context (L2) > L2: WORKER → 4 GUC set đúng (worker_id = ctx.workerId, role = WORKER, vendor_id rỗng) 845ms
+   ✓ V5-M1-06b LIVE — worker/vendor scope (L1) + RLS context (L2) > L2: VENDOR → GUC vendor_id = ctx.vendorId, role = VENDOR_ADMIN, worker_id rỗng 455ms
+   ✓ V5-M1-06b LIVE — worker/vendor scope (L1) + RLS context (L2) > L2: SYSTEM_CRON → GUC danh tính hệ thống cố định (user_id = system:cron, role = ADMIN) 459ms
+   ✓ V5-M1-06b LIVE — worker/vendor scope (L1) + RLS context (L2) > DEC-05: SYSTEM_DEDUP phát hiện worker ACTIVE trùng SĐT, nhưng VENDOR không thấy row worker 1014ms
+ ✓ tests/db/referral-attribution-foundation.integration.test.ts (15 tests) 9243ms
+   ✓ N2-1 Foundation Integration (E-01..E-17) > E-01: app_engine_writer role posture asserts 882ms
+   ✓ N2-1 Foundation Integration (E-01..E-17) > FORCE ROW LEVEL SECURITY is enabled on referral_attributions 345ms
+   ✓ N2-1 Foundation Integration (E-01..E-17) > E-14: current_user=app_engine_writer 530ms
+   ✓ N2-1 Foundation Integration (E-01..E-17) > E-10: INSERT with invalid context denied 354ms
+   ✓ N2-1 Foundation Integration (E-01..E-17) > E-17: INSERT ... RETURNING allowed (with valid context) 344ms
+   ✓ N2-1 Foundation Integration (E-01..E-17) > E-08: Link-capture context UPDATE on ACTIVE denied 770ms
+   ✓ N2-1 Foundation Integration (E-01..E-17) > AC-02: Layer 1 immutable update 497ms
+   ✓ N2-1 Foundation Integration (E-01..E-17) > AC-03: Layer 1b laborProfileId write-once 399ms
+   ✓ N2-1 Foundation Integration (E-01..E-17) > AC-04: Layer 1c lifecycle matrix (ACTIVE -> terminal) 394ms
+(node:10956) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/domains/applications/security-boundary.mp2.test.ts (13 tests) 2979ms
+   ✓ MP-2 security boundary — LIVE (AC-09) > hrp_public_rpc is NOLOGIN + BYPASSRLS 642ms
+   ✓ MP-2 security boundary — LIVE (AC-09) > hrp_public_rpc has schema USAGE required by its pinned search_path 557ms
+   ✓ MP-2 security boundary — LIVE (AC-09) > both functions are prosecdef=true and owned by hrp_public_rpc 521ms
+   ✓ MP-2 security boundary — LIVE (AC-09) > EXECUTE is denied to PUBLIC and granted to app roles 469ms
+   ✓ MP-2 security boundary — LIVE (AC-09) > NEGATIVE: app_user_writer cannot direct-INSERT candidate_submissions under WORKER context 779ms
+ ✓ src/shared/auth/live-ticket-route-boundary.m1-06d.test.ts (5 tests) 6730ms
+   ✓ V5-M1-06d LIVE — Ticket route boundary (RQ-05 / AC-05) > RQ-05: withDbContext sets RLS GUC before TicketService Tx runs (AC-05) 967ms
+   ✓ V5-M1-06d LIVE — Ticket route boundary (RQ-05 / AC-05) > RQ-05: Worker A cannot read Worker B ticket — RLS backstop throws NotFoundError 489ms
+   ✓ V5-M1-06d LIVE — Ticket route boundary (RQ-05 / AC-05) > RQ-05: HR_STAFF global queue includes both workers' tickets (RBAC visibility) 579ms
+   ✓ V5-M1-06d LIVE — Ticket route boundary (RQ-05 / AC-05) > RQ-05: route service layer enforces withDbContext — TicketService Tx bypasses raw prisma 1071ms
+   ✓ V5-M1-06d LIVE — Ticket route boundary (RQ-05 / AC-05) > RQ-05: TicketService public API (no tx) works for ADMIN/system callers 867ms
+ ✓ src/domains/admin-demand-tree.integration.test.ts (17 tests) 16764ms
+   ✓ W3 Admin Demand Tree — LIVE RLS Integration Test > 1. ADMIN → thấy mọi fixture > sees client 1708ms
+   ✓ W3 Admin Demand Tree — LIVE RLS Integration Test > 1. ADMIN → thấy mọi fixture > sees project with slots 1054ms
+   ✓ W3 Admin Demand Tree — LIVE RLS Integration Test > 1. ADMIN → thấy mọi fixture > sees job opening 1169ms
+   ✓ W3 Admin Demand Tree — LIVE RLS Integration Test > 2. DIRECTOR → thấy mọi fixture > sees client 691ms
+   ✓ W3 Admin Demand Tree — LIVE RLS Integration Test > 2. DIRECTOR → thấy mọi fixture > sees project with slots 796ms
+   ✓ W3 Admin Demand Tree — LIVE RLS Integration Test > 2. DIRECTOR → thấy mọi fixture > sees job opening 755ms
+   ✓ W3 Admin Demand Tree — LIVE RLS Integration Test > 3. assigned PM → thấy project/client/opening liên quan > sees client 827ms
+   ✓ W3 Admin Demand Tree — LIVE RLS Integration Test > 3. assigned PM → thấy project/client/opening liên quan > sees project with slots 712ms
+   ✓ W3 Admin Demand Tree — LIVE RLS Integration Test > 3. assigned PM → thấy project/client/opening liên quan > sees job opening 756ms
+   ✓ W3 Admin Demand Tree — LIVE RLS Integration Test > 4. sub-PM 1 và sub-PM 2 → thấy project liên quan > sub-PM 1 sees project 1476ms
+   ✓ W3 Admin Demand Tree — LIVE RLS Integration Test > 4. sub-PM 1 và sub-PM 2 → thấy project liên quan > sub-PM 2 sees project 1449ms
+   ✓ W3 Admin Demand Tree — LIVE RLS Integration Test > 5. unrelated PM → nhận null > cannot see project 398ms
+   ✓ W3 Admin Demand Tree — LIVE RLS Integration Test > 5. unrelated PM → nhận null > cannot see job opening 412ms
+   ✓ W3 Admin Demand Tree — LIVE RLS Integration Test > 6. Client Guard verification > unrelated PM cannot see C1 (has visible projects for others, none for him) 462ms
+   ✓ W3 Admin Demand Tree — LIVE RLS Integration Test > 6. Client Guard verification > Primary PM cannot see C2 (has no visible projects for him) 473ms
+   ✓ W3 Admin Demand Tree — LIVE RLS Integration Test > 7. missing ID → nhận null > missing project returns null 408ms
+ ✓ tests/db/handling-assignment.integration.test.ts (4 tests) 6979ms
+   ✓ W5 HandlingAssignment safety > sweeps an elapsed ACTIVE row before manager reassignment 1885ms
+   ✓ W5 HandlingAssignment safety > records a manual release as REVOKED 876ms
+   ✓ W5 HandlingAssignment safety > allows assignees to read only their own rows 1527ms
+   ✓ W5 HandlingAssignment safety > denies missing-context reads and assignee writes 1622ms
+ ✓ src/shared/auth/live-auth-scope.m1-06a.test.ts (6 tests) 6818ms
+   ✓ V5-M1-06a LIVE — CTV self-scope (L1) + RLS context (L2) > L1: CTV chỉ đọc User của chính mình (inject { id: ctx.userId }); hai CTV disjoint 1393ms
+   ✓ V5-M1-06a LIVE — CTV self-scope (L1) + RLS context (L2) > L1: CTV chỉ đọc CtvWithdrawalRequest của mình, không thấy của CTV khác 581ms
+   ✓ V5-M1-06a LIVE — CTV self-scope (L1) + RLS context (L2) > L1: where thủ công { ctvId: <CTV khác> } vẫn rỗng (AND self-scope, chống enumeration) 577ms
+   ✓ V5-M1-06a LIVE — CTV self-scope (L1) + RLS context (L2) > L1: role ngoài scope (SALE) → DENY_BY_DEFAULT trên cả 4 builder mới 1776ms
+   ✓ V5-M1-06a LIVE — CTV self-scope (L1) + RLS context (L2) > L2: 4 GUC transaction-local set đúng ctx trong CÙNG tx boundary (writer principal) 703ms
+   ✓ V5-M1-06a LIVE — CTV self-scope (L1) + RLS context (L2) > L1+L2: trên writer (RLS thật) CTV đọc CtvWithdrawalRequest KHÔNG leak sang CTV khác 483ms
+ ✓ src/shared/auth/rls-context.test.ts (9 tests) 3854ms
+   ✓ applyRlsContext (DEC-02 — set_config is_local=true) > set cả 4 GUC trong transaction 1190ms
+   ✓ applyRlsContext (DEC-02 — set_config is_local=true) > set vendorId và workerId từ AuthContext 410ms
+   ✓ GUC transaction-local — KHÔNG leak (AC-03) > trong transaction: set + visible 469ms
+   ✓ GUC transaction-local — KHÔNG leak (AC-03) > sau khi transaction commit, transaction-local GUC KHÔNG leak vào transaction tiếp theo 797ms
+   ✓ withDbContext (RQ-03) > auto-set GUC + auto-commit 398ms
+   ✓ withDbContext (RQ-03) > auto-rollback khi callback throw 345ms
+ ✓ src/shared/auth/matrix-scope.test.ts (59 tests) 23727ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > ADMIN × workers → query không error (≤ baseline) 352ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > ADMIN × projects → query không error (≤ baseline) 363ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > ADMIN × vendors → query không error (≤ baseline) 344ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > ADMIN × vendor_statements → query không error (≤ baseline) 341ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > HR_MANAGER × workers → query không error (≤ baseline) 423ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > HR_MANAGER × projects → query không error (≤ baseline) 359ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > HR_MANAGER × vendors → query không error (≤ baseline) 340ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > HR_MANAGER × vendor_statements → query không error (≤ baseline) 340ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > DIRECTOR × workers → query không error (≤ baseline) 342ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > DIRECTOR × projects → query không error (≤ baseline) 356ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > DIRECTOR × vendors → query không error (≤ baseline) 343ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > DIRECTOR × vendor_statements → query không error (≤ baseline) 339ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > HR_STAFF × workers → query không error (≤ baseline) 342ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > HR_STAFF × projects → query không error (≤ baseline) 360ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > HR_STAFF × vendors → query không error (≤ baseline) 343ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > HR_STAFF × vendor_statements → query không error (≤ baseline) 338ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > SALE × workers → query không error (≤ baseline) 342ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > SALE × projects → query không error (≤ baseline) 378ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > SALE × vendors → query không error (≤ baseline) 352ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > SALE × vendor_statements → query không error (≤ baseline) 340ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > PM × workers → query không error (≤ baseline) 344ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > PM × projects → query không error (≤ baseline) 358ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > PM × vendors → query không error (≤ baseline) 345ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > PM × vendor_statements → query không error (≤ baseline) 342ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > ACCOUNTANT × workers → query không error (≤ baseline) 339ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > ACCOUNTANT × projects → query không error (≤ baseline) 355ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > ACCOUNTANT × vendors → query không error (≤ baseline) 342ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > ACCOUNTANT × vendor_statements → query không error (≤ baseline) 336ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > MKT × workers → query không error (≤ baseline) 355ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > MKT × projects → query không error (≤ baseline) 356ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > MKT × vendors → query không error (≤ baseline) 337ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > MKT × vendor_statements → query không error (≤ baseline) 340ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > VENDOR_ADMIN × workers → query không error (≤ baseline) 619ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > VENDOR_ADMIN × projects → query không error (≤ baseline) 528ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > VENDOR_ADMIN × vendors → query không error (≤ baseline) 352ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > VENDOR_ADMIN × vendor_statements → query không error (≤ baseline) 353ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > VENDOR_STAFF × workers → query không error (≤ baseline) 343ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > VENDOR_STAFF × projects → query không error (≤ baseline) 416ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > VENDOR_STAFF × vendors → query không error (≤ baseline) 349ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > VENDOR_STAFF × vendor_statements → query không error (≤ baseline) 350ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > CTV × workers → query không error (≤ baseline) 348ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > CTV × projects → query không error (≤ baseline) 369ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > CTV × vendors → query không error (≤ baseline) 344ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > CTV × vendor_statements → query không error (≤ baseline) 350ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > WORKER × workers → query không error (≤ baseline) 348ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > WORKER × projects → query không error (≤ baseline) 371ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > WORKER × vendors → query không error (≤ baseline) 359ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > WORKER × vendor_statements → query không error (≤ baseline) 359ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > EMPLOYEE × workers → query không error (≤ baseline) 350ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > EMPLOYEE × projects → query không error (≤ baseline) 369ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > EMPLOYEE × vendors → query không error (≤ baseline) 391ms
+   ✓ Phase 2 L2 RLS — 13 role × 4 bảng matrix (52 cases) > EMPLOYEE × vendor_statements → query không error (≤ baseline) 344ms
+   ✓ L2 RLS — VendorStatement scope riêng (root + VENDOR) > ADMIN + vendor_statements → thấy hết 347ms
+   ✓ L2 RLS — VendorStatement scope riêng (root + VENDOR) > SALE + vendor_statements → 0 (SALE không có scope VS) 347ms
+   ✓ L2 RLS — VendorStatement scope riêng (root + VENDOR) > VENDOR_ADMIN thiếu vendor_id + vendor_statements → 0 347ms
+   ✓ L2 RLS — worker role thấy chỉ chính mình > WORKER (accountUserId không match) + workers → 0 346ms
+   ✓ L2 RLS — §5.7 chống leak (counts/aggregates scoped) > count() qua L2 cũng bị scope (không leak tổng số) 348ms
+   ✓ L2 RLS — §5.7 chống leak (counts/aggregates scoped) > HR_STAFF + projects → 0 (HR_STAFF không có scope project) 355ms
+   ✓ L2 RLS — UPDATE/DELETE không thể modify ngoài scope > SALE cố update 1 worker ngoài scope → 0 rows affected 582ms
+ ✓ src/domains/applications/live-integration.mp3b.test.ts (1 test) 4412ms
+   ✓ MP-3B LIVE conversion > allows one QUALIFIED -> CONVERTED winner without orphan Worker/SourceClaim rows 3870ms
+
+ Test Files  31 passed (31)
+      Tests  541 passed | 2 skipped (543)
+   Start at  23:54:29
+   Duration  684.82s (transform 1.06s, setup 0ms, collect 3.00s, tests 672.94s, environment 6ms, prepare 2.78s)
+
+EXIT: 0
+
+---
+exit_code: 0
+elapsed_ms: 690886
+ended_at: 2026-09-25T17:05:56.198Z
+---

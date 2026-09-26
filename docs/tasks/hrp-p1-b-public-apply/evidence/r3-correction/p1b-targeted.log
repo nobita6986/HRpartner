@@ -1,0 +1,20 @@
+
+ RUN  v2.1.9 C:/CodeApp/HrP-worktrees/t1b-p1b-public-apply
+
+ ✓ tests/db/p1b-public-apply-slug-bound.integration.test.ts (10 tests) 12972ms
+   ✓ P1-B canonical slug-bound lifecycle > AC-01/03 happy NEW_PROFILE links submission, case, profile and initial history 865ms
+   ✓ P1-B canonical slug-bound lifecycle > AC-02 EXACT_MATCH reuses LaborProfile and active PlacementCase 828ms
+   ✓ P1-B canonical slug-bound lifecycle > AC-04 POSSIBLE_MATCH maps generic 409 and creates zero lifecycle rows 1174ms
+   ✓ P1-B canonical slug-bound lifecycle > AC-05 duplicate application remains P0012/409 352ms
+   ✓ P1-B canonical slug-bound lifecycle > AC-06/07 DB idempotency replays same payload and rejects different payload 964ms
+   ✓ P1-B canonical slug-bound lifecycle > AC-08 concurrent same-key yields one mutation and one replay result 956ms
+   ✓ P1-B canonical slug-bound lifecycle > AC-09 A1 DRAFT/ARCHIVED/FILLED guards create zero lifecycle rows 1244ms
+   ✓ P1-B canonical slug-bound lifecycle > AC-10 RPC revalidates an unpublish that happens before invocation 517ms
+   ✓ P1-B canonical slug-bound lifecycle > AC-11 history failure rolls back profile, case and submission atomically 897ms
+
+ Test Files  1 passed (1)
+      Tests  10 passed (10)
+   Start at  00:13:27
+   Duration  13.69s (transform 119ms, setup 0ms, collect 209ms, tests 12.97s, environment 0ms, prepare 137ms)
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m

@@ -1,0 +1,5 @@
+
+
+[typecheck] exit=0
+[typecheck] command=npx tsc --noEmit
+[typecheck] completed at 2026-09-25T17:19:32.888Z

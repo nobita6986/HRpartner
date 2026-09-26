@@ -1,0 +1,29 @@
+
+ RUN  v2.1.9 C:/CodeApp/HrP-worktrees/t1b-p1b-public-apply
+
+ ✓ src/domains/applications/live-integration.mp2.test.ts (11 tests) 14116ms
+   ✓ MP-2 LIVE integration (AC-02/03/04/05) > AC-02 valid apply creates exactly one submission + initial history (no Worker/SourceClaim) 927ms
+   ✓ MP-2 LIVE integration (AC-02/03/04/05) > AC-02 rejects private / non-active / closed / expired / full jobs (P0011) 3444ms
+   ✓ MP-2 LIVE integration (AC-02/03/04/05) > AC-03 same key+payload replays the same tracking with no second row 931ms
+   ✓ MP-2 LIVE integration (AC-02/03/04/05) > AC-03 same key + DIFFERENT payload → IDEMPOTENCY_PAYLOAD_MISMATCH (P0010) 748ms
+   ✓ MP-2 LIVE integration (AC-02/03/04/05) > AC-03 duplicate active slot+phone (different key) → DUPLICATE_APPLICATION (P0012) 752ms
+   ✓ MP-2 LIVE integration (AC-02/03/04/05) > AC-03 a second row with the same idempotency key hash is rejected by the DB (23505) 332ms
+   ✓ MP-2 LIVE integration (AC-02/03/04/05) > AC-03 REAL concurrent race: N simultaneous same-key applies create exactly ONE row 3394ms
+   ✓ MP-2 LIVE integration (AC-02/03/04/05) > AC-04 tracking projection exposes only DEC-02 allow-list columns and no PII 769ms
+   ✓ MP-2 LIVE integration (AC-02/03/04/05) > AC-05 RLS read scope: privileged roles see an unscoped row; others do not 1774ms
+
+ Test Files  1 passed (1)
+      Tests  11 passed (11)
+   Start at  00:13:29
+   Duration  14.77s (transform 102ms, setup 0ms, collect 103ms, tests 14.12s, environment 0ms, prepare 136ms)
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+(node:16140) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+(Use `node --trace-warnings ...` to show where the warning was created)
