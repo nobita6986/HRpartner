@@ -20,6 +20,37 @@
  * Refs:
  *   - tests/db/handling-assignment.integration.test.ts (W5 base pattern)
  *   - tests/db/placement-lifecycle-integration.test.ts (N3 fixture builder)
+ *
+ * ── Run-scoped isolation contract (F-17/F-18/F-19, T0 round-3 post-DB) ──
+ * The shared synthetic DB carries 193+ pre-existing placement cases. The
+ * service's default pagination can therefore put a freshly inserted fixture
+ * off the first page, and the `view=ALL` total can exceed `pageSize=100`.
+ * To make every fixture-dependent assertion deterministic on a shared DB
+ * without raising `pageSize` past schema max (100) or touching production
+ * query semantics, every fixture-dependent query in this file is
+ * `search`-narrowed by the run-scoped `profile.fullName`:
+ *   - `profile.fullName` is built by `makeProfile` as `${label} ${runId}`
+ *     where `runId = p1e0-${randomUUID().slice(0,8)}` is unique per run.
+ *   - The service filter maps `search` to `laborProfile.fullName contains`,
+ *     so the candidate set collapses to exactly the fixture row.
+ *   - All fixture assertions are written in the `expect(out.total).toBe(1)`
+ *     form — exact caseId match on `out.items[0]` — never via `items.find`
+ *     membership, which can be vacuous on an empty page.
+ *
+ * F-17 (permission fixture): the HR_STAFF MINE cases (AC-09, F-15) are now
+ * driven with `NO_PERMS` (or empty permission Set in the route mock) so the
+ * production masking branch runs and produces canonical masked values.
+ * Masking is NEVER relaxed in production to make these tests pass.
+ *
+ * F-19 (AC-08 invariant): the prior `expect(total).toBe(items.length)` only
+ * holds at total ≤ pageSize. AC-08's actual invariant — count and findMany
+ * share the same `where` inside the same transaction — is now proven against
+ * a freshly inserted run-scoped fixture narrowed by `search`, where
+ * `total === items.length === 1` and `items[0].caseId === fixture.caseId`.
+ *
+ * Refs:
+ *   - docs/tasks/hrp-p1-e0-recruiter-workbench-read-model/HANDOFF.md §3
+ *     (post-DB correction round; F-17/F-18/F-19 are test-only edits).
  */
 
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
@@ -209,7 +240,14 @@ describe.skipIf(!HAS_TEST_DB)('P1-E0 RecruiterWorkbench integration', () => {
       },
     });
     profileIds.push(profile.id);
-    return profile;
+    // F-18: project `fullName` as a non-nullable string at the helper
+    // boundary. Prisma's column type is `string | null` but the test helper
+    // always populates it, so callers can pass it directly to `search` and
+    // to `encodeURIComponent` without per-site `?? ''` fallbacks.
+    return {
+      ...profile,
+      fullName: profile.fullName ?? `${label} ${runId}`,
+    };
   }
 
   async function makeCase(
@@ -326,38 +364,45 @@ describe.skipIf(!HAS_TEST_DB)('P1-E0 RecruiterWorkbench integration', () => {
       role: 'HR_STAFF',
     };
 
+    // F-18: `search: profile.fullName` isolates this fixture from the other
+    // 193+ rows on the shared synthetic DB. pageSize=20 is unchanged — the
+    // search narrows the candidate set to exactly this run-scoped profile.
     const adminOut = await withContext(writer, adminCtx, (tx) =>
       getRecruiterWorkbenchList(tx, adminCtx, {
         view: 'ALL',
+        search: profile.fullName,
         page: 1,
         pageSize: 20,
       }, FULL_PERMS),
     );
-    const adminRow = adminOut.items.find((r) => r.caseId === c.id);
-    expect(adminRow).toBeDefined();
+    expect(adminOut.total).toBe(1);
+    expect(adminOut.items.length).toBe(1);
+    const adminRow = adminOut.items[0];
+    expect(adminRow.caseId).toBe(c.id);
     // Nested shape (AC-05): no top-level candidatePhone/candidateCccdNumber.
     expect(adminRow).not.toHaveProperty('candidatePhone');
     expect(adminRow).not.toHaveProperty('candidateCccdNumber');
     // Raw values for ADMIN/HR_MANAGER (they have CAN_VIEW_WORKER_SENSITIVE).
-    expect(adminRow!.candidate.phone).toBe('0912345678');
-    expect(adminRow!.candidate.cccdNumber).toBe('001099123456');
-    expect(adminRow!.primaryActions.detailHref).toBe(
+    expect(adminRow.candidate.phone).toBe('0912345678');
+    expect(adminRow.candidate.cccdNumber).toBe('001099123456');
+    expect(adminRow.primaryActions.detailHref).toBe(
       `/admin/labor-profiles/${profile.id}`,
     );
-    expect(adminRow!.primaryActions.detailHref).not.toContain('?case=');
-    expect(adminRow!.nextAction).toBe('OPEN_INTAKE');
+    expect(adminRow.primaryActions.detailHref).not.toContain('?case=');
+    expect(adminRow.nextAction).toBe('OPEN_INTAKE');
 
     const staffOut = await withContext(writer, staffCtx, (tx) =>
       getRecruiterWorkbenchList(tx, staffCtx, {
-        view: 'MINE', // staff default; no handler so will be empty, but we
-        // explicitly request ALL in a separate scenario via handler assignment.
+        view: 'MINE', // staff default; no handler so will be empty.
+        search: profile.fullName,
         page: 1,
         pageSize: 20,
       }, NO_PERMS),
     );
-    // MINE for staff with no active assignment → row not visible.
-    const staffRowMine = staffOut.items.find((r) => r.caseId === c.id);
-    expect(staffRowMine).toBeUndefined();
+    // MINE for staff with no active assignment → row not visible even when
+    // narrowed by search. MINE intersects search with handler assignment.
+    expect(staffOut.total).toBe(0);
+    expect(staffOut.items).toEqual([]);
   }, 30_000);
 
   it('AC-09: HR_STAFF with active handling assignment sees the case + masked PII', async () => {
@@ -375,20 +420,32 @@ describe.skipIf(!HAS_TEST_DB)('P1-E0 RecruiterWorkbench integration', () => {
     });
 
     const ctx: AuthContext = { userId: staffAId, role: 'HR_STAFF' };
+    // F-17 (T0 round-3 post-DB verdict): HR_STAFF without
+    // CAN_VIEW_WORKER_SENSITIVE MUST be passed as NO_PERMS so the production
+    // masking branch runs and produces masked phone/cccdNumber. The prior
+    // FULL_PERMS call was a test-fixture defect (it requested raw PII on a
+    // role that production never grants sensitive permission to). Masking is
+    // never relaxed in production to make this test pass — only the
+    // permission context is corrected.
     const out = await withContext(writer, ctx, (tx) =>
       getRecruiterWorkbenchList(tx, ctx, {
         view: 'MINE',
+        // F-18: run-scoped isolation via `search` so the fixture is the only
+        // candidate on a shared synthetic DB regardless of pageSize/page.
+        search: profile.fullName,
         page: 1,
         pageSize: 20,
-      }, FULL_PERMS),
+      }, NO_PERMS),
     );
-    const row = out.items.find((r) => r.caseId === c.id);
-    expect(row).toBeDefined();
-    expect(row!.candidate.phone).toBe('091****678');
-    expect(row!.candidate.cccdNumber).toBe('********3456');
-    expect(row!.handler.assigneeUserId).toBe(staffAId);
-    expect(row!.handler.assigneeName).toBe('P1E0 Staff A');
-    expect(row!.nextAction).toBe('OPEN_INTAKE');
+    expect(out.total).toBe(1);
+    expect(out.items.length).toBe(1);
+    const row = out.items[0];
+    expect(row.caseId).toBe(c.id);
+    expect(row.candidate.phone).toBe('091****678');
+    expect(row.candidate.cccdNumber).toBe('********3456');
+    expect(row.handler.assigneeUserId).toBe(staffAId);
+    expect(row.handler.assigneeName).toBe('P1E0 Staff A');
+    expect(row.nextAction).toBe('OPEN_INTAKE');
   }, 30_000);
 
   // F-14 + F-11: explicit "newest wins" DB regression. Two cases:
@@ -431,22 +488,27 @@ describe.skipIf(!HAS_TEST_DB)('P1-E0 RecruiterWorkbench integration', () => {
     const olderSubmittedCanonical = olderSubmittedAt;
 
     const ctx: AuthContext = { userId: managerId, role: 'HR_MANAGER' };
+    // F-18: search-narrowed query so the fixture is the only row in
+    // `out.items` regardless of pagination on a shared synthetic DB.
     const out = await withContext(writer, ctx, (tx) =>
       getRecruiterWorkbenchList(tx, ctx, {
         view: 'ALL',
+        search: profile.fullName,
         page: 1,
         pageSize: 20,
       }, FULL_PERMS),
     );
-    const row = out.items.find((r) => r.caseId === c.id);
-    expect(row, `expected caseId=${c.id} to be present in items`).toBeDefined();
-    expect(row!.lastInteraction.kind).toBe('STATUS_CHANGE');
-    expect(row!.lastInteraction.at).not.toBeNull();
+    expect(out.total).toBe(1);
+    expect(out.items.length).toBe(1);
+    const row = out.items[0];
+    expect(row.caseId, `expected caseId=${c.id} to be present in items`).toBe(c.id);
+    expect(row.lastInteraction.kind).toBe('STATUS_CHANGE');
+    expect(row.lastInteraction.at).not.toBeNull();
     // Exact timestamp from the source of truth (newerStatusCanonical).
-    expect(new Date(row!.lastInteraction.at as string).getTime()).toBe(
+    expect(new Date(row.lastInteraction.at as string).getTime()).toBe(
       newerStatusCanonical.getTime(),
     );
-    expect(new Date(row!.lastInteraction.at as string).getTime()).toBeGreaterThan(
+    expect(new Date(row.lastInteraction.at as string).getTime()).toBeGreaterThan(
       olderSubmittedCanonical.getTime(),
     );
   }, 30_000);
@@ -495,21 +557,25 @@ describe.skipIf(!HAS_TEST_DB)('P1-E0 RecruiterWorkbench integration', () => {
     const newerSubmittedCanonical = newerSubRow.createdAt;
 
     const ctx: AuthContext = { userId: managerId, role: 'HR_MANAGER' };
+    // F-18: search-narrowed query so the fixture is the only row.
     const out = await withContext(writer, ctx, (tx) =>
       getRecruiterWorkbenchList(tx, ctx, {
         view: 'ALL',
+        search: profile.fullName,
         page: 1,
         pageSize: 20,
       }, FULL_PERMS),
     );
-    const row = out.items.find((r) => r.caseId === c.id);
-    expect(row, `expected caseId=${c.id} to be present in items`).toBeDefined();
-    expect(row!.lastInteraction.kind).toBe('SUBMISSION');
-    expect(row!.lastInteraction.at).not.toBeNull();
-    expect(new Date(row!.lastInteraction.at as string).getTime()).toBe(
+    expect(out.total).toBe(1);
+    expect(out.items.length).toBe(1);
+    const row = out.items[0];
+    expect(row.caseId, `expected caseId=${c.id} to be present in items`).toBe(c.id);
+    expect(row.lastInteraction.kind).toBe('SUBMISSION');
+    expect(row.lastInteraction.at).not.toBeNull();
+    expect(new Date(row.lastInteraction.at as string).getTime()).toBe(
       newerSubmittedCanonical.getTime(),
     );
-    expect(new Date(row!.lastInteraction.at as string).getTime()).toBeGreaterThan(
+    expect(new Date(row.lastInteraction.at as string).getTime()).toBeGreaterThan(
       olderStatusCanonical.getTime(),
     );
   }, 30_000);
@@ -534,27 +600,31 @@ describe.skipIf(!HAS_TEST_DB)('P1-E0 RecruiterWorkbench integration', () => {
     const c = await makeCase(profile.id, 'OPEN', 80);
     const ctx: AuthContext = { userId: managerId, role: 'HR_MANAGER' };
 
+    // F-18: `search: profile.fullName` narrows to the fixture row only.
     const outTrue = await withContext(writer, ctx, (tx) =>
       getRecruiterWorkbenchList(tx, ctx, {
         view: 'ALL',
         overdue: true,
+        search: profile.fullName,
         page: 1,
         pageSize: 50,
       }, FULL_PERMS),
     );
-    const setTrue = new Set(outTrue.items.map((r) => r.caseId));
-    expect(setTrue.has(c.id)).toBe(true);
+    expect(outTrue.total).toBe(1);
+    expect(outTrue.items.length).toBe(1);
+    expect(outTrue.items[0].caseId).toBe(c.id);
 
     const outFalse = await withContext(writer, ctx, (tx) =>
       getRecruiterWorkbenchList(tx, ctx, {
         view: 'ALL',
         overdue: false,
+        search: profile.fullName,
         page: 1,
         pageSize: 50,
       }, FULL_PERMS),
     );
-    const setFalse = new Set(outFalse.items.map((r) => r.caseId));
-    expect(setFalse.has(c.id)).toBe(false);
+    expect(outFalse.total).toBe(0);
+    expect(outFalse.items).toEqual([]);
   }, 30_000);
 
   it('F-14: overdue=true|false on isolated fixtures (case 2: <72h, expired ACTIVE assignment)', async () => {
@@ -580,27 +650,31 @@ describe.skipIf(!HAS_TEST_DB)('P1-E0 RecruiterWorkbench integration', () => {
 
     const ctx: AuthContext = { userId: managerId, role: 'HR_MANAGER' };
 
+    // F-18: search-narrowed to the fixture row only.
     const outTrue = await withContext(writer, ctx, (tx) =>
       getRecruiterWorkbenchList(tx, ctx, {
         view: 'ALL',
         overdue: true,
+        search: profile.fullName,
         page: 1,
         pageSize: 50,
       }, FULL_PERMS),
     );
-    const setTrue = new Set(outTrue.items.map((r) => r.caseId));
-    expect(setTrue.has(c.id)).toBe(true);
+    expect(outTrue.total).toBe(1);
+    expect(outTrue.items.length).toBe(1);
+    expect(outTrue.items[0].caseId).toBe(c.id);
 
     const outFalse = await withContext(writer, ctx, (tx) =>
       getRecruiterWorkbenchList(tx, ctx, {
         view: 'ALL',
         overdue: false,
+        search: profile.fullName,
         page: 1,
         pageSize: 50,
       }, FULL_PERMS),
     );
-    const setFalse = new Set(outFalse.items.map((r) => r.caseId));
-    expect(setFalse.has(c.id)).toBe(false);
+    expect(outFalse.total).toBe(0);
+    expect(outFalse.items).toEqual([]);
   }, 30_000);
 
   it('F-14: overdue=true|false on isolated fixtures (case 3: <72h, no assignment)', async () => {
@@ -612,27 +686,31 @@ describe.skipIf(!HAS_TEST_DB)('P1-E0 RecruiterWorkbench integration', () => {
     const c = await makeCase(profile.id, 'OPEN', 24);
     const ctx: AuthContext = { userId: managerId, role: 'HR_MANAGER' };
 
+    // F-18: search-narrowed to the fixture row only.
     const outTrue = await withContext(writer, ctx, (tx) =>
       getRecruiterWorkbenchList(tx, ctx, {
         view: 'ALL',
         overdue: true,
+        search: profile.fullName,
         page: 1,
         pageSize: 50,
       }, FULL_PERMS),
     );
-    const setTrue = new Set(outTrue.items.map((r) => r.caseId));
-    expect(setTrue.has(c.id)).toBe(false);
+    expect(outTrue.total).toBe(0);
+    expect(outTrue.items).toEqual([]);
 
     const outFalse = await withContext(writer, ctx, (tx) =>
       getRecruiterWorkbenchList(tx, ctx, {
         view: 'ALL',
         overdue: false,
+        search: profile.fullName,
         page: 1,
         pageSize: 50,
       }, FULL_PERMS),
     );
-    const setFalse = new Set(outFalse.items.map((r) => r.caseId));
-    expect(setFalse.has(c.id)).toBe(true);
+    expect(outFalse.total).toBe(1);
+    expect(outFalse.items.length).toBe(1);
+    expect(outFalse.items[0].caseId).toBe(c.id);
   }, 30_000);
 
   it('AC-02: UNVERIFIED + IN_PROGRESS + STATUS_CHANGE → REQUEST_DOCS', async () => {
@@ -642,16 +720,19 @@ describe.skipIf(!HAS_TEST_DB)('P1-E0 RecruiterWorkbench integration', () => {
     });
     const c = await makeCase(profile.id, 'IN_PROGRESS');
     const ctx: AuthContext = { userId: managerId, role: 'HR_MANAGER' };
+    // F-18: search-narrowed to the fixture row only.
     const out = await withContext(writer, ctx, (tx) =>
       getRecruiterWorkbenchList(tx, ctx, {
         view: 'ALL',
+        search: profile.fullName,
         page: 1,
         pageSize: 20,
       }, FULL_PERMS),
     );
-    const row = out.items.find((r) => r.caseId === c.id);
-    expect(row).toBeDefined();
-    expect(row!.nextAction).toBe('REQUEST_DOCS');
+    expect(out.total).toBe(1);
+    expect(out.items.length).toBe(1);
+    expect(out.items[0].caseId).toBe(c.id);
+    expect(out.items[0].nextAction).toBe('REQUEST_DOCS');
   }, 30_000);
 
   it('AC-02: READY_TO_PLACE → REVIEW_PLACEMENT; CLOSED → NONE', async () => {
@@ -660,18 +741,37 @@ describe.skipIf(!HAS_TEST_DB)('P1-E0 RecruiterWorkbench integration', () => {
     await makeCase(rtp.id, 'READY_TO_PLACE');
     await makeCase(closed.id, 'CLOSED');
     const ctx: AuthContext = { userId: managerId, role: 'HR_MANAGER' };
-    const out = await withContext(writer, ctx, (tx) =>
+
+    // F-18: each fixture is asserted via its own search-narrowed query so
+    // neither test depends on the other fixture's placement in pagination.
+    // Schema max pageSize is 100, and the shared synthetic DB has 193+ rows
+    // in `view=ALL`, so a single pageSize=100 query cannot guarantee both
+    // fixtures appear on the same page.
+    const outRtp = await withContext(writer, ctx, (tx) =>
       getRecruiterWorkbenchList(tx, ctx, {
         view: 'ALL',
+        search: rtp.fullName,
         page: 1,
         pageSize: 100,
       }, FULL_PERMS),
     );
-    const byProfile = Object.fromEntries(
-      out.items.map((r) => [r.candidate.laborProfileId, r]),
+    expect(outRtp.total).toBe(1);
+    expect(outRtp.items.length).toBe(1);
+    expect(outRtp.items[0].candidate.laborProfileId).toBe(rtp.id);
+    expect(outRtp.items[0].nextAction).toBe('REVIEW_PLACEMENT');
+
+    const outClosed = await withContext(writer, ctx, (tx) =>
+      getRecruiterWorkbenchList(tx, ctx, {
+        view: 'ALL',
+        search: closed.fullName,
+        page: 1,
+        pageSize: 100,
+      }, FULL_PERMS),
     );
-    expect(byProfile[rtp.id]!.nextAction).toBe('REVIEW_PLACEMENT');
-    expect(byProfile[closed.id]!.nextAction).toBe('NONE');
+    expect(outClosed.total).toBe(1);
+    expect(outClosed.items.length).toBe(1);
+    expect(outClosed.items[0].candidate.laborProfileId).toBe(closed.id);
+    expect(outClosed.items[0].nextAction).toBe('NONE');
   }, 30_000);
 
   it('AC-04: isOverdue with HANDLER_EXPIRED wins over CASE_AGE_THRESHOLD', async () => {
@@ -688,17 +788,20 @@ describe.skipIf(!HAS_TEST_DB)('P1-E0 RecruiterWorkbench integration', () => {
     });
 
     const ctx: AuthContext = { userId: managerId, role: 'HR_MANAGER' };
+    // F-18: search-narrowed to the fixture row only.
     const out = await withContext(writer, ctx, (tx) =>
       getRecruiterWorkbenchList(tx, ctx, {
         view: 'ALL',
+        search: profile.fullName,
         page: 1,
         pageSize: 100,
       }, FULL_PERMS),
     );
-    const row = out.items.find((r) => r.caseId === c.id);
-    expect(row).toBeDefined();
-    expect(row!.isOverdue).toBe(true);
-    expect(row!.overdueReason).toBe('HANDLER_EXPIRED');
+    expect(out.total).toBe(1);
+    expect(out.items.length).toBe(1);
+    expect(out.items[0].caseId).toBe(c.id);
+    expect(out.items[0].isOverdue).toBe(true);
+    expect(out.items[0].overdueReason).toBe('HANDLER_EXPIRED');
   }, 30_000);
 
   it('AC-04: case aged > 72h with no expired handler → CASE_AGE_THRESHOLD', async () => {
@@ -715,17 +818,20 @@ describe.skipIf(!HAS_TEST_DB)('P1-E0 RecruiterWorkbench integration', () => {
     });
 
     const ctx: AuthContext = { userId: managerId, role: 'HR_MANAGER' };
+    // F-18: search-narrowed to the fixture row only.
     const out = await withContext(writer, ctx, (tx) =>
       getRecruiterWorkbenchList(tx, ctx, {
         view: 'ALL',
+        search: profile.fullName,
         page: 1,
         pageSize: 100,
       }, FULL_PERMS),
     );
-    const row = out.items.find((r) => r.caseId === c.id);
-    expect(row).toBeDefined();
-    expect(row!.isOverdue).toBe(true);
-    expect(row!.overdueReason).toBe('CASE_AGE_THRESHOLD');
+    expect(out.total).toBe(1);
+    expect(out.items.length).toBe(1);
+    expect(out.items[0].caseId).toBe(c.id);
+    expect(out.items[0].isOverdue).toBe(true);
+    expect(out.items[0].overdueReason).toBe('CASE_AGE_THRESHOLD');
   }, 30_000);
 
   it('AC-04: filter overdue=true returns the case, overdue=false excludes it', async () => {
@@ -757,44 +863,80 @@ describe.skipIf(!HAS_TEST_DB)('P1-E0 RecruiterWorkbench integration', () => {
   }, 30_000);
 
   it('AC-08: count + items returned in same tx share the same where filter', async () => {
-    const ctx: AuthContext = { userId: managerId, role: 'HR_MANAGER' };
-    const allOut = await withContext(writer, ctx, (tx) =>
-      getRecruiterWorkbenchList(tx, ctx, {
-        view: 'ALL',
-        page: 1,
-        pageSize: 100,
-      }, FULL_PERMS),
-    );
-    expect(allOut.total).toBe(allOut.items.length);
-    expect(allOut.total).toBeGreaterThan(0);
-  }, 30_000);
-
-  it('AC-12: submissionHref = /admin/applications when case has submissions; null otherwise', async () => {
+    // F-19 (T0 round-3 post-DB verdict): the prior `expect(allOut.total).toBe(allOut.items.length)`
+    // assertion is wrong whenever total > pageSize (the shared synthetic DB has 193+ rows, so
+    // pageSize=100 truncates and `total !== items.length`). The corrected form uses a fresh
+    // run-scoped fixture narrowed by `search`, asserts the count invariant for that exact row,
+    // and proves AC-08's actual invariant — count and findMany share the same `where` inside the
+    // same transaction. Production pagination semantics are not changed.
+    const profile = await makeProfile('ac08-isolation', {
+      completeness: 'COMPLETE',
+    });
+    const c = await makeCase(profile.id, 'OPEN');
     const ctx: AuthContext = { userId: managerId, role: 'HR_MANAGER' };
     const out = await withContext(writer, ctx, (tx) =>
       getRecruiterWorkbenchList(tx, ctx, {
         view: 'ALL',
+        search: profile.fullName,
         page: 1,
-        pageSize: 100,
+        pageSize: 20,
       }, FULL_PERMS),
     );
-    // Find at least one row WITH submissions (the `last-int` test created one).
-    const withSub = out.items.find(
-      (r) => r.primaryActions.submissionHref !== null,
+    expect(out.total).toBe(1);
+    expect(out.items.length).toBe(1);
+    expect(out.items[0].caseId).toBe(c.id);
+    // AC-08 invariant: count and findMany used the same `where` (search narrowed both to 1 row),
+    // and they executed inside the same transaction (tx-scoped RLS GUC). The shape equality of
+    // `total === items.length` holds at this isolation boundary.
+    expect(out.total).toBe(out.items.length);
+  }, 30_000);
+
+  it('AC-12: submissionHref = /admin/applications when case has submissions; null otherwise', async () => {
+    const ctx: AuthContext = { userId: managerId, role: 'HR_MANAGER' };
+
+    // F-18: build two fixtures (one with a submission, one without) and
+    // assert each via its own search-narrowed query. The shared synthetic
+    // DB has 193+ rows, so iterating `out.items.find` is fragile across
+    // pagination — the search-based form is the only non-vacuous proof.
+    const profileWithSub = await makeProfile('ac12-with-sub', {
+      completeness: 'COMPLETE',
+    });
+    const cWithSub = await makeCase(profileWithSub.id, 'IN_PROGRESS');
+    await makeSubmission(profileWithSub.id, cWithSub.id, {
+      fullName: `AC12 Sub ${runId}`,
+    });
+
+    const profileNoSub = await makeProfile('ac12-no-sub', {
+      completeness: 'COMPLETE',
+    });
+    await makeCase(profileNoSub.id, 'OPEN');
+
+    const outWith = await withContext(writer, ctx, (tx) =>
+      getRecruiterWorkbenchList(tx, ctx, {
+        view: 'ALL',
+        search: profileWithSub.fullName,
+        page: 1,
+        pageSize: 20,
+      }, FULL_PERMS),
     );
-    if (withSub) {
-      expect(withSub.primaryActions.submissionHref).toBe(
-        '/admin/applications',
-      );
-      expect(withSub.primaryActions.submissionHref).not.toContain('?case=');
-    }
-    // Rows WITHOUT submissions should have null submissionHref.
-    const withoutSub = out.items.find(
-      (r) => r.primaryActions.submissionHref === null,
+    expect(outWith.total).toBe(1);
+    expect(outWith.items.length).toBe(1);
+    expect(outWith.items[0].primaryActions.submissionHref).toBe(
+      '/admin/applications',
     );
-    if (withoutSub) {
-      expect(withoutSub.primaryActions.submissionHref).toBeNull();
-    }
+    expect(outWith.items[0].primaryActions.submissionHref).not.toContain('?case=');
+
+    const outWithout = await withContext(writer, ctx, (tx) =>
+      getRecruiterWorkbenchList(tx, ctx, {
+        view: 'ALL',
+        search: profileNoSub.fullName,
+        page: 1,
+        pageSize: 20,
+      }, FULL_PERMS),
+    );
+    expect(outWithout.total).toBe(1);
+    expect(outWithout.items.length).toBe(1);
+    expect(outWithout.items[0].primaryActions.submissionHref).toBeNull();
   }, 30_000);
 
   // ── E0-F07: Real GET handler coverage on synthetic DB ────────────────────
@@ -850,46 +992,55 @@ describe.skipIf(!HAS_TEST_DB)('P1-E0 RecruiterWorkbench integration', () => {
   // is constrained to cases where this staff member has an ACTIVE handler
   // assignment). We use `view=MINE` here for staff to avoid the 403
   // gate at the route.
+  //
+  // F-18: build a fixture profile/case assigned to staffAId, narrow the
+  // route query by `search: profile.fullName` so the route's MINE result is
+  // exactly one row regardless of how many other staffAId assignments exist
+  // on the shared DB. The masking assertion is then exact, not membership.
   it('F-12: real GET handler applies permission-driven masking for staff with MINE view', async () => {
-    // Find a staff profile that has an ACTIVE handling assignment on at
-    // least one seeded case so MINE returns non-empty. We use staffAId as
-    // the auth context.
+    const profile = await makeProfile('f12-staff-mine-mask', {
+      phone: '0912349999',
+      cccd: '001099777666',
+      identity: 'VERIFIED',
+      completeness: 'COMPLETE',
+    });
+    await makeCase(profile.id, 'OPEN');
+    await makeAssignment(profile.id, staffAId, {
+      status: 'ACTIVE',
+      startsAgoMs: 60_000,
+      expiresInMs: 7 * 24 * 60 * 60 * 1000,
+    });
+
     mocks.getAuthContext.mockImplementation(
       async () => ({ userId: staffAId, role: 'HR_STAFF' }),
     );
-    // No CAN_VIEW_WORKER_SENSITIVE → phone/cccd must be masked.
+    // F-17: No CAN_VIEW_WORKER_SENSITIVE → phone/cccd must be masked. The
+    // mock permission fixture must mirror the production role posture for
+    // HR_STAFF without `canSeeSensitive` — production masking is never
+    // relaxed to make this test pass.
     mocks.resolveEffectivePermissions.mockImplementation(async () => {
       return new Set<string>();
     });
     mocks.getPrisma.mockReturnValue(writer);
 
     const req = new Request(
-      'http://localhost/api/admin/recruiter-workbench?view=MINE',
+      `http://localhost/api/admin/recruiter-workbench?view=MINE&pageSize=20&search=${encodeURIComponent(profile.fullName)}`,
       { method: 'GET' },
     );
     const res = await recruiterWorkbenchGET(req as unknown as import('next/server').NextRequest);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body).toHaveProperty('items');
-    // For every returned row, candidate.phone and candidate.cccdNumber
-    // must be the masked form (NOT raw).
-    for (const row of body.items) {
-      expect(row).not.toHaveProperty('candidatePhone');
-      expect(row).not.toHaveProperty('candidateCccdNumber');
-      if (row.candidate) {
-        // Masked phone has shape '*** *** 1234' (last 4 digits visible).
-        // Raw phone starts with country/area code digits. The masked form
-        // contains asterisks.
-        const phone = row.candidate.phone ?? '';
-        const cccd = row.candidate.cccdNumber ?? '';
-        if (phone.length > 0) {
-          expect(phone).toMatch(/\*/);
-        }
-        if (cccd.length > 0) {
-          expect(cccd).toMatch(/\*/);
-        }
-      }
-    }
+    expect(body.items.length).toBe(1);
+    expect(body.total).toBe(1);
+    // Exact canonical masked values: maskPhone = 3 head + 3 tail,
+    // maskCccd = 4 tail (no head).
+    const row = body.items[0];
+    expect(row).not.toHaveProperty('candidatePhone');
+    expect(row).not.toHaveProperty('candidateCccdNumber');
+    expect(row.candidate).toBeDefined();
+    expect(row.candidate.phone).toBe('091****999');
+    expect(row.candidate.cccdNumber).toBe('********7666');
   }, 60_000);
 
   // F-12: prove that `getPrisma()` is the writer connection (not the admin
@@ -959,22 +1110,26 @@ describe.skipIf(!HAS_TEST_DB)('P1-E0 RecruiterWorkbench integration', () => {
     });
     mocks.getPrisma.mockReturnValue(writer);
 
+    // F-18: `search: profile.fullName` narrows to the fixture row only. The
+    // URL query string uses the canonical `search` parameter — Zod schema
+    // accepts min 1, max 255 chars (profile.fullName fits).
     const req = new Request(
-      'http://localhost/api/admin/recruiter-workbench?view=ALL&pageSize=100',
+      `http://localhost/api/admin/recruiter-workbench?view=ALL&pageSize=20&search=${encodeURIComponent(profile.fullName)}`,
       { method: 'GET' },
     );
     const res = await recruiterWorkbenchGET(req as unknown as import('next/server').NextRequest);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(Array.isArray(body.items)).toBe(true);
-    expect(body.items.length).toBeGreaterThan(0);
+    expect(body.items.length).toBe(1);
+    expect(body.total).toBe(1);
     // No top-level alias is ever present on any row.
     for (const row of body.items) {
       expect(row).not.toHaveProperty('candidatePhone');
       expect(row).not.toHaveProperty('candidateCccdNumber');
     }
-    const row = body.items.find((r: { caseId: string }) => r.caseId === c.id);
-    expect(row, `expected caseId=${c.id} to be present in items`).toBeDefined();
+    const row = body.items[0];
+    expect(row.caseId, `expected caseId=${c.id} to be present in items`).toBe(c.id);
     expect(row.candidate).toBeDefined();
     // Raw values for HR_MANAGER (CAN_VIEW_WORKER_SENSITIVE granted).
     expect(row.candidate.phone).toBe('0987001122');
@@ -1002,27 +1157,33 @@ describe.skipIf(!HAS_TEST_DB)('P1-E0 RecruiterWorkbench integration', () => {
     mocks.getAuthContext.mockImplementation(
       async () => ({ userId: staffAId, role: 'HR_STAFF' }),
     );
-    // No CAN_VIEW_WORKER_SENSITIVE → masking must apply.
+    // F-17: HR_STAFF without CAN_VIEW_WORKER_SENSITIVE — mock returns empty
+    // permission set so production masking is forced on this route. The route
+    // handler's resolved `canSeeSensitive` flag is forwarded to the service,
+    // which then masks phone/cccdNumber. Masking is never relaxed in production
+    // to make this test pass — only the mock permission fixture is corrected.
     mocks.resolveEffectivePermissions.mockImplementation(async () => {
       return new Set<string>();
     });
     mocks.getPrisma.mockReturnValue(writer);
 
+    // F-18: search-narrowed to the fixture row only.
     const req = new Request(
-      'http://localhost/api/admin/recruiter-workbench?view=MINE&pageSize=100',
+      `http://localhost/api/admin/recruiter-workbench?view=MINE&pageSize=20&search=${encodeURIComponent(profile.fullName)}`,
       { method: 'GET' },
     );
     const res = await recruiterWorkbenchGET(req as unknown as import('next/server').NextRequest);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(Array.isArray(body.items)).toBe(true);
-    expect(body.items.length).toBeGreaterThan(0);
+    expect(body.items.length).toBe(1);
+    expect(body.total).toBe(1);
     for (const row of body.items) {
       expect(row).not.toHaveProperty('candidatePhone');
       expect(row).not.toHaveProperty('candidateCccdNumber');
     }
-    const row = body.items.find((r: { caseId: string }) => r.caseId === c.id);
-    expect(row, `expected caseId=${c.id} to be present in items`).toBeDefined();
+    const row = body.items[0];
+    expect(row.caseId, `expected caseId=${c.id} to be present in items`).toBe(c.id);
     expect(row.candidate).toBeDefined();
     // Exact canonical masked values per `maskPhone` (3 head + 3 tail) and
     // `maskCccd` (4 tail, 0 head). NOT generic `'*** *** 1234'` shape.
