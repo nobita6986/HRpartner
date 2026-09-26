@@ -29,7 +29,7 @@ POST-REVERSAL UTF-8 no-BOM/LF-only scan (2026-09-26 — C-07 closure correction 
 Command: Node manual scan over the changed surface (test-infra edit +
 14 docs/evidence files modified during control-field rollback).
 
-Result (post-reversal): 15/15 files clean, 0 fail.
+Result (post-reversal): 16/16 files clean, 0 fail.
 
 Files scanned:
   src/domains/applications/live-integration.mp2.test.ts (test-infra fix)
@@ -47,6 +47,7 @@ Files scanned:
   docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/typecheck.txt
   docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/lint.txt
   docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/test-unit.txt
+  docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/live-integration-attempts-t1b-sandbox.txt (E-21, new)
 
 All BOM=false, CRLF=false, valid UTF-8 (no U+FFFD).
 
