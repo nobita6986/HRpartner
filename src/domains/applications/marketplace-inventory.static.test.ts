@@ -75,8 +75,27 @@ function walk(dir: string): string[] {
 
 const API_FILES = walk(API_DIR).filter((p) => p.endsWith('.ts'));
 const MUTATING = /export\s+(async\s+)?function\s+(POST|PUT|PATCH|DELETE)\b/;
-const AUTH_MARKER =
-  /getAuthContext|requireAuth|withDbContext|applyRlsContext|resolvePerms|requirePermission|assertPermission|getSessionUser|verifySession/;
+// F-04A: AUTH_MARKER is the LIST of identifier names; each marker MUST
+// appear as a call expression (e.g. `getAuthContext(`) for the route/handler
+// to count as guarded. Bare identifiers, type-only imports, and `import type`
+// references do NOT count. This blocks the bare-identifier bypass where a
+// route file imports or names `getAuthContext` in a comment without ever
+// calling it.
+const AUTH_MARKER_NAMES = [
+  'getAuthContext',
+  'requireAuth',
+  'withDbContext',
+  'applyRlsContext',
+  'resolvePerms',
+  'requirePermission',
+  'assertPermission',
+  'getSessionUser',
+  'verifySession',
+] as const;
+// F-04A: matches ANY marker as a call expression (`name(`).
+const AUTH_MARKER_CALL_RE = new RegExp(
+  '\\b(?:' + AUTH_MARKER_NAMES.join('|') + ')\\s*\\(',
+);
 // Ba route marketplace ẩn danh có chủ đích: 1 canonical apply + 2 stub 410.
 // N2-2 link-capture (Decision A): GET /r/[code] canonical redirect with signed
 // cookie (rate-limit + engine-context gate = auth-equivalent). No anonymous POST.
@@ -129,44 +148,68 @@ const PLACEMENT_ROUTE_HELPER = join(
 /**
  * Canonical security classifier for mutating admin placement routes.
  *
- * A mutating route is GUARDED if and only if ALL of the following hold:
- *   1. The route source imports `placement.route-helpers` (named or default).
- *   2. The route source CALLS `runPlacementCommand(` (call expression, not
- *      just a bare identifier in a comment or type annotation).
- *   3. The canonical helper (`placement.route-helpers.ts`) actually EXPORTS
- *      `runPlacementCommand` AND contains both `getAuthContext(` and
- *      `withDbContext(` call expressions.
+ * F-04A — every AUTH_MARKER check requires an actual call expression
+ * (`getAuthContext(`, `withDbContext(`, `requireAuth(`, …). Bare identifiers,
+ * `import` statements, `import type`, comments, and type annotations do NOT
+ * count. This closes the bare-identifier bypass where a route file could
+ * satisfy the detector by merely importing or naming an auth helper without
+ * ever calling it.
  *
- * Call-expression checks use `\.` prefix to distinguish from identifiers inside
- * words (e.g. `_runPlacementCommand_` would not match `\.runPlacementCommand\(`).
+ * F-04B — for tests, an optional `helperSource`/`helperExists` injection
+ * lets the classifier evaluate `helper_missing_security_markers` against a
+ * synthetic helper without mutating the production helper file.
+ *
+ * A mutating route is GUARDED if and only if:
+ *   Path A — its source contains an AUTH_MARKER call expression.
+ *   Path B — its source imports from a relative `./handler` (or similar)
+ *            and that handler file contains an AUTH_MARKER call expression.
+ *   Path C — its source imports `placement.route-helpers` AND contains an
+ *            actual `runPlacementCommand(` call expression AND the helper
+ *            source exports `runPlacementCommand` AND contains both
+ *            `getAuthContext(` and `withDbContext(` call expressions.
  *
  * Returns a discriminated result so callers can assert the classification
  * decision (used by both the real route inventory and the negative fixture
  * tests in `tests/security/`).
  */
-function classifyMutatingPlacementRoute(file: string): {
-  readonly guarded: false;
-  readonly reason:
-    | 'no_helper_import'
-    | 'no_helper_call'
-    | 'helper_missing_security_markers'
-    | 'direct_auth_marker'
-    | 'delegate_handler_has_auth_marker';
-} | {
-  readonly guarded: true;
-} {
+type ClassificationResult =
+  | { readonly guarded: true; readonly path: 'A' | 'B' | 'C' }
+  | {
+      readonly guarded: false;
+      readonly reason:
+        | 'no_helper_import'
+        | 'no_helper_call'
+        | 'helper_missing_security_markers'
+        | 'no_direct_auth_call'
+        | 'no_delegate_handler_auth_call'
+        | 'no_handler_sibling';
+    };
+
+function classifyMutatingPlacementRoute(
+  file: string,
+  options?: {
+    readonly helperSource?: string;
+    readonly helperExists?: boolean;
+  },
+): ClassificationResult {
   const code = strip(read(file));
 
-  // Path A: direct AUTH_MARKER.
-  if (AUTH_MARKER.test(code)) return { guarded: true };
+  // Path A: route source contains an actual AUTH_MARKER call expression.
+  // Import/type/comment references do NOT count.
+  if (AUTH_MARKER_CALL_RE.test(code)) {
+    return { guarded: true, path: 'A' };
+  }
 
-  // Path B: delegates to a handler sibling with AUTH_MARKER.
+  // Path B: route delegates to a `./handler` sibling; the handler must
+  // contain an actual AUTH_MARKER call expression.
   const delegate = code.match(/from\s+['"](\.{1,2}(?:\/[^'"]*)?\/handler)['"]/);
   if (delegate) {
     const target = join(file, '..', `${delegate[1]}.ts`);
-    if (existsSync(target) && AUTH_MARKER.test(strip(read(target)))) {
-      return { guarded: true };
+    if (existsSync(target) && AUTH_MARKER_CALL_RE.test(strip(read(target)))) {
+      return { guarded: true, path: 'B' };
     }
+    // Handler sibling exists but contains no AUTH_MARKER call expression.
+    return { guarded: false, reason: 'no_delegate_handler_auth_call' };
   }
 
   // Path C: delegates to `placement.route-helpers` — require BOTH import AND call.
@@ -180,17 +223,33 @@ function classifyMutatingPlacementRoute(file: string): {
     return { guarded: false, reason: 'no_helper_call' };
   }
 
-  // Require helper itself to have the actual security markers.
-  if (!placementHelperHasSecurityMarkers()) {
+  // Require helper itself to have the actual security markers (or use
+  // the injected helper source provided by tests).
+  if (!placementHelperHasSecurityMarkers(options)) {
     return { guarded: false, reason: 'helper_missing_security_markers' };
   }
 
-  return { guarded: true };
+  return { guarded: true, path: 'C' };
 }
 
-function placementHelperHasSecurityMarkers(): boolean {
-  if (!existsSync(PLACEMENT_ROUTE_HELPER)) return false;
-  const helper = strip(read(PLACEMENT_ROUTE_HELPER));
+function placementHelperHasSecurityMarkers(options?: {
+  readonly helperSource?: string;
+  readonly helperExists?: boolean;
+}): boolean {
+  // F-04B: tests can inject helper source to exercise the
+  // `helper_missing_security_markers` branch without mutating the
+  // canonical production helper. `helperExists=false` simulates a missing
+  // helper; `helperSource` overrides the file-system read.
+  let helper: string;
+  if (options && Object.prototype.hasOwnProperty.call(options, 'helperSource')) {
+    helper = strip(options.helperSource ?? '');
+  } else if (options && options.helperExists === false) {
+    return false;
+  } else if (!existsSync(PLACEMENT_ROUTE_HELPER)) {
+    return false;
+  } else {
+    helper = strip(read(PLACEMENT_ROUTE_HELPER));
+  }
   const exportsRunPlacementCommand = /export\s+(?:async\s+)?function\s+runPlacementCommand\b/.test(helper);
   // Require call expressions, not bare identifiers.
   const hasGetAuthContext = /\bgetAuthContext\s*\(/.test(helper);
@@ -302,10 +361,10 @@ describe('F-02 — fail-closed delegation classifier against negative fixture', 
     expect(['no_helper_import', 'no_helper_call']).toContain(result.reason);
   });
 
-  it('the fixture contains no AUTH_MARKER (negative case)', () => {
+  it('the fixture contains no AUTH_MARKER call expression (negative case)', () => {
     if (!fixtureExists) throw new Error('fixture missing');
     const code = strip(read(FIXTURE_PATH));
-    expect(code).not.toMatch(AUTH_MARKER);
+    expect(code).not.toMatch(AUTH_MARKER_CALL_RE);
   });
 
   it('the fixture does not import `placement.route-helpers`', () => {
@@ -373,26 +432,219 @@ describe('F-02 — fail-closed delegation classifier against negative fixture', 
   });
 
   it('helper-missing-call-expressions case: helper with bare identifiers is rejected', () => {
-    // Build a synthetic helper that has only identifiers (no actual calls).
-    const HELPER_TMP = join(ROOT, 'src/domains/talent/__synth-helper.ts');
-    const ROUTE_TMP = join(ROOT, 'app/api/admin/__synth-route.ts');
-    const helperSrc = `// Fake "helper" — has identifiers but no actual call expressions.\n` +
+    // F-04B: classifier accepts an injected helper source so the test can
+    // exercise the `helper_missing_security_markers` branch WITHOUT mutating
+    // the canonical production helper. Route imports + calls
+    // `runPlacementCommand`, helper exports the function but only has bare
+    // identifiers for the security markers (no call expressions).
+    //
+    // Helper source code intentionally has no `getAuthContext(` or
+    // `withDbContext(` call expressions. Path C should classify the route
+    // as UNGUARDED with reason `helper_missing_security_markers`.
+    //
+    // Cleanup runs in `finally` and ALSO before the assertion (defensive) so
+    // that if the assertion throws, the synthetic helper file is removed
+    // before the test reports its failure.
+    const HELPER_TMP = join(ROOT, 'tests/security/__synth-helper-f04b.ts');
+    const ROUTE_TMP = join(ROOT, 'tests/security/__synth-route-f04b.ts');
+    // helper exports runPlacementCommand but the security markers are bare
+    // identifiers in a comment + const bindings (NO call expressions).
+    const helperSrc =
+      `// Fake "helper" — exports runPlacementCommand but has bare identifiers only.\n` +
+      `// getAuthContext is mentioned in a comment, not a call expression.\n` +
       `export function runPlacementCommand() { /* no-op */ }\n` +
       `const getAuthContext = () => null; const withDbContext = () => null;\n`;
-    const routeSrc = `import { runPlacementCommand } from '@/src/domains/talent/__synth-helper';\n` +
+    const routeSrc =
+      `// Route imports + calls runPlacementCommand; helper must provide security markers.\n` +
+      `import { runPlacementCommand } from '@/src/domains/talent/placement.route-helpers';\n` +
       `export async function POST() { return runPlacementCommand(); }\n`;
     require('fs').writeFileSync(HELPER_TMP, helperSrc, 'utf8');
     require('fs').writeFileSync(ROUTE_TMP, routeSrc, 'utf8');
-    // Also need a dir for the route.
-    require('fs').mkdirSync(join(ROOT, 'app/api/admin'), { recursive: true });
+    const fs = require('fs');
     try {
-      const r = classifyMutatingPlacementRoute(ROUTE_TMP);
-      // The classifier checks the REAL canonical helper, not the synthetic one.
-      // Synthetic route imports a non-canonical helper → reason `no_helper_import`.
+      const r = classifyMutatingPlacementRoute(ROUTE_TMP, {
+        helperSource: fs.readFileSync(HELPER_TMP, 'utf8'),
+        helperExists: true,
+      });
       expect(r.guarded).toBe(false);
+      if (!r.guarded) expect(r.reason).toBe('helper_missing_security_markers');
     } finally {
-      require('fs').unlinkSync(HELPER_TMP);
-      require('fs').unlinkSync(ROUTE_TMP);
+      // Defensive cleanup: remove files even if assertion throws. Use
+      // unlinkSync without raising if the file is already gone.
+      for (const p of [HELPER_TMP, ROUTE_TMP]) {
+        try { fs.unlinkSync(p); } catch { /* already gone */ }
+      }
+    }
+    // Post-cleanup check: synthetic files MUST be gone so they cannot
+    // contaminate subsequent test runs.
+    expect(existsSync(HELPER_TMP)).toBe(false);
+    expect(existsSync(ROUTE_TMP)).toBe(false);
+  });
+
+  it('helper-missing-call-expressions case: helper missing BOTH markers is rejected', () => {
+    // F-04B: explicit injection — helper exists with NO security markers at all.
+    const ROUTE_TMP = join(ROOT, 'tests/security/__synth-route-f04b-both.ts');
+    const routeSrc =
+      `import { runPlacementCommand } from '@/src/domains/talent/placement.route-helpers';\n` +
+      `export async function POST() { return runPlacementCommand(); }\n`;
+    const helperSrc =
+      `export function runPlacementCommand() { /* no-op */ }\n` +
+      `const unrelated = 42;\n`;
+    require('fs').writeFileSync(ROUTE_TMP, routeSrc, 'utf8');
+    const fs = require('fs');
+    try {
+      const r = classifyMutatingPlacementRoute(ROUTE_TMP, {
+        helperSource: fs.readFileSync(ROUTE_TMP, 'utf8').replace('export async function POST', '// x') + helperSrc,
+        helperExists: true,
+      });
+      expect(r.guarded).toBe(false);
+      if (!r.guarded) expect(r.reason).toBe('helper_missing_security_markers');
+    } finally {
+      try { fs.unlinkSync(ROUTE_TMP); } catch { /* */ }
+    }
+    expect(existsSync(ROUTE_TMP)).toBe(false);
+  });
+
+  it('helper-missing-call-expressions case: helperExists=false simulates missing helper', () => {
+    // F-04B: a route that imports + calls runPlacementCommand with
+    // helperExists=false → classifier returns
+    // { guarded: false, reason: 'helper_missing_security_markers' }.
+    const ROUTE_TMP = join(ROOT, 'tests/security/__synth-route-f04b-missing.ts');
+    const routeSrc =
+      `import { runPlacementCommand } from '@/src/domains/talent/placement.route-helpers';\n` +
+      `export async function POST() { return runPlacementCommand(); }\n`;
+    require('fs').writeFileSync(ROUTE_TMP, routeSrc, 'utf8');
+    const fs = require('fs');
+    try {
+      const r = classifyMutatingPlacementRoute(ROUTE_TMP, {
+        helperExists: false,
+      });
+      expect(r.guarded).toBe(false);
+      if (!r.guarded) expect(r.reason).toBe('helper_missing_security_markers');
+    } finally {
+      try { fs.unlinkSync(ROUTE_TMP); } catch { /* */ }
+    }
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // F-04A — Path A and Path B must require call expressions, not bare
+  // identifiers. These assertions guarantee that no route or delegated
+  // handler can satisfy the detector merely by importing or naming the
+  // auth markers.
+  // ─────────────────────────────────────────────────────────────────────────
+
+  function buildAndRun(content: string, opts?: Parameters<typeof classifyMutatingPlacementRoute>[1]): ClassificationResult {
+    const tmp = buildSyntheticFixture(content);
+    try {
+      return classifyMutatingPlacementRoute(tmp, opts);
+    } finally {
+      try { require('fs').unlinkSync(tmp); } catch { /* */ }
+    }
+  }
+
+  it('F-04A Path A — direct route imports `getAuthContext` but never calls it → UNGUARDED', () => {
+    // The route imports the marker (which previously was enough for
+    // AUTH_MARKER.test()) but never CALLS it. F-04A requires an actual
+    // call expression. No helper import, no delegate import → reason
+    // `no_helper_import` (because Path C is checked after A/B).
+    const r = buildAndRun(
+      `import { getAuthContext } from '@/src/shared/auth/auth-context';\n` +
+      `export async function POST() { return new Response('x'); }\n`,
+    );
+    expect(r.guarded).toBe(false);
+  });
+
+  it('F-04A Path A — direct route has bare `getAuthContext` identifier only (in comment) → UNGUARDED', () => {
+    // The identifier appears only in a comment. Bare identifiers do NOT
+    // count under F-04A.
+    const r = buildAndRun(
+      `// This route calls getAuthContext — actually, no it doesn't.\n` +
+      `export async function POST() { return new Response('x'); }\n`,
+    );
+    expect(r.guarded).toBe(false);
+  });
+
+  it('F-04A Path A — direct route ACTUALLY calls `getAuthContext(...)` → GUARDED via Path A', () => {
+    // The route has an actual call expression. AUTH_MARKER_CALL_RE matches.
+    const r = buildAndRun(
+      `import { getAuthContext } from '@/src/shared/auth/auth-context';\n` +
+      `export async function POST(req: Request) {\n` +
+      `  const ctx = await getAuthContext(req);\n` +
+      `  return new Response(JSON.stringify({ userId: ctx.userId }), { status: 200 });\n` +
+      `}\n`,
+    );
+    expect(r.guarded).toBe(true);
+    if (r.guarded) expect(r.path).toBe('A');
+  });
+
+  it('F-04A Path B — delegated handler imports marker but never calls it → UNGUARDED', () => {
+    // Route delegates to `./handler` but handler only imports the marker,
+    // does not call it. F-04A requires an actual call expression in the
+    // handler source.
+    const handlerDir = join(ROOT, 'tests/security/__f04a-handler-import-only');
+    require('fs').mkdirSync(handlerDir, { recursive: true });
+    const routePath = join(handlerDir, 'route.ts');
+    const handlerPath = join(handlerDir, 'handler.ts');
+    require('fs').writeFileSync(
+      routePath,
+      `export { POST } from './handler';\n` +
+      `export async function POST(req: Request) { return new Response('x'); }\n`,
+      'utf8',
+    );
+    require('fs').writeFileSync(
+      handlerPath,
+      `import { getAuthContext } from '@/src/shared/auth/auth-context';\n` +
+      `export async function POST(req: Request) { return new Response('x'); }\n`,
+      'utf8',
+    );
+    const fs = require('fs');
+    try {
+      const r = classifyMutatingPlacementRoute(routePath);
+      expect(r.guarded).toBe(false);
+      // Route delegates via `./handler` and the handler exists but has no
+      // AUTH_MARKER call expression → reason `no_delegate_handler_auth_call`.
+      if (!r.guarded) expect(r.reason).toBe('no_delegate_handler_auth_call');
+    } finally {
+      for (const p of [routePath, handlerPath, handlerDir]) {
+        try { fs.unlinkSync(p); } catch { /* */ }
+        try { fs.rmdirSync(p); } catch { /* */ }
+      }
+    }
+  });
+
+  it('F-04A Path B — delegated handler ACTUALLY calls marker → GUARDED via Path B', () => {
+    // Route delegates to `./handler` and the handler actually calls the
+    // marker. Path B returns `guarded: true, path: 'B'`.
+    const handlerDir = join(ROOT, 'tests/security/__f04a-handler-call');
+    require('fs').mkdirSync(handlerDir, { recursive: true });
+    const routePath = join(handlerDir, 'route.ts');
+    const handlerPath = join(handlerDir, 'handler.ts');
+    require('fs').writeFileSync(
+      routePath,
+      `import { handlerPOST } from './handler';\n` +
+      `export const POST = handlerPOST;\n` +
+      `export async function POST(req: Request) { return new Response('x'); }\n`,
+      'utf8',
+    );
+    require('fs').writeFileSync(
+      handlerPath,
+      `import { getAuthContext } from '@/src/shared/auth/auth-context';\n` +
+      `export async function handlerPOST(req: Request) {\n` +
+      `  const ctx = await getAuthContext(req);\n` +
+      `  return new Response(JSON.stringify({ userId: ctx.userId }), { status: 200 });\n` +
+      `}\n`,
+      'utf8',
+    );
+    const fs = require('fs');
+    try {
+      const r = classifyMutatingPlacementRoute(routePath);
+      expect(r.guarded).toBe(true);
+      if (r.guarded) expect(r.path).toBe('B');
+    } finally {
+      for (const p of [routePath, handlerPath, handlerDir]) {
+        try { fs.unlinkSync(p); } catch { /* */ }
+        try { fs.rmdirSync(p); } catch { /* */ }
+      }
     }
   });
 });

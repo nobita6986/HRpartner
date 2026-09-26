@@ -1,7 +1,8 @@
 C-04 — Fail-closed delegation detector
 =========================================
 
-Round: 2 (v1.2)
+Round: 2 (v1.2) + F-02 substantive proof + F-04A call-expression closure +
+F-04B helper injection for `helper_missing_security_markers`.
 
 Change:
 -------
@@ -12,20 +13,38 @@ to enumerate specific route file names). Replaced with a SINGLE canonical
 classifier function used by BOTH the production route inventory AND the
 negative fixture:
 
-  classifyMutatingPlacementRoute(routeSource) -> { guarded: true } | { guarded: false, reason }
-    Path A — AUTH_MARKER present in source         -> guarded: true
-    Path B — delegates to handler sibling with AUTH_MARKER -> guarded: true
-    Path C — uses placement.route-helpers delegation:
-      (1) MUST import from `placement.route-helpers` (named or default)
-      (2) MUST have actual `runPlacementCommand(` CALL EXPRESSION
-      (3) helper MUST export `runPlacementCommand` AND contain
-          ACTUAL `getAuthContext(` AND `withDbContext(` CALL EXPRESSIONS
+  classifyMutatingPlacementRoute(file, options?) -> ClassificationResult
+    Path A — route source has AUTH_MARKER call expression          -> guarded: true, path: 'A'
+    Path B — route delegates to a `./handler` sibling whose source  -> guarded: true, path: 'B'
+              has AUTH_MARKER call expression
+    Path C — route imports `placement.route-helpers` AND           -> guarded: true, path: 'C'
+              has actual `runPlacementCommand(` call AND the
+              helper exports `runPlacementCommand` AND contains
+              ACTUAL `getAuthContext(` AND `withDbContext(` call
+              expressions
     ANY condition missing -> guarded: false, with specific reason:
       - 'no_helper_import'
       - 'no_helper_call'
       - 'helper_missing_security_markers'
+      - 'no_direct_auth_call'            (F-04A)
+      - 'no_delegate_handler_auth_call'  (F-04A)
+      - 'no_handler_sibling'             (F-04A reserved)
 
-Round 2 + F-02 SUBSTANTIVE PROOF:
+F-04A — Bare-identifier bypass closure:
+- AUTH_MARKER detection now uses `\bMARKER\s*\(` (call expression).
+  Bare identifiers, `import` statements, `import type`, comments, and
+  type annotations do NOT count.
+- This applies to BOTH Path A (direct route AUTH_MARKER) and Path B
+  (delegated handler AUTH_MARKER) — not only Path C/placement helper.
+- New 5 F-04A substantive assertions verify:
+  * direct route imports `getAuthContext` but never calls it → UNGUARDED
+  * direct route has bare `getAuthContext` identifier only (in comment) → UNGUARDED
+  * direct route ACTUALLY calls `getAuthContext(...)` → GUARDED via Path A
+  * delegated handler imports marker but never calls it → UNGUARDED with reason
+    `no_delegate_handler_auth_call`
+  * delegated handler ACTUALLY calls marker → GUARDED via Path B
+
+F-02 SUBSTANTIVE PROOF (round-2):
 - Marker checks REQUIRE call expressions (`getAuthContext(`), not bare
   identifier presence. A comment like `// uses getAuthContext` no longer
   satisfies the check.
@@ -35,7 +54,20 @@ Round 2 + F-02 SUBSTANTIVE PROOF:
   the production route inventory — so "proves detector catches" is
   now a measurable, reproducible assertion.
 
-Negative fixture (new file): `tests/security/admin-route-fail-closed.negative-fixture.ts`
+F-04B — `helper_missing_security_markers` injection:
+- `classifyMutatingPlacementRoute(file, { helperSource?, helperExists? })`
+  accepts an optional injected helper so tests can exercise the
+  `helper_missing_security_markers` branch WITHOUT mutating the
+  canonical production helper. Cleanup runs in `finally` AND before the
+  post-cleanup existence check, so residue is impossible even on
+  assertion failure.
+- 3 new F-04B assertions:
+  * helper exports runPlacementCommand with bare identifiers only →
+    `{ guarded: false, reason: 'helper_missing_security_markers' }`
+  * helper has no security markers at all → same reason
+  * `helperExists: false` (simulating missing helper file) → same reason
+
+Negative fixture (unchanged): `tests/security/admin-route-fail-closed.negative-fixture.ts`
   - declares `export async function POST`
   - does NOT import placement.route-helpers
   - does NOT call `runPlacementCommand`
@@ -45,8 +77,10 @@ Negative fixture (new file): `tests/security/admin-route-fail-closed.negative-fi
 Evidence:
 ---------
 1. Canonical classifier — `src/domains/applications/marketplace-inventory.static.test.ts`:
-   - `classifyMutatingPlacementRoute` (single source of truth)
-   - `placementHelperHasSecurityMarkers` (call-expression marker check)
+   - `classifyMutatingPlacementRoute(file, options?)` (single source of truth)
+   - `placementHelperHasSecurityMarkers(options?)` (call-expression marker check,
+     injectable helper source for F-04B)
+   - `AUTH_MARKER_CALL_RE` (call-expression regex for Path A and Path B)
    - Production route inventory filter now uses
      `!classifyMutatingPlacementRoute(p).guarded`
 2. Negative fixture — `tests/security/admin-route-fail-closed.negative-fixture.ts`:
@@ -54,17 +88,25 @@ Evidence:
    - exports `POST` mutating handler with no auth
    - `classifyMutatingPlacementRoute` MUST return `guarded: false` for it
 3. Unit test — `npx vitest run src/domains/applications/marketplace-inventory.static.test.ts`:
-   - 40 tests PASS (was 30; 10 new F-02 substantive assertions)
-   - F-02 describe block asserts:
-     * fixture file exists
-     * fixture recognised as mutating POST
-     * `classifyMutatingPlacementRoute(fixture).guarded === false`
-     * `classifyMutatingPlacementRoute(fixture).reason ∈ {no_helper_import, no_helper_call}`
-     * fixture contains no AUTH_MARKER / no helper import / no `runPlacementCommand(`
-     * import-only WITHOUT call -> rejected with reason 'no_helper_call'
-     * call-only WITHOUT canonical import -> rejected with reason 'no_helper_import'
+   - 47 tests PASS (was 40; +7 new F-04A/B substantive assertions)
+   - F-02 + F-04 describe block asserts:
+     * fixture file exists, recognised as mutating POST, classified UNGUARDED
+     * classifier reports unguarded reason ∈ {no_helper_import, no_helper_call}
+     * fixture contains no AUTH_MARKER call expression
+     * fixture does not import `placement.route-helpers`
+     * fixture does not call `runPlacementCommand(`
+     * import-only WITHOUT call → rejected with reason 'no_helper_call'
+     * call-only WITHOUT canonical import → rejected with reason 'no_helper_import'
      * current 5 production routes all GUARDED
-     * helper with bare identifiers but no call expressions -> rejected
+     * injected helper with bare identifiers → 'helper_missing_security_markers'
+     * injected helper missing both markers → 'helper_missing_security_markers'
+     * helperExists:false → 'helper_missing_security_markers'
+     * F-04A direct route imports marker but never calls → UNGUARDED
+     * F-04A direct route bare marker in comment → UNGUARDED
+     * F-04A direct route actually calls marker → GUARDED path 'A'
+     * F-04A delegated handler imports marker but never calls → UNGUARDED with
+       reason 'no_delegate_handler_auth_call'
+     * F-04A delegated handler actually calls marker → GUARDED path 'B'
 4. Helper marker contract — `src/domains/talent/placement.route-helpers.ts`:
    - exports `runPlacementCommand`
    - imports `getAuthContext` from `@/src/shared/auth/auth-context` and CALLS `getAuthContext(`
@@ -73,10 +115,11 @@ Evidence:
 Gates:
 ------
 - `npx.cmd vitest run src/domains/applications/marketplace-inventory.static.test.ts`:
-  40 PASS (was 30; +10 F-02 substantive assertions)
+  47 PASS (was 30; +17 substantive assertions across F-02 + F-04)
 
 References:
 -----------
 - TASK §6 AC-12
 - TASK §4.1.1 STEP-05c (v1.2)
 - HANDOFF §2.2 AC-12 row
+- F-04A/B/C directives from T0 (round-2 follow-up)
