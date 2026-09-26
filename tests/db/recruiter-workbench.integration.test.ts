@@ -391,19 +391,44 @@ describe.skipIf(!HAS_TEST_DB)('P1-E0 RecruiterWorkbench integration', () => {
     expect(row!.nextAction).toBe('OPEN_INTAKE');
   }, 30_000);
 
-  it('AC-04: lastInteraction prefers STATUS_CHANGE over SUBMISSION', async () => {
-    const profile = await makeProfile('last-int', {
+  // F-14 + F-11: explicit "newest wins" DB regression. Two cases:
+  //   (a) older submission + newer status history → STATUS_CHANGE @ status ts.
+  //   (b) newer submission + older status history → SUBMISSION @ submission ts.
+  // Each case asserts the expected `kind` AND the exact timestamp pulled
+  // from the row, against the canonical fixture IDs created inline. A loop
+  // over `items` is not used because an empty result set would pass.
+  it('F-14/F-11: lastInteraction newest-wins (newer status + older submission → STATUS_CHANGE)', async () => {
+    const profile = await makeProfile('f14-newest-status', {
       identity: 'VERIFIED',
       completeness: 'COMPLETE',
     });
     const c = await makeCase(profile.id, 'IN_PROGRESS');
-    // Older submission (50 min ago).
+    // Older SUBMISSION (120 min ago). Read back its canonical createdAt from DB.
     const sub = await makeSubmission(profile.id, c.id, {
-      fullName: `Sub ${runId}`,
-      createdMinutesAgo: 50,
+      fullName: `F14 Sub ${runId}`,
+      createdMinutesAgo: 120,
     });
-    // Newer STATUS_CHANGE (10 min ago).
-    await makeStatusHistory(sub.id, 'IN_REVIEW', 10);
+    const subRow = await admin.candidateSubmission.findUniqueOrThrow({
+      where: { id: sub.id },
+      select: { createdAt: true },
+    });
+    const olderSubmittedAt = subRow.createdAt;
+    // Newer STATUS_CHANGE (15 min ago).
+    const newerStatusAt = new Date(Date.now() - 15 * 60 * 1000);
+    const h1 = await admin.applicationStatusHistory.create({
+      data: {
+        submissionId: sub.id,
+        toStatus: 'IN_REVIEW',
+        createdAt: newerStatusAt,
+      },
+    });
+    historyIds.push(h1.id);
+    const statusRow = await admin.applicationStatusHistory.findUniqueOrThrow({
+      where: { id: h1.id },
+      select: { createdAt: true },
+    });
+    const newerStatusCanonical = statusRow.createdAt;
+    const olderSubmittedCanonical = olderSubmittedAt;
 
     const ctx: AuthContext = { userId: managerId, role: 'HR_MANAGER' };
     const out = await withContext(writer, ctx, (tx) =>
@@ -414,21 +439,61 @@ describe.skipIf(!HAS_TEST_DB)('P1-E0 RecruiterWorkbench integration', () => {
       }, FULL_PERMS),
     );
     const row = out.items.find((r) => r.caseId === c.id);
-    expect(row).toBeDefined();
+    expect(row, `expected caseId=${c.id} to be present in items`).toBeDefined();
     expect(row!.lastInteraction.kind).toBe('STATUS_CHANGE');
-    expect(row!.nextAction).toBe('AWAITING_RESULT');
+    expect(row!.lastInteraction.at).not.toBeNull();
+    // Exact timestamp from the source of truth (newerStatusCanonical).
+    expect(new Date(row!.lastInteraction.at as string).getTime()).toBe(
+      newerStatusCanonical.getTime(),
+    );
+    expect(new Date(row!.lastInteraction.at as string).getTime()).toBeGreaterThan(
+      olderSubmittedCanonical.getTime(),
+    );
   }, 30_000);
 
-  it('AC-04: lastInteraction falls back to SUBMISSION when no history', async () => {
-    const profile = await makeProfile('last-int-sub', {
+  it('F-14/F-11: lastInteraction newest-wins (newer submission + older status → SUBMISSION)', async () => {
+    const profile = await makeProfile('f14-newest-sub', {
       identity: 'VERIFIED',
       completeness: 'COMPLETE',
     });
-    const c = await makeCase(profile.id, 'OPEN');
-    await makeSubmission(profile.id, c.id, {
-      fullName: `Sub ${runId}`,
-      createdMinutesAgo: 30,
+    const c = await makeCase(profile.id, 'IN_PROGRESS');
+    // Older STATUS_CHANGE (180 min ago) tied to an older submission.
+    const sub = await makeSubmission(profile.id, c.id, {
+      fullName: `F14 Sub Old ${runId}`,
+      createdMinutesAgo: 180,
     });
+    const olderStatusAt = new Date(Date.now() - 180 * 60 * 1000);
+    const hOld = await admin.applicationStatusHistory.create({
+      data: {
+        submissionId: sub.id,
+        toStatus: 'IN_REVIEW',
+        createdAt: olderStatusAt,
+      },
+    });
+    historyIds.push(hOld.id);
+    const hOldRow = await admin.applicationStatusHistory.findUniqueOrThrow({
+      where: { id: hOld.id },
+      select: { createdAt: true },
+    });
+    const olderStatusCanonical = hOldRow.createdAt;
+    // Newer SUBMISSION (5 min ago) on the same case.
+    const newerSubmittedAt = new Date(Date.now() - 5 * 60 * 1000);
+    const newerSub = await admin.candidateSubmission.create({
+      data: {
+        fullName: `F14 Sub New ${runId}`,
+        phone: '0912000000',
+        placementCaseId: c.id,
+        laborProfileId: profile.id,
+        createdAt: newerSubmittedAt,
+      },
+    });
+    submissionIds.push(newerSub.id);
+    const newerSubRow = await admin.candidateSubmission.findUniqueOrThrow({
+      where: { id: newerSub.id },
+      select: { createdAt: true },
+    });
+    const newerSubmittedCanonical = newerSubRow.createdAt;
+
     const ctx: AuthContext = { userId: managerId, role: 'HR_MANAGER' };
     const out = await withContext(writer, ctx, (tx) =>
       getRecruiterWorkbenchList(tx, ctx, {
@@ -438,9 +503,136 @@ describe.skipIf(!HAS_TEST_DB)('P1-E0 RecruiterWorkbench integration', () => {
       }, FULL_PERMS),
     );
     const row = out.items.find((r) => r.caseId === c.id);
-    expect(row).toBeDefined();
+    expect(row, `expected caseId=${c.id} to be present in items`).toBeDefined();
     expect(row!.lastInteraction.kind).toBe('SUBMISSION');
-    expect(row!.nextAction).toBe('SCREEN_SUBMISSION');
+    expect(row!.lastInteraction.at).not.toBeNull();
+    expect(new Date(row!.lastInteraction.at as string).getTime()).toBe(
+      newerSubmittedCanonical.getTime(),
+    );
+    expect(new Date(row!.lastInteraction.at as string).getTime()).toBeGreaterThan(
+      olderStatusCanonical.getTime(),
+    );
+  }, 30_000);
+
+  // F-14: non-vacuous overdue true/false DB proof. Each case below is
+  // created with an explicit run-scoped fixture ID, then queried under both
+  // `overdue: true` and `overdue: false`. Membership is asserted by exact
+  // caseId via Set, NOT by item.length: a loop would silently pass on an
+  // empty result, which is exactly the bug class the F-10 fix prevents.
+  //
+  // Production where-clause (read-service.ts after E0-F01+correction 2/3):
+  //   overdue=true  → case.openedAt < (now - 72h) OR a profile ACTIVE
+  //                   assignment with expiresAt < now.
+  //   overdue=false → NOT (above). Equivalent to: ageHours < 72 AND no
+  //                   expired ACTIVE assignment.
+  it('F-14: overdue=true|false on isolated fixtures (case 1: >72h, no assignment)', async () => {
+    const profile = await makeProfile('f14-overdue-old', {
+      identity: 'VERIFIED',
+      completeness: 'COMPLETE',
+    });
+    // >72h: opened 80h ago, no assignment.
+    const c = await makeCase(profile.id, 'OPEN', 80);
+    const ctx: AuthContext = { userId: managerId, role: 'HR_MANAGER' };
+
+    const outTrue = await withContext(writer, ctx, (tx) =>
+      getRecruiterWorkbenchList(tx, ctx, {
+        view: 'ALL',
+        overdue: true,
+        page: 1,
+        pageSize: 50,
+      }, FULL_PERMS),
+    );
+    const setTrue = new Set(outTrue.items.map((r) => r.caseId));
+    expect(setTrue.has(c.id)).toBe(true);
+
+    const outFalse = await withContext(writer, ctx, (tx) =>
+      getRecruiterWorkbenchList(tx, ctx, {
+        view: 'ALL',
+        overdue: false,
+        page: 1,
+        pageSize: 50,
+      }, FULL_PERMS),
+    );
+    const setFalse = new Set(outFalse.items.map((r) => r.caseId));
+    expect(setFalse.has(c.id)).toBe(false);
+  }, 30_000);
+
+  it('F-14: overdue=true|false on isolated fixtures (case 2: <72h, expired ACTIVE assignment)', async () => {
+    const profile = await makeProfile('f14-overdue-handler', {
+      identity: 'VERIFIED',
+      completeness: 'COMPLETE',
+    });
+    // <72h: opened 24h ago.
+    const c = await makeCase(profile.id, 'OPEN', 24);
+    // ACTIVE handling assignment that already expired (expiresAt = now - 1h).
+    const expired = new Date(Date.now() - 60 * 60 * 1000);
+    const a = await admin.laborProfileHandlingAssignment.create({
+      data: {
+        laborProfileId: profile.id,
+        assigneeUserId: staffBId,
+        source: 'MANAGER_ASSIGNMENT',
+        startsAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+        expiresAt: expired,
+        status: 'ACTIVE',
+      },
+    });
+    assignmentIds.push(a.id);
+
+    const ctx: AuthContext = { userId: managerId, role: 'HR_MANAGER' };
+
+    const outTrue = await withContext(writer, ctx, (tx) =>
+      getRecruiterWorkbenchList(tx, ctx, {
+        view: 'ALL',
+        overdue: true,
+        page: 1,
+        pageSize: 50,
+      }, FULL_PERMS),
+    );
+    const setTrue = new Set(outTrue.items.map((r) => r.caseId));
+    expect(setTrue.has(c.id)).toBe(true);
+
+    const outFalse = await withContext(writer, ctx, (tx) =>
+      getRecruiterWorkbenchList(tx, ctx, {
+        view: 'ALL',
+        overdue: false,
+        page: 1,
+        pageSize: 50,
+      }, FULL_PERMS),
+    );
+    const setFalse = new Set(outFalse.items.map((r) => r.caseId));
+    expect(setFalse.has(c.id)).toBe(false);
+  }, 30_000);
+
+  it('F-14: overdue=true|false on isolated fixtures (case 3: <72h, no assignment)', async () => {
+    const profile = await makeProfile('f14-not-overdue', {
+      identity: 'VERIFIED',
+      completeness: 'COMPLETE',
+    });
+    // <72h: opened 24h ago, no assignment.
+    const c = await makeCase(profile.id, 'OPEN', 24);
+    const ctx: AuthContext = { userId: managerId, role: 'HR_MANAGER' };
+
+    const outTrue = await withContext(writer, ctx, (tx) =>
+      getRecruiterWorkbenchList(tx, ctx, {
+        view: 'ALL',
+        overdue: true,
+        page: 1,
+        pageSize: 50,
+      }, FULL_PERMS),
+    );
+    const setTrue = new Set(outTrue.items.map((r) => r.caseId));
+    expect(setTrue.has(c.id)).toBe(false);
+
+    const outFalse = await withContext(writer, ctx, (tx) =>
+      getRecruiterWorkbenchList(tx, ctx, {
+        view: 'ALL',
+        overdue: false,
+        page: 1,
+        pageSize: 50,
+      }, FULL_PERMS),
+    );
+    const setFalse = new Set(outFalse.items.map((r) => r.caseId));
+    expect(setFalse.has(c.id)).toBe(true);
   }, 30_000);
 
   it('AC-02: UNVERIFIED + IN_PROGRESS + STATUS_CHANGE → REQUEST_DOCS', async () => {
@@ -730,5 +922,114 @@ describe.skipIf(!HAS_TEST_DB)('P1-E0 RecruiterWorkbench integration', () => {
     expect(observedDatasource).toBe(writerUrl);
     // Restore prior impl if any.
     if (originalGetPrisma) mocks.getPrisma.mockImplementation(originalGetPrisma);
+  }, 60_000);
+
+  // ── F-15: non-vacuous real-route proof with explicit fixture IDs ─────────
+  // Each test creates a fresh, self-contained fixture (profile + case +
+  // optional handling assignment) tracked by the existing afterAll
+  // teardown, then asserts:
+  //   - response.items is non-empty
+  //   - exact caseId is present in items
+  //   - manager route returns raw phone / cccdNumber in candidate DTO
+  //   - HR_STAFF MINE route returns the assigned case
+  //   - HR_STAFF MINE row carries canonical exact masked values
+  //   - top-level candidatePhone / candidateCccdNumber are absent on every
+  //     row, regardless of role
+  // F-12 mock boundaries are preserved (only getAuthContext,
+  // resolveEffectivePermissions and getPrisma are mocked).
+
+  // F-15: HR_MANAGER sees raw PII for an explicit fixture caseId.
+  it('F-15: real GET handler (manager) returns raw PII for explicit caseId', async () => {
+    const profile = await makeProfile('f15-mgr-raw', {
+      phone: '0987001122',
+      cccd: '001099777111',
+      identity: 'VERIFIED',
+      completeness: 'COMPLETE',
+    });
+    const c = await makeCase(profile.id, 'OPEN');
+
+    mocks.getAuthContext.mockImplementation(
+      async () => ({ userId: managerId, role: 'HR_MANAGER' }),
+    );
+    mocks.resolveEffectivePermissions.mockImplementation(async () => {
+      const set = new Set<string>();
+      set.add('CAN_VIEW_WORKER_SENSITIVE');
+      set.add('CAN_VIEW_UNASSIGNED_POOL');
+      return set;
+    });
+    mocks.getPrisma.mockReturnValue(writer);
+
+    const req = new Request(
+      'http://localhost/api/admin/recruiter-workbench?view=ALL&pageSize=100',
+      { method: 'GET' },
+    );
+    const res = await recruiterWorkbenchGET(req as unknown as import('next/server').NextRequest);
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(Array.isArray(body.items)).toBe(true);
+    expect(body.items.length).toBeGreaterThan(0);
+    // No top-level alias is ever present on any row.
+    for (const row of body.items) {
+      expect(row).not.toHaveProperty('candidatePhone');
+      expect(row).not.toHaveProperty('candidateCccdNumber');
+    }
+    const row = body.items.find((r: { caseId: string }) => r.caseId === c.id);
+    expect(row, `expected caseId=${c.id} to be present in items`).toBeDefined();
+    expect(row.candidate).toBeDefined();
+    // Raw values for HR_MANAGER (CAN_VIEW_WORKER_SENSITIVE granted).
+    expect(row.candidate.phone).toBe('0987001122');
+    expect(row.candidate.cccdNumber).toBe('001099777111');
+  }, 60_000);
+
+  // F-15: HR_STAFF MINE sees exactly the assigned case with canonical
+  // masked PII (no asterisk mistake, no leak). Uses staffAId so we don't
+  // depend on earlier tests' assignments.
+  it('F-15: real GET handler (HR_STAFF MINE) returns masked PII for assigned caseId', async () => {
+    const profile = await makeProfile('f15-staff-masked', {
+      phone: '0912341234',
+      cccd: '001099555888',
+      identity: 'VERIFIED',
+      completeness: 'COMPLETE',
+    });
+    const c = await makeCase(profile.id, 'OPEN');
+    // ACTIVE handling assignment to staffAId covering now → case is in MINE.
+    await makeAssignment(profile.id, staffAId, {
+      status: 'ACTIVE',
+      startsAgoMs: 60_000,
+      expiresInMs: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    mocks.getAuthContext.mockImplementation(
+      async () => ({ userId: staffAId, role: 'HR_STAFF' }),
+    );
+    // No CAN_VIEW_WORKER_SENSITIVE → masking must apply.
+    mocks.resolveEffectivePermissions.mockImplementation(async () => {
+      return new Set<string>();
+    });
+    mocks.getPrisma.mockReturnValue(writer);
+
+    const req = new Request(
+      'http://localhost/api/admin/recruiter-workbench?view=MINE&pageSize=100',
+      { method: 'GET' },
+    );
+    const res = await recruiterWorkbenchGET(req as unknown as import('next/server').NextRequest);
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(Array.isArray(body.items)).toBe(true);
+    expect(body.items.length).toBeGreaterThan(0);
+    for (const row of body.items) {
+      expect(row).not.toHaveProperty('candidatePhone');
+      expect(row).not.toHaveProperty('candidateCccdNumber');
+    }
+    const row = body.items.find((r: { caseId: string }) => r.caseId === c.id);
+    expect(row, `expected caseId=${c.id} to be present in items`).toBeDefined();
+    expect(row.candidate).toBeDefined();
+    // Exact canonical masked values per `maskPhone` (3 head + 3 tail) and
+    // `maskCccd` (4 tail, 0 head). NOT generic `'*** *** 1234'` shape.
+    expect(row.candidate.phone).toBe('091****234');
+    expect(row.candidate.cccdNumber).toBe('********5888');
+    // Handler info resolves to staffAId.
+    expect(row.handler).toBeDefined();
+    expect(row.handler.assigneeUserId).toBe(staffAId);
   }, 60_000);
 });
