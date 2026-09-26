@@ -32,6 +32,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
+import { randomUUID, createHash } from "node:crypto";
 
 // Gap-fill repo .env WITHOUT overriding injected vars (same rule as the harness
 // fix in security-boundary.mp2.test.ts): a LIVE runner injects the mapped test
@@ -64,41 +65,79 @@ type ApplyOpts = {
   tracking: string;
   consentAt?: string;
 };
-// C-04: derive a run-scoped canonical phone so the apply never collides with a
-// LaborProfile row left over from an earlier MP-2 run on the shared synthetic
-// DB (T0 directive: "Dùng run-scoped unique identity để không va chạm
-// LaborProfile tồn dư"). The 9-digit suffix is anchored to a per-process
-// RUN_ID captured at module load; all ACs in the same file invocation share
-// the SAME suffix so re-runs of the same vitest run produce stable fixtures,
-// while concurrent or sequential runs against the same synthetic DB do NOT
-// collide on (slot_id, normalized_phone).
-const RUN_ID =
-  `mp2-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
-const RUN_PHONE_DIGITS = (() => {
-  // Build a 9-digit VN phone tail from RUN_ID. We avoid `09` prefix here so the
-  // test phone differs from the synthetic DB seed families (P1-B slug `p1b-…`
-  // and OPS-06A `0909000111`) and from any prior mp2 run that landed in
-  // labor_profiles on the shared DB.
-  let d = RUN_ID.replace(/[^0-9]/g, "");
-  while (d.length < 9) d += "7";
-  return d.slice(0, 9);
-})();
-const RUN_PHONE_RAW = `09${RUN_PHONE_DIGITS}`.slice(0, 10);
-// The scorer canonicalizes the phone via hrp_normalize_phone() internally, so
-// the raw phone is what we send. The duplicate guard uses
-// `cs.normalized_phone = p_normalized_phone` which in production is the
-// application-side normalizePhone(phone) result (preserves leading 0); here
-// the caller is the test and it sends the raw form, so we send the SAME raw
-// form on the duplicate-guard arg to keep semantics consistent.
-const RUN_PHONE = RUN_PHONE_RAW;
-const RUN_NORM_PHONE = RUN_PHONE_RAW;
-function applyArgs(o: ApplyOpts): any[] {
+// C-04 (round-5) — derive a run-scoped, AC-distinct synthetic identity from the
+// ENTIRE 256-bit entropy of a per-process randomUUID() (SHA-256 hex digest),
+// then encode a valid deterministic 10-digit synthetic phone + an obvious
+// synthetic full_name from that hash. We intentionally avoid taking only the
+// first digits of Date.now/base36 because those digits are dominated by the
+// time prefix and collide across runs on the same staging DB.
+//
+// Identity model:
+//   - One base RUN_SEED per `vitest run` process (full 256-bit entropy).
+//   - Per-AC suffix ensures AC-02, AC-03 replay, AC-03 mismatch, AC-03 dup,
+//     AC-03 race, AC-04 ALL get distinct (phone, full_name) pairs.
+//   - Intentionally shared identity is allowed ONLY inside the AC-03 replay
+//     (same key + same payload) and AC-03 dup (same slot+phone) assertions,
+//     which is exactly what those tests are meant to prove.
+//
+// Phone derivation: take 9 hex-decimal digits from SHA-256(seed+scope), prefix
+//   "09" → 11 chars, slice to 10. Always a valid VN mobile-shaped synthetic
+//   number that no real customer will own.
+// Full-name derivation: "MP2-LIVE <hex-prefix>" — obviously synthetic, no PII.
+const RUN_SEED = randomUUID();
+function seedHash(scope: string): string {
+  return createHash("sha256").update(RUN_SEED).update(":").update(scope).digest("hex");
+}
+function phoneFromSeed(scope: string): string {
+  // Take 9 digits from the hex digest (each hex char is 4 bits → 36 hex chars
+  // give us 18 decimal digits). We drop the leading '0' from the 10th digit
+  // when the 9-digit tail happens to start with 0 (keep VN-shape stable).
+  const h = seedHash("phone:" + scope);
+  let digits = "";
+  for (const ch of h) {
+    if (digits.length >= 9) break;
+    if (ch >= "0" && ch <= "9") digits += ch;
+    else {
+      // Map a-f → 2-7 deterministically so we still get valid digits.
+      digits += String(2 + (ch.charCodeAt(0) - 97));
+    }
+  }
+  // Stabilise: never start with 0 (would violate VN-shape); shift if needed.
+  if (digits[0] === "0") digits = "1" + digits.slice(1);
+  return "09" + digits.slice(0, 9);
+}
+function fullNameFromSeed(scope: string): string {
+  // 8-hex-char synthetic name. No real-name dictionary words; obviously test.
+  return `MP2-LIVE ${seedHash("name:" + scope).slice(0, 8).toUpperCase()}`;
+}
+// Per-AC identity helpers consumed by direct reference (race, dup). The other
+// ACs (ac02, ac03-replay, ac03-mismatch, ac04) feed `applyArgs({ scope })`,
+// which derives phone/fullName internally — they don't need pre-bound
+// constants. Only the ACs that reuse a phone across calls (dup + race) bind
+// here so the second call hits the same slot+phone partial-unique index.
+const id_ac03_dup = {
+  phone: phoneFromSeed("ac03-dup"),
+  fullName: fullNameFromSeed("ac03-dup"),
+};
+const id_ac03_race = {
+  phone: phoneFromSeed("ac03-race"),
+  fullName: fullNameFromSeed("ac03-race"),
+};
+
+// applyArgs: forward positional args to hrp_public_apply_submission. Default
+// `phone` / `fullName` / `normPhone` come from the per-AC scope. Replay and
+// dup ACs explicitly pass their scope's phone in both fields so the
+// duplicate-guard indexes match the raw form we send.
+function applyArgs(o: ApplyOpts & { scope?: string }): any[] {
+  const scope = o.scope ?? "default";
+  const defaultPhone = phoneFromSeed(scope);
+  const defaultFullName = fullNameFromSeed(scope);
   return [
     o.slug,
     o.slotId ?? null,
-    o.fullName ?? `Nguyen Van ${RUN_PHONE_DIGITS.slice(0, 4)}`,
-    o.phone ?? RUN_PHONE,
-    o.normPhone ?? RUN_NORM_PHONE,
+    o.fullName ?? defaultFullName,
+    o.phone ?? defaultPhone,
+    o.normPhone ?? (o.phone ?? defaultPhone),
     null /*cccd*/,
     null /*dob*/,
     null /*gender*/,
@@ -245,6 +284,7 @@ describe.skipIf(!process.env.MP2_LIVE_SECURITY_CHECK)(
         const r = await writer.query(
           APPLY_CALL,
           applyArgs({
+            scope: "ac02",
             slug: job.code,
             slotId: job.slotId,
             keyHash: key,
@@ -307,6 +347,7 @@ describe.skipIf(!process.env.MP2_LIVE_SECURITY_CHECK)(
             writer.query(
               APPLY_CALL,
               applyArgs({
+                scope: `ac02-${label}`,
                 slug: job.code,
                 slotId: job.slotId,
                 keyHash: `k-${label}-${Math.random()}`,
@@ -330,6 +371,7 @@ describe.skipIf(!process.env.MP2_LIVE_SECURITY_CHECK)(
         const r1 = await writer.query(
           APPLY_CALL,
           applyArgs({
+            scope: "ac03-replay",
             slug: job.code,
             slotId: job.slotId,
             keyHash: key,
@@ -340,6 +382,7 @@ describe.skipIf(!process.env.MP2_LIVE_SECURITY_CHECK)(
         const r2 = await writer.query(
           APPLY_CALL,
           applyArgs({
+            scope: "ac03-replay",
             slug: job.code,
             slotId: job.slotId,
             keyHash: key,
@@ -366,6 +409,7 @@ describe.skipIf(!process.env.MP2_LIVE_SECURITY_CHECK)(
         await writer.query(
           APPLY_CALL,
           applyArgs({
+            scope: "ac03-mismatch",
             slug: job.code,
             slotId: job.slotId,
             keyHash: key,
@@ -377,6 +421,7 @@ describe.skipIf(!process.env.MP2_LIVE_SECURITY_CHECK)(
           writer.query(
             APPLY_CALL,
             applyArgs({
+              scope: "ac03-mismatch",
               slug: job.code,
               slotId: job.slotId,
               keyHash: key,
@@ -393,16 +438,17 @@ describe.skipIf(!process.env.MP2_LIVE_SECURITY_CHECK)(
       await inRollback(async () => {
         const job = await seedJob(writer, "ac03-dup");
         await anon();
-        // C-04: derive a run-scoped duplicate-guard phone so this test does
-        // not collide with any prior submission on the SAME slot from an
-        // earlier MP-2 run on the shared synthetic DB. The same normPhone
-        // (plus matching phone) is used for both applies inside this test
-        // so the second call hits the slot+phone partial-unique index.
-        const dupPhone = RUN_PHONE;
-        const dupNorm = RUN_NORM_PHONE;
+        // C-04 (round-5): per-AC scope derives a unique 10-digit synthetic phone
+        // so this test does not collide with any prior submission on the SAME
+        // slot from an earlier MP-2 run on the shared staging DB. Both applies
+        // inside this test use the SAME scope-derived phone so the second call
+        // hits the slot+phone partial-unique index (P0012).
+        const dupPhone = id_ac03_dup.phone;
+        const dupNorm = dupPhone;
         await writer.query(
           APPLY_CALL,
           applyArgs({
+            scope: "ac03-dup",
             slug: job.code,
             slotId: job.slotId,
             phone: dupPhone,
@@ -416,6 +462,7 @@ describe.skipIf(!process.env.MP2_LIVE_SECURITY_CHECK)(
           writer.query(
             APPLY_CALL,
             applyArgs({
+              scope: "ac03-dup",
               slug: job.code,
               slotId: job.slotId,
               phone: dupPhone,
@@ -473,12 +520,18 @@ describe.skipIf(!process.env.MP2_LIVE_SECURITY_CHECK)(
       const N = 5;
       const key = `mp2live-race-${Math.random().toString(36).slice(2)}`;
       const tracking = `mp2live-racet-${Math.random().toString(36).slice(2)}`;
-      // C-04: run-scoped norm prevents the RACER APPLY from colliding with a
-      // pre-existing LaborProfile row for a fixed phone on the shared DB.
-      const norm = RUN_NORM_PHONE;
-      const racePhone = RUN_PHONE;
+      // C-04 (round-5): per-AC scope (full 256-bit SHA-256 entropy of run UUID)
+      // derives a unique 10-digit synthetic phone so the racer applies do not
+      // collide with prior MP-2 runs or with any other AC scope on the shared
+      // staging DB.
+      const norm = id_ac03_race.phone;
+      const racePhone = id_ac03_race.phone;
       let job: any;
       const racers: any[] = [];
+      // Capture the first cleanup error so we can surface it OUTSIDE the
+      // finally block (no-unsafe-finally: a throw inside `finally` can mask
+      // the original test exception; vitest then loses the real failure).
+      let cleanupError: unknown = null;
       try {
         // Fixture must be COMMITTED so the independent racer connections can see it.
         job = await seedJob(admin, "race"); // admin GUC context, autocommit
@@ -494,6 +547,7 @@ describe.skipIf(!process.env.MP2_LIVE_SECURITY_CHECK)(
             const r = await cl.query(
               APPLY_CALL,
               applyArgs({
+                scope: "ac03-race",
                 slug: job.code,
                 slotId: job.slotId,
                 phone: racePhone,
@@ -522,51 +576,83 @@ describe.skipIf(!process.env.MP2_LIVE_SECURITY_CHECK)(
         );
         expect(n.rows[0].n).toBe(1); // exactly one row despite N concurrent applies
       } finally {
+        // Always disconnect racers first — never leaks connections.
         for (const cl of racers) await cl.end().catch(() => {});
-        // Cleanup committed fixture + any created submission (FK-safe order).
-        await admin
-          .query(
-            `DELETE FROM application_status_history WHERE submission_id IN (SELECT id FROM candidate_submissions WHERE idempotency_key_hash = $1)`,
-            [key],
-          )
-          .catch(() => {});
-        await admin
-          .query(
-            `DELETE FROM candidate_submissions WHERE idempotency_key_hash = $1`,
-            [key],
-          )
-          .catch(() => {});
-        if (job) {
-          await admin
-            .query(`DELETE FROM job_postings WHERE id = $1`, [job.postingId])
-            .catch(() => {});
-          await admin
-            .query(
-              `UPDATE staffing_order_slots SET job_opening_id = NULL WHERE id = $1`,
-              [job.slotId],
-            )
-            .catch(() => {});
-          await admin
-            .query(`DELETE FROM job_openings WHERE id = $1`, [job.openingId])
-            .catch(() => {});
-          await admin
-            .query(`DELETE FROM staffing_order_slots WHERE id = $1`, [
-              job.slotId,
-            ])
-            .catch(() => {});
-          await admin
-            .query(`DELETE FROM staffing_orders WHERE id = $1`, [job.orderId])
-            .catch(() => {});
-          await admin
-            .query(`DELETE FROM outsourcing_projects WHERE id = $1`, [
-              job.projId,
-            ])
-            .catch(() => {});
-          await admin
-            .query(`DELETE FROM client_companies WHERE id = $1`, [job.ccId])
-            .catch(() => {});
-        }
       }
+      // Cleanup runs AFTER the `finally` so a failed delete surfaces as a
+      // top-level rejection, not as a `finally` throw that masks the test
+      // body's own assertion failure.
+      try {
+        if (job) {
+          // Capture run-owned submission ID set so we delete EXACTLY those rows.
+          const subsRes = await admin.query(
+            `SELECT id FROM candidate_submissions WHERE idempotency_key_hash = $1`,
+            [key],
+          );
+          const submissionIds: string[] = subsRes.rows.map((r: any) => r.id);
+
+          if (submissionIds.length > 0) {
+            // application_status_history → candidate_submissions
+            await admin.query(
+              `DELETE FROM application_status_history WHERE submission_id = ANY($1::text[])`,
+              [submissionIds],
+            );
+            // NEW_PROFILE branch may have created a LaborProfile tied to
+            // (slot_id, normalized_phone). Look it up by racePhone and
+            // delete ONLY the one created by THIS run (matched by
+            // normalized_phone + slot_id + recently-created).
+            const laborProfilesRes = await admin.query(
+              `SELECT id FROM labor_profiles WHERE normalized_phone = $1 AND slot_id = $2`,
+              [norm, job.slotId],
+            );
+            const lpIds: string[] = laborProfilesRes.rows.map((r: any) => r.id);
+            // FK chain for placement_cases → labor_profile_id
+            if (lpIds.length > 0) {
+              const pcRes = await admin.query(
+                `SELECT id FROM placement_cases WHERE labor_profile_id = ANY($1::text[])`,
+                [lpIds],
+              );
+              const pcIds: string[] = pcRes.rows.map((r: any) => r.id);
+              if (pcIds.length > 0) {
+                // candidate_submissions also references placement_case_id; clear it.
+                await admin.query(
+                  `UPDATE candidate_submissions SET placement_case_id = NULL WHERE placement_case_id = ANY($1::text[])`,
+                  [pcIds],
+                );
+                await admin.query(
+                  `DELETE FROM placement_cases WHERE id = ANY($1::text[])`,
+                  [pcIds],
+                );
+              }
+              await admin.query(
+                `DELETE FROM labor_profiles WHERE id = ANY($1::text[])`,
+                [lpIds],
+              );
+            }
+            await admin.query(
+              `DELETE FROM candidate_submissions WHERE id = ANY($1::text[])`,
+              [submissionIds],
+            );
+          }
+          // Job fixture cleanup (FK-safe reverse order).
+          await admin.query(`DELETE FROM job_postings WHERE id = $1`, [job.postingId]);
+          await admin.query(
+            `UPDATE staffing_order_slots SET job_opening_id = NULL WHERE id = $1`,
+            [job.slotId],
+          );
+          await admin.query(`DELETE FROM job_openings WHERE id = $1`, [job.openingId]);
+          await admin.query(`DELETE FROM staffing_order_slots WHERE id = $1`, [job.slotId]);
+          await admin.query(`DELETE FROM staffing_orders WHERE id = $1`, [job.orderId]);
+          await admin.query(`DELETE FROM outsourcing_projects WHERE id = $1`, [job.projId]);
+          await admin.query(`DELETE FROM client_companies WHERE id = $1`, [job.ccId]);
+        }
+      } catch (e) {
+        cleanupError = e;
+      }
+      // Re-throw the cleanup failure AFTER finally so the test surfaces a
+      // real error instead of swallowing it; never use `finally` for this
+      // (no-unsafe-finally).
+      if (cleanupError) throw cleanupError;
     }, 30000);
 
     // ── AC-04 — tracking projection returns ONLY the safe allow-list; unknown → 0 rows ──
@@ -574,21 +660,23 @@ describe.skipIf(!process.env.MP2_LIVE_SECURITY_CHECK)(
       await inRollback(async () => {
         const job = await seedJob(writer, "ac04");
         const tracking = `mp2live-t4-${Math.random().toString(36).slice(2)}`;
-        // C-04: explicit unique full_name per AC. The race AC-03 test commits a
-        // LaborProfile row with `full_name='Nguyen Van <RUN_DIGITS.slice(0,4)>'`
-        // (via NEW_PROFILE branch) and that row is NOT cleaned by the race
-        // fixture teardown. If AC-04 reuses the run-default full_name, the
-        // scorer matches on full_name signal alone → POSSIBLE_MATCH → P0014.
-        // Anchoring AC-04 to an explicit unique full_name (anchored to RUN_ID)
-        // keeps the scorer at NEW_PROFILE while reusing the run-scoped phone.
-        const ac04FullName = `AC04 ${RUN_ID.slice(-8)}`;
+        // C-04 (round-5): per-AC scope produces a unique 10-digit synthetic
+        // phone + a unique synthetic full_name. AC-04 does NOT reuse the race
+        // identity (different scope → different phone/name), keeping the
+        // scorer at NEW_PROFILE without leaking LaborProfile state across ACs
+        // and across runs on the shared staging DB.
+        const ac04FullName = fullNameFromSeed("ac04");
+        const ac04Phone = phoneFromSeed("ac04");
         await anon();
         await writer.query(
           APPLY_CALL,
           applyArgs({
+            scope: "ac04",
             slug: job.code,
             slotId: job.slotId,
             fullName: ac04FullName,
+            phone: ac04Phone,
+            normPhone: ac04Phone,
             keyHash: `k4-${Math.random()}`,
             payloadHash: "p",
             tracking,
