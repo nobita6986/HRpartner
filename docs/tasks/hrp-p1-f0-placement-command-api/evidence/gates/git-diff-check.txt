@@ -1,0 +1,3 @@
+git diff --check adbd28f7
+EXIT=0
+RESULT: PASS

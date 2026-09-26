@@ -1,0 +1,47 @@
+P1-F0 round-5 evidence
+====================================
+[PRE-REVERSAL: round-5 final freeze 2026-09-26. NOT to be cited as fresh PASS evidence per T0 directive point 7; canonical gates FAIL/PENDING until C-07 closure correction runtime PASS reproduces.]
+Command: npm run test:integration
+
+Status: ENV_BLOCKED/PENDING in this sandbox (DATABASE_URL_TEST + DATABASE_URL_ADMIN_TEST
+not provisioned in this sandbox; T0 owns the staging target and has already exercised
+the canonical integration on the dedicated writable staging target per round-5 directive).
+
+> hrp@0.1.0 test:integration
+> node scripts/ci/integration-preflight.mjs
+
+ENV_BLOCKED
+[integration-preflight] DATABASE_URL_TEST is not set. A dedicated test database is required for the integration lane.
+[integration-preflight] Integration lane NOT run — this is a BLOCKED state, not a PASS.
+
+Exit code: 0
+
+C-05 dual-URL contract remains enforced. C-05 round-2/3/4 closure verified by
+src/shared/observability/integration-preflight.env-readiness.static.test.ts (7 tests
+PASS) — see evidence/corrections/C-05-truthful-tests-dual-url.txt.
+
+T0 next action after this commit lands: re-provision synthetic PG (writer non-super +
+non-bypassrls, admin bypassrls, same host+port+db), re-run canonical integration suite.
+
+=====================================================================
+POST-REVERSAL integration-env-readiness (2026-09-26 — C-07 closure correction in-progress)
+=====================================================================
+
+Command: npm run test:integration
+
+Result (post-reversal): ENV_BLOCKED (DATABASE_URL_TEST +
+DATABASE_URL_ADMIN_TEST still not provisioned in T1B sandbox; T0 owns
+the staging target).
+
+Status: TRANSPARENT — T1B sandbox does NOT have a dedicated synthetic
+staging DB; LIVE integration tests (MP-2, P1-F0, full canonical) MUST
+be re-attempted by T0 on the dedicated writable staging writer/admin
+pair after this commit lands.
+
+After T0 reproduces runtime PASS on the dedicated synthetic staging,
+the canonical gates can be flipped back to PASS and a fresh
+docs/evidence freeze commit can land. Until then, Canonical gates
+remains FAIL/PENDING per directive point 8.
+
+Exit code: 0 (preflight passes; integration lane is intentionally
+blocked at the env-readiness layer, NOT faked PASS).

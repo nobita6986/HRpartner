@@ -1,0 +1,11 @@
+STRICT UTF-8 NO-BOM / LF-ONLY FINAL FREEZE SCAN
+docs/tasks/hrp-p1-f0-placement-command-api/evidence/corrections/C-07-closure.txt UTF8=True BOM=False CR=False RESULT=PASS
+docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/git-diff-check.txt UTF8=True BOM=False CR=False RESULT=PASS
+docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/live-integration-run-staging.txt UTF8=True BOM=False CR=False RESULT=PASS
+docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/verify-encoding.txt UTF8=True BOM=False CR=False RESULT=PASS
+docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/verify-handoff.txt UTF8=True BOM=False CR=False RESULT=PASS
+docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/verify-task.txt UTF8=True BOM=False CR=False RESULT=PASS
+docs/tasks/hrp-p1-f0-placement-command-api/evidence/sha-pins.txt UTF8=True BOM=False CR=False RESULT=PASS
+docs/tasks/hrp-p1-f0-placement-command-api/HANDOFF.md UTF8=True BOM=False CR=False RESULT=PASS
+docs/tasks/hrp-p1-f0-placement-command-api/TASK.md UTF8=True BOM=False CR=False RESULT=PASS
+RESULT: PASS

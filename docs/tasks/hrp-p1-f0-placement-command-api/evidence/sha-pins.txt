@@ -1,0 +1,53 @@
+P1-F0 PLACEMENT COMMAND API — FINAL SHA PINS
+Date: 2026-09-26
+
+Branch:
+  codex/t1b-p1f0-placement-command-clean-correction
+
+Baseline:
+  a88d87270f51fb63bba8f4f1144304dad4983007
+
+Predecessor:
+  1b1d8ac747a424c5d47d6cc777f44bba254fcd51
+
+Semantic Implementation SHA:
+  adbd28f711ccf4f53807fb44a9beb98ba5e22ac4
+
+Final docs/evidence freeze commit:
+  1658835c3f220fc79dfe09ab11a0172064d0c1a8
+
+Preserved correction history includes:
+  927e32057d59655a6f0775b81ba628ef72f13baf
+  75462f59ee92a61d5766eb79a3e96c52843fa97c
+  5b131ac52752364f80fa3957c5ccae1d8fe8e9fd
+  fa9530a456ba1e68ab993d31915bc549b55e3f83
+  0a403ef837656b89f6e87cfbbc87c515a3c7e318
+  a4db06f57cab4ba2135b7fab0f09d21e97023ed5
+  eca445bc641542d40dea652d498ff5dcb5888623
+  45bc5ec5ad49a6555e3e3c54aa79d409b033cab9
+  d688b66229980fd5449cbd882691c8105458dbf3
+  813015cb
+  241e635016ab2d741fb25529d96a5fc308cd2a3a
+  adbd28f711ccf4f53807fb44a9beb98ba5e22ac4
+
+Final control state:
+  Status: READY_FOR_AUDIT
+  Frozen delivery: YES
+  Canonical gates: PASS
+  Audit eligibility: ELIGIBLE
+  Next gate: TIER3_LIGHT_AUDIT
+  Correction batches used: 1
+
+Fresh T0 runtime evidence:
+  evidence/corrections/C-07-closure.txt
+  evidence/gates/live-integration-run-staging.txt
+
+Measured results:
+  MP-2: 11/11 PASS x3
+  P1-F0: 20/20 PASS x3
+  Canonical integration: 32/32 files; 561 passed; 0 failed; 2 skipped
+  Writer/admin posture: PASS
+  Production DB/migration: NOT_RUN
+
+No amend, reset, rebase or force-push was used. No push, PR, Tier 3,
+merge, production migration or deployment was performed during this freeze.

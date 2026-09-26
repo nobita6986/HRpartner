@@ -1,0 +1,82 @@
+Final gates — P1-F0 round-2 F-01/F-02/F-03 follow-up
+=====================================================
+
+Round: 2 (v1.2) + F-01/F-02/F-03 follow-up
+Branch: codex/t1b-p1f0-placement-command-clean-correction
+Branch base: 9274ccd93f7541d3dfadecf929e48d4c38252690 (NO cherry-pick of c0f4dc6)
+
+Commit chain (in order, newest first):
+- eb937d4 — docs(p1-f0): round-2 follow-up checkpoint (F-01 + F-03)
+- c8d7bfa — test(p1-f0): F-02 substantive proof (semantic test/integrity)
+- 032efb1 — docs(p1-f0): round-2 docs freeze v1.2 (pre-audit checkpoint)
+- 70047d0 — feat(p1-f0): round-2 C-01..C-05 pre-audit correction batch (semantic impl)
+- 9274ccd — feat(p1-f0): placement command API (original implementation)
+
+GATE 1 — Targeted C-04/static tests
+-----------------------------------
+$ npx.cmd vitest run --reporter=default \
+    src/domains/talent/placement.commands.test.ts \
+    src/domains/talent/placement.route-helpers.test.ts \
+    src/domains/talent/placement.commands.routes.test.ts \
+    src/domains/applications/marketplace-inventory.static.test.ts \
+    src/shared/observability/integration-preflight.env-readiness.static.test.ts
+5 files, 142 tests PASS (was 132 before F-02 follow-up; +10 new F-02 substantive assertions)
+
+GATE 2 — Complete targeted placement suite (= Gate 1, 142 tests)
+-----------------------------------
+
+GATE 3 — npm run test:unit
+--------------------------
+$ npm.cmd run test:unit
+173 test files PASS, 2749 tests PASSED | 9 SKIPPED (2758 total)
+(was 2739 before F-02 follow-up; +10 new F-02 substantive assertions)
+
+GATE 4 — npm run typecheck (via tsc --noEmit)
+---------------------------------------------
+$ npx.cmd tsc --noEmit
+Exit code: 0
+No diagnostics.
+
+GATE 5 — npm run lint
+---------------------
+$ npx.cmd next lint
+Exit code: 0
+Only warnings (pre-existing, not introduced by F-02).
+
+GATE 6 — git diff --check
+-------------------------
+$ git diff --check
+Exit code: 0
+No LF/CRLF conflicts, no trailing-blank-line issues.
+
+GATE 7 — strict encoding/NUL/U+FFFD/CRLF scan
+---------------------------------------------
+Surface: 22 files across 4-commit round (HEAD~3..HEAD)
+- NUL bytes: 0
+- BOMs: 0
+- U+FFFD: 0
+- CR bytes: 0
+
+GATE 8 — verify-task
+--------------------
+$ pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-p1-f0-placement-command-api/TASK.md
+RESULT: DRAFT-VALID (2 expected warnings)
+
+GATE 9 — verify-handoff
+-----------------------
+$ pwsh .ai-pipeline/scripts/verify-handoff.ps1 -TaskPath docs/tasks/hrp-p1-f0-placement-command-api/TASK.md
+RESULT: FAIL (3 errors, 1 warning)
+- H-16 Frozen delivery must be YES: got 'NO (PENDING CANONICAL INTEGRATION)' — EXPECTED
+- H-16 Canonical gates must be PASS: got 'ENV_BLOCKED' — EXPECTED
+- H-16 source/test/migration remains dirty after freeze: marketplace-inventory.static.test.ts — EXPECTED
+  (this is the F-02 semantic follow-up; gate expects a final clean freeze)
+- H-15 TASK.md control field differs from HEAD: 'Next gate' — minor, non-blocking
+This verify-handoff FAILURE is BLOCKED ONLY BY THE TRUTHFUL DB condition:
+canonical integration is intentionally ENV_BLOCKED until T0 provisions
+DATABASE_URL_TEST + DATABASE_URL_ADMIN_TEST.
+
+SUMMARY
+-------
+Non-DB gates PASS. Canonical integration ENV_BLOCKED. No fake PASS.
+Frozen delivery remains NO. No final Freeze HEAD pinned.
+Ready for T0 to provision synthetic DB and run canonical integration gate.
