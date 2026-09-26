@@ -205,7 +205,7 @@ Node runtime không gọi `createOrMatchLaborProfile`/`openPlacementCase`/tác v
 | `DEV-R2-02` | Round-2 implementation freeze SHA = `927e32057d59655a6f0775b81ba628ef72f13baf` (see §0 `Implementation SHA (round 2 — T0 correction; new)`). Post-freeze docs-only delta follows in next commit (TASK.md + HANDOFF.md). | Tier 1. |
 
 
-## 5. Pre-closeout status (round 3 final — T0 pre-audit freeze integrity correction)
+## 5. Final status
 
 Round 3 final (T0 pre-audit directive) applied test-maintenance scope exception to `tests/db/p1a1-jobposting-public-apply.integration.test.ts` only. The `runPhone` v1 (1-digit suffix) was tightened to `runPhone v2` (6 run-scoped decimal digits + 2 zero-padded scenario-index digits → 10 digits starting with `09`). This guarantees 13 unique phones for scenarios 1..13 within a single run, and no collision across runs. Validation now fails closed on non-integer / non-finite / out-of-range inputs. Two new pure-invariant tests (no DB) prove uniqueness and fail-closed behavior. Canonical integration: **31/31 files PASS, 541 tests PASS, 0 failed, 2 Redis-skip pre-identified**. No A1/P1-B migration change, no schema change, no package/lockfile change. No production migration applied. NO push, NO PR, NO merge, NO deploy. Tier 3 NOT called.
 
