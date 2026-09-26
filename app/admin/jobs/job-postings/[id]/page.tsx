@@ -16,9 +16,23 @@
  *     của `hrp_project_visible_for` để HR_STAFF/ACCOUNTANT không thấy DRAFT
  *     nội bộ (chờ chính sách phân quyền rõ ràng hơn).
  *
- * Public anonymous apply RPC (`/api/public/jobs/[slug]/applications`) KHÔNG
- * bị ảnh hưởng — vẫn tra Project qua `getPublicJobDetail`. A1 sẽ gắn nó với
- * JobPosting khi schema mapping được chốt.
+ * UI truth baseline (hrp-p1-a0.2 / T1C):
+ *   - Canonical public JobPosting detail (`/viec-lam/[slug]`) đã được
+ *     cutover sang JobPosting PUBLISHED trong P1-A1 (ACCEPTED). Không còn
+ *     fallback về `getPublicJobDetail` qua Project cho posting hiện hữu.
+ *   - Anonymous apply RPC (`/api/public/jobs/[slug]/applications`) đã bind
+ *     với JobPosting PUBLISHED + OPEN + linked slot trong P1-B (ACCEPTED),
+ *     dùng SECURITY DEFINER RPC `hrp_public_apply_submission` server-derived
+ *     canonical chain — không còn truy vấn Project/Slot cũ.
+ *   - Hai claim trên là UI truth baseline, không được ghi ngược
+ *     "chờ P1-A1" / "CandidateSubmission.jobPostingId chưa có" trên UI
+ *     production.
+ *
+ * Còn hạn chế thật sự:
+ *   - Gallery media: chưa có; chờ AV4 Media Library integration.
+ *   - Slug rename sau first PUBLISHED: schema lock slug immutability ở
+ *     PUBLISHED (P1-A0 AC-11). Pre-publish rename route chưa được expose —
+ *     vẫn phải tạo JobOpening mới để đổi slug ở trạng thái này.
  */
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
@@ -76,10 +90,10 @@ export default async function AdminJobPostingDetailPage({ params }: PageProps) {
   });
   if (!posting) {
     // Có thể là (a) id không tồn tại, hoặc (b) RLS policy deny (role không
-    // đọc được project liên quan). Trang public `/viec-lam/[slug]` cũng đọc
-    // qua Project (chưa gắn JobPosting), nên ta KHÔNG đoán đây là 404 vì
-    // trang public có thể tồn tại — chỉ trả notFound khi service đã chạy
-    // đầy đủ và cho null.
+    // đọc được project liên quan). Trang public `/viec-lam/[slug]` đã cutover
+    // sang JobPosting PUBLISHED ở P1-A1, KHÔNG còn fallback Project-only —
+    // không thể dùng slug-style fallback ở đây; chỉ trả notFound khi service
+    // đã chạy đầy đủ và cho null.
     notFound();
   }
 
@@ -139,10 +153,11 @@ export default async function AdminJobPostingDetailPage({ params }: PageProps) {
           </div>
 
           <div className="mt-5 flex flex-wrap items-center gap-2">
-            {/* Liên kết tới /viec-lam/[slug] đã được cố ý bỏ: trang public
-                hiện vẫn tra Project (getPublicJobDetail), chưa gắn với
-                JobPosting. Sẽ khôi phục khi có ánh xạ JobPosting.slug → Project.code
-                hợp lệ (chờ AV6 CMS). Xem footer note bên dưới. */}
+            {/* Liên kết tới /viec-lam/[slug] đã được cố ý bỏ trên UI admin này:
+                canonical public detail ở P1-A1 là JobPosting-slug lookup, không
+                dùng internal UUID. URL kiểu `/viec-lam/${slug}` chỉ hợp lệ với
+                slug đã publish; admin cần copy slug từ panel nếu muốn xem
+                render thật. Footer note bên dưới liệt kê phần còn hạn chế. */}
             <Link
               href="/admin/jobs/job-postings"
               className="rounded border px-3 py-1.5 text-sm font-medium"
@@ -156,7 +171,23 @@ export default async function AdminJobPostingDetailPage({ params }: PageProps) {
         {/* Editor shell — P1-A0: real Tiptap wrapper + real persistence API */}
         <JobPostingEditorShell initial={posting} canMutate={canMutate} />
 
-        {/* Footer note — phần bị khóa */}
+        {/* Footer note — UI truth baseline (hrp-p1-a0.2 / T1C).
+            *
+            *  Chỉ giữ lại những capability thật sự còn hạn chế. Những claim về
+            *  "public detail còn Project-backed / anonymous apply chờ P1-A1 /
+            *  CandidateSubmission.jobPostingId chưa có" đã được P1-A1 và P1-B
+            *  (cả hai ACCEPTED trên main) giải quyết — không ghi ngược trên
+            *  UI production. Slug rename là schema-level immutability của
+            *  P1-A0 AC-11 chứ không phải khóa tạm thời.
+            *
+            *  Items còn hạn chế:
+            *  - Gallery media integration: chưa có — AV4 còn chờ. JobPosting
+            *    chỉ mang 4 rich-text field (description/requirements/benefits/
+            *    applicationInstructions).
+            *  - Slug rename sau first PUBLISHED: schema lock slug (P1-A0
+            *    AC-11: published slug immutable). Pre-publish rename route
+            *    chưa được expose; vẫn phải tạo JobOpening mới để đổi slug.
+            */}
         <section
           className="mt-6 rounded-lg border p-4 text-sm"
           style={{
@@ -164,16 +195,26 @@ export default async function AdminJobPostingDetailPage({ params }: PageProps) {
             backgroundColor: 'var(--color-surface-container)',
             color: 'var(--on-surface-variant)',
           }}
-          aria-label="Phần bị khóa"
+          aria-label="Phần còn hạn chế"
+          data-testid="locked-section-detail"
         >
           <h2 className="mb-2 text-sm font-semibold" style={{ color: 'var(--on-surface)' }}>
-            Phần bị khóa (chờ bước sau)
+            Phần còn hạn chế (đang chờ tích hợp)
           </h2>
           <ul className="ml-4 list-disc space-y-1">
-            <li><strong>Mở JobPosting ở trang public</strong> (<code>/viec-lam/[slug]</code>) → trang public hiện vẫn tra Project (qua <code>getPublicJobDetail</code>), chưa gắn với JobPosting. Sẽ được khôi phục khi <code>P1-A1</code> hoàn tất ánh xạ JobPosting.slug → Project.</li>
-            <li><strong>Gallery media</strong> (ảnh đính kèm JobPosting) → chờ AV4 Media Library integration với JobPosting owner.</li>
-            <li><strong>Anonymous apply RPC gắn JobPosting</strong> (tạo CandidateSubmission.jobPostingId) → chờ P1-A1. Hiện tại vẫn qua Project/Slot cũ, không thay đổi.</li>
-            <li><strong>Sửa slug trước publish</strong> → schema lock slug sau first PUBLISHED; pre-publish rename hiện chưa expose. Cần tạo JobOpening mới nếu muốn đổi slug.</li>
+            <li>
+              <strong>Gallery media</strong> (ảnh đính kèm JobPosting) — JobPosting hiện chỉ mang
+              rich-text content qua 4 field <code>descriptionJson</code> /
+              <code>requirementsJson</code> / <code>benefitsJson</code> /
+              <code>applicationInstructionsJson</code>. Media library integration chưa có;
+              dự kiến đến cùng với AV4 Media Library.
+            </li>
+            <li>
+              <strong>Sửa slug trước publish</strong> — schema khóa slug sau lần
+              publish đầu tiên (P1-A0 AC-11: published slug immutable). Hiện chưa
+              expose route rename slug pre-publish; cần tạo JobOpening mới để đổi
+              slug. Đây là schema-level invariant, không phải khóa tạm thời.
+            </li>
           </ul>
         </section>
       </div>
