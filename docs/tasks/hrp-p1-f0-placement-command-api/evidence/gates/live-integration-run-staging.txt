@@ -693,84 +693,84 @@ stdout | tests/db/aff03-public-intake.integration.test.ts > AFF-05A-R1 — Canon
    ✓ AFF-05A-R1 — Canonical initial handling window (R1) > AC-07 (forced abort): future starts_at anomaly → rollback 1351ms
    ✓ AFF-05A-R1 — Canonical initial handling window (R1) > AC-08 (clean chain): owner/SECURITY DEFINER/search_path/EXECUTE ACL + handling SELECT+INSERT only 1738ms
 stdout | tests/db/p1a1-jobposting-public-apply.integration.test.ts > P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.2 — DRAFT / ARCHIVED posting → fail closed > apply với slug của DRAFT posting → JOB_NOT_AVAILABLE (P0011), 0 submissions
-prisma:error 
+prisma:error
 Invalid `prisma.$queryRawUnsafe()` invocation:
 
 
 Raw query failed. Code: `P0011`. Message: `ERROR: JOB_NOT_AVAILABLE`
 
 stdout | tests/db/p1a1-jobposting-public-apply.integration.test.ts > P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.2 — DRAFT / ARCHIVED posting → fail closed > apply với slug của ARCHIVED posting → JOB_NOT_AVAILABLE (P0011), 0 submissions
-prisma:error 
+prisma:error
 Invalid `prisma.$queryRawUnsafe()` invocation:
 
 
 Raw query failed. Code: `P0011`. Message: `ERROR: JOB_NOT_AVAILABLE`
 
 stdout | tests/db/p1a1-jobposting-public-apply.integration.test.ts > P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.3 — JobOpening.status NOT OPEN → fail closed > apply với slug của posting mà JobOpening.status=DRAFT → JOB_NOT_AVAILABLE (P0011)
-prisma:error 
+prisma:error
 Invalid `prisma.$queryRawUnsafe()` invocation:
 
 
 Raw query failed. Code: `P0011`. Message: `ERROR: JOB_NOT_AVAILABLE`
 
 stdout | tests/db/p1a1-jobposting-public-apply.integration.test.ts > P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.3 — JobOpening.status NOT OPEN → fail closed > mở opening A sang FILLED → apply với slug A tiếp theo → JOB_NOT_AVAILABLE
-prisma:error 
+prisma:error
 Invalid `prisma.$queryRawUnsafe()` invocation:
 
 
 Raw query failed. Code: `P0011`. Message: `ERROR: JOB_NOT_AVAILABLE`
 
 stdout | tests/db/p1a1-jobposting-public-apply.integration.test.ts > P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.3 — JobOpening.status NOT OPEN → fail closed > mở opening A sang CANCELLED → apply với slug A → JOB_NOT_AVAILABLE
-prisma:error 
+prisma:error
 Invalid `prisma.$queryRawUnsafe()` invocation:
 
 
 Raw query failed. Code: `P0011`. Message: `ERROR: JOB_NOT_AVAILABLE`
 
 stdout | tests/db/p1a1-jobposting-public-apply.integration.test.ts > P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.4 — old Project.code-only slug → fail closed > apply với slug = Project.code → JOB_NOT_AVAILABLE (P0011) — RPC KHÔNG còn resolve qua Project
-prisma:error 
+prisma:error
 Invalid `prisma.$queryRawUnsafe()` invocation:
 
 
 Raw query failed. Code: `P0011`. Message: `ERROR: JOB_NOT_AVAILABLE`
 
 stdout | tests/db/p1a1-jobposting-public-apply.integration.test.ts > P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.5 — sibling / wrong / expired / full slot → fail closed > apply với p_slot_id = sibling slot B → JOB_NOT_AVAILABLE (canonical chain reject)
-prisma:error 
+prisma:error
 Invalid `prisma.$queryRawUnsafe()` invocation:
 
 
 Raw query failed. Code: `P0011`. Message: `ERROR: JOB_NOT_AVAILABLE`
 
 stdout | tests/db/p1a1-jobposting-public-apply.integration.test.ts > P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.5 — sibling / wrong / expired / full slot → fail closed > apply với p_slot_id = non-existent → JOB_NOT_AVAILABLE
-prisma:error 
+prisma:error
 Invalid `prisma.$queryRawUnsafe()` invocation:
 
 
 Raw query failed. Code: `P0011`. Message: `ERROR: JOB_NOT_AVAILABLE`
 
 stdout | tests/db/p1a1-jobposting-public-apply.integration.test.ts > P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.5 — sibling / wrong / expired / full slot → fail closed > apply với p_slot_id = expired slot → JOB_NOT_AVAILABLE
-prisma:error 
+prisma:error
 Invalid `prisma.$queryRawUnsafe()` invocation:
 
 
 Raw query failed. Code: `P0011`. Message: `ERROR: JOB_NOT_AVAILABLE`
 
 stdout | tests/db/p1a1-jobposting-public-apply.integration.test.ts > P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.5 — sibling / wrong / expired / full slot → fail closed > apply với p_slot_id = full slot → JOB_NOT_AVAILABLE
-prisma:error 
+prisma:error
 Invalid `prisma.$queryRawUnsafe()` invocation:
 
 
 Raw query failed. Code: `P0011`. Message: `ERROR: JOB_NOT_AVAILABLE`
 
 stdout | tests/db/p1a1-jobposting-public-apply.integration.test.ts > P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.7/8/9 — idempotency replay / payload mismatch / duplicate > C-05.8 — replay với payload khác → P0010 (IDEMPOTENCY_PAYLOAD_MISMATCH)
-prisma:error 
+prisma:error
 Invalid `prisma.$queryRawUnsafe()` invocation:
 
 
 Raw query failed. Code: `P0010`. Message: `ERROR: IDEMPOTENCY_PAYLOAD_MISMATCH`
 
 stdout | tests/db/p1a1-jobposting-public-apply.integration.test.ts > P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.7/8/9 — idempotency replay / payload mismatch / duplicate > C-05.9 — duplicate application cùng slot + cùng normalized phone → P0012
-prisma:error 
+prisma:error
 Invalid `prisma.$queryRawUnsafe()` invocation:
 
 
@@ -784,7 +784,7 @@ Raw query failed. Code: `P0012`. Message: `ERROR: DUPLICATE_APPLICATION`
    ✓ P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.11/12 — public projection qua withPublicDb > C-05.12 — JobOpening.staffingOrderSlot của posting A = slot A (canonical, KHÔNG slot B) 736ms
    ✓ P1-A1 canonical public JobPosting + apply (C-04/C-05) > C-05.11/12 — public projection qua withPublicDb > C-05.12 — JobOpening.staffingOrderSlot của posting B = slot B (canonical) 639ms
 stdout | tests/db/placement-lifecycle-integration.test.ts > N3 placement-lifecycle integration — DB-touching proof > (vii) RLS: HR_MANAGER GUC thấy rows; PUBLIC (no GUC) thấy 0 — FORCE RLS enforced
-prisma:error 
+prisma:error
 Invalid `tx.placement.create()` invocation in
 C:\CodeApp\HrP-worktrees\t1b-p1f0-placement-command-planning\tests\db\placement-lifecycle-integration.test.ts:692:24
 
@@ -796,7 +796,7 @@ Error occurred during query execution:
 ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "42501", message: "new row violates row-level security policy for table \"placements\"", severity: "ERROR", detail: None, column: None, hint: None }), transient: false })
 
 stdout | tests/db/placement-lifecycle-integration.test.ts > N3 placement-lifecycle integration — DB-touching proof > (viii) UNIQUE partial index race: concurrent INSERT cùng (case,opening) → both fulfilled, one winner one replayed
-prisma:error 
+prisma:error
 Invalid `tx.placement.create()` invocation in
 C:\CodeApp\HrP-worktrees\t1b-p1f0-placement-command-planning\src\domains\talent\placement.service.ts:168:40
 
@@ -807,7 +807,7 @@ C:\CodeApp\HrP-worktrees\t1b-p1f0-placement-command-planning\src\domains\talent\
 Unique constraint failed on the (not available)
 
 stdout | tests/db/placement-lifecycle-integration.test.ts > N3 placement-lifecycle integration — DB-touching proof > (xiii) RLS/privilege: app_user_writer DELETE bị REVOKE — Placement lịch sử bất khả xóa
-prisma:error 
+prisma:error
 Invalid `tx.placement.delete()` invocation in
 C:\CodeApp\HrP-worktrees\t1b-p1f0-placement-command-planning\tests\db\placement-lifecycle-integration.test.ts:1053:24
 

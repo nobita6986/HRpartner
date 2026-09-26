@@ -50,7 +50,7 @@
 | Canonical gates | `PASS` |
 | Correction batches used | `1` |
 | Implementation SHA | `adbd28f711ccf4f53807fb44a9beb98ba5e22ac4` |
-| Final Freeze HEAD | `PENDING_DOCS_FREEZE_COMMIT` |
+| Final Freeze HEAD | `1658835c3f220fc79dfe09ab11a0172064d0c1a8` (docs/evidence freeze; current pin-only follow-up contains no semantic delta) |
 | Execution round | `6` (C-07 runtime closure and final freeze; correction budget remains one consolidated batch) |
 | Baseline | `a88d87270f51fb63bba8f4f1144304dad4983007` |
 | Predecessor SHA | `1b1d8ac747a424c5d47d6cc777f44bba254fcd51` (preserved) |
@@ -143,7 +143,7 @@ in E-21; production DB/migration were not run.
 | `AC-15` | No outbox/event producer: route KHÔNG import `@/src/shared/integrity/outbox/**`. | `src/domains/talent/placement.commands.routes.test.ts` AST guard | `npx.cmd vitest run src/domains/talent/placement.commands.routes.test.ts` → exit 0 (54 passed) (E-05) | none |
 | `AC-16` | No migration: `prisma/migrations/` 0 hit. Client-managed EFFECTIVE atomic close. HRP-managed EFFECTIVE zero mutation. | static (git diff) + `npx prisma validate` | `npx prisma validate` → exit 0 (E-01) | integration final DB inspection deferred to BLK-01 |
 | `AC-17` | `assertSourceCandidateSubmissionIntegrity` no catch-all; DB/RLS error propagate; `createPlacement` not called when `findUnique` rejects. | `src/domains/talent/placement.commands.test.ts` it-block "findUnique reject → createPlacement not called" + `src/domains/talent/placement.commands.ts:assertSourceCandidateSubmissionIntegrity` | `npx.cmd vitest run src/domains/talent/placement.commands.test.ts` → exit 0 (15 passed) (E-12) | none |
-| `AC-18` | Dual-URL env readiness and posture fail closed; writer/admin same host+port+db, writer non-super/non-bypassrls, admin bypassrls. | preflight + posture scripts | `POSTURE_OK writer_is_writer admin_is_admin same_target` (E-21) | none |
+| `AC-18` | Dual-URL env readiness and posture fail closed; writer/admin same host+port+db, writer non-super/non-bypassrls, admin bypassrls. | preflight + posture scripts | `CI_INTEGRATION_STRICT=1 npm run test:integration` → `POSTURE_OK writer_is_writer admin_is_admin same_target` (E-21) | none |
 
 ### 2.2 C-by-C evidence trail
 

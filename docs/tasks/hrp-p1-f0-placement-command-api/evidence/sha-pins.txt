@@ -14,7 +14,7 @@ Semantic Implementation SHA:
   adbd28f711ccf4f53807fb44a9beb98ba5e22ac4
 
 Final docs/evidence freeze commit:
-  PENDING_DOCS_FREEZE_COMMIT
+  1658835c3f220fc79dfe09ab11a0172064d0c1a8
 
 Preserved correction history includes:
   927e32057d59655a6f0775b81ba628ef72f13baf

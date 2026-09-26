@@ -12,7 +12,7 @@
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
 | Audit reason | CRITICAL lane default LIGHT. F0 wraps production-ready placement.service with role-level gate + RLS GUC + idempotency wrap + error-to-HTTP mapping. LIGHT audit ensures changed surface (route mới + adapter mới) đối chiếu với freeze SHA. Catalog + seed KHÔNG thuộc in-scope (C-02). |
-| Spec version | `v1.4` (C-07 closure; T0 synthetic-staging runtime gate PASS) |
+| Spec version | `v1.4` |
 | Status | `READY_FOR_AUDIT` |
 | Contract gate | `ACCEPTED` |
 | Decision state | `CLOSED` |

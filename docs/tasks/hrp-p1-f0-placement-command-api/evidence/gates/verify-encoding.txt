@@ -1,35 +1,11 @@
-verify-encoding.ps1 -- P1-F0 round-2 v1.2 correction batch
-========================================================
-
-Status: SCRIPT NOT PRESENT ON THIS BRANCH. (pre-reversal; will be re-attempted after C-07 closure correction runtime PASS.)
-
-The original repo has .ai-pipeline/scripts/verify-encoding.ps1 as an
-untracked file in the parent worktree. On the clean correction branch
-codex/t1b-p1f0-placement-command-clean-correction, the script is NOT present.
-
-Mitigation: the round-2 instruction asks for "strict UTF-8 no-BOM scan
-tren toan changed surface" -- this is performed manually via a Node.js
-scan over all changed surface files (see encoding-bom-scan.txt).
-
-Scan result: ALL CHANGED FILES CLEAN (no BOM, no CRLF, valid UTF-8).
-
-If T0 wants verify-encoding.ps1 on the clean branch, T1B can stage it
-in a separate docs/tooling commit (NOT part of the semantic Implementation
-commit). For now, manual scan suffices.
-
-Round: 2 (v1.2)
-
-=====================================================================
-POST-REVERSAL UTF-8 status (2026-09-26 — C-07 closure correction in-progress)
-=====================================================================
-
-Command: Node manual UTF-8 no-BOM / LF-only scan over the post-reversal
-changed surface (test-infra edit + 14 docs/evidence files modified
-during control-field rollback).
-
-Result: ALL CHANGED FILES CLEAN (no BOM, no CRLF, valid UTF-8). See
-`encoding-bom-scan.txt` for the canonical scan output.
-
-After runtime PASS + final freeze, this file will be SUPERSEDED by
-a fresh verify-encoding.ps1 run (if T0 stages the script on the
-clean branch per T0's option in the pre-reversal evidence).
+STRICT UTF-8 NO-BOM / LF-ONLY FINAL FREEZE SCAN
+docs/tasks/hrp-p1-f0-placement-command-api/evidence/corrections/C-07-closure.txt UTF8=True BOM=False CR=False RESULT=PASS
+docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/git-diff-check.txt UTF8=True BOM=False CR=False RESULT=PASS
+docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/live-integration-run-staging.txt UTF8=True BOM=False CR=False RESULT=PASS
+docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/verify-encoding.txt UTF8=True BOM=False CR=False RESULT=PASS
+docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/verify-handoff.txt UTF8=True BOM=False CR=False RESULT=PASS
+docs/tasks/hrp-p1-f0-placement-command-api/evidence/gates/verify-task.txt UTF8=True BOM=False CR=False RESULT=PASS
+docs/tasks/hrp-p1-f0-placement-command-api/evidence/sha-pins.txt UTF8=True BOM=False CR=False RESULT=PASS
+docs/tasks/hrp-p1-f0-placement-command-api/HANDOFF.md UTF8=True BOM=False CR=False RESULT=PASS
+docs/tasks/hrp-p1-f0-placement-command-api/TASK.md UTF8=True BOM=False CR=False RESULT=PASS
+RESULT: PASS
