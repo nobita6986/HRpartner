@@ -1,11 +1,10 @@
 # HANDOFF — `hrp-p1-f0-placement-command-api`
 
-> **CURRENT — C-07 closure / final freeze v1.4.** T0 reset dedicated
-> synthetic staging, applied all 53 branch migrations, and reproduced MP-2
-> `11/11 ×3`, P1-F0 `20/20 ×3`, and full canonical strict `32/32 files`,
-> `561 passed`, `0 failed`, `2` pre-identified Redis skips. Writer/admin
-> posture PASS; production DB/migration NOT_RUN. Status `READY_FOR_AUDIT`;
-> frozen delivery `YES`; next gate `TIER3_LIGHT_AUDIT`.
+> **CURRENT — ACCEPTED closeout v1.5.** Tier 3 LIGHT verdict PASS was adopted,
+> PR #58 merged to `main`, post-merge CI and Vercel passed, and all five
+> production command routes returned 401 to unauthenticated POST requests.
+> No production schema or migration action was required. Status `ACCEPTED`;
+> next gate `NONE — MERGED_AND_PRODUCTION_VERIFIED`.
 >
 > **HISTORICAL — Round 5 REVERSAL (v1.3-revoked — T0 verdict CHANGES_REQUIRED /
 > NOT_READY_FOR_AUDIT).**
@@ -37,19 +36,20 @@
 | Task slug | `hrp-p1-f0-placement-command-api` |
 | Delivery protocol | `V2_FAST_FREEZE` |
 | Work type | `CODE` |
-| Spec version | `v1.4` |
-| Status | `READY_FOR_AUDIT` |
+| Spec version | `v1.5` |
+| Status | `ACCEPTED` |
 | Contract gate | `ACCEPTED` |
 | Decision state | `CLOSED` |
 | Audit mode | `LIGHT` |
 | Audit mode (phải khớp TASK) | `LIGHT` |
 | Assurance lane | `CRITICAL` |
 | Canonical integration | `PASS` — MP-2 `11/11 ×3`; P1-F0 `20/20 ×3`; full canonical strict `32/32 files`, `561 passed`, `0 failed`, `2` Redis skips |
-| Audit eligibility | `ELIGIBLE` |
+| Audit eligibility | `COMPLETED` — Tier 3 LIGHT PASS |
 | Frozen delivery | `YES` |
 | Canonical gates | `PASS` |
 | Correction batches used | `1` |
-| Implementation SHA | `adbd28f711ccf4f53807fb44a9beb98ba5e22ac4` |
+| Implementation SHA | `a91f1bed9ea45a59ae1a734cd2ffbdfa42b7f4d9` |
+| Semantic Implementation SHA | `adbd28f711ccf4f53807fb44a9beb98ba5e22ac4` (frozen P1-F0 semantic delivery) |
 | Final Freeze HEAD | `1658835c3f220fc79dfe09ab11a0172064d0c1a8` (docs/evidence freeze; current pin-only follow-up contains no semantic delta) |
 | Execution round | `6` (C-07 runtime closure and final freeze; correction budget remains one consolidated batch) |
 | Baseline | `a88d87270f51fb63bba8f4f1144304dad4983007` |
@@ -202,12 +202,25 @@ in E-21; production DB/migration were not run.
 | Tests (unit + static + integration) | Unit 2756 passed / 9 skipped; MP-2 `11/11 ×3`; P1-F0 `20/20 ×3`; canonical 561 passed / 0 failed / 2 skipped. |
 | Gates | PASS. |
 | Canonical integration | PASS on dedicated synthetic staging; production DB/migration NOT_RUN. |
-| HANDOFF | `READY_FOR_AUDIT`. |
-| Audit eligibility | `ELIGIBLE`. Tier 3 LIGHT may audit the frozen delivery. |
-| Push / PR / Tier 3 / merge / deploy | NONE performed. |
+| HANDOFF | `ACCEPTED`. |
+| Audit eligibility | `COMPLETED`. Tier 3 LIGHT verdict PASS adopted. |
+| Push / PR / Tier 3 / merge / deploy | PR #58 merged; Vercel deployment and read-only/auth-only production smoke verified. No migration required. |
 | Archive branch | PRESERVED (`codex/t1b-p1f0-placement-command-planning` nguyên vẹn, KHÔNG amend/reset/rebase/force-push). |
 | Pipeline tooling (`c0f4dc6`) | Separated. KHÔNG cherry-pick vào clean delivery. Giữ trên archive branch; T0 review/land riêng. |
 
-**Stop signal.** C-07 closure and final freeze complete. Await Tier 3 LIGHT audit; T0 retains push/PR/merge/production authority.
+## 6. Accepted production closeout
 
-Handoff status: READY_FOR_AUDIT
+| Gate | Evidence | Result |
+|---|---|---|
+| Tier 3 audit | `AUDIT.md` SHA-256 `4b48336c7a9403f8f0132c54162db1ae8082c400eb2677b0e10815dcf61636a7`; verdict PASS | PASS |
+| Audit adoption | `d7cdd309` preserves `AUDIT.md` byte identity; evidence-only trailing blank lines normalized | PASS |
+| Main reconciliation | `fa5d0c043c757df926d30d34f927870a47764cc9` preserves P1-F0 plus accepted main registry entries | PASS |
+| PR merge | PR #58 merged at `a91f1bed9ea45a59ae1a734cd2ffbdfa42b7f4d9` | PASS |
+| Post-merge CI | GitHub Actions run `36254047212`: Quality and full Integration passed | PASS |
+| Deployment | Vercel status for accepted main SHA: deployment completed | PASS |
+| Production smoke | Unauthenticated POST to create, confirm, effective, fail, and cancel routes returned HTTP 401 | PASS |
+| Database gate | P1-F0 contains no schema/migration delta; production migration was not required or run | NOT_REQUIRED |
+
+No source, test, schema, migration, package, or `AUDIT.md` bytes changed during this docs-only closeout. `AUD-001..AUD-003` remain recorded as non-blocking P3 observations.
+
+Handoff status: ACCEPTED
