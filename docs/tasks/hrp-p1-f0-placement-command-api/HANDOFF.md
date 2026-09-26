@@ -35,7 +35,7 @@
 | Canonical gates | `PASS` |
 | Correction batches used | `1` |
 | Implementation SHA | `eca445bc641542d40dea652d498ff5dcb5888623` |
-| Final Freeze HEAD | `<pinned after this docs/evidence freeze commit lands>` |
+| Final Freeze HEAD | `45bc5ec5ad49a6555e3e3c54aa79d409b033cab9` |
 | Execution round | `5` (round 1 = v1.0→v1.1 contract correction; round 2 = v1.2 pre-audit correction batch C-01..C-06; round 5 = v1.3 synthetic-DB gate correction + final freeze C-07) |
 | Baseline | `a88d87270f51fb63bba8f4f1144304dad4983007` |
 | Predecessor SHA | `1b1d8ac747a424c5d47d6cc777f44bba254fcd51` (preserved) |

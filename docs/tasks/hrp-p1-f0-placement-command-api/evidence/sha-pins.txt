@@ -24,14 +24,14 @@ Implementation SHA chain (latest first, used for HANDOFF pin):
   9274ccd93f7541d3dfadecf929e48d4c38252690 - original implementation
 
 Docs-only commits (NOT source/test/tooling/config):
-  TBD (post-this-write) - docs(p1-f0): round-5 final freeze (TASK + HANDOFF + sanitized evidence)
+  45bc5ec5ad49a6555e3e3c54aa79d409b033cab9 - docs(p1-f0): round-5 final freeze (TASK v1.3 + HANDOFF READY_FOR_AUDIT + sanitized evidence)
   9fcf69f0f8d1822cdf9a3301f21f7fce315103df - F-04C docs checkpoint
   336486cb60ff4a3c0e5e51e3b7e43356a428c80a - F-01/F-03 round-2 follow-up
   032efb1d6168ee5a5f1600e0c5ba2f7f7848a119 - round-2 docs freeze v1.2 (PRE-AUDIT CHECKPOINT)
 
 HANDOFF Implementation SHA:  eca445bc641542d40dea652d498ff5dcb5888623  (round-5 C-07)
 HANDOFF Pre-audit checkpoint: 032efb1d6168ee5a5f1600e0c5ba2f7f7848a119 (round-2 docs freeze)
-HANDOFF Final Freeze HEAD:    TBD - pinned after the docs/evidence freeze commit lands
+HANDOFF Final Freeze HEAD:    45bc5ec5ad49a6555e3e3c54aa79d409b033cab9  (round-5 docs/evidence freeze commit)
 
 Next gate: TIER3_LIGHT_AUDIT (T0 owns the post-freeze audit handoff)
 
