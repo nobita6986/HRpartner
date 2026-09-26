@@ -5,7 +5,7 @@
 | Field | Value |
 |---|---|
 | Task slug | `hrp-p1-e0-recruiter-workbench-read-model` |
-| Spec version | `v1.4` |
+| Spec version | `v1.5` |
 | Audit mode (phải khớp TASK) | `LIGHT` |
 | Assurance lane | `CRITICAL` |
 | Delivery protocol | `V2_FAST_FREEZE` |
@@ -21,13 +21,13 @@
 | Correction batches used | `1` |
 | Correction batches used note | V2 base budget = 1 batch. The T0-authorized integrity exception (covering E0-F10..F-12 + E0-F14..F-16 + E0-F17..F-19) is OUTSIDE the V2 base budget — it is an override of the budget, NOT a separate V2 batch. Therefore `Correction batches used = 1` (the planned batch E0-F01..E0-F09). The T0-authorized exception narrative is preserved in HANDOFF §1.1, §4.4 (BLK-02 + round-3 sub-section), and §5. Round-1 batch (E0-F01..E0-F09) and the docs-freeze for that batch are preserved unchanged. |
 | Execution round | `1` (correction budget exception #2 active) |
-| Current audit round | `0` (chưa mở audit; phụ thuộc `TIER3_LIGHT_AUDIT`) |
-| Status | `READY_FOR_AUDIT` |
+| Current audit round | `1` |
+| Status | `ACCEPTED` |
 | Executor | `Tier 1` |
 | Worktree | `C:\CodeApp\HrP-worktrees\t1a-p1e-recruiter-workbench` |
 | Branch | `codex/t1a-p1e-recruiter-workbench` |
-| Next gate | `TIER3_LIGHT_AUDIT` |
-| Docs checkpoint SHA | `pending` — pinned AFTER post-DB freeze (F-13: docs commit must not self-pin; pinning here creates an infinite amend loop). The current docs commit SHA is recorded in the round-2 docs checkpoint commit message but is NOT recorded inside this HANDOFF per F-13. |
+| Next gate | `NONE — MERGED_AND_PRODUCTION_VERIFIED` |
+| Docs checkpoint SHA | `e6e1180e8f13ab7dfe28d2ea044e472d09cdbc2a` (pre-audit docs/evidence freeze); Tier 3 audit adopted at `096ba32edd76f0ddcd3342b929c9b2bc6a4a888b` |
 
 ## 1. Outcome and changed surface
 
@@ -240,7 +240,7 @@ T0-authorized correction batch 3/3 (the final batch). The F-17/F-18/F-19 correct
 
 Implementation SHA `e0bc2ca6078d0d4c2ee5ff80255a8f67ac996ed8` is the post-F-17/F-18/F-19 semantic test correction commit. The downstream docs/evidence freeze commit (commit 10) will pin this SHA in TASK.md + HANDOFF.md control fields and is reported up to T0 together with the 3× PASS proof.
 
-`Handoff status: READY_FOR_AUDIT`
+`Historical pre-closeout state = READY_FOR_AUDIT` (superseded by the production closeout below).
 
 ## 5. Final status
 
@@ -252,9 +252,18 @@ Implementation SHA `e0bc2ca6078d0d4c2ee5ff80255a8f67ac996ed8` is the post-F-17/F
 | `verify-handoff.ps1` | `RESULT: PASS` — H-16/H-17/H-18 pass cleanly under Frozen delivery=YES / Canonical gates=PASS / Audit eligibility=ELIGIBLE / Status=READY_FOR_AUDIT. |
 | Required-relation-sweep | PASS — round-3 does not introduce any new RLS-required relation select (F-17/F-18/F-19 are fixture-only). |
 | Integration lane | `PASS` — synthetic-DB gate returned 20/20 PASS ×3 consecutive at SHA `e0bc2ca6`. Full canonical integration suite 561 PASS / 2 skipped / 0 FAIL. |
-| Tier 3 call | NOT triggered. `Status = READY_FOR_AUDIT`; `Current audit round = 0` awaiting T0 review of the freeze SHAs. |
+| Tier 3 call | LIGHT audit round 1 completed with verdict `CONDITIONAL`; T0 accepted it as non-blocking because AUD-N01..AUD-N04 are P3 and T0 DB evidence covers AC-09..AC-13. Audit artifact adopted byte-exact at `096ba32edd76f0ddcd3342b929c9b2bc6a4a888b`. |
 | Frozen delivery | `YES`. Implementation SHA pinned at `e0bc2ca6078d0d4c2ee5ff80255a8f67ac996ed8`. All prior commits (`20819f93`, `318ca93e`, `aa62d834`, `e7793af7`, `8a65e775`, `9eb0fbe0`, `ff1c58e0`) preserved unmodified. |
-| Push / PR | Branch `codex/t1a-p1e-recruiter-workbench` will NOT be pushed until T0 reviews the freeze SHAs. No PR opened. |
-| Tier 0 round | Stopped at docs/evidence freeze commit (commit 10). Awaiting T0 review. |
+| Push / PR | PR #54 was squash-merged into `main` at `c647fc6a8d5443c909c411d25522c43a134937fb`. |
+| Tier 0 round | Main CI run `36251128370` PASS; Vercel production deployment SUCCESS; read-only production smoke PASS. |
 
-`Handoff status: READY_FOR_AUDIT` (do `T0_CI_SYNTHETIC_DB_GATE` đã pass 20/20 ×3, freeze commit landed; awaiting T0 review).
+## 6. Closeout
+
+- **Audit disposition:** Tier 3 LIGHT round 1 `CONDITIONAL` accepted by T0. All locally measurable ACs passed; AC-09..AC-13 carried authoritative T0 synthetic evidence at Implementation SHA `e0bc2ca6078d0d4c2ee5ff80255a8f67ac996ed8` (20/20 PASS ×3; canonical integration 561 PASS / 2 skipped / 0 failed). AUD-N01..AUD-N04 remain P3 non-blocking debt.
+- **Merge:** PR #54 audit-adoption HEAD `096ba32edd76f0ddcd3342b929c9b2bc6a4a888b` was squash-merged into `main` as `c647fc6a8d5443c909c411d25522c43a134937fb`.
+- **Main verification:** CI run `36251128370` passed Quality and Integration. The Integration job applied all 39 migrations to its clean PostgreSQL container, confirmed no drift, and ran the fail-closed integration suite successfully.
+- **Production deployment:** Vercel status for merge commit `c647fc6a8d5443c909c411d25522c43a134937fb` is SUCCESS. No production migration was required because P1-E0 contains no schema or migration change.
+- **Read-only smoke:** `GET https://www.hrpartner.vn/` returned 200. Unauthenticated `GET /api/admin/recruiter-workbench?page=1&pageSize=20` returned 401, confirming the production route is deployed and the auth boundary remains fail-closed. No production data was written.
+- **Dependency release:** P1-E0 interface is frozen and `ACCEPTED`; P1-E1 may remove `WAIT_P1_E0_INTERFACE_FREEZE` in its own task transition.
+
+Handoff status: ACCEPTED
