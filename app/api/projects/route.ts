@@ -2,6 +2,7 @@
  * GET /api/projects — M5 Admin Master Data
  * POST /api/projects — M7 Admin Projects CRUD
  */
+import type { Prisma } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
 import { getPrisma } from '@/src/lib/db';
 import { AuthSessionError, getAuthContext } from '@/src/shared/auth/auth-context';
@@ -22,6 +23,46 @@ const VIEWER_ROLES = new Set([
   'ADMIN', 'HR_MANAGER', 'HR_STAFF', 'PM', 'ACCOUNTANT', 'DIRECTOR',
 ]);
 const ADMIN_ROLES = new Set(['ADMIN', 'PM', 'HR_MANAGER']);
+
+/**
+ * Stable JSON projection for the project master list.
+ *
+ * Prisma returns `budgetVnd` as a native bigint. Passing a raw Project row to
+ * `NextResponse.json` makes JSON.stringify throw at runtime whenever that
+ * column is populated. Keep the endpoint backward-compatible by returning the
+ * value as a decimal string and by allowlisting the relation fields explicitly.
+ */
+const PROJECT_LIST_SELECT = {
+  id: true,
+  code: true,
+  clientCompanyId: true,
+  name: true,
+  pmUserId: true,
+  subPmUserId1: true,
+  subPmUserId2: true,
+  siteAddress: true,
+  startDate: true,
+  endDate: true,
+  status: true,
+  budgetVnd: true,
+  billingTerms: true,
+  quota: true,
+  filled: true,
+  version: true,
+  isPublic: true,
+  clientCompanyName: true,
+  createdAt: true,
+  clientCompany: { select: { id: true, name: true, code: true } },
+} satisfies Prisma.ProjectSelect;
+
+type ProjectListRow = Prisma.ProjectGetPayload<{ select: typeof PROJECT_LIST_SELECT }>;
+
+function toProjectListDto(row: ProjectListRow) {
+  return {
+    ...row,
+    budgetVnd: row.budgetVnd === null ? null : row.budgetVnd.toString(),
+  };
+}
 
 export async function GET(req: NextRequest) {
   let ctx;
@@ -62,7 +103,7 @@ export async function GET(req: NextRequest) {
       Promise.all([
         tx.project.findMany({
           where,
-          include: { clientCompany: { select: { id: true, name: true, code: true } } },
+          select: PROJECT_LIST_SELECT,
           orderBy: { createdAt: 'desc' },
           take,
           skip,
@@ -70,7 +111,7 @@ export async function GET(req: NextRequest) {
         tx.project.count({ where }),
       ]),
     );
-    return NextResponse.json({ projects: rows, total, take, skip });
+    return NextResponse.json({ projects: rows.map(toProjectListDto), total, take, skip });
   } catch (err) {
     if (err instanceof AuthScopeError) {
       return NextResponse.json(
@@ -79,7 +120,10 @@ export async function GET(req: NextRequest) {
       );
     }
     console.error('[api/projects] query error:', err);
-    return NextResponse.json({ error: 'INTERNAL', message: 'Failed to query projects' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'INTERNAL', message: 'Không thể tải danh sách dự án.' },
+      { status: 500 },
+    );
   }
 }
 
