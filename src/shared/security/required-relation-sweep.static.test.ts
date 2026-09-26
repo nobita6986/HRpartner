@@ -111,6 +111,13 @@ const EXPECTED_HITS = [
   // mà MKT thoả khi `Project.is_public=true` (migration s1_rls_project 2026-08-16).
   'src/domains/job-board/public.service.ts:666 staffingOrder',
   'src/domains/job-board/public.service.ts:673 project',
+  // hrp-p1-e0 (2026-09-26): Recruiter Workbench read-model cần `fullName`/`phone`/`cccdNumber`/
+  // `identityVerification`/`completeness` để build `RecruiterWorkbenchRow.candidate` (§4.3 RQ-02).
+  // `LaborProfile` là quan hệ BẮT BUỘC trong schema `placement_case` (không optional, không list) — sweep
+  // đếm là đúng. An toàn vì query chạy trong `withDbContext(... role=ADMIN | HR_MANAGER | HR_STAFF)`
+  // với GUC session-scoped nên RLS `hrp_labor_profile_visible_for` đã lọc theo role/handler pool.
+  // PII `phone`/`cccdNumber` được mask khi thiếu `CAN_VIEW_WORKER_SENSITIVE` (DEC-05).
+  'src/domains/talent/recruiter-workbench.read-service.ts:475 laborProfile',
 ] as const;
 
 interface SourceEntry {
@@ -306,7 +313,12 @@ describe('quan hệ BẮT BUỘC trên bảng bị RLS che: tập vị trí sele
     // → 136/139/218/226) — không đếm thêm, không trừ.
     // Sau P1-A1 (2026-09-25): +2 dòng ở public.service.ts (staffingOrder, project) do nguồn
     // chuyển từ Project sang JobPosting chain. Tổng src = 18, tổng all = 21.
-    expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(18);
+    // Sau P1-E0 (2026-09-26): +1 dòng ở recruiter-workbench.read-service.ts:475 (laborProfile) — quan hệ
+    // bắt buộc trong schema `placement_case`, cần thiết để project `fullName`/`phone`/`cccdNumber`/
+    // `identityVerification`/`completeness` (§4.3 RQ-02). Chạy trong `withDbContext` nên RLS
+    // `hrp_labor_profile_visible_for` đã lọc; PII được mask khi thiếu `CAN_VIEW_WORKER_SENSITIVE`.
+    // Tổng src = 19, tổng all = 22.
+    expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(19);
   });
 });
 
