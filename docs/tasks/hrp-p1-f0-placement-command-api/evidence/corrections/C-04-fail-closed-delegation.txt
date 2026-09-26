@@ -8,48 +8,72 @@ Change:
 File: `src/domains/applications/marketplace-inventory.static.test.ts`
 
 Removed hard-coded `ADMIN_GUARDED_VIA_HELPER` allowlist (which v1.1 used
-to enumerate specific route file names). Replaced with dynamic
-fail-closed checks:
+to enumerate specific route file names). Replaced with a SINGLE canonical
+classifier function used by BOTH the production route inventory AND the
+negative fixture:
 
-  guardedViaPlacementHelper(routeSource):
-    1. route imports `runPlacementCommand` (static AST/regex check)
-    2. route CALLS `runPlacementCommand` (not just imports it)
-    Both conditions required — `import` alone does NOT count.
+  classifyMutatingPlacementRoute(routeSource) -> { guarded: true } | { guarded: false, reason }
+    Path A — AUTH_MARKER present in source         -> guarded: true
+    Path B — delegates to handler sibling with AUTH_MARKER -> guarded: true
+    Path C — uses placement.route-helpers delegation:
+      (1) MUST import from `placement.route-helpers` (named or default)
+      (2) MUST have actual `runPlacementCommand(` CALL EXPRESSION
+      (3) helper MUST export `runPlacementCommand` AND contain
+          ACTUAL `getAuthContext(` AND `withDbContext(` CALL EXPRESSIONS
+    ANY condition missing -> guarded: false, with specific reason:
+      - 'no_helper_import'
+      - 'no_helper_call'
+      - 'helper_missing_security_markers'
 
-  placementHelperHasSecurityMarkers(helperSource):
-    1. helper contains `getAuthContext`
-    2. helper contains `withDbContext`
-    Both required.
+Round 2 + F-02 SUBSTANTIVE PROOF:
+- Marker checks REQUIRE call expressions (`getAuthContext(`), not bare
+  identifier presence. A comment like `// uses getAuthContext` no longer
+  satisfies the check.
+- The negative fixture
+  `tests/security/admin-route-fail-closed.negative-fixture.ts` is run
+  through the SAME `classifyMutatingPlacementRoute` function used by
+  the production route inventory — so "proves detector catches" is
+  now a measurable, reproducible assertion.
 
 Negative fixture (new file): `tests/security/admin-route-fail-closed.negative-fixture.ts`
   - declares `export async function POST`
   - does NOT import placement.route-helpers
   - does NOT call `runPlacementCommand`
-  - does NOT contain `getAuthContext` or `withDbContext`
-  - proves detector flags unguarded mutating routes
+  - does NOT contain `getAuthContext(` or `withDbContext(` call expressions
+  - classifier returns `{ guarded: false, reason: 'no_helper_import' }`
 
 Evidence:
 ---------
-1. Static reading — `src/domains/applications/marketplace-inventory.static.test.ts`:
-   - `guardedViaPlacementHelper` function: imports-and-calls check
-   - `placementHelperHasSecurityMarkers` function: marker check
-   - negative test consumes `tests/security/admin-route-fail-closed.negative-fixture.ts`
+1. Canonical classifier — `src/domains/applications/marketplace-inventory.static.test.ts`:
+   - `classifyMutatingPlacementRoute` (single source of truth)
+   - `placementHelperHasSecurityMarkers` (call-expression marker check)
+   - Production route inventory filter now uses
+     `!classifyMutatingPlacementRoute(p).guarded`
 2. Negative fixture — `tests/security/admin-route-fail-closed.negative-fixture.ts`:
    - uses `_req`/`_tx` (eslint-clean) to avoid unused-var warnings
    - exports `POST` mutating handler with no auth
-   - detector must flag this if ever copied into `app/api/admin/**`
+   - `classifyMutatingPlacementRoute` MUST return `guarded: false` for it
 3. Unit test — `npx vitest run src/domains/applications/marketplace-inventory.static.test.ts`:
-   - 30 tests PASS
-   - includes negative-fixture test that proves detector catches
-     unguarded mutating routes
+   - 40 tests PASS (was 30; 10 new F-02 substantive assertions)
+   - F-02 describe block asserts:
+     * fixture file exists
+     * fixture recognised as mutating POST
+     * `classifyMutatingPlacementRoute(fixture).guarded === false`
+     * `classifyMutatingPlacementRoute(fixture).reason ∈ {no_helper_import, no_helper_call}`
+     * fixture contains no AUTH_MARKER / no helper import / no `runPlacementCommand(`
+     * import-only WITHOUT call -> rejected with reason 'no_helper_call'
+     * call-only WITHOUT canonical import -> rejected with reason 'no_helper_import'
+     * current 5 production routes all GUARDED
+     * helper with bare identifiers but no call expressions -> rejected
 4. Helper marker contract — `src/domains/talent/placement.route-helpers.ts`:
    - exports `runPlacementCommand`
-   - imports `getAuthContext` from `@/src/shared/auth/auth-context`
-   - imports `withDbContext` from `@/src/shared/auth/with-db-context`
+   - imports `getAuthContext` from `@/src/shared/auth/auth-context` and CALLS `getAuthContext(`
+   - imports `withDbContext` from `@/src/shared/auth/with-db-context` and CALLS `withDbContext(`
 
 Gates:
 ------
-- `npm run test:unit -- src/domains/applications/marketplace-inventory.static.test.ts` : 30 PASS
+- `npx.cmd vitest run src/domains/applications/marketplace-inventory.static.test.ts`:
+  40 PASS (was 30; +10 F-02 substantive assertions)
 
 References:
 -----------

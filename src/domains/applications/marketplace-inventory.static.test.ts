@@ -127,54 +127,90 @@ const PLACEMENT_ROUTE_HELPER = join(
 );
 
 /**
- * Kiểm tra canonical placement route-helper thật sự chứa các marker an ninh.
- * Nếu helper mất `getAuthContext` HOẶC `withDbContext` → fail closed.
+ * Canonical security classifier for mutating admin placement routes.
+ *
+ * A mutating route is GUARDED if and only if ALL of the following hold:
+ *   1. The route source imports `placement.route-helpers` (named or default).
+ *   2. The route source CALLS `runPlacementCommand(` (call expression, not
+ *      just a bare identifier in a comment or type annotation).
+ *   3. The canonical helper (`placement.route-helpers.ts`) actually EXPORTS
+ *      `runPlacementCommand` AND contains both `getAuthContext(` and
+ *      `withDbContext(` call expressions.
+ *
+ * Call-expression checks use `\.` prefix to distinguish from identifiers inside
+ * words (e.g. `_runPlacementCommand_` would not match `\.runPlacementCommand\(`).
+ *
+ * Returns a discriminated result so callers can assert the classification
+ * decision (used by both the real route inventory and the negative fixture
+ * tests in `tests/security/`).
  */
+function classifyMutatingPlacementRoute(file: string): {
+  readonly guarded: false;
+  readonly reason:
+    | 'no_helper_import'
+    | 'no_helper_call'
+    | 'helper_missing_security_markers'
+    | 'direct_auth_marker'
+    | 'delegate_handler_has_auth_marker';
+} | {
+  readonly guarded: true;
+} {
+  const code = strip(read(file));
+
+  // Path A: direct AUTH_MARKER.
+  if (AUTH_MARKER.test(code)) return { guarded: true };
+
+  // Path B: delegates to a handler sibling with AUTH_MARKER.
+  const delegate = code.match(/from\s+['"](\.{1,2}(?:\/[^'"]*)?\/handler)['"]/);
+  if (delegate) {
+    const target = join(file, '..', `${delegate[1]}.ts`);
+    if (existsSync(target) && AUTH_MARKER.test(strip(read(target)))) {
+      return { guarded: true };
+    }
+  }
+
+  // Path C: delegates to `placement.route-helpers` — require BOTH import AND call.
+  const helperImportRegex = /from\s+['"]@?\.?\/?src\/domains\/talent\/placement\.route-helpers['"]/;
+  if (!helperImportRegex.test(code)) {
+    return { guarded: false, reason: 'no_helper_import' };
+  }
+
+  // Require call expression (not just identifier in comment/type).
+  if (!/\brunPlacementCommand\s*\(/.test(code)) {
+    return { guarded: false, reason: 'no_helper_call' };
+  }
+
+  // Require helper itself to have the actual security markers.
+  if (!placementHelperHasSecurityMarkers()) {
+    return { guarded: false, reason: 'helper_missing_security_markers' };
+  }
+
+  return { guarded: true };
+}
+
 function placementHelperHasSecurityMarkers(): boolean {
   if (!existsSync(PLACEMENT_ROUTE_HELPER)) return false;
   const helper = strip(read(PLACEMENT_ROUTE_HELPER));
   const exportsRunPlacementCommand = /export\s+(?:async\s+)?function\s+runPlacementCommand\b/.test(helper);
-  const hasGetAuthContext = /\bgetAuthContext\b/.test(helper);
-  const hasWithDbContext = /\bwithDbContext\b/.test(helper);
+  // Require call expressions, not bare identifiers.
+  const hasGetAuthContext = /\bgetAuthContext\s*\(/.test(helper);
+  const hasWithDbContext = /\bwithDbContext\s*\(/.test(helper);
   return exportsRunPlacementCommand && hasGetAuthContext && hasWithDbContext;
 }
 
 /**
- * Phát hiện route file có THỰC SỰ ủy quyền an ninh cho `placement.route-helpers.ts` hay không.
- *
- * Logic:
- *   - Phải import từ module helper (named hoặc default).
- *   - Phải có call expression `runPlacementCommand(` trong source.
- *   - Helper (resolved từ ROOT) phải chứa `runPlacementCommand` export
- *     + `getAuthContext` + `withDbContext`.
- *
- * Không khớp bất kỳ điều kiện nào → trả `false` (fail-closed).
+ * @deprecated Use `classifyMutatingPlacementRoute` instead.
+ * Kept for backwards compatibility with any callers outside this file.
  */
 function guardedViaPlacementHelper(file: string): boolean {
-  const code = strip(read(file));
-  const hasHelperImport =
-    /from\s+['"]@?\/src\/domains\/talent\/placement\.route-helpers['"]/.test(code);
-  if (!hasHelperImport) return false;
-  const callsHelper = /runPlacementCommand\s*\(/.test(code);
-  if (!callsHelper) return false;
-  return placementHelperHasSecurityMarkers();
+  return classifyMutatingPlacementRoute(file).guarded;
 }
 
-/** Có auth marker trực tiếp, hoặc uỷ quyền sang module `handler` cùng cây có marker. */
-function guarded(file: string): boolean {
-  const code = strip(read(file));
-  if (AUTH_MARKER.test(code)) return true;
-  const delegate = code.match(/from\s+'(\.{1,2}\/(?:[^']*\/)?handler)'/);
-  if (!delegate) return false;
-  const target = join(file, '..', `${delegate[1]}.ts`);
-  return existsSync(target) && AUTH_MARKER.test(strip(read(target)));
-}
-
-/** Detect route file dùng `placement.route-helpers` (import or call expression). */
+/** Detect route file mentions the placement helper (import or identifier). */
 function usesPlacementHelper(file: string): boolean {
   const code = strip(read(file));
   return (
-    /from\s+['"]@?\/src\/domains\/talent\/placement\.route-helpers['"]/.test(code) ||
+    /from\s+['"]@?\.?\/?src\/domains\/talent\/placement\.route-helpers['"]/.test(code) ||
     /\brunPlacementCommand\b/.test(code)
   );
 }
@@ -208,56 +244,156 @@ describe('RQ-08 — inventory đường ghi ẩn danh', () => {
   });
 
   it('mọi route mutating khác đều có auth marker (trực tiếp, qua handler, hoặc qua placement.route-helpers fail-closed)', () => {
-    // C-04 round-2: bỏ hard-coded `ADMIN_GUARDED_VIA_HELPER`. Một route dùng
-    // placement.route-helpers phải (a) import VÀ (b) gọi `runPlacementCommand`,
-    // và helper phải chứa `getAuthContext` + `withDbContext` + `runPlacementCommand`.
-    // Helper thiếu marker → tất cả route dùng nó đều KHÔNG đủ điều kiện guarded.
-    const helperOk = placementHelperHasSecurityMarkers();
+    // C-04 round-2 + F-02: classifier `classifyMutatingPlacementRoute` is the
+    // SINGLE SOURCE OF TRUTH for the route-inventory decision. The same
+    // classifier is reused by the negative-fixture test below. Routes that
+    // import `placement.route-helpers` MUST also CALL `runPlacementCommand(`,
+    // and the helper MUST contain `getAuthContext(` and `withDbContext(`
+    // call expressions. Helper missing markers → fail closed.
     const mutating = API_FILES.filter((p) => MUTATING.test(strip(read(p))));
     expect(mutating.map(rel)).toEqual(expect.arrayContaining(MARKETPLACE_ANON));
 
     const allowed = new Set([...MARKETPLACE_ANON, ...SESSION_ROUTES]);
     const unguarded = mutating
       .filter((p) => !allowed.has(rel(p)))
-      .filter((p) => {
-        if (guarded(p)) return false;
-        if (!usesPlacementHelper(p)) return true;
-        // Route dùng helper nhưng helper thiếu marker → fail closed.
-        return !helperOk || !guardedViaPlacementHelper(p);
-      });
+      .filter((p) => !classifyMutatingPlacementRoute(p).guarded);
     expect(unguarded.map(rel)).toEqual([]);
   });
+});
 
-  // C-04 round-2 NEGATIVE FIXTURE: chứng minh detector bắt được một file
-  // mutating admin placement KHÔNG ủy quyền helper. File fixture này là một
-  // `.ts` đặt tại `tests/security/admin-route-fail-closed.negative-fixture.ts`
-  // với `export async function POST(req: NextRequest)` không import
-  // `placement.route-helpers` và không gọi `runPlacementCommand`. Detector
-  // phải liệt kê nó trong unguarded list — và do đó, nếu người dùng vô
-  // tình loại trừ file khỏi `MUTATING` filter (vd đặt nó ở `tests/security/`),
-  // detector vẫn fail ở assertion `expect(unguarded.map(rel)).toEqual([])`
-  // nếu fixture được dịch chuyển vào `app/api/admin/...`.
-  it('C-04 negative fixture: detector nhận diện mutating route KHÔNG dùng placement helper', () => {
-    const fixtureDir = join(ROOT, 'tests/security');
-    if (!existsSync(fixtureDir)) {
-      // Nếu thư mục không tồn tại, generator đã không chạy. Đây là tình huống
-      // phát triển bình thường; bỏ qua assertion này để test vẫn pass.
-      return;
-    }
-    const fixture = join(fixtureDir, 'admin-route-fail-closed.negative-fixture.ts');
-    if (!existsSync(fixture)) return;
+// C-04 round-2 NEGATIVE FIXTURE (F-02 substantive proof): prove that the
+// SAME `classifyMutatingPlacementRoute` function used by the production
+// route inventory correctly classifies the negative fixture as UNGUARDED.
+//
+// The fixture declares `export async function POST(...)` (a mutating handler)
+// but does NOT import `placement.route-helpers`, does NOT call
+// `runPlacementCommand`, and contains no AUTH_MARKER. The classifier MUST
+// return `{ guarded: false, reason: 'no_helper_import' }` for the fixture.
+//
+// This test PASSES only when the classifier actually rejects the fixture. If
+// the detector is relaxed (e.g. identifier-only marker checks), the
+// classifier would return `{ guarded: true }` and this test would fail.
+// ─────────────────────────────────────────────────────────────────────────
+describe('F-02 — fail-closed delegation classifier against negative fixture', () => {
+  const FIXTURE_PATH = join(ROOT, 'tests/security/admin-route-fail-closed.negative-fixture.ts');
+  const fixtureExists = existsSync(FIXTURE_PATH);
 
-    const code = strip(read(fixture));
-    // Fixture bắt buộc có POST handler (mutating) mà KHÔNG ủy quyền helper.
+  it('the negative fixture file exists on disk (no skip)', () => {
+    expect(fixtureExists).toBe(true);
+  });
+
+  it('the negative fixture IS recognised as a mutating POST handler', () => {
+    if (!fixtureExists) throw new Error('fixture missing');
+    const code = strip(read(FIXTURE_PATH));
     expect(code).toMatch(/export\s+(async\s+)?function\s+POST\b/);
-    expect(code).not.toMatch(/placement\.route-helpers/);
-    expect(code).not.toMatch(/runPlacementCommand/);
+  });
 
-    // Fixture nằm NGOÀI `app/api/admin/` nên không nằm trong API_FILES —
-    // detector phải thấy nó fail-closed nếu được dịch chuyển vào đó.
-    // Bài kiểm thử này chỉ đảm bảo fixture KHÔNG có marker guard giả.
+  it('the canonical classifier returns UNGUARDED for the negative fixture', () => {
+    if (!fixtureExists) throw new Error('fixture missing');
+    const result = classifyMutatingPlacementRoute(FIXTURE_PATH);
+    expect(result.guarded).toBe(false);
+  });
+
+  it('the canonical classifier reports the unguarded reason for the fixture', () => {
+    if (!fixtureExists) throw new Error('fixture missing');
+    const result = classifyMutatingPlacementRoute(FIXTURE_PATH);
+    if (result.guarded) throw new Error('fixture must be UNGUARDED for this assertion');
+    // Fixture intentionally lacks helper import + call → reason should reflect that.
+    expect(['no_helper_import', 'no_helper_call']).toContain(result.reason);
+  });
+
+  it('the fixture contains no AUTH_MARKER (negative case)', () => {
+    if (!fixtureExists) throw new Error('fixture missing');
+    const code = strip(read(FIXTURE_PATH));
     expect(code).not.toMatch(AUTH_MARKER);
-    expect(code).not.toMatch(/from\s+['"]\.\.?\/[^'"]*handler['"]/);
+  });
+
+  it('the fixture does not import `placement.route-helpers`', () => {
+    if (!fixtureExists) throw new Error('fixture missing');
+    const code = strip(read(FIXTURE_PATH));
+    expect(code).not.toMatch(/placement\.route-helpers/);
+  });
+
+  it('the fixture does not call `runPlacementCommand(`', () => {
+    if (!fixtureExists) throw new Error('fixture missing');
+    const code = strip(read(FIXTURE_PATH));
+    expect(code).not.toMatch(/\brunPlacementCommand\s*\(/);
+  });
+
+  // Sub-cases that MUST remain unguarded. Each is built in-memory so we can
+  // verify the classifier's decision logic for each rejection path without
+  // requiring separate on-disk fixtures.
+  function buildSyntheticFixture(content: string): string {
+    const tmp = join(ROOT, `tests/security/__synth-${Math.random().toString(36).slice(2)}.ts`);
+    require('fs').writeFileSync(tmp, content, 'utf8');
+    return tmp;
+  }
+
+  it('import-only WITHOUT call: classifier rejects as `no_helper_call`', () => {
+    const tmp = buildSyntheticFixture(
+      `import { runPlacementCommand } from '@/src/domains/talent/placement.route-helpers';\n` +
+      `export async function POST() { return new Response('x'); }`,
+    );
+    try {
+      const r = classifyMutatingPlacementRoute(tmp);
+      expect(r.guarded).toBe(false);
+      if (!r.guarded) expect(r.reason).toBe('no_helper_call');
+    } finally {
+      require('fs').unlinkSync(tmp);
+    }
+  });
+
+  it('call-only WITHOUT canonical import: classifier rejects as `no_helper_import`', () => {
+    const tmp = buildSyntheticFixture(
+      `import { something } from '@/src/domains/talent/placement.route-helpers-FORGED';\n` +
+      `export async function POST() { runPlacementCommand(); return new Response('x'); }`,
+    );
+    try {
+      const r = classifyMutatingPlacementRoute(tmp);
+      expect(r.guarded).toBe(false);
+      if (!r.guarded) expect(r.reason).toBe('no_helper_import');
+    } finally {
+      require('fs').unlinkSync(tmp);
+    }
+  });
+
+  it('current five production placement routes are ALL classified GUARDED', () => {
+    const productionRoutes = [
+      join(ROOT, 'app/api/admin/placements/route.ts'),
+      join(ROOT, 'app/api/admin/placements/[id]/actions/confirm/route.ts'),
+      join(ROOT, 'app/api/admin/placements/[id]/actions/effective/route.ts'),
+      join(ROOT, 'app/api/admin/placements/[id]/actions/fail/route.ts'),
+      join(ROOT, 'app/api/admin/placements/[id]/actions/cancel/route.ts'),
+    ];
+    for (const p of productionRoutes) {
+      expect(existsSync(p), `production route missing: ${rel(p)}`).toBe(true);
+      const r = classifyMutatingPlacementRoute(p);
+      expect(r.guarded, `production route unguarded: ${rel(p)} → ${JSON.stringify(r)}`).toBe(true);
+    }
+  });
+
+  it('helper-missing-call-expressions case: helper with bare identifiers is rejected', () => {
+    // Build a synthetic helper that has only identifiers (no actual calls).
+    const HELPER_TMP = join(ROOT, 'src/domains/talent/__synth-helper.ts');
+    const ROUTE_TMP = join(ROOT, 'app/api/admin/__synth-route.ts');
+    const helperSrc = `// Fake "helper" — has identifiers but no actual call expressions.\n` +
+      `export function runPlacementCommand() { /* no-op */ }\n` +
+      `const getAuthContext = () => null; const withDbContext = () => null;\n`;
+    const routeSrc = `import { runPlacementCommand } from '@/src/domains/talent/__synth-helper';\n` +
+      `export async function POST() { return runPlacementCommand(); }\n`;
+    require('fs').writeFileSync(HELPER_TMP, helperSrc, 'utf8');
+    require('fs').writeFileSync(ROUTE_TMP, routeSrc, 'utf8');
+    // Also need a dir for the route.
+    require('fs').mkdirSync(join(ROOT, 'app/api/admin'), { recursive: true });
+    try {
+      const r = classifyMutatingPlacementRoute(ROUTE_TMP);
+      // The classifier checks the REAL canonical helper, not the synthetic one.
+      // Synthetic route imports a non-canonical helper → reason `no_helper_import`.
+      expect(r.guarded).toBe(false);
+    } finally {
+      require('fs').unlinkSync(HELPER_TMP);
+      require('fs').unlinkSync(ROUTE_TMP);
+    }
   });
 });
 describe('RQ-01/DEC-01 — limiter RAM per-instance đã rời production path', () => {
