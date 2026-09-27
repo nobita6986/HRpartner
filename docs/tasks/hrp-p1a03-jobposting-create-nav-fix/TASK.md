@@ -21,8 +21,8 @@ fix and the regression tests are traceable per-deficiency.
 | Audit reason | P1-A0.3 fix may touch RLS policies / role authority for JobPosting authoring and must be re-verified by an external auditor against the exact frozen Implementation SHA. P1-NAV-01 is a pure UI helper, but is bundled in the same SHAs so audit reads one batch, not two. Defect bundle contains AUTH/RLS/permission surface; CRITICAL is conservative. |
 | Status | `READY_TO_CODE` |
 | Planner | `Tier 1` (T1C, directive `T0 → T1C — P1 go-live defect bundle`) |
-| Baseline | `2586b9fa2574c978be56f4d8dc259228516fdfbc` (origin/main HEAD before this worktree branched; PR #60 already merged) |
-| Implementation SHA | `PENDING` (set when impl commit is frozen) |
+| Baseline | `2586b9fa2574c978be56f4d8dc259228516fdfbc` |
+| Implementation SHA | `PENDING` |
 | Frozen delivery | `NO` (still implementing — `READY_TO_CODE` only) |
 | Canonical gates | `PENDING` |
 | Audit eligibility | `PENDING` |

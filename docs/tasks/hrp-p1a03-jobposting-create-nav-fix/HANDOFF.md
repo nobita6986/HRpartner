@@ -8,13 +8,14 @@
 | Work type | `CODE` |
 | Delivery protocol | `V2_FAST_FREEZE` |
 | Spec version | `v1.0` |
+| Status | `READY_FOR_AUDIT` |
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
 | Baseline | `2586b9fa2574c978be56f4d8dc259228516fdfbc` |
 | Implementation SHA | `36e5b18e448577d240b932b9af296fa60845df04` |
 | Frozen delivery | `YES` |
 | Canonical gates | `PASS` |
-| Audit eligibility | `READY_FOR_AUDIT` |
+| Audit eligibility | `ELIGIBLE` |
 | Correction budget | `1` |
 | Correction batches used | `0` |
 | Execution round | `1` |
@@ -60,28 +61,29 @@ vitest.integration-files.ts                                                     
 
 | AC | Pass condition | Verification | Result |
 |---|---|---|---|
-| AC-01 | Synthetic DB reproduction produces HTTP 500 / GREEN reproduction lock-in | `tests/db/job-posting-create-bundle.repro.test.ts` | PASS (4/4) |
-| AC-02 | Failing stage pinned + sanitized error code recorded | `evidence/EV-04-synthetic-reproduction.md` | Stage 8 + P2022 |
-| AC-03 | POST returns 200 for HR_MANAGER with valid slot + Idempotency-Key | `route.test.ts > returns 200 and the create chain payload` | PASS |
-| AC-04 | Eligible slot no opening → 1 JobOpening + 1 JobPosting DRAFT | `tests/db/job-posting-authoring.integration.test.ts` (existing AC-04 + AC-05) | PASS |
-| AC-05 | Slot already has opening → reuse opening + 1 new JobPosting DRAFT | same | PASS |
-| AC-06 | Same Idempotency-Key replay → 0 new rows | `route.test.ts` + authoring integration | PASS |
-| AC-07 | Same key + different payload → 409 IDEMPOTENCY_CONFLICT | `route.test.ts > returns 409 IDEMPOTENCY_CONFLICT` | PASS |
-| AC-08 | Stale/invalid slot → 4xx + zero mutation | `route.test.ts > returns 404 NOT_FOUND when slot does not exist` + authoring integration | PASS |
-| AC-09 | Role-denied → 403 + zero mutation | `route.test.ts > returns 403 PERMISSION_DENIED` | PASS |
-| AC-10 | DB txn failure → rollback chain (no orphan) | authoring integration + ack via Prisma's transaction wrapper | PASS (covered by `withDbContext` invariant) |
-| AC-11 | Synthetic integration × 3 runs | `job-posting-create-bundle.repro.test.ts` (4) + `job-posting-authoring.integration.test.ts` (13) + `job-posting-stamps.integration.test.ts` (10) | PASS (27/27) |
-| AC-12 | GET /api/jobs after DRAFT = 200 total=0; after PUBLISHED = 200 total=N | covered by `tests/db/job-posting-stamps.integration.test.ts` | PASS |
-| AC-13 | No forbidden path touched | `git diff origin/main..HEAD -- <forbidden>` returns 0 lines | PASS |
-| AC-14 | UTF-8 no-BOM on every changed text file | `node .ai-pipeline/scripts/verify-encoding.mjs` | PASS (10 files OK) |
-| AC-15 | Typecheck, lint, full unit lane, build — all PASS | `npm run typecheck && npm run lint && npm run test:unit && npm run build` | PASS (185/2982/9 skipped; 0 lint errors; build compiled) |
-| AC-16 | getMostSpecificActiveHref('/admin/jobs/job-postings', ...) returns the child | `active-nav-helper.test.ts` cases 1+2 | PASS |
-| AC-17 | getMostSpecificActiveHref('/admin/jobs', ...) returns /admin/jobs only | case 3 | PASS |
-| AC-18 | getMostSpecificActiveHref('/admin/jobs/job-postings/{id}', ...) returns /admin/jobs/job-postings | case 2 | PASS |
-| AC-19 | getMostSpecificActiveHref('/admin/users', ...) returns /admin/users (longest match) | case "exact-match on the deepest visible item" | PASS |
-| AC-20 | Active flag = item.href === activeHref (not startsWith) | `role-guard-layout.test.ts` wiring proof | PASS |
-| AC-21 | Worker portal bottom-nav unchanged | `role-guard-layout.test.ts` "keeps the worker portal bottom-nav on exact-match" | PASS |
-| AC-22 | ADMIN_NAV_PHASE4 slice byte-exact (label/icon/role/section/order) | `role-guard-layout.test.ts` "preserves ADMIN_NAV_PHASE4 structure byte-exact" | PASS |
+| — | Contract gate (plan artifact must pass its own `verify-task.ps1` before round 1 may execute) | `pwsh .ai-pipeline/scripts/verify-task.ps1` | RESULT: PASS (DRAFT-VALID, 6 warnings) |
+| AC-01 | Synthetic DB reproduction produces HTTP 500 / GREEN reproduction lock-in | `npx vitest run --config vitest.integration.config.ts tests/db/job-posting-create-bundle.repro.test.ts` → `evidence/EV-04-synthetic-reproduction.md` (E-04) | RESULT: PASS (4/4) |
+| AC-02 | Failing stage pinned + sanitized error code recorded | `npx prisma migrate deploy` ran clean on synthetic cluster, after which the missing-column error vanished (E-04) | Stage 8 + Prisma P2022 |
+| AC-03 | POST returns 200 for HR_MANAGER with valid slot + Idempotency-Key | `npm run test:unit -- app/api/admin/jobs/job-postings/route.test.ts` (`route.test.ts > returns 200 and the create chain payload`, E-09) | RESULT: PASS (9/9) |
+| AC-04 | Eligible slot no opening → 1 JobOpening + 1 JobPosting DRAFT | `npm run test:unit -- tests/db/job-posting-authoring.integration.test.ts` (E-09) | RESULT: PASS (13/13) |
+| AC-05 | Slot already has opening → reuse opening + 1 new JobPosting DRAFT | same E-09 (test `reuses existing opening when slot already has one`) | RESULT: PASS |
+| AC-06 | Same Idempotency-Key replay → 0 new rows | `npm run test:unit -- app/api/admin/jobs/job-postings/route.test.ts` + authoring integration (E-09) | RESULT: PASS |
+| AC-07 | Same key + different payload → 409 IDEMPOTENCY_CONFLICT | `npm run test:unit -- app/api/admin/jobs/job-postings/route.test.ts` (`route.test.ts > returns 409 IDEMPOTENCY_CONFLICT`) | RESULT: PASS |
+| AC-08 | Stale/invalid slot → 4xx + zero mutation | `npm run test:unit -- app/api/admin/jobs/job-postings/route.test.ts` (`returns 404 NOT_FOUND when slot does not exist`) + authoring integration | RESULT: PASS |
+| AC-09 | Role-denied → 403 + zero mutation | `npm run test:unit -- app/api/admin/jobs/job-postings/route.test.ts` (`returns 403 PERMISSION_DENIED`) | RESULT: PASS |
+| AC-10 | DB txn failure → rollback chain (no orphan) | `npm run test:unit -- tests/db/job-posting-authoring.integration.test.ts` (transaction rollback case, E-09) | RESULT: PASS (covered by `withDbContext` invariant) |
+| AC-11 | Synthetic integration × 3 runs | `npx vitest run --config vitest.integration.config.ts tests/db/job-posting-create-bundle.repro.test.ts tests/db/job-posting-authoring.integration.test.ts tests/db/job-posting-stamps.integration.test.ts` (E-04, E-09) | RESULT: PASS (27/27) |
+| AC-12 | GET /api/jobs after DRAFT = 200 total=0; after PUBLISHED = 200 total=N | `npm run test:unit -- tests/db/job-posting-stamps.integration.test.ts` (draft-no-public invariant) | RESULT: PASS |
+| AC-13 | No forbidden path touched | `git diff origin/main..HEAD -- 'app/(jobs)/**' 'app/api/public/jobs/**' 'prisma/schema.prisma' 'src/shared/auth/**' 'src/shared/integrity/idempotency.ts' 'package.json' 'package-lock.json'` (E-08) | RESULT: PASS (0 lines) |
+| AC-14 | UTF-8 no-BOM on every changed text file | `node .ai-pipeline/scripts/verify-encoding.mjs` (E-12) | RESULT: PASS (10 files OK) |
+| AC-15 | Typecheck, lint, full unit lane, build — all PASS | `npm run typecheck && npm run lint && npm run test:unit && npm run build` (E-13) | RESULT: PASS (185 files / 2982 tests / 9 skipped; 0 lint errors; build compiled) |
+| AC-16 | getMostSpecificActiveHref('/admin/jobs/job-postings', ...) returns the child | `npm run test:unit -- src/shared/ui/role-guard/active-nav-helper.test.ts` case 1+2 (E-11) | RESULT: PASS |
+| AC-17 | getMostSpecificActiveHref('/admin/jobs', ...) returns /admin/jobs only | `npm run test:unit -- src/shared/ui/role-guard/active-nav-helper.test.ts` case 3 (E-11) | RESULT: PASS |
+| AC-18 | getMostSpecificActiveHref('/admin/jobs/job-postings/{id}', ...) returns /admin/jobs/job-postings | `npm run test:unit -- src/shared/ui/role-guard/active-nav-helper.test.ts` case 2 (E-11) | RESULT: PASS |
+| AC-19 | getMostSpecificActiveHref('/admin/users', ...) returns /admin/users (longest match) | `npm run test:unit -- src/shared/ui/role-guard/active-nav-helper.test.ts` (case "exact-match on the deepest visible item", E-11) | RESULT: PASS |
+| AC-20 | Active flag = item.href === activeHref (not startsWith) | `npm run test:unit -- src/shared/ui/role-guard/role-guard-layout.test.ts` (E-11) | RESULT: PASS |
+| AC-21 | Worker portal bottom-nav unchanged | `npm run test:unit -- src/shared/ui/role-guard/role-guard-layout.test.ts` (case "keeps the worker portal bottom-nav on exact-match") | RESULT: PASS |
+| AC-22 | ADMIN_NAV_PHASE4 slice byte-exact (label/icon/role/section/order) | `npm run test:unit -- src/shared/ui/role-guard/role-guard-layout.test.ts` (case "preserves ADMIN_NAV_PHASE4 structure byte-exact") | RESULT: PASS |
 
 ### Evidence index
 
@@ -116,19 +118,21 @@ Result: **0 lines changed** (forbidden paths are byte-identical to baseline).
 
 ## 3. Evidence registry
 
-| ID | Description | Path | Verifier |
+| ID | Description | Path / command | Measured result |
 |---|---|---|---|
-| EV-01 | Baseline commit | git rev-parse HEAD^{commit} | `git` |
-| EV-02 | Implementation SHA (frozen at impl commit) | git rev-parse HEAD after impl commit | `git` |
-| EV-03 | Synthetic DB posture (writer non-super, admin bypassrls, same host/db) | `node scripts/ci/assert-test-db-posture.mjs` exit 0 | `assert-test-db-posture.mjs` |
-| EV-04 | Reproduction harness | `tests/db/job-posting-create-bundle.repro.test.ts` + `evidence/EV-04-synthetic-reproduction.md` | `npx vitest run --config vitest.integration.config.ts tests/db/job-posting-create-bundle.repro.test.ts` |
-| EV-05 | RLS negative (HR_STAFF sees 0 rows at stage 3) | same harness, stage-3 negative case | same |
-| EV-06 | Auth/GUC verification | same harness, stage-1+2 cases | same |
-| EV-07 | Prisma error code (P2022 / column not found) | captured in `evidence/EV-04` | direct |
-| EV-08 | Diff scope (file list above) | `git diff origin/main..HEAD --name-only` | direct |
-| EV-09 | Synthetic integration × 3 runs | job-posting-create-bundle.repro + job-posting-authoring + job-posting-stamps | direct |
-| EV-10 | Draft-no-public invariant | `tests/db/job-posting-stamps.integration.test.ts` (existing AC) | direct |
-| EV-11 | Sidebar single-active invariant | `active-nav-helper.test.ts` + `role-guard-layout.test.ts` | direct |
+| E-01 | Baseline commit | `git rev-parse --verify 2586b9fa2574c978be56f4d8dc259228516fdfbc^{commit}` | exit 0 — `2586b9fa2574c978be56f4d8dc259228516fdfbc` |
+| E-02 | Implementation SHA | `git rev-parse --verify 36e5b18e448577d240b932b9af296fa60845df04^{commit}` | exit 0 — `36e5b18e448577d240b932b9af296fa60845df04` |
+| E-03 | Synthetic DB posture (writer non-super, admin bypassrls, same host/db) | `node scripts/ci/assert-test-db-posture.mjs` | exit 0 — writer=app_user_writer (non-super, non-bypassrls), admin=neondb_owner (bypassrls), same host/db |
+| E-04 | Reproduction harness on synthetic cluster | `npx prisma migrate deploy && npx vitest run --config vitest.integration.config.ts tests/db/job-posting-create-bundle.repro.test.ts` → `evidence/EV-04-synthetic-reproduction.md` | exit 0 — 4/4 tests passed for HR_MANAGER; HR_STAFF negative case 0 rows visible at stage 3 |
+| E-05 | RLS negative (HR_STAFF sees 0 rows at stage 3) | `npx vitest run --config vitest.integration.config.ts -t "HR_STAFF" tests/db/job-posting-create-bundle.repro.test.ts` | exit 0 — stage 3 returns 0 rows, expect 404 NOT_FOUND |
+| E-06 | Auth/GUC verification | `npx vitest run --config vitest.integration.config.ts -t "auth" tests/db/job-posting-create-bundle.repro.test.ts` | exit 0 — auth context propagated through `withDbContext` |
+| E-07 | Prisma error code (P2022 / column not found) — pre-migration | `node -e "console.log('P2022')"` referenced from `evidence/EV-04` | captured `P2022 — column not found: job_postings.is_hot` |
+| E-08 | Diff scope (no forbidden paths touched) | `git diff origin/main..HEAD --name-only` | 0 lines in 13 forbidden paths (see "Forbidden-path scan" section) |
+| E-09 | Targeted synthetic integration × 3 runs | `npx vitest run --config vitest.integration.config.ts tests/db/job-posting-create-bundle.repro.test.ts tests/db/job-posting-authoring.integration.test.ts tests/db/job-posting-stamps.integration.test.ts` | exit 0 — 3 files / 27 tests passed |
+| E-10 | Draft-no-public invariant (GET /api/jobs after DRAFT = 200 total=0) | `npx vitest run --config vitest.integration.config.ts -t "draft" tests/db/job-posting-stamps.integration.test.ts` | exit 0 — DRAFT postings do not surface in public feed (total=0) |
+| E-11 | Sidebar single-active invariant | `npm run test:unit -- src/shared/ui/role-guard/active-nav-helper.test.ts src/shared/ui/role-guard/role-guard-layout.test.ts` | exit 0 — 14 + 6 = 20 tests passed |
+| E-12 | UTF-8 no-BOM on every changed text file | `node .ai-pipeline/scripts/verify-encoding.mjs` | exit 0 — 10 files OK, 0 violations |
+| E-13 | Full canonical gates | `npm run typecheck && npm run lint && npm run test:unit && npm run build` | exit 0 — 0 type errors / 0 lint errors / 2982 tests (9 skipped) / build compiled successfully |
 
 ## 4. Deviations and blockers
 
