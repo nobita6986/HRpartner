@@ -12,7 +12,7 @@
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
 | Baseline | `2586b9fa2574c978be56f4d8dc259228516fdfbc` |
-| Implementation SHA | `6c54771c2541d6712ff1ee62d5788974d5781e4d` |
+| Implementation SHA | `36e5b18e448577d240b932b9af296fa60845df04` |
 | Frozen delivery | `YES` |
 | Canonical gates | `PASS` |
 | Audit eligibility | `ELIGIBLE` |
@@ -121,7 +121,7 @@ Result: **0 lines changed** (forbidden paths are byte-identical to baseline).
 | ID | Description | Path / command | Measured result |
 |---|---|---|---|
 | E-01 | Baseline commit | `git rev-parse --verify 2586b9fa2574c978be56f4d8dc259228516fdfbc^{commit}` | exit 0 — `2586b9fa2574c978be56f4d8dc259228516fdfbc` |
-| E-02 | Implementation SHA | `git rev-parse --verify 6c54771c2541d6712ff1ee62d5788974d5781e4d^{commit}` | exit 0 — `6c54771c2541d6712ff1ee62d5788974d5781e4d` |
+| E-02 | Implementation SHA | `git rev-parse --verify 36e5b18e448577d240b932b9af296fa60845df04^{commit}` | exit 0 — `36e5b18e448577d240b932b9af296fa60845df04` |
 | E-03 | Synthetic DB posture (writer non-super, admin bypassrls, same host/db) | `node scripts/ci/assert-test-db-posture.mjs` | exit 0 — writer=app_user_writer (non-super, non-bypassrls), admin=neondb_owner (bypassrls), same host/db |
 | E-04 | Reproduction harness on synthetic cluster | `npx prisma migrate deploy && npx vitest run --config vitest.integration.config.ts tests/db/job-posting-create-bundle.repro.test.ts` → `evidence/EV-04-synthetic-reproduction.md` | exit 0 — 4/4 tests passed for HR_MANAGER; HR_STAFF negative case 0 rows visible at stage 3 |
 | E-05 | RLS negative (HR_STAFF sees 0 rows at stage 3) | `npx vitest run --config vitest.integration.config.ts -t "HR_STAFF" tests/db/job-posting-create-bundle.repro.test.ts` | exit 0 — stage 3 returns 0 rows, expect 404 NOT_FOUND |
