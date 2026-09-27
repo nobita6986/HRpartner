@@ -9,14 +9,15 @@
 > |---|---|
 > | F1 semantic Implementation SHA | `4983fdc448503cd1a0037788a0a4810c31b267d8` |
 > | Docs/evidence SHA | `0dc2557131acdab02c157a5790d28113b05cebbc` |
-> | Branch HEAD | `0dc2557131acdab02c157a5790d28113b05cebbc` |
+> | Branch HEAD (pin metadata commit) | `5c53b1cbb581ab482287a2de3befe4f9e82e5adc` |
 > | Baseline | `fabeda29c97720612136909b8f7beccfdf217c25` |
 > | P1-E1 production merge SHA | `a3383d64736b2536e000ce7b102c22ce8dad49ed` |
 >
 > **Range truthfulness:** post-freeze semantic commit `4983fdc` lands first;
-> docs/evidence commit `0dc25571` follows immediately. Range `4983fdc..HEAD`
-> contains docs/evidence only (TASK.md Revision Log row 4 + this HANDOFF.md +
-> AUDIT.md).
+> docs/evidence commit `0dc25571` follows; pin metadata commit `5c53b1c` is
+> the post-freeze HEAD. Range `4983fdc..HEAD` contains docs/evidence only
+> (TASK.md Revision Log row 4 + HANDOFF.md + AUDIT.md + this HANDOFF-only
+> pin metadata update).
 
 ## 0. Control
 
@@ -246,7 +247,7 @@ No blockers. `verify-task.ps1` PASS. `verify-handoff.ps1` PASS. All 19 AC have e
 | **F1 control-flip SHA** (docs-only) | `973585b9c3fa0b6e28c973f389966a07944ba549` (Status/Contract gate/Decision state/Next gate flip) |
 | **F1 semantic Implementation SHA** (semantic code + tests commit, code freeze anchor) | `4983fdc448503cd1a0037788a0a4810c31b267d8` |
 | **Docs/evidence SHA** (TASK.md Revision Log + HANDOFF + AUDIT) | `0dc2557131acdab02c157a5790d28113b05cebbc` |
-| **Audit target** (post-freeze HEAD) | `0dc2557131acdab02c157a5790d28113b05cebbc` |
+| **Audit target** (post-freeze HEAD with pin metadata) | `5c53b1cbb581ab482287a2de3befe4f9e82e5adc` |
 | Frozen delivery | YES |
 | Canonical gates | PASS |
 | Audit eligibility | ELIGIBLE |

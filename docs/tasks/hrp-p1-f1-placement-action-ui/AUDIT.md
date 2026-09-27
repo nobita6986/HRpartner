@@ -26,7 +26,7 @@
 | Implementation SHA | `4983fdc448503cd1a0037788a0a4810c31b267d8` (semantic code commit; landed) |
 | F1 semantic Implementation SHA note | H-16 anchor = exact semantic code + tests commit. Must exactly match HANDOFF Â§5.2. |
 | Docs/evidence SHA | `0dc2557131acdab02c157a5790d28113b05cebbc` (TASK.md Revision Log row 4 + HANDOFF.md + AUDIT.md; landed) |
-| Audit target | `0dc2557131acdab02c157a5790d28113b05cebbc` (post-freeze HEAD; landed) |
+| Audit target | `5c53b1cbb581ab482287a2de3befe4f9e82e5adc` (post-freeze HEAD with pin metadata; landed) |
 | TASK status | `READY_FOR_AUDIT` |
 | HANDOFF Frozen delivery | `YES` |
 | HANDOFF Audit eligibility | `ELIGIBLE` |
@@ -129,7 +129,7 @@ Tier 1 found zero P0, P1, or P2 findings on the current pre-freeze changed surfa
 | E-11 | Forbidden-path audit (24 paths) | exit 0 | 0 hits |
 | E-12 | Required relation sweep invariant | exit 0 | 25 hits (bumped from 22 baseline; reflects F1 additive include chain) |
 | E-13 | n8n boundary | exit 0 | 0 matches in F1 changed surface |
-| E-14 | Branch state | branch `codex/t1b-p1f1-placement-actions-impl` HEAD pre-freeze = `973585b9c3fa0b6e28c973f389966a07944ba549`; origin/main HEAD = `fabeda29c97720612136909b8f7beccfdf217c25`; P1-E1 runtime merge = `a3383d64736b2536e000ce7b102c22ce8dad49ed` |
+| E-14 | Branch state | branch `codex/t1b-p1f1-placement-actions-impl` post-freeze HEAD = `5c53b1cbb581ab482287a2de3befe4f9e82e5adc` (HANDOFF-only pin metadata commit); semantic code commit `4983fdc448503cd1a0037788a0a4810c31b267d8` reachable as `HEAD~2`; docs/evidence commit `0dc2557131acdab02c157a5790d28113b05cebbc` reachable as `HEAD~1`; origin/main HEAD = `fabeda29c97720612136909b8f7beccfdf217c25`; P1-E1 runtime merge = `a3383d64736b2536e000ce7b102c22ce8dad49ed` |
 
 ## 5. Conclusion
 
