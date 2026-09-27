@@ -199,13 +199,20 @@ export function CreateJobPostingForm({ eligibleSlots, actionUrl, loadError }: Cr
           color: 'var(--on-surface-variant)',
         }}
         aria-label="Form tạo JobPosting — không khả dụng"
+        data-testid="create-job-posting-load-error"
       >
         <h2 className="mb-2 text-sm font-semibold" style={{ color: 'var(--on-surface)' }}>
           Tạo JobPosting mới
         </h2>
-        <p>Không thể tải danh sách StaffingOrderSlot đủ điều kiện: [{loadError.code}] {loadError.message}</p>
+        <p>
+          Không thể tải danh sách StaffingOrderSlot đủ điều kiện: [{loadError.code}]{' '}
+          {loadError.message}
+        </p>
         <p className="mt-1 text-xs italic">
-          Khi synthetic DB chưa sẵn, form vẫn hiển thị nhưng selector rỗng.
+          Selector này chỉ là gợi ý client-side. Ngay cả khi không load được, một POST với{' '}
+          <code>slotId</code> hợp lệ vẫn được write-path kiểm tra lại trong transaction qua{' '}
+          <code>assertSlotEligibleForNewJobPosting</code>. Nếu vẫn thấy lỗi này, kiểm tra
+          kết nối DB / RLS context.
         </p>
       </section>
     );
@@ -238,6 +245,7 @@ export function CreateJobPostingForm({ eligibleSlots, actionUrl, loadError }: Cr
         backgroundColor: 'var(--color-surface-container)',
       }}
       aria-label="Tạo JobPosting mới"
+      data-testid="create-job-posting-form"
     >
       <h2 className="mb-3 text-base font-semibold" style={{ color: 'var(--on-surface)' }}>
         Tạo JobPosting mới
@@ -246,14 +254,31 @@ export function CreateJobPostingForm({ eligibleSlots, actionUrl, loadError }: Cr
       {eligibleSlots.length === 0 ? (
         <div className="rounded border border-dashed p-3 text-sm" style={{ borderColor: 'var(--outline)' }}>
           <p style={{ color: 'var(--on-surface-variant)' }}>
-            Chưa có StaffingOrderSlot đủ điều kiện. Một slot đủ điều kiện phải thoả:
+            <strong>Chưa có StaffingOrderSlot đủ điều kiện.</strong> Một slot đủ điều kiện phải thoả đồng
+            thời 4 điều kiện (predicate canonical <code>eligibleSlotPredicateSql(now)</code> ở
+            <code>job-posting-list.service.ts</code>, dùng chung cho selector và write-path):
           </p>
           <ul className="ml-4 mt-1 list-disc space-y-0.5 text-xs" style={{ color: 'var(--on-surface-variant)' }}>
-            <li>StaffingOrder.status ∈ OPEN|CLOSING_SOON</li>
-            <li>deadlineDate chưa hết (hoặc null) và validTo chưa hết (hoặc null)</li>
-            <li>{'slotsFilled < slotsNeeded'}</li>
-            <li>Chưa có JobOpening / JobPosting canonical</li>
+            <li>
+              StaffingOrder.status ∈ <code>OPEN</code> | <code>CLOSING_SOON</code>
+            </li>
+            <li>
+              <code>deadline_date</code> chưa hết (hoặc <code>NULL</code>) và{' '}
+              <code>s.valid_to</code> chưa hết (hoặc <code>NULL</code>)
+            </li>
+            <li>
+              <code>s.slots_filled &lt; s.slots_needed</code>
+            </li>
+            <li>
+              Chưa có JobOpening / JobPosting canonical gắn với slot này
+            </li>
           </ul>
+          <p className="mt-2 text-xs" style={{ color: 'var(--on-surface-variant)' }}>
+            Gợi ý: hãy kiểm tra lại <code>StaffingOrder</code> (còn trong hạn, status mở)
+            hoặc tạo một JobOpening mới trước khi quay lại trang này. Selector client chỉ
+            hiển thị gợi ý — quyền quyết định eligibility vẫn nằm ở
+            <code> assertSlotEligibleForNewJobPosting</code> trong transaction write.
+          </p>
         </div>
       ) : (
         <>
