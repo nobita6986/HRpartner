@@ -39,6 +39,11 @@ export const INTEGRATION_TEST_FILES: string[] = [
   'src/shared/auth/live-ticket-route-boundary.m1-06d.test.ts',
   'src/shared/auth/live-vendor-idor.m1-08.test.ts',
   'src/shared/auth/live-public-read-rls.go-live-04.test.ts',
+  // hrp-p1a03-jobposting-create-nav-fix / EV-04: synthetic DB reproduction
+  // harness for P1-A0.3 stages 1..8 + EV-08 negative (HR_STAFF deny-by-default
+  // RLS posture). Self-skips when DATABASE_URL_TEST + DATABASE_URL_ADMIN_TEST
+  // absent (ENV_BLOCKED per directive DEC-01).
+  'tests/db/job-posting-create-bundle.repro.test.ts',
   // go-live-05 / RQ-13 / STEP-08: LIVE evidence cho projection card (seed thật + cleanup thật).
   'src/domains/job-board/public-card-truth.integration.test.ts',
   // hrp-v6-n3-service-model-placement: DB-touching proof for ServiceModel taxonomy +
