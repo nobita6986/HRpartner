@@ -11,13 +11,14 @@
 | Audit mode | `NONE` |
 | Audit reason | Narrow UI truth cleanup only. No auth/RLS/schema/migration/contract change detected during discovery. Role matrix preserved byte-exact from P1-A0.1. Per `tier1.md`: FAST + NONE is the default for UI-truth copy/word fixes. |
 | Execution round | `1` |
-| Baseline | `4970f47d` (origin/main HEAD before this worktree branched) |
-| Implementation SHA | `c5aa978860e244f056aa51bf586667cf46bd8297` |
+| Baseline | `4970f47d481c185f655242e3e91480e4117241dd` (origin/main HEAD before this worktree branched) |
+| Implementation SHA | `f54de46e659b2a519013ea3b863dfb3ce9c109e0` |
 | Frozen delivery | `YES` |
 | Canonical gates | `PASS` |
 | Audit eligibility | `NOT_REQUIRED` |
-| Correction batches used | `0` |
+| Correction batches used | `1` |
 | Status | `READY_FOR_REVIEW` |
+| Next gate | `T0_PR_CI_MERGE` |
 
 ## 1. Outcome and changed surface
 

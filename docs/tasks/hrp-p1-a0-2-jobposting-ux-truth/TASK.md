@@ -11,15 +11,21 @@
 | Assurance lane | `FAST` |
 | Audit mode | `NONE` |
 | Audit reason | Narrow UI truth/hygiene only — no auth, RLS, schema, migration, or contract change. Discovery did not reveal any authority/security expansion (role matrix preserved exactly). Per `tier1.md` FAST lane → `NONE` is default and a Tier 3 audit round would be unable to find anything beyond what the static guard already proves. |
-| Status | `COMPLETE` |
+| Status | `READY_FOR_REVIEW` |
 | Planner | `Tier 1` (T1C, lệnh T0: "T0 → T1C — P1-A0.2 JobPosting Authoring UX Truth Cleanup") |
-| Baseline | `4970f47d` (origin/main HEAD before this worktree branched) |
+| Baseline | `4970f47d481c185f655242e3e91480e4117241dd` (origin/main HEAD before this worktree branched) |
+| Implementation SHA | `f54de46e659b2a519013ea3b863dfb3ce9c109e0` (current PR HEAD — semantic delivery on PR; follow-up docs-only freeze round does NOT pin itself) |
+| Frozen delivery | `YES` |
+| Canonical gates | `PASS` |
+| Audit mode | `NONE` (FAST lane default per `tier1.md`; no discovery revealed authority/security/contract change) |
+| Audit eligibility | `NOT_REQUIRED` |
 | In-scope roots | `app/admin/jobs/job-postings/page.tsx`; `app/admin/jobs/job-postings/[id]/page.tsx`; `app/admin/jobs/job-postings/create-job-posting-form.tsx`; `app/admin/jobs/job-postings/__tests__/job-postings-ui-truth.static.test.ts`; `docs/tasks/hrp-p1-a0-2-jobposting-ux-truth/**` |
 | Forbidden paths | `prisma/**`; `src/domains/staffing/job-posting-authoring.service.ts`; `src/domains/staffing/job-posting-list.service.ts`; `app/(jobs)/**`; `app/api/public/jobs/**`; `app/api/admin/jobs/job-postings/**`; `docs/PLANNER_HANDOVER.md`; `package.json`; `package-lock.json`; sidebar / navigation / menu files |
-| Required gates | `npm run typecheck`; `npx eslint <changed>`; `npx vitest run <static test file>`; `npm run test:unit`; `npm run build`; `git diff --check`; `pwsh .ai-pipeline/scripts/verify-encoding.mjs` (Node variant — see §3); `pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-p1-a0-2-jobposting-ux-truth/TASK.md`; `pwsh .ai-pipeline/scripts/verify-handoff.ps1 -TaskPath docs/tasks/hrp-p1-a0-2-jobposting-ux-truth/TASK.md` |
+| Required gates | `npm run typecheck`; `npx eslint <changed>`; `npx vitest run <static test file>`; `npm run test:unit`; `npm run build`; `git diff --check`; `node .ai-pipeline/scripts/verify-encoding.mjs` (Node variant — see DEC-06; the `.mjs` script is the canonical UTF-8 no-BOM gate in this worktree; `.ps1` variant was added at upstream commit `c0f4dc69` after this worktree branched and remains absent — mirrors `DEV-04` from P1-A0.1); `pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-p1-a0-2-jobposting-ux-truth/TASK.md`; `pwsh .ai-pipeline/scripts/verify-handoff.ps1 -TaskPath docs/tasks/hrp-p1-a0-2-jobposting-ux-truth/TASK.md` |
 | Correction budget | `1` |
-| Next gate | T0 review + merge |
-| Current execution round | `1` |
+| Correction batches used | `1` |
+| Next gate | `T0_PR_CI_MERGE` (T0 reviews, re-runs CI on corrected HEAD, then merges — T1 must not merge) |
+| Current execution round | `1` (semantic delivery) + follow-up docs-only freeze round (`READY_FOR_REVIEW`) |
 
 ## 1. Outcome
 
