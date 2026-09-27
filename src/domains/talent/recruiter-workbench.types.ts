@@ -184,6 +184,62 @@ export interface RecruiterWorkbenchRow {
     detailHref: string;
     submissionHref: string | null;
   };
+  /**
+   * P1-F1 additive projection — server-authoritative placement summary for
+   * the row's case. Read by the F1 `PlacementActionCell` only to gate
+   * visibility and to label control labels; lifecycle transitions are owned
+   * entirely by the F0 routes (LOCK-02).
+   *
+   * `null` when the case has no `Placement` row yet. The UI MUST NOT infer
+   * placement existence from any other field.
+   */
+  placement: RecruiterWorkbenchPlacement | null;
+  /**
+   * P1-F1 additive projection — distinct `JobOpening` candidates currently
+   * eligible for `placementCreate`. Deduplicated on `jobOpeningId` (most
+   * recent submission wins), deterministically sorted, then filtered to
+   * openings whose `StaffingOrderSlot` still admits a new placement
+   * (server-derived in read-service; the UI only renders the list).
+   *
+   * `null` when the case has no `CandidateSubmission` rows that resolve to a
+   * `JobOpening` (e.g., `READY_TO_PLACE` with no submission yet).
+   */
+  placementOptions: RecruiterWorkbenchPlacementOption[] | null;
+}
+
+export type RecruiterWorkbenchPlacementManagementMode = 'HRP_MANAGED' | 'CLIENT_MANAGED';
+
+/**
+ * One-line placement summary for F1 UI gating. Carries the bare `id` +
+ * `status` plus the `jobOpeningId` it is anchored to and the derived
+ * `managementMode`. Fields NOT exposed on the wire (no `selectedAt`,
+ * `confirmedAt`, `effectiveAt`, `failureReason`, `cancelledReason`, etc.)
+ * — those are owned by the placement detail page.
+ */
+export interface RecruiterWorkbenchPlacement {
+  id: string;
+  /** Matches the canonical `PlacementStatus` enum on the Prisma model. */
+  status:
+    | 'SELECTED'
+    | 'CONFIRMED'
+    | 'EFFECTIVE'
+    | 'FAILED'
+    | 'CANCELLED';
+  jobOpeningId: string | null;
+  managementMode: RecruiterWorkbenchPlacementManagementMode;
+}
+
+/**
+ * One selectable `JobOpening` for `placementCreate`. The UI binds this list
+ * into a `<select>`; the F0 route re-validates `jobOpeningId` server-side.
+ */
+export interface RecruiterWorkbenchPlacementOption {
+  jobOpeningId: string;
+  /** Required for `placementCreate` body when chosen. */
+  sourceCandidateSubmissionId: string;
+  title: string;
+  projectName: string | null;
+  companyName: string | null;
 }
 
 export interface RecruiterWorkbenchListResponse {

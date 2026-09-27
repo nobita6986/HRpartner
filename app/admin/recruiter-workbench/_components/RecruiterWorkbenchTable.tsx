@@ -26,6 +26,7 @@ import { NextActionBadge } from './NextActionBadge';
 import { AgeCell } from './AgeCell';
 import { HandlerChip } from './HandlerChip';
 import { PrimaryActions } from './PrimaryActions';
+import { PlacementActionCell } from '@/src/domains/talent/recruiter-workbench.placement-actions';
 
 const CASE_STATUS_LABELS: Record<RecruiterWorkbenchRow['caseStatus'], string> = {
   OPEN: 'Đang mở',
@@ -114,6 +115,9 @@ export function RecruiterWorkbenchTable({
               Phụ trách
             </th>
             <th scope="col" className="px-4 py-3">
+              Bố trí
+            </th>
+            <th scope="col" className="px-4 py-3">
               Thời gian / Quá hạn
             </th>
             <th scope="col" className="px-4 py-3 text-right">
@@ -188,6 +192,16 @@ export function RecruiterWorkbenchTable({
                   <HandlerChip
                     assigneeName={row.handler.assigneeName}
                     source={row.handler.source}
+                  />
+                </td>
+                <td className="px-4 py-3 align-top">
+                  <PlacementActionCell
+                    row={{
+                      caseId: row.caseId,
+                      caseStatus: row.caseStatus,
+                      placement: row.placement,
+                      placementOptions: row.placementOptions,
+                    }}
                   />
                 </td>
                 <td className="px-4 py-3 align-top">

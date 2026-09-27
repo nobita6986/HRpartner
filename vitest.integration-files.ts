@@ -138,4 +138,12 @@ export const INTEGRATION_TEST_FILES: string[] = [
   // DTO nested shape (no top-level aliases). Self-skips when DATABASE_URL_TEST
   // + DATABASE_URL_ADMIN_TEST absent (ENV_BLOCKED).
   'tests/db/recruiter-workbench.integration.test.ts',
+  // hrp-p1-f1-placement-action-ui: F1 additive E0 projections
+  // (`placement` summary + `placementOptions` derived list) on real DB. Covers
+  // null-without-placement, HRP-managed snapshot surfacing, dedup of multiple
+  // submissions per JobOpening, deterministic sort order, legacy-slot=null
+  // filtering, cross-row isolation, and stale-snapshot matrix.
+  // Self-skips when DATABASE_URL_TEST + DATABASE_URL_ADMIN_TEST absent
+  // (ENV_BLOCKED — Tier 0/Owner cung cấp DB trước khi xét merge).
+  'tests/db/p1f1-placement-action-ui.integration.test.ts',
 ];
