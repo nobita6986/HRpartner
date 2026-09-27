@@ -64,9 +64,20 @@ export const metadata = {
  * xấu. Trang này vẫn hữu ích cho HR_STAFF vì họ cần form tạo draft. Khi tạo xong, họ chuyển sang
  * editor `/admin/jobs/job-postings/[id]` (POST đã authorize HR_STAFF qua `ALLOWED_MUTATION_ROLES`).
  *
- * `CREATE_ROLES` (subset) — chỉ những role này MỚI thấy nút "+ Tạo JobPosting mới" và form tạo.
- * Mutation authority đã freeze ở P1-A0 (`ALLOWED_MUTATION_ROLES` trong
+ * `CREATE_ROLES` (subset) — chỉ những role này MỚI thấy form "Tạo JobPosting mới" và selector
+ * StaffingOrderSlot. Mutation authority đã freeze ở P1-A0 (`ALLOWED_MUTATION_ROLES` trong
  * `job-posting-authoring.service.ts`); trang này chỉ REUSE cùng tập role.
+ *
+ * Lưu ý (hrp-p1-a0.2 / T1C): form `CreateJobPostingForm` đã wired đầy đủ từ P1-A0.1
+ * (DEC-01..04): server Component load eligible-slot qua canonical
+ * `listEligibleSlotsForNewJobPosting`, client form POST `/api/admin/jobs/job-postings` với UUID
+ * Idempotency-Key, redirect sang editor `/admin/jobs/job-postings/[id]` sau khi tạo/reuse.
+ * KHÔNG claim "form chưa dựng" trên UI production.
+ *
+ * Canonical public JobPosting detail (`/viec-lam/[slug]`) đã được cutover trong P1-A1 (ACCEPTED)
+ * — bài viết chi tiết được render từ JobPosting PUBLISHED qua `getPublicJobDetail`, không còn
+ * fallback sang Project. Anonymous apply RPC bind với JobPosting PUBLISHED đã nghiệm thu trong
+ * P1-B (ACCEPTED). Hai dòng này là UI truth baseline — không ghi ngược về chờ bước sau.
  */
 const VIEWER_ROLES: ReadonlySet<SystemRole> = new Set([
   'ADMIN',
@@ -180,8 +191,10 @@ export default async function AdminJobPostingsListPage({ searchParams }: PagePro
             </h1>
             <p className="mt-1 text-sm" style={{ color: 'var(--on-surface-variant)' }}>
               Chọn một JobPosting để chỉnh nội dung, lưu bản nháp, publish/unpublish/archive.
-              Bản P1-A0: tạo/reuse JobOpening từ StaffingOrderSlot, schema JobPosting mở rộng
-              với rich content (Tiptap, contentSchemaVersion=1).
+              Schema JobPosting mở rộng ở P1-A0 với rich content (Tiptap, contentSchemaVersion=1);
+              form tạo/reuse JobOpening từ StaffingOrderSlot đã được dựng ở P1-A0.1 (chỉ
+              CREATE_ROLES thấy). Trang public <code>/viec-lam/[slug]</code> hiện đọc JobPosting
+              PUBLISHED (P1-A1) và anonymous apply RPC bind JobPosting (P1-B) đã nghiệm thu.
             </p>
           </div>
           <Link
@@ -351,7 +364,19 @@ export default async function AdminJobPostingsListPage({ searchParams }: PagePro
           </div>
         </div>
 
-        {/* Footer note — phần bị khóa */}
+        {/* Footer note — UI truth baseline (hrp-p1-a0.2 / T1C).
+            *
+            *  Chỉ giữ lại những capability thật sự còn hạn chế. Những claim về
+            *  "form tạo chưa dựng / public detail còn Project-backed / anonymous
+            *  apply chờ P1-A1" đã được P1-A0.1, P1-A1, P1-B (tất cả ACCEPTED
+            *  trên main) giải quyết — không được ghi ngược trên UI production.
+            *
+            *  Items còn hạn chế:
+            *  - Gallery media integration: chưa có — AV4 còn chờ. JobPosting chỉ
+            *    mang schema rich-text validator hiện hữu (descriptionJson/
+            *    requirementsJson/benefitsJson/applicationInstructionsJson).
+            *    Đây là đầu mối duy nhất còn lại; khi AV4 merge sẽ cập nhật lại.
+            */}
         <section
           className="mt-6 rounded-lg border p-4 text-sm"
           style={{
@@ -359,16 +384,21 @@ export default async function AdminJobPostingsListPage({ searchParams }: PagePro
             backgroundColor: 'var(--color-surface-container)',
             color: 'var(--on-surface-variant)',
           }}
-          aria-label="Phần bị khóa"
+          aria-label="Phần còn hạn chế"
+          data-testid="locked-section-list"
         >
           <h2 className="mb-2 text-sm font-semibold" style={{ color: 'var(--on-surface)' }}>
-            Phần bị khóa (chờ bước sau)
+            Phần còn hạn chế (đang chờ tích hợp)
           </h2>
           <ul className="ml-4 list-disc space-y-1">
-            <li><strong>Tạo mới draft từ slot</strong> ở list page → form chọn StaffingOrderSlot chưa dựng (P1-A0 POST API đã sẵn sàng, UI form sẽ thêm ở bước sau).</li>
-            <li><strong>Mở JobPosting ở trang public</strong> (<code>/viec-lam/[slug]</code>) → trang public hiện vẫn tra Project (qua <code>getPublicJobDetail</code>), chưa gắn với JobPosting. Sẽ được khôi phục khi <code>P1-A1</code> hoàn tất ánh xạ.</li>
-            <li><strong>Gallery media</strong> (ảnh đính kèm JobPosting) → chờ AV4 Media Library integration.</li>
-            <li><strong>Anonymous apply RPC gắn JobPosting</strong> → chờ P1-A1 (CandidateSubmission.jobPostingId).</li>
+            <li>
+              <strong>Gallery media</strong> (ảnh đính kèm JobPosting) — JobPosting hiện chỉ mang
+              rich-text content qua 4 field <code>descriptionJson</code> /
+              <code>requirementsJson</code> / <code>benefitsJson</code> /
+              <code>applicationInstructionsJson</code> (validator AC-03..AC-05). Media
+              library integration chưa có; dự kiến sẽ đến sau cùng với AV4 Media
+              Library.
+            </li>
           </ul>
         </section>
       </div>
