@@ -13,20 +13,22 @@
 > | Docs freeze SHA (T1A v1.4 freeze commit) | `56d461695bb47c0ae607444551cca45558313b04` |
 > | Post-freeze pin/update SHA (HANDOFF-only pin metadata) | `a7f4591a87eef26a860e7c789e98bf509f2c5a03` |
 > | Audit target | the new remote branch HEAD produced by this correction (reported externally; do not attempt a self-referential SHA inside the commit that creates itself) |
+> | Post-audit accepted-main reconciliation / canonical Implementation SHA | `bcb76d0263872eee421b586fd9e78ce893863dec` |
 >
 > **Range truthfulness:**
 >
-> - `f5f8a011..HEAD` contains docs/control changes only (TASK.md + HANDOFF.md only).
+> - `f5f8a011..c898ce58` contains docs/control changes only (TASK.md + HANDOFF.md only).
 > - `56d46169..a7f4591a` contains HANDOFF-only pin metadata.
-> - The v1.5 correction commit (this round) is also docs/control-only.
-> - There is **zero semantic source/test/schema/migration/package delta after `f5f8a011`**.
+> - `09eb5b77` adds only the byte-exact Tier 3 `AUDIT.md`.
+> - `bcb76d02` reconciles accepted `main` after PR #60; its six incoming files are exclusively P1-A0.2 JobPosting UI/docs and do not overlap E1.
+> - There is **zero E1 semantic source/test delta after `f5f8a011`**; H-16 pins the newest combined delivery at `bcb76d02`.
 
 ## 0. Control
 
-|| Field | Value |
+| Field | Value |
 |---|---|---|
 | Task slug | `hrp-p1-e1-recruiter-workbench-ui` |
-| Spec version | `v1.5` |
+| Spec version | `v1.6` |
 | Audit mode (phải khớp TASK) | `LIGHT` |
 | Audit mode | `LIGHT` |
 | Assurance lane | `STANDARD` |
@@ -35,15 +37,18 @@
 | Baseline note | T0 → T1A reconciliation: origin/main HEAD đã được forward-merge vào E1 branch. Baseline trong TASK/HANDOFF ghi nhận reconciled origin/main SHA. Pre-reconciliation baseline `224a4d9f` preserved trong TASK.md Revision Log v1.3 + v1.0/v1.1/v1.2 history. |
 | E1 semantic Implementation SHA | `36fb9d22b1cc097ba7bf685f38b74a729dbc15b5` |
 | E1 semantic Implementation SHA note | Semantic UI + tests commit trên branch `codex/t1a-p1e1-recruiter-workbench-ui`. Contract materialization pinned at `b57fa5de`. Pre-reconciliation docs-freeze commit pinned at `b81f5b94`. Cả 3 commit preserved unmodified trên branch qua ordinary merge. |
-| Implementation SHA | `f5f8a0116a1ea5a4b9a2dd3154ed93b586a202e8` |
-| Implementation SHA note | Reconciled Implementation SHA (= `f5f8a011...`) — exact merge commit chứa E1 (UI + tests `36fb9d22` + contract materialization `b57fa5de` + pre-reconciliation docs-freeze `b81f5b94`) cộng với latest accepted main (40 commits ahead at the time of T0). Pinned here as the canonical `Implementation SHA` because H-16 invariant = "no semantic source/test delta after this SHA". Range `f5f8a011..HEAD` contains docs/control changes only (TASK.md + HANDOFF.md); zero semantic source/test delta. T1A v1.4 docs-freeze commit `56d46169` and HANDOFF-only pin metadata commit `a7f4591a` and the v1.5 docs/control-only correction commit are all docs-only and do not change this invariant. |
+| Implementation SHA | `bcb76d0263872eee421b586fd9e78ce893863dec` |
+| Implementation SHA note | Canonical post-audit accepted-main reconciliation SHA. It contains the audited E1 delivery unchanged plus six already-accepted P1-A0.2 files from PR #60 required by GitHub's up-to-date rule. `git diff c898ce58..bcb76d02 -- app/admin/recruiter-workbench docs/tasks/hrp-p1-e1-recruiter-workbench-ui` contains only the byte-exact `AUDIT.md`; zero E1 source/test bytes changed. Pinning the newest combined delivery keeps H-16 truthful. |
 | Reconciled Implementation SHA | `f5f8a0116a1ea5a4b9a2dd3154ed93b586a202e8` |
-| Reconciled Implementation SHA note | Exact merge commit chứa E1 (UI + tests `36fb9d22` + contract materialization `b57fa5de` + pre-reconciliation docs-freeze `b81f5b94`) cộng với latest accepted main (40 commits ahead at the time of T0). Ordinary forward-merge `git merge origin/main --no-ff`, clean — no conflicts. Synonym of canonical `Implementation SHA` above (H-16 anchor). |
+| Reconciled Implementation SHA note | Historical pre-audit merge commit chứa E1 (UI + tests `36fb9d22` + contract materialization `b57fa5de` + pre-reconciliation docs-freeze `b81f5b94`) cộng với accepted main tại thời điểm T0 reconciliation. Ordinary forward-merge `git merge origin/main --no-ff`, clean — no conflicts. It was the H-16 anchor before PR #60 landed; the current canonical H-16 anchor is `bcb76d02`. |
 | Docs freeze SHA | `56d461695bb47c0ae607444551cca45558313b04` |
 | Docs freeze SHA note | T1A v1.4 freeze commit (TASK.md v1.3 → v1.4 + HANDOFF.md §0 control updated to reconciled baseline + identity). Docs-only; no source/test change. After this commit: HANDOFF-only pin metadata commit `a7f4591a`, then the v1.5 docs/control-only correction commit. |
 | Post-freeze pin/update SHA | `a7f4591a87eef26a860e7c789e98bf509f2c5a03` |
 | Post-freeze pin/update SHA note | HANDOFF-only pin metadata commit; only modifies `docs/tasks/hrp-p1-e1-recruiter-workbench-ui/HANDOFF.md`. Range `56d46169..a7f4591a` contains this HANDOFF-only update. |
-| Audit target | the new remote branch HEAD produced by this v1.5 correction (reported externally in the final report; do not self-reference inside this commit) |
+| Audit target | `c898ce58b24cbfbef3dfe2eda3fe2f20f6c10393` |
+| Audit adoption SHA | `09eb5b7751eb14df919da0b3c86ed16c4e3dce41` |
+| Post-audit accepted-main reconciliation SHA | `bcb76d0263872eee421b586fd9e78ce893863dec` (canonical `Implementation SHA`; E1 bytes unchanged) |
+| Production merge SHA | `a3383d64736b2536e000ce7b102c22ce8dad49ed` (PR #61) |
 | Origin/main merged SHA | `4970f47d481c185f655242e3e91480e4117241dd` |
 | Origin/main commits merged | `40` |
 | Frozen delivery | `YES` |
@@ -54,12 +59,12 @@
 | Audit eligibility rationale | E1 là read-only UI consumer của E0 (ACCEPTED tại `c647fc6a` per PR #54, hiện visible tại `4970f47d` post-F0/A0-1 closeout). All 19 AC design-verified + unit-covered; no business authority ở client (no mutation, no derived `nextAction`/`isOverdue`/`ageHours`, no client PII masking). Forward-merge `origin/main` clean: E1 chỉ thêm mới `app/admin/recruiter-workbench/**`; main thêm các path tách biệt (`app/admin/jobs/**`, `app/api/admin/jobs/**`, `app/api/admin/placements/**`, `prisma/**`, `src/domains/staffing/**`, `src/domains/talent/placement.commands*`, `src/domains/job-board/**`, `tests/db/**`, `vitest.integration-files.ts`). |
 | Correction batches used | `0` |
 | Execution round | `1` |
-| Current audit round | `0` |
-| Status | `READY_FOR_AUDIT` |
+| Current audit round | `1` |
+| Status | `ACCEPTED` |
 | Executor | `Tier 1` |
 | Worktree | `C:\CodeApp\HrP-worktrees\t1a-p1e1-recruiter-workbench-ui` |
 | Branch | `codex/t1a-p1e1-recruiter-workbench-ui` |
-| Next gate | `TIER3_LIGHT_AUDIT` |
+| Next gate | `NONE — MERGED_AND_PRODUCTION_VERIFIED` |
 | Test environment | `NOT_REQUIRED` (UI / component lane; E0 service mocked at unit-lane; fail-closed DB lane enforced by `vitest.unit.config.ts`) |
 | n8n boundary | `N/A` (UI does not call n8n) |
 
@@ -215,10 +220,11 @@ No blockers. `verify-task.ps1` PASS. `verify-handoff.ps1` PASS. All 19 AC have e
 |---|---|
 | Branch | `codex/t1a-p1e1-recruiter-workbench-ui` |
 | **E1 semantic Implementation SHA** (preserved unmodified) | `36fb9d22b1cc097ba7bf685f38b74a729dbc15b5` (semantic UI + tests commit; reachable as `HEAD~4`) |
-| **Reconciled Implementation SHA** (final freeze HEAD for H-16) | `f5f8a0116a1ea5a4b9a2dd3154ed93b586a202e8` (ordinary forward-merge of `origin/main` into E1 branch; exact commit chứa E1 + latest accepted main) |
+| **Reconciled Implementation SHA** (pre-audit historical anchor) | `f5f8a0116a1ea5a4b9a2dd3154ed93b586a202e8` (ordinary forward-merge of `origin/main` into E1 branch before audit) |
+| **Canonical Implementation SHA for H-16** | `bcb76d0263872eee421b586fd9e78ce893863dec` (post-audit accepted-main reconciliation; zero E1 semantic delta) |
 | **Docs freeze SHA** (T1A v1.4 freeze commit) | `56d461695bb47c0ae607444551cca45558313b04` (TASK.md v1.3 → v1.4 + HANDOFF.md §0 control updated; docs-only) |
 | **Post-freeze pin/update SHA** (HANDOFF-only pin metadata) | `a7f4591a87eef26a860e7c789e98bf509f2c5a03` (only modifies HANDOFF.md; range `56d46169..a7f4591a` contains this HANDOFF-only update) |
-| **Audit target** (v1.5 docs/control-only correction commit) | the new remote branch HEAD produced by this correction (reported externally in the final report; do not self-reference inside this commit) |
+| **Audit target** (v1.5 docs/control-only correction commit) | `c898ce58b24cbfbef3dfe2eda3fe2f20f6c10393` |
 | **Contract-materialization SHA** (preserved unmodified) | `b57fa5ded863c280033c53cfc613e2cccb8b551e` |
 | **Pre-reconciliation docs-freeze SHA** (preserved unmodified) | `b81f5b94401fc14af9d07c7eefd2e94d55e17096` |
 | **Origin/main merged SHA** | `4970f47d481c185f655242e3e91480e4117241dd` |
@@ -229,8 +235,8 @@ No blockers. `verify-task.ps1` PASS. `verify-handoff.ps1` PASS. All 19 AC have e
 | Canonical gates | PASS |
 | Audit eligibility | ELIGIBLE |
 | Correction batches used | `0` (v1.5 is a pre-audit docs-integrity correction, not a semantic E1 or post-audit correction batch; `correction budget: 1` preserved for post-audit) |
-| Current audit round | `0` |
-| Next gate | TIER3_LIGHT_AUDIT |
+| Current audit round | `1` |
+| Next gate | NONE — MERGED_AND_PRODUCTION_VERIFIED |
 
 ### 5.3 Tier 3 stop / handoff
 
@@ -240,4 +246,14 @@ No blockers. `verify-task.ps1` PASS. `verify-handoff.ps1` PASS. All 19 AC have e
 - v1.5 pre-audit docs-integrity correction: spec version v1.4 → v1.5, status `READY_FOR_EXECUTION` → `READY_FOR_AUDIT`, next gate `TIER1_IMPLEMENTATION_FREEZE` → `TIER3_LIGHT_AUDIT`. Correction batches used = `0` (pre-audit docs-integrity, not a semantic E1 correction batch and not a post-audit correction batch; `correction budget: 1` preserved for post-audit). All 5 SHA identities preserved unmodified across the round; no amend/reset/rebase/force-push.
 - Branch will be pushed to `origin` after this v1.5 docs/control-only correction commit lands (so the resulting `verify-task.ps1` / `verify-handoff.ps1` / `verify-encoding.mjs` runs against the committed TASK.md + HANDOFF.md with v1.5 fields). Working tree must be clean. Do not open PR. Do not call Tier 3. Do not merge or deploy. Stop for T0 review.
 
-Handoff status: READY_FOR_AUDIT
+## 6. Closeout
+
+- **Audit disposition:** Tier 3 LIGHT round 1 `PASS`; 19/19 AC measured; zero P0/P1/P2. O-01 remains accepted P3 code debt. O-02 was a docs-only malformed table header and is corrected in this closeout.
+- **Audit adoption:** byte-exact `AUDIT.md` adopted at `09eb5b7751eb14df919da0b3c86ed16c4e3dce41`.
+- **Merge:** PR #61 merged into `main` as `a3383d64736b2536e000ce7b102c22ce8dad49ed`.
+- **Main verification:** CI run `36321408501` passed Quality and Integration. Integration applied all 39 migrations to its clean PostgreSQL container, confirmed no drift, and completed the fail-closed suite.
+- **Production deployment:** Vercel status for merge commit `a3383d64736b2536e000ce7b102c22ce8dad49ed` is SUCCESS. P1-E1 has no schema/migration delta, so no production migration was required.
+- **Production smoke:** unauthenticated `GET https://www.hrpartner.vn/admin/recruiter-workbench` returned `307` with `Location: /login?callback=/admin`; the deployed route exists and remains fail-closed. No production data was written.
+- **Dependency release:** P1-E1 is `ACCEPTED`; P1-F1 may remove `WAIT_P1_E1_ACCEPTED` only through its own materialization round from current `origin/main`.
+
+Handoff status: ACCEPTED
