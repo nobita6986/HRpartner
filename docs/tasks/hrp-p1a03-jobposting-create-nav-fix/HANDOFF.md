@@ -11,10 +11,10 @@
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
 | Baseline | `2586b9fa2574c978be56f4d8dc259228516fdfbc` |
-| Implementation SHA | `PENDING` (set in §1 when impl commit freezes) |
-| Frozen delivery | `YES` (after §1 SHA is pinned, before final commit) |
-| Canonical gates | `PASS` (after final commit, all gates green) |
-| Audit eligibility | `PENDING` (set to READY_FOR_AUDIT after final verify-handoff PASS) |
+| Implementation SHA | `36e5b18e448577d240b932b9af296fa60845df04` |
+| Frozen delivery | `YES` |
+| Canonical gates | `PASS` |
+| Audit eligibility | `READY_FOR_AUDIT` |
 | Correction budget | `1` |
 | Correction batches used | `0` |
 | Execution round | `1` |
