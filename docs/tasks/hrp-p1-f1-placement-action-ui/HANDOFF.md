@@ -8,14 +8,15 @@
 > | Role | SHA |
 > |---|---|
 > | F1 semantic Implementation SHA | `4983fdc448503cd1a0037788a0a4810c31b267d8` |
-> | Docs/evidence SHA | `<F1_DOCS_SHA>` (TASK.md Revision Log + HANDOFF.md + AUDIT.md; reported after this commit lands) |
-> | Branch HEAD | `<HEAD_SHA>` (post-freeze; reported after this commit lands) |
+> | Docs/evidence SHA | `0dc2557131acdab02c157a5790d28113b05cebbc` |
+> | Branch HEAD | `0dc2557131acdab02c157a5790d28113b05cebbc` |
 > | Baseline | `fabeda29c97720612136909b8f7beccfdf217c25` |
 > | P1-E1 production merge SHA | `a3383d64736b2536e000ce7b102c22ce8dad49ed` |
 >
-> **Range truthfulness:** post-freeze semantic commit `4983fdc` lands first; this
-> docs/evidence commit follows immediately. Range `4983fdc..HEAD` after this commit
-> contains docs/evidence only (TASK.md Revision Log row 4 + this HANDOFF.md + AUDIT.md).
+> **Range truthfulness:** post-freeze semantic commit `4983fdc` lands first;
+> docs/evidence commit `0dc25571` follows immediately. Range `4983fdc..HEAD`
+> contains docs/evidence only (TASK.md Revision Log row 4 + this HANDOFF.md +
+> AUDIT.md).
 
 ## 0. Control
 
@@ -32,8 +33,8 @@
 | F1 semantic Implementation SHA | `4983fdc448503cd1a0037788a0a4810c31b267d8` |
 | F1 semantic Implementation SHA note | Code commit gá»“m: E0 additive DTO (`recruiter-workbench.types.ts` + read-service include/derive + read-service.test.ts); F1 fetch helper + tests; F1 states helper + tests; F1 UI components (`PlacementActionCell` + `PlacementActionDrawer` + `PlacementCreateForm` + `EffectiveEvidenceForm` + `ConfirmPlacementActionDialog`) + SSR structural tests; E1 integration (`RecruiterWorkbenchTable` wiring `PlacementActionCell`); required-relation-sweep static test bump (22â†’25 hits); DB integration test (`tests/db/p1f1-placement-action-ui.integration.test.ts`). |
 | Implementation SHA | `4983fdc448503cd1a0037788a0a4810c31b267d8` |
-| Docs/evidence SHA | `<F1_DOCS_SHA>` (TASK.md Revision Log row 4 + HANDOFF.md + AUDIT.md; reported after this commit lands) |
-| Audit target | `<HEAD_SHA>` (post-freeze; reported after this commit lands) |
+| Docs/evidence SHA | `0dc2557131acdab02c157a5790d28113b05cebbc` |
+| Audit target | `0dc2557131acdab02c157a5790d28113b05cebbc` |
 | Origin/main commits merged | 0 (F1 additive on top of main HEAD `fabeda29`; no forward-merge needed) |
 | Frozen delivery | `YES` |
 | Canonical gates | `PASS` |
@@ -244,8 +245,8 @@ No blockers. `verify-task.ps1` PASS. `verify-handoff.ps1` PASS. All 19 AC have e
 | **F1 materialization SHA** (docs-only, branch táº¡o tá»« fabeda29) | `6dbd971d` (v1.1 RECON + TASK materialization from planning commit `0eb9b0e4`) |
 | **F1 control-flip SHA** (docs-only) | `973585b9c3fa0b6e28c973f389966a07944ba549` (Status/Contract gate/Decision state/Next gate flip) |
 | **F1 semantic Implementation SHA** (semantic code + tests commit, code freeze anchor) | `4983fdc448503cd1a0037788a0a4810c31b267d8` |
-| **Docs/evidence SHA** (TASK.md Revision Log + HANDOFF + AUDIT) | `<F1_DOCS_SHA>` (reported after this commit lands) |
-| **Audit target** (post-freeze HEAD) | `<HEAD_SHA>` (reported after this commit lands) |
+| **Docs/evidence SHA** (TASK.md Revision Log + HANDOFF + AUDIT) | `0dc2557131acdab02c157a5790d28113b05cebbc` |
+| **Audit target** (post-freeze HEAD) | `0dc2557131acdab02c157a5790d28113b05cebbc` |
 | Frozen delivery | YES |
 | Canonical gates | PASS |
 | Audit eligibility | ELIGIBLE |

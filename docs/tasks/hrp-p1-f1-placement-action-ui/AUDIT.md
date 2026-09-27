@@ -25,8 +25,8 @@
 | Baseline | `fabeda29c97720612136909b8f7beccfdf217c25` (origin/main HEAD) |
 | Implementation SHA | `4983fdc448503cd1a0037788a0a4810c31b267d8` (semantic code commit; landed) |
 | F1 semantic Implementation SHA note | H-16 anchor = exact semantic code + tests commit. Must exactly match HANDOFF Â§5.2. |
-| Docs/evidence SHA | `<F1_DOCS_SHA>` (TASK.md Revision Log row 4 + HANDOFF.md + AUDIT.md; reported after this commit lands) |
-| Audit target | `<HEAD_SHA>` (post-freeze; reported after this commit lands) |
+| Docs/evidence SHA | `0dc2557131acdab02c157a5790d28113b05cebbc` (TASK.md Revision Log row 4 + HANDOFF.md + AUDIT.md; landed) |
+| Audit target | `0dc2557131acdab02c157a5790d28113b05cebbc` (post-freeze HEAD; landed) |
 | TASK status | `READY_FOR_AUDIT` |
 | HANDOFF Frozen delivery | `YES` |
 | HANDOFF Audit eligibility | `ELIGIBLE` |
