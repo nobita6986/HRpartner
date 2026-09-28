@@ -8,22 +8,28 @@
  *   payload verbatim; the caller decides whether to call `router.refresh()`.
  * LOCK-13: idempotency key is RAW UUID v4 (per-tab `sessionStorage`),
  *   scoped in `hrp.p1f1.idem.<command>.<scope>.<payloadHash>` so identical
- *   retries reuse the key but payload changes mint a fresh one. Cleared
- *   on 200/201 terminal success.
+ *   retries reuse the key but payload changes mint a fresh one.
  *
- * This is an isomorphic module — the pure helpers (`mintPlacementIdempotencyKey`)
- * export from `./placement-actions.states`. This file glues them to the
- * global `fetch` (browser) and to per-tab `sessionStorage` (browser).
- *
- * NO deps beyond the project modules — no SWR, no react-query, no library
- * abstraction over `fetch`.
+ * Safe error mapping (F-03 / LOCK-09 / RQ-12 / AC-08):
+ *   - 500 / unknown / network failure → fixed generic Vietnamese message.
+ *     NEVER render raw `envelope.message`, raw `Error.message`, `details`,
+ *     `acknowledgementRef`, evidence, actor ID, tokens, or PII.
+ *   - 4xx (400/401/403/404/409) → frozen safe mapping; preserves
+ *     canonical server `message` if present and Vietnamese-friendly, else
+ *     fall back to a generic message keyed by `error` code.
+ *   - Same `Idempotency-Key` is preserved across network uncertainty and
+ *     5xx retry (the key was already minted; we never clear it on
+ *     non-terminal outcomes — only on 200/201 success).
  */
 
 import { PLACEMENT_COMMAND_ROUTES } from '@/src/domains/talent/placement.commands';
 
 import {
+  NETWORK_GENERIC_VI,
   type PlacementCommandName,
   type PlacementCommandPayloadShape,
+  SAFE_CODE_MESSAGES,
+  SERVER_GENERIC_VI,
   sessionStorageKeyForPlacementCommand,
 } from './recruiter-workbench.placement-actions.states';
 
@@ -31,11 +37,6 @@ import {
 // 1. Raw UUID v4 mint (LOCK-13).
 // ─────────────────────────────────────────────────────────────────────────
 
-/**
- * Generate a fresh UUID v4 using `crypto.randomUUID` (browser-native).
- * Throws if the runtime does NOT expose `crypto.randomUUID` — i.e. the
- * caller forgot to gate on `typeof window`. We do NOT polyfill.
- */
 export function mintUuidV4(): string {
   if (typeof globalThis.crypto?.randomUUID !== 'function') {
     throw new Error('crypto.randomUUID không khả dụng — trình duyệt không hỗ trợ');
@@ -46,17 +47,6 @@ export function mintUuidV4(): string {
 /**
  * Mint-or-reuse the per-tab sessionStorage Idempotency-Key for the given
  * canonical command + scope + payload.
- *
- * Returns `{ key, isFresh }`:
- *   - `isFresh=true` → first time the row sees this command+payload → key
- *     was just minted. Subsequent calls (double-click / network retry /
- *     5xx retry) with the same scope + payload reuse the same key.
- *   - `isFresh=false` → key reused from sessionStorage.
- *
- * On `200/201` success the caller MUST clear the entry (see
- * `clearPlacementIdempotencyKey`) so a same-payload retry AFTER a successful
- * transition is treated as a fresh user action (UX: the user sees the
- * updated status; a subsequent click must be intentional).
  */
 export function mintPlacementIdempotencyKey(args: {
   command: PlacementCommandName;
@@ -65,14 +55,10 @@ export function mintPlacementIdempotencyKey(args: {
 }): { key: string; isFresh: boolean } {
   const storageKey = sessionStorageKeyForPlacementCommand(args);
   if (typeof globalThis.window === 'undefined') {
-    // Non-browser runtime — always mint fresh (caller is a server-side test).
     return { key: mintUuidV4(), isFresh: true };
   }
   const existing = globalThis.window.sessionStorage.getItem(storageKey);
   if (existing && existing.length === 36) {
-    // Mid-key shape check; we deliberately do NOT call `isUuidV4` here to
-    // avoid an import cycle (and the storage key already encodes the
-    // command+scope+hash, so a collision with a wrong format is impossible).
     return { key: existing, isFresh: false };
   }
   const fresh = mintUuidV4();
@@ -80,54 +66,33 @@ export function mintPlacementIdempotencyKey(args: {
   return { key: fresh, isFresh: true };
 }
 
-/** Clear ALL idempotency keys for the given command + scope (post-success). */
+/**
+ * Clear the idempotency key EXACTLY on terminal success (200/201).
+ *
+ * On ANY non-terminal outcome (network exception, 4xx, 5xx, parse failure)
+ * the key MUST stay in sessionStorage so the next deliberate attempt
+ * reuses the SAME key — guaranteeing idempotent retry semantics under
+ * uncertainty. The caller invokes this function ONLY after a `ok: true`
+ * result.
+ */
 export function clearPlacementIdempotencyKey(args: {
   command: PlacementCommandName;
   scope: string;
-  payload?: unknown;
+  payload: unknown;
 }): void {
   if (typeof globalThis.window === 'undefined') return;
-  // Clear by exact key when payload provided; otherwise clear every key
-  // matching `hrp.p1f1.idem.<command>.<scope>.*` (defensive — covers the
-  // case where the caller changes only the payload between submits).
-  if (args.payload !== undefined) {
-    globalThis.window.sessionStorage.removeItem(
-      sessionStorageKeyForPlacementCommand({
-        command: args.command,
-        scope: args.scope,
-        payload: args.payload,
-      }),
-    );
-    return;
-  }
-  const prefix = `hrp.p1f1.idem.${args.command}.${args.scope}.`;
-  const keysToRemove: string[] = [];
-  for (let i = 0; i < globalThis.window.sessionStorage.length; i++) {
-    const k = globalThis.window.sessionStorage.key(i);
-    if (k && k.startsWith(prefix)) keysToRemove.push(k);
-  }
-  for (const k of keysToRemove) {
-    globalThis.window.sessionStorage.removeItem(k);
-  }
+  const storageKey = sessionStorageKeyForPlacementCommand({
+    command: args.command,
+    scope: args.scope,
+    payload: args.payload,
+  });
+  globalThis.window.sessionStorage.removeItem(storageKey);
 }
 
 // ─────────────────────────────────────────────────────────────────────────
 // 2. URL building — canonical F0 endpoints.
 // ─────────────────────────────────────────────────────────────────────────
 
-/**
- * Compute the canonical URL for a placement command. The 5 canonical
- * endpoints live in `placement.commands.ts → PLACEMENT_COMMAND_ROUTES`
- * and the existing routes use `placementId` as the URL `:id`.
- *
- * The map's values are prefixed with the request method (e.g.
- * `POST:/api/admin/placements/[id]/actions/confirm`) for the
- * `withIdempotency` scope key. We strip the `METHOD:` prefix here so
- * the URL handed to `fetch()` is plain path.
- *
- * For `placement.create` there is no `:id` — the case+jobOpening come from
- * the body. For the 4 transitions the `:id` is the placement id.
- */
 export function urlForPlacementCommand(args: {
   command: PlacementCommandName;
   placementId?: string;
@@ -144,10 +109,8 @@ export function urlForPlacementCommand(args: {
             : 'cancel'
   ];
 
-  // Strip the leading `METHOD:` prefix used by withIdempotency scoping.
   const pathOnly = route.replace(/^[A-Z]+:/, '');
 
-  // Replace the `[id]` segment with the real placement id when present.
   if (pathOnly.includes('[id]')) {
     if (!args.placementId) {
       throw new Error(
@@ -163,7 +126,49 @@ export function urlForPlacementCommand(args: {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// 3. POST wrapper — Idempotency-Key in header + safe JSON body.
+// 3. Safe Vietnamese message mapping (F-03).
+//   - Constants live in `./recruiter-workbench.placement-actions.states`
+//     so the same frozen text is used by both `formatErrorMessage` (inline
+//     alert rendering) and this fetch wrapper.
+//   - `safeMessageForError` here ONLY adds the INTERNAL → server-generic
+//     alias and a status-keyed last-resort fallback. The two callers stay
+//     semantically aligned.
+// ─────────────────────────────────────────────────────────────────────────
+
+const SAFE_CODE_MESSAGES_WITH_INTERNAL: Record<string, string> = {
+  ...SAFE_CODE_MESSAGES,
+  INTERNAL: SERVER_GENERIC_VI,
+};
+
+/**
+ * Map a server error code → safe Vietnamese display message.
+ * NEVER pass through raw `envelope.message` if the status is 5xx or the
+ * error code is unknown (defense against accidental PII leakage).
+ */
+function safeMessageForError(
+  errorCode: string,
+  status: number,
+  envelopeMessage: string | null,
+): string {
+  if (status >= 500 || status === 0) {
+    return SAFE_CODE_MESSAGES_WITH_INTERNAL[errorCode] ?? SERVER_GENERIC_VI;
+  }
+  if (errorCode === 'UNKNOWN' || !errorCode) {
+    return `Yêu cầu thất bại (mã ${status}). Vui lòng thử lại.`;
+  }
+  const canned = SAFE_CODE_MESSAGES[errorCode];
+  if (canned) return canned;
+  // 4xx with a known Vietnamese-friendly server message: keep verbatim.
+  // The server is responsible for not leaking PII/secret fields here;
+  // if it does, the F0 route's logging taxonomy will catch the regression.
+  if (envelopeMessage && envelopeMessage.trim().length > 0) {
+    return envelopeMessage;
+  }
+  return `Yêu cầu thất bại (mã ${status}). Vui lòng thử lại.`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// 4. POST wrapper — Idempotency-Key in header + safe JSON body.
 // ─────────────────────────────────────────────────────────────────────────
 
 export interface PlacementCommandRequest {
@@ -181,35 +186,15 @@ export interface PlacementCommandSuccess<TBody> {
 export interface PlacementCommandFailure {
   ok: false;
   status: number;
-  envelope:
-    | {
-        error: string;
-        message: string;
-      }
-    | null;
   errorCode: string;
-  /** Short, Vietnamese-ready message usable in `<p role="alert">`. */
+  /** Short, Vietnamese-safe message usable in `<p role="alert">`. */
   displayMessage: string;
 }
 
-/**
- * Result envelope returned by `runPlacementCommandRequest`. Discriminated
- * on `ok` so the caller can switch on success vs failure at the type level.
- */
 export type PlacementCommandResult<TBody> =
   | PlacementCommandSuccess<TBody>
   | PlacementCommandFailure;
 
-/**
- * Headers bound by the F0 routes we POST to:
- *   - `Accept: application/json` — strict (no wildcard accept).
- *   - `Content-Type: application/json` — required by NextRequest.json() flow.
- *   - `x-idempotency-key: <raw uuid v4>` — LOCK-13.
- *
- * We NEVER set `credentials: include` — the request inherits the same
- * cookie jar as the page render. The `Idempotency-Key` is the only header
- * we add.
- */
 export function headersForPlacementCommand(idempotencyKey: string): HeadersInit {
   return {
     Accept: 'application/json',
@@ -225,11 +210,13 @@ export function headersForPlacementCommand(idempotencyKey: string): HeadersInit 
  *   1. mint-or-reuse `Idempotency-Key` scoped to `(command, scope, payload)`
  *   2. POST the canonical URL with the body + Idempotency-Key header
  *   3. Parse the response (status + JSON envelope or null)
- *   4. Return a discriminated union — caller NEVER has to inspect raw
+ *   4. Map to safe Vietnamese message (F-03): 500/network/unknown → generic;
+ *      4xx → frozen safe mapping keyed by error code.
+ *   5. On terminal success (200/201), CLEAR the idempotency key so the
+ *      NEXT deliberate attempt with the SAME payload mints a fresh key.
+ *      On any non-terminal outcome, the key stays put (LOCK-13 retention).
+ *   6. Return a discriminated union — caller NEVER has to inspect raw
  *      `Response` objects.
- *
- * The helper intentionally does NOT call `router.refresh()`; that is the
- * caller's responsibility after a successful `ok: true` result.
  */
 export async function runPlacementCommandRequest<TBody>(
   req: PlacementCommandRequest,
@@ -271,8 +258,6 @@ export async function runPlacementCommandRequest<TBody>(
     response = await fetch(url, {
       method: 'POST',
       headers: headersForPlacementCommand(idempotencyKey),
-      // For `placement.create` we send the full body; for transitions we
-      // send an empty object (the route's `validateXxxBody` accepts `{}`).
       body: JSON.stringify(
         command === 'placement.create'
           ? {
@@ -299,17 +284,15 @@ export async function runPlacementCommandRequest<TBody>(
       ),
       cache: 'no-store',
     });
-  } catch (e) {
-    // Network-level failure (DNS, CORS preflight, etc.).
+  } catch {
+    // Network-level failure (DNS, CORS preflight, abort, offline, etc.).
+    // F-03: render fixed generic Vietnamese message; the key stays in
+    // sessionStorage so a deliberate retry reuses the same Idempotency-Key.
     return {
       ok: false,
       status: 0,
-      envelope: null,
       errorCode: 'NETWORK',
-      displayMessage:
-        e instanceof Error
-          ? `Không thể kết nối máy chủ: ${e.message}`
-          : 'Không thể kết nối máy chủ.',
+      displayMessage: NETWORK_GENERIC_VI,
     };
   }
 
@@ -324,11 +307,15 @@ export async function runPlacementCommandRequest<TBody>(
       body = null;
     }
 
-    // Best-effort replayed flag extraction; absence is fine (older routes).
     const replayed =
       body && typeof body === 'object' && 'replayed' in (body as object)
         ? Boolean((body as { replayed?: unknown }).replayed)
         : false;
+
+    // LOCK-13: clear the idempotency key ONLY on terminal success. A
+    // subsequent click with the same payload is treated as a fresh user
+    // action (UX intent: the user sees the updated status and clicks again).
+    clearPlacementIdempotencyKey({ command, scope, payload });
 
     return {
       ok: true,
@@ -338,8 +325,10 @@ export async function runPlacementCommandRequest<TBody>(
     };
   }
 
-  // Failure — try to parse the canonical `{ error, message }` envelope.
-  let envelope: { error: string; message: string } | null = null;
+  // Failure — try to parse the canonical `{ error, message }` envelope,
+  // but DO NOT trust its `message` for 5xx or unknown codes.
+  let envelopeError: string | null = null;
+  let envelopeMessage: string | null = null;
   try {
     const parsed: unknown = await response.json();
     if (
@@ -349,25 +338,24 @@ export async function runPlacementCommandRequest<TBody>(
       'message' in (parsed as Record<string, unknown>)
     ) {
       const e = parsed as { error: unknown; message: unknown };
-      if (typeof e.error === 'string' && typeof e.message === 'string') {
-        envelope = { error: e.error, message: e.message };
-      }
+      if (typeof e.error === 'string') envelopeError = e.error;
+      if (typeof e.message === 'string') envelopeMessage = e.message;
     }
   } catch {
-    envelope = null;
+    // ignore — non-JSON or empty body
   }
 
-  const displayMessage = envelope
-    ? (envelope.message.length > 0
-        ? envelope.message
-        : `${envelope.error} — Yêu cầu thất bại.`)
-    : `Yêu cầu thất bại với mã ${status}.`;
+  const errorCode = envelopeError ?? 'UNKNOWN';
+  const displayMessage = safeMessageForError(
+    errorCode,
+    status,
+    envelopeMessage,
+  );
 
   return {
     ok: false,
     status,
-    envelope,
-    errorCode: envelope?.error ?? 'UNKNOWN',
+    errorCode,
     displayMessage,
   };
 }

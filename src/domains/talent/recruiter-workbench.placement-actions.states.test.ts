@@ -38,11 +38,24 @@ import {
 
 function baseRow(
   overrides: Partial<RecruiterWorkbenchRow> = {},
-): Pick<RecruiterWorkbenchRow, 'caseStatus' | 'placement' | 'placementOptions'> {
+): Pick<
+  RecruiterWorkbenchRow,
+  'caseStatus' | 'placement' | 'placementOptions' | 'nextAction'
+> {
+  // Explicit default for `nextAction`: tests targeting the workflow gate
+  // (F-06) pass `null` or a non-REVIEW value to flip the matrix into
+  // "no actions" mode; the matrix tests rely on the default below.
+  const explicit = Object.prototype.hasOwnProperty.call(
+    overrides,
+    'nextAction',
+  );
   return {
     caseStatus: overrides.caseStatus ?? 'READY_TO_PLACE',
     placement: overrides.placement ?? null,
     placementOptions: overrides.placementOptions ?? null,
+    nextAction: explicit
+      ? (overrides.nextAction as RecruiterWorkbenchRow['nextAction'])
+      : 'REVIEW_PLACEMENT',
   };
 }
 
@@ -185,6 +198,102 @@ describe('availableActionsForRow', () => {
     );
     expect(out).toEqual([]);
   });
+
+  // ───────────────────────────────────────────────────────────────────────
+  // F-06 / AC-02 / AC-16 — workflow gate. Placement mutations are only
+  //                       offered when `nextAction === 'REVIEW_PLACEMENT'`.
+  //                       All other 6 enum values must yield NO actions,
+  //                       regardless of placement status / options.
+  // ───────────────────────────────────────────────────────────────────────
+
+  const F06_NON_REVIEW_VALUES = [
+    'OPEN_INTAKE',
+    'REQUEST_DOCS',
+    'SCREEN_SUBMISSION',
+    'SCHEDULE_SCREEN',
+    'AWAITING_RESULT',
+    'NONE',
+  ] as const;
+
+  it.each(F06_NON_REVIEW_VALUES)(
+    'F-06/F06-AVR-%s: non-REVIEW_PLACEMENT nextAction → empty even with placement options',
+    (nextAction) => {
+      const out = availableActionsForRow(
+        baseRow({
+          caseStatus: 'READY_TO_PLACE',
+          placement: null,
+          placementOptions: [
+            {
+              jobOpeningId: 'jo-1',
+              sourceCandidateSubmissionId: 's1',
+              title: 'X',
+              projectName: 'P',
+              companyName: 'C',
+            },
+          ],
+          nextAction,
+        }),
+      );
+      expect(out).toEqual([]);
+    },
+  );
+
+  it.each(F06_NON_REVIEW_VALUES)(
+    'F-06/F06-AVR-CONFIRMED-%s: non-REVIEW_PLACEMENT → empty even with CONFIRMED placement',
+    (nextAction) => {
+      const out = availableActionsForRow(
+        baseRow({
+          caseStatus: 'READY_TO_PLACE',
+          placement: placement({
+            status: 'CONFIRMED',
+            managementMode: 'CLIENT_MANAGED',
+          }),
+          nextAction,
+        }),
+      );
+      expect(out).toEqual([]);
+    },
+  );
+
+  it('F-06/F06-AVR-NULL: null nextAction → empty', () => {
+    const out = availableActionsForRow(
+      baseRow({
+        caseStatus: 'READY_TO_PLACE',
+        placement: null,
+        placementOptions: [
+          {
+            jobOpeningId: 'jo-1',
+            sourceCandidateSubmissionId: 's1',
+            title: 'X',
+            projectName: 'P',
+            companyName: 'C',
+          },
+        ],
+        nextAction: null as unknown as 'REVIEW_PLACEMENT',
+      }),
+    );
+    expect(out).toEqual([]);
+  });
+
+  it('F-06/F06-AVR-REVIEW: REVIEW_PLACEMENT + options → create', () => {
+    const out = availableActionsForRow(
+      baseRow({
+        caseStatus: 'READY_TO_PLACE',
+        placement: null,
+        placementOptions: [
+          {
+            jobOpeningId: 'jo-1',
+            sourceCandidateSubmissionId: 's1',
+            title: 'X',
+            projectName: 'P',
+            companyName: 'C',
+          },
+        ],
+        nextAction: 'REVIEW_PLACEMENT',
+      }),
+    );
+    expect(out.map((a) => a.command)).toEqual(['placement.create']);
+  });
 });
 
 describe('canPerformPlacementAction', () => {
@@ -243,34 +352,96 @@ describe('formatManagementModeVi', () => {
 // ─────────────────────────────────────────────────────────────────────────
 
 describe('formatErrorMessage', () => {
-  it('F1-FEM01: uses envelope.message when present', () => {
-    expect(
-      formatErrorMessage({ error: 'CODE', message: 'Đã xảy ra lỗi X' }),
-    ).toBe('Đã xảy ra lỗi X');
+  it('F1-FEM01: 4xx known safe code → canned Vietnamese message (no envelope.message pass-through)', () => {
+    // F-03: 4xx with a known safe error code → frozen Vietnamese canned
+    // text. The envelope.message ("Đã xảy ra lỗi X") is intentionally
+    // discarded so a server regression cannot leak via render.
+    const out = formatErrorMessage(
+      { error: 'VALIDATION', message: 'Đã xảy ra lỗi X' },
+      400,
+    );
+    expect(out).toBe('Yêu cầu không hợp lệ. Vui lòng kiểm tra lại.');
+    expect(out).not.toContain('Đã xảy ra lỗi X');
   });
 
-  it('F1-FEM02: falls back to "CODE — fallback" when message absent', () => {
-    expect(formatErrorMessage({ error: 'VALIDATION' })).toContain('VALIDATION');
-    expect(formatErrorMessage({ error: 'VALIDATION' })).toContain(
-      'Yêu cầu thất bại',
+  it('F1-FEM02: 4xx known safe code (VALIDATION alone) → canned Vietnamese text', () => {
+    const out = formatErrorMessage({ error: 'VALIDATION' }, 400);
+    expect(out).toBe('Yêu cầu không hợp lệ. Vui lòng kiểm tra lại.');
+  });
+
+  it('F1-FEM03: 4xx unknown code → status-keyed fallback', () => {
+    expect(formatErrorMessage({}, 400)).toBe(
+      'Yêu cầu thất bại (mã 400). Vui lòng thử lại.',
     );
   });
 
-  it('F1-FEM03: returns generic fallback when envelope is empty', () => {
-    expect(formatErrorMessage({})).toBe('Yêu cầu thất bại. Vui lòng thử lại.');
-  });
-
-  it('F1-FEM04: returns generic fallback when envelope is null/undefined', () => {
+  it('F1-FEM04: null envelope, status=0 (network failure) → NETWORK_GENERIC_VI', () => {
     expect(formatErrorMessage(null)).toBe(
-      'Yêu cầu thất bại. Vui lòng thử lại.',
+      'Không thể kết nối máy chủ. Vui lòng thử lại.',
     );
     expect(formatErrorMessage(undefined)).toBe(
-      'Yêu cầu thất bại. Vui lòng thử lại.',
+      'Không thể kết nối máy chủ. Vui lòng thử lại.',
     );
   });
 
-  it('F1-FEM05: custom fallback applies to empty envelopes', () => {
-    expect(formatErrorMessage({}, 'CUSTOM')).toBe('CUSTOM');
+  it('F1-FEM05: 4xx unknown code with empty envelope → status-keyed fallback (no custom override path)', () => {
+    // Status is known → status-keyed fallback wins over caller fallback.
+    expect(formatErrorMessage({}, 400, 'CUSTOM')).toBe(
+      'Yêu cầu thất bại (mã 400). Vui lòng thử lại.',
+    );
+  });
+
+  // ───────────────────────────────────────────────────────────────────────
+  // F-03 / LOCK-09 — 5xx and network failure must NEVER leak raw envelope
+  // text. The render layer must only show fixed generic Vietnamese.
+  // ───────────────────────────────────────────────────────────────────────
+
+  it('F1-FEM06: 5xx envelope.message is DROPPED → fixed generic fallback only', () => {
+    const out = formatErrorMessage(
+      { error: 'INTERNAL', message: 'Stack: at db.ts:42, PII = 0987654321' },
+      500,
+    );
+    expect(out).toBe('Đã có lỗi máy chủ. Vui lòng thử lại sau.');
+    expect(out).not.toContain('Stack');
+    expect(out).not.toContain('0987654321');
+    expect(out).not.toContain('INTERNAL');
+  });
+
+  it('F1-FEM07: 502/503/504 → fixed generic fallback only', () => {
+    for (const s of [502, 503, 504]) {
+      const out = formatErrorMessage(
+        { error: 'BAD_GATEWAY', message: 'leaky-token-XXX' },
+        s,
+      );
+      expect(out).toBe('Đã có lỗi máy chủ. Vui lòng thử lại sau.');
+      expect(out).not.toContain('leaky-token-XXX');
+    }
+  });
+
+  it('F1-FEM08: status=0 (network failure) → fixed Vietnamese fallback only', () => {
+    const out = formatErrorMessage(
+      { error: 'NETWORK', message: 'leaky fetch error text' },
+      0,
+    );
+    expect(out).toBe('Không thể kết nối máy chủ. Vui lòng thử lại.');
+    expect(out).not.toContain('leaky');
+  });
+
+  it('F1-FEM09: 5xx with null envelope → fixed generic fallback only', () => {
+    expect(formatErrorMessage(null, 500)).toBe(
+      'Đã có lỗi máy chủ. Vui lòng thử lại sau.',
+    );
+  });
+
+  it('F1-FEM10: 409 known safe code → canned Vietnamese (no envelope pass-through)', () => {
+    expect(
+      formatErrorMessage(
+        { error: 'IDEMPOTENCY_CONFLICT', message: 'Trùng thao tác' },
+        409,
+      ),
+    ).toBe(
+      'Yêu cầu trùng với thao tác trước nhưng payload khác. Vui lòng tải lại trang.',
+    );
   });
 });
 

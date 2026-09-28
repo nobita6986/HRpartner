@@ -196,6 +196,12 @@ export default async function RecruiterWorkbenchPage({ searchParams }: PageProps
 
   const finalFilter = { ...parsed.filter, view: effectiveView };
 
+  // F-02 / AC-03: derive `canMutatePlacement` server-side from the
+  // authenticated role. Server F0 authorization remains canonical; this
+  // flag is purely UX affordance.
+  const canMutatePlacement =
+    session.role === 'ADMIN' || session.role === 'HR_MANAGER';
+
   // Call E0 service inside withDbContext for RLS.
   const prisma = getPrisma();
   let data;
@@ -270,7 +276,7 @@ export default async function RecruiterWorkbenchPage({ searchParams }: PageProps
         </div>
       </section>
 
-      <RecruiterWorkbenchTable items={data.items} />
+      <RecruiterWorkbenchTable items={data.items} canMutatePlacement={canMutatePlacement} />
 
       <PaginationControls
         page={activePage}

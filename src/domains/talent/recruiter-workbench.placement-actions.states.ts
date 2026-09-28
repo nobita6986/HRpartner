@@ -1,11 +1,12 @@
 /**
  * recruiter-workbench.placement-actions.states.ts — P1-F1 pure state
- * helpers for the placement action cell (LOCK-02..LOCK-08, LOCK-15).
+ * helpers for the placement action cell (LOCK-02..LOCK-08, LOCK-15, F-06).
  *
  * Lifecycle authority is owned entirely by the F0 routes; this module
  * never derives transition decisions from the wire status. It only:
  *   - enumerates which `PlacementCommandName` is allowed given the row's
- *     `placement` + `placementOptions` + `caseStatus` snapshot;
+ *     `placement` + `placementOptions` + `caseStatus` + `nextAction`
+ *     snapshot;
  *   - formats an inline error message from a canonical F0 response envelope;
  *   - gates the "ENABLE EFFECTIVE" rule for HRP-managed placements
  *     (LOCK-15 — server still rejects with `HRP_EFFECTIVE_FORBIDDEN`);
@@ -18,6 +19,7 @@
  */
 import type {
   RecruiterWorkbenchRow,
+  ServerDerivedNextAction,
 } from '@/src/domains/talent/recruiter-workbench.types';
 import type { PlacementStatus } from '@prisma/client';
 
@@ -25,13 +27,6 @@ import type { PlacementStatus } from '@prisma/client';
 // 1. Canonical command name (route dispatch table).
 // ─────────────────────────────────────────────────────────────────────────
 
-/**
- * The 5 F0 mutation endpoints, by canonical name.
- *
- * `placement.create` is the only command that operates WITHOUT an existing
- * placement id — it MUST receive a `caseId + jobOpeningId [+ submissionId]`
- * payload. The other 4 commands operate ON an existing placement id.
- */
 export type PlacementCommandName =
   | 'placement.create'
   | 'placement.confirm'
@@ -47,10 +42,6 @@ export const PLACEMENT_COMMANDS = [
   'placement.cancel',
 ] as const satisfies ReadonlyArray<PlacementCommandName>;
 
-/**
- * `placement.create` UNLIKE the others — needs a `(caseId, jobOpeningId,
- * sourceCandidateSubmissionId?)` body. The transition commands take `{}`.
- */
 export type PlacementCommandPayloadShape =
   | {
       command: 'placement.create';
@@ -73,13 +64,9 @@ export type PlacementCommandPayloadShape =
     };
 
 // ─────────────────────────────────────────────────────────────────────────
-// 2. Availability matrix (LOCK-02 / LOCK-04 / LOCK-15).
+// 2. Availability matrix (LOCK-02 / LOCK-04 / LOCK-15 / F-06).
 // ─────────────────────────────────────────────────────────────────────────
 
-/**
- * The label + button intent matrix. The UI renders buttons ONLY for the
- * commands returned here; everything else is hidden (LOCK-04).
- */
 export interface PlacementActionDescriptor {
   command: PlacementCommandName;
   /** Short user-facing label, Vietnamese. */
@@ -89,43 +76,56 @@ export interface PlacementActionDescriptor {
 }
 
 /**
+ * Workflow gate (F-06): placement mutations are only ever offered when
+ * the server-derived `nextAction` is `REVIEW_PLACEMENT`. Every other
+ * `nextAction` value (`OPEN_INTAKE`, `REQUEST_DOCS`, `SCREEN_SUBMISSION`,
+ * `SCHEDULE_SCREEN`, `AWAITING_RESULT`, `NONE`) → empty action list.
+ *
+ * The server is the canonical authority (it still owns the lifecycle
+ * state machine); the UI gate is purely UX.
+ */
+function isPlacementReadyRow(
+  nextAction: ServerDerivedNextAction | null | undefined,
+): boolean {
+  return nextAction === 'REVIEW_PLACEMENT';
+}
+
+/**
  * Pure: given the row + the user's role context, return the ordered list of
  * available actions.
  *
  * Rules:
- *   - CLOSED case → no actions (terminal). Effect: the action cell renders
- *     "—" (LOCK-04 single-row, no bulk).
- *   - caseStatus === 'READY_TO_PLACE' AND placement === null AND
- *     placementOptions has ≥ 1 candidate → ONLY `placement.create`.
- *   - caseStatus === 'READY_TO_PLACE' AND placement !== null AND
- *     placement.status === 'SELECTED':
- *       HRP_MANAGED   → `placement.confirm` + `placement.fail` + `placement.cancel`
- *       CLIENT_MANAGED→ same triplet (HRP only-forbids EFFECTIVE)
- *   - placement.status === 'CONFIRMED':
- *       HRP_MANAGED   → `placement.fail` + `placement.cancel` (NO EFFECTIVE)
- *       CLIENT_MANAGED→ `placement.effective` + `placement.fail` + `placement.cancel`
- *   - placement.status ∈ {EFFECTIVE, FAILED, CANCELLED} → no actions (terminal).
- *   - placement.status === 'SELECTED' AND caseStatus !== 'READY_TO_PLACE' →
- *     locked (read-only). User sees an inline alert; UI does NOT surface
- *     command buttons (LOCK-15 stale-rejection rule).
+ *   - caseStatus === 'CLOSED' → no actions (terminal).
+ *   - server `nextAction` must be `REVIEW_PLACEMENT` for any mutation
+ *     affordance (F-06); otherwise no actions.
+ *   - `placement === null` && `placementOptions` has ≥ 1 candidate →
+ *     ONLY `placement.create`.
+ *   - `placement?.status === 'SELECTED'`:
+ *     HRP_MANAGED   → `placement.confirm` + `placement.fail` + `placement.cancel`
+ *     CLIENT_MANAGED→ same triplet
+ *   - `placement?.status === 'CONFIRMED'`:
+ *     HRP_MANAGED   → `placement.fail` + `placement.cancel` (NO EFFECTIVE)
+ *     CLIENT_MANAGED→ `placement.effective` + `placement.fail` + `placement.cancel`
+ *   - `placement.status ∈ {EFFECTIVE, FAILED, CANCELLED}` → no actions.
+ *   - `placement.status === 'SELECTED'` AND `caseStatus !== 'READY_TO_PLACE'`
+ *     → locked (read-only) — caller checks `isStalePlacementSnapshot`.
  */
 export function availableActionsForRow(
   row: Pick<
     RecruiterWorkbenchRow,
-    'caseStatus' | 'placement' | 'placementOptions'
+    'caseStatus' | 'placement' | 'placementOptions' | 'nextAction'
   >,
 ): ReadonlyArray<PlacementActionDescriptor> {
+  if (row.caseStatus === 'CLOSED') return [];
+
+  // F-06 workflow gate. Server is authority; this is UX-only.
+  if (!isPlacementReadyRow(row.nextAction)) return [];
+
   const placement = row.placement;
-  const caseStatus = row.caseStatus;
 
-  // Terminal case → no actions.
-  if (caseStatus === 'CLOSED') return [];
-
-  // Treat `undefined` (DTO not yet projected) the same as `null`.
   if (placement == null) {
-    // No placement yet — only viable action is create.
     const options = row.placementOptions ?? [];
-    if (caseStatus !== 'READY_TO_PLACE') return [];
+    if (row.caseStatus !== 'READY_TO_PLACE') return [];
     if (options.length === 0) return [];
     return [
       {
@@ -141,7 +141,7 @@ export function availableActionsForRow(
 
   if (status === 'SELECTED') {
     // LOCK-15 stale-rejection: case not ready → lock the cell.
-    if (caseStatus !== 'READY_TO_PLACE') return [];
+    if (row.caseStatus !== 'READY_TO_PLACE') return [];
     return [
       { command: 'placement.confirm', label: 'Xác nhận', intent: 'primary' },
       { command: 'placement.fail', label: 'Thất bại', intent: 'danger' },
@@ -170,19 +170,16 @@ export function availableActionsForRow(
     ];
   }
 
-  // EFFECTIVE / FAILED / CANCELLED → terminal placement → no actions.
   return [];
 }
 
 /**
  * Convenience: TRUE iff at least one action is available for the row.
- * Used by `PlacementActionCell` to decide between the action chip and the
- * "—" sentinel.
  */
 export function canPerformPlacementAction(
   row: Pick<
     RecruiterWorkbenchRow,
-    'caseStatus' | 'placement' | 'placementOptions'
+    'caseStatus' | 'placement' | 'placementOptions' | 'nextAction'
   >,
 ): boolean {
   return availableActionsForRow(row).length > 0;
@@ -192,11 +189,6 @@ export function canPerformPlacementAction(
 // 3. Inline status label.
 // ─────────────────────────────────────────────────────────────────────────
 
-/**
- * Pure: format the placement's status into a short Vietnamese chip label.
- * Used by the action cell to show the current placement status when no
- * mutation is possible (e.g. terminal placement on a non-CLOSED case).
- */
 export function formatPlacementStatusVi(
   status: PlacementStatus,
 ): string {
@@ -212,8 +204,6 @@ export function formatPlacementStatusVi(
     case 'CANCELLED':
       return 'Đã huỷ';
     default: {
-      // Defensive: an unknown enum value MUST still render — never
-      // throw inside a render path.
       const _exhaustive: never = status;
       return String(_exhaustive);
     }
@@ -238,26 +228,73 @@ export interface PlacementErrorEnvelope {
 /**
  * Pure: extract a Vietnamese-safe inline message from a server response.
  *
- * Priority:
- *   1. `envelope.message` if present and non-empty (already Vietnamese-friendly).
- *   2. Fallback to `envelope.error` code in parens if message absent.
- *   3. Final fallback to a generic message so the inline alert NEVER crashes
- *      the row.
+ * Priority (F-03 / LOCK-09 / RQ-12 / AC-08):
+ *   1. 5xx or status=0 (network failure) → fixed generic Vietnamese message
+ *      NEVER `envelope.message`, NEVER `Error.message`, NEVER details /
+ *      acknowledgementRef / actor / tokens / PII.
+ *   2. frozen SAFE_CODE_MESSAGES lookup keyed by canonical `error` code
+ *   3. fallback to a generic message keyed by status
  *
  * The returned string is plain text — the caller wraps it in
- * `<p role="alert">…</p>` / `<p role="status">…</p>`. No HTML ever leaks
- * into this channel.
+ * `<p role="alert">…</p>` / `<p role="status">…</p>`.
  */
+export const SAFE_CODE_MESSAGES: Readonly<Record<string, string>> = {
+  VALIDATION: 'Yêu cầu không hợp lệ. Vui lòng kiểm tra lại.',
+  IDEMPOTENCY_REQUIRED:
+    'Thiếu Idempotency-Key — không retry được. Vui lòng tải lại trang.',
+  IDEMPOTENCY_CONFLICT:
+    'Yêu cầu trùng với thao tác trước nhưng payload khác. Vui lòng tải lại trang.',
+  IDEMPOTENCY_KEY_REUSED:
+    'Yêu cầu trùng với thao tác trước nhưng payload khác. Vui lòng tải lại trang.',
+  NO_TOKEN: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
+  INVALID_TOKEN: 'Phiên đăng nhập không hợp lệ. Vui lòng đăng nhập lại.',
+  USER_INACTIVE: 'Tài khoản đang bị khoá. Vui lòng liên hệ quản trị.',
+  USER_NOT_FOUND: 'Không tìm thấy người dùng. Vui lòng đăng nhập lại.',
+  FORBIDDEN: 'Bạn không có quyền thực hiện thao tác này.',
+  PLACEMENT_NOT_FOUND:
+    'Bố trí không còn tồn tại. Danh sách đã được làm mới.',
+  INVALID_STATE_TRANSITION:
+    'Trạng thái đã thay đổi — danh sách đã được làm mới.',
+  PLACEMENT_VALIDATION_ERROR:
+    'Yêu cầu không hợp lệ với trạng thái hiện tại của bố trí.',
+  PLACEMENT_IDEMPOTENCY_CONFLICT:
+    'Yêu cầu trùng với thao tác trước nhưng payload khác. Vui lòng tải lại trang.',
+};
+
+export const SERVER_GENERIC_VI = 'Đã có lỗi máy chủ. Vui lòng thử lại sau.';
+export const NETWORK_GENERIC_VI = 'Không thể kết nối máy chủ. Vui lòng thử lại.';
+export const GENERIC_FALLBACK_VI = 'Yêu cầu thất bại. Vui lòng thử lại.';
+
 export function formatErrorMessage(
   envelope: PlacementErrorEnvelope | null | undefined,
-  fallback = 'Yêu cầu thất bại. Vui lòng thử lại.',
+  status = 0,
+  fallback = GENERIC_FALLBACK_VI,
 ): string {
+  // F-03: 5xx or network failure → fixed generic Vietnamese only.
+  // We DO NOT consult envelope.message even when it's present.
+  if (status >= 500) {
+    const code =
+      envelope && typeof envelope.error === 'string'
+        ? envelope.error.trim()
+        : '';
+    return SAFE_CODE_MESSAGES[code] ?? SERVER_GENERIC_VI;
+  }
+  if (status === 0) {
+    return NETWORK_GENERIC_VI;
+  }
   if (!envelope || typeof envelope !== 'object') return fallback;
-  const msg = typeof envelope.message === 'string' ? envelope.message.trim() : '';
-  if (msg.length > 0) return msg;
   const code = typeof envelope.error === 'string' ? envelope.error.trim() : '';
-  if (code.length > 0) return `${code} — ${fallback}`;
-  return fallback;
+  const msg = typeof envelope.message === 'string' ? envelope.message.trim() : '';
+
+  if (code === 'UNKNOWN' || code.length === 0) {
+    return status > 0
+      ? `Yêu cầu thất bại (mã ${status}). Vui lòng thử lại.`
+      : fallback;
+  }
+  const canned = SAFE_CODE_MESSAGES[code];
+  if (canned) return canned;
+  if (msg.length > 0) return msg;
+  return `${code} — ${fallback}`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -269,11 +306,9 @@ export function formatErrorMessage(
  * as an unsigned hex string (8 chars). Deterministic, dependency-free,
  * fast — adequate to detect "same payload" / "different payload" change.
  *
- * NOTE: This is NOT a cryptographic hash. Its only job is to make a
- * sessionStorage key stable across double-click / network retry when
- * the payload is byte-equal, and to mint a fresh key when the payload
- * actually changed. Cryptographic strength is the server-side
- * `Idempotency-Key` header's job, not this hash's.
+ * NOT a cryptographic hash. Its only job is to make a sessionStorage key
+ * stable across double-click / network retry when the payload is
+ * byte-equal, and to mint a fresh key when the payload actually changed.
  */
 export function fnv1a32Hex(payload: unknown): string {
   let h = 0x811c9dc5;
@@ -287,8 +322,7 @@ export function fnv1a32Hex(payload: unknown): string {
 
 /**
  * Deterministic JSON stringification with sorted keys at every depth.
- * Used as input to `fnv1a32Hex`. `Date` → ISO string; otherwise fall back
- * to JSON with `replacer`.
+ * `Date` → ISO string; otherwise fall back to JSON with `replacer`.
  */
 export function canonicalizePayload(payload: unknown): string {
   return JSON.stringify(payload, (_key, value: unknown) => {
@@ -318,9 +352,7 @@ export function canonicalizePayload(payload: unknown): string {
  *   - `payloadHash` is the FNV-1a hash of the canonical payload.
  *
  * Two clicks with the same scope and payload hit the same key (idempotent
- * retry). A payload change mints a fresh key. The router's
- * `sessionStorage` API scopes every key to the tab — they cannot leak
- * across windows or sessions.
+ * retry). A payload change mints a fresh key.
  */
 export function sessionStorageKeyForPlacementCommand(args: {
   command: PlacementCommandName;
@@ -348,9 +380,8 @@ export function isStalePlacementSnapshot(
 ): boolean {
   if (row.placement == null) return false;
   if (row.placement.status === 'EFFECTIVE') return row.caseStatus !== 'CLOSED';
-  if (row.placement.status === 'FAILED') return false; // FAILED is terminal & does not gate the case
+  if (row.placement.status === 'FAILED') return false;
   if (row.placement.status === 'CANCELLED') return false;
-  // SELECTED / CONFIRMED → requires caseStatus = READY_TO_PLACE.
   if (row.caseStatus !== 'READY_TO_PLACE') return true;
   return false;
 }

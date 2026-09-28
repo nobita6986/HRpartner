@@ -122,7 +122,7 @@ export function SlideOutDrawer({
           <button
             type="button"
             onClick={onClose}
-            aria-label="�óng"
+            aria-label="Đóng"
             className="ml-3 inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-700"
           >
             <X className="h-4 w-4" />

@@ -3,6 +3,9 @@
 /**
  * recruiter-workbench.placement-actions.tsx — P1-F1 UI island.
  *
+ * LOCK-02: Server is the lifecycle authority. The cell NEVER decides whether
+ *   to fire a mutation; it only collects the user's intent and delegates to
+ *   the drawer.
  * LOCK-03: narrow action-cell / client island scoped to a single row.
  * LOCK-04: SlideOutDrawer + single-row actions (NO bulk).
  * LOCK-05: every mutation POSTs `x-idempotency-key: <raw UUID v4>`.
@@ -16,31 +19,30 @@
  *
  * Components:
  *   - `<PlacementActionCell/>` — the narrow table-cell island. Renders
- *     either an "Mở bố trí" trigger button or a `—` sentinel for
- *     terminal rows.
- *   - `<PlacementActionDrawer/>` — the SlideOutDrawer. Holds the
- *     command list + inline status/alert + the form for create/effective.
- *   - `<ConfirmPlacementActionDialog/>` — confirm dialog for the 3
- *     non-create commands (confirm/fail/cancel).
+ *     either an "Mở bố trí" trigger button or a `—` sentinel.
+ *   - `<PlacementActionDrawer/>` — wraps the shared `SlideOutDrawer` with
+ *     F1-specific body/actions/forms.
+ *   - `<ConfirmPlacementActionDialog/>` — confirm dialog for the
+ *     non-create, non-effective commands (confirm/fail/cancel).
  *   - `<EffectiveEvidenceForm/>` — controlled form for the EFFECTIVE
- *     command's evidence payload (client-managed only).
- *
- * The drawer is the parent of the dialog and the form. Cell never holds
- * the dialog/form itself — that would violate the single-row action rule.
+ *     command's evidence payload (client-managed only). Strict Zod
+ *     RFC 3339 validation + retention of form state + same idempotency
+ *     key on same-payload retry (LOCK-13).
  */
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
+import { z } from 'zod';
 import {
   AlertTriangle,
   CheckCircle2,
   ChevronRight,
   RefreshCw,
   XCircle,
-  X as XIcon,
 } from 'lucide-react';
 
 import { cn } from '@/src/shared/utils/cn';
+import { SlideOutDrawer } from '@/src/shared/ui/sheet/slide-out-drawer';
 
 import {
   availableActionsForRow,
@@ -53,12 +55,12 @@ import {
 } from './recruiter-workbench.placement-actions.states';
 import {
   type PlacementCommandResult,
-  clearPlacementIdempotencyKey,
   runPlacementCommandRequest,
 } from './recruiter-workbench.placement-actions.fetch';
 
 import type {
   RecruiterWorkbenchRow,
+  ServerDerivedNextAction,
 } from '@/src/domains/talent/recruiter-workbench.types';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -69,7 +71,13 @@ export interface PlacementActionCellProps {
   row: Pick<
     RecruiterWorkbenchRow,
     'caseId' | 'caseStatus' | 'placement' | 'placementOptions'
-  >;
+  > & { nextAction: ServerDerivedNextAction };
+  /**
+   * Server-derived affordance flag (F-02). `true` only for ADMIN and
+   * HR_MANAGER; every other role renders NO mutation affordance at all.
+   * Server F0 authorization remains canonical; this flag is purely UX.
+   */
+  canMutatePlacement: boolean;
 }
 
 /**
@@ -77,23 +85,36 @@ export interface PlacementActionCellProps {
  *
  * Renders:
  *   - `—` when no action is available (terminal case, stale snapshot, no
- *     options for CREATE).
- *   - A small "Mở bố trí" button when actions exist.
+ *     options for CREATE, or `canMutatePlacement=false`).
+ *   - A small "Mở bố trí" button when actions exist AND role is authorized.
  *
- * The button opens the `<PlacementActionDrawer>` for this row. The drawer
- * is the ONLY place where the user touches a command; this cell is the
- * entry-point.
- *
- * Server lifecycle authority (LOCK-02): this cell never decides whether
- * to fire a mutation — it only collects the user's intent and delegates
- * to the drawer.
+ * The button opens the `<PlacementActionDrawer>` for this row.
  */
 export function PlacementActionCell({
   row,
+  canMutatePlacement,
 }: PlacementActionCellProps): React.ReactElement {
   const [open, setOpen] = React.useState(false);
   const hasActions = canPerformPlacementAction(row);
   const stale = isStalePlacementSnapshot(row);
+  const authorized = canMutatePlacement === true;
+
+  if (!authorized) {
+    // F-02 / AC-03: role gate. UI MUST NOT render any mutation affordance
+    // for HR_STAFF / CTV / PUBLIC / unauthenticated. Server F0 is authority.
+    return (
+      <div
+        className="flex justify-end"
+        data-testid="placement-action-cell"
+        data-case-id={row.caseId}
+        data-authorized="false"
+      >
+        <span className="text-xs text-slate-500" aria-hidden="true">
+          —
+        </span>
+      </div>
+    );
+  }
 
   if (stale) {
     return (
@@ -101,6 +122,7 @@ export function PlacementActionCell({
         className="flex flex-col items-end gap-1"
         data-testid="placement-action-cell"
         data-case-id={row.caseId}
+        data-authorized="true"
       >
         <span className="text-xs text-slate-500" aria-hidden="true">
           —
@@ -122,6 +144,7 @@ export function PlacementActionCell({
         className="flex justify-end"
         data-testid="placement-action-cell"
         data-case-id={row.caseId}
+        data-authorized="true"
       >
         <span className="text-xs text-slate-500" aria-hidden="true">
           —
@@ -135,6 +158,7 @@ export function PlacementActionCell({
       className="flex justify-end"
       data-testid="placement-action-cell"
       data-case-id={row.caseId}
+      data-authorized="true"
     >
       <button
         type="button"
@@ -147,27 +171,25 @@ export function PlacementActionCell({
         <ChevronRight className="w-3 h-3" aria-hidden="true" />
         Mở bố trí
       </button>
-      <PlacementActionDrawer row={row} open={open} onClose={() => setOpen(false)} />
+      <PlacementActionDrawer
+        row={row}
+        open={open}
+        onClose={() => setOpen(false)}
+      />
     </div>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// 2. PlacementActionDrawer — SlideOutDrawer.
+// 2. PlacementActionDrawer — wraps shared SlideOutDrawer (LOCK-04, F-05).
 // ─────────────────────────────────────────────────────────────────────────
 
 export interface PlacementActionDrawerProps {
-  row: Pick<
-    RecruiterWorkbenchRow,
-    'caseId' | 'caseStatus' | 'placement' | 'placementOptions'
-  >;
+  row: PlacementActionCellProps['row'];
   open: boolean;
   onClose: () => void;
 }
 
-/**
- * Status / alert state held in the drawer (LOCK-07).
- */
 interface DrawerState {
   statusText: string | null;
   alertText: string | null;
@@ -205,7 +227,6 @@ export function PlacementActionDrawer({
 
   const actions = React.useMemo(() => availableActionsForRow(row), [row]);
 
-  // Reset internal state when the drawer closes.
   React.useEffect(() => {
     if (!open) {
       setState(INITIAL_DRAWER_STATE);
@@ -216,18 +237,8 @@ export function PlacementActionDrawer({
     }
   }, [open]);
 
-  // Escape key closes the drawer.
-  React.useEffect(() => {
-    if (!open) return;
-    function onKeyDown(e: KeyboardEvent): void {
-      if (e.key === 'Escape') onClose();
-    }
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [open, onClose]);
-
   // Send the mutation. NO optimistic mutation (LOCK-06). After success →
-  // clear idempotency key, surface `role="status"`, then `router.refresh()`.
+  // surface `role="status"`, then `router.refresh()`.
   async function submitCommand(
     command: PlacementCommandName,
     payload: PlacementCommandPayloadShape,
@@ -251,14 +262,7 @@ export function PlacementActionDrawer({
       return;
     }
 
-    // Clear the idempotency key on terminal success (LOCK-13).
-    clearPlacementIdempotencyKey({
-      command,
-      scope:
-        'placementId' in payload ? payload.placementId : payload.placementCaseId,
-      payload,
-    });
-
+    // LOCK-06: revalidate the server-rendered list, then close.
     setPending(null);
     setState({
       statusText:
@@ -275,9 +279,7 @@ export function PlacementActionDrawer({
       pendingCommand: null,
     });
 
-    // LOCK-06: revalidate the server-rendered list, then close.
     router.refresh();
-    // Give the user a brief moment to read the inline status.
     window.setTimeout(() => onClose(), 800);
   }
 
@@ -285,37 +287,15 @@ export function PlacementActionDrawer({
 
   return (
     <>
-      <div
-        role="presentation"
-        data-testid="placement-drawer-overlay"
-        className="fixed inset-0 bg-slate-900/40 z-40"
-        onClick={onClose}
-      />
-      <aside
-        role="dialog"
-        aria-modal="true"
-        aria-label={`Bố trí cho case ${row.caseId}`}
+      <SlideOutDrawer
+        open={open}
+        onClose={onClose}
+        title={`Bố trí cho case ${row.caseId}`}
+        description="Chọn thao tác. Mỗi lệnh đều có Idempotency-Key; lệnh đã gửi sẽ không tạo trùng."
+        width="md"
         data-testid="placement-drawer"
-        data-case-id={row.caseId}
-        data-open="true"
-        className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white shadow-2xl flex flex-col"
       >
-        <header className="flex items-center justify-between px-5 py-4 border-b border-slate-200">
-          <h2 className="text-sm font-semibold text-slate-900">
-            Bố trí case {row.caseId}
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Đóng"
-            data-testid="placement-drawer-close"
-            className="p-1.5 rounded text-slate-500 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-300"
-          >
-            <XIcon className="w-4 h-4" aria-hidden="true" />
-          </button>
-        </header>
-
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+        <div className="space-y-4" data-case-id={row.caseId}>
           <DrawerCaseSummary row={row} />
 
           {/* Inline status + alert (LOCK-07). Plain text only. */}
@@ -407,13 +387,13 @@ export function PlacementActionDrawer({
                 );
               })}
           </div>
-        </div>
 
-        <footer className="px-5 py-3 border-t border-slate-200 text-[11px] text-slate-500">
-          Quyết định vòng đời thuộc quyền máy chủ (F0). Trạng thái hiển thị
-          chỉ phục vụ kích hoạt nút, không tự cập nhật.
-        </footer>
-      </aside>
+          <p className="text-[11px] text-slate-500 pt-2 border-t border-slate-100">
+            Quyết định vòng đời thuộc quyền máy chủ (F0). Trạng thái hiển thị
+            chỉ phục vụ kích hoạt nút, không tự cập nhật.
+          </p>
+        </div>
+      </SlideOutDrawer>
 
       <ConfirmPlacementActionDialog
         command={confirming}
@@ -455,10 +435,7 @@ export function PlacementActionDrawer({
 function DrawerCaseSummary({
   row,
 }: {
-  row: Pick<
-    RecruiterWorkbenchRow,
-    'caseId' | 'caseStatus' | 'placement' | 'placementOptions'
-  >;
+  row: PlacementActionCellProps['row'];
 }): React.ReactElement {
   const p = row.placement;
   return (
@@ -470,6 +447,24 @@ function DrawerCaseSummary({
           data-testid="placement-drawer-case-id"
         >
           {row.caseId}
+        </span>
+      </div>
+      <div className="mt-1 flex items-center justify-between">
+        <span className="text-slate-700">Trạng thái case</span>
+        <span
+          data-testid="placement-drawer-case-status"
+          className="font-medium text-slate-900"
+        >
+          {row.caseStatus}
+        </span>
+      </div>
+      <div className="mt-1 flex items-center justify-between">
+        <span className="text-slate-700">Hành động tiếp</span>
+        <span
+          data-testid="placement-drawer-next-action"
+          className="font-medium text-slate-900"
+        >
+          {row.nextAction}
         </span>
       </div>
       {p && (
@@ -580,20 +575,42 @@ function PlacementCreateForm({
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// 4. EffectiveEvidenceForm — strict evidence for placement.effective.
+// 4. EffectiveEvidenceForm — strict Zod RFC 3339 + retention (LOCK-13, F-04).
 // ─────────────────────────────────────────────────────────────────────────
+
+const STRICT_RFC3339 = z.string().datetime({
+  offset: true,
+  message: 'clientAcknowledgedAt phải là RFC 3339 nghiêm ngặt (VD: 2026-01-02T03:04:05Z).',
+});
+
+const EVIDENCE_SCHEMA = z.object({
+  clientAcknowledgedAt: STRICT_RFC3339,
+  clientAcknowledgedByUserId: z
+    .string()
+    .trim()
+    .min(1, 'Cần nhập mã người xác nhận.'),
+  acknowledgementRef: z
+    .string()
+    .trim()
+    .min(1, 'Cần nhập mã tham chiếu xác nhận.'),
+});
+
+export type EffectiveEvidencePayload = z.infer<typeof EVIDENCE_SCHEMA>;
 
 interface EffectiveEvidenceFormProps {
   pending: boolean;
-  onSubmit: (
-    evidence: {
-      clientAcknowledgedAt: string;
-      clientAcknowledgedByUserId: string;
-      acknowledgementRef: string;
-    } | null,
-  ) => void;
+  onSubmit: (evidence: EffectiveEvidencePayload | null) => void;
 }
 
+/**
+ * Controlled evidence form. Strict Zod RFC 3339 for `clientAcknowledgedAt`.
+ * Form state is preserved across same-payload retry (caller invokes
+ * `onSubmit(null)` only when user explicitly resets).
+ *
+ * Reuse the SAME idempotency-key on same-payload retry (handled by the
+ * fetch helper via `sessionStorageKeyForPlacementCommand` — the key is
+ * derived from the canonical payload hash).
+ */
 function EffectiveEvidenceForm({
   pending,
   onSubmit,
@@ -607,24 +624,18 @@ function EffectiveEvidenceForm({
   const [localError, setLocalError] = React.useState<string | null>(null);
 
   function submit(): void {
-    if (!clientAcknowledgedAt.trim()) {
-      setLocalError('Cần nhập thời điểm khách hàng xác nhận (ISO-8601).');
-      return;
-    }
-    if (!clientAcknowledgedByUserId.trim()) {
-      setLocalError('Cần nhập mã người xác nhận.');
-      return;
-    }
-    if (!acknowledgementRef.trim()) {
-      setLocalError('Cần nhập mã tham chiếu xác nhận.');
-      return;
-    }
-    setLocalError(null);
-    onSubmit({
+    const parsed = EVIDENCE_SCHEMA.safeParse({
       clientAcknowledgedAt: clientAcknowledgedAt.trim(),
       clientAcknowledgedByUserId: clientAcknowledgedByUserId.trim(),
       acknowledgementRef: acknowledgementRef.trim(),
     });
+    if (!parsed.success) {
+      const first = parsed.error.issues[0];
+      setLocalError(first?.message ?? 'Dữ liệu không hợp lệ.');
+      return;
+    }
+    setLocalError(null);
+    onSubmit(parsed.data);
   }
 
   return (
@@ -637,7 +648,7 @@ function EffectiveEvidenceForm({
           htmlFor="placement-evidence-at"
           className="block text-[11px] text-slate-700"
         >
-          Thời điểm xác nhận (ISO-8601)
+          Thời điểm xác nhận (RFC 3339)
         </label>
         <input
           id="placement-evidence-at"
@@ -750,7 +761,6 @@ export function ConfirmPlacementActionDialog({
   onCancel,
   onConfirm,
 }: ConfirmPlacementActionDialogProps): React.ReactElement | null {
-  // Esc closes the confirm dialog.
   React.useEffect(() => {
     if (!command) return;
     function onKey(e: KeyboardEvent): void {
