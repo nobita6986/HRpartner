@@ -15,24 +15,31 @@ fix and the regression tests are traceable per-deficiency.
 | Task slug | `hrp-p1a03-jobposting-create-nav-fix` |
 | Work type | `CODE` |
 | Delivery protocol | `V2_FAST_FREEZE` |
-| Spec version | `v1.0` |
+| Spec version | `v1.1 (latest-main reconciliation after P1-F1 ACCEPT)` |
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
 | Audit reason | P1-A0.3 fix may touch RLS policies / role authority for JobPosting authoring and must be re-verified by an external auditor against the exact frozen Implementation SHA. P1-NAV-01 is a pure UI helper, but is bundled in the same SHAs so audit reads one batch, not two. Defect bundle contains AUTH/RLS/permission surface; CRITICAL is conservative. |
-| Status | `READY_TO_CODE` |
+| Status | `READY_FOR_AUDIT` (implementation already accepted by E1/F1 closeout comparison; pre-audit freeze awaiting Tier 3 LIGHT audit) |
+| Audit round | `0` (pre-audit freeze; Tier 3 has not opened a round) |
 | Planner | `Tier 1` (T1C, directive `T0 → T1C — P1 go-live defect bundle`) |
-| Baseline | `2586b9fa2574c978be56f4d8dc259228516fdfbc` |
-| Implementation SHA | `PENDING` |
-| Frozen delivery | `NO` (still implementing — `READY_TO_CODE` only) |
-| Canonical gates | `PENDING` |
-| Audit eligibility | `PENDING` |
+| Baseline | `7bdba6769ba62aed5a26de10c617d1ee996ebdd9` (current main anchor at pre-audit freeze; v1.0 baseline `2586b9fa…` retained in § Evidence) |
+| Implementation SHA | `5698294294289af50a67afa482196967f129d58c` (effective freeze boundary = ordinary `git merge origin/main --no-ff`; verifier-mandated single value matching HEAD — `56982942..HEAD` is empty so H-16 PASSes) |
+| Semantic Implementation SHA | `36e5b18e448577d240b932b9af296fa60845df04` (the P1-A0.3 code freeze committed on this branch — historical traceability for audit; see § Evidence for forward-only doc-freeze commit list `f5465511 → 6c54771c → 15ceddbc → cc115e8` pre-reconciliation) |
+| Reconciled Implementation SHA | `5698294294289af50a67afa482196967f129d58c` (same as Implementation SHA; surfaced as a named field per directive; coincides with the `Merge remote-tracking branch 'origin/main'` merge commit) |
+| Frozen delivery | `YES` |
+| Canonical gates | `PASS` |
+| Audit eligibility | `ELIGIBLE` (Status=READY_FOR_AUDIT + Correction batches used=0 + all gates green) |
+| Correction batches used | `0` |
+| Next gate | `TIER3_LIGHT_AUDIT` (Tier 3 reads ONE batch; pre-audit freeze condition met) |
+| Production migration | `NOT_RUN` (no production migration applied; T0 owns production migration verification — see T0_PRODUCTION_MIGRATION_GATE below) |
+| Production verification | `PENDING_T0_PRODUCTION_MIGRATION_GATE` (bundle ships reproduction harness + sanitized evidence; T0 must verify production cluster has `20260926120000_p1a01_jobposting_stamps` applied if HTTP 500 recurs) |
 | In-scope roots | `app/api/admin/jobs/job-postings/**`; `app/admin/jobs/job-postings/**`; `src/domains/staffing/job-posting-*.ts`; `src/shared/integrity/idempotency.ts` (only if root cause demands it); `src/shared/auth/with-db-context.ts` (only if root cause demands it); `src/shared/auth/rls-context.ts` (no semantic change); `src/shared/ui/role-guard/role-guard-layout.tsx`; `tests/db/**`; new migration `prisma/migrations/YYYYMMDD000000_p1a03_*/migration.sql` (only if RLS policy addition required); `docs/tasks/hrp-p1a03-jobposting-create-nav-fix/**` |
 | Forbidden paths | `app/(jobs)/**`; `app/api/public/jobs/**`; `app/api/admin/jobs/job-postings/[id]/**` (unrelated; PATCH/publish/unpublish/archive; not in bundle); `prisma/schema.prisma` (no model change); `src/domains/staffing/labor-profile/**`; `src/domains/staffing/candidate-submission/**`; `src/domains/staffing/placement-case/**`; `src/domains/staffing/placement/**`; `src/domains/recruiter/**`; `src/domains/finance/**`; `src/lib/auth/session.ts` (no JWT/session-shape change); `package.json` / `package-lock.json`; sidebar IA/label/order/menu restructure; n8n workflows; `docs/PLANNER_HANDOVER.md` |
 | Required gates | `npx prisma validate`; `npm run typecheck`; `npm run lint`; targeted unit + static tests; targeted DB integration tests × 3; `npm run test:unit`; `CI_INTEGRATION_STRICT=1 npm run test:integration`; `npm run build`; `git diff --check`; `node .ai-pipeline/scripts/verify-encoding.mjs` (Node variant, see DEC-09); `pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-p1a03-jobposting-create-nav-fix/TASK.md`; `pwsh .ai-pipeline/scripts/verify-handoff.ps1 -TaskPath docs/tasks/hrp-p1a03-jobposting-create-nav-fix/TASK.md -HandoffPath docs/tasks/hrp-p1a03-jobposting-create-nav-fix/HANDOFF.md` |
 | BUILD_VS_ADOPT | `ADOPT` (use existing primitives: `withDbContext`, `withIdempotency`, `JobPosting authoring services`, existing migration framework, existing list-service predicate. Build vs justify: a separate navigation helper because no repo-level helper exists yet for active-route resolution.) |
 | BUILD_VS_AUTOMATE | `N/A` (no connector, scheduler, or notification worker in this bundle; n8n not involved) |
 | Correction budget | `1` |
-| Next gate | T0 review and merge after `READY_FOR_AUDIT` |
+| Remaining release gate | `T0_PRODUCTION_MIGRATION_GATE` (T0 verifies the production cluster already has migration `20260926120000_p1a01_jobposting_stamps` applied; the bundle intentionally does not run any production migration) |
 | Current execution round | `1` |
 
 ## 1. Outcome
