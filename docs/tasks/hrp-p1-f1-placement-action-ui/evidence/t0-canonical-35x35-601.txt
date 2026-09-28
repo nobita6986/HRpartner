@@ -1,0 +1,31 @@
+T0 FULL CANONICAL STRICT AT a5c5556
+====================================
+
+Implementation SHA: a5c55568912247459d21919448cb1613455e1268
+Run mode: full canonical strict integration suite against synthetic DB.
+
+T0-authoritative results (per T0 handback):
+
+  Files:     35/35 PASS
+  Passed:    601
+  Skipped:   2
+  Failed:    0
+  Exit:      0
+
+Coverage spans:
+  - Canonical HRP placement command API (F0)
+  - F1 placement action UI integration (p1f1)
+  - Predecessor P1-F0 integration (p1f0)
+  - E0 recruiter-workbench read model
+  - N-series foundation tests that the F1 surface depends on
+  - Synthetic DB posture / teardown / RLS / role authority
+
+T0 reproduction is the authoritative measurement; Tier 1 did not
+re-run this suite locally (env-gated DATABASE_URL_TEST /
+DATABASE_URL_ADMIN_TEST absent on local machine; Tier 1 keeps
+ENV_BLOCKED honest on local per DEC-13).
+
+Redaction:
+  - No URL / credential / token / secret / PII appears in this file.
+
+RESULT: PASS (35/35, 601/2/0, exit 0).

@@ -122,7 +122,7 @@ const EXPECTED_HITS = [
   // đếm là đúng. An toàn vì query chạy trong `withDbContext(... role=ADMIN | HR_MANAGER | HR_STAFF)`
   // với GUC session-scoped nên RLS `hrp_labor_profile_visible_for` đã lọc theo role/handler pool.
   // PII `phone`/`cccdNumber` được mask khi thiếu `CAN_VIEW_WORKER_SENSITIVE` (DEC-05).
-  'src/domains/talent/recruiter-workbench.read-service.ts:649 laborProfile',
+  'src/domains/talent/recruiter-workbench.read-service.ts:652 laborProfile',
   // hrp-p1-e0 STEP-06 (2026-09-26): E0-F05 job context projection cần đọc
   // `placement.jobOpening.posting.title` và `placement.jobOpening.staffingOrder.project.name`/
   // `.clientCompanyName`. `JobOpening` (qua `Placement.jobOpening`) là quan hệ BẮT BUỘC trong schema
@@ -131,9 +131,20 @@ const EXPECTED_HITS = [
   // quyền `ADMIN`/`HR_MANAGER`/`HR_STAFF` theo GUC); `StaffingOrder` qua `Project` có RLS
   // `hrp_project_visible_for` nhưng MKT/HR đã thoả khi JOIN từ `placement_case` đã qua
   // `withDbContext` RLS `placement_case_visible_for`. Test integration T0 CI sẽ xác nhận.
-  'src/domains/talent/recruiter-workbench.read-service.ts:679 jobOpening',
-  'src/domains/talent/recruiter-workbench.read-service.ts:683 staffingOrder',
-  'src/domains/talent/recruiter-workbench.read-service.ts:685 project',
+  //
+  // hrp-p1-f1 (2026-09-27): Thêm derivePlacementOptionsFromSubmissions — quét
+  // `submissions.slot.jobOpening.staffingOrder.project` để phục vụ additive
+  // `placementOptions`. `JobOpening` (qua `CandidateSubmission.slot`) là quan hệ
+  // không optional trong schema `staffing_order_slot`. RLS JobOpening/StaffingOrder/Project
+  // giống chain trên (`hrp_project_visible_for` đã thoả qua placement_case → withDbContext).
+  // P1-F1 cũng thêm `status`/`serviceModelSnapshot`/`jobOpeningId` vào `placements` select
+  // → line numbers của chain `placements.jobOpening.staffingOrder.project` SHIFTED.
+  'src/domains/talent/recruiter-workbench.read-service.ts:682 jobOpening',
+  'src/domains/talent/recruiter-workbench.read-service.ts:686 staffingOrder',
+  'src/domains/talent/recruiter-workbench.read-service.ts:688 project',
+  'src/domains/talent/recruiter-workbench.read-service.ts:715 jobOpening',
+  'src/domains/talent/recruiter-workbench.read-service.ts:719 staffingOrder',
+  'src/domains/talent/recruiter-workbench.read-service.ts:721 project',
 ] as const;
 
 interface SourceEntry {
@@ -341,7 +352,12 @@ describe('quan hệ BẮT BUỘC trên bảng bị RLS che: tập vị trí sele
     // Sau P1-E0 correction round-2 (2026-09-26): F-10/F-11 không thêm quan hệ, chỉ thay đổi
     // hình thức OR; line numbers shift vì code reorganization. Sweep dùng line literals nên
     // bumped 599 → 649 và 629/633/635 → 679/683/685. Tổng vẫn = 22, không đổi invariant.
-    expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(22);
+    // Sau P1-F1 (2026-09-27): Thêm submissions.slot.jobOpening.staffingOrder.project chain để
+    // derive placementOptions. +3 dòng (`682 jobOpening`, `686 staffingOrder`, `688 project`).
+    // Plus: thêm status/serviceModelSnapshot/jobOpeningId vào placements.select làm chain
+    // `placements.jobOpening.staffingOrder.project` SHIFTED 679/683/685 → 715/719/721 (line shift
+    // không thêm dòng). Tổng src = 25, tổng all = 28.
+    expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(25);
   });
 });
 

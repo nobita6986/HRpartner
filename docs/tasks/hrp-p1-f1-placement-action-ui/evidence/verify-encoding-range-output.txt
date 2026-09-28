@@ -1,0 +1,1 @@
+RESULT: PASS. 27/27 text file(s) in range fabeda29c97720612136909b8f7beccfdf217c25..HEAD; 0 BOM, 0 NUL, 0 U+FFFD, 0 CRLF, 0 mojibake streaks.

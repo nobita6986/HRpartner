@@ -1,0 +1,24 @@
+T0 PREFLIGHT DB POSTURE AT a5c5556
+====================================
+
+Implementation SHA: a5c55568912247459d21919448cb1613455e1268
+
+T0-authoritative preflight (per T0 handback):
+
+  writer identity:      app_user_writer
+  writer superuser:     false
+  writer bypassrls:     false
+  admin bypassrls:      true
+  writer/admin target:  same target (writer and admin resolve to the same database)
+  posture verdict:      POSTURE_OK
+
+T0 reproduction is the authoritative measurement; Tier 1 did not
+re-run this preflight locally (env-gated DATABASE_URL_TEST /
+DATABASE_URL_ADMIN_TEST absent on local machine; Tier 1 keeps
+ENV_BLOCKED honest on local per DEC-13).
+
+Redaction:
+  - No URL / credential / token / secret / PII appears in this file.
+  - No actual DATABASE_URL value is recorded.
+
+RESULT: POSTURE_OK.

@@ -19,12 +19,15 @@
  *      - DTO assembly with deterministic tie-breakers (AC-11, RQ-11).
  */
 
-import { Prisma } from '@prisma/client';
+import { Prisma, ServiceModel } from '@prisma/client';
 
 import type { AuthContext } from '@/src/shared/auth/auth-context';
 
 import { maskCccd, maskPhone } from '@/src/shared/privacy/mask';
 
+import {
+  computeManagementMode,
+} from '@/src/domains/talent/placement.lifecycle';
 import {
   CASE_STATUS_VALUES,
   RecruiterWorkbenchCaseStatus,
@@ -668,14 +671,47 @@ export async function getRecruiterWorkbenchList(
         },
         submissions: {
           orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-          select: { id: true, createdAt: true },
+          // P1-F1 additive: also project `slot.jobOpening` so the read-service
+          // can derive `placementOptions` (LOCK-01). Pre-existing fields `id` +
+          // `createdAt` are kept for lastInteraction derivation — no breakage.
+          select: {
+            id: true,
+            createdAt: true,
+            slot: {
+              select: {
+                jobOpening: {
+                  select: {
+                    id: true,
+                    posting: { select: { id: true, title: true } },
+                    staffingOrder: {
+                      select: {
+                        project: {
+                          select: { name: true, clientCompanyName: true },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
         },
         placements: {
           orderBy: [{ selectedAt: 'desc' }, { id: 'desc' }],
           take: 1,
+          // P1-F1 additive: also project `status` + `serviceModelSnapshot`
+          // so the read-service can derive `placement` (LOCK-01). Pre-existing
+          // fields `id`, `selectedAt`, `jobOpening` chain are kept for the
+          // existing `extractJobContextFromPlacement` call.
           select: {
             id: true,
             selectedAt: true,
+            status: true,
+            serviceModelSnapshot: true,
+            // Direct FK column needed by the additive `placement.jobOpeningId`
+            // (the relation's `jobOpening.id` is the same value, but the
+            // DTO contract expects the canonical column projection).
+            jobOpeningId: true,
             jobOpening: {
               select: {
                 id: true,
@@ -810,6 +846,22 @@ export async function getRecruiterWorkbenchList(
         submissionHref:
           c.submissions.length > 0 ? `/admin/applications` : null,
       },
+      // P1-F1 additive: server-derived placement summary + selectable
+      // JobOpening candidates. UI uses these to gate the action cell
+      // ONLY (LOCK-02 / LOCK-15); lifecycle authority remains with F0.
+      placement: derivePlacementFromRows(
+        c.placements as unknown as ReadonlyArray<{
+          id: string;
+          status: string;
+          jobOpeningId: string | null;
+          serviceModelSnapshot: string | null;
+        }>,
+      ),
+      placementOptions: derivePlacementOptionsFromSubmissions(
+        c.submissions as unknown as Parameters<
+          typeof derivePlacementOptionsFromSubmissions
+        >[0],
+      ),
     };
   });
 
@@ -844,6 +896,120 @@ function findExpiredHandlerExpiresAt(
     }
   }
   return best.expiresAt;
+}
+
+/**
+ * Helper: derive the additive `placement` summary from the case's already-
+ * selected single `Placement` row (Prisma `take: 1, orderBy: selectedAt DESC,
+ * id DESC` per E0-F05). Returns `null` when the case has no placement yet,
+ * OR when `serviceModelSnapshot` is null (legacy opening — the F1 UI must
+ * hide the action cell in that case).
+ *
+ * Pure derivation — no Prisma calls. The DTO carries the bare `id`, `status`,
+ * `jobOpeningId`, and `managementMode`. Lifecycle transitions are owned
+ * entirely by the F0 routes (LOCK-02): this function MUST NOT be used to
+ * guess or mutate status.
+ *
+ * Exported for unit tests.
+ */
+export function derivePlacementFromRows(
+  rawPlacements: ReadonlyArray<{
+    id: string;
+    status: string;
+    jobOpeningId: string | null;
+    serviceModelSnapshot: string | null;
+  }>,
+): RecruiterWorkbenchRow['placement'] {
+  // `take: 1` returns 0 or 1; the adapter enforces this. We still defend
+  // against accidental multi-row input by picking the head.
+  const head = rawPlacements[0];
+  if (!head) return null;
+
+  const mode = computeManagementMode(
+    head.serviceModelSnapshot as ServiceModel | null,
+  );
+  // `managementMode` is required by the DTO. If `serviceModelSnapshot` is
+  // null (legacy opening), we surface `null` placement rather than coerce
+  // a misleading default.
+  if (mode === null) return null;
+
+  return {
+    id: head.id,
+    status: head.status as 'SELECTED' | 'CONFIRMED' | 'EFFECTIVE' | 'FAILED' | 'CANCELLED',
+    jobOpeningId: head.jobOpeningId,
+    managementMode: mode,
+  };
+}
+
+/**
+ * Helper: deduplicate `JobOpening` candidates across the case's
+ * `CandidateSubmission` rows. Multiple submissions can target the same
+ * opening (e.g. vendor + CTV + referral); we surface it exactly once.
+ *
+ * Resolution rules (LOCK-01):
+ *   1. Drop submissions where `slot` or `slot.jobOpening` is missing —
+ *      legacy submissions MUST NOT block the F1 control.
+ *   2. For each `jobOpeningId`, KEEP the first occurrence. Prisma
+ *      `orderBy: createdAt DESC, id DESC` already sorts the newest first,
+ *      so the first-arriving submission per opening IS the canonical newest.
+ *   3. Sort the resulting options deterministically by
+ *      `(projectName, companyName, title, jobOpeningId)` — all null-safe,
+ *      ascending. Equal keys → stable on `jobOpeningId`.
+ *   4. Return `null` when zero candidates exist (F1 UI hides the cell).
+ *
+ * Pure derivation — no Prisma calls. Exported for unit tests.
+ */
+export function derivePlacementOptionsFromSubmissions(
+  submissions: ReadonlyArray<{
+    id: string;
+    createdAt: Date;
+    slot: {
+      jobOpening: {
+        id: string;
+        posting: { id: string; title: string } | null;
+        staffingOrder: {
+          project: { name: string; clientCompanyName: string | null } | null;
+        } | null;
+      } | null;
+    } | null;
+  }>,
+): RecruiterWorkbenchRow['placementOptions'] {
+  type Option = NonNullable<
+    RecruiterWorkbenchRow['placementOptions']
+  >[number];
+
+  const byOpening = new Map<string, Option>();
+  for (const sub of submissions) {
+    const opening = sub.slot?.jobOpening;
+    if (!opening) continue;
+    if (byOpening.has(opening.id)) continue; // newest wins by construction
+    byOpening.set(opening.id, {
+      jobOpeningId: opening.id,
+      sourceCandidateSubmissionId: sub.id,
+      title: opening.posting?.title ?? '',
+      projectName: opening.staffingOrder?.project?.name ?? null,
+      companyName: opening.staffingOrder?.project?.clientCompanyName ?? null,
+    });
+  }
+
+  if (byOpening.size === 0) return null;
+  const options = Array.from(byOpening.values());
+
+  options.sort((a, b) => {
+    const pa = a.projectName ?? '';
+    const pb = b.projectName ?? '';
+    if (pa !== pb) return pa < pb ? -1 : 1;
+    const ca = a.companyName ?? '';
+    const cb = b.companyName ?? '';
+    if (ca !== cb) return ca < cb ? -1 : 1;
+    if (a.title !== b.title) return a.title < b.title ? -1 : 1;
+    if (a.jobOpeningId !== b.jobOpeningId) {
+      return a.jobOpeningId < b.jobOpeningId ? -1 : 1;
+    }
+    return 0;
+  });
+
+  return options;
 }
 
 /**
