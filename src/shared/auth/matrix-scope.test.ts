@@ -116,10 +116,16 @@ describe('L2 RLS — §5.7 chống leak (counts/aggregates scoped)', () => {
     expect(n).toBe(0);
   });
 
-  it('HR_STAFF + projects → 0 (HR_STAFF không có scope project)', async () => {
+  // P1-A04 (2026-09-28): HR_STAFF đã có narrow RLS `hrp_sora_projects_claimable_select`
+  // cho phép thấy `outsourcing_projects` chứa `StaffingOrder` ở trạng thái OPEN và
+  // CHƯA có active recruiter assignment (claim queue). Assert phải nới lỏng: HR_STAFF
+  // phải ≤ baseline (không leak), nhưng KHÔNG đòi bằng 0 nữa.
+  it('HR_STAFF + projects → ≤ baseline (claim queue narrow policy admits some)', async () => {
     const prisma = getPrisma();
     const n = await queryInScope(prisma, 'HR_STAFF', 'outsourcing_projects');
-    expect(n).toBe(0);
+    // Lấy baseline từ queryInScope(ADMIN) trong cùng test (in-tx, deterministic).
+    const baseline = await queryInScope(prisma, 'ADMIN', 'outsourcing_projects');
+    expect(n).toBeLessThanOrEqual(baseline);
   });
 });
 

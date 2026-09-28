@@ -145,6 +145,19 @@ const EXPECTED_HITS = [
   'src/domains/talent/recruiter-workbench.read-service.ts:715 jobOpening',
   'src/domains/talent/recruiter-workbench.read-service.ts:719 staffingOrder',
   'src/domains/talent/recruiter-workbench.read-service.ts:721 project',
+  // hrp-p1-a04 (2026-09-28): `listUnclaimedStaffingOrders` LEFT-JOIN `project.clientCompany` for
+  // queue-row display fields; `listMyActiveStaffingOrders` LEFT-JOIN `staffingOrder.project.clientCompany`
+  // for the recruiter's "My Orders" surface. All three are quan hệ BẮT BUỘC in schema. An toàn vì
+  // `staffing_orders` được RLS narrow `hrp_sora_staffing_orders_claimable_select` (OPEN+unassigned,
+  // queue) hoặc `hrp_sora_staffing_orders_staff_select` (assigned); `outsourcing_projects` narrow
+  // `hrp_sora_projects_claimable_select` (queue) hoặc `hrp_sora_projects_staff_select` (assigned);
+  // `client_companies` đã có `hrp_client_company_select` admit HR_STAFF. Cả hai caller đều chạy
+  // trong `withDbContext(... role=HR_STAFF)` nên RLS narrowing hoạt động.
+  'src/domains/talent/recruiter-assignment.service.ts:455 clientCompany',
+  'src/domains/talent/recruiter-assignment.service.ts:455 project',
+  'src/domains/talent/recruiter-assignment.service.ts:506 staffingOrder',
+  'src/domains/talent/recruiter-assignment.service.ts:513 clientCompany',
+  'src/domains/talent/recruiter-assignment.service.ts:513 project',
 ] as const;
 
 interface SourceEntry {
@@ -357,7 +370,11 @@ describe('quan hệ BẮT BUỘC trên bảng bị RLS che: tập vị trí sele
     // Plus: thêm status/serviceModelSnapshot/jobOpeningId vào placements.select làm chain
     // `placements.jobOpening.staffingOrder.project` SHIFTED 679/683/685 → 715/719/721 (line shift
     // không thêm dòng). Tổng src = 25, tổng all = 28.
-    expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(25);
+    // Sau P1-A04 (2026-09-28): `recruiter-assignment.service.ts` thêm `listUnclaimedStaffingOrders`
+    // (LEFT-JOIN `project.clientCompany`) và `listMyActiveStaffingOrders` (LEFT-JOIN
+    // `staffingOrder.project.clientCompany`). +5 dòng (`455 clientCompany/project`,
+    // `506 staffingOrder`, `513 clientCompany/project`). Tổng src = 30, tổng all = 33.
+    expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(30);
   });
 });
 

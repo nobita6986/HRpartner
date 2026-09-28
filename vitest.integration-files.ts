@@ -151,4 +151,13 @@ export const INTEGRATION_TEST_FILES: string[] = [
   // Self-skips when DATABASE_URL_TEST + DATABASE_URL_ADMIN_TEST absent
   // (ENV_BLOCKED — Tier 0/Owner cung cấp DB trước khi xét merge).
   'tests/db/p1f1-placement-action-ui.integration.test.ts',
+  // hrp-p1-a0-4-scoped-recruiter-authority: DB-touching proof for AC-E2E-01..AC-E2E-22.
+  // Covers: new aggregate + helpers + RLS posture, HR_STAFF self-claim race
+  // (exactly-one-winner using two DB connections + advisory lock), deterministic
+  // revoke lock ordering (command-first + revoke-first using two independent
+  // DB connections), sibling-order isolation, partial unique active-assignment
+  // index, helper search_path locked + EXECUTE not PUBLIC, exactly 4 RLS
+  // policies on the new table. Self-skips when DATABASE_URL_TEST +
+  // DATABASE_URL_ADMIN_TEST absent (ENV_BLOCKED).
+  'tests/db/p1a04-scoped-recruiter-authority.integration.test.ts',
 ];

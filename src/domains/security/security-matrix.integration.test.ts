@@ -184,10 +184,14 @@ describe.skipIf(!enabled)('V5-M1-07b PLN-01 — truthful security matrix (13+2 r
   ];
 
   // ── Truthful VISIBLE sets — derived verbatim from m13 USING clauses + fixtures ─
+  // P1-A04 (2026-09-28): HR_STAFF được thấy `outsourcing_projects`/`staffing_orders`
+  // có ít nhất một `StaffingOrder` ở trạng thái `OPEN` và CHƯA có active recruiter
+  // assignment — qua narrow RLS `hrp_sora_*_claimable_select`. VISIBLE bật cờ cho hai
+  // bảng này; các bảng khác không đổi.
   const VISIBLE: Record<string, Set<string>> = {
     workers: new Set(['ADMIN', 'HR_MANAGER', 'DIRECTOR', 'HR_STAFF', 'SALE', 'PM', 'VENDOR_ADMIN', 'VENDOR_STAFF', 'CTV', 'WORKER']),
-    outsourcing_projects: new Set(['ADMIN', 'HR_MANAGER', 'DIRECTOR', 'SALE', 'PM', 'WORKER', 'MKT', 'VENDOR_ADMIN', 'VENDOR_STAFF', 'CTV']),
-    staffing_orders: new Set(['ADMIN', 'HR_MANAGER', 'DIRECTOR', 'SALE', 'PM', 'WORKER', 'MKT', 'VENDOR_ADMIN', 'VENDOR_STAFF', 'CTV']),
+    outsourcing_projects: new Set(['ADMIN', 'HR_MANAGER', 'DIRECTOR', 'HR_STAFF', 'SALE', 'PM', 'WORKER', 'MKT', 'VENDOR_ADMIN', 'VENDOR_STAFF', 'CTV']),
+    staffing_orders: new Set(['ADMIN', 'HR_MANAGER', 'DIRECTOR', 'HR_STAFF', 'SALE', 'PM', 'WORKER', 'MKT', 'VENDOR_ADMIN', 'VENDOR_STAFF', 'CTV']),
     vendors: new Set(['ADMIN', 'HR_MANAGER', 'DIRECTOR', 'ACCOUNTANT', 'SALE', 'VENDOR_ADMIN', 'VENDOR_STAFF']),
     attendance_events: new Set(['ADMIN', 'HR_MANAGER', 'HR_STAFF', 'PM', 'WORKER']),
     timesheet_periods: new Set(['ADMIN', 'HR_MANAGER', 'HR_STAFF', 'ACCOUNTANT', 'DIRECTOR', 'PM']),
