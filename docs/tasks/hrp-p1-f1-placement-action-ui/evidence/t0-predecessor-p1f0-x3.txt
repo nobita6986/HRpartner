@@ -1,0 +1,33 @@
+T0 PREDECESSOR P1-F0 REPRODUCTION x3 AT a5c5556
+=================================================
+
+Implementation SHA: a5c55568912247459d21919448cb1613455e1268
+Test suite: tests/db/p1f0-placement-command-api.integration.test.ts
+Run mode: CI_INTEGRATION_STRICT=1 npx vitest run tests/db/p1f0-placement-command-api.integration.test.ts --config vitest.integration.config.ts
+
+T0-authoritative results (per T0 handback):
+
+  Run 1: 20/20 PASS
+  Run 2: 20/20 PASS
+  Run 3: 20/20 PASS
+
+F0 predecessor coverage covers the canonical 5 placement commands:
+  POST /api/admin/placements
+  POST /api/admin/placements/[id]/actions/confirm
+  POST /api/admin/placements/[id]/actions/effective
+  POST /api/admin/placements/[id]/actions/fail
+  POST /api/admin/placements/[id]/actions/cancel
+
+Plus F0 lifecycle / idempotency / RLS / role authority / 409 race /
+replay / cross-state-transition coverage that F1 wraps via HTTP.
+
+T0 reproduction is the authoritative measurement; Tier 1 did not
+re-run this suite locally (env-gated DATABASE_URL_TEST /
+DATABASE_URL_ADMIN_TEST absent on local machine; Tier 1 keeps
+ENV_BLOCKED honest on local per DEC-13).
+
+Redaction:
+  - No URL / credential / token / secret / PII appears in this file.
+  - No raw Idempotency-Key, raw actorId, raw evidence, raw acknowledgementRef.
+
+RESULT: PASS x3.

@@ -129,6 +129,8 @@ const SAMPLE_ITEMS = [
     ageHours: 24,
     isOverdue: false,
     overdueReason: null,
+    placement: null,
+    placementOptions: null,
     primaryActions: {
       detailHref: '/admin/labor-profiles/lp-001',
       submissionHref: '/admin/applications',
@@ -159,6 +161,8 @@ const SAMPLE_ITEMS = [
     ageHours: 80,
     isOverdue: true,
     overdueReason: 'CASE_AGE_THRESHOLD',
+    placement: null,
+    placementOptions: null,
     primaryActions: {
       detailHref: '/admin/labor-profiles/lp-002',
       submissionHref: null,
@@ -443,5 +447,109 @@ describe('RecruiterWorkbenchPage (server component)', () => {
     expect(html).toContain('aria-label="Bộ lọc quá hạn"');
     expect(html).toContain('role="search"');
     expect(html).toContain('aria-label="Phân trang"');
+  });
+
+  // ───────────────────────────────────────────────────────────────────────
+  // F-02 / AC-03 — server-derived canMutatePlacement flag drives the
+  //                 placement action cell affordance. HR_STAFF + CTV + PUBLIC
+  //                 must render NO mutation trigger.
+  // ───────────────────────────────────────────────────────────────────────
+
+  const ADMIN_ROW: Record<string, unknown> = {
+    caseId: 'case-admin-row',
+    caseStatus: 'READY_TO_PLACE',
+    openedAt: '2026-09-26T00:00:00.000Z',
+    closedAt: null,
+    candidate: {
+      laborProfileId: 'lp-001',
+      fullName: 'Nguyen Van A',
+      phone: '0901234567',
+      cccdNumber: '012345678901',
+      identityVerification: 'VERIFIED',
+      completeness: 'FULL',
+    },
+    job: {
+      jobPostingId: 'jp-1',
+      jobPostingTitle: 'Thợ hàn',
+      projectName: 'Dự án X',
+      companyName: 'Công ty Y',
+    },
+    lastInteraction: { at: '2026-09-26T00:00:00.000Z', kind: 'SUBMISSION' },
+    nextAction: 'REVIEW_PLACEMENT',
+    handler: { assigneeUserId: 'u-1', assigneeName: 'Trần Văn B', source: 'a-1' },
+    ageHours: 1,
+    isOverdue: false,
+    overdueReason: null,
+    placement: null,
+    placementOptions: [
+      {
+        jobOpeningId: '00000000-0000-4000-8000-000000000001',
+        sourceCandidateSubmissionId: '00000000-0000-4000-8000-000000000010',
+        title: 'Thợ hàn',
+        projectName: 'Dự án X',
+        companyName: 'Công ty Y',
+      },
+    ],
+    primaryActions: {
+      detailHref: '/admin/labor-profiles/lp-001',
+      submissionHref: '/admin/applications',
+    },
+  };
+
+  it('F2-PG01: ADMIN → placement action cell is renderable (Mở bố trí)', async () => {
+    mockedSession.mockResolvedValueOnce({ userId: 'admin-1', role: 'ADMIN' });
+    mockedService.mockResolvedValueOnce({
+      items: [ADMIN_ROW],
+      total: 1,
+      page: 1,
+      pageSize: 20,
+    });
+    const html = await renderPage({});
+    expect(html).toContain('placement-action-cell');
+    expect(html).toContain('data-authorized="true"');
+  });
+
+  it('F2-PG02: HR_MANAGER → placement action cell is renderable', async () => {
+    mockedSession.mockResolvedValueOnce({
+      userId: 'mgr-1',
+      role: 'HR_MANAGER',
+    });
+    mockedService.mockResolvedValueOnce({
+      items: [ADMIN_ROW],
+      total: 1,
+      page: 1,
+      pageSize: 20,
+    });
+    const html = await renderPage({});
+    expect(html).toContain('data-authorized="true"');
+  });
+
+  it('F2-PG03: HR_STAFF → placement action cell is NOT mutating (data-authorized=false)', async () => {
+    mockedSession.mockResolvedValueOnce({
+      userId: 'staff-1',
+      role: 'HR_STAFF',
+    });
+    mockedService.mockResolvedValueOnce({
+      items: [ADMIN_ROW],
+      total: 1,
+      page: 1,
+      pageSize: 20,
+    });
+    const html = await renderPage({});
+    expect(html).toContain('data-authorized="false"');
+    expect(html).not.toContain('Mở bố trí');
+  });
+
+  it('F2-PG04: page renders the table even when nextAction is not REVIEW_PLACEMENT (no row affordance)', async () => {
+    mockedSession.mockResolvedValueOnce({ userId: 'admin-1', role: 'ADMIN' });
+    mockedService.mockResolvedValueOnce({
+      items: SAMPLE_ITEMS, // nextAction SCREEN_SUBMISSION / OPEN_INTAKE
+      total: 2,
+      page: 1,
+      pageSize: 20,
+    });
+    const html = await renderPage({});
+    expect(html).not.toContain('Mở bố trí');
+    expect(html).toContain('data-testid="workbench-row"');
   });
 });

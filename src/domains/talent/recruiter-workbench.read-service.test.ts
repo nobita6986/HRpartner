@@ -28,6 +28,8 @@ import type { Prisma } from '@prisma/client';
 import {
   buildOrderBy,
   buildPlacementCaseWhere,
+  derivePlacementFromRows,
+  derivePlacementOptionsFromSubmissions,
   getRecruiterWorkbenchList,
 } from '@/src/domains/talent/recruiter-workbench.read-service';
 import type {
@@ -107,10 +109,33 @@ function makeCaseRow(
     openedAt?: Date;
     closedAt?: Date | null;
     laborProfile?: ReturnType<typeof makeProfileRow>;
-    submissions?: Array<{ id: string; createdAt: Date }>;
+    submissions?: Array<{
+      id: string;
+      createdAt: Date;
+      slot?: {
+        jobOpening?: {
+          id: string;
+          posting?: { id: string; title: string | null } | null;
+          staffingOrder?: {
+            project?: { name: string; clientCompanyName: string | null } | null;
+          } | null;
+        } | null;
+      } | null;
+    }>;
     placements?: Array<{
       id: string;
       selectedAt: Date;
+      status?: 'SELECTED' | 'CONFIRMED' | 'EFFECTIVE' | 'FAILED' | 'CANCELLED';
+      serviceModelSnapshot?:
+        | 'STAFFING_SUPPLY'
+        | 'LABOR_LEASING'
+        | 'RECRUITMENT_SERVICE'
+        | 'REFERRAL_SERVICE'
+        | null;
+      // Top-level FK column — read by derivePlacementFromRows. When `jobOpening`
+      // relation is provided we auto-derive it for convenience unless the
+      // caller overrides it explicitly.
+      jobOpeningId?: string | null;
       jobOpening?: {
         id: string;
         posting?: { id: string; title: string | null } | null;
@@ -121,6 +146,17 @@ function makeCaseRow(
     }>;
   } = {},
 ) {
+  const rawPlacements = overrides.placements ?? [];
+  const placements = rawPlacements.map((p) => {
+    const has = (k: string): boolean =>
+      Object.prototype.hasOwnProperty.call(p, k);
+    // Auto-derive `jobOpeningId` from the relation unless the caller set it.
+    const relationId = p.jobOpening?.id ?? null;
+    return {
+      ...p,
+      jobOpeningId: has('jobOpeningId') ? p.jobOpeningId : relationId,
+    };
+  });
   return {
     id: overrides.id ?? 'case-1',
     status: overrides.status ?? 'OPEN',
@@ -129,7 +165,7 @@ function makeCaseRow(
     closedAt: overrides.closedAt ?? null,
     laborProfile: overrides.laborProfile ?? makeProfileRow(),
     submissions: overrides.submissions ?? [],
-    placements: overrides.placements ?? [],
+    placements,
   };
 }
 
@@ -1057,5 +1093,451 @@ describe('getRecruiterWorkbenchList', () => {
     for (const item of out.items) {
       expect(allowed.has(item.nextAction)).toBe(true);
     }
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// P1-F1 E0 additives — server-derived `placement` + `placementOptions`
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('derivePlacementFromRows', () => {
+  it('F1-AC01: returns null on empty input', () => {
+    expect(derivePlacementFromRows([])).toBeNull();
+  });
+
+  it('F1-AC02: returns null when serviceModelSnapshot is null (legacy opening)', () => {
+    const out = derivePlacementFromRows([
+      {
+        id: 'pl-1',
+        status: 'SELECTED',
+        jobOpeningId: 'jo-1',
+        serviceModelSnapshot: null,
+      },
+    ]);
+    expect(out).toBeNull();
+  });
+
+  it('F1-AC03: classifies STAFFING_SUPPLY as HRP_MANAGED', () => {
+    const out = derivePlacementFromRows([
+      {
+        id: 'pl-1',
+        status: 'SELECTED',
+        jobOpeningId: 'jo-1',
+        serviceModelSnapshot: 'STAFFING_SUPPLY',
+      },
+    ]);
+    expect(out).toEqual({
+      id: 'pl-1',
+      status: 'SELECTED',
+      jobOpeningId: 'jo-1',
+      managementMode: 'HRP_MANAGED',
+    });
+  });
+
+  it('F1-AC04: classifies RECRUITMENT_SERVICE as CLIENT_MANAGED', () => {
+    const out = derivePlacementFromRows([
+      {
+        id: 'pl-2',
+        status: 'CONFIRMED',
+        jobOpeningId: 'jo-1',
+        serviceModelSnapshot: 'RECRUITMENT_SERVICE',
+      },
+    ]);
+    expect(out?.managementMode).toBe('CLIENT_MANAGED');
+    expect(out?.status).toBe('CONFIRMED');
+  });
+
+  it('F1-AC05: takes head row when multiple are provided', () => {
+    const out = derivePlacementFromRows([
+      {
+        id: 'pl-newest',
+        status: 'SELECTED',
+        jobOpeningId: 'jo-newest',
+        serviceModelSnapshot: 'STAFFING_SUPPLY',
+      },
+      {
+        id: 'pl-older',
+        status: 'CANCELLED',
+        jobOpeningId: 'jo-older',
+        serviceModelSnapshot: 'STAFFING_SUPPLY',
+      },
+    ]);
+    expect(out?.id).toBe('pl-newest');
+  });
+
+  it('F1-AC06: preserves null jobOpeningId (legacy placement)', () => {
+    const out = derivePlacementFromRows([
+      {
+        id: 'pl-1',
+        status: 'FAILED',
+        jobOpeningId: null,
+        serviceModelSnapshot: 'REFERRAL_SERVICE',
+      },
+    ]);
+    expect(out?.jobOpeningId).toBeNull();
+    expect(out?.managementMode).toBe('CLIENT_MANAGED');
+  });
+});
+
+describe('derivePlacementOptionsFromSubmissions', () => {
+  it('F1-OPT01: returns null when no submissions', () => {
+    expect(derivePlacementOptionsFromSubmissions([])).toBeNull();
+  });
+
+  it('F1-OPT02: returns null when submissions lack slot/jobOpening', () => {
+    const out = derivePlacementOptionsFromSubmissions([
+      { id: 's1', createdAt: NOW, slot: null },
+      { id: 's2', createdAt: NOW, slot: { jobOpening: null } },
+    ]);
+    expect(out).toBeNull();
+  });
+
+  it('F1-OPT03: deduplicates multiple submissions targeting the same opening, newest wins', () => {
+    const out = derivePlacementOptionsFromSubmissions([
+      // Order matches Prisma orderBy: createdAt DESC, id DESC
+      {
+        id: 's-newest',
+        createdAt: new Date('2026-09-26T09:00:00Z'),
+        slot: {
+          jobOpening: {
+            id: 'jo-1',
+            posting: { id: 'jp-1', title: 'Forklift operator' },
+            staffingOrder: {
+              project: { name: 'Alpha', clientCompanyName: 'Acme' },
+            },
+          },
+        },
+      },
+      {
+        id: 's-older',
+        createdAt: new Date('2026-09-25T09:00:00Z'),
+        slot: {
+          jobOpening: {
+            id: 'jo-1',
+            posting: { id: 'jp-1', title: 'Forklift operator' },
+            staffingOrder: {
+              project: { name: 'Alpha', clientCompanyName: 'Acme' },
+            },
+          },
+        },
+      },
+    ]);
+    expect(out).toEqual([
+      {
+        jobOpeningId: 'jo-1',
+        sourceCandidateSubmissionId: 's-newest',
+        title: 'Forklift operator',
+        projectName: 'Alpha',
+        companyName: 'Acme',
+      },
+    ]);
+  });
+
+  it('F1-OPT04: sorts by (projectName, companyName, title, jobOpeningId) asc, null-safe', () => {
+    const out = derivePlacementOptionsFromSubmissions([
+      {
+        id: 's-a',
+        createdAt: NOW,
+        slot: {
+          jobOpening: {
+            id: 'jo-c',
+            posting: { id: 'jp-c', title: 'Welder' },
+            staffingOrder: {
+              project: { name: 'Bravo', clientCompanyName: 'BravoInc' },
+            },
+          },
+        },
+      },
+      {
+        id: 's-b',
+        createdAt: NOW,
+        slot: {
+          jobOpening: {
+            id: 'jo-a',
+            posting: { id: 'jp-a', title: 'Carpenter' },
+            staffingOrder: {
+              project: { name: 'Alpha', clientCompanyName: null },
+            },
+          },
+        },
+      },
+      {
+        id: 's-c',
+        createdAt: NOW,
+        slot: {
+          jobOpening: {
+            id: 'jo-b',
+            posting: { id: 'jp-b', title: 'Forklift operator' },
+            staffingOrder: {
+              project: { name: 'Alpha', clientCompanyName: 'Acme' },
+            },
+          },
+        },
+      },
+    ]);
+    // Sort key: (projectName, companyName, title, jobOpeningId) asc
+    //   jo-a: Alpha/null/Carpenter
+    //   jo-b: Alpha/Acme/Forklift operator
+    //   jo-c: Bravo/BravoInc/Welder
+    // null < "Acme" → jo-a precedes jo-b.
+    expect(out?.map((o) => o.jobOpeningId)).toEqual(['jo-a', 'jo-b', 'jo-c']);
+  });
+
+  it('F1-OPT05: title falls back to empty string when posting is null', () => {
+    const out = derivePlacementOptionsFromSubmissions([
+      {
+        id: 's-1',
+        createdAt: NOW,
+        slot: {
+          jobOpening: {
+            id: 'jo-orphan',
+            posting: null,
+            staffingOrder: null,
+          },
+        },
+      },
+    ]);
+    expect(out).toEqual([
+      {
+        jobOpeningId: 'jo-orphan',
+        sourceCandidateSubmissionId: 's-1',
+        title: '',
+        projectName: null,
+        companyName: null,
+      },
+    ]);
+  });
+
+  it('F1-OPT06: multiple distinct openings yields one row per openingId', () => {
+    const out = derivePlacementOptionsFromSubmissions([
+      {
+        id: 's1',
+        createdAt: NOW,
+        slot: {
+          jobOpening: {
+            id: 'jo-1',
+            posting: { id: 'jp-1', title: 'Welder' },
+            staffingOrder: {
+              project: { name: 'Alpha', clientCompanyName: 'Acme' },
+            },
+          },
+        },
+      },
+      {
+        id: 's2',
+        createdAt: NOW,
+        slot: {
+          jobOpening: {
+            id: 'jo-2',
+            posting: { id: 'jp-2', title: 'Helper' },
+            staffingOrder: {
+              project: { name: 'Alpha', clientCompanyName: 'Acme' },
+            },
+          },
+        },
+      },
+    ]);
+    expect(out?.length).toBe(2);
+    expect(new Set(out!.map((o) => o.jobOpeningId))).toEqual(
+      new Set(['jo-1', 'jo-2']),
+    );
+  });
+});
+
+describe('row mapper — F1 additive surface', () => {
+  it('F1-RM01: row.placement is null when case has no placement row', async () => {
+    const tx = makeTx({ cases: [makeCaseRow()], total: 1 });
+    const out = await listWith(tx, makeAdminCtx(), baseFilter);
+    expect(out.items[0]!.placement).toBeNull();
+    expect(out.items[0]!.placementOptions).toBeNull();
+  });
+
+  it('F1-RM02: row.placement reflects the single selected placement + managementMode', async () => {
+    const tx = makeTx({
+      cases: [
+        makeCaseRow({
+          id: 'c1',
+          status: 'READY_TO_PLACE',
+          placements: [
+            {
+              id: 'pl-1',
+              selectedAt: NOW,
+              status: 'SELECTED',
+              serviceModelSnapshot: 'STAFFING_SUPPLY',
+              jobOpening: {
+                id: 'jo-1',
+                posting: { id: 'jp-1', title: 'X' },
+                staffingOrder: {
+                  project: { name: 'Alpha', clientCompanyName: 'Acme' },
+                },
+              },
+            },
+          ],
+        }),
+      ],
+      total: 1,
+    });
+    const out = await listWith(tx, makeAdminCtx(), baseFilter);
+    expect(out.items[0]!.placement).toEqual({
+      id: 'pl-1',
+      status: 'SELECTED',
+      jobOpeningId: 'jo-1',
+      managementMode: 'HRP_MANAGED',
+    });
+  });
+
+  it('F1-RM03: row.placement is null when serviceModelSnapshot is null (legacy)', async () => {
+    const tx = makeTx({
+      cases: [
+        makeCaseRow({
+          id: 'c1',
+          status: 'READY_TO_PLACE',
+          placements: [
+            {
+              id: 'pl-1',
+              selectedAt: NOW,
+              status: 'SELECTED',
+              serviceModelSnapshot: null,
+              jobOpening: {
+                id: 'jo-1',
+                posting: { id: 'jp-1', title: 'X' },
+                staffingOrder: {
+                  project: { name: 'Alpha', clientCompanyName: 'Acme' },
+                },
+              },
+            },
+          ],
+        }),
+      ],
+      total: 1,
+    });
+    const out = await listWith(tx, makeAdminCtx(), baseFilter);
+    expect(out.items[0]!.placement).toBeNull();
+  });
+
+  it('F1-RM04: row.placementOptions resolves distinct job openings across submissions', async () => {
+    const tx = makeTx({
+      cases: [
+        makeCaseRow({
+          id: 'c1',
+          status: 'READY_TO_PLACE',
+          submissions: [
+            {
+              id: 's-newest',
+              createdAt: new Date('2026-09-26T09:00:00Z'),
+              slot: {
+                jobOpening: {
+                  id: 'jo-1',
+                  posting: { id: 'jp-1', title: 'Welder' },
+                  staffingOrder: {
+                    project: { name: 'Alpha', clientCompanyName: 'Acme' },
+                  },
+                },
+              },
+            },
+            {
+              id: 's-older',
+              createdAt: new Date('2026-09-25T09:00:00Z'),
+              slot: {
+                jobOpening: {
+                  id: 'jo-1',
+                  posting: { id: 'jp-1', title: 'Welder' },
+                  staffingOrder: {
+                    project: { name: 'Alpha', clientCompanyName: 'Acme' },
+                  },
+                },
+              },
+            },
+            {
+              id: 's-2',
+              createdAt: NOW,
+              slot: {
+                jobOpening: {
+                  id: 'jo-2',
+                  posting: { id: 'jp-2', title: 'Helper' },
+                  staffingOrder: {
+                    project: { name: 'Alpha', clientCompanyName: 'Acme' },
+                  },
+                },
+              },
+            },
+          ],
+        }),
+      ],
+      total: 1,
+    });
+    const out = await listWith(tx, makeAdminCtx(), baseFilter);
+    expect(out.items[0]!.placementOptions?.length).toBe(2);
+    // F1-RM04a: option for jo-1 carries the NEWEST submission id.
+    const jo1 = out.items[0]!.placementOptions!.find(
+      (o) => o.jobOpeningId === 'jo-1',
+    );
+    expect(jo1?.sourceCandidateSubmissionId).toBe('s-newest');
+    const jo2 = out.items[0]!.placementOptions!.find(
+      (o) => o.jobOpeningId === 'jo-2',
+    );
+    expect(jo2?.sourceCandidateSubmissionId).toBe('s-2');
+  });
+
+  it('F1-RM05: legacy submissions without slot do NOT pollute placementOptions', async () => {
+    const tx = makeTx({
+      cases: [
+        makeCaseRow({
+          id: 'c1',
+          status: 'READY_TO_PLACE',
+          submissions: [
+            // Legacy: no slot (Prisma returns slot=null)
+            { id: 's-legacy', createdAt: NOW, slot: null } as never,
+            {
+              id: 's-modern',
+              createdAt: NOW,
+              slot: {
+                jobOpening: {
+                  id: 'jo-1',
+                  posting: { id: 'jp-1', title: 'Welder' },
+                  staffingOrder: null,
+                },
+              },
+            },
+          ],
+        }),
+      ],
+      total: 1,
+    });
+    const out = await listWith(tx, makeAdminCtx(), baseFilter);
+    expect(out.items[0]!.placementOptions?.length).toBe(1);
+    expect(out.items[0]!.placementOptions![0]!.jobOpeningId).toBe('jo-1');
+  });
+
+  it('F1-ISO: cases on different rows resolve placement independently (cross-case isolation)', async () => {
+    const tx = makeTx({
+      cases: [
+        makeCaseRow({
+          id: 'c1',
+          status: 'READY_TO_PLACE',
+          placements: [
+            {
+              id: 'pl-1',
+              selectedAt: NOW,
+              status: 'SELECTED',
+              serviceModelSnapshot: 'STAFFING_SUPPLY',
+              jobOpening: {
+                id: 'jo-1',
+                posting: { id: 'jp-1', title: 'X' },
+                staffingOrder: {
+                  project: { name: 'Alpha', clientCompanyName: 'Acme' },
+                },
+              },
+            },
+          ],
+        }),
+        makeCaseRow({ id: 'c2', status: 'READY_TO_PLACE' }),
+      ],
+      total: 2,
+    });
+    const out = await listWith(tx, makeAdminCtx(), baseFilter);
+    const byId = Object.fromEntries(out.items.map((i) => [i.caseId, i]));
+    expect(byId['c1']!.placement?.id).toBe('pl-1');
+    expect(byId['c2']!.placement).toBeNull();
   });
 });

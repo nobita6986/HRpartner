@@ -1,0 +1,39 @@
+T0 TARGETED P1-F1 REPRODUCTION x3 AT a5c5556
+==================================================
+
+Implementation SHA: a5c55568912247459d21919448cb1613455e1268
+Test suite: tests/db/p1f1-placement-action-ui.integration.test.ts
+Run mode: CI_INTEGRATION_STRICT=1 npx vitest run tests/db/p1f1-placement-action-ui.integration.test.ts --config vitest.integration.config.ts
+
+T0-authoritative results (per T0 handback):
+
+  Run 1: 10/10 PASS
+  Run 2: 10/10 PASS
+  Run 3: 10/10 PASS
+
+Each run executed against the synthetic PostgreSQL target.
+
+F1-DB09 (canonical F0 create + confirm, route-driven):
+  - POST /api/admin/placements -> 201 SELECTED + replayed=false
+  - POST /api/admin/placements/[id]/actions/confirm -> 200 CONFIRMED + replayed=false
+  - getRecruiterWorkbenchList refresh -> row projection observes placement.status = CONFIRMED
+
+F1-DB10 (canonical F0 EFFECTIVE on HRP-managed, route-driven):
+  - POST /api/admin/placements -> 201 SELECTED + replayed=false
+  - POST /api/admin/placements/[id]/actions/confirm -> 200 CONFIRMED + replayed=false
+  - POST /api/admin/placements/[id]/actions/effective (valid evidence) -> 400 PLACEMENT_VALIDATION_ERROR
+  - re-read DB -> placement stays CONFIRMED; PlacementCase stays OPEN
+
+Plus the F1 unit + fetch + states + slide-out-drawer coverage attached to the F1 surface
+(roles, idempotency scoping, frozen Vietnamese generic, retention suite, U+FFFD shared
+primitive) executed alongside in each run and reported PASS.
+
+T0 reproduction is the authoritative measurement; Tier 1 did not re-run this suite
+locally (env-gated DATABASE_URL_TEST / DATABASE_URL_ADMIN_TEST absent on local machine;
+Tier 1 keeps ENV_BLOCKED honest on local per DEC-13).
+
+Redaction:
+  - No URL / credential / token / secret / PII appears in this file.
+  - No raw Idempotency-Key, raw actorId, raw evidence, raw acknowledgementRef.
+
+RESULT: PASS x3.
