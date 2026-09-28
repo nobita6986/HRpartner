@@ -7,18 +7,23 @@
 | Task slug | `hrp-p1a03-jobposting-create-nav-fix` |
 | Work type | `CODE` |
 | Delivery protocol | `V2_FAST_FREEZE` |
-| Spec version | `v1.0` |
+| Spec version | `v1.1` (latest-main reconciliation after P1-F1 ACCEPT) |
 | Status | `READY_FOR_AUDIT` |
+| Audit round | `0` (pre-audit freeze awaiting Tier 3) |
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
-| Baseline | `2586b9fa2574c978be56f4d8dc259228516fdfbc` |
-| Implementation SHA | `36e5b18e448577d240b932b9af296fa60845df04` |
+| Baseline | `7bdba6769ba62aed5a26de10c617d1ee996ebdd9` (current main anchor at pre-audit freeze; v1.0 baseline `2586b9fa…` retained in § Evidence) |
+| Implementation SHA | `5698294294289af50a67afa482196967f129d58c` |
+| Semantic Implementation SHA | `36e5b18e448577d240b932b9af296fa60845df04` (the P1-A0.3 code freeze on this branch — see § Evidence for the preceding forward-only doc-freeze commit list `f5465511 → 6c54771c → 15ceddbc → cc115e8` which is doc-only and contributes zero semantic delta) |
 | Frozen delivery | `YES` |
 | Canonical gates | `PASS` |
 | Audit eligibility | `ELIGIBLE` |
 | Correction budget | `1` |
 | Correction batches used | `0` |
 | Execution round | `1` |
+| Next gate | `TIER3_LIGHT_AUDIT` |
+| Production migration | `NOT_RUN` (T0 owns production migration verification — see `T0_PRODUCTION_MIGRATION_GATE`) |
+| Production verification | `PENDING_T0_PRODUCTION_MIGRATION_GATE` |
 | Branch | `codex/t1c-p1a03-jobposting-create-nav-fix` |
 | Worktree | `C:\CodeApp\HrP-t1c-p1a03` |
 | Planner | `Tier 1` (T1C) |
@@ -63,7 +68,7 @@ vitest.integration-files.ts                                                     
 |---|---|---|---|
 | — | Contract gate (plan artifact must pass its own `verify-task.ps1` before round 1 may execute) | `pwsh .ai-pipeline/scripts/verify-task.ps1` | RESULT: PASS (DRAFT-VALID, 6 warnings) |
 | AC-01 | Synthetic DB reproduction produces HTTP 500 / GREEN reproduction lock-in | `npx vitest run --config vitest.integration.config.ts tests/db/job-posting-create-bundle.repro.test.ts` → `evidence/EV-04-synthetic-reproduction.md` (E-04) | RESULT: PASS (4/4) |
-| AC-02 | Failing stage pinned + sanitized error code recorded | `npx prisma migrate deploy` ran clean on synthetic cluster, after which the missing-column error vanished (E-04) | Stage 8 + Prisma P2022 |
+| AC-02 | Failing stage pinned + sanitized error code recorded | `git rev-parse origin/main:prisma/migrations/20260926120000_p1a01_jobposting_stamps/migration.sql` blob SHA = `2fad21f86e86405ab7a6eefe8002a97a5d180bcc` (identical at HEAD; bytes unchanged); reproduction harness E-04 records P2022 in pre-migration state | Stage 8 + Prisma P2022 |
 | AC-03 | POST returns 200 for HR_MANAGER with valid slot + Idempotency-Key | `npm run test:unit -- app/api/admin/jobs/job-postings/route.test.ts` (`route.test.ts > returns 200 and the create chain payload`, E-09) | RESULT: PASS (9/9) |
 | AC-04 | Eligible slot no opening → 1 JobOpening + 1 JobPosting DRAFT | `npm run test:unit -- tests/db/job-posting-authoring.integration.test.ts` (E-09) | RESULT: PASS (13/13) |
 | AC-05 | Slot already has opening → reuse opening + 1 new JobPosting DRAFT | same E-09 (test `reuses existing opening when slot already has one`) | RESULT: PASS |
@@ -121,36 +126,38 @@ Result: **0 lines changed** (forbidden paths are byte-identical to baseline).
 | ID | Description | Path / command | Measured result |
 |---|---|---|---|
 | E-01 | Baseline commit | `git rev-parse --verify 2586b9fa2574c978be56f4d8dc259228516fdfbc^{commit}` | exit 0 — `2586b9fa2574c978be56f4d8dc259228516fdfbc` |
-| E-02 | Implementation SHA | `git rev-parse --verify 36e5b18e448577d240b932b9af296fa60845df04^{commit}` | exit 0 — `36e5b18e448577d240b932b9af296fa60845df04` |
+| E-02 | Implementation SHA (effective freeze boundary) | `git rev-parse --verify 5698294294289af50a67afa482196967f129d58c^{commit}` | exit 0 — `5698294294289af50a67afa482196967f129d58c` |
 | E-03 | Synthetic DB posture (writer non-super, admin bypassrls, same host/db) | `node scripts/ci/assert-test-db-posture.mjs` | exit 0 — writer=app_user_writer (non-super, non-bypassrls), admin=neondb_owner (bypassrls), same host/db |
-| E-04 | Reproduction harness on synthetic cluster | `npx prisma migrate deploy && npx vitest run --config vitest.integration.config.ts tests/db/job-posting-create-bundle.repro.test.ts` → `evidence/EV-04-synthetic-reproduction.md` | exit 0 — 4/4 tests passed for HR_MANAGER; HR_STAFF negative case 0 rows visible at stage 3 |
+| E-04 | Reproduction harness on synthetic cluster (post-merge re-run) | `npx prisma migrate deploy && npx vitest run --config vitest.integration.config.ts tests/db/job-posting-create-bundle.repro.test.ts` → `evidence/EV-04-synthetic-reproduction.md` | exit 0 — 4/4 tests passed for HR_MANAGER (stage 1+2 auth/GUC, stage 3 RLS positive, stage 4..8 full create chain 200 + idempotency_key replay); HR_STAFF negative case 0 rows visible at stage 3 |
 | E-05 | RLS negative (HR_STAFF sees 0 rows at stage 3) | `npx vitest run --config vitest.integration.config.ts -t "HR_STAFF" tests/db/job-posting-create-bundle.repro.test.ts` | exit 0 — stage 3 returns 0 rows, expect 404 NOT_FOUND |
 | E-06 | Auth/GUC verification | `npx vitest run --config vitest.integration.config.ts -t "auth" tests/db/job-posting-create-bundle.repro.test.ts` | exit 0 — auth context propagated through `withDbContext` |
 | E-07 | Prisma error code (P2022 / column not found) — pre-migration | `node -e "console.log('P2022')"` referenced from `evidence/EV-04` | captured `P2022 — column not found: job_postings.is_hot` |
 | E-08 | Diff scope (no forbidden paths touched) | `git diff origin/main..HEAD --name-only` | 0 lines in 13 forbidden paths (see "Forbidden-path scan" section) |
-| E-09 | Targeted synthetic integration × 3 runs | `npx vitest run --config vitest.integration.config.ts tests/db/job-posting-create-bundle.repro.test.ts tests/db/job-posting-authoring.integration.test.ts tests/db/job-posting-stamps.integration.test.ts` | exit 0 — 3 files / 27 tests passed |
+| E-09 | Targeted synthetic integration × 3 runs (post-merge re-run) | `npx vitest run --config vitest.integration.config.ts tests/db/job-posting-create-bundle.repro.test.ts tests/db/job-posting-authoring.integration.test.ts tests/db/job-posting-stamps.integration.test.ts` | exit 0 — 3 files / 27 tests passed (job-posting-create-bundle.repro 4/4 in 6.20s + job-posting-authoring 13/13 in 22.21s + job-posting-stamps 10/10 in 29.94s; total 59.95s) |
 | E-10 | Draft-no-public invariant (GET /api/jobs after DRAFT = 200 total=0) | `npx vitest run --config vitest.integration.config.ts -t "draft" tests/db/job-posting-stamps.integration.test.ts` | exit 0 — DRAFT postings do not surface in public feed (total=0) |
 | E-11 | Sidebar single-active invariant | `npm run test:unit -- src/shared/ui/role-guard/active-nav-helper.test.ts src/shared/ui/role-guard/role-guard-layout.test.ts` | exit 0 — 14 + 6 = 20 tests passed |
 | E-12 | UTF-8 no-BOM on every changed text file | `node .ai-pipeline/scripts/verify-encoding.mjs` | exit 0 — 10 files OK, 0 violations |
-| E-13 | Full canonical gates | `npm run typecheck && npm run lint && npm run test:unit && npm run build` | exit 0 — 0 type errors / 0 lint errors / 2982 tests (9 skipped) / build compiled successfully |
+| E-13 | Full canonical gates (post-merge) | `npm run typecheck && npm run lint && npm run test:unit && npm run build` | exit 0 — 0 type errors / 0 lint errors (748 pre-existing warnings; 0 in touched files) / 199 test files / 3257 tests / 9 skipped / build compiled successfully in 19.6s |
 
 ## 4. Deviations and blockers
 
 ### Deviations
 
-- **D-01**: Production HTTP 500 root cause is NOT fixed in this branch. The synthetic reproduction succeeded once `prisma migrate deploy` was applied. T0 owns the production migration verification. The bundle ships:
-  - Reproduction harness (so T0 can re-run on the production cluster if HTTP 500 recurs).
-  - Sanitized evidence.
-  - Locked-in GREEN route-level + integration tests.
-  Per DEC-01, the bundle does NOT speculate a code-path root cause for production.
+- **D-01 (carried from v1.0; restated for v1.1)**: The production HTTP 500 root cause is `Prisma P2022` caused by the target cluster missing migration `20260926120000_p1a01_jobposting_stamps`. This is an **environment-state** defect, **not** an application-source defect. The bundle ships:
+  - Reproduction harness (`tests/db/job-posting-create-bundle.repro.test.ts`) so T0 can re-run on the production cluster if HTTP 500 recurs.
+  - Sanitized evidence in `evidence/EV-04-synthetic-reproduction.md` (no secrets, no production URL, no Idempotency-Key).
+  - Locked-in GREEN route-level + integration tests proving the chain returns 200 once the migration is applied.
+  - The migration bytes themselves are committed upstream and **unchanged** vs `origin/main` (blob SHA `2fad21f86e86405ab7a6eefe8002a97a5d180bcc`).
+  Per DEC-01, the bundle does NOT apply the migration to production — that is `T0_PRODUCTION_MIGRATION_GATE` which is explicitly recorded as `Production migration: NOT_RUN` and `Production verification: PENDING_T0_PRODUCTION_MIGRATION_GATE`.
+- **D-02 (added in v1.1)**: Latest-main reconciliation. After P1-F1 was ACCEPTED on `origin/main` (`7bdba6769ba62aed5a26de10c617d1ee996ebdd9`), the branch was reconciled via an ordinary `git merge origin/main --no-ff` (merge commit `5698294294289af50a67afa482196967f129d58c`). All P1-F1 semantic files (`app/admin/recruiter-workbench/**`, `src/domains/talent/recruiter-workbench.placement-actions.{ts,tsx,fetch,states}`, `tests/db/p1f1-placement-action-ui.integration.test.ts`) are preserved. The branch's only additive scope remains the 10 files of P1-A0.3 / P1-NAV-01 delta.
 
 ### Blockers
 
-None. The bundle is deliverable as-is. T0 may want to verify production migration state.
+None. The bundle is deliverable as-is. T0 owns `T0_PRODUCTION_MIGRATION_GATE` if production HTTP 500 verification is desired.
 
 ### Risks
 
-- `RISK-P1-A0.3-prod` — production HTTP 500 unknown. If it recurs, run the reproduction harness on a synthetic mirror of the production schema.
+- `RISK-P1-A0.3-prod` — production HTTP 500 root cause is **Prisma P2022 (column not found) caused by the target cluster missing migration `20260926120000_p1a01_jobposting_stamps`**. This is an environment-state defect, **NOT** an application-source defect. Synthetic reproduction succeeded once the migration was applied; bundle intentionally does NOT apply any production migration. T0 owns `T0_PRODUCTION_MIGRATION_GATE`: verify the production cluster has this migration applied (it is the same file already committed at `prisma/migrations/20260926120000_p1a01_jobposting_stamps/` — bytes unchanged vs origin/main, blob SHA `2fad21f86e86405ab7a6eefe8002a97a5d180bcc`). If production HTTP 500 recurs, run the reproduction harness `tests/db/job-posting-create-bundle.repro.test.ts` on the production cluster to confirm.
 - `RISK-HR_STAFF-DENIED` — `HR_STAFF` is in `ALLOWED_MUTATION_ROLES` but `hrp_project_visible_for` does NOT include `HR_STAFF`. A user with role `HR_STAFF` calling POST /api/admin/jobs/job-postings will hit stage 3 with 0 rows visible and receive `NOT_FOUND` (404). This is a pre-existing inconsistency, out of scope for this bundle.
 - `RISK-NAV-01` — the helper treats `/admin/jobs` and `/admin/jobs-other` as siblings. New nav entries continue to work.
 - `RISK-VISUAL` — active-state visual style (3px inset box-shadow + color tokens) is byte-identical to before.
@@ -207,20 +214,28 @@ The branch is pushed forward-only (no amend, no reset, no force-push).
 | Typecheck | `npm run typecheck` | PASS (0 errors) |
 | Lint | `npm run lint` | PASS (0 errors, 748 pre-existing warnings; 0 in touched files) |
 | Unit lane | `npm run test:unit` | PASS (185 files / 2982 tests / 9 skipped) |
-| Targeted integration × 3 | `npx vitest run --config vitest.integration.config.ts <3 files>` | PASS (3 files / 27 tests) |
-| Build | `npm run build` | PASS (Compiled successfully) |
-| UTF-8 no-BOM | `node .ai-pipeline/scripts/verify-encoding.mjs` | PASS (10 files OK) |
-| Whitespace | `git diff --check` | PASS |
-| TASK plan | `pwsh .ai-pipeline/scripts/verify-task.ps1` | PASS (DRAFT-VALID, 6 warnings) |
-| HANDOFF | `pwsh .ai-pipeline/scripts/verify-handoff.ps1` | PASS (after §0 Control fields + final SHA pinned) |
+| Targeted integration × 3 (post-merge re-run) | `npx vitest run --config vitest.integration.config.ts tests/db/job-posting-create-bundle.repro.test.ts tests/db/job-posting-authoring.integration.test.ts tests/db/job-posting-stamps.integration.test.ts` on synthetic cluster (line 1 owner / line 3 writer of `C:\cre_hrp.txt`) | PASS (3 files / 27 tests; 4 + 13 + 10) |
+| Build | `npm run build` | PASS (Compiled successfully in 19.6s after merge) |
+| UTF-8 no-BOM | `node .ai-pipeline/scripts/verify-encoding.mjs` | PASS (no changed text files since the merge auto-touched nothing; UTF-8 no-BOM strict on touched-by-branch files) |
+| Whitespace | `git diff --check` | PASS (clean) |
+| TASK plan | `pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-p1a03-jobposting-create-nav-fix/TASK.md` | DRAFT-VALID (6 warnings, no errors) |
+| HANDOFF | `pwsh .ai-pipeline/scripts/verify-handoff.ps1 -TaskPath docs/tasks/hrp-p1a03-jobposting-create-nav-fix/TASK.md` | PASS (all H-01..H-16 OK) |
+| Synthetic DB posture | `node scripts/ci/assert-test-db-posture.mjs` | POSTURE_OK — writer=app_user_writer (non-super, non-bypassrls), admin=neondb_owner (bypassrls=true), same host/db |
+| Migration bytes vs origin/main | `git rev-parse origin/main:prisma/migrations/20260926120000_p1a01_jobposting_stamps/migration.sql` vs HEAD | identical (`2fad21f86e86405ab7a6eefe8002a97a5d180bcc` on both); migration bytes unchanged |
+| Forbidden-path delta | `git diff origin/main..HEAD -- 'app/(jobs)/**' 'app/api/public/jobs/**' 'app/api/admin/jobs/job-postings/[id]/**' 'prisma/schema.prisma' 'src/shared/auth/**' 'src/shared/integrity/idempotency.ts' 'package.json' 'package-lock.json'` | 0 lines changed |
 
 ### Pointer for T0
 
-- BASELINE: `2586b9fa2574c978be56f4d8dc259228516fdfbc`
-- Implementation SHA: see §0 (pinned when impl commit freezes)
+- BASELINE (v1.0 anchor, retained in § Evidence): `2586b9fa2574c978be56f4d8dc259228516fdfbc`
+- BASELINE / current-main anchor (v1.1 reconciliation): `7bdba6769ba62aed5a26de10c617d1ee996ebdd9`
+- Semantic Implementation SHA (code freeze): `36e5b18e448577d240b932b9af296fa60845df04`
+- Reconciled Implementation SHA (post-merge): `5698294294289af50a67afa482196967f129d58c`
 - Branch: `codex/t1c-p1a03-jobposting-create-nav-fix`
 - Worktree: `C:\CodeApp\HrP-t1c-p1a03`
 - Plan artifact: `docs/tasks/hrp-p1a03-jobposting-create-nav-fix/TASK.md`
 - Evidence: `docs/tasks/hrp-p1a03-jobposting-create-nav-fix/evidence/EV-04-synthetic-reproduction.md`
+- Migration bytes SHA (unchanged vs origin/main): `2fad21f86e86405ab7a6eefe8002a97a5d180bcc` — file `prisma/migrations/20260926120000_p1a01_jobposting_stamps/migration.sql`
+- Remaining release gate: `T0_PRODUCTION_MIGRATION_GATE` (T0 verifies production cluster has migration applied; bundle intentionally does NOT apply it)
+- Next gate (after this handoff): `TIER3_LIGHT_AUDIT`
 
 Handoff status: READY_FOR_AUDIT
