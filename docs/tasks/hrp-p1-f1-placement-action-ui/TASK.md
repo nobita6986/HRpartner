@@ -8,9 +8,9 @@
 > continuations inside the single pre-audit correction batch
 > (`Correction batches used: 1`).
 >
-> Current effective status: `READY_FOR_AUDIT / ELIGIBLE / PASS`.
+> Current effective status: `ACCEPTED / COMPLETED / PASS`.
 > Frozen delivery: `YES`.
-> Next gate: `TIER3_LIGHT_AUDIT`.
+> Next gate: `NONE — MERGED_AND_PRODUCTION_VERIFIED`.
 
 ## 0. Control
 
@@ -24,8 +24,8 @@
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
 | Audit reason | UI mở 5 mutation commands từ production-ready backend; rủi ro chính: stale status, leak raw error, idempotency key mistreatment khi retry, role bypass nếu UI gate lệch server gate, double-click tạo duplicate placement. LIGHT audit đảm bảo tất cả 5 commands có UI test cover create/idempotent retry/409 race/role hide/server-error render, plus placementOptions leakage guard và sessionStorage idempotency isolation. |
-| Spec version | `v1.1` |
-| Status | `READY_FOR_AUDIT` (T0 runtime gate PASS at `a5c5556`; pre-existing shared-DB residue disclosed and unchanged) |
+| Spec version | `v1.2` |
+| Status | `ACCEPTED` — Tier 3 LIGHT `CONDITIONAL` accepted by T0; PR #63 merged; post-merge CI, Vercel and auth-first production smoke PASS |
 | Contract gate | `READY_TO_CODE` |
 | Decision state | `CLOSED` |
 | Open Owner decisions | `0` |
@@ -36,15 +36,19 @@
 | Required gates | `pwsh .ai-pipeline/scripts/verify-task.ps1`; `pwsh .ai-pipeline/scripts/verify-handoff.ps1`; `node .ai-pipeline/scripts/verify-encoding-range.mjs fabeda29c97720612136909b8f7beccfdf217c25` (range-aware strict UTF-8); `git diff --check`; `git status --porcelain`; `npm run typecheck`; `npm run lint`; `npm run test:unit`; `npm run test:integration` (env-gated `ENV_BLOCKED` honest report when DB absent). |
 | Frozen delivery | `YES` |
 | Canonical gates | `PASS` |
-| Audit eligibility | `ELIGIBLE` |
+| Audit eligibility | `COMPLETED` — 15/17 AC independently PASS; AC-05/AC-11 `ENV_BLOCKED` locally at Tier 3 and authorized from exact-SHA T0 runtime provenance |
 | Baseline | `fabeda29c97720612136909b8f7beccfdf217c25` |
-| Implementation SHA | `a5c55568912247459d21919448cb1613455e1268` (Round 3 zero-residue teardown; pinned via `git rev-parse HEAD`; supersedes `f2fb34f` as the frozen semantic SHA) |
-| Docs/Evidence SHA | `<reported externally by Tier 1, NOT pinned in this file>` |
+| Implementation SHA | `fe36334c5d92836120f5b6ffd2e897912756ff62` (accepted-main integration SHA; PR #63 merge commit) |
+| Semantic Implementation SHA | `a5c55568912247459d21919448cb1613455e1268` (frozen F1 semantic delivery; unchanged by audit adoption and closeout) |
+| Docs/Evidence SHA | `d05088110b0870be2959d3a2d6fd2c686730e66e` |
+| Audit adoption SHA | `912c269e1d2930313eb8cf36d3d262b3bc0ff35a` |
+| Production merge SHA | `fe36334c5d92836120f5b6ffd2e897912756ff62` (PR #63) |
+| Post-merge CI | GitHub Actions run `36389772726`: Quality + Integration PASS; all 39 migrations applied to clean CI PostgreSQL; no drift |
 | Depends on | P1-F0 `ACCEPTED`; P1-E0 `ACCEPTED`; P1-E1 `ACCEPTED` + merged main |
-| Current execution round | `6` (PRE-AUDIT DOCS/EVIDENCE FINAL-FREEZE) |
-| Current audit round | `0` (Tier 3 not yet engaged) |
-| Next gate | `TIER3_LIGHT_AUDIT` |
-| Production DB/migration | `NOT_RUN` (T0 confirmed Neon target is not disposable; no reset/drop applied) |
+| Current execution round | `7` (T0 accepted production closeout) |
+| Current audit round | `1` |
+| Next gate | `NONE — MERGED_AND_PRODUCTION_VERIFIED` |
+| Production DB/migration | `NOT_REQUIRED / NOT_RUN` — F1 contains no production schema/migration delta; CI migration lane only used clean ephemeral PostgreSQL |
 
 > **Note on Test environment.** The truthful state for the current
 > final-freeze commit is `PASS` (T0_CI_SYNTHETIC_DB_GATE ×3 passed at
@@ -52,6 +56,19 @@
 > canonical strict 35/35 files / 601 passed / 2 skipped / 0 failed /
 > exit 0). Independent global-prefix snapshot before and after the run
 > batch did not increase, so current-run residue delta = 0.
+
+> **v1.2 — accepted production closeout.** Tier 3 LIGHT round 1 returned
+> `CONDITIONAL`: 15/17 AC independently PASS; AC-05 and AC-11 were
+> `ENV_BLOCKED` only because the auditor lacked local synthetic-DB
+> credentials. T0 accepted the verdict using runtime provenance pinned to
+> semantic SHA `a5c5556` (P1-F1 `10/10 ×3`, predecessor P1-F0 `20/20 ×3`,
+> full canonical `35/35` files / `601 passed` / `2 skipped` / `0 failed`,
+> posture PASS, current-run residue delta zero). The byte-exact audit was
+> adopted at `912c269e`; PR #63 merged as `fe36334c`; main CI run
+> `36389772726` and Vercel succeeded. Production smoke returned `307` from
+> `/admin/recruiter-workbench` to login and `401` from unauthenticated
+> placement create/confirm POSTs. No production migration or data write was
+> required. `AUD-001..AUD-007` remain recorded as non-blocking P3 debt.
 
 > **Note on correction budget.** V2_FAST_FREEZE `Correction budget = 1`
 > per the per-run contract. T0 normalization decision: `Correction
@@ -409,6 +426,20 @@ Correction-batch normalization is recorded by T0:
   freeze boundary and hands the frozen SHA over to T0 for review
   before `TIER3_LIGHT_AUDIT`.
 
+### 9.2 Accepted production closeout (round 7 — T0)
+
+- Tier 3 LIGHT round 1 `CONDITIONAL` adopted byte-exact at `912c269e`;
+  no P0/P1/P2 blockers and seven P3 observations remain recorded.
+- PR #63 merged into `main` as `fe36334c`; no semantic F1 delta followed
+  frozen semantic SHA `a5c5556`.
+- Post-merge GitHub Actions run `36389772726` passed Quality and full
+  Integration. Vercel production deployment for `fe36334c` succeeded.
+- Auth-first production smoke passed without credentials or data writes:
+  Workbench GET redirected `307` to login; placement create and confirm
+  POST requests returned `401`.
+- F1 has no schema/migration delta. Production migration was not required
+  or run. Task state advances to `ACCEPTED`; no further F1 gate remains.
+
 Forbidden-path discipline remains intact: this commit only touches
 `docs/tasks/hrp-p1-f1-placement-action-ui/**`. Source, tests,
 schema, migration, package, lockfile, and CI config are untouched
@@ -433,5 +464,6 @@ docs/evidence paths).
 | 5 | 2026-09-28 | `48c3974` | Round-2 runtime correction: `F1-DB10` `READY_TO_PLACE` reread case status matches fixture; runtime-integrity continuation inside round 2. |
 | 5 | 2026-09-28 | `a5c5556` | Round-3 zero-residue teardown: tracked-id cleanup + scoped idempotency_key deletion. SUPERSEDES `f2fb34f` as the frozen Implementation SHA per T0 handback (`a5c5556` is the new frozen semantic SHA; round-2 SHA `f2fb34f` is preserved verbatim in this row for history). |
 | 6 | 2026-09-28 | `<docs-freeze-sha>` | PRE-AUDIT DOCS/EVIDENCE FINAL-FREEZE: Implementation SHA pinned to `a5c5556` (T0 runtime gate PASS ×3); `Status = READY_FOR_AUDIT`, `Frozen delivery = YES`, `Canonical gates = PASS`, `Audit eligibility = ELIGIBLE`, `Test environment = PASS`, `Next gate = TIER3_LIGHT_AUDIT`, `Production DB/migration = NOT_RUN`, `Correction batches used = 1`; HANDOFF.md compact §0..§5 synchronized; new evidence files under `evidence/` (`t0-targeted-p1f1-x3.txt`, `t0-predecessor-p1f0-x3.txt`, `t0-canonical-35x35-601.txt`, `t0-db-posture.txt`, `t0-zero-residue-current.txt`, `t0-pre-existing-shared-db-residue.txt`, `t0-sha-chain.txt`); re-run verifier outputs (`verify-task-output.txt`, `verify-handoff-output.txt`, `verify-encoding-range-output.txt`); pre-existing shared-DB residue disclosed as `BLK-02` historical debt (NOT residue of `a5c5556`). NO source / test / schema / migration / package / lockfile touched. `git diff --name-only a5c5556..HEAD` returns only `docs/tasks/hrp-p1-f1-placement-action-ui/**`. |
+| 7 | 2026-09-28 | `T0 closeout` | Tier 3 LIGHT `CONDITIONAL` accepted from exact-SHA runtime provenance; audit adopted at `912c269e`; PR #63 merged at `fe36334c`; main CI run `36389772726` and Vercel PASS; auth-first production smoke `307/401/401`; status → `ACCEPTED`; next gate → `NONE — MERGED_AND_PRODUCTION_VERIFIED`; no production migration required or run. |
 
-TASK status: READY_FOR_AUDIT
+TASK status: ACCEPTED
