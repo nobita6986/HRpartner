@@ -22,6 +22,46 @@ import type {
   ServerDerivedNextAction,
 } from '@/src/domains/talent/recruiter-workbench.types';
 import type { PlacementStatus } from '@prisma/client';
+import { z } from 'zod';
+
+// ─────────────────────────────────────────────────────────────────────────
+// 0. EFFECTIVE evidence schema (F-04, C2-04).
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * Strict RFC 3339 validator for `clientAcknowledgedAt`.
+ *
+ * Mirrors the F0 route (`app/api/admin/placements/[id]/actions/effective`)
+ * which uses `parseStrictIso8601Date` for the same field. We keep a
+ * Zod schema here so the client form can validate BEFORE POST.
+ */
+const STRICT_RFC3339_DATETIME = z.string().datetime({
+  offset: true,
+  message: 'clientAcknowledgedAt phải là RFC 3339 nghiêm ngặt (VD: 2026-01-02T03:04:05Z).',
+});
+
+/**
+ * Single source of truth for the EFFECTIVE evidence payload schema.
+ *
+ * Exported (C2-04) so tests — and any downstream caller — exercise the
+ * EXACT same validator the production form uses. The form trims user
+ * input BEFORE calling `safeParse`; `clientAcknowledgedAt` is NOT
+ * auto-trimmed by Zod, so leading/trailing whitespace is rejected as
+ * a non-canonical RFC 3339 string.
+ */
+export const EFFECTIVE_EVIDENCE_SCHEMA = z.object({
+  clientAcknowledgedAt: STRICT_RFC3339_DATETIME,
+  clientAcknowledgedByUserId: z
+    .string()
+    .trim()
+    .min(1, 'Cần nhập mã người xác nhận.'),
+  acknowledgementRef: z
+    .string()
+    .trim()
+    .min(1, 'Cần nhập mã tham chiếu xác nhận.'),
+});
+
+export type EffectiveEvidencePayload = z.infer<typeof EFFECTIVE_EVIDENCE_SCHEMA>;
 
 // ─────────────────────────────────────────────────────────────────────────
 // 1. Canonical command name (route dispatch table).

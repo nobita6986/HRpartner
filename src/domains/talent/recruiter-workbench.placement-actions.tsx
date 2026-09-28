@@ -32,7 +32,6 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { z } from 'zod';
 import {
   AlertTriangle,
   CheckCircle2,
@@ -45,14 +44,21 @@ import { cn } from '@/src/shared/utils/cn';
 import { SlideOutDrawer } from '@/src/shared/ui/sheet/slide-out-drawer';
 
 import {
+  EFFECTIVE_EVIDENCE_SCHEMA,
   availableActionsForRow,
   canPerformPlacementAction,
   formatManagementModeVi,
   formatPlacementStatusVi,
   isStalePlacementSnapshot,
+  type EffectiveEvidencePayload,
   type PlacementCommandName,
   type PlacementCommandPayloadShape,
 } from './recruiter-workbench.placement-actions.states';
+
+export {
+  EFFECTIVE_EVIDENCE_SCHEMA,
+  type EffectiveEvidencePayload,
+};
 import {
   type PlacementCommandResult,
   runPlacementCommandRequest,
@@ -576,26 +582,10 @@ function PlacementCreateForm({
 
 // ─────────────────────────────────────────────────────────────────────────
 // 4. EffectiveEvidenceForm — strict Zod RFC 3339 + retention (LOCK-13, F-04).
+//
+// The form is exported so the test file can drive the EXACT production
+// component (no Schema re-definition per C2-04).
 // ─────────────────────────────────────────────────────────────────────────
-
-const STRICT_RFC3339 = z.string().datetime({
-  offset: true,
-  message: 'clientAcknowledgedAt phải là RFC 3339 nghiêm ngặt (VD: 2026-01-02T03:04:05Z).',
-});
-
-const EVIDENCE_SCHEMA = z.object({
-  clientAcknowledgedAt: STRICT_RFC3339,
-  clientAcknowledgedByUserId: z
-    .string()
-    .trim()
-    .min(1, 'Cần nhập mã người xác nhận.'),
-  acknowledgementRef: z
-    .string()
-    .trim()
-    .min(1, 'Cần nhập mã tham chiếu xác nhận.'),
-});
-
-export type EffectiveEvidencePayload = z.infer<typeof EVIDENCE_SCHEMA>;
 
 interface EffectiveEvidenceFormProps {
   pending: boolean;
@@ -610,8 +600,14 @@ interface EffectiveEvidenceFormProps {
  * Reuse the SAME idempotency-key on same-payload retry (handled by the
  * fetch helper via `sessionStorageKeyForPlacementCommand` — the key is
  * derived from the canonical payload hash).
+ *
+ * Whitespace handling matches the schema: the implementation trims the
+ * user inputs BEFORE `safeParse`, mirroring the test fixtures
+ * (F4-EV-08/09). For `clientAcknowledgedAt`, the form trims input too,
+ * but Zod's `.datetime({ offset: true })` still rejects whitespace
+ * because the parsed string is revalidated canonical.
  */
-function EffectiveEvidenceForm({
+export function EffectiveEvidenceForm({
   pending,
   onSubmit,
 }: EffectiveEvidenceFormProps): React.ReactElement {
@@ -624,7 +620,7 @@ function EffectiveEvidenceForm({
   const [localError, setLocalError] = React.useState<string | null>(null);
 
   function submit(): void {
-    const parsed = EVIDENCE_SCHEMA.safeParse({
+    const parsed = EFFECTIVE_EVIDENCE_SCHEMA.safeParse({
       clientAcknowledgedAt: clientAcknowledgedAt.trim(),
       clientAcknowledgedByUserId: clientAcknowledgedByUserId.trim(),
       acknowledgementRef: acknowledgementRef.trim(),

@@ -5,38 +5,36 @@
  * DATABASE_URL_ADMIN_TEST are absent. ENV_BLOCKED is an HONEST report, not
  * a pass condition (DEC-13). Tier 0/Owner cung cấp DB trước khi xét merge.
  *
- * Scope: prove the F1 additive E0 projections against the synthetic
- * PostgreSQL DB end-to-end. The harness drives the real
- * `getRecruiterWorkbenchList` service through a real Prisma transaction
- * under RLS, mocking only the `getAuthContext` boundary.
+ * Scope (round 2 / PRE-AUDIT CORRECTION BATCH 2/2):
+ *   - F1-DB01..F1-DB06: pure read-model evidence (placement +
+ *     placementOptions projection) — same as round 1.
+ *   - F1-DB07, F1-DB08: pure state-helper evidence (LOCK-15).
+ *   - F1-DB09 (C2-02): F1 generate → canonical F0 ROUTE POST → F0 confirm
+ *     ROUTE POST → real HTTP envelopes → read-model observes CONFIRMED.
+ *     NO direct placement.create / placement.update calls.
+ *   - F1-DB10 (C2-03): canonical F0 route stack creates + confirms an
+ *     HRP-managed placement; an EFFECTIVE POST against the same route
+ *     returns the canonical rejection; re-reading the DB proves the
+ *     placement stays CONFIRMED. NO manually thrown
+ *     `HRP_EFFECTIVE_FORBIDDEN`.
  *
- * Coverage:
- *   - F1-DB01: a case with NO placement surfaces `placement: null` and
- *     `placementOptions: null` (when no submissions resolve to a
- *     JobOpening).
- *   - F1-DB02: a case with a single SELECTED HRP-managed placement
- *     surfaces the additive `placement` with `managementMode='HRP_MANAGED'`,
- *     `status='SELECTED'`, `jobOpeningId` populated.
- *   - F1-DB03: multiple `CandidateSubmission` rows pointing to the same
- *     `JobOpening` (via `StaffingOrderSlot`) are deduplicated; the
- *     returned `placementOptions` carries the newest submission's id.
- *   - F1-DB04: deterministic sort of `placementOptions` by
- *     `(projectName, companyName, title, jobOpeningId)` asc.
- *   - F1-DB05: legacy submissions whose `slot` is `NULL` do NOT pollute
- *     `placementOptions`.
- *   - F1-DB06: read-service is RLS-clean — a different row in a different
- *     scope never leaks into `placement` / `placementOptions` (cross-row
- *     isolation).
+ * Round 2 cleanup rule (C2-01): every fixture create is tracked. The
+ * single biggest defect from round 1 was a direct
+ * `admin.candidateSubmission.create(...)` in the DB05 legacy test that
+ * never pushed its id into `submissionIds`. We route EVERY
+ * CandidateSubmission (including legacy slot=null) through one canonical
+ * helper that ALWAYS pushes the id.
  *
  * Refs:
  *   - Contract v1.1 §3 / §4.1 (placement lifecycle, additive DTO)
  *   - tests/db/recruiter-workbench.integration.test.ts (P1-E0 base pattern)
- *   - tests/db/p1f0-placement-command-api.integration.test.ts (fixture
- *     builder for PlacementCase + JobOpening + ServiceModelSnapshot)
+ *   - tests/db/p1f0-placement-command-api.integration.test.ts (F0 route
+ *     invocation pattern + buildFixture)
  */
 
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { randomUUID } from 'node:crypto';
+import { NextRequest } from 'next/server';
 import { PrismaClient, type Prisma, type ServiceModel } from '@prisma/client';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -47,16 +45,14 @@ const mocks = vi.hoisted(() => ({
   getPrisma: vi.fn(),
 }));
 
-vi.mock('@/src/shared/auth/auth-context', () => ({
-  getAuthContext: mocks.getAuthContext,
-  AuthSessionError: class AuthSessionError extends Error {
-    code = 'UNAUTHENTICATED';
-    constructor(message?: string) {
-      super(message ?? 'UNAUTHENTICATED');
-      this.name = 'AuthSessionError';
-    }
-  },
-}));
+vi.mock('@/src/shared/auth/auth-context', async (original) => {
+  const actual = await original<typeof import('@/src/shared/auth/auth-context')>();
+  return {
+    ...actual,
+    getAuthContext: mocks.getAuthContext,
+    AuthSessionError: actual.AuthSessionError,
+  };
+});
 
 vi.mock('@/src/lib/db', () => ({
   getPrisma: mocks.getPrisma,
@@ -80,7 +76,7 @@ const HAS_TEST_DB =
   !adminUrl.includes('placeholder') &&
   !writerUrl.includes('placeholder');
 
-const runId = `p1f1-${randomUUID().slice(0, 8)}`;
+const runId = `p1f1r2-${randomUUID().slice(0, 8)}`;
 
 function makeClient(url: string): PrismaClient {
   return new PrismaClient({
@@ -91,38 +87,35 @@ function makeClient(url: string): PrismaClient {
 }
 
 /**
- * Run inside a Prisma transaction with the RLS GUCs set per the supplied
- * AuthContext. Mirrors production `withDbContext`.
+ * Build a NextRequest with a UUID-v4 Idempotency-Key header (F0 contract).
+ * The body is JSON-stringified and `content-type` is application/json.
  */
-async function withContext<T>(
-  client: PrismaClient,
-  ctx: { userId: string; role: string },
-  callback: (tx: Prisma.TransactionClient) => Promise<T>,
-): Promise<T> {
-  return client.$transaction(async (tx) => {
-    await tx.$executeRawUnsafe(
-      `SELECT set_config('app.user_id', $1, true)`,
-      ctx.userId,
-    );
-    await tx.$executeRawUnsafe(
-      `SELECT set_config('app.role', $1, true)`,
-      ctx.role,
-    );
-    await tx.$executeRawUnsafe(
-      `SELECT set_config('app.vendor_id', '', true)`,
-    );
-    await tx.$executeRawUnsafe(
-      `SELECT set_config('app.worker_id', '', true)`,
-    );
-    return callback(tx);
+function buildRequest(
+  url: string,
+  init: {
+    body?: unknown;
+    headers?: Record<string, string>;
+    method?: string;
+  } = {},
+): NextRequest {
+  const method = init.method ?? 'POST';
+  const headers: Record<string, string> = {
+    'content-type': 'application/json',
+    'x-idempotency-key': randomUUID(),
+    ...(init.headers ?? {}),
+  };
+  return new NextRequest(`http://localhost${url}`, {
+    method,
+    body: init.body !== undefined ? JSON.stringify(init.body) : undefined,
+    headers,
   });
 }
 
-function makeAdminCtx(): AuthContext {
-  return { userId: `${runId}-admin`, role: 'ADMIN' } as AuthContext;
+function routeParams<T>(value: T): { params: Promise<T> } {
+  return { params: Promise.resolve(value) };
 }
 
-describe.skipIf(!HAS_TEST_DB)('P1-F1 Placement Action UI integration', () => {
+describe.skipIf(!HAS_TEST_DB)('P1-F1 Placement Action UI integration (round 2)', () => {
   let admin: PrismaClient;
   let writer: PrismaClient;
 
@@ -136,10 +129,6 @@ describe.skipIf(!HAS_TEST_DB)('P1-F1 Placement Action UI integration', () => {
   const slotIds: string[] = [];
   const submissionIds: string[] = [];
   const placementIds: string[] = [];
-  // F-01: every `makePosting()` MUST register the JobPosting id here so
-  // the reverse-FK teardown can delete JobPostings BEFORE JobOpenings
-  // (otherwise the FK `job_postings_job_opening_id_fkey` blocks the
-  // JobOpening delete with code 23001 and the test leaks residue).
   const jobPostingIds: string[] = [];
 
   beforeAll(async () => {
@@ -150,62 +139,35 @@ describe.skipIf(!HAS_TEST_DB)('P1-F1 Placement Action UI integration', () => {
       data: {
         id: `${runId}-admin`,
         phone: `${runId}-admin`,
-        name: 'P1F1 Admin',
+        name: 'P1F1R2 Admin',
         role: 'ADMIN',
       },
     });
     userIds.push(adminUser.id);
-    // getAuthContext is mocked; each call returns ADMIN for this run.
-    mocks.getAuthContext.mockResolvedValue(makeAdminCtx());
-    // The read-service does not call getPrisma — only the routes do — but
-    // we still satisfy the import graph in case future helper calls do.
+    // Default role (all read-service calls): ADMIN. F0-route cases can
+    // override per-call via `mocks.getAuthContext.mockResolvedValueOnce`.
+    mocks.getAuthContext.mockResolvedValue({
+      userId: adminUser.id,
+      role: 'ADMIN',
+    });
+    // The F0 route pipeline calls `getPrisma()` (NOT `withDbContext`) to
+    // acquire the raw Prisma client. Wire the writer; routes that run
+    // commands create their own transactions internally.
     mocks.getPrisma.mockReturnValue(writer);
   }, 30_000);
 
   afterAll(async () => {
     try {
-      // F-01 / strict reverse-FK teardown.
-      //
-      // Postgres FK graph (forward):
-      //   Placement → PlacementCase, JobOpening, LaborProfile, ClientCompany, Project
-      //   Placement → (no FK to JobPosting or StaffingOrderSlot, but the
-      //                F0 service snapshots the `serviceModel` and the
-      //                audit trail uses ApplicationStatusHistory.)
-      //   ApplicationStatusHistory → PlacementCase, LaborProfile
-      //   CandidateSubmission → PlacementCase, LaborProfile, StaffingOrderSlot
-      //   JobPosting → JobOpening            ← must delete FIRST
-      //   StaffingOrderSlot → StaffingOrder, JobOpening
-      //   JobOpening → StaffingOrder
-      //   StaffingOrder → Project
-      //   Project → ClientCompany
-      //   PlacementCase → LaborProfile
-      //   LaborProfile → User (created user has no LaborProfile row, but
-      //                    the synthetic user is a leaf).
-      //
-      // Deletion order MUST follow the reverse of the forward direction;
-      // any FK violation aborts the entire transaction and leaks residue.
-      //
-      // Each step deletes by tracked id only. NO blanket/prefix delete:
-      // the synthetic DB is shared across runs and a prefix delete would
-      // wipe other test fixtures (F-01 explicit rule).
-      //
-      // We do NOT swallow cleanup errors: any failure here surfaces to
-      // the test runner so the residue is reported (not hidden).
+      // C2-01 / strict reverse-FK teardown — by tracked IDs only.
       await admin?.placement.deleteMany({
         where: { id: { in: placementIds } },
       });
-      // ApplicationStatusHistory FK → CandidateSubmission. We don't track
-      // its ids in this run (F1 fixtures don't drive status changes), but
-      // we still attempt a clean sweep keyed by submission ids to honor
-      // the strict reverse-FK contract. Any rows here are zero in this
-      // test file; the count must stay zero (verified by residue check).
       await admin?.applicationStatusHistory?.deleteMany({
         where: { submissionId: { in: submissionIds } },
       });
       await admin?.candidateSubmission.deleteMany({
         where: { id: { in: submissionIds } },
       });
-      // JobPosting → JobOpening: delete postings FIRST.
       await admin?.jobPosting.deleteMany({
         where: { id: { in: jobPostingIds } },
       });
@@ -232,11 +194,6 @@ describe.skipIf(!HAS_TEST_DB)('P1-F1 Placement Action UI integration', () => {
       });
       await admin?.user.deleteMany({ where: { id: { in: userIds } } });
 
-      // F-01 zero-residue assertions — every tracked id MUST have been
-      // removed by the cascade above. If any array is non-empty, the
-      // teardown did not actually delete those rows (most likely a
-      // transaction was rolled back by an FK violation elsewhere).
-      // We assert against admin.clientCompany / etc. via a count query.
       const residue = await admin?.$transaction(async (tx) => {
         const counts = {
           users: await tx.user.count({ where: { id: { in: userIds } } }),
@@ -271,8 +228,6 @@ describe.skipIf(!HAS_TEST_DB)('P1-F1 Placement Action UI integration', () => {
         };
         return counts;
       });
-      // The assertion runs OUTSIDE the transaction (after $transaction
-      // resolves). All counts must be zero.
       expect(residue).toEqual({
         users: 0,
         laborProfiles: 0,
@@ -293,8 +248,8 @@ describe.skipIf(!HAS_TEST_DB)('P1-F1 Placement Action UI integration', () => {
   }, 30_000);
 
   // ───────────────────────────────────────────────────────────────────
-  // Fixture builders — minimal chain needed to project placement /
-  // placementOptions from the workbench read-model.
+  // Fixture builders — every fixture MUST push into the tracked-id
+  // array; teardown relies on it (C2-01).
   // ───────────────────────────────────────────────────────────────────
 
   async function makeProfile(label: string) {
@@ -329,8 +284,8 @@ describe.skipIf(!HAS_TEST_DB)('P1-F1 Placement Action UI integration', () => {
   async function makeCompany(label: string) {
     const cc = await admin.clientCompany.create({
       data: {
-        name: `P1F1 ${label} ${runId}`,
-        code: `P1F1-${runId}-${label}`,
+        name: `P1F1R2 ${label} ${runId}`,
+        code: `P1F1R2-${runId}-${label}`,
       },
     });
     clientCompanyIds.push(cc.id);
@@ -341,7 +296,7 @@ describe.skipIf(!HAS_TEST_DB)('P1-F1 Placement Action UI integration', () => {
     const prj = await admin.project.create({
       data: {
         name,
-        code: `P1F1-${runId}-${label}`,
+        code: `P1F1R2-${runId}-${label}`,
         clientCompanyId,
         status: 'ACTIVE',
         startDate: new Date(),
@@ -356,8 +311,8 @@ describe.skipIf(!HAS_TEST_DB)('P1-F1 Placement Action UI integration', () => {
     const so = await admin.staffingOrder.create({
       data: {
         projectId,
-        code: `P1F1-${runId}-${label}`,
-        title: `P1F1 SO ${label}`,
+        code: `P1F1R2-${runId}-${label}`,
+        title: `P1F1R2 SO ${label}`,
         status: 'OPEN',
       },
     });
@@ -399,21 +354,12 @@ describe.skipIf(!HAS_TEST_DB)('P1-F1 Placement Action UI integration', () => {
     return slot;
   }
 
-  /**
-   * Make a JobPosting (one-to-one with JobOpening). This is where the public
-   * `title` lives — `placementOptions.title` derives from `posting.title`.
-   *
-   * F-01: the created id is pushed onto `jobPostingIds` so teardown can
-   * delete JobPostings before JobOpenings. Without this, Postgres code
-   * 23001 (`job_postings_job_opening_id_fkey`) blocks the JobOpening
-   * delete and the entire afterAll throws, leaking residue across runs.
-   */
   async function makePosting(opts: { jobOpeningId: string; title: string; label: string }) {
     const post = await admin.jobPosting.create({
       data: {
         jobOpeningId: opts.jobOpeningId,
         title: opts.title,
-        slug: `p1f1-${opts.label}-${runId}`,
+        slug: `p1f1r2-${opts.label}-${runId}`,
         status: 'PUBLISHED',
         publishedAt: new Date(),
       },
@@ -422,35 +368,44 @@ describe.skipIf(!HAS_TEST_DB)('P1-F1 Placement Action UI integration', () => {
     return post;
   }
 
+  /**
+   * C2-01 / round 2 — single canonical CandidateSubmission helper.
+   * ALWAYS pushes the created id into `submissionIds`, including the
+   * legacy slot=null variant. ALL fixture creates in this file must go
+   * through this function so the teardown never leaks residue (the
+   * round-1 `DB05` bug was a direct `admin.candidateSubmission.create`
+   * that bypassed tracking).
+   */
   async function makeSubmission(
     opts: {
       laborProfileId: string;
       placementCaseId: string;
-      slotId: string;
+      slotId: string | null;
       createdAt?: Date;
+      legacy?: boolean;
     },
-  ) {
+  ): Promise<string> {
     const sub = await admin.candidateSubmission.create({
       data: {
         laborProfileId: opts.laborProfileId,
         placementCaseId: opts.placementCaseId,
         slotId: opts.slotId,
-        fullName: `P1F1 Sub ${opts.laborProfileId.slice(-4)}`,
+        fullName: opts.legacy
+          ? `P1F1R2 Legacy Sub ${opts.laborProfileId.slice(-4)}`
+          : `P1F1R2 Sub ${opts.laborProfileId.slice(-4)}`,
         phone: `${runId}-sub`,
         createdAt: opts.createdAt ?? new Date(),
       },
     });
     submissionIds.push(sub.id);
-    return sub;
+    return sub.id;
   }
 
   /**
-   * Build the minimal Placement fixture: PlacementCase + JobOpening chain +
-   * (optional) Placement row. We use the same `placementCreate` flow
-   * indirectly by writing the Placement row directly with the snapshot
-   * `serviceModelSnapshot` that the production service would copy from the
-   * JobOpening's `serviceModel`. (The route is exercised by `p1f0` tests;
-   * F1 only cares about the additive READ projection.)
+   * Build the minimal Placement fixture for read-model projections.
+   * Used ONLY by DB02, DB03, DB04, DB06 (no F0-route involvement).
+   * Any route-driven DB09/DB10 path goes through the canonical route,
+   * NOT through this helper.
    */
   async function makePlacementRow(opts: {
     placementCaseId: string;
@@ -476,17 +431,26 @@ describe.skipIf(!HAS_TEST_DB)('P1-F1 Placement Action UI integration', () => {
     return p;
   }
 
-  /**
-   * Fetch the workbench list narrowed by `search` (the runId is embedded
-   * in `profile.fullName`, so the search predicate isolates each fixture
-   * on a shared synthetic DB).
-   */
   async function fetchOneRow(searchTag: string) {
-    const ctx = makeAdminCtx();
-    return withContext(writer, ctx, async (tx) => {
+    const ctx = { userId: `${runId}-admin`, role: 'ADMIN' as const };
+    return writer.$transaction(async (tx) => {
+      await tx.$executeRawUnsafe(
+        `SELECT set_config('app.user_id', $1, true)`,
+        ctx.userId,
+      );
+      await tx.$executeRawUnsafe(
+        `SELECT set_config('app.role', $1, true)`,
+        ctx.role,
+      );
+      await tx.$executeRawUnsafe(
+        `SELECT set_config('app.vendor_id', '', true)`,
+      );
+      await tx.$executeRawUnsafe(
+        `SELECT set_config('app.worker_id', '', true)`,
+      );
       return getRecruiterWorkbenchList(
         tx,
-        ctx,
+        ctx as AuthContext,
         { search: searchTag, view: 'ALL', page: 1, pageSize: 50 },
         { canSeeSensitive: true },
         new Date(),
@@ -495,7 +459,10 @@ describe.skipIf(!HAS_TEST_DB)('P1-F1 Placement Action UI integration', () => {
   }
 
   // ───────────────────────────────────────────────────────────────────
-  // Coverage
+  // F1-DB01 .. F1-DB08 — pure read-model evidence + helper matrix.
+  // Identical scope to round 1 (the targeted F1 unit/component tests
+  // and the read-model projection are not under dispute). All
+  // CandidateSubmissions go through makeSubmission (C2-01 fixed).
   // ───────────────────────────────────────────────────────────────────
 
   it('F1-DB01: case with NO placement + NO submissions → placement + placementOptions both null', async () => {
@@ -513,7 +480,7 @@ describe.skipIf(!HAS_TEST_DB)('P1-F1 Placement Action UI integration', () => {
     const profile = await makeProfile('db02');
     const pc = await makeCase(profile.id, 'READY_TO_PLACE');
     const cc = await makeCompany('db02cc');
-    const prj = await makeProject('db02prj', cc.id, 'P1F1 Project Bravo');
+    const prj = await makeProject('db02prj', cc.id, 'P1F1R2 Project Bravo');
     const so = await makeStaffingOrder(prj.id, 'db02so');
     const jo = await makeJobOpening(so.id, {
       label: 'db02jo',
@@ -541,7 +508,7 @@ describe.skipIf(!HAS_TEST_DB)('P1-F1 Placement Action UI integration', () => {
     const profile = await makeProfile('db03');
     const pc = await makeCase(profile.id, 'READY_TO_PLACE');
     const cc = await makeCompany('db03cc');
-    const prj = await makeProject('db03prj', cc.id, 'P1F1 Alpha');
+    const prj = await makeProject('db03prj', cc.id, 'P1F1R2 Alpha');
     const so = await makeStaffingOrder(prj.id, 'db03so');
     const jo = await makeJobOpening(so.id, {
       label: 'db03jo',
@@ -550,7 +517,6 @@ describe.skipIf(!HAS_TEST_DB)('P1-F1 Placement Action UI integration', () => {
     await makePosting({ jobOpeningId: jo.id, title: 'Thợ điện', label: 'db03' });
     const slot = await makeSlot(so.id, jo.id, 'db03slot');
 
-    // Order matches Prisma orderBy: createdAt DESC, id DESC.
     await makeSubmission({
       laborProfileId: profile.id,
       placementCaseId: pc.id,
@@ -570,20 +536,17 @@ describe.skipIf(!HAS_TEST_DB)('P1-F1 Placement Action UI integration', () => {
     expect(row.placementOptions?.length).toBe(1);
     const opt = row.placementOptions![0]!;
     expect(opt.jobOpeningId).toBe(jo.id);
-    // The newest submission is the one returned (id ends with longer uuid suffix).
-    // Sanity check: it's a valid UUID v4-shape (column is uuid).
     expect(opt.sourceCandidateSubmissionId).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-/i,
     );
     expect(opt.title).toBe('Thợ điện');
-    expect(opt.projectName).toBe('P1F1 Alpha');
+    expect(opt.projectName).toBe('P1F1R2 Alpha');
   });
 
-  it('F1-DB04: 3 distinct job openings → sorted by (projectName, companyName fallback, title, jobOpeningId)', async () => {
+  it('F1-DB04: 3 distinct job openings → sorted by (projectName, title, jobOpeningId)', async () => {
     const profile = await makeProfile('db04');
     const pc = await makeCase(profile.id, 'READY_TO_PLACE');
 
-    // Project A: one title (default companyName).
     const ccA = await makeCompany('db04ccA');
     const prjA = await makeProject('db04prjA', ccA.id, 'Alpha-Works');
     const soA = await makeStaffingOrder(prjA.id, 'db04soA');
@@ -594,7 +557,6 @@ describe.skipIf(!HAS_TEST_DB)('P1-F1 Placement Action UI integration', () => {
     await makePosting({ jobOpeningId: joA.id, title: 'Helper', label: 'db04A' });
     const slotA = await makeSlot(soA.id, joA.id, 'db04slotA');
 
-    // Same project name 'Alpha-Works', same companyName, different title.
     const ccB = await makeCompany('db04ccB');
     const prjB = await makeProject('db04prjB', ccB.id, 'Alpha-Works');
     const soB = await makeStaffingOrder(prjB.id, 'db04soB');
@@ -605,7 +567,6 @@ describe.skipIf(!HAS_TEST_DB)('P1-F1 Placement Action UI integration', () => {
     await makePosting({ jobOpeningId: joB.id, title: 'Welder', label: 'db04B' });
     const slotB = await makeSlot(soB.id, joB.id, 'db04slotB');
 
-    // Different project 'Bravo'.
     const ccC = await makeCompany('db04ccC');
     const prjC = await makeProject('db04prjC', ccC.id, 'Bravo-Site');
     const soC = await makeStaffingOrder(prjC.id, 'db04soC');
@@ -636,32 +597,30 @@ describe.skipIf(!HAS_TEST_DB)('P1-F1 Placement Action UI integration', () => {
     expect(out.total).toBe(1);
     const options = out.items[0]!.placementOptions!;
     expect(options.length).toBe(3);
-    // 'Alpha-Works' < 'Bravo-Site' → 2 x Alpha first.
     const titlesAlpha = options
       .filter((o) => o.projectName === 'Alpha-Works')
       .map((o) => o.title);
-    expect(titlesAlpha).toEqual(['Helper', 'Welder']); // alphabetical
+    expect(titlesAlpha).toEqual(['Helper', 'Welder']);
     expect(options[options.length - 1]!.projectName).toBe('Bravo-Site');
   });
 
-  it('F1-DB05: legacy submission with slot=null does NOT pollute placementOptions', async () => {
+  it('F1-DB05 (C2-01 fixed): legacy submission with slot=null tracked via canonical helper', async () => {
     const profile = await makeProfile('db05');
     const pc = await makeCase(profile.id, 'READY_TO_PLACE');
 
-    // Legacy submission: slot NULL
-    await admin.candidateSubmission.create({
-      data: {
-        laborProfileId: profile.id,
-        placementCaseId: pc.id,
-        slotId: null,
-        fullName: `P1F1 Legacy Sub ${profile.id.slice(-4)}`,
-        phone: `${runId}-legacy-sub`,
-      },
+    // C2-01: routed through `makeSubmission` so teardown sees the id.
+    // `legacy=true` preserves the slot=null semantics so the read-model
+    // expectation (placementOptions null) still holds.
+    await makeSubmission({
+      laborProfileId: profile.id,
+      placementCaseId: pc.id,
+      slotId: null,
+      legacy: true,
     });
 
     const out = await fetchOneRow(profile.fullName);
     const row = out.items[0]!;
-    expect(row.placementOptions).toBeNull(); // empty after filtering legacy
+    expect(row.placementOptions).toBeNull();
     expect(row.placement).toBeNull();
   });
 
@@ -673,14 +632,13 @@ describe.skipIf(!HAS_TEST_DB)('P1-F1 Placement Action UI integration', () => {
     const pcB = await makeCase(profileB.id, 'READY_TO_PLACE');
 
     const cc = await makeCompany('db06cc');
-    const prj = await makeProject('db06prj', cc.id, 'P1F1 Delta');
+    const prj = await makeProject('db06prj', cc.id, 'P1F1R2 Delta');
     const so = await makeStaffingOrder(prj.id, 'db06so');
     const jo = await makeJobOpening(so.id, {
       label: 'db06jo',
       serviceModel: 'STAFFING_SUPPLY',
     });
 
-    // Case A: has a placement.
     await makePlacementRow({
       placementCaseId: pcA.id,
       laborProfileId: profileA.id,
@@ -690,7 +648,6 @@ describe.skipIf(!HAS_TEST_DB)('P1-F1 Placement Action UI integration', () => {
       serviceModelSnapshot: 'STAFFING_SUPPLY',
     });
 
-    // Search by full name — must yield EXACTLY one case, the matching profile.
     const outA = await fetchOneRow(profileA.fullName);
     expect(outA.total).toBe(1);
     expect(outA.items[0]!.placement).not.toBeNull();
@@ -700,9 +657,7 @@ describe.skipIf(!HAS_TEST_DB)('P1-F1 Placement Action UI integration', () => {
     expect(outB.items[0]!.placement).toBeNull();
   });
 
-  it('F1-DB07: isStalePlacementSnapshot classifies SELECTED + IN_PROGRESS as stale', async () => {
-    // Pure helper × DB scenario — no real DB write required beyond the seed
-    // above. Confirms the matrix view matches the read-service row.
+  it('F1-DB07: isStalePlacementSnapshot classifies SELECTED + IN_PROGRESS as stale', () => {
     const row = {
       caseId: 'db07',
       caseStatus: 'IN_PROGRESS' as const,
@@ -715,10 +670,12 @@ describe.skipIf(!HAS_TEST_DB)('P1-F1 Placement Action UI integration', () => {
       placementOptions: null,
     };
     expect(isStalePlacementSnapshot(row)).toBe(true);
-    expect(availableActionsForRow({ ...row, nextAction: 'REVIEW_PLACEMENT' })).toEqual([]);
+    expect(
+      availableActionsForRow({ ...row, nextAction: 'REVIEW_PLACEMENT' as const }),
+    ).toEqual([]);
   });
 
-  it('F1-DB08: availableActionsForRow returns confirm+fail+cancel for SELECTED + READY_TO_PLACE', async () => {
+  it('F1-DB08: availableActionsForRow returns confirm+fail+cancel for SELECTED + READY_TO_PLACE', () => {
     const row = {
       caseId: 'db08',
       caseStatus: 'READY_TO_PLACE' as const,
@@ -731,7 +688,7 @@ describe.skipIf(!HAS_TEST_DB)('P1-F1 Placement Action UI integration', () => {
       placementOptions: null,
     };
     expect(
-      availableActionsForRow({ ...row, nextAction: 'REVIEW_PLACEMENT' }).map(
+      availableActionsForRow({ ...row, nextAction: 'REVIEW_PLACEMENT' as const }).map(
         (a) => a.command,
       ),
     ).toEqual([
@@ -742,23 +699,21 @@ describe.skipIf(!HAS_TEST_DB)('P1-F1 Placement Action UI integration', () => {
   });
 
   // ───────────────────────────────────────────────────────────────────────
-  // F-07 — Runtime proof that the F1-generated command shape is accepted
-  // by the canonical F0 authority, the read model observes the resulting
-  // placement state, and the HRP-managed EFFECTIVE rule rejects at the F0
-  // authority (the UI hides the button per LOCK-15, but the server is the
-  // canonical enforcement).
+  // F1-DB09 (C2-02) — F1 generate → canonical F0 routes → read model
+  // observes CONFIRMED. NO direct placement.create / placement.update.
   // ───────────────────────────────────────────────────────────────────────
 
-  it('F1-DB09 (F-07): F1 create → F0 confirm → read model observes CONFIRMED', async () => {
-    // Build a READY_TO_PLACE case with an open job opening + posting.
+  it('F1-DB09 (C2-02): F1 create via F0 route + F0 confirm via route + read-model observes CONFIRMED', async () => {
+    // Build minimal chain through the tracked-id helpers ONLY — never
+    // call placement.create directly.
     const profile = await makeProfile('db09');
     const pc = await makeCase(profile.id, 'READY_TO_PLACE');
     const cc = await makeCompany('db09cc');
-    const prj = await makeProject('db09prj', cc.id, 'P1F1 Runway-7');
+    const prj = await makeProject('db09prj', cc.id, 'P1F1R2 Runway-9');
     const so = await makeStaffingOrder(prj.id, 'db09so');
     const jo = await makeJobOpening(so.id, {
       label: 'db09jo',
-      serviceModel: 'STAFFING_SUPPLY',
+      serviceModel: 'RECRUITMENT_SERVICE',
     });
     await makePosting({ jobOpeningId: jo.id, title: 'Crane operator', label: 'db09' });
     const slot = await makeSlot(so.id, jo.id, 'db09slot');
@@ -773,58 +728,71 @@ describe.skipIf(!HAS_TEST_DB)('P1-F1 Placement Action UI integration', () => {
     expect(pre.items[0]!.placement).toBeNull();
     expect(pre.items[0]!.placementOptions?.length).toBe(1);
 
-    // F1-shaped create command: same body the client fetch wrapper sends
-    // (placementCaseId + jobOpeningId + sourceCandidateSubmissionId).
-    const ctx = makeAdminCtx();
-    const created = await withContext(writer, ctx, async (tx) => {
-      // Drive the F0 service directly — the canonical route does the
-      // same with auth + idempotency wrapping. We only assert the
-      // command shape is accepted and produces a Placement row.
-      const sub = await tx.candidateSubmission.findFirst({
-        where: { placementCaseId: pc.id },
-      });
-      const placement = await tx.placement.create({
-        data: {
+    // C2-02 fix: invoke the canonical F0 route. Admin session is
+    // already set in beforeAll (mockResolvedValue); the F0 pipeline
+    // internally calls `getPrisma()` (which we mocked to `writer`).
+    const { POST: POST_CREATE } = await import(
+      '@/app/api/admin/placements/route'
+    );
+    const createRes = await POST_CREATE(
+      buildRequest('/api/admin/placements', {
+        body: {
           placementCaseId: pc.id,
-          laborProfileId: profile.id,
-          clientCompanyId: cc.id,
-          projectId: prj.id,
           jobOpeningId: jo.id,
-          sourceCandidateSubmissionId: sub!.id,
-          serviceModelSnapshot: jo.serviceModel,
-          status: 'SELECTED',
         },
-      });
-      placementIds.push(placement.id);
-      return placement;
-    });
-    expect(created.status).toBe('SELECTED');
+      }),
+    );
+    expect(createRes.status).toBe(201);
+    const createBody = await createRes.json();
+    expect(createBody.placementId).toBeTruthy();
+    expect(createBody.status).toBe('SELECTED');
+    expect(createBody.replayed).toBe(false);
+    placementIds.push(createBody.placementId);
 
-    // F0 confirm command shape: { placementId }.
-    const confirmed = await withContext(writer, ctx, async (tx) => {
-      const updated = await tx.placement.update({
-        where: { id: created.id },
-        data: { status: 'CONFIRMED' },
-      });
-      return updated;
-    });
-    expect(confirmed.status).toBe('CONFIRMED');
+    // C2-02 fix: invoke the canonical F0 confirm route.
+    const { POST: POST_CONFIRM } = await import(
+      '@/app/api/admin/placements/[id]/actions/confirm/route'
+    );
+    const confirmRes = await POST_CONFIRM(
+      buildRequest(
+        `/api/admin/placements/${createBody.placementId}/actions/confirm`,
+        { body: {} },
+      ),
+      routeParams({ id: createBody.placementId }),
+    );
+    expect(confirmRes.status).toBe(200);
+    const confirmBody = await confirmRes.json();
+    expect(confirmBody.status).toBe('CONFIRMED');
+    expect(confirmBody.placementId).toBe(createBody.placementId);
+    expect(confirmBody.replayed).toBe(false);
 
-    // Read model observes the new state.
+    // DB proof (read-side): confirmedAt populated by the service.
+    const placementRow = await admin.placement.findUnique({
+      where: { id: createBody.placementId },
+      select: { status: true, confirmedAt: true },
+    });
+    expect(placementRow?.status).toBe('CONFIRMED');
+    expect(placementRow?.confirmedAt).not.toBeNull();
+
+    // Read-model proof: refreshed projection observes CONFIRMED.
     const post = await fetchOneRow(profile.fullName);
-    expect(post.items[0]!.placement?.id).toBe(created.id);
+    expect(post.items[0]!.placement?.id).toBe(createBody.placementId);
     expect(post.items[0]!.placement?.status).toBe('CONFIRMED');
   });
 
-  it('F1-DB10 (F-07): HRP-managed placement → EFFECTIVE rejected by F0 authority (LOCK-15)', async () => {
-    // Build the same chain; create a HRP-managed SELECTED placement, then
-    // assert the F0 service rejects the EFFECTIVE transition. This proves
-    // the UI gate (`availableActionsForRow` returns no `placement.effective`
-    // for HRP_MANAGED + CONFIRMED) is consistent with the F0 authority.
+  // ───────────────────────────────────────────────────────────────────────
+  // F1-DB10 (C2-03) — canonical F0 route stack creates + confirms an
+  // HRP-managed placement; an EFFECTIVE POST against the SAME route
+  // returns the canonical rejection; re-reading the DB proves the
+  // placement stays CONFIRMED. NO manually thrown
+  // `HRP_EFFECTIVE_FORBIDDEN`.
+  // ───────────────────────────────────────────────────────────────────────
+
+  it('F1-DB10 (C2-03): HRP-managed placement → canonical EFFECTIVE route returns 400; placement stays CONFIRMED', async () => {
     const profile = await makeProfile('db10');
     const pc = await makeCase(profile.id, 'READY_TO_PLACE');
     const cc = await makeCompany('db10cc');
-    const prj = await makeProject('db10prj', cc.id, 'P1F1 Runway-10');
+    const prj = await makeProject('db10prj', cc.id, 'P1F1R2 Runway-10');
     const so = await makeStaffingOrder(prj.id, 'db10so');
     const jo = await makeJobOpening(so.id, {
       label: 'db10jo',
@@ -838,35 +806,44 @@ describe.skipIf(!HAS_TEST_DB)('P1-F1 Placement Action UI integration', () => {
       slotId: slot.id,
     });
 
-    const ctx = makeAdminCtx();
-    const placement = await withContext(writer, ctx, async (tx) => {
-      const sub = await tx.candidateSubmission.findFirst({
-        where: { placementCaseId: pc.id },
-      });
-      const p = await tx.placement.create({
-        data: {
+    // C2-03 fix: create + confirm through the canonical F0 route stack
+    // (NO direct placement.create, NO direct placement.update).
+    const { POST: POST_CREATE } = await import(
+      '@/app/api/admin/placements/route'
+    );
+    const createRes = await POST_CREATE(
+      buildRequest('/api/admin/placements', {
+        body: {
           placementCaseId: pc.id,
-          laborProfileId: profile.id,
-          clientCompanyId: cc.id,
-          projectId: prj.id,
           jobOpeningId: jo.id,
-          sourceCandidateSubmissionId: sub!.id,
-          serviceModelSnapshot: jo.serviceModel,
-          status: 'CONFIRMED',
         },
-      });
-      placementIds.push(p.id);
-      return p;
-    });
+      }),
+    );
+    expect(createRes.status).toBe(201);
+    const createBody = await createRes.json();
+    placementIds.push(createBody.placementId);
 
-    // UI gate: confirm EFFECTIVE is not offered when HRP_MANAGED +
-    // CONFIRMED. (already covered in the pure helper tests, repeated here
-    // so the DB test proves consistency end-to-end.)
+    const { POST: POST_CONFIRM } = await import(
+      '@/app/api/admin/placements/[id]/actions/confirm/route'
+    );
+    const confirmRes = await POST_CONFIRM(
+      buildRequest(
+        `/api/admin/placements/${createBody.placementId}/actions/confirm`,
+        { body: {} },
+      ),
+      routeParams({ id: createBody.placementId }),
+    );
+    expect(confirmRes.status).toBe(200);
+    const confirmBody = await confirmRes.json();
+    expect(confirmBody.status).toBe('CONFIRMED');
+
+    // UI gate sanity check: HRP-managed + CONFIRMED → no EFFECTIVE
+    // command in the available action set (matches LOCK-15).
     expect(
       availableActionsForRow({
         caseStatus: 'READY_TO_PLACE',
         placement: {
-          id: placement.id,
+          id: createBody.placementId,
           status: 'CONFIRMED',
           jobOpeningId: jo.id,
           managementMode: 'HRP_MANAGED',
@@ -876,36 +853,45 @@ describe.skipIf(!HAS_TEST_DB)('P1-F1 Placement Action UI integration', () => {
       }).map((a) => a.command),
     ).not.toContain('placement.effective');
 
-    // F0 authority: an attempt to set EFFECTIVE on a HRP-managed
-    // placement via the canonical service path must reject. The exact
-    // error code is implementation-defined; the DB-level invariant is
-    // that the placement row stays at CONFIRMED (the service either
-    // throws HRP_EFFECTIVE_FORBIDDEN / INVALID_STATE_TRANSITION, or the
-    // route returns 400 without mutating).
-    let threw: unknown = null;
-    try {
-      await withContext(writer, ctx, async (tx) => {
-        // Mirror the F0 service's invariant: STAFFING_SUPPLY +
-        // HRP_MANAGED → no EFFECTIVE.
-        if (placement.serviceModelSnapshot === 'STAFFING_SUPPLY') {
-          throw new Error('HRP_EFFECTIVE_FORBIDDEN');
-        }
-        await tx.placement.update({
-          where: { id: placement.id },
-          data: { status: 'EFFECTIVE' },
-        });
-      });
-    } catch (err) {
-      threw = err;
-    }
-    expect(String((threw as Error)?.message ?? threw)).toContain(
-      'HRP_EFFECTIVE_FORBIDDEN',
+    // C2-03 fix: invoke the REAL EFFECTIVE route with VALID evidence.
+    // The route is canonical and the rejection comes from the canonical
+    // service via `PlacementValidationError`. NO manual `if
+    // serviceModelSnapshot === 'STAFFING_SUPPLY' throw …` here.
+    const { POST: POST_EFFECTIVE } = await import(
+      '@/app/api/admin/placements/[id]/actions/effective/route'
     );
+    const effectiveRes = await POST_EFFECTIVE(
+      buildRequest(
+        `/api/admin/placements/${createBody.placementId}/actions/effective`,
+        {
+          body: {
+            evidence: {
+              clientAcknowledgedAt: new Date().toISOString(),
+              clientAcknowledgedByUserId: `${runId}-cb`,
+              acknowledgementRef: `${runId}-ref`,
+            },
+          },
+        },
+      ),
+      routeParams({ id: createBody.placementId }),
+    );
+    expect(effectiveRes.status).toBe(400);
+    const effectiveBody = await effectiveRes.json();
+    // C-07 / taxonomy freeze: rejection code is PLACEMENT_VALIDATION_ERROR,
+    // NOT the synthetic HRP_EFFECTIVE_FORBIDDEN (which no longer exists).
+    expect(effectiveBody.error).toBe('PLACEMENT_VALIDATION_ERROR');
+    expect(effectiveBody.error).not.toBe('HRP_MANAGED_EFFECTIVE_NOT_SUPPORTED');
 
-    // Re-read; placement must still be CONFIRMED, not EFFECTIVE.
-    const reread = await withContext(writer, ctx, async (tx) => {
-      return tx.placement.findUnique({ where: { id: placement.id } });
+    // DB proof: placement is still CONFIRMED; PlacementCase still OPEN.
+    const rereadPlacement = await admin.placement.findUnique({
+      where: { id: createBody.placementId },
+      select: { status: true },
     });
-    expect(reread?.status).toBe('CONFIRMED');
+    expect(rereadPlacement?.status).toBe('CONFIRMED');
+    const rereadCase = await admin.placementCase.findUnique({
+      where: { id: pc.id },
+      select: { status: true },
+    });
+    expect(rereadCase?.status).toBe('OPEN');
   });
 });
