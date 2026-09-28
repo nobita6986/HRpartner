@@ -16,11 +16,27 @@
  * Pattern đúc từ `tests/db/placement-lifecycle-integration.test.ts` (N3) +
  * `src/domains/applications/conversion.routes.test.ts` (route unit).
  *
+ * Round-3 cleanup rule (T0 zero-residue handback): every fixture
+ * created by `buildFixture()` and `attachCandidateSubmission()` is
+ * pushed into module-scoped trackers (`createdClientCompanyIds`,
+ * `createdProjectIds`, `createdStaffingOrderIds`, `createdJobOpeningIds`,
+ * `createdLaborProfileIds`, `createdPlacementCaseIds`,
+ * `createdPlacementIds`, `createdCsIds`). `afterAll` deletes them in
+ * strict reverse-FK order, scoped to tracked IDs only — NEVER
+ * blanket-deletes a whole table. Idempotency keys are deleted by
+ * `actorId IN (createdIdempotencyActorIds)` (the three run-scoped
+ * mock actor identities) because the table is shared across suites on
+ * the same synthetic DB. Every individual delete in teardown fails
+ * closed; the disconnect calls in `finally` are the only `.catch(…)`
+ * remains, to keep the harness clean on partial teardown.
+ *
  * Refs:
  *   - Contract v1.1 §4.1.1 (5 commands)
  *   - TASK §0 (in-scope roots, forbidden paths)
  *   - C-07 (error→HTTP canonical mapping)
  *   - C-08 (single transaction boundary)
+ *   - tests/db/intake-writer-integration.test.ts (idempotency_key
+ *     scoped-by-actor cleanup precedent)
  */
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { randomUUID } from 'node:crypto';
@@ -75,6 +91,40 @@ function makeClient(url: string): PrismaClient {
 // ─────────────────────────────────────────────────────────────────────────
 // Fixture builder (re-uses pattern from placement-lifecycle-integration).
 // ─────────────────────────────────────────────────────────────────────────
+/**
+ * Module-scoped teardown trackers — pushed to by `buildFixture()` and
+ * every direct fixture helper, then drained by `afterAll` in strict
+ * reverse-FK order. The previous round (round-2) only tracked
+ * Placement / PlacementCase / LaborProfile / CandidateSubmission; the
+ * T0 zero-residue handback (round-3) requires every row this run ever
+ * created to be tracked, including ClientCompany / Project /
+ * StaffingOrder / JobOpening / IdempotencyKey — otherwise the synthetic
+ * DB accumulates residue across `npx vitest run` invocations on the
+ * same dataset. We DO NOT blanket-delete any whole table.
+ */
+const createdClientCompanyIds: string[] = [];
+const createdProjectIds: string[] = [];
+const createdStaffingOrderIds: string[] = [];
+const createdJobOpeningIds: string[] = [];
+const createdLaborProfileIds: string[] = [];
+const createdPlacementCaseIds: string[] = [];
+const createdPlacementIds: string[] = [];
+const createdCsIds: string[] = [];
+/**
+ * Every actorId wired into mockAuth across the suite. The canonical
+ * `withIdempotency` wrap records `actor_id = ctx.userId`, so deleting
+ * `idempotencyKey` rows by `actorId IN (createdIdempotencyActorIds)`
+ * is sufficient to clean up every idempotency row this run created
+ * without touching sibling-suite rows. Some entries here are pure
+ * actor ids that never reach `withIdempotency` (HR_STAFF role gate,
+ * HR_MANAGER IDEMPOTENCY_REQUIRED) — those entries leave zero
+ * idempotency rows so the scoped delete is a no-op for them, which is
+ * correct. We deliberately track all three identities so the
+ * zero-residue assertion is exact regardless of which actor created the
+ * row.
+ */
+const createdIdempotencyActorIds: string[] = [];
+
 interface Fixture {
   clientCompanyId: string;
   projectId: string;
@@ -98,6 +148,7 @@ async function buildFixture(
     data: { name: `P1F0 CC ${seed} ${runId}`, code: `P1F0CC${runId}${seed}` },
     select: { id: true },
   });
+  createdClientCompanyIds.push(cc.id);
   const prj = await admin.project.create({
     data: {
       name: `P1F0 Project ${seed} ${runId}`,
@@ -109,6 +160,7 @@ async function buildFixture(
     },
     select: { id: true },
   });
+  createdProjectIds.push(prj.id);
   const so = await admin.staffingOrder.create({
     data: {
       projectId: prj.id,
@@ -118,6 +170,7 @@ async function buildFixture(
     },
     select: { id: true },
   });
+  createdStaffingOrderIds.push(so.id);
   const jo = await admin.jobOpening.create({
     data: {
       staffingOrderId: so.id,
@@ -127,6 +180,7 @@ async function buildFixture(
     },
     select: { id: true, serviceModel: true },
   });
+  createdJobOpeningIds.push(jo.id);
   const lp = await admin.laborProfile.create({
     data: {
       fullName: `P1F0 LP ${seed} ${runId}`,
@@ -135,10 +189,12 @@ async function buildFixture(
     },
     select: { id: true },
   });
+  createdLaborProfileIds.push(lp.id);
   const pc = await admin.placementCase.create({
     data: { laborProfileId: lp.id, status: 'OPEN', openedAt: new Date() },
     select: { id: true },
   });
+  createdPlacementCaseIds.push(pc.id);
   return {
     clientCompanyId: cc.id,
     projectId: prj.id,
@@ -168,6 +224,7 @@ async function attachCandidateSubmission(
     },
     select: { id: true },
   });
+  createdCsIds.push(row.id);
   return row.id;
 }
 
@@ -209,41 +266,155 @@ describeIf(
     let admin: PrismaClient;
     let writer: PrismaClient;
 
-    const createdLaborProfileIds: string[] = [];
-    const createdPlacementCaseIds: string[] = [];
-    const createdPlacementIds: string[] = [];
-    const createdCsIds: string[] = [];
+    // Every tracker is module-scoped (above) and pushed to by
+    // `buildFixture()` / `attachCandidateSubmission()`. Do NOT
+    // shadow them with describe-scoped duplicates — the teardown
+    // reads from the module-scoped arrays.
 
     beforeAll(async () => {
       if (!adminUrl || !writerUrl) return;
       admin = makeClient(adminUrl);
       writer = makeClient(writerUrl);
+      // Register every actor identity that mockAuth will use this
+      // run. The canonical `withIdempotency` records
+      // `actor_id = ctx.userId`; tracking all three identities keeps
+      // the scoped idempotency_key cleanup exact even if a test
+      // forgets to call buildFixture (e.g. role-gate tests still
+      // send a mock userId).
+      for (const actorId of [
+        `p1f0-admin-${runId}`,
+        `p1f0-hrmgr-${runId}`,
+        `p1f0-hrstaff-${runId}`,
+      ]) {
+        if (!createdIdempotencyActorIds.includes(actorId)) {
+          createdIdempotencyActorIds.push(actorId);
+        }
+      }
     }, 30000);
 
     afterAll(async () => {
       if (!admin) return;
       try {
-        for (const pid of createdPlacementIds) {
-          await admin.$executeRawUnsafe(`DELETE FROM placements WHERE id = $1`, pid).catch(() => {});
-        }
-        for (const csId of createdCsIds) {
-          await admin.candidateSubmission.deleteMany({ where: { id: csId } }).catch(() => {});
-        }
-        for (const pcId of createdPlacementCaseIds) {
-          await admin.placementCase.update({
-            where: { id: pcId },
-            data: { status: 'CLOSED', closedAt: new Date() },
-          }).catch(() => {});
-        }
-        for (const lpId of createdLaborProfileIds) {
-          await admin.placementCase.deleteMany({ where: { laborProfileId: lpId } }).catch(() => {});
-          await admin.laborProfile.deleteMany({ where: { id: lpId } }).catch(() => {});
-        }
-      } catch (e) {
-        console.warn('P1-F0 cleanup partial failure:', (e as Error).message.slice(0, 200));
+        // Round-3 teardown — strict reverse-FK order, scoped to
+        // tracked IDs only, fail-closed (no `.catch(() => {})` on
+        // any individual delete). Schema FKs that drive the order:
+        //   Placement.placementCase → Restrict
+        //   Placement.laborProfile  → Restrict
+        //   PlacementCase.laborProfile → NoAction (default)
+        //   JobOpening.staffingOrder  → NoAction (default)
+        //   StaffingOrderSlot.staffingOrder → Cascade (parent)
+        //   StaffingOrderSlot.jobOpening → SetNull (slot survives JO delete)
+        //   Project.clientCompany     → NoAction (default)
+        //   CandidateSubmission.placementCase → NoAction (default)
+        //   ApplicationStatusHistory.submission → Cascade (parent)
+        //   IdempotencyKey.actorId has no FK to users; we delete by
+        //   scoped actorId IN tracked ids BEFORE the (no-op) users
+        //   delete. We DO NOT create User rows for these actor
+        //   identities — they're mock auth subjects only.
+        //
+        // Order:
+        //   1. Placements (Restrict on placementCase/laborProfile)
+        await admin.placement.deleteMany({
+          where: { id: { in: createdPlacementIds } },
+        });
+        //   2. Application status history tied to tracked submissions
+        await admin.applicationStatusHistory.deleteMany({
+          where: { submissionId: { in: createdCsIds } },
+        });
+        //   3. Candidate submissions (Restrict on placementCase)
+        await admin.candidateSubmission.deleteMany({
+          where: { id: { in: createdCsIds } },
+        });
+        //   4. Job openings (must precede StaffingOrder due to FK)
+        await admin.jobOpening.deleteMany({
+          where: { id: { in: createdJobOpeningIds } },
+        });
+        //   5. StaffingOrderSlots (Cascade parent → SO already tracked;
+        //      skip the cascade edge by deleting slots explicitly with
+        //      an empty set, since buildFixture does not create slots)
+        //   (intentionally no-op — buildFixture creates no slots.)
+        //   6. Staffing orders (must precede Project)
+        await admin.staffingOrder.deleteMany({
+          where: { id: { in: createdStaffingOrderIds } },
+        });
+        //   7. Placement cases (must precede LaborProfile)
+        await admin.placementCase.deleteMany({
+          where: { id: { in: createdPlacementCaseIds } },
+        });
+        //   8. Labor profiles (after all placements + cases reference them)
+        await admin.laborProfile.deleteMany({
+          where: { id: { in: createdLaborProfileIds } },
+        });
+        //   9. Projects (must precede ClientCompany)
+        await admin.project.deleteMany({
+          where: { id: { in: createdProjectIds } },
+        });
+        //  10. Client companies (no FK below)
+        await admin.clientCompany.deleteMany({
+          where: { id: { in: createdClientCompanyIds } },
+        });
+        //  11. Idempotency keys for tracked actor ids (independent
+        //      zero-residue gate — T0 handback). Scoped by actorId,
+        //      never blanket-deleted, because the table is shared
+        //      across suites on the same synthetic DB.
+        await admin.idempotencyKey.deleteMany({
+          where: { actorId: { in: createdIdempotencyActorIds } },
+        });
+
+        // Zero-residue assertion. Every tracked surface MUST be empty.
+        const residue = await admin.$transaction(async (tx) => {
+          const counts = {
+            placements: await tx.placement.count({
+              where: { id: { in: createdPlacementIds } },
+            }),
+            applicationStatusHistories: await tx.applicationStatusHistory.count({
+              where: { submissionId: { in: createdCsIds } },
+            }),
+            candidateSubmissions: await tx.candidateSubmission.count({
+              where: { id: { in: createdCsIds } },
+            }),
+            jobOpenings: await tx.jobOpening.count({
+              where: { id: { in: createdJobOpeningIds } },
+            }),
+            staffingOrders: await tx.staffingOrder.count({
+              where: { id: { in: createdStaffingOrderIds } },
+            }),
+            placementCases: await tx.placementCase.count({
+              where: { id: { in: createdPlacementCaseIds } },
+            }),
+            laborProfiles: await tx.laborProfile.count({
+              where: { id: { in: createdLaborProfileIds } },
+            }),
+            projects: await tx.project.count({
+              where: { id: { in: createdProjectIds } },
+            }),
+            clientCompanies: await tx.clientCompany.count({
+              where: { id: { in: createdClientCompanyIds } },
+            }),
+            idempotencyKeys: await tx.idempotencyKey.count({
+              where: { actorId: { in: createdIdempotencyActorIds } },
+            }),
+          };
+          return counts;
+        });
+        expect(residue).toEqual({
+          placements: 0,
+          applicationStatusHistories: 0,
+          candidateSubmissions: 0,
+          jobOpenings: 0,
+          staffingOrders: 0,
+          placementCases: 0,
+          laborProfiles: 0,
+          projects: 0,
+          clientCompanies: 0,
+          idempotencyKeys: 0,
+        });
+      } finally {
+        // Disconnects still allowed in finally (test harness safety);
+        // cleanup itself is fail-closed.
+        await admin?.$disconnect().catch(() => {});
+        await writer?.$disconnect().catch(() => {});
       }
-      await admin?.$disconnect().catch(() => {});
-      await writer?.$disconnect().catch(() => {});
     }, 30000);
 
     // ─────────────────────────────────────────────────────────────────────
@@ -282,8 +453,6 @@ describeIf(
 
     it('AC-01: ADMIN role + valid body → creates placement (SELECTED)', async () => {
       const f = await buildFixture(admin, '01', 'RECRUITMENT_SERVICE');
-      createdLaborProfileIds.push(f.lpId);
-      createdPlacementCaseIds.push(f.pcId);
 
       mockAuth.getAuthContext.mockResolvedValue({
         userId: `p1f0-admin-${runId}`,
@@ -347,9 +516,6 @@ describeIf(
     // ─────────────────────────────────────────────────────────────────────
     it('AC-03: same key + same payload → replayed=true, single Placement', async () => {
       const f = await buildFixture(admin, '03', 'RECRUITMENT_SERVICE');
-      createdLaborProfileIds.push(f.lpId);
-      createdPlacementCaseIds.push(f.pcId);
-
       mockAuth.getAuthContext.mockResolvedValue({
         userId: `p1f0-admin-${runId}`,
         role: 'ADMIN',
@@ -380,9 +546,6 @@ describeIf(
     it('AC-03: same key + DIFFERENT payload → 409 IDEMPOTENCY_CONFLICT', async () => {
       const f1 = await buildFixture(admin, '03a', 'RECRUITMENT_SERVICE');
       const f2 = await buildFixture(admin, '03b', 'RECRUITMENT_SERVICE');
-      createdLaborProfileIds.push(f1.lpId, f2.lpId);
-      createdPlacementCaseIds.push(f1.pcId, f2.pcId);
-
       mockAuth.getAuthContext.mockResolvedValue({
         userId: `p1f0-admin-${runId}`,
         role: 'ADMIN',
@@ -412,10 +575,7 @@ describeIf(
     // ─────────────────────────────────────────────────────────────────────
     it('AC-04: sourceCandidateSubmissionId matching → create succeeds', async () => {
       const f = await buildFixture(admin, '04a', 'RECRUITMENT_SERVICE');
-      createdLaborProfileIds.push(f.lpId);
-      createdPlacementCaseIds.push(f.pcId);
       const csId = await attachCandidateSubmission(admin, f, '04a');
-      createdCsIds.push(csId);
 
       mockAuth.getAuthContext.mockResolvedValue({
         userId: `p1f0-admin-${runId}`,
@@ -434,10 +594,7 @@ describeIf(
     it('AC-04: sourceCandidateSubmissionId mismatch → 400 VALIDATION, zero mutation', async () => {
       const fA = await buildFixture(admin, '04b-a', 'RECRUITMENT_SERVICE');
       const fB = await buildFixture(admin, '04b-b', 'RECRUITMENT_SERVICE');
-      createdLaborProfileIds.push(fA.lpId, fB.lpId);
-      createdPlacementCaseIds.push(fA.pcId, fB.pcId);
       const csForA = await attachCandidateSubmission(admin, fA, '04b');
-      createdCsIds.push(csForA);
 
       mockAuth.getAuthContext.mockResolvedValue({
         userId: `p1f0-admin-${runId}`,
@@ -463,9 +620,6 @@ describeIf(
     // ─────────────────────────────────────────────────────────────────────
     it('AC-05: confirm route → 200 CONFIRMED; replayed=false', async () => {
       const f = await buildFixture(admin, '05', 'RECRUITMENT_SERVICE');
-      createdLaborProfileIds.push(f.lpId);
-      createdPlacementCaseIds.push(f.pcId);
-
       mockAuth.getAuthContext.mockResolvedValue({
         userId: `p1f0-admin-${runId}`,
         role: 'ADMIN',
@@ -504,9 +658,6 @@ describeIf(
     // ─────────────────────────────────────────────────────────────────────
     it('AC-06: same key on confirm → replayed=true', async () => {
       const f = await buildFixture(admin, '06', 'RECRUITMENT_SERVICE');
-      createdLaborProfileIds.push(f.lpId);
-      createdPlacementCaseIds.push(f.pcId);
-
       mockAuth.getAuthContext.mockResolvedValue({
         userId: `p1f0-admin-${runId}`,
         role: 'ADMIN',
@@ -541,9 +692,6 @@ describeIf(
     // ─────────────────────────────────────────────────────────────────────
     it('AC-07: client-managed EFFECTIVE → Placement EFFECTIVE + PlacementCase CLOSED; zero Worker/Episode/Assignment', async () => {
       const f = await buildFixture(admin, '07', 'RECRUITMENT_SERVICE');
-      createdLaborProfileIds.push(f.lpId);
-      createdPlacementCaseIds.push(f.pcId);
-
       mockAuth.getAuthContext.mockResolvedValue({
         userId: `p1f0-admin-${runId}`,
         role: 'HR_MANAGER',
@@ -598,9 +746,6 @@ describeIf(
     // ─────────────────────────────────────────────────────────────────────
     it('AC-08: HRP-managed EFFECTIVE → 400 PLACEMENT_VALIDATION_ERROR; zero mutation', async () => {
       const f = await buildFixture(admin, '08', 'STAFFING_SUPPLY');
-      createdLaborProfileIds.push(f.lpId);
-      createdPlacementCaseIds.push(f.pcId);
-
       mockAuth.getAuthContext.mockResolvedValue({
         userId: `p1f0-admin-${runId}`,
         role: 'ADMIN',
@@ -654,9 +799,6 @@ describeIf(
     // ─────────────────────────────────────────────────────────────────────
     it('AC-09: cancel after EFFECTIVE → 409 INVALID_STATE_TRANSITION', async () => {
       const f = await buildFixture(admin, '09', 'RECRUITMENT_SERVICE');
-      createdLaborProfileIds.push(f.lpId);
-      createdPlacementCaseIds.push(f.pcId);
-
       mockAuth.getAuthContext.mockResolvedValue({
         userId: `p1f0-admin-${runId}`,
         role: 'ADMIN',
@@ -704,9 +846,6 @@ describeIf(
     // ─────────────────────────────────────────────────────────────────────
     it('AC-10: fail transition → 200 FAILED; service builds failureReason', async () => {
       const f = await buildFixture(admin, '10', 'RECRUITMENT_SERVICE');
-      createdLaborProfileIds.push(f.lpId);
-      createdPlacementCaseIds.push(f.pcId);
-
       mockAuth.getAuthContext.mockResolvedValue({
         userId: `p1f0-admin-${runId}`,
         role: 'ADMIN',
@@ -790,9 +929,6 @@ describeIf(
       const legalOutcomes = new Set<string>();
       for (let i = 0; i < K; i++) {
         const f = await buildFixture(admin, `12a-${i}`, 'RECRUITMENT_SERVICE');
-        createdLaborProfileIds.push(f.lpId);
-        createdPlacementCaseIds.push(f.pcId);
-
         const r1 = await POST_CREATE(buildRequest('/api/admin/placements', {
           body: { placementCaseId: f.placementCaseId, jobOpeningId: f.jobOpeningId },
         }));
@@ -889,9 +1025,6 @@ describeIf(
       const { POST: POST_CANCEL } = await import('@/app/api/admin/placements/[id]/actions/cancel/route');
 
       const f = await buildFixture(admin, '12b', 'RECRUITMENT_SERVICE');
-      createdLaborProfileIds.push(f.lpId);
-      createdPlacementCaseIds.push(f.pcId);
-
       const r1 = await POST_CREATE(buildRequest('/api/admin/placements', {
         body: { placementCaseId: f.placementCaseId, jobOpeningId: f.jobOpeningId },
       }));
@@ -964,9 +1097,6 @@ describeIf(
     // ─────────────────────────────────────────────────────────────────────
     it('AC-13: withDbContext sets app.user_id + app.role GUC inside the placement command', async () => {
       const f = await buildFixture(admin, '13', 'RECRUITMENT_SERVICE');
-      createdLaborProfileIds.push(f.lpId);
-      createdPlacementCaseIds.push(f.pcId);
-
       // Wrap getAuthContext to also assert GUC inside the tx via a callback.
       const userId = `p1f0-admin-${runId}`;
       mockAuth.getAuthContext.mockImplementation(async () => ({

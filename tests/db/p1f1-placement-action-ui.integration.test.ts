@@ -25,11 +25,20 @@
  * CandidateSubmission (including legacy slot=null) through one canonical
  * helper that ALWAYS pushes the id.
  *
+ * Round 3 cleanup rule (T0 zero-residue handback): every canonical F0
+ * route POST records an `idempotency_keys` row keyed by `actor_id =
+ * ctx.userId`. Tracking `idempotencyActorIds` and scoping the
+ * `idempotencyKey.deleteMany` by `actorId IN (tracked)` is mandatory —
+ * the table is shared across suites on the same synthetic DB and a
+ * blanket delete would mask unrelated residue from sibling suites.
+ *
  * Refs:
  *   - Contract v1.1 §3 / §4.1 (placement lifecycle, additive DTO)
  *   - tests/db/recruiter-workbench.integration.test.ts (P1-E0 base pattern)
  *   - tests/db/p1f0-placement-command-api.integration.test.ts (F0 route
  *     invocation pattern + buildFixture)
+ *   - tests/db/intake-writer-integration.test.ts (idempotency_key
+ *     scoped-by-actor cleanup precedent)
  */
 
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
@@ -130,6 +139,12 @@ describe.skipIf(!HAS_TEST_DB)('P1-F1 Placement Action UI integration (round 2)',
   const submissionIds: string[] = [];
   const placementIds: string[] = [];
   const jobPostingIds: string[] = [];
+  // Track every actorId that was wired into mockAuth so the canonical
+  // withIdempotency wrap (which uses ctx.userId as the idempotency_keys
+  // actor_id) can be cleaned up deterministically per tracked id. We
+  // never blanket-delete the whole idempotency_keys table — only rows
+  // whose actorId was created by this run.
+  const idempotencyActorIds: string[] = [];
 
   beforeAll(async () => {
     admin = makeClient(adminUrl);
@@ -144,6 +159,7 @@ describe.skipIf(!HAS_TEST_DB)('P1-F1 Placement Action UI integration (round 2)',
       },
     });
     userIds.push(adminUser.id);
+    idempotencyActorIds.push(adminUser.id);
     // Default role (all read-service calls): ADMIN. F0-route cases can
     // override per-call via `mocks.getAuthContext.mockResolvedValueOnce`.
     mocks.getAuthContext.mockResolvedValue({
@@ -159,6 +175,21 @@ describe.skipIf(!HAS_TEST_DB)('P1-F1 Placement Action UI integration (round 2)',
   afterAll(async () => {
     try {
       // C2-01 / strict reverse-FK teardown — by tracked IDs only.
+      // Order: placements (Restrict on PlacementCase/LP) →
+      // application status history (FK submissionId) →
+      // candidate submissions (FK slotId/jobOpeningId nullable) →
+      // job postings (FK jobOpeningId) →
+      // staffing order slots (FK jobOpeningId nullable + staffingOrderId Cascade) →
+      // job openings (FK staffingOrderId) →
+      // staffing orders (FK projectId) →
+      // placement cases (FK laborProfileId) →
+      // projects (FK clientCompanyId) →
+      // client companies (no FK below) →
+      // labor profiles (FK cascade from cases via app logic, but
+      // Placement.laborProfile → Restrict so safe only AFTER placements) →
+      // idempotency keys for tracked actor ids (BEFORE users since
+      // actorId may equal userId) →
+      // users.
       await admin?.placement.deleteMany({
         where: { id: { in: placementIds } },
       });
@@ -191,6 +222,14 @@ describe.skipIf(!HAS_TEST_DB)('P1-F1 Placement Action UI integration (round 2)',
       });
       await admin?.laborProfile.deleteMany({
         where: { id: { in: profileIds } },
+      });
+      // Idempotency keys: scoped by tracked actorId. The canonical
+      // withIdempotency wrap records actor_id = ctx.userId, so every
+      // row created by this run is reachable via actorId IN
+      // idempotencyActorIds. Scoped deletion is mandatory because the
+      // table is shared across suites on the same synthetic DB.
+      await admin?.idempotencyKey.deleteMany({
+        where: { actorId: { in: idempotencyActorIds } },
       });
       await admin?.user.deleteMany({ where: { id: { in: userIds } } });
 
@@ -225,6 +264,13 @@ describe.skipIf(!HAS_TEST_DB)('P1-F1 Placement Action UI integration (round 2)',
           jobPostings: await tx.jobPosting.count({
             where: { id: { in: jobPostingIds } },
           }),
+          // Independent zero-residue assertion for idempotency keys.
+          // Every successful F0-route POST in this run writes exactly
+          // one idempotency_key row keyed by actorId IN tracked; the
+          // cleanup must leave zero residue.
+          idempotencyKeys: await tx.idempotencyKey.count({
+            where: { actorId: { in: idempotencyActorIds } },
+          }),
         };
         return counts;
       });
@@ -240,8 +286,12 @@ describe.skipIf(!HAS_TEST_DB)('P1-F1 Placement Action UI integration (round 2)',
         candidateSubmissions: 0,
         placements: 0,
         jobPostings: 0,
+        idempotencyKeys: 0,
       });
     } finally {
+      // Disconnects still allowed in finally (test harness safety); the
+      // cleanup itself fails-closed — no `.catch(() => {})` swallows
+      // any individual delete above.
       await writer?.$disconnect().catch(() => {});
       await admin?.$disconnect().catch(() => {});
     }
