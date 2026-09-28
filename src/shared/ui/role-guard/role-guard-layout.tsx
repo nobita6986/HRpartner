@@ -38,6 +38,7 @@ import {
   Wallet,
 } from 'lucide-react';
 import { cn } from '@/src/shared/utils/cn';
+import { getMostSpecificActiveHref } from './active-nav-helper';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -171,11 +172,28 @@ export function RoleGuardLayout({
     [visibleNav],
   );
 
-  const isNavItemActive = React.useCallback(
-    (href: string) => pathname === href || (href !== '/' && pathname?.startsWith(href + '/')),
-    [pathname],
+  /**
+   * P1-NAV-01 fix: compute the single active href for `pathname` among the
+   * role-visible nav items, then mark `item.href === activeHref` as active.
+   * The previous prefix-match logic double-activated `/admin/jobs` and
+   * `/admin/jobs/job-postings` for `pathname='/admin/jobs/job-postings'`. The
+   * `getMostSpecificActiveHref` helper picks the LONGEST matching href, so only
+   * the most-specific entry highlights. The contract is enforced by
+   * `active-nav-helper.test.ts` (RQ-08..RQ-14).
+   */
+  const activeHref = React.useMemo(
+    () => getMostSpecificActiveHref(pathname, visibleNav),
+    [pathname, visibleNav],
   );
-  const developmentRouteActive = developmentNav.some((item) => isNavItemActive(item.href));
+  const developmentActiveHref = React.useMemo(
+    () => getMostSpecificActiveHref(pathname, developmentNav),
+    [pathname, developmentNav],
+  );
+  const isNavItemActive = React.useCallback(
+    (href: string) => activeHref !== null && href === activeHref,
+    [activeHref],
+  );
+  const developmentRouteActive = developmentActiveHref !== null;
   const [developmentOpen, setDevelopmentOpen] = React.useState(developmentRouteActive);
 
   React.useEffect(() => {
