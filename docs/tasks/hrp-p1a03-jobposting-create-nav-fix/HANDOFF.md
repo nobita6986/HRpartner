@@ -53,6 +53,7 @@
 docs/tasks/hrp-p1a03-jobposting-create-nav-fix/TASK.md                                new
 docs/tasks/hrp-p1a03-jobposting-create-nav-fix/HANDOFF.md                              new
 docs/tasks/hrp-p1a03-jobposting-create-nav-fix/evidence/EV-04-synthetic-reproduction.md new
+docs/tasks/hrp-p1a03-jobposting-create-nav-fix/evidence/EV-14-full-canonical-integration.md new (v1.1 round)
 app/api/admin/jobs/job-postings/route.test.ts                                          new (9 tests)
 src/shared/ui/role-guard/active-nav-helper.ts                                          new
 src/shared/ui/role-guard/active-nav-helper.test.ts                                     new (14 tests)
@@ -77,11 +78,11 @@ vitest.integration-files.ts                                                     
 | AC-08 | Stale/invalid slot → 4xx + zero mutation | `npm run test:unit -- app/api/admin/jobs/job-postings/route.test.ts` (`returns 404 NOT_FOUND when slot does not exist`) + authoring integration | RESULT: PASS |
 | AC-09 | Role-denied → 403 + zero mutation | `npm run test:unit -- app/api/admin/jobs/job-postings/route.test.ts` (`returns 403 PERMISSION_DENIED`) | RESULT: PASS |
 | AC-10 | DB txn failure → rollback chain (no orphan) | `npm run test:unit -- tests/db/job-posting-authoring.integration.test.ts` (transaction rollback case, E-09) | RESULT: PASS (covered by `withDbContext` invariant) |
-| AC-11 | Synthetic integration × 3 runs | `npx vitest run --config vitest.integration.config.ts tests/db/job-posting-create-bundle.repro.test.ts tests/db/job-posting-authoring.integration.test.ts tests/db/job-posting-stamps.integration.test.ts` (E-04, E-09) | RESULT: PASS (27/27) |
+| AC-11 | Targeted synthetic integration × 3 runs (subset; full canonical integration is E-14) | `npx vitest run --config vitest.integration.config.ts tests/db/job-posting-create-bundle.repro.test.ts tests/db/job-posting-authoring.integration.test.ts tests/db/job-posting-stamps.integration.test.ts` (E-04, E-09) | RESULT: PASS (27/27 across the 3 files; targeted subset only — does NOT substitute for the E-14 full canonical integration suite of 36 files / 605 tests) |
 | AC-12 | GET /api/jobs after DRAFT = 200 total=0; after PUBLISHED = 200 total=N | `npm run test:unit -- tests/db/job-posting-stamps.integration.test.ts` (draft-no-public invariant) | RESULT: PASS |
 | AC-13 | No forbidden path touched | `git diff origin/main..HEAD -- 'app/(jobs)/**' 'app/api/public/jobs/**' 'prisma/schema.prisma' 'src/shared/auth/**' 'src/shared/integrity/idempotency.ts' 'package.json' 'package-lock.json'` (E-08) | RESULT: PASS (0 lines) |
-| AC-14 | UTF-8 no-BOM on every changed text file | `node .ai-pipeline/scripts/verify-encoding.mjs` (E-12) | RESULT: PASS (10 files OK) |
-| AC-15 | Typecheck, lint, full unit lane, build — all PASS | `npm run typecheck && npm run lint && npm run test:unit && npm run build` (E-13) | RESULT: PASS (185 files / 2982 tests / 9 skipped; 0 lint errors; build compiled) |
+| AC-14 | UTF-8 no-BOM on every changed text file | `node .ai-pipeline/scripts/verify-encoding.mjs` (E-12) | RESULT: PASS (2 changed text files: HANDOFF.md, EV-14; strict UTF-8 no-BOM, LF-only, zero NUL/U+FFFD/mojibake) |
+| AC-15 | Typecheck, lint, full unit lane, build — all PASS | `npm run typecheck && npm run lint && npm run test:unit && npm run build` (E-13) | RESULT: PASS (199 files / 3257 tests / 9 skipped; 0 lint errors; build compiled) |
 | AC-16 | getMostSpecificActiveHref('/admin/jobs/job-postings', ...) returns the child | `npm run test:unit -- src/shared/ui/role-guard/active-nav-helper.test.ts` case 1+2 (E-11) | RESULT: PASS |
 | AC-17 | getMostSpecificActiveHref('/admin/jobs', ...) returns /admin/jobs only | `npm run test:unit -- src/shared/ui/role-guard/active-nav-helper.test.ts` case 3 (E-11) | RESULT: PASS |
 | AC-18 | getMostSpecificActiveHref('/admin/jobs/job-postings/{id}', ...) returns /admin/jobs/job-postings | `npm run test:unit -- src/shared/ui/role-guard/active-nav-helper.test.ts` case 2 (E-11) | RESULT: PASS |
@@ -136,8 +137,9 @@ Result: **0 lines changed** (forbidden paths are byte-identical to baseline).
 | E-09 | Targeted synthetic integration × 3 runs (post-merge re-run) | `npx vitest run --config vitest.integration.config.ts tests/db/job-posting-create-bundle.repro.test.ts tests/db/job-posting-authoring.integration.test.ts tests/db/job-posting-stamps.integration.test.ts` | exit 0 — 3 files / 27 tests passed (job-posting-create-bundle.repro 4/4 in 6.20s + job-posting-authoring 13/13 in 22.21s + job-posting-stamps 10/10 in 29.94s; total 59.95s) |
 | E-10 | Draft-no-public invariant (GET /api/jobs after DRAFT = 200 total=0) | `npx vitest run --config vitest.integration.config.ts -t "draft" tests/db/job-posting-stamps.integration.test.ts` | exit 0 — DRAFT postings do not surface in public feed (total=0) |
 | E-11 | Sidebar single-active invariant | `npm run test:unit -- src/shared/ui/role-guard/active-nav-helper.test.ts src/shared/ui/role-guard/role-guard-layout.test.ts` | exit 0 — 14 + 6 = 20 tests passed |
-| E-12 | UTF-8 no-BOM on every changed text file | `node .ai-pipeline/scripts/verify-encoding.mjs` | exit 0 — 10 files OK, 0 violations |
-| E-13 | Full canonical gates (post-merge) | `npm run typecheck && npm run lint && npm run test:unit && npm run build` | exit 0 — 0 type errors / 0 lint errors (748 pre-existing warnings; 0 in touched files) / 199 test files / 3257 tests / 9 skipped / build compiled successfully in 19.6s |
+| E-12 | UTF-8 no-BOM on every changed text file | `node .ai-pipeline/scripts/verify-encoding.mjs` | exit 0 — 2 changed text files OK (HANDOFF.md, EV-14), 0 violations (strict UTF-8 no-BOM, LF-only, zero NUL/U+FFFD/mojibake) |
+| E-13 | Non-DB canonical gates (post-merge) | `npm run typecheck && npm run lint && npm run test:unit && npm run build` | exit 0 — 0 type errors / 0 lint errors (748 pre-existing warnings; 0 in touched files) / 199 test files / 3257 tests / 9 skipped / build compiled successfully in 19.6s |
+| E-14 | Full canonical integration (CI_INTEGRATION_STRICT=1) on the T0-provisioned synthetic writer/admin pair | `CI_INTEGRATION_STRICT=1 npm run test:integration` → `evidence/EV-14-full-canonical-integration.md` | exit 0 — **36 test files / 605 tests passed / 2 skipped (Redis-gated V5-OPS-06A) / 0 failed** in 894.11s; preflight posture OK (writer non-super, non-bypassrls; admin bypassrls; same host/db; not production); no production DB contact; vitest.integration-files.ts registered every file |
 
 ## 4. Deviations and blockers
 
@@ -197,7 +199,9 @@ P1 go-live defect bundle covering P1-A0.3 + P1-NAV-01:
   href wins. No menu / role / IA change.
 
 Tests: 4 new files, +29 unit tests, +1 new synthetic reproduction
-integration test (4 tests). Full unit lane 2982/9 skipped pass.
+integration test (4 tests). Full unit lane passes (historical count at
+this commit: 2982 tests / 9 skipped; **current count** at the v1.1
+reconciliation HEAD: 199 files / 3257 tests / 9 skipped — see E-13).
 
 For-T0: HTTP 500 production root cause remains to be verified —
 production-side migration state should be confirmed before the
@@ -213,10 +217,11 @@ The branch is pushed forward-only (no amend, no reset, no force-push).
 | Prisma validate | `npx prisma validate` | PASS |
 | Typecheck | `npm run typecheck` | PASS (0 errors) |
 | Lint | `npm run lint` | PASS (0 errors, 748 pre-existing warnings; 0 in touched files) |
-| Unit lane | `npm run test:unit` | PASS (185 files / 2982 tests / 9 skipped) |
-| Targeted integration × 3 (post-merge re-run) | `npx vitest run --config vitest.integration.config.ts tests/db/job-posting-create-bundle.repro.test.ts tests/db/job-posting-authoring.integration.test.ts tests/db/job-posting-stamps.integration.test.ts` on synthetic cluster (line 1 owner / line 3 writer of `C:\cre_hrp.txt`) | PASS (3 files / 27 tests; 4 + 13 + 10) |
+| Unit lane | `npm run test:unit` | PASS (199 files / 3257 tests / 9 skipped) |
+| Targeted integration × 3 (post-merge re-run) | `npx vitest run --config vitest.integration.config.ts tests/db/job-posting-create-bundle.repro.test.ts tests/db/job-posting-authoring.integration.test.ts tests/db/job-posting-stamps.integration.test.ts` on the T0-provisioned synthetic writer/admin pair | PASS (3 files / 27 tests; 4 + 13 + 10) |
+| **Full canonical integration (CI_INTEGRATION_STRICT=1)** | `CI_INTEGRATION_STRICT=1 npm run test:integration` on the T0-provisioned synthetic writer/admin pair | PASS (36 test files / 605 tests / 2 skipped (Redis-gated V5-OPS-06A) / 0 failed in 894.11s; see E-14) |
 | Build | `npm run build` | PASS (Compiled successfully in 19.6s after merge) |
-| UTF-8 no-BOM | `node .ai-pipeline/scripts/verify-encoding.mjs` | PASS (no changed text files since the merge auto-touched nothing; UTF-8 no-BOM strict on touched-by-branch files) |
+| UTF-8 no-BOM | `node .ai-pipeline/scripts/verify-encoding.mjs` | PASS (2 changed text files in this round — HANDOFF.md + evidence/EV-14; strict UTF-8 no-BOM, LF-only, zero NUL/U+FFFD/mojibake) |
 | Whitespace | `git diff --check` | PASS (clean) |
 | TASK plan | `pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-p1a03-jobposting-create-nav-fix/TASK.md` | DRAFT-VALID (6 warnings, no errors) |
 | HANDOFF | `pwsh .ai-pipeline/scripts/verify-handoff.ps1 -TaskPath docs/tasks/hrp-p1a03-jobposting-create-nav-fix/TASK.md` | PASS (all H-01..H-16 OK) |
@@ -233,7 +238,7 @@ The branch is pushed forward-only (no amend, no reset, no force-push).
 - Branch: `codex/t1c-p1a03-jobposting-create-nav-fix`
 - Worktree: `C:\CodeApp\HrP-t1c-p1a03`
 - Plan artifact: `docs/tasks/hrp-p1a03-jobposting-create-nav-fix/TASK.md`
-- Evidence: `docs/tasks/hrp-p1a03-jobposting-create-nav-fix/evidence/EV-04-synthetic-reproduction.md`
+- Evidence: `docs/tasks/hrp-p1a03-jobposting-create-nav-fix/evidence/EV-04-synthetic-reproduction.md` + `evidence/EV-14-full-canonical-integration.md` (v1.1 round)
 - Migration bytes SHA (unchanged vs origin/main): `2fad21f86e86405ab7a6eefe8002a97a5d180bcc` — file `prisma/migrations/20260926120000_p1a01_jobposting_stamps/migration.sql`
 - Remaining release gate: `T0_PRODUCTION_MIGRATION_GATE` (T0 verifies production cluster has migration applied; bundle intentionally does NOT apply it)
 - Next gate (after this handoff): `TIER3_LIGHT_AUDIT`
