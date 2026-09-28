@@ -1,28 +1,36 @@
-# P1-A0.4 — Scoped Recruiter Authority — Reconciliation
+ P1-A0.4 — Scoped Recruiter Authority — Reconciliation
 
 **Pipeline V2 — Discovery / Realignment**
+
+> **Phase-0 adoption note (v1.3, 2026-09-28)** — T0 ACCEPTED v1.2 planning SHA `e40a0b50863a3501f89943ba737592f1e2054e8d`. The two path/control corrections in v1.3 are mechanical adoption fixes (path correction + control-field truthfulness + AC-24 rewrite); they are NOT a new T1C correction batch. Path corrections: `src/shared/auth/withIdempotency.ts` → `src/shared/integrity/idempotency.ts`; `src/lib/auth/session.ts` → `src/shared/auth/auth-context.ts` (Server-Component session reading may additionally use `src/shared/auth/server-session.ts`).
+
 
 ## 0. Header / control
 
 | Field | Value |
 | --- | --- |
 | `Doc type` | `discovery/realignment` |
-| `Spec version` | `v1.2` |
-| `Status` | `T0_REVIEW` |
+| `Spec version` | `v1.3` |
+| `Status` | `ACCEPTED (planning round closed at v1.2); implementation round in progress under v1.3` |
 | `Delivery protocol` | `V2_FAST_FREEZE` |
 | `Assurance lane` | `CRITICAL` |
 | `Audit mode` | `LIGHT` |
 | `Baseline` | `origin/main @ f3a3d1a46e2e4a26103c9bf318b67cba21bdfcf7` |
-| `Worktree (planning)` | `C:\\CodeApp\\HrP-t1c-p1a04` |
-| `Branch (planning)` | `codex/t1c-p1a04-scoped-recruiter-authority` |
+| `Worktree (implementation)` | `C:\CodeApp\HrP-t1c-p1a04-impl` (separate from planning worktree) |
+| `Branch (implementation)` | `codex/t1c-p1a04-scoped-recruiter-authority-impl` (forked from planning SHA `e40a0b5`) |
+| `Worktree (planning, preserved)` | `C:\CodeApp\HrP-t1c-p1a04` |
+| `Branch (planning, preserved)` | `codex/t1c-p1a04-scoped-recruiter-authority` (HEAD `e40a0b5`) |
 | `Owner of this doc` | T1C (Tier 1) |
-| `Contract gate` | `DRAFT` |
-| `Contract accepted by T0` | `PENDING` |
+| `Contract gate` | `READY_TO_CODE` (T0 ACCEPTED v1.2 → materialization v1.3) |
+| `Contract accepted by T0` | `YES` |
 | `Decision state` | `CLOSED` |
-| `Correction budget` | `1` (exhausted by v1.1 batch `C-01..C-12`; v1.2 is an integrity repair using T0 integrity exceptions — not a fresh correction budget) |
-| `T0 integrity exceptions used` | `1` (the v1.2 batch: encoding/schema/path/atomicity/control-truthfulness repair) |
+| `Planning correction budget` | `1` (consumed by v1.1 `C-01..C-12`) |
+| `T0 planning integrity exceptions used` | `1` (consumed by v1.2 `I-01..I-08`) |
+| `Implementation correction budget` | `1` |
+| `Implementation correction batches used` | `0` |
+| `Test environment` | `REQUIRED` (synthetic-DB preflight determines readiness) |
 | `Open Owner decisions` | `0` |
-| `Next gate` | `T0_CONTRACT_REVIEW` |
+| `Next gate` | `TIER1_IMPLEMENTATION_FREEZE` |
 
 ## 1. Capability matrix — current treatment of HR_STAFF
 
@@ -377,3 +385,4 @@ If during implementation a previously-closed decision needs revisiting, Tier 1 s
 | `v1.0` | 2026-09-28 | Tier 1 (T1C) | Initial reconciliation (PROPOSED_ONLY). | `T0 → T1C — P1-A0.4 Scoped Recruiter Authority — planning round` |
 | `v1.1` | 2026-09-28 | Tier 1 (T1C) | T0 correction `C-01..C-12` consolidated into one docs-only forward-only commit on top of predecessor `5bb7581a11312c5111f51e0ec84534b4ac9b4a97`. Status equivalent to the legacy `ready-to-code-token` under the legacy V2 enum; Contract gate `ready-to-code-token` (V2 enum); Contract accepted by T0 `YES` (semantic field, later corrected). E2E chain expanded to 22 steps. | `T0 → T1C — P1-A0.4 Contract Correction v1.1 — C-01..C-12` |
 | `v1.2` | 2026-09-28 | Tier 1 (T1C) | T0 integrity correction after v1.1 verdict `CHANGES_REQUIRED`. Working-tree docs reset from clean predecessor blob to repair encoder-induced mojibake (195 markers, 3 C0 controls U+000B×2 + U+000C) introduced at v1.1. Control fields updated: Status `T0_REVIEW` (no self-declared contract-text-accepted state); Contract gate `DRAFT`; Contract accepted by T0 `PENDING`; Spec version `v1.2`; T0 integrity exceptions used `1`; Correction budget `1` exhausted by v1.1; Open Owner decisions `0`. §4.3 SQL helpers rewritten schema-qualified (`public.hrp_staffing_order_visible_for(text)`, `public.hrp_project_recruiter_visible_for(text)`) with `SET search_path = pg_catalog, public` posture, identity only via `public.hrp_session_role()` / `public.hrp_session_user_id()`, and migration REVOKE/GRANT to runtime roles. §4.3.3 narrowly-scoped policies use correct column names. §7 transactional revoke semantics revised exactly per I-03 (no half-mutated-row language). §5.1 post-claim phone corrected (full contact phone may be returned to active handler only when needed for calling). §8 routes explicitly marked `(new)` and verified-not-present at origin/main; existing public endpoints `GET /api/jobs/{slug}` and `POST /api/public/jobs/{slug}/applications` are repository-exact paths. §10 implementation allowlist rebuilt with `git cat-file -e origin/main:<path>` proof per existing item, `(new)` markers, and zero `src/app/`. Predecessor `f1fff224e4d5fb9c4c6a24a51add565d85ed2c4e` preserved. No amend / reset / rebase / force-push. | `T0 → T1C — P1-A0.4 pre-implementation integrity correction v1.2` |
+| `v1.3` | 2026-09-28 | Tier 1 (T1C) | T0 ACCEPTED v1.2 planning SHA `e40a0b50863a3501f89943ba737592f1e2054e8d`. Phase-0 contract adoption/materialization (mechanical, not a new correction batch): (1) replace nonexistent `src/shared/auth/withIdempotency.ts` with canonical `src/shared/integrity/idempotency.ts`; (2) replace nonexistent `src/lib/auth/session.ts` with canonical `src/shared/auth/auth-context.ts` (and additionally allow `src/shared/auth/server-session.ts` for Server Component session reading); (3) Phase-0 banner added at top of this realignment doc; (4) §0 control table of TASK rewritten to v1.3 fields. No design changes. Predecessor chain preserved: `5bb7581a` (v1.0), `f1fff224` (v1.1), `e40a0b5` (v1.2 ACCEPTED). | `T0 → T1C — P1-A0.4 contract ACCEPTED + implementation authorization` |

@@ -7,32 +7,34 @@
 | Field | Value |
 | --- | --- |
 | Task slug | `hrp-p1-a0-4-scoped-recruiter-authority` |
-| Work type | `CONTRACT` (planning-round docs-only) |
-| Assurance lane | `LIGHT` (docs-only planning round; Tier 3 not called) |
+| Work type | `IMPLEMENTATION` |
 | Doc type | `task/contract` |
-| Spec version | `v1.2` |
-| Status | `T0_REVIEW` |
-| Planner | `Tier 1` (T1C; v1.2 corrective close of v1.1 `CHANGES_REQUIRED` verdict) |
+| Spec version | `v1.3` |
+| Status | `READY_TO_CODE` |
+| Planner | `Tier 1` (T1C) |
 | Baseline | `f3a3d1a46e2e4a26103c9bf318b67cba21bdfcf7` |
-| Contract gate | `DRAFT` |
-| Contract accepted by T0 | `PENDING` |
+| Contract gate | `READY_TO_CODE` |
+| Contract accepted by T0 | `YES` |
 | Decision state | `CLOSED` |
-| T0 integrity exceptions used | `1` (v1.2 batch: encoding/schema/path/atomicity/control-truthfulness repair) |
-| Correction budget | `1` |
-| Test environment | `NOT_REQUIRED` (planning-round docs-only) |
-| Current execution round | `1` |
-| Current audit round | `0` (Tier 3 not called this round) |
-| Next gate | `T0_CONTRACT_REVIEW` |
+| Assurance lane | `CRITICAL` |
+| Audit mode | `LIGHT` |
+| Audit reason | Security/RLS slice (additive aggregate + SECDEFINER helpers + revoke locking); Tier 3 must verify on synthetic-DB evidence, not unit/static. |
+| Planning correction budget | `1` (consumed by v1.1 `C-01..C-12`) |
+| T0 planning integrity exceptions used | `1` (consumed by v1.2 `I-01..I-08`) |
+| Implementation correction budget | `1` |
+| Implementation correction batches used | `0` |
+| Test environment | `REQUIRED` (synthetic-DB preflight; readiness determined by preflight outcome) |
+| Current execution round | `2` (planning round closed at v1.3; implementation round begins on Phase 1 worktree) |
+| Current audit round | `0` (Tier 3 not called) |
+| Next gate | `TIER1_IMPLEMENTATION_FREEZE` |
 | Open Owner decisions | `0` |
 | Delivery protocol | `V2_FAST_FREEZE` |
-| Audit mode | `LIGHT` (planning-round docs-only) |
-| Audit reason | Docs-only planning round; Tier 3 is not called; only the textual contract is in scope. |
 | Build vs adopt | `ADOPT` |
 | Build vs automate | `N/A` |
 | In-scope roots | `docs/discovery/realignment/P1A04_SCOPED_RECRUITER_AUTHORITY_RECONCILIATION.md`; `docs/tasks/hrp-p1-a0-4-scoped-recruiter-authority/TASK.md` |
 | Required gates | `verify-task.ps1`; `.ai-pipeline/scripts/verify-task.ps1` |
-| Predecessor chain (preserved) | `5bb7581a11312c5111f51e0ec84534b4ac9b4a97` (v1.0); `f1fff224e4d5fb9c4c6a24a51add565d85ed2c4e` (v1.1) |
-| v1.2 directive | `T0 → T1C — P1-A0.4 pre-implementation integrity correction v1.2` (verdict `CHANGES_REQUIRED`) |
+| Predecessor chain (preserved) | `5bb7581a11312c5111f51e0ec84534b4ac9b4a97` (v1.0); `f1fff224e4d5fb9c4c6a24a51add565d85ed2c4e` (v1.1); `e40a0b50863a3501f89943ba737592f1e2054e8d` (v1.2 planning, ACCEPTED by T0) |
+| v1.3 directive | `T0 → T1C — P1-A0.4 contract ACCEPTED + implementation authorization` |
 
 ## 1. Outcome
 
@@ -44,12 +46,16 @@ implementation-round contract (separate baseline pin) will encode the
 synthetic DB integration plan and the acceptance chain carried as
 `AC-E2E-01..AC-E2E-22` in §6.2 below.
 
-This v1.2 round is a docs-only integrity correction over v1.1. It is
-delivered as exactly **one forward-only commit** on top of predecessor
-`f1fff224e4d5fb9c4c6a24a51add565d85ed2c4e`. No amend, reset, rebase or
-force-push. Predecessors `5bb7581a11312c5111f51e0ec84534b4ac9b4a97`
-(v1.0) and `f1fff224e4d5fb9c4c6a24a51add565d85ed2c4e` (v1.1) are
-preserved.
+This v1.3 round is a docs-only contract adoption/materialization over
+v1.2 (T0 ACCEPTED). It is delivered as exactly **one forward-only
+commit** on top of predecessor `e40a0b50863a3501f89943ba737592f1e2054e8d`.
+No amend, reset, rebase or force-push. Predecessors
+`5bb7581a11312c5111f51e0ec84534b4ac9b4a97` (v1.0),
+`f1fff224e4d5fb9c4c6a24a51add565d85ed2c4e` (v1.1) and
+`e40a0b50863a3501f89943ba737592f1e2054e8d` (v1.2, ACCEPTED by T0) are
+preserved. The v1.3 corrections are mechanical adoption fixes
+(path correction + control-field truthfulness + AC-24 rewrite), NOT a
+new T1C correction batch.
 
 The two changed files are:
 
@@ -116,7 +122,7 @@ encoding/schema/path/atomicity truthfulness in the contract text.)
 | `DEC-28` | (C-10 / I-04) No new broad permission code is introduced in this slice. The proposed `CAN_PUBLISH_JOB_FOR_ASSIGNED_ORDERS` requirement is REMOVED from P1-A0.4. The locked authorization model is: role establishes the recruiter persona; active `StaffingOrderRecruiterAssignment` establishes object scope; both are required. No `prisma/seed.mjs` permission grant is needed. | `CHOSEN` |
 | `DEC-29` | (C-11 / I-04) Implementation allowlist is expanded below in §4.2. Frozen-task source exceptions are explicitly listed (P1-B / F0/F1 / E1 / session). | `CHOSEN` |
 | `DEC-30` | (C-12 / I-05) Final E2E acceptance chain is expanded to `AC-E2E-01..AC-E2E-22` per §6.2. | `CHOSEN` |
-| Correction budget | `1` |
+| `v1.2` | 2026-09-28 | Tier 1 (T1C) | T0 integrity correction after v1.1 verdict `CHANGES_REQUIRED`. Strict UTF-8 LF no-BOM, 0 NUL, 0 U+FFFD, 0 mojibake. | `T0 → T1C — P1-A0.4 pre-implementation integrity correction v1.2` |
 
 ### 3.2 Build vs Adopt
 
@@ -258,8 +264,8 @@ The implementation allowlist below carries every path T0 has accepted under `I-0
 
 - `src/domains/applications/conversion.service.ts` (P1-B frozen) — read-only consumption; no behavioral or signature change.
 - `src/domains/talent/placement.route-helpers.ts` (P1-F0/F1 frozen) — the canonical placement route-helper in this repo. If a new narrowly-scoped helper `assertPlacementHrStaffDualAuthority()` is needed, it is added as a new EXPORTED helper adjacent to the existing one, NOT as an edit to the existing helper bodies.
-- `src/shared/auth/withIdempotency.ts` (E1 frozen) — read-only consumption.
-- `src/lib/auth/session.ts` — read-only consumption.
+- `src/shared/integrity/idempotency.ts` (E1 frozen) — read-only consumption.
+- `src/shared/auth/auth-context.ts` — read-only consumption.
 
 No historical TASK.md / HANDOFF.md / AUDIT.md / evidence/ bundle of any frozen task is to be edited. This task's own TASK / HANDOFF / AUDIT / evidence/ bundle is the only such bundle that may be created or edited.
 
@@ -270,7 +276,7 @@ No historical TASK.md / HANDOFF.md / AUDIT.md / evidence/ bundle of any frozen t
 - `src/domains/attendance/**` / `src/domains/finance/**` / `src/domains/payroll/**` / `src/domains/leave/**` — no authority definition.
 - `src/domains/conversion/**` (P1-B) — no behavioral change.
 - `src/domains/n8n/**` and any n8n workflow files — no n8n dependency.
-- `src/lib/auth/session.ts` — no JWT / session shape change.
+- `src/shared/auth/auth-context.ts` — no JWT / session shape change.
 - `package.json` / `package-lock.json` / `pnpm-lock.yaml` / `yarn.lock` — no new dependency.
 - Sidebar IA / label order / icon change beyond the "Chuyên viên tuyển dụng" label surface inside the recruiter surface itself.
 - `docs/PLANNER_HANDOVER.md` (T0-owned).
@@ -332,7 +338,7 @@ No historical TASK.md / HANDOFF.md / AUDIT.md / evidence/ bundle of any frozen t
 | `AC-21` | (I-04) Implementation allowlist lists — at minimum — each path T0 listed under I-04. Existing paths are verified at `origin/main` via `git cat-file -e origin/main:<path>`. New paths are marked `(new)`. No `src/app/**` paths appear anywhere in the doc. | `grep -nE "^src/app/"` returns 0 matches across both docs; allowlist rows match T0's I-04 list. |
 | `AC-22` | (I-05) E2E AC uses the canonical repository-exact routes verified at `origin/main`: `GET /api/jobs/{slug}` (`app/api/jobs/[slug]/route.ts`) and `POST /api/public/jobs/{slug}/applications` (`app/api/public/jobs/[slug]/applications/route.ts`). No use of any query-string variant or non-canonical alternate path for these endpoints. | `git grep -nE "/api/jobs\?slug=|/api/public/jobs/[^/]+/(apply|\?slug=)" docs/` returns 0 matches. |
 | `AC-23` | (I-06) No phrasing that treats the post-claim phone as automatically masked (rather than as recruiter-contact fields whose full value is delivered ONLY to the active winning handler when that is what is needed to call the candidate) is present in either doc. | Phrase-id grep against masked-as-sufficient returns 0 matches in either doc. |
-| Correction budget | `1` |
+| `AC-24` | (I-07) Control field truthfulness — Spec version `v1.3`; Status `READY_TO_CODE`; Contract gate `READY_TO_CODE`; Contract accepted by T0 `YES`; Decision state `CLOSED`; Assurance lane `CRITICAL`; Audit mode `LIGHT`; Planning correction budget `1` consumed by v1.1; T0 planning integrity exceptions used `1` consumed by v1.2; Implementation correction budget `1`; Implementation correction batches used `0`; Test environment `REQUIRED` (synthetic-DB preflight); Next gate `TIER1_IMPLEMENTATION_FREEZE`; Open Owner decisions `0`. The contract does NOT self-declare any contract-text-accepted state for the implementation round. | `grep -nE "Status .READY_TO_CODE|Contract gate .READY_TO_CODE|Contract accepted by T0 .YES|Assurance lane .CRITICAL|Audit mode .LIGHT|Implementation correction budget .1|Implementation correction batches used .0|Next gate .TIER1_IMPLEMENTATION_FREEZE|Open Owner decisions .0" docs/tasks/hrp-p1-a0-4-scoped-recruiter-authority/TASK.md` returns expected rows in §0; section 9/10 records T0 acceptance and the v1.3 adoption commit. |
 | `AC-25` | (I-08) After commit, the strict UTF-8 scanner returns BOM=0, CR=0, NUL=0, U+FFFD=0, C0=0, mojibake markers=0 for both docs files. `git diff --check f1fff224..HEAD` is clean. `verify-task.ps1` returns `DRAFT-VALID`. | Raw scanner output is reported to T0 in the closing summary. |
 | `AC-26` | Working tree is clean after commit; push is forward-only (no force); predecessor `f1fff224e4d5fb9c4c6a24a51add565d85ed2c4e` is preserved as `HEAD~1`. | `git status --short` after commit is empty; `git log -1 --format=%P` shows `f1fff224e4d5fb9c4c6a24a51add565d85ed2c4e`. |
 | `AC-27` | The full v1.1 review batch is still represented in `DEC-20..DEC-30` (C-01..C-12) and `DEC-31` (I-01..I-08). | `grep -nE "DEC-2[0-9]|DEC-31" docs/.../TASK.md` returns 12 rows in §3. |
@@ -419,8 +425,9 @@ explicitly:
 | --- | --- | --- | --- | --- |
 | `v1.0` | 2026-09-28 | Tier 1 (T1C) | Initial planning contract; baseline `f3a3d1a4`; PROPOSED_ONLY + Contract gate DRAFT + Decision state CLOSED; correction budget 1; AC-E2E-01..AC-E2E-18 chain carried forward from Owner directive; DEC-01..DEC-19 close all 17 locked Owner decisions plus DEC-18 (forward-only migration posture) and DEC-19 (planning-round posture). | `T0 → T1C — P1-A0.4 Scoped Recruiter Authority — planning round` |
 | `v1.1` | 2026-09-28 | Tier 1 (T1C) | T0 correction `C-01..C-12` consolidated into one docs-only forward-only commit on top of predecessor `5bb7581a11312c5111f51e0ec84534b4ac9b4a97`. Status equivalent to the legacy `ready-to-code-token` under the legacy V2 enum; Contract gate `ready-to-code-token` (V2 enum); Contract accepted by T0 `YES` (semantic field; T0 later returned a verdict of `CHANGES_REQUIRED` on a follow-up review which is why v1.2 is required). AC-E2E chain expanded from 18 to 22 steps; DEC-20..DEC-30 carry the C-01..C-12 corrections. | `T0 → T1C — P1-A0.4 Contract Correction v1.1 — C-01..C-12` |
-| Correction budget | `1` |
+| `v1.2` | 2026-09-28 | Tier 1 (T1C) | T0 integrity correction after v1.1 verdict `CHANGES_REQUIRED`. Working-tree docs reset from clean predecessor blob to repair encoder-induced mojibake (195 markers, 3 C0 controls U+000B ×2 + U+000C) introduced at v1.1. Strict UTF-8 LF no-BOM, 0 NUL, 0 U+FFFD, 0 mojibake. | `T0 → T1C — P1-A0.4 pre-implementation integrity correction v1.2` |
+| `v1.3` | 2026-09-28 | Tier 1 (T1C) | T0 ACCEPTED v1.2 planning SHA `e40a0b50863a3501f89943ba737592f1e2054e8d`. Phase-0 contract adoption/materialization (mechanical, not a new T1C correction batch): (1) replace nonexistent path `src/shared/auth/withIdempotency.ts` with existing canonical `src/shared/integrity/idempotency.ts`; (2) replace nonexistent path `src/lib/auth/session.ts` with existing canonical `src/shared/auth/auth-context.ts` (and additionally allow `src/shared/auth/server-session.ts` for Server Component session reading); (3) §6.1 AC-24 row rewritten to a real `AC-24` — I-07 control truthfulness row carrying v1.3 truthful controls (Spec version `v1.3`; Status `READY_TO_CODE`; Contract gate `READY_TO_CODE`; Contract accepted by T0 `YES`; Assurance lane `CRITICAL`; Audit mode `LIGHT`; implementation correction budget `1`; implementation correction batches used `0`; Test environment `REQUIRED`; Next gate `TIER1_IMPLEMENTATION_FREEZE`; Open Owner decisions `0`); (4) §0 control table rewritten to v1.3 fields (work type `IMPLEMENTATION`, planning correction budget `1` consumed by v1.1, T0 planning integrity exceptions used `1` consumed by v1.2, implementation correction budget `1`, implementation correction batches used `0`, test environment `REQUIRED`); (5) predecessor chain preserved: `5bb7581a` (v1.0), `f1fff224` (v1.1), `e40a0b5` (v1.2 ACCEPTED). No amend / reset / rebase / force-push. Strict UTF-8 no-BOM LF verified. Planning AC numbering stays exactly `AC-01..AC-28`; E2E chain stays exactly `AC-E2E-01..AC-E2E-22`. | `T0 → T1C — P1-A0.4 contract ACCEPTED + implementation authorization` |
 
 ---
 
-*This contract is in T0_REVIEW for the `verdict CHANGES_REQUIRED` follow-up. Tier 1 stops here. Implementation may begin only after T0 final review returns ACCEPTED on v1.2.*
+*This contract is v1.3, materializing T0 ACCEPTED v1.2 (`e40a0b50863a3501f89943ba737592f1e2054e8d`). Work type `IMPLEMENTATION`; Status `READY_TO_CODE`; Contract gate `READY_TO_CODE`; Next gate `TIER1_IMPLEMENTATION_FREEZE`. Tier 1 begins Phase 1 (separate worktree + branch `codex/t1c-p1a04-scoped-recruiter-authority-impl`) immediately. Implementation round does not consume T0 planning correction budgets or T0 planning integrity exceptions.*
