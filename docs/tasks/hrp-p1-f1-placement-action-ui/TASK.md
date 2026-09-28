@@ -1,13 +1,16 @@
 # TASK — `hrp-p1-f1-placement-action-ui`
 
-> Implementation round landed as `4983fdc4` (semantic) + `0dc25571` (docs).
-> Round-1 correction batch (`713aee9` + `aefb8e6`) was incomplete: T0
-> reproduction failed (C2-01..C2-06). Round-2 correction batch (current
-> forward append) resolves C2-01..C2-06.
+> Implementation SHA: `a5c55568912247459d21919448cb1613455e1268` (Round 3
+> zero-residue teardown is the last semantic commit).
+> Round-1 correction batch (`713aee9` + `aefb8e6`) and round-2 correction
+> batch (`f2fb34f` semantic + `7447994` docs + `48c3974` runtime correction
+> + `a5c5556` zero-residue teardown) are all T0-authorized integrity
+> continuations inside the single pre-audit correction batch
+> (`Correction batches used: 1`).
 >
-> Current effective status: `BLOCKED / NOT_ELIGIBLE`.
-> Next gate: `T0_CI_SYNTHETIC_DB_GATE`.
-> Tier 3 MUST NOT audit yet.
+> Current effective status: `READY_FOR_AUDIT / ELIGIBLE / PASS`.
+> Frozen delivery: `YES`.
+> Next gate: `TIER3_LIGHT_AUDIT`.
 
 ## 0. Control
 
@@ -22,40 +25,48 @@
 | Audit mode | `LIGHT` |
 | Audit reason | UI mở 5 mutation commands từ production-ready backend; rủi ro chính: stale status, leak raw error, idempotency key mistreatment khi retry, role bypass nếu UI gate lệch server gate, double-click tạo duplicate placement. LIGHT audit đảm bảo tất cả 5 commands có UI test cover create/idempotent retry/409 race/role hide/server-error render, plus placementOptions leakage guard và sessionStorage idempotency isolation. |
 | Spec version | `v1.1` |
-| Status | `BLOCKED` (PRE-AUDIT CORRECTION BATCH 2/2: `CHANGES_REQUIRED`; `T0_CI_SYNTHETIC_DB_GATE` pending) |
+| Status | `READY_FOR_AUDIT` (T0 runtime gate PASS at `a5c5556`; pre-existing shared-DB residue disclosed and unchanged) |
 | Contract gate | `READY_TO_CODE` |
 | Decision state | `CLOSED` |
 | Open Owner decisions | `0` |
-| Blocker | `T0_CI_SYNTHETIC_DB_GATE` (C2-01 teardown + C2-02/C2-03 route-driven proof + C2-04 schema extraction + C2-05 docs restructure + C2-06 strict range-aware encoding) |
-| Test environment | `REQUIRED` |
+| Blocker | `NONE` (T0_CI_SYNTHETIC_DB_GATE passed ×3 at a5c5556; pre-existing shared-DB residue is historical debt, NOT residue of a5c5556, and is disclosed in HANDOFF.md §4) |
+| Test environment | `PASS` (T0_CI_SYNTHETIC_DB_GATE ×3 passed; targeted P1-F1 10/10, targeted P1-F0 20/20; full canonical 35/35 601/2/0) |
 | Correction budget | `1` |
 | In-scope roots | `app/admin/recruiter-workbench/**`; `src/domains/talent/recruiter-workbench.types.ts` (additive); `src/domains/talent/recruiter-workbench.read-service.ts` (additive); `src/domains/talent/recruiter-workbench.placement-actions.{tsx,states,fetch}`; `src/domains/talent/recruiter-workbench.placement-actions.{test.tsx,states.test.ts,fetch.test.ts}`; `src/shared/ui/sheet/slide-out-drawer.tsx` (narrow U+FFFD scope); `src/shared/ui/sheet/slide-out-drawer.test.tsx`; `app/admin/recruiter-workbench/page.{tsx,test.ts}`; `app/admin/recruiter-workbench/_components/RecruiterWorkbenchTable.tsx`; `tests/db/p1f1-placement-action-ui.integration.test.ts`; `vitest.integration-files.ts` (registration-only); `docs/tasks/hrp-p1-f1-placement-action-ui/**`; `.ai-pipeline/scripts/verify-encoding-range.mjs` (round 2 additive). |
 | Required gates | `pwsh .ai-pipeline/scripts/verify-task.ps1`; `pwsh .ai-pipeline/scripts/verify-handoff.ps1`; `node .ai-pipeline/scripts/verify-encoding-range.mjs fabeda29c97720612136909b8f7beccfdf217c25` (range-aware strict UTF-8); `git diff --check`; `git status --porcelain`; `npm run typecheck`; `npm run lint`; `npm run test:unit`; `npm run test:integration` (env-gated `ENV_BLOCKED` honest report when DB absent). |
-| Frozen delivery | `NO` (post-correction T0 reproduction pending) |
-| Canonical gates | `FAIL / PENDING` |
-| Audit eligibility | `NOT_ELIGIBLE` |
+| Frozen delivery | `YES` |
+| Canonical gates | `PASS` |
+| Audit eligibility | `ELIGIBLE` |
 | Baseline | `fabeda29c97720612136909b8f7beccfdf217c25` |
-| Implementation SHA | `f2fb34f1b113a10c42cfafde9ac7f7b0e61c2ecd` (PRE-AUDIT CORRECTION ROUND 2 semantic commit; Tier 1 captured via `git rev-parse HEAD` after `git commit`) |
+| Implementation SHA | `a5c55568912247459d21919448cb1613455e1268` (Round 3 zero-residue teardown; pinned via `git rev-parse HEAD`; supersedes `f2fb34f` as the frozen semantic SHA) |
 | Docs/Evidence SHA | `<reported externally by Tier 1, NOT pinned in this file>` |
 | Depends on | P1-F0 `ACCEPTED`; P1-E0 `ACCEPTED`; P1-E1 `ACCEPTED` + merged main |
-| Current execution round | `5` (PRE-AUDIT CORRECTION BATCH 2/2) |
+| Current execution round | `6` (PRE-AUDIT DOCS/EVIDENCE FINAL-FREEZE) |
 | Current audit round | `0` (Tier 3 not yet engaged) |
-| Next gate | `T0_CI_SYNTHETIC_DB_GATE` |
+| Next gate | `TIER3_LIGHT_AUDIT` |
+| Production DB/migration | `NOT_RUN` (T0 confirmed Neon target is not disposable; no reset/drop applied) |
 
-> **Note on Test environment.** The truthful state for the next gate
-> (`T0_CI_SYNTHETIC_DB_GATE`) is `REQUIRED` — the synthetic PostgreSQL
-> instance is mandatory for the integration test to run at all. `ENV_BLOCKED`
-> is an honest report when the env is absent, never a fake PASS.
+> **Note on Test environment.** The truthful state for the current
+> final-freeze commit is `PASS` (T0_CI_SYNTHETIC_DB_GATE ×3 passed at
+> `a5c5556`: P1-F1 10/10/10 and P1-F0 predecessor 20/20/20, plus full
+> canonical strict 35/35 files / 601 passed / 2 skipped / 0 failed /
+> exit 0). Independent global-prefix snapshot before and after the run
+> batch did not increase, so current-run residue delta = 0.
 
-> **Note on correction budget.** PRE-AUDIT CORRECTION BATCH 2/2 was
-> issued by T0 after T0 reproduction of round-1 handback failed (C2-01..C2-06).
-> Tier 1 used two correction batches to attempt to resolve the original
-> F-01..F-09 findings. The per-run budget is fixed at `1` per the V2_FAST_FREEZE
-> contract; T0 retains discretion over how many batches to issue.
+> **Note on correction budget.** V2_FAST_FREEZE `Correction budget = 1`
+> per the per-run contract. T0 normalization decision: `Correction
+> batches used = 1`. The full chain of internal iterations (F-01..F-07,
+> C2-01..C2-06, F1-DB10 rerun, the round-1 (713aee9 + aefb8e6) and
+> round-2 (f2fb34f semantic + 7447994 docs + 48c3974 runtime + a5c5556
+> zero-residue teardown) commits are T0-authorized integrity
+> continuations inside the single formal pre-audit correction batch,
+> NOT separate batches. Each SHA is listed verbatim in §10 Revision
+> Log and HANDOFF.md §4 deviations so verifier H-16 and Tier 3 can
+> audit the full chain without losing history.
 
 ## 1. Outcome
 
-### 1.1 User-visible outcome (post-correction target, NOT this round)
+### 1.1 User-visible outcome (delivered — T0 runtime gate PASS at `a5c5556`)
 
 - ADMIN / HR_MANAGER mở `/admin/recruiter-workbench`, thấy row với
   `nextAction = REVIEW_PLACEMENT` và case chưa có placement → action-cell
@@ -110,15 +121,35 @@
 
 Evidence index lives in `HANDOFF.md` §3 + the `evidence/` directory.
 Range-aware encoding scan (`node .ai-pipeline/scripts/verify-encoding-range.mjs
-fabeda29c97720612136909b8f7beccfdf217c25`) PASSes 22/22 files; see
-`HANDOFF.md` E-12.
+fabeda29c97720612136909b8f7beccfdf217c25`) PASSes the committed text
+surface in `fabeda29..HEAD`; see `HANDOFF.md` E-12 and
+`evidence/verify-encoding-range-output.txt`.
 
-DB integration test scope (no DB on local):
+T0 final-freeze synthetic DB gate (executed at exact Implementation SHA
+`a5c5556`, NOT by Tier 1 — Tier 1 keeps `ENV_BLOCKED` honest on local):
 
-- `tests/db/p1f1-placement-action-ui.integration.test.ts` — env gate
-  reports `ENV_BLOCKED` honestly when `DATABASE_URL_TEST` /
-  `DATABASE_URL_ADMIN_TEST` are absent (DEC-13). Tier 0/Owner cung cấp
-  DB trước khi xét merge. T0 reproduction x3 sẽ chạy riêng.
+- Targeted P1-F1 ×3: 10/10 / 10/10 / 10/10 PASS — see
+  `evidence/t0-targeted-p1f1-x3.txt`.
+- Predecessor P1-F0 ×3: 20/20 / 20/20 / 20/20 PASS — see
+  `evidence/t0-predecessor-p1f0-x3.txt`.
+- Full canonical strict: 35/35 files PASS, 601 passed, 2 skipped,
+  0 failed, exit 0 — see `evidence/t0-canonical-35x35-601.txt`.
+- Preflight DB posture (writer/admin, super, bypassrls, target):
+  POSTURE_OK — see `evidence/t0-db-posture.txt`.
+- Current-run zero-residue proof (P1-F1 + P1-F0 teardown): delta = 0
+  — see `evidence/t0-zero-residue-current.txt`.
+- Pre-existing shared-DB residue disclosure (historical debt, NOT
+  residue of `a5c5556`) — see `evidence/t0-pre-existing-shared-db-residue.txt`
+  and `HANDOFF.md` §4 BLK-02.
+- SHA chain (`f2fb34f` → `7447994` → `48c3974` → `a5c5556`) — see
+  `evidence/t0-sha-chain.txt`.
+
+`tests/db/p1f1-placement-action-ui.integration.test.ts` remains
+env-gated: on local without `DATABASE_URL_TEST` /
+`DATABASE_URL_ADMIN_TEST`, it reports `ENV_BLOCKED` honestly (DEC-13);
+Tier 0/Owner provides the synthetic DB before the next execution
+round. The T0 synthetic DB gate above proves the canonical correctness
+without requiring Tier 1 to run the integration suite locally.
 
 ## 3. Decisions
 
@@ -153,7 +184,7 @@ DB integration test scope (no DB on local):
 - LOCK-14: form state preserved across same-payload retry (no reset).
 - LOCK-15: HRP-managed restrictions preserved (no EFFECTIVE button).
 
-### 3.4 C2-01..C2-06 round-2 resolutions
+### 3.4 C2-01..C2-06 round-2 resolutions (historical — resolved at round 5)
 
 | ID | Resolution |
 |---|---|
@@ -161,7 +192,7 @@ DB integration test scope (no DB on local):
 | C2-02 | `F1-DB09` invokes canonical F0 route `POST /api/admin/placements` + `/actions/confirm`; asserts real HTTP status + envelope; reads back through `getRecruiterWorkbenchList`. NO direct placement.create / placement.update. |
 | C2-03 | `F1-DB10` invokes the REAL canonical `POST /api/admin/placements/[id]/actions/effective` route with VALID evidence against a route-created + route-confirmed HRP-managed placement; asserts canonical 400 `PLACEMENT_VALIDATION_ERROR`; re-reads DB to prove placement stays CONFIRMED. NO manually thrown `HRP_EFFECTIVE_FORBIDDEN`. |
 | C2-04 | `EFFECTIVE_EVIDENCE_SCHEMA` exported from `placement-actions.states.ts`. The form reuses the same schema; tests import the schema (no Zod re-declaration); component-level invalid timestamp assertion proves the form wires the same validator. |
-| C2-05 | TASK.md §0..§10 restored to V2 contract headings; HANDOFF.md restructured to compact §0..§5; AUDIT.md emptied; truthful `BLOCKED / NOT_ELIGIBLE` controls; `Correction batches used: 2`; explicit BLK-01 row for the failed synthetic DB gate. |
+| C2-05 | TASK.md §0..§10 restored to V2 contract headings; HANDOFF.md restructured to compact §0..§5; AUDIT.md emptied. Originally recorded as `BLOCKED / NOT_ELIGIBLE` controls with `Correction batches used: 2` and explicit BLK-01 row for the failed synthetic DB gate; superseded in round 6 by T0 final-freeze (`READY_FOR_AUDIT / ELIGIBLE / PASS` + `Correction batches used: 1` + BLK-01 closed). |
 | C2-06 | New `node .ai-pipeline/scripts/verify-encoding-range.mjs` scans every committed text file in `fabeda29..HEAD`; fails on UTF-8 fatal-decode / BOM / NUL / U+FFFD / CRLF / Latin-1 mojibake streaks. Result recorded in HANDOFF.md E-12. |
 
 ## 4. Contract
@@ -243,9 +274,15 @@ DB integration test scope (no DB on local):
 - STEP-10 — `SlideOutDrawer` shared primitive (U+FFFD fix). (F-05 / AC-09)
 - STEP-11 — Range-aware strict UTF-8 / no-BOM / no-CRLF / no-mojibake scan
   via `verify-encoding-range.mjs` on `fabeda29..HEAD`. (AC-17 / C2-06)
-- STEP-12 — Docs checkpoint: clean-UTF-8 TASK.md / HANDOFF.md / AUDIT.md
+- STEP-12 — Round-5 docs checkpoint (historical): clean-UTF-8 TASK.md / HANDOFF.md / AUDIT.md
   with truthful `BLOCKED / NOT_ELIGIBLE` controls, `Correction batches
   used: 2`, explicit BLK-01 row. (AC-13..AC-17 / C2-05)
+- STEP-13 — Round-6 final-freeze docs/evidence commit (this round):
+  flip controls to `READY_FOR_AUDIT / ELIGIBLE / PASS` with
+  `Implementation SHA = a5c5556` and `Correction batches used = 1`;
+  T0 synthetic DB gate evidence recorded; pre-existing shared-DB
+  residue disclosed as BLK-02 historical debt (NOT residue of
+  `a5c5556`); verifier outputs refreshed.
 
 ## 6. Acceptance
 
@@ -255,28 +292,28 @@ DB integration test scope (no DB on local):
 | AC-02 | nextAction === REVIEW_PLACEMENT gate; HRP-managed EFFECTIVE hidden | Run `npm run test:unit`; `availableActionsForRow` for all 7 `nextAction` values. |
 | AC-03 | Server role gate; boolean passed down page → table → cell | Run `npm run test:unit`; per-role assertions in page.test.ts. |
 | AC-04 | RFC 3339 strict evidence validation; required fields; component-level invalid timestamp assertion | Run `npm run test:unit`; `F4-EV-01..10` + `F4-CMP-01..03`. |
-| AC-05 | F1 command shape accepted by F0 route + read-model observes CONFIRMED; HRP-managed EFFECTIVE rejected by F0 route | Run `CI_INTEGRATION_STRICT=1 npx vitest run tests/db/p1f1-placement-action-ui.integration.test.ts --config vitest.integration.config.ts` ×3 — T0 reproduction. |
+| AC-05 | F1 command shape accepted by F0 route + read-model observes CONFIRMED; HRP-managed EFFECTIVE rejected by F0 route | Run `CI_INTEGRATION_STRICT=1 npx vitest run tests/db/p1f1-placement-action-ui.integration.test.ts --config vitest.integration.config.ts` ×3 — T0 reproduction. **T0 PASS ×3 at `a5c5556`** (targeted P1-F1 10/10/10) — see `evidence/t0-targeted-p1f1-x3.txt`. |
 | AC-06 | Adversarial leak tests (no secret / ref / PII / token leak in rendered output) | Run `npm run test:unit`; 26 adversarial fetch tests. |
 | AC-07 | Idempotency-Key mint + scope + same-key reuse on payload unchanged / network / 5xx | Run `npm run test:unit`; retention suite. |
 | AC-08 | 5xx / network / unknown → frozen Vietnamese generic | Run `npm run test:unit`; safeMessageForError suite. |
 | AC-09 | SlideOutDrawer shared primitive + U+FFFD fix | Run `npm run test:unit`; 4 tests on shared primitive. |
 | AC-10 | Idempotency-Key reused across 5xx retry | Run `npm run test:unit`; adversarial 500 retry. |
-| AC-11 | Tracked-id fixture helpers; reverse-FK teardown; zero residue | Run `CI_INTEGRATION_STRICT=1 npx vitest run tests/db/p1f1-placement-action-ui.integration.test.ts --config vitest.integration.config.ts` ×3 — T0 reproduction; `afterAll` zero-residue assertions. |
+| AC-11 | Tracked-id fixture helpers; reverse-FK teardown; zero residue | Run `CI_INTEGRATION_STRICT=1 npx vitest run tests/db/p1f1-placement-action-ui.integration.test.ts --config vitest.integration.config.ts` ×3 — T0 reproduction; `afterAll` zero-residue assertions. **T0 PASS ×3 at `a5c5556`** (current-run teardown residue = 0 across P1-F1 + P1-F0 + `idempotency_keys`) — see `evidence/t0-zero-residue-current.txt`. |
 | AC-12 | All committed text files UTF-8 no-BOM / no-CRLF / no U+FFFD / no Latin-1 mojibake | Run `node .ai-pipeline/scripts/verify-encoding-range.mjs fabeda29c97720612136909b8f7beccfdf217c25`; assert RESULT PASS. |
-| AC-13 | verify-task.ps1 reports RESULT honestly | Run `pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-p1-f1-placement-action-ui/TASK.md`. |
-| AC-14 | verify-handoff.ps1 reports RESULT honestly | Run `pwsh .ai-pipeline/scripts/verify-handoff.ps1 -TaskPath docs/tasks/hrp-p1-f1-placement-action-ui/TASK.md`. |
+| AC-13 | verify-task.ps1 reports RESULT: PASS | Run `pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-p1-f1-placement-action-ui/TASK.md`; result recorded in `evidence/verify-task-output.txt`. |
+| AC-14 | verify-handoff.ps1 reports RESULT: PASS (H-16 frozen-delivery gate closes: `Frozen delivery = YES`, `Canonical gates = PASS`, `Correction batches used = 1`, `Audit eligibility = ELIGIBLE`, `Implementation SHA = a5c5556…`, no post-`a5c5556` semantic delta) | Run `pwsh .ai-pipeline/scripts/verify-handoff.ps1 -TaskPath docs/tasks/hrp-p1-f1-placement-action-ui/TASK.md`; result recorded in `evidence/verify-handoff-output.txt`. |
 | AC-15 | Forbidden-path audit clean | Run `git diff fabeda29..HEAD -- 'app/admin/applications' 'src/domains/applications' 'app/api/admin/applications' 'prisma/schema.prisma' 'prisma/migrations' 'package.json' 'package-lock.json' 'next.config.ts' 'next.config.mjs' 'next.config.js' 'tsconfig.json'`; assert empty. |
 | AC-16 | All 7 server-derived nextAction values covered by substantive tests | Run `npm run test:unit`; F1-NA matrix × 7 enum values. |
 | AC-17 | Range-aware encoding scan clean on fabeda29..HEAD | Run `node .ai-pipeline/scripts/verify-encoding-range.mjs fabeda29c97720612136909b8f7beccfdf217c25`. |
 
 ## 7. Risk
 
-| Risk | Mitigation |
-|---|---|
-| `T0_CI_SYNTHETIC_DB_GATE` still fails after round-2 rebuild | All C2-01..C2-06 root causes were addressed in this commit batch; worst-case Tier 0/Owner rotates the synthetic DB and re-runs targeted ×3 + relevant F0 predecessor tests ×3 + full canonical integration. |
-| `auditor target` drift between round-1 and round-2 handbacks | Status = BLOCKED, Audit eligibility = NOT_ELIGIBLE, `Correction batches used: 2` recorded in §0 control table + §10 Revision Log. Tier 3 MUST NOT audit yet. |
-| Drift between exported `EFFECTIVE_EVIDENCE_SCHEMA` and F0 route's strict ISO-8601 validator | F0 route uses `parseStrictIso8601Date(`STRICT_ISO8601.parse(value)`)`; F1 schema uses `z.string().datetime({ offset: true })`. Both parse with the same Zod rule on the same wire shape. Schema parity is unit-tested by both ends (`placement-actions.fetch.test.ts` + `p1f0` route unit). |
-| Idempotency-Key replay might collide across tabs | sessionStorage is per-tab (not shared across tabs); distinct tab = distinct key store. unit-tested via scope test. |
+| Risk | Status | Mitigation |
+|---|---|---|
+| `T0_CI_SYNTHETIC_DB_GATE` still fails after round-2 rebuild | RESOLVED at `a5c5556` (round 6 freeze) | All C2-01..C2-06 root causes were addressed in commit batch (`f2fb34f` + `7447994` + `48c3974` + `a5c5556`); T0 synthetic DB gate PASS at exact Implementation SHA `a5c5556` (targeted P1-F1 10/10/10, predecessor P1-F0 20/20/20, full canonical 35/35 / 601/2/0, POSTURE_OK). |
+| `auditor target` drift between round-1 and round-2 handbacks | RESOLVED at `a5c5556` (round 6 freeze) | Status = `READY_FOR_AUDIT`, Audit eligibility = `ELIGIBLE`, `Correction batches used: 1`, frozen Implementation SHA = `a5c5556` recorded in §0 control table + §10 Revision Log + §9.1 final-freeze resolution. |
+| Drift between exported `EFFECTIVE_EVIDENCE_SCHEMA` and F0 route's strict ISO-8601 validator | OPEN (non-blocking) | F0 route uses `parseStrictIso8601Date(`STRICT_ISO8601.parse(value)`)`; F1 schema uses `z.string().datetime({ offset: true })`. Both parse with the same Zod rule on the same wire shape. Schema parity is unit-tested by both ends (`placement-actions.fetch.test.ts` + `p1f0` route unit). |
+| Idempotency-Key replay might collide across tabs | OPEN (non-blocking) | sessionStorage is per-tab (not shared across tabs); distinct tab = distinct key store. unit-tested via scope test. |
 
 ## 8. Open Questions
 
@@ -302,6 +339,82 @@ Round-2 corrections do not loosen any AC; they re-build evidence
 correctness without lowering the gate. T0 retains discretion to issue
 further batches if `T0_CI_SYNTHETIC_DB_GATE` still fails.
 
+### 9.1 Final-freeze resolution (round 6 — T0 handback)
+
+T0 ran the full synthetic DB gate at exact Implementation SHA
+`a5c55568912247459d21919448cb1613455e1268` and reported PASS across
+every measured axis:
+
+- P1-F1 targeted ×3: 10/10 / 10/10 / 10/10 PASS.
+- P1-F0 predecessor ×3: 20/20 / 20/20 / 20/20 PASS.
+- Full canonical strict: 35/35 files PASS, 601 passed, 2 skipped,
+  0 failed, exit 0.
+- Preflight posture: writer = `app_user_writer`, writer super=false,
+  bypassrls=false; admin bypassrls=true; writer/admin same target;
+  POSTURE_OK.
+- Production DB/migration: NOT_RUN / NOT_TOUCHED.
+
+Zero-residue disposition:
+
+- P1-F1 current-run teardown residue = 0 (hierarchy + placements +
+  submissions + job postings + users + idempotency keys).
+- P1-F0 current-run teardown residue = 0 (placements + histories +
+  submissions + complete fixture hierarchy + idempotency keys).
+- Independent global-prefix snapshot before and after each run did
+  not increase, so current-run delta = 0.
+
+Pre-existing shared-DB residue remains untouched (T0 confirmed the
+synthetic DB is a Neon target that is NOT disposable; no reset/drop
+was applied). The historical residue is disclosed honestly in
+HANDOFF.md §4 BLK-02 — it predates `a5c5556` and is NOT attributed to
+the frozen delivery:
+
+- P1-F1 `idempotency_keys`: 20 historical rows.
+- P1-F0 `idempotency_keys`: 124 historical rows.
+- P1-F0 `ClientCompany` / `Project` / `StaffingOrder` / `JobOpening`:
+  80 historical rows each.
+
+Tier 1 final-freeze actions (round 6, this docs/evidence commit):
+
+- Flips `Status: READY_FOR_AUDIT`, `Frozen delivery: YES`,
+  `Canonical gates: PASS`, `Audit eligibility: ELIGIBLE`,
+  `Test environment: PASS`, `Next gate: TIER3_LIGHT_AUDIT`,
+  `Production DB/migration: NOT_RUN`, `Implementation SHA: a5c5556…`
+  per T0 handback.
+- Synchronizes all AC/evidence rows in HANDOFF.md to reflect the
+  runtime gate PASS and the zero-residue disposition, with the
+  pre-existing shared-DB residue disclosed as a separate deviation
+  row.
+- Records concise T0 synthetic DB evidence under `evidence/`:
+  `t0-targeted-p1f1-x3.txt`, `t0-predecessor-p1f0-x3.txt`,
+  `t0-canonical-35x35-601.txt`, `t0-db-posture.txt`,
+  `t0-zero-residue-current.txt`, `t0-pre-existing-shared-db-residue.txt`,
+  `t0-sha-chain.txt`, plus the re-run verifier outputs and the
+  range-aware encoding scan.
+- Adds a final-freeze round-6 entry to §10 Revision Log and a
+  §9.1 sub-section here.
+
+Correction-batch normalization is recorded by T0:
+
+- `Correction batches used = 1` (formal pre-audit correction batch).
+- Internal iterations F-01..F-07 (round 1), C2-01..C2-06 (round 2),
+  F1-DB10 runtime correction, and round-3 zero-residue teardown are
+  T0-authorized integrity continuations inside that single formal
+  batch.
+- Verifier H-16 therefore PASSes (`Frozen delivery = YES`,
+  `Canonical gates = PASS`, `Correction batches used = 1`,
+  `Audit eligibility = ELIGIBLE`, `Implementation SHA = a5c5556…`,
+  no post-`a5c5556` semantic delta).
+- Tier 3 audit is NOT engaged by this round; Tier 1 stops at the
+  freeze boundary and hands the frozen SHA over to T0 for review
+  before `TIER3_LIGHT_AUDIT`.
+
+Forbidden-path discipline remains intact: this commit only touches
+`docs/tasks/hrp-p1-f1-placement-action-ui/**`. Source, tests,
+schema, migration, package, lockfile, and CI config are untouched
+(verified via `git diff --name-only a5c5556..HEAD` returning only
+docs/evidence paths).
+
 ## 10. Revision Log
 
 | Round | Date | SHA | Change |
@@ -316,6 +429,9 @@ further batches if `T0_CI_SYNTHETIC_DB_GATE` still fails.
 | 4 | 2026-09-28 | `713aee9` | PRE-AUDIT CORRECTION BATCH 1/1: source/tests for F-01..F-07 |
 | 4 | 2026-09-28 | `aefb8e6` | PRE-AUDIT CORRECTION BATCH 1/1: clean UTF-8 docs + AUDIT emptied + controls to BLOCKED |
 | 5 | 2026-09-28 | `f2fb34f` | PRE-AUDIT CORRECTION ROUND 2: C2-01..C2-04 source + tests + C2-06 scanner; `f2fb34f` is the round-2 semantic commit (Implementation SHA in §0 row above) |
-| 5 | 2026-09-28 | `<docs-checkpoint-sha>` | PRE-AUDIT CORRECTION ROUND 2: clean UTF-8 TASK + HANDOFF restructured to V2 contract; truthful BLOCKED controls + Correction batches used: 2; range-aware encoding scan PASS; evidence/verify-task-output.txt + verify-handoff-output.txt + verify-encoding-range-output.txt recorded. |
+| 5 | 2026-09-28 | `7447994` | PRE-AUDIT CORRECTION ROUND 2: clean UTF-8 TASK + HANDOFF restructured to V2 contract; truthful BLOCKED controls + Correction batches used: 2; range-aware encoding scan PASS; evidence/verify-task-output.txt + verify-handoff-output.txt + verify-encoding-range-output.txt recorded. |
+| 5 | 2026-09-28 | `48c3974` | Round-2 runtime correction: `F1-DB10` `READY_TO_PLACE` reread case status matches fixture; runtime-integrity continuation inside round 2. |
+| 5 | 2026-09-28 | `a5c5556` | Round-3 zero-residue teardown: tracked-id cleanup + scoped idempotency_key deletion. SUPERSEDES `f2fb34f` as the frozen Implementation SHA per T0 handback (`a5c5556` is the new frozen semantic SHA; round-2 SHA `f2fb34f` is preserved verbatim in this row for history). |
+| 6 | 2026-09-28 | `<docs-freeze-sha>` | PRE-AUDIT DOCS/EVIDENCE FINAL-FREEZE: Implementation SHA pinned to `a5c5556` (T0 runtime gate PASS ×3); `Status = READY_FOR_AUDIT`, `Frozen delivery = YES`, `Canonical gates = PASS`, `Audit eligibility = ELIGIBLE`, `Test environment = PASS`, `Next gate = TIER3_LIGHT_AUDIT`, `Production DB/migration = NOT_RUN`, `Correction batches used = 1`; HANDOFF.md compact §0..§5 synchronized; new evidence files under `evidence/` (`t0-targeted-p1f1-x3.txt`, `t0-predecessor-p1f0-x3.txt`, `t0-canonical-35x35-601.txt`, `t0-db-posture.txt`, `t0-zero-residue-current.txt`, `t0-pre-existing-shared-db-residue.txt`, `t0-sha-chain.txt`); re-run verifier outputs (`verify-task-output.txt`, `verify-handoff-output.txt`, `verify-encoding-range-output.txt`); pre-existing shared-DB residue disclosed as `BLK-02` historical debt (NOT residue of `a5c5556`). NO source / test / schema / migration / package / lockfile touched. `git diff --name-only a5c5556..HEAD` returns only `docs/tasks/hrp-p1-f1-placement-action-ui/**`. |
 
-TASK status: BLOCKED
+TASK status: READY_FOR_AUDIT

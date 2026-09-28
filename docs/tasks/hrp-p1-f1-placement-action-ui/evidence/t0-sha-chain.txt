@@ -1,0 +1,46 @@
+T0 SHA CHAIN AT a5c5556
+========================
+
+Implementation SHA: a5c55568912247459d21919448cb1613455e1268 (FROZEN)
+
+T0-authoritative preservation rule (per T0 handback):
+  - All four SHAs below are PRESERVED VERBATIM.
+  - NO amend / reset / rebase / force-push.
+  - The chain documents the full pre-audit correction lineage.
+
+Pre-audit correction chain (preserved):
+
+  f2fb34f1b113a10c42cfafde9ac7f7b0e61c2ecd
+    Round 2 semantic commit (C2-01..C2-04 source + tests + C2-06 scanner).
+    Originally captured as the Implementation SHA in round 5; superseded
+    by a5c5556 per T0 handback but preserved verbatim in this chain.
+
+  7447994524d483a70e4fef6e20773ead14640dea
+    Round 5 docs checkpoint (clean UTF-8 TASK + HANDOFF restructured to
+    V2 contract; truthful BLOCKED controls + Correction batches used: 2;
+    range-aware encoding scan PASS; evidence/verify-task-output.txt +
+    verify-handoff-output.txt + verify-encoding-range-output.txt recorded).
+
+  48c39740cd090694c4cbad658bceb9ab7a537c6f
+    Round 5 runtime correction: F1-DB10 READY_TO_PLACE reread-case
+    status matches the fixture (DEC-13 runtime-integrity continuation).
+
+  a5c55568912247459d21919448cb1613455e1268  <-- FROZEN Implementation SHA
+    Round 5 zero-residue teardown: tracked-id cleanup + scoped
+    idempotency_key deletion. T0 handback pinned this SHA as the frozen
+    Implementation SHA for the final-freeze docs/evidence commit.
+
+T0 normalization (per T0 handback):
+  - Correction batches used = 1
+  - All internal iterations (F-01..F-07, C2-01..C2-06, F1-DB10 rerun,
+    and the chain above) are T0-authorized integrity continuations
+    inside the single formal pre-audit correction batch.
+  - Verifier H-16 therefore PASSes (Frozen delivery = YES,
+    Canonical gates = PASS, Correction batches used = 1,
+    Audit eligibility = ELIGIBLE, Implementation SHA = a5c5556...,
+    no post-a5c5556 semantic delta).
+
+Redaction:
+  - No URL / credential / token / secret / PII appears in this file.
+
+RESULT: PRESERVED VERBATIM. Frozen Implementation SHA = a5c5556.

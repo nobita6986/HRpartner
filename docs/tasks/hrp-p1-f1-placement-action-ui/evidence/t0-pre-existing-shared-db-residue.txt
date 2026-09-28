@@ -1,0 +1,42 @@
+T0 PRE-EXISTING SHARED-DB RESIDUE DISCLOSURE
+=============================================
+
+Implementation SHA: a5c55568912247459d21919448cb1613455e1268
+
+The synthetic PostgreSQL target is a Neon instance that Tier 0/Owner
+has not declared disposable. T0 confirmed that NO reset/drop was
+applied during the synthetic DB gate.
+
+The pre-existing residue below was created by prior run batches
+executed BEFORE commit a5c5556 and remains on the shared database.
+This residue is NOT attributed to a5c5556; it is pre-existing
+synthetic-DB debt that is out of scope for the F1 frozen delivery.
+
+Counts (T0 snapshot, per T0 handback):
+
+  P1-F1 idempotency_keys:                20 historical rows
+  P1-F0 idempotency_keys:               124 historical rows
+  P1-F0 ClientCompany:                   80 historical rows
+  P1-F0 Project:                         80 historical rows
+  P1-F0 StaffingOrder:                   80 historical rows
+  P1-F0 JobOpening:                      80 historical rows
+
+Disclosure rule (Tier 0 00-global-rules section 2):
+  - Every "đã chạy / đã pass / đã sửa" claim must be backed by
+    command / output or equivalent proof.
+  - This file discloses the historical debt without hiding it.
+  - The current-run teardown residue is independently asserted to be 0
+    (see evidence/t0-zero-residue-current.txt), so the pre-existing
+    residue does not contaminate the frozen delivery.
+
+Resolution:
+  - Reset / drop of the synthetic Neon target is out of scope for
+    Tier 1 and was explicitly declined by T0 in the handback.
+  - Owner / Tier 0 may rotate the synthetic DB out-of-band in a
+    separate, owner-approved task.
+
+Redaction:
+  - No URL / credential / token / secret / PII appears in this file.
+  - No actual row contents are recorded; only counts.
+
+RESULT: DISCLOSED (pre-existing synthetic-DB debt, NOT residue of a5c5556).

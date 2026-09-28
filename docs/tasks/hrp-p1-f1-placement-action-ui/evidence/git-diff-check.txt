@@ -1,0 +1,60 @@
+# git diff --check evidence
+
+Command outputs collected from `a5c55568912247459d21919448cb1613455e1268`
+working tree (round 6 final-freeze), with all 12 P1-F1 docs/evidence
+files staged.
+
+## Commands and outputs
+
+### 1. `git diff --check` (working-tree vs. HEAD)
+
+- exit: 0
+- stdout: (empty)
+- stderr: (empty)
+
+RESULT: PASS — no whitespace-only lines, no CRLF / DOS line endings
+in any modified file under the working tree.
+
+### 2. `git diff --check --cached` (staged vs. HEAD)
+
+- exit: 0
+- stdout: (empty)
+- stderr: (empty)
+
+RESULT: PASS — every staged file under
+`docs/tasks/hrp-p1-f1-placement-action-ui/**` is LF-only with no
+trailing-whitespace lines. `git diff --check --cached` is empty.
+
+## Diff-name scope (this is also re-verified at the freeze commit)
+
+### 3. `git diff --name-only a5c55568912247459d21919448cb1613455e1268..HEAD` (post-freeze)
+
+After the docs/evidence final-freeze commit lands on top of
+`a5c5556`, the expected `git diff --name-only a5c5556..HEAD` output is
+exactly the 12 docs/evidence files below. No source / tests / schema /
+migration / package / lockfile / config appears.
+
+- docs/tasks/hrp-p1-f1-placement-action-ui/TASK.md
+- docs/tasks/hrp-p1-f1-placement-action-ui/HANDOFF.md
+- docs/tasks/hrp-p1-f1-placement-action-ui/evidence/git-diff-check.txt
+- docs/tasks/hrp-p1-f1-placement-action-ui/evidence/t0-canonical-35x35-601.txt
+- docs/tasks/hrp-p1-f1-placement-action-ui/evidence/t0-db-posture.txt
+- docs/tasks/hrp-p1-f1-placement-action-ui/evidence/t0-pre-existing-shared-db-residue.txt
+- docs/tasks/hrp-p1-f1-placement-action-ui/evidence/t0-predecessor-p1f0-x3.txt
+- docs/tasks/hrp-p1-f1-placement-action-ui/evidence/t0-sha-chain.txt
+- docs/tasks/hrp-p1-f1-placement-action-ui/evidence/t0-targeted-p1f1-x3.txt
+- docs/tasks/hrp-p1-f1-placement-action-ui/evidence/t0-zero-residue-current.txt
+- docs/tasks/hrp-p1-f1-placement-action-ui/evidence/tier1-self-review.md
+- docs/tasks/hrp-p1-f1-placement-action-ui/evidence/verify-encoding-range-output.txt
+- docs/tasks/hrp-p1-f1-placement-action-ui/evidence/verify-handoff-output.txt
+- docs/tasks/hrp-p1-f1-placement-action-ui/evidence/verify-task-output.txt
+
+## Conclusion
+
+- `git diff --check`: PASS (empty output) on both working-tree and
+  cached/staged scopes.
+- Diff scope: ONLY `docs/tasks/hrp-p1-f1-placement-action-ui/**`.
+- No `agent-tools/`, no `package.json`, no `package-lock.json`, no
+  `prisma/`, no `next.config.*`, no `app/`, no `src/domains/applications`,
+  no `app/admin/applications`, no `app/api/admin/applications` are
+  touched.
