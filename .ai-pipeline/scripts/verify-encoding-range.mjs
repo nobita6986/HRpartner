@@ -22,7 +22,7 @@
  * Exit codes: 0 = PASS (0 violations); 2 = FAIL (>=1 violation).
  * Output: summary line + per-file failure detail.
  */
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 
 const baseline = process.argv[2];
 const head = process.argv[3] ?? 'HEAD';
@@ -31,15 +31,25 @@ if (!baseline) {
   process.exit(2);
 }
 
-// Helper: run git and return trimmed stdout.
-function git(args) {
-  return execFileSync('git', args, { encoding: 'utf8' });
+// Helper: run git and return RAW BYTES (Buffer). We must avoid the UTF-16
+// transcoding that execFileSync({encoding: 'utf8'}) triggers on Windows
+// PowerShell, which inserts a BOM and NUL padding.
+function gitBytes(args) {
+  const res = spawnSync('git', args, { encoding: 'buffer', shell: false });
+  if (res.status !== 0) {
+    throw new Error(`git ${args.join(' ')} exited ${res.status}: ${res.stderr?.toString('utf8') ?? ''}`);
+  }
+  return res.stdout ?? Buffer.alloc(0);
+}
+
+function gitText(args) {
+  return gitBytes(args).toString('utf8');
 }
 
 // List committed files in the range (rename-aware). Excludes binary files
 // by their Git attributes (the `--diff` and `git diff` output formats we
 // use make that distinction explicit).
-const filesRaw = git([
+const filesRaw = gitText([
   'diff',
   '--name-only',
   '--diff-filter=ACMRTUXB',
@@ -56,7 +66,7 @@ if (fileList.length === 0) {
 
 // Determine which files are text. We follow git's own classification by
 // reading `git diff` (which marks binary files with `Binary files ...`).
-const diffRaw = git([
+const diffRaw = gitText([
   'diff',
   '--numstat',
   `${baseline}..${head}`,
@@ -79,7 +89,7 @@ const violations = [];
 for (const relPath of fileList) {
   let bytes;
   try {
-    bytes = git(['show', `${head}:${relPath}`]);
+    bytes = gitBytes(['show', `${head}:${relPath}`]);
   } catch (err) {
     violations.push({
       path: relPath,
@@ -88,9 +98,9 @@ for (const relPath of fileList) {
     continue;
   }
   // Skip files > 2 MiB (typical binary lim).
-  if (Buffer.byteLength(bytes, 'utf8') > 2 * 1024 * 1024) continue;
+  if (bytes.length > 2 * 1024 * 1024) continue;
 
-  const textIssues = checkOne(relPath, Buffer.from(bytes, 'utf8'));
+  const textIssues = checkOne(relPath, bytes);
   for (const issue of textIssues) violations.push({ path: relPath, ...issue });
 }
 

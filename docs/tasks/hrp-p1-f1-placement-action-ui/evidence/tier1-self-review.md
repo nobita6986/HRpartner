@@ -1,40 +1,53 @@
-# Tier 1 self-review — `hrp-p1-f1-placement-action-ui`
+# Tier 1 self-review — `hrp-p1-f1-placement-action-ui` (round 2)
 
-> **Not an authoritative audit.** Tier 3 will produce the real LIGHT
-> audit report. This note is the Tier 1 self-check performed before
-> the PRE-AUDIT CORRECTION BATCH 1/1 handback to T0.
+This is a Tier 1 internal self-review only. It is NOT the authoritative
+audit evidence; the Tier 3 AUDIT.md is the authoritative artifact.
 
-## Pre-freeze state
+## What this round changed
 
-- V2_FAST_FREEZE: implementation round + docs/evidence round landed as
-  `4983fdc4` (semantic code) + `0dc25571` (docs/evidence).
-- Tier 1 attempted a self-review and authored `AUDIT.md`.
-- Tier 0 ran the synthetic DB integration test and reported
-  `CHANGES_REQUIRED` with F-01..F-09 (BLOCKED / NOT_ELIGIBLE).
+- C2-01 — single canonical `makeSubmission` helper in the DB integration test;
+  every `CandidateSubmission` (incl. legacy slot=null) routes through it;
+  tracked-id push is unconditional. The round-1 `F1-DB05` direct
+  `admin.candidateSubmission.create` was deleted.
+- C2-02 — `F1-DB09` now invokes the canonical F0 `POST /api/admin/placements`
+  + `/actions/confirm` route handlers with real `x-idempotency-key` UUID
+  v4. No direct `placement.create` / `placement.update` remains in the F1
+  proof.
+- C2-03 — `F1-DB10` now creates + confirms via canonical F0 routes and
+  invokes the real `/actions/effective` route with valid evidence
+  against an HRP-managed `CONFIRMED` placement. The canonical 400
+  `PLACEMENT_VALIDATION_ERROR` comes from the real service, NOT from a
+  manual throw inside the test.
+- C2-04 — `EFFECTIVE_EVIDENCE_SCHEMA` is exported from
+  `recruiter-workbench.placement-actions.states.ts`. The form imports the
+  same value; the test deletes its duplicate Zod object and adds
+  component-level invalid-timestamp + onSubmit-wiring assertions against
+  the production form.
+- C2-05 — TASK.md §0..§10 V2 contract structure restored. HANDOFF.md uses
+  compact §0..§5. AUDIT.md kept empty for Tier 3. Controls are truthful
+  `BLOCKED / NOT_ELIGIBLE`, `Correction batches used: 2`, explicit `BLK-01`.
+- C2-06 — Range-aware `.ai-pipeline/scripts/verify-encoding-range.mjs` added
+  (Node, fatal UTF-8 decoder + BOM + NUL + U+FFFD + CRLF + Latin-1
+  mojibake streak checks). Run on `fabeda29..HEAD`: 22/22 PASS, 0 violations.
 
-## Why this file exists
+## Local verification (Tier 1 side, before handback)
 
-Per the PRE-AUDIT CORRECTION BATCH 1/1 finding F-08, Tier 1 must NOT
-author the Tier 3 audit. The previously authored `AUDIT.md` is being
-emptied in a forward commit so Tier 3 can create its own independent
-report from the corrected surface. The substantive self-review notes
-moved here for traceability are NON-AUTHORITATIVE.
+| Gate | Result |
+|---|---|
+| Targeted F1 tests | PASS — 163 tests across 5 files |
+| `npm run test:unit` | PASS — 196 files / 3228 tests + 9 skipped |
+| typecheck | PASS — 0 errors |
+| lint | PASS — 0 errors (warnings unchanged) |
+| build | PASS |
+| `git diff --check` | empty (LF only) |
+| range-aware encoding scan `fabeda29..HEAD` | PASS — 22/22, 0 violations |
+| verify-task | PASS (truthful BLOCKED warnings) |
+| verify-handoff | PASS (truthful BLOCKED warnings) |
+| forbidden-path audit | clean |
 
-## What Tier 1 observed (informational only)
+## Honest limitations
 
-- `4983fdc4` implemented LOCK-01..LOCK-15 with E0 additive projection,
-  F1 fetch helper (idempotency-key), F1 pure state, UI components.
-- `0dc25571` flipped controls to `READY_FOR_AUDIT` and added
-  HANDOFF/AUDIT docs.
-- Tier 1 did NOT observe F-01 teardown residue, F-02 role-gate
-  weakness, F-03 5xx error leakage, F-06 nextAction gate, F-07 DB
-  evidence depth, F-08 encoding corruption, F-09 control-state drift.
-- Tier 3 must independently verify the post-correction surface.
-
-## Forward correction commit plan (Tier 1)
-
-- 1x semantic correction commit: source/tests for F-01..F-07.
-- 1x docs/evidence checkpoint commit: empty `AUDIT.md`, move
-  notes to `evidence/tier1-self-review.md`, flip TASK/HANDOFF
-  controls to BLOCKED with `Next gate = T0_CI_SYNTHETIC_DB_GATE`.
-- Tier 3 then runs independently against the corrected HEAD.
+- Tier 1 did NOT execute `T0_CI_SYNTHETIC_DB_GATE`; that's T0's job.
+- Tier 1 did NOT call Tier 3.
+- The `db05` teardown previously failing was caused by the un-tracked
+  direct `admin.candidateSubmission.create`; round 2 closes that hole.
