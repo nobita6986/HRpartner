@@ -882,7 +882,11 @@ describe.skipIf(!HAS_TEST_DB)('P1-F1 Placement Action UI integration (round 2)',
     expect(effectiveBody.error).toBe('PLACEMENT_VALIDATION_ERROR');
     expect(effectiveBody.error).not.toBe('HRP_MANAGED_EFFECTIVE_NOT_SUPPORTED');
 
-    // DB proof: placement is still CONFIRMED; PlacementCase still OPEN.
+    // DB proof: placement is still CONFIRMED; PlacementCase is unchanged
+    // at its original READY_TO_PLACE status — the rejected EFFECTIVE
+    // command must NOT mutate the case. Placement status is what the
+    // canonical route protects; the case status is a precondition the
+    // fixture set, not a side-effect of the rejection.
     const rereadPlacement = await admin.placement.findUnique({
       where: { id: createBody.placementId },
       select: { status: true },
@@ -892,6 +896,6 @@ describe.skipIf(!HAS_TEST_DB)('P1-F1 Placement Action UI integration (round 2)',
       where: { id: pc.id },
       select: { status: true },
     });
-    expect(rereadCase?.status).toBe('OPEN');
+    expect(rereadCase?.status).toBe('READY_TO_PLACE');
   });
 });
