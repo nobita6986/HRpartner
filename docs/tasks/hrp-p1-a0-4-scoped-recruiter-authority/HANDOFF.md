@@ -24,7 +24,8 @@
 | F-01..F-08 correction SHA-5 | `1762393f` (docs re-freeze v1.3 round-3) |
 | F-01..F-08 correction SHA-6 | `f56a71c1` (docs round-3: HEAD + encoding count to measured values) |
 | F-01..F-08 correction SHA-7 | `f130b22` (docs: post-final HEAD SHA bump) |
-| **HEAD** | `f130b22` |
+| F-01..F-08 correction SHA-8 | `0f84c88` (docs: pin final HEAD to f130b22) |
+| **HEAD** | `0f84c88` |
 | Delivery protocol | `V2_FAST_FREEZE` |
 | Frozen delivery | `YES` |
 | Canonical gates | `PASS` |
