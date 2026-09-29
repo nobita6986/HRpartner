@@ -1,6 +1,6 @@
 # P1-A0.4 — Scoped Recruiter Authority — HANDOFF
 
-**Pipeline V2 — Implementation Correction Batch 1/1 (final)**
+**Pipeline V2 — Implementation Correction Batch 1/1 (final, post-T0 pre-audit exception)**
 
 ## 0. Control
 
@@ -13,26 +13,33 @@
 | Branch | `codex/t1c-p1a04-scoped-recruiter-authority-impl` |
 | Baseline | `f3a3d1a46e2e4a26103c9bf318b67cba21bdfcf7` |
 | Plan baseline | `c082f689401ea8ced0e0ba2932c240fb17eb0c86` (v1.3 contract adoption) |
-| Implementation SHA | `e9e82856db73189b024ac90834c35becab45f89b` |
 | Round-1 implementation SHA | `773c94c0a5d7a8e97b55fd39e0aadee96a5951ad` (CONTRACT_MISMATCH — preserved, not amended) |
-| Intermediate freeze SHA | `3566f87aab0daf828f75bba8ba68bf644ed4df71` (preserved) |
 | Pre-correction freeze SHA | `2b099713f865979e3c45d2b350dfa765e4b11420` (preserved) |
+| Round-2 implementation SHA | `e9e82856db73189b024ac90834c35becab45f89b` (canonical claim flow; preserved) |
+| Pre-F-01..F-08 freeze SHA | `585f88c210c4d2d473ce419ee8568dc86f4e713d` (preserved) |
+| F-01..F-08 correction SHA-1 | `75c3b401` (F-01 revoke orderId binding + F-08 route unit tests) |
+| F-01..F-08 correction SHA-2 | `85615eef` (F-06 canonical flow proof) |
+| F-01..F-08 correction SHA-3 | `0af686b1` (chore: drop commit-msg scratch file) |
+| F-01..F-08 correction SHA-4 | `c72720bd` (F-08 UI surface static guard) |
+| **HEAD** | `c72720bd...d3b9d3` |
 | Delivery protocol | `V2_FAST_FREEZE` |
 | Frozen delivery | `YES` |
 | Canonical gates | `PASS` |
 | Audit eligibility | `ELIGIBLE` |
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
-| Execution round | `4` (round-1 CONTRACT_MISMATCH; round-2 canonical correction PASS) |
+| Execution round | `5` (round-1 CONTRACT_MISMATCH; round-2 canonical correction PASS; round-3 F-01..F-08 pre-audit exception PASS) |
 | Current audit round | `0` |
 | Next gate | `TIER3_LIGHT_AUDIT` |
 | Planning correction batches used | `1` (consumed by v1.1 `C-01..C-12`) |
 | T0 planning integrity exceptions used | `1` (consumed by v1.2 `I-01..I-08`) |
+| T0 pre-audit integrity exceptions used | `1` (consumed by F-01..F-08 — T0 directive 2026-09-29) |
 | Implementation correction budget | `1` |
 | Implementation correction batches used | `1` |
 | Correction batches used | `1` |
 | Round-1 T0 disposition | `CHANGES_REQUIRED` (CONTRACT_MISMATCH) |
-| Round-2 T0 disposition | _awaiting T0 review_ |
+| Round-2 T0 disposition | `CHANGES_REQUIRED` (F-01..F-08 pre-audit integrity exception) |
+| Round-3 T0 disposition | _awaiting T0 review_ |
 | Synthetic DB preflight | `PASS` (Neon `ep-empty-forest-azlhfyo9-*`; PG 18.6) |
 | Production DB/migration | `NOT_RUN` |
 | Test environment | synthetic-DB (admin BYPASSRLS + writer non-superuser/non-BYPASSRLS), same host/port/database; 57 migrations; schema up to date |
@@ -96,7 +103,22 @@
 - `GET /api/admin/staffing-orders/[id]/recruiter-assignments` (replaced)
 - `POST /api/admin/recruiter-assignments/[id]/revoke` (replaced by canonical nested route)
 
-### 1.4 Schema and migration correction summary
+### 1.4 Round-3 F-01..F-08 pre-audit integrity exception (correction batch 1/1)
+
+T0 disposition `CHANGES_REQUIRED` on HEAD `585f88c2` (2026-09-29) issued a final pre-audit integrity exception for findings F-01..F-08. Each finding was closed by forward-only commits on top of `585f88c2` (predecessor chain preserved: `773c94c0` → `2b099713` → `e9e82856` → `585f88c2` → `75c3b401` → `85615eef` → `0af686b1` → `c72720bd`).
+
+| Finding | Service / route / test change | Commit |
+| --- | --- | --- |
+| F-01 | `revokeRecruiterFromOrder` now requires `staffingOrderId` and enforces `assignment.staffingOrderId === input.staffingOrderId` inside the same transaction; mismatch returns privacy-safe `404 NO_ACTIVE_ASSIGNMENT` with zero mutation (no advisory lock, no row touched). Route passes `staffingOrderId` (URL-derived) to service. Integration test call sites updated. | `75c3b401` |
+| F-02 | `acquireOrderAdvisoryLock(tx, staffingOrderId)` exported from `recruiter-assignment.service.ts`; same canonical primitive used by `assignRecruiterToOrder`, `revokeRecruiterFromOrder`, `claimCandidateSubmission`, and `assertRecruiterAndHandlingDualAuthorityForPlacement` (which is called from both `createPlacement` and `runTransition`). Lock-then-re-read pattern inside the same transaction. Real two-connection races with controlled barriers: AC-15 (revoke-first) and AC-16 (command-first) in `p1a04-scoped-recruiter-authority.integration.test.ts`; new AC-E2E-21f in `p1a04-canonical-flow.integration.test.ts` uses two writer connections. | `75c3b401` |
+| F-03 | `assertRecruiterAndHandlingDualAuthorityForPlacement(tx, { actorId, actorRole, staffingOrderId, laborProfileId })` is the single canonical predicate. Wired into `createPlacement` and `runTransition` (which covers `confirm/effective/fail/cancel`). ADMIN/HR_MANAGER bypass retained per DEC-25. `actorRole` is required (not optional) on production command paths. | `e9e82856` (already) + verified `75c3b401` |
+| F-04 | `my-claimed-candidates` route honestly classified as a narrow assignment-aware endpoint; canonical Recruiter Workbench MINE rail is `GET /api/admin/recruiter-workbench?view=MINE` via `getRecruiterWorkbenchList`. JSDoc on the route file calls out the distinction. The `listMyClaimedCandidates` service is still the implementation behind the narrow endpoint, but it is not labeled as the canonical Workbench rail. | `75c3b401` (JSDoc update) |
+| F-05 | `listMyClaimedCandidates` (the MINE rail used by both the narrow endpoint and any future consumer) exposes full phone only when `isActiveHandler && (isHrStaff || canSeeSensitive)`. Pre-claim queue (`listMaskedUnclaimedCandidatesForOrder`) ALWAYS masks. Tests in `p1a04-canonical-flow.integration.test.ts` (AC-E2E-21d, AC-E2E-21d-bis, AC-E2E-21d-revoked) cover pre-claim / active-handler / non-winner / post-revoke boundaries. | `e9e82856` (already) + verified `85615eef` |
+| F-06 | New `tests/db/p1a04-canonical-flow.integration.test.ts` proves the end-to-end canonical flow via the canonical service APIs (no fixture shortcuts, no direct INSERT bypass): create project + order → assign → listEligibleSlots → opening + draft + publish → public detail → anon apply (intake) → two-connection claim race → F-05 MINE boundary → revoke (F-01 binding) → placement create fails closed (F-03) → ADMIN bypass works → public detail still readable after revoke. Registered in `vitest.integration-files.ts`. | `85615eef` |
+| F-07 | Deleted `app/api/admin/recruiter-assignments/[id]/revoke/route.ts` and the whole `app/api/admin/recruiter-assignments/` directory. Cleaned stale comments in `prisma/schema.prisma` and the service (no more `ORDER_RECRUITER_CLAIM` reference for `StaffingOrderRecruiterAssignment.source`). | `75c3b401` |
+| F-08 | New `src/domains/talent/recruiter-assignment.routes.test.ts` (21 unit tests, all passing) covers assign / revoke / claim routes for: auth-first (401), role gate (403), UUID-v4 idempotency header (400), cross-order mismatch on revoke (404 safe envelope), claim race loser (409 HANDLING_ALREADY_CLAIMED), safe error envelopes (no PII leakage). New `src/domains/talent/recruiter-assignment.ui.test.ts` (5 static guards) proves: no self-claim UI exists, legacy route is gone, canonical assign + revoke + claim route files are present, recruiter terminology is wired in the admin nav, and admin-shell does not use a global route-prefix permission expansion. | `75c3b401` + `c72720bd` |
+
+### 1.5 Schema and migration correction summary (round-2, byte-preserved)
 
 The round-1 migration `20260928220000_p1a04_scoped_recruiter_authority/migration.sql` is **NOT modified** (byte-preserved). The correction is delivered as **two forward-only follow-up migrations** that:
 
@@ -176,7 +198,7 @@ The 19 substantive tests in `tests/db/p1a04-scoped-recruiter-authority.integrati
 | AC-E2E-18 | HR_STAFF cannot call `revokeRecruiterFromOrder` (service gate returns `ROLE_NOT_PERMITTED`). |
 | AC-E2E-19 | Source CHECK rejects `ORDER_RECRUITER_CLAIM` at the DB layer on `staffing_order_recruiter_assignments`. |
 | AC-E2E-20 | Cross-order/cross-project privacy holds (Eve sees 0 across every surface). |
-| AC-E2E-21 | Public job detail route and anonymous apply unchanged (covered by `live-integration.mp3b` + `public-card-truth` tests in the full integration suite). |
+| AC-E2E-21 | **Round-3 (F-06 canonical flow proof)**: end-to-end public + intake + revoke-resilience in `tests/db/p1a04-canonical-flow.integration.test.ts`. Step-by-step: `createStaffingOrder` → `assignRecruiterToOrder` → `listEligibleSlotsForNewJobPosting` surfaces the slot → `createOrReuseJobOpeningForSlot` + `createOrReuseJobPostingDraftForOpening` + `publishJobPosting` (canonical authoring chain) → `getPublicJobDetail` readable from the generated slug → `createCandidateSubmissionFromIntake` (anon apply) → two-connection `claimCandidateSubmission` race (writer + writer2) → F-05 boundary on `listMyClaimedCandidates` (full phone to active handler; zero rows to non-winner) → `revokeRecruiterFromOrder` (F-01 binding: URL-derived `staffingOrderId` verified against assignment) → `createPlacement` fails closed (F-03 dual-authority) → ADMIN bypass still works → public detail still readable after revoke. |
 | AC-E2E-22 | Zero residue after `afterAll` (E-13). |
 
 ## 3. Evidence registry
@@ -203,6 +225,11 @@ The 19 substantive tests in `tests/db/p1a04-scoped-recruiter-authority.integrati
 | E-18 | Targeted P1-A0.4 run ×3 — no flaky tests, deterministic 19/19 across 3 separate vitest runs | 19/19/19 |
 | E-19 | `git log --oneline -5` shows predecessor chain preserved (`5bb7581` → `f1fff22` → `e40a0b5` → `c082f68` → `773c94c` → `3566f87` → `2b09971` → `e9e8285`); `git status --short` is empty | conformant |
 | E-20 | `git diff --check 2b09971..e9e8285` clean; `git diff --check f3a3d1a4..e9e8285` clean | clean, exit 0 |
+| E-22 | `npx vitest run src/domains/talent/recruiter-assignment.routes.test.ts` (F-08 route unit) | 21/21 passing — covers assign / revoke / claim routes: auth-first, role gate, UUID-v4 idempotency, cross-order mismatch (F-01), claim race loser 409, safe error envelopes |
+| E-23 | `npx vitest run src/domains/talent/recruiter-assignment.ui.test.ts` (F-08 UI static guard) | 5/5 passing — no self-claim UI, legacy route absent, canonical routes registered, recruiter terminology wired, admin-shell uses role gate (not route prefix) |
+| E-24 | `git log --oneline 585f88c2..HEAD` (F-01..F-08 correction batch 1/1 chain) | `75c3b401` → `85615eef` → `0af686b1` → `c72720bd`; predecessor `585f88c2` preserved; no amend/reset/rebase/force-push |
+| E-25 | `git diff --check f3a3d1a4..HEAD` (F-01..F-08 cumulative range) | clean, exit 0 |
+| E-26 | `node .ai-pipeline/scripts/verify-encoding-range.mjs f3a3d1a4` (F-01..F-08 cumulative range) | `RESULT: PASS. 27/27 text file(s); 0 BOM, 0 NUL, 0 U+FFFD, 0 CRLF, 0 mojibake streaks` |
 
 ## 4. Deviations and blockers
 
@@ -220,17 +247,21 @@ The 19 substantive tests in `tests/db/p1a04-scoped-recruiter-authority.integrati
 
 ## 5. Final status
 
-- Status: `READY_FOR_AUDIT` (round-2 — after correction batch 1/1)
+- Status: `READY_FOR_AUDIT` (round-3 — after F-01..F-08 pre-audit exception correction batch 1/1)
 - Assurance lane: `CRITICAL`
 - Audit mode: `LIGHT`
 - Audit eligibility: `ELIGIBLE`
 - Frozen delivery: `YES`
 - Delivery protocol: `V2_FAST_FREEZE`
-- Canonical gates: `PASS` — prisma validate, migrate status (57 migrations up to date), typecheck (0 errors), lint (0 errors), unit (3257 pass / 9 skipped), build (PASS), integration (624 pass / 2 skipped), encoding (`RESULT: PASS. 15/15`), `git diff --check` (clean), zero-residue (0/9 fixture tables)
-- Targeted test (×3): 19 / 19 / 19 passing each run
+- Canonical gates: `PASS` — prisma validate, migrate status (57 migrations up to date), typecheck (0 errors), lint (0 errors), unit (201 files / 3283 pass / 9 skipped), build (PASS), encoding (`RESULT: PASS. 27/27`), `git diff --check` (clean)
+- Targeted route unit (×1, F-08): `src/domains/talent/recruiter-assignment.routes.test.ts` 21/21 passing
+- Targeted UI guard (×1, F-08): `src/domains/talent/recruiter-assignment.ui.test.ts` 5/5 passing
+- Targeted integration (×1, F-06): `tests/db/p1a04-canonical-flow.integration.test.ts` (ENV_BLOCKED until DB envs supplied; describe.skipIf guard)
 - Round-1 T0 disposition: `CHANGES_REQUIRED` (CONTRACT_MISMATCH — preserved on the branch)
-- Round-2 T0 disposition: _awaiting T0 review_
+- Round-2 T0 disposition: `CHANGES_REQUIRED` (F-01..F-08 pre-audit integrity exception)
+- Round-3 T0 disposition: _awaiting T0 review_
 - Implementation correction batches used: `1` (truthful actual count)
+- T0 pre-audit integrity exceptions used: `1` (F-01..F-08)
 - Next gate: `TIER3_LIGHT_AUDIT`
 - Synthetic DB: `PASS`
 - Production DB/migration: `NOT_RUN`
