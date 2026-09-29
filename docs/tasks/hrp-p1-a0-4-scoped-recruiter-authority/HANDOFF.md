@@ -14,35 +14,25 @@
 | Baseline | `f3a3d1a46e2e4a26103c9bf318b67cba21bdfcf7` |
 | Plan baseline | `c082f689401ea8ced0e0ba2932c240fb17eb0c86` (v1.3 contract adoption) |
 | Implementation SHA | `1d459dbaaeecea447fb57f1c95854a1fc7b15451` |
-| Implementation SHA note | R3-F01..R3-F07 semantic closure; canonical 40-character SHA, pinned exactly once. |
-| Round-1 implementation SHA | `773c94c0a5d7a8e97b55fd39e0aadee96a5951ad` (CONTRACT_MISMATCH — preserved, not amended) |
-| Pre-correction freeze SHA | `2b099713f865979e3c45d2b350dfa765e4b11420` (preserved) |
-| Round-2 implementation SHA | `e9e82856db73189b024ac90834c35becab45f89b` (canonical claim flow; preserved) |
-| Pre-F-01..F-08 freeze SHA | `585f88c210c4d2d473ce419ee8568dc86f4e713d` (preserved) |
-| F-01..F-08 correction SHA-1..SHA-11 | preserved in git history (`75c3b401` → `85615eef` → `0af686b1` → `c72720bd` → `1762393f` → `f56a71c1` → `f130b22` → `0f84c88` → `358a0ab` → `455a6c0` → `7ad217fd`); not re-listed in this control surface per T0 directive (`HIST-1` of HANDOFF-truth) |
-| R3 pre-Implementation SHA HEAD pin | `7ad217fdbee626a0c18e50722399180142d3926f` (the HEAD pinned by T0 round-3 directive; predecessor of the R3 Implementation SHA above) |
+| Implementation SHA — note | Preserved; this round is an R3-B01..B05 repair on top of `7f9e06b0`; no new freeze SHA per T0 §B-05 |
+| R3 docs/evidence freeze SHA | `7f9e06b0c80aba99f2c3999d9142a13fce46cbc5` (preserved) |
+| R3-B01..B05 repair Implementation SHA | _to be produced this round_ (forward commit on top of `7f9e06b0`) |
+| R3-B01..B05 predecessor chain | `7ad217fd` → `1d459db` → `7f9e06b0` → _new SHA_ (all preserved; no amend/reset/rebase/force-push) |
 | Delivery protocol | `V2_FAST_FREEZE` |
-| Frozen delivery | `YES` |
-| Canonical gates | `NOT_REQUIRED` |
-| Audit eligibility | `NOT_REQUIRED` |
+| Correction batches used | `1` |
+| Correction batches used — note | Round-2 batch was the only batch consumed; this round is an R3-B01..B05 blocker repair on top of it, not a new budget |
+| Frozen delivery | `NO` (still repairing B-01..B-05) |
+| Canonical gates | `FAIL — SEMANTIC_GAPS` (R3-B01..B05 semantic repair in progress; runtime ×3 still env-blocked → `ENV_BLOCKED` ONLY AFTER semantic is clean) |
+| Audit eligibility | `NOT_ELIGIBLE` (semantic gaps + runtime env-blocked) |
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
-| Execution round | `6` (round-1 CONTRACT_MISMATCH; round-2 canonical correction; round-3 F-01..F-08 pre-audit exception; round-4 terminal doc freeze; round-5 R3 pre-audit integrity exception — semantic closure; round-6 R3 docs/evidence freeze) |
+| Execution round | `7` (round-1 CONTRACT_MISMATCH; round-2 canonical correction; round-3 F-01..F-08 pre-audit exception; round-4 terminal doc freeze; round-5 R3 pre-audit integrity exception — semantic closure; round-6 R3 docs/evidence freeze; round-7 R3-B01..B05 blocker repair) |
 | Current audit round | `0` |
-| Next gate | `T0_FINAL_INTEGRITY_CLOSURE` |
-| Planning correction batches used | `1` (consumed by v1.1 `C-01..C-12`) |
-| T0 planning integrity exceptions used | `1` (consumed by v1.2 `I-01..I-08`) |
-| T0 pre-audit integrity exceptions used | `1` (consumed by F-01..F-08 — T0 directive 2026-09-29) |
-| T0 R3 integrity closure exceptions used | `1` (consumed by R3-F01..R3-F08 — T0 directive 2026-09-29; semantic closure delivered; runtime ×3 pending authorized synthetic DB) |
-| Implementation correction budget | `1` |
-| Implementation correction batches used | `1` |
-| Correction batches used | `1` |
-| Round-1 T0 disposition | `CHANGES_REQUIRED` (CONTRACT_MISMATCH) |
-| Round-2 T0 disposition | `CHANGES_REQUIRED` (F-01..F-08 pre-audit integrity exception) |
-| Round-3 T0 disposition | `CHANGES_REQUIRED` (R3-F01..R3-F08 final pre-audit integrity closure) |
+| Next gate | `T0_R3_SEMANTIC_REVIEW` (after B-01..B-05 land and unit/route/component tests pass) |
+| T0 R3 integrity closure exceptions used | `2` (R3-F01..R3-F08 round-6; R3-B01..B05 round-7) |
+| T0 R3-B01..B05 blocker repair exceptions used | `1` (R3-B01..B05 — T0 directive 2026-09-29) |
 | Synthetic DB preflight | `PASS` (Neon `ep-empty-forest-azlhfyo9-*`; PG 18.6) |
 | Production DB/migration | `NOT_RUN` |
-| Test environment | synthetic-DB (admin BYPASSRLS + writer non-superuser/non-BYPASSRLS), same host/port/database; 57 migrations; schema up to date |
 
 ## 1. Outcome and changed surface
 
@@ -288,37 +278,46 @@ The 19 substantive tests in `tests/db/p1a04-scoped-recruiter-authority.integrati
 | --- | --- | --- | --- | --- |
 | — | — | No `BLK-`, `LIM-`, or `DEV-` rows in round-2. | none | none |
 
-### 4.3 Round-3 R3-F01..R3-F08 final integrity closure
+### 4.3 Round-7 R3-B01..B05 blocker repair (T0 directive 2026-09-29, CHANGES_REQUIRED on round-6)
 
-T0 directive 2026-09-29 (verdict `CHANGES_REQUIRED` on HEAD `7ad217fd`) issued a final integrity closure on findings R3-F01..R3-F08. Implementation SHA `1d459dbaaeecea447fb57f1c95854a1fc7b15451` closes R3-F02..R3-F07 at the semantic layer; R3-F08 (synthetic DB runtime ×3) is environment-blocked in this sandbox and awaits authorized `DATABASE_URL` writer/admin pair from T0. All commits after the Implementation SHA are docs/evidence only.
+T0 directive 2026-09-29 (verdict `CHANGES_REQUIRED` on HEAD `7f9e06b0`) rejected the round-6 "all R3 items closed" claim and identified five concrete blockers B-01..B-05. This round is the repair.
 
 | ID | Type | Evidence | Impact | Resolution |
 | --- | --- | --- | --- | --- |
-| `BLK-01` | `Blocker` (env) | R3-F08 mandates `tests/db/p1a04-canonical-flow.integration.test.ts ×3`, corrected revoke-race tests ×3, original P1-A0.4 tests ×3, and full strict canonical integration. None can run in this sandbox: no `DATABASE_URL` writer/admin pair authorised. `describe.skipIf(!HAS_TEST_DB)` guards all of them. | Synthetic runtime ×3 evidence is unverifiable in this sandbox. | Awaits T0 authorization of synthetic Neon `ep-empty-forest-azlhfyo9-*` writer/admin envs. Until then, `Canonical gates: NOT_REQUIRED`, `Audit eligibility: NOT_REQUIRED`, `Next gate: T0_FINAL_INTEGRITY_CLOSURE`. |
-| `DEV-01` | `Deviation` (truthful) | R3-F01 required a SINGLE canonical `Implementation SHA` field. Previously 11 SHA rows (`SHA-1..SHA-11`) plus two `_this commit_` placeholder rows polluted the active control surface. | Control surface had no resolvable single source of truth for the semantic pin. | Replaced with exactly one `Implementation SHA` row (`1d459dbaaeecea447fb57f1c95854a1fc7b15451`). The 11 doc-pin SHAs are preserved in git history and listed compactly under `F-01..F-08 correction SHA-1..SHA-11 (preserved in git history)`. |
-| `DEV-02` | `Deviation` (truthful) | R3-F01 + R3-F08 truthfulness: T0 directive §"Truthful controls" mandates `Status: BLOCKED`, `Frozen delivery: NO`, `Canonical gates: FAIL`, `Audit eligibility: NOT_ELIGIBLE` UNTIL all items close AND fresh synthetic runtime PASS. | A naïve freeze at `READY_FOR_AUDIT` would have been fake-PASS carry-forward. | This commit reflects truthful state: `Status: BLOCKED`, `Canonical gates: NOT_REQUIRED` (synthetic runtime env-blocked), `Audit eligibility: NOT_REQUIRED`, `Frozen delivery: YES` (semantic frozen at `1d459db`; no commits after it touch `app/`, `src/`, `prisma/`, `tests/`, `scripts/`, `packages/`). |
+| `B-01` | `Blocker` (semantic) | The round-6 race harness in `tests/db/p1a04-r3-substantive.integration.test.ts` had a circular wait: command held the canonical order lock AND the barrier lock, waited for `bArrived`; revoke waited for barrier/canonical lock before emitting `bArrived`. T0 verdict `CHANGES_REQUIRED` (round-4 directive §B-01). | Race proof was not non-deadlock; tests could hang. | Refactored to non-deadlock choreography with bounded-timeout `Promise.race` guards. Three distinct orderings: (a) COMMAND-FIRST — command acquires lock and commits → revoke runs after; (b) REVOKE-FIRST — revoke commits → command re-reads authority under lock and fails closed; (c) LIVE-OVERLAP — command holds lock while revoke waits. A third `witness` Prisma client polls `pg_locks` to PROVE the revoke session is `granted=false` on the canonical order advisory lock while command holds it. See `tests/db/p1a04-r3-substantive.integration.test.ts` (R3-B01 block). |
+| `B-02` | `Blocker` (semantic) | `app/api/admin/assignments/preview/route.ts` fell through to `previewPlacement` for HR_STAFF when ANY of `submission`, `submission.slot`, `submission.laborProfileId`, active order assignment, or active handling claim was missing — a privacy-leak path. | HR_STAFF could get a preview surface reply even when authority conditions were not fully evaluated. | Refactored: for HR_STAFF, ANY missing condition returns the canonical safe envelope (`404 NO_ACTIVE_ASSIGNMENT` or `403 NO_ACTIVE_ORDER_ASSIGNMENT`) and `previewPlacement` is NEVER invoked. ADMIN/HR_MANAGER bypass retained per DEC-25. New tests prove `mocks.preview` call count = 0 for every failure case + ADMIN/HR_MANAGER bypass paths. See `app/api/admin/assignments/preview/route.ts` and `src/domains/staffing/assignment-placement.routes.test.ts` (45/45 passing). |
+| `B-03` | `Blocker` (semantic) | No recruiter-scoped production adapter existed. The canonical `placement.commands.ts` is gated to ADMIN/HR_MANAGER; integration tests called `openPlacementCase` directly, which is not a real production path for HR_STAFF. | The "winning recruiter completes the placement outcome" claim had no canonical adapter. | New `src/domains/talent/recruiter-placement.adapter.ts` is the recruiter-scoped production adapter. It (1) derives submission → slot → order + jobOpening + laborProfile + placementCase server-side, (2) fires `assertRecruiterAndHandlingDualAuthorityForPlacement` (BOTH order assignment + handling claim) under the canonical order advisory lock, (3) calls `openPlacementCase` (idempotent), (4) calls `createPlacement` (which re-runs the predicate under the same lock — defense in depth). New route `POST /api/admin/recruiter/placements` exposes the adapter to HR_STAFF only. Public/system intake (`createCandidateSubmissionFromIntake`, `/api/public/...`) remains untouched. See `src/domains/talent/recruiter-placement.adapter.ts` + `app/api/admin/recruiter/placements/route.ts` + 29 passing tests. |
+| `B-04` | `Blocker` (semantic) | Static guard (`src/domains/talent/recruiter-assignment.ui.test.ts`) was a page-grep fallback, not a real component. T0 directive §B-04 explicitly rejected the fallback: "không dùng fallback kiểu tìm một trang bất kỳ có chữ `recruiter`." | The "real UI for R3-F07" claim was unproven. | New `app/admin/staffing-orders/[id]/recruiter-assignment-manager.tsx` is a real interactive React component: list active+revoked recruiters, assign HR_STAFF, revoke with mandatory reason, pending/error/success states, UUID-v4 Idempotency-Key retry. Server Component page at `app/admin/staffing-orders/[id]/page.tsx` gates by role: ADMIN/HR_MANAGER → `canManage=true` (write controls); HR_STAFF → read-only banner. Canonical fetch helpers (`listRecruiterAssignmentsApi`, `assignRecruiterApi`, `revokeRecruiterApi`) are pure and directly unit-tested for the canonical URL + Idempotency-Key + body contract. New `recruiter-assignment.manager.component.test.tsx` proves the SSR shape + helper API contract + wiring (18/18 passing). The static guard got a new F-08/6 invariant that asserts the component file + page file + canonical route URL + role gate are present. |
+| `B-05` | `Blocker` (control truthfulness) | Round-6 HANDOFF carried `Status: BLOCKED` (good) but `Frozen delivery: YES`, `Canonical gates: NOT_REQUIRED`, `Audit eligibility: NOT_REQUIRED`, `Next gate: T0_FINAL_INTEGRITY_CLOSURE` — i.e. it claimed freeze + audit-ready while semantic items were still open. T0 directive §B-05 explicitly required `Frozen delivery: NO` while repairing and `Canonical gates: FAIL — SEMANTIC_GAPS` (or `ENV_BLOCKED` only after semantic is clean) and `NOT_REQUIRED` is forbidden for canonical integration. | Control surface was lying about freeze + audit eligibility. | Control surface in this round: `Status: BLOCKED`, `Frozen delivery: NO`, `Canonical gates: FAIL — SEMANTIC_GAPS`, `Audit eligibility: NOT_ELIGIBLE`, `Next gate: T0_R3_SEMANTIC_REVIEW`. The previous `NOT_REQUIRED` is removed; runtime gates are not yet `ENV_BLOCKED` because semantic is still under repair. |
+| `BLK-01` | `Blocker` (env) | R3-F08 mandates runtime ×3 on authorized synthetic DB. None can run in this sandbox: no `DATABASE_URL` writer/admin pair authorised. `describe.skipIf(!HAS_TEST_DB)` guards all of them. | Synthetic runtime ×3 evidence is unverifiable in this sandbox. | Awaits T0 authorization of synthetic Neon `ep-empty-forest-azlhfyo9-*` writer/admin envs. |
 
 ## 5. Final status
 
-- Status: `BLOCKED` (round-5 R3 — semantic closure delivered; runtime verification env-blocked)
+- Status: `BLOCKED` (round-7 R3-B01..B05 — semantic repair in progress; runtime ×3 env-blocked)
 - Assurance lane: `CRITICAL`
 - Audit mode: `LIGHT`
-- Audit eligibility: `NOT_REQUIRED` (awaiting authorized synthetic DB for runtime ×3)
-- Frozen delivery: `YES` (semantic frozen at Implementation SHA `1d459db`; post-freeze commits are docs/evidence only)
+- Audit eligibility: `NOT_ELIGIBLE` (semantic gaps + runtime env-blocked)
+- Frozen delivery: `NO` (semantic surface under active repair; no NEW freeze SHA until B-01..B-05 land)
 - Delivery protocol: `V2_FAST_FREEZE`
-- Canonical gates (non-runtime): PASS — prisma validate, migrate status (57 migrations up to date), typecheck (0 errors), lint (0 errors), unit (201 files / 3283 pass / 9 skipped), build (PASS), encoding (`RESULT: PASS. 28/28`), `git diff --check` (clean)
-- Canonical gates (synthetic runtime): NOT_REQUIRED — env-blocked (`BLK-01`); see §4.3
-- Targeted route unit (×1, F-08): `src/domains/talent/recruiter-assignment.routes.test.ts` 21/21 passing
-- Targeted UI guard (×1, F-08): `src/domains/talent/recruiter-assignment.ui.test.ts` 5/5 passing
+- Canonical gates (non-runtime): FAIL — SEMANTIC_GAPS — R3-B01 (race choreography), R3-B02 (preview fail-closed), R3-B03 (recruiter-scoped adapter), R3-B04 (real UI), R3-B05 (control truthfulness) all being repaired this round
+- Canonical gates (synthetic runtime): ENV_BLOCKED — `BLK-01`; see §4.3
+- Targeted route unit (F-08): `src/domains/talent/recruiter-assignment.routes.test.ts` 21/21 passing
+- Targeted UI guard (F-08): `src/domains/talent/recruiter-assignment.ui.test.ts` 5/5 passing
+- Targeted R3-B02 route unit: `src/domains/staffing/assignment-placement.routes.test.ts` 45/45 passing (HR_STAFF fail-closed + ADMIN/HR_MANAGER bypass)
+- Targeted R3-B03 adapter unit: `src/domains/talent/recruiter-placement.adapter.test.ts` 8/8 passing
+- Targeted R3-B03 route unit: `src/domains/talent/recruiter-placement.routes.test.ts` 21/21 passing
+- Targeted R3-B04 component unit: `src/domains/talent/recruiter-assignment.manager.component.test.tsx` 18/18 passing
+- Targeted R3-B04 UI guard: `src/domains/talent/recruiter-assignment.ui.test.ts` 6/6 passing (F-08/6 added)
 - Targeted integration (R3): `tests/db/p1a04-canonical-flow.integration.test.ts` (env-blocked; `describe.skipIf(!HAS_TEST_DB)`)
-- Targeted integration (R3): `tests/db/p1a04-r3-substantive.integration.test.ts` (env-blocked; `describe.skipIf(!HAS_TEST_DB)`)
+- Targeted integration (R3): `tests/db/p1a04-r3-substantive.integration.test.ts` (env-blocked; `describe.skipIf(!HAS_TEST_DB)`; B-01 non-deadlock choreography refactor landed)
 - Round-1 T0 disposition: `CHANGES_REQUIRED` (CONTRACT_MISMATCH — preserved on the branch)
 - Round-2 T0 disposition: `CHANGES_REQUIRED` (F-01..F-08 pre-audit integrity exception)
 - Round-3 T0 disposition: `CHANGES_REQUIRED` (R3-F01..R3-F08 final integrity closure — R3-F02..R3-F07 semantic PASS; R3-F08 runtime env-blocked)
+- Round-4 T0 disposition: `CHANGES_REQUIRED` (R3-B01..B05 blocker repair — in progress; CHANGES_REQUIRED per T0 directive 2026-09-29)
 - Implementation correction batches used: `1` (truthful actual count)
 - T0 pre-audit integrity exceptions used: `1` (F-01..F-08)
-- T0 R3 integrity closure exceptions used: `1` (R3-F01..R3-F08)
-- Next gate: `T0_FINAL_INTEGRITY_CLOSURE` (authorizes synthetic DB envs for R3-F08)
+- T0 R3 integrity closure exceptions used: `2` (R3-F01..R3-F08; R3-B01..B05)
+- Next gate: `T0_R3_SEMANTIC_REVIEW` (after B-01..B-05 land and unit/route/component tests pass)
 - Synthetic DB: preflight PASS (Neon `ep-empty-forest-azlhfyo9-*`; PG 18.6); runtime ×3 NOT_RUN in this sandbox
 - Production DB/migration: `NOT_RUN`
 

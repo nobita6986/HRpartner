@@ -3,7 +3,10 @@
  *
  * Lane: unit (no DB, no React render). Static-grep the app/ tree to prove
  * the contract UI surface for canonical HR_STAFF recruiter authority is in
- * place:
+ * place. Real interactive component coverage lives in
+ * `src/domains/talent/recruiter-assignment.manager.component.test.tsx`
+ * (R3-B04) which exercises the canonical API contracts via the
+ * RecruiterAssignmentManager component + its pure fetch helpers.
  *
  *   F-08 invariants asserted:
  *   1. NO self-claim UI exists for `StaffingOrder` (the round-1
@@ -13,11 +16,14 @@
  *      recruiter-management UI controls (or an explicit allowlist says
  *      they are wired via admin shell).
  *   3. HR_STAFF carries the recruiter terminology "Chuyên viên tuyển dụng"
- *      in the admin nav / role-guard.
+ *      in the admin nav / role-guard / real component file.
  *   4. The forbidden global permission expansion is NOT introduced
  *      (admin-shell still gates by role, not by route prefix).
  *   5. The legacy /api/admin/recruiter-assignments/[id]/revoke route is
  *      completely absent (F-07 / F-08 — same invariant).
+ *   6. (B-04) The real interactive component
+ *      `app/admin/staffing-orders/[id]/recruiter-assignment-manager.tsx`
+ *      exists, is wired from the page, and emits the canonical API routes.
  *
  * This is a STATIC guard, not a runtime render. The intent is to detect
  * regressions (e.g. someone re-introduces a self-claim button, or strips
@@ -159,6 +165,27 @@ describe('P1-A0.4 F-08 UI surface — static guards', () => {
     expect(c).not.toMatch(/route\.startsWith\(['"]\/admin\//);
     // It MUST use RoleGuardLayout (or a per-role allowlist), not a URL prefix check.
     expect(c).toMatch(/RoleGuardLayout|isAdminPortalRole/);
+  });
+
+  it('F-08/6 (B-04) Real RecruiterAssignmentManager component exists + page wires it', () => {
+    // The real interactive component (not a placeholder, not a stub) MUST
+    // exist under the canonical admin path. The page MUST import it; the
+    // component MUST wire the canonical API routes.
+    const componentPath = join(APP_DIR, 'admin', 'staffing-orders', '[id]', 'recruiter-assignment-manager.tsx');
+    const pagePath = join(APP_DIR, 'admin', 'staffing-orders', '[id]', 'page.tsx');
+    expect(statSync(componentPath).isFile(), 'real component file must exist').toBe(true);
+    expect(statSync(pagePath).isFile(), 'admin staffing-orders detail page must exist').toBe(true);
+
+    const componentSrc = codeFor(componentPath);
+    expect(componentSrc).toContain('/api/admin/staffing/orders/');
+    expect(componentSrc).toContain('idempotency-key');
+    expect(componentSrc).toContain('Chuyên viên tuyển dụng');
+
+    const pageSrc = codeFor(pagePath);
+    expect(pageSrc).toContain('RecruiterAssignmentManager');
+    expect(pageSrc).toContain("from './recruiter-assignment-manager'");
+    // Role gate: ADMIN/HR_MANAGER get canManage=true.
+    expect(pageSrc).toMatch(/canManage\s*=\s*MANAGE_ROLES\.has|MANAGE_ROLES\.has.*canManage/);
   });
 });
 

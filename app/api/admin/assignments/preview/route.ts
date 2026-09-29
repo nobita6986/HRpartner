@@ -1,21 +1,27 @@
 /**
  * POST /api/admin/assignments/preview — MP-3C STEP-03 (RQ-02, DEC-01/03/04).
  *
- * READ-ONLY placement preflight. ADMIN/HR_MANAGER only (DEC-04 — RLS also allows
- * DIRECTOR to write assignments, the app gate is deliberately narrower). Runs
- * inside `withDbContext` so every read is RLS-scoped to the caller.
+ * READ-ONLY placement preflight. ADMIN/HR_MANAGER reach `previewPlacement`
+ * directly. HR_STAFF recruiters reach it only when the dual-authority
+ * predicate can be FULLY EVALUATED under `withDbContext`:
  *
- * P1-A0.4 (R3-F03): HR_STAFF with active recruiter assignment on the order is
- * admitted only after the dual-authority predicate passes:
- *   (a) ACTIVE StaffingOrderRecruiterAssignment on the derived order, AND
- *   (b) ACTIVE LaborProfileHandlingAssignment for the LaborProfile.
- * ADMIN/HR_MANAGER bypass per DEC-25. The preview itself remains READ-ONLY —
- * it writes NOTHING (DEC-03) so a stale preview can never authorise a write.
+ *   (a) `submissionId` resolves to an existing submission,
+ *   (b) that submission's `slot` exists and exposes `staffingOrderId`,
+ *   (c) the submission has a `laborProfileId`,
+ *   (d) an ACTIVE `StaffingOrderRecruiterAssignment` exists for the
+ *       recruiter on the derived order,
+ *   (e) an ACTIVE `LaborProfileHandlingAssignment` exists for the
+ *       recruiter on the derived `LaborProfile`.
  *
- * The client sends ONLY `submissionId` + assignment attributes; workerId, slotId,
- * staffingOrderId and projectId are derived server-side from the submission
- * (DEC-01). The response is advisory: activation re-checks everything under lock,
- * so a stale preview can never authorise a write (DEC-03).
+ * For HR_STAFF callers, ANY missing condition MUST fail closed with the
+ * canonical safe envelope (404 NOT_FOUND or 403 FORBIDDEN depending on
+ * which condition fails) — and `previewPlacement` MUST NEVER be invoked
+ * when the predicate is not fully evaluated. This avoids leaking
+ * existence-oracle information through the preview surface.
+ *
+ * ADMIN/HR_MANAGER bypass per DEC-25 — the predicate is skipped and the
+ * service is called directly. The preview remains READ-ONLY (DEC-03):
+ * no INSERT, no UPDATE; a stale preview cannot authorise a write.
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { getPrisma } from '@/src/lib/db';
@@ -52,33 +58,79 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'INVALID_INPUT', message: 'Invalid JSON body' }, { status: 400 });
   }
 
+  const submissionId = String(body.submissionId ?? '');
+
   try {
     const prisma = getPrisma();
     const preview = await withDbContext(prisma, ctx, async (tx) => {
-      // P1-A0.4 (R3-F03): dual-authority preflight for HR_STAFF callers.
-      // We must (1) look up the submission + slot to derive the order and the
-      // labor profile, then (2) verify both authority rows under the order
-      // advisory lock. A preview is read-only — we never INSERT anything, but
-      // the authority check is identical to the activatePlacement path so
-      // callers can trust the projection.
-      const submission = await tx.candidateSubmission.findUnique({
-        where: { id: String(body.submissionId ?? '') },
-        select: {
-          id: true,
-          laborProfileId: true,
-          slot: { select: { staffingOrderId: true } },
-        },
-      });
-      if (submission && ctx.role === 'HR_STAFF' && submission.slot && submission.laborProfileId) {
+      if (ctx.role === 'HR_STAFF') {
+        // B-02: HR_STAFF callers MUST clear the dual-authority predicate in
+        // FULL before `previewPlacement` is ever invoked. ANY missing link
+        // returns the safe envelope; the canonical service is NEVER reached
+        // for an HR_STAFF caller that fails this gate.
+        if (!submissionId) {
+          const err = new RecruiterAssignmentError(
+            'NO_ACTIVE_ASSIGNMENT',
+            'Submission không tồn tại',
+            404,
+            { reason: 'submission_not_found' },
+          );
+          throw err;
+        }
+        const submission = await tx.candidateSubmission.findUnique({
+          where: { id: submissionId },
+          select: {
+            id: true,
+            laborProfileId: true,
+            slot: { select: { staffingOrderId: true } },
+          },
+        });
+        if (!submission) {
+          throw new RecruiterAssignmentError(
+            'NO_ACTIVE_ASSIGNMENT',
+            'Submission không tồn tại',
+            404,
+            { reason: 'submission_not_found' },
+          );
+        }
+        if (!submission.slot) {
+          throw new RecruiterAssignmentError(
+            'NO_ACTIVE_ASSIGNMENT',
+            'Submission thiếu slot anchor',
+            404,
+            { reason: 'slot_missing' },
+          );
+        }
+        if (!submission.laborProfileId) {
+          throw new RecruiterAssignmentError(
+            'NO_ACTIVE_ASSIGNMENT',
+            'Submission thiếu LaborProfile anchor',
+            404,
+            { reason: 'labor_profile_missing' },
+          );
+        }
+        // Both authority checks fire inside the same tx under the order
+        // advisory lock. Either fails closed with NO_ACTIVE_ORDER_ASSIGNMENT
+        // or NO_ACTIVE_ASSIGNMENT.
         await assertRecruiterAndHandlingDualAuthorityForPlacement(tx, {
           actorId: ctx.userId,
           actorRole: ctx.role,
           staffingOrderId: submission.slot.staffingOrderId,
           laborProfileId: submission.laborProfileId,
         });
+        // Dual-authority cleared → safe to invoke the preview service.
+        return previewPlacement(tx, ctx, {
+          submissionId,
+          employeeCode: String(body.employeeCode ?? ''),
+          employmentType: String(body.employmentType ?? ''),
+          workSetting: body.workSetting ?? null,
+          validFrom: String(body.validFrom ?? ''),
+          validTo: body.validTo ?? null,
+        });
       }
+      // ADMIN/HR_MANAGER bypass per DEC-25 — predicate skipped.
       return previewPlacement(tx, ctx, {
-        submissionId: String(body.submissionId ?? ''),
+        submissionId,
         employeeCode: String(body.employeeCode ?? ''),
         employmentType: String(body.employmentType ?? ''),
         workSetting: body.workSetting ?? null,
