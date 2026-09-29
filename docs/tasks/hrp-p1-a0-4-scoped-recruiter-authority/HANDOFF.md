@@ -23,7 +23,8 @@
 | F-01..F-08 correction SHA-4 | `c72720bd` (F-08 UI surface static guard) |
 | F-01..F-08 correction SHA-5 | `1762393f` (docs re-freeze v1.3 round-3) |
 | F-01..F-08 correction SHA-6 | `f56a71c1` (docs round-3: HEAD + encoding count to measured values) |
-| **HEAD** | `f56a71c1` |
+| F-01..F-08 correction SHA-7 | `f130b22` (docs: post-final HEAD SHA bump) |
+| **HEAD** | `f130b22` |
 | Delivery protocol | `V2_FAST_FREEZE` |
 | Frozen delivery | `YES` |
 | Canonical gates | `PASS` |
