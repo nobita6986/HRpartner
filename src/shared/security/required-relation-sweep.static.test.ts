@@ -145,19 +145,33 @@ const EXPECTED_HITS = [
   'src/domains/talent/recruiter-workbench.read-service.ts:715 jobOpening',
   'src/domains/talent/recruiter-workbench.read-service.ts:719 staffingOrder',
   'src/domains/talent/recruiter-workbench.read-service.ts:721 project',
-  // hrp-p1-a04 (2026-09-28): `listUnclaimedStaffingOrders` LEFT-JOIN `project.clientCompany` for
-  // queue-row display fields; `listMyActiveStaffingOrders` LEFT-JOIN `staffingOrder.project.clientCompany`
-  // for the recruiter's "My Orders" surface. All three are quan hệ BẮT BUỘC in schema. An toàn vì
-  // `staffing_orders` được RLS narrow `hrp_sora_staffing_orders_claimable_select` (OPEN+unassigned,
-  // queue) hoặc `hrp_sora_staffing_orders_staff_select` (assigned); `outsourcing_projects` narrow
-  // `hrp_sora_projects_claimable_select` (queue) hoặc `hrp_sora_projects_staff_select` (assigned);
-  // `client_companies` đã có `hrp_client_company_select` admit HR_STAFF. Cả hai caller đều chạy
-  // trong `withDbContext(... role=HR_STAFF)` nên RLS narrowing hoạt động.
-  'src/domains/talent/recruiter-assignment.service.ts:455 clientCompany',
-  'src/domains/talent/recruiter-assignment.service.ts:455 project',
-  'src/domains/talent/recruiter-assignment.service.ts:506 staffingOrder',
-  'src/domains/talent/recruiter-assignment.service.ts:513 clientCompany',
-  'src/domains/talent/recruiter-assignment.service.ts:513 project',
+  // hrp-p1-a04 correction batch 1/1 (2026-09-29): `listUnclaimedStaffingOrders` and
+  // `listMyActiveStaffingOrders` (the SELF-CLAIM-StaffingOrder surfaces) were DROPPED
+  // in favor of `claimCandidateSubmission` (candidate-side claim). The 5 prior hits
+  // for these functions were removed from EXPECTED_HITS. The canonical P1-A0.4 path
+  // uses `assignRecruiterToOrder` (HR_MANAGER assigns a recruiter) +
+  // `claimCandidateSubmission` (assigned recruiter claims a LaborProfile / submission).
+  // The latter queries `labor_profile_handling_assignments` (uncovered above — this table
+  // has no RLS that targets assignment_id/recruiter as a SELECT-time filter from outside),
+  // and `candidate_submissions` (which has RLS but the helper chains through service gates).
+  // New danger hits introduced by this batch (necessary for the new flow, all under
+  // `withDbContext(role=HR_STAFF)` after the candidate-claim gate):
+  //   - claimCandidateSubmission selects submission.placementCase (379) to derive the
+  //     LaborProfile anchor required for the ORDER_RECRUITER_CLAIM handling row.
+  //   - listMaskedUnclaimedCandidatesForOrder chains submission → placementCase → laborProfile
+  //     (617), and slot → jobOpening → staffingOrder (638), for masked projection display.
+  //   - Same masked-queue WHERE filter for "not yet claimed" via placementCase.laborProfile
+  //     .handlingAssignments.none (721, 722).
+  //   - placement.service.ts runTransition preloads jobOpening.staffingOrderId (328) for the
+  //     dual-authority assert to fire in the same tx.
+  // All safe: RLS chains already cover (placement_case_visible_for, labor_profile_visible_for,
+  // hrp_project_visible_for). p1-a04 prior had 25 src hits; this batch adds 6 net (28 src total).
+  'src/domains/talent/recruiter-assignment.service.ts:379 placementCase',
+  'src/domains/talent/recruiter-assignment.service.ts:617 laborProfile',
+  'src/domains/talent/recruiter-assignment.service.ts:638 staffingOrder',
+  'src/domains/talent/recruiter-assignment.service.ts:721 placementCase',
+  'src/domains/talent/recruiter-assignment.service.ts:722 laborProfile',
+  'src/domains/talent/placement.service.ts:328 jobOpening',
 ] as const;
 
 interface SourceEntry {
@@ -370,11 +384,11 @@ describe('quan hệ BẮT BUỘC trên bảng bị RLS che: tập vị trí sele
     // Plus: thêm status/serviceModelSnapshot/jobOpeningId vào placements.select làm chain
     // `placements.jobOpening.staffingOrder.project` SHIFTED 679/683/685 → 715/719/721 (line shift
     // không thêm dòng). Tổng src = 25, tổng all = 28.
-    // Sau P1-A04 (2026-09-28): `recruiter-assignment.service.ts` thêm `listUnclaimedStaffingOrders`
-    // (LEFT-JOIN `project.clientCompany`) và `listMyActiveStaffingOrders` (LEFT-JOIN
-    // `staffingOrder.project.clientCompany`). +5 dòng (`455 clientCompany/project`,
-    // `506 staffingOrder`, `513 clientCompany/project`). Tổng src = 30, tổng all = 33.
-    expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(30);
+    // Sau P1-A04 correction batch 1/1 (2026-09-29): DROPPED `listUnclaimedStaffingOrders`
+    // và `listMyActiveStaffingOrders` (self-claim path) → -5 dòng ở recruiter-assignment.service.ts.
+    // Thêm 6 dòng mới (claimCandidateSubmission + listMaskedUnclaimedCandidatesForOrder +
+    // placement.service.ts runTransition). Tổng src = 25 + 6 = 31, tổng all = 28 + 6 = 34.
+    expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(31);
   });
 });
 

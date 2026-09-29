@@ -33,7 +33,7 @@
  *   - NO schema/migration changes.
  *   - NO outbox/event producer.
  */
-import type { Prisma } from '@prisma/client';
+import type { Prisma, SystemRole } from '@prisma/client';
 import {
   createPlacement,
   confirmPlacement,
@@ -57,6 +57,14 @@ import { PlacementValidationError } from './placement.errors';
  */
 export interface PlacementCreateAdapterInput {
   actorId: string;
+  /**
+   * P1-A0.4: actorRole is forwarded server-derived from the route's
+   * AuthContext. HR_STAFF actors are checked for dual-authority (active
+   * order assignment + active handling assignment) inside the service.
+   * Optional for backward compat (legacy tests don't pass it; service
+   * skips the check when undefined).
+   */
+  actorRole?: SystemRole;
   placementCaseId: string;
   jobOpeningId: string;
   sourceCandidateSubmissionId?: string;
@@ -66,9 +74,14 @@ export interface PlacementCreateAdapterInput {
  * Adapter input for the 4 transition commands. Routes must derive
  * `actorId` from AuthContext and `placementId` from the URL param.
  * `evidence` is only used by `placementEffective`.
+ *
+ * P1-A0.4: `actorRole` is forwarded server-derived from the route's
+ * AuthContext. HR_STAFF actors are checked for dual-authority (active
+ * order assignment + active handling assignment) inside the service.
  */
 export interface PlacementTransitionAdapterInput {
   actorId: string;
+  actorRole?: SystemRole;
   placementId: string;
   evidence?: {
     clientAcknowledgedAt: Date;
@@ -192,6 +205,7 @@ export async function placementCreate(
 
   return createPlacement(tx, {
     actorId: input.actorId,
+    ...(input.actorRole ? { actorRole: input.actorRole } : {}),
     laborProfileId,
     placementCaseId: input.placementCaseId,
     jobOpeningId: input.jobOpeningId,
@@ -212,6 +226,7 @@ export async function placementConfirm(
 ): Promise<TransitionPlacementResult> {
   return confirmPlacement(tx, {
     actorId: input.actorId,
+    actorRole: input.actorRole,
     placementId: input.placementId,
   });
 }
@@ -234,6 +249,7 @@ export async function placementEffective(
   }
   return markPlacementEffective(tx, {
     actorId: input.actorId,
+    actorRole: input.actorRole,
     placementId: input.placementId,
     evidence: input.evidence,
   });
@@ -251,6 +267,7 @@ export async function placementFail(
 ): Promise<TransitionPlacementResult> {
   return failPlacement(tx, {
     actorId: input.actorId,
+    actorRole: input.actorRole,
     placementId: input.placementId,
   });
 }
@@ -267,6 +284,7 @@ export async function placementCancel(
 ): Promise<TransitionPlacementResult> {
   return cancelPlacement(tx, {
     actorId: input.actorId,
+    actorRole: input.actorRole,
     placementId: input.placementId,
   });
 }

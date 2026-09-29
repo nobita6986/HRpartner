@@ -462,11 +462,11 @@ model StaffingOrderRecruiterAssignment {
   id                String   @id @default(uuid())
   staffingOrderId   String   @map("staffing_order_id")
   recruiterUserId   String   @map("recruiter_user_id")
-  assignedByUserId  String?  @map("assigned_by_user_id") // null when source=ORDER_RECRUITER_CLAIM
-  source            String   // HR_MANAGER_ASSIGN | ORDER_RECRUITER_CLAIM
+  assignedByUserId  String   @map("assigned_by_user_id") // HR_MANAGER/ADMIN that issued the assignment
+  source            String   // HR_MANAGER_ASSIGN (only)
   status            String   // ACTIVE | REVOKED
   reason            String?  @db.Text
-  startsAt          DateTime @map("starts_at")
+  assignedAt        DateTime @map("assigned_at")
   revokedAt         DateTime? @map("revoked_at")
   revokedByUserId   String?  @map("revoked_by_user_id")
   createdAt         DateTime @default(now()) @map("created_at")
@@ -475,7 +475,7 @@ model StaffingOrderRecruiterAssignment {
 
   staffingOrder StaffingOrder @relation(fields: [staffingOrderId], references: [id], onDelete: Cascade)
   recruiter     User         @relation("OrderRecruiter", fields: [recruiterUserId], references: [id])
-  assignedBy    User?        @relation("OrderRecruiterAssignedBy", fields: [assignedByUserId], references: [id])
+  assignedBy    User         @relation("OrderRecruiterAssignedBy", fields: [assignedByUserId], references: [id])
   revokedBy     User?        @relation("OrderRecruiterRevokedBy", fields: [revokedByUserId], references: [id])
 
   @@index([staffingOrderId, status])

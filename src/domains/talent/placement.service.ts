@@ -29,7 +29,7 @@
  *     replayed=false — caller xử lý theo state hiện tại (fix round-3 review).
  */
 
-import { Prisma, type PlacementStatus, type ServiceModel, type PlacementCaseStatus } from '@prisma/client';
+import { Prisma, type PlacementStatus, type ServiceModel, type PlacementCaseStatus, type SystemRole } from '@prisma/client';
 import type { Prisma as PrismaTypes } from '@prisma/client';
 import {
   InvalidStateTransitionError,
@@ -39,6 +39,10 @@ import {
 } from './placement.errors';
 import { canTransition, isActivePlacement, isTerminalPlacement } from './placement.lifecycle';
 import { resolveClientCompanyIdForJobOpening, assertClassifiedJobOpening } from './placement.resolution';
+import {
+  assertActiveRecruiterForOrder,
+  assertActiveHandlingForLaborProfile,
+} from './recruiter-assignment.service';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Public types
@@ -50,6 +54,16 @@ export interface CreatePlacementInput {
   jobOpeningId: string;
   /** Caller đã verify quyền CAN_MANAGE_TALENT_CASE hoặc ADMIN/HR_MANAGER. */
   actorId: string;
+  /**
+   * P1-A0.4 dual-authority: server-side role gate. When actorRole='HR_STAFF',
+   * `createPlacement` MUST also verify the actor has:
+   *   (a) ACTIVE StaffingOrderRecruiterAssignment on the order derived from
+   *       `jobOpening -> staffingOrderId`, AND
+   *   (b) ACTIVE LaborProfileHandlingAssignment for `laborProfileId`.
+   * Both checks run in the SAME tx as the INSERT. Missing either → throw.
+   * Optional for backward compat: omitted → skip the check (HR_MANAGER/ADMIN).
+   */
+  actorRole?: SystemRole;
   sourceCandidateSubmissionId?: string;
 }
 
@@ -66,6 +80,13 @@ export interface CreatePlacementResult {
 export interface TransitionPlacementInput {
   placementId: string;
   actorId: string;
+  /**
+   * P1-A0.4 dual-authority: when actorRole='HR_STAFF', every transition
+   * command MUST verify both the active order assignment and the active
+   * handling assignment in the same tx. See createPlacement notes.
+   * Optional for backward compat (HR_MANAGER/ADMIN path bypasses).
+   */
+  actorRole?: SystemRole;
   /** Chỉ dùng cho markPlacementEffective — DEC-08 / AC-07. */
   evidence?: PlacementEffectivenessEvidence;
 }
@@ -144,6 +165,18 @@ export async function createPlacement(
   assertClassifiedJobOpening(jobOpening);
 
   const resolved = await resolveClientCompanyIdForJobOpening(tx, jobOpening);
+
+  // Bước 2b: P1-A0.4 dual-authority (HR_STAFF only). Same-tx checks for
+  // (a) ACTIVE StaffingOrderRecruiterAssignment on the order derived from
+  //     jobOpening.staffingOrderId, and
+  // (b) ACTIVE LaborProfileHandlingAssignment for the laborProfileId.
+  // Missing either → fail closed with NO_ACTIVE_ORDER_ASSIGNMENT /
+  // NO_ACTIVE_ASSIGNMENT (canonical RecruiterAssignmentError). HR_MANAGER /
+  // ADMIN bypass via `assertActiveRecruiterForOrder` / `assertActiveHandlingForLaborProfile`.
+  if (input.actorRole === 'HR_STAFF') {
+    await assertActiveRecruiterForOrder(tx, input.actorId, input.actorRole, jobOpening.staffingOrderId);
+    await assertActiveHandlingForLaborProfile(tx, input.actorId, input.actorRole, input.laborProfileId);
+  }
 
   // Bước 3: idempotent replay (DEC-09).
   const existing = await findActivePlacement(tx, {
@@ -270,10 +303,12 @@ async function findActivePlacement(
 interface PlacementTransitionRow {
   id: string;
   placementCaseId: string;
+  laborProfileId: string;
   status: PlacementStatus;
   serviceModelSnapshot: ServiceModel | null;
   clientCompanyId: string | null;
   projectId: string | null;
+  jobOpening: { staffingOrderId: string } | null;
 }
 
 async function findPlacementForTransition(
@@ -285,10 +320,12 @@ async function findPlacementForTransition(
     select: {
       id: true,
       placementCaseId: true,
+      laborProfileId: true,
       status: true,
       serviceModelSnapshot: true,
       clientCompanyId: true,
       projectId: true,
+      jobOpening: { select: { staffingOrderId: true } },
     },
   });
   if (!row) throw new PlacementNotFoundError(placementId);
@@ -299,6 +336,7 @@ interface RunTransitionInput {
   tx: PrismaTypes.TransactionClient;
   placementId: string;
   actorId: string;
+  actorRole?: SystemRole;
   to: PlacementStatus;
 }
 
@@ -315,9 +353,30 @@ async function runTransition(
 ): Promise<TransitionPlacementResult> {
   const row = await findPlacementForTransition(args.tx, args.placementId);
 
-  // Same state → idempotent no-op.
+  // Same state → idempotent no-op. Authority checks are skipped here: the
+  // transition did not happen (no write). A HR_STAFF replay reflects the
+  // original command that already established authority; subsequent revoke
+  // cycles are not relevant to a no-op return.
   if (row.status === args.to) {
     return { placementId: row.id, status: row.status, replayed: true };
+  }
+
+  // P1-A0.4 dual-authority (HR_STAFF only). Same-tx checks for both
+  // (a) ACTIVE StaffingOrderRecruiterAssignment on the order derived from
+  //     placement.jobOpening.staffingOrderId, and
+  // (b) ACTIVE LaborProfileHandlingAssignment for placement.laborProfileId.
+  // The transition runs INSIDE the same tx as the conditional UPDATE so a
+  // concurrent revoke between check and UPDATE will be visible to the UPDATE
+  // (which would then fail-closed via its own status-guard path).
+  if (args.actorRole === 'HR_STAFF') {
+    if (!row.jobOpening) {
+      throw new PlacementValidationError(
+        `Placement ${row.id} has no JobOpening anchor; cannot derive staffing order for HR_STAFF authority check`,
+        { placementId: row.id },
+      );
+    }
+    await assertActiveRecruiterForOrder(args.tx, args.actorId, args.actorRole, row.jobOpening.staffingOrderId);
+    await assertActiveHandlingForLaborProfile(args.tx, args.actorId, args.actorRole, row.laborProfileId);
   }
 
   const managementMode: 'HRP_MANAGED' | 'CLIENT_MANAGED' | null = row.serviceModelSnapshot
@@ -452,7 +511,16 @@ function deriveModeFromSnapshot(snapshot: ServiceModel): 'HRP_MANAGED' | 'CLIENT
 // ═══════════════════════════════════════════════════════════════════════════
 
 export function confirmPlacement(tx: PrismaTypes.TransactionClient, input: TransitionPlacementInput) {
-  return runTransition({ tx, placementId: input.placementId, actorId: input.actorId, to: 'CONFIRMED' }, {});
+  return runTransition(
+    {
+      tx,
+      placementId: input.placementId,
+      actorId: input.actorId,
+      ...(input.actorRole ? { actorRole: input.actorRole } : {}),
+      to: 'CONFIRMED',
+    },
+    {},
+  );
 }
 
 export function markPlacementEffective(
@@ -460,17 +528,41 @@ export function markPlacementEffective(
   input: TransitionPlacementInput,
 ) {
   return runTransition(
-    { tx, placementId: input.placementId, actorId: input.actorId, to: 'EFFECTIVE' },
+    {
+      tx,
+      placementId: input.placementId,
+      actorId: input.actorId,
+      ...(input.actorRole ? { actorRole: input.actorRole } : {}),
+      to: 'EFFECTIVE',
+    },
     { managementMode: null, evidence: input.evidence },
   );
 }
 
 export function failPlacement(tx: PrismaTypes.TransactionClient, input: TransitionPlacementInput) {
-  return runTransition({ tx, placementId: input.placementId, actorId: input.actorId, to: 'FAILED' }, {});
+  return runTransition(
+    {
+      tx,
+      placementId: input.placementId,
+      actorId: input.actorId,
+      ...(input.actorRole ? { actorRole: input.actorRole } : {}),
+      to: 'FAILED',
+    },
+    {},
+  );
 }
 
 export function cancelPlacement(tx: PrismaTypes.TransactionClient, input: TransitionPlacementInput) {
-  return runTransition({ tx, placementId: input.placementId, actorId: input.actorId, to: 'CANCELLED' }, {});
+  return runTransition(
+    {
+      tx,
+      placementId: input.placementId,
+      actorId: input.actorId,
+      ...(input.actorRole ? { actorRole: input.actorRole } : {}),
+      to: 'CANCELLED',
+    },
+    {},
+  );
 }
 
 /** Helper export để service khác (vd PlacementCase close) kiểm tra placement đã terminal. */

@@ -1,61 +1,81 @@
 /**
- * recruiter-assignment.service.ts — P1-A0.4 Scoped Recruiter Authority.
+ * recruiter-assignment.service.ts — P1-A0.4 Scoped Recruiter Authority (canonical).
  *
- * Service layer for `StaffingOrderRecruiterAssignment`. The application is the
- * authoritative role gate; RLS is the backstop. All mutations run inside a
- * caller-managed transaction (use `withDbContext`).
+ * Round 2 (correction batch 1/1) — T0 disposition CHANGES_REQUIRED.
  *
- * Five operations (TASK.md §3 / AC-01..AC-08):
- *   1. assignRecruiterToOrder      — HR_MANAGER / ADMIN creates a
- *      HR_MANAGER_ASSIGN row. Idempotent (AssignmentAlreadyExistsError).
- *   2. revokeRecruiterFromOrder    — HR_MANAGER / ADMIN revokes any row, or
- *      HR_STAFF revokes their own ORDER_RECRUITER_CLAIM row. Deterministic
- *      mutex via `pg_advisory_xact_lock(hashtext(staffing_order_id))`.
- *   3. claimStaffingOrder          — HR_STAFF self-claim. Advisory lock
- *      ensures at most one winner per order; race losers receive
- *      HANDLING_ALREADY_CLAIMED (404).
- *   4. listUnclaimedStaffingOrders — Read service for the queue. Filtered to
- *      OPEN orders the caller may claim (HR_STAFF only). Bounded to 100.
- *   5. listMyActiveStaffingOrders  — Read service for the recruiter's own
- *      active orders (used by the workbench).
+ * Service layer for `StaffingOrderRecruiterAssignment` (HR_MANAGER_ASSIGN only)
+ * AND `LaborProfileHandlingAssignment` (claim path: ORDER_RECRUITER_CLAIM).
  *
- * Role gate:
- *   - HR_STAFF may only create ORDER_RECRUITER_CLAIM rows; the service
- *     refuses `source = HR_MANAGER_ASSIGN` from a HR_STAFF caller.
- *   - HR_MANAGER / ADMIN may create HR_MANAGER_ASSIGN; self-claim is also
- *     permitted (a manager can also act as a recruiter for visibility
- *     testing — admin path only).
+ * The application is the authoritative role gate; RLS is the backstop. All
+ * mutations run inside a caller-managed transaction (use `withDbContext`).
+ *
+ * Six operations (TASK.md §3 / AC-01..AC-08):
+ *   1. assignRecruiterToOrder           — HR_MANAGER / ADMIN creates a
+ *      HR_MANAGER_ASSIGN row. Idempotent on (order, recruiter).
+ *   2. revokeRecruiterFromOrder         — HR_MANAGER / ADMIN revokes any
+ *      row. Deterministic mutex via `pg_advisory_xact_lock`.
+ *   3. claimCandidateSubmission         — assigned HR_STAFF claims an
+ *      unclaimed candidate. The order is derived server-side via
+ *      `CandidateSubmission -> slot -> StaffingOrder`. Advisory lock
+ *      on the submission + the existing partial unique index on
+ *      `LaborProfileHandlingAssignment` serialize the race; exactly one
+ *      winner. Race losers receive `HANDLING_ALREADY_CLAIMED` (409).
+ *      The winner row carries source = `ORDER_RECRUITER_CLAIM`.
+ *   4. listOrderRecruiterAssignments    — read: all assignments on an order.
+ *   5. listMyClaimedCandidates          — read: candidate submissions the
+ *      caller has claimed (Recruiter Workbench MINE rail).
+ *   6. listMaskedUnclaimedCandidatesForOrder — read: assigned recruiter
+ *      sees a MASKED view (phone, cccd, dob masked) of unclaimed
+ *      candidates on their assigned order. PII is NOT delivered.
+ *
+ * Role gate (server-side, FINAL authority):
+ *   - assign / revoke: ADMIN/HR_MANAGER only.
+ *   - claim: HR_STAFF with active assignment on the order.
  *
  * Error model (canonical codes — wire contract):
- *   - ASSIGNEE_NOT_FOUND          (404)
- *   - ASSIGNEE_NOT_RECRUITER      (400) — must be HR_STAFF role
- *   - STAFFING_ORDER_NOT_FOUND    (404)
- *   - ASSIGNMENT_ALREADY_EXISTS   (409) — duplicate INSERT
- *   - NO_ACTIVE_ASSIGNMENT        (404) — revoke target missing
- *   - HANDLING_ALREADY_CLAIMED    (409) — claim race lost
- *   - ROLE_NOT_PERMITTED          (403)
- *   - CROSS_ORDER_REVOKE          (400) — attempt to revoke a row whose
- *                                          (order, recruiter) pair does
- *                                          not match the caller's session
+ *   - ASSIGNEE_NOT_FOUND                (404)
+ *   - ASSIGNEE_NOT_RECRUITER            (400)
+ *   - STAFFING_ORDER_NOT_FOUND          (404)
+ *   - CANDIDATE_SUBMISSION_NOT_FOUND    (404)
+ *   - CANDIDATE_SUBMISSION_NOT_IN_ORDER (404)
+ *   - ORDER_NOT_OPEN                    (409)
+ *   - ASSIGNMENT_ALREADY_EXISTS         (409)
+ *   - NO_ACTIVE_ORDER_ASSIGNMENT        (403) — actor not assigned to order
+ *   - NO_ACTIVE_ASSIGNMENT              (404) — revoke target missing
+ *   - HANDLING_ALREADY_CLAIMED          (409) — claim race lost
+ *   - ROLE_NOT_PERMITTED                (403)
+ *   - INVALID_INPUT                     (400)
  *
  * Deterministic revoke ordering (AC-E2E-20 / AC-E2E-21):
- *   - The mutex is `pg_advisory_xact_lock(hashtext(staffing_order_id))` —
- *     scoped to the order, transaction-bound.
- *   - Test invariant: when one DB connection commits ACTIVE → ACTIVE
- *     (assign-then-revoke) and another observes the state mid-revoke, the
- *     loser sees NO_ACTIVE_ASSIGNMENT and aborts cleanly. The
- *     "command-first" and "revoke-first" orderings are both covered.
+ *   - Mutex: `pg_advisory_xact_lock(hashtext(staffing_order_id))`.
+ *   - Test invariant: command-first + revoke-first both produce deterministic
+ *     ORDER_NOT_ACTIVE / NO_ACTIVE_ASSIGNMENT outcomes.
  */
 import { Prisma, type PrismaClient, type Prisma as PrismaTypes } from '@prisma/client';
 import type { SystemRole } from '@prisma/client';
+import { maskPhone } from '@/src/shared/privacy/mask';
 
 export const RECRUITER_ASSIGNMENT_SOURCE = {
   HR_MANAGER_ASSIGN: 'HR_MANAGER_ASSIGN',
-  ORDER_RECRUITER_CLAIM: 'ORDER_RECRUITER_CLAIM',
 } as const;
 
 export const RECRUITER_ASSIGNMENT_STATUS = {
   ACTIVE: 'ACTIVE',
+  REVOKED: 'REVOKED',
+} as const;
+
+export const HANDLING_ASSIGNMENT_SOURCE = {
+  AFF_INITIAL: 'AFF_INITIAL',
+  MANAGER_ASSIGNMENT: 'MANAGER_ASSIGNMENT',
+  CASE_RESOLUTION: 'CASE_RESOLUTION',
+  ORDER_RECRUITER_CLAIM: 'ORDER_RECRUITER_CLAIM',
+} as const;
+
+export const HANDLING_ASSIGNMENT_STATUS = {
+  ACTIVE: 'ACTIVE',
+  COMPLETED: 'COMPLETED',
+  EXPIRED: 'EXPIRED',
+  TRANSFERRED: 'TRANSFERRED',
   REVOKED: 'REVOKED',
 } as const;
 
@@ -65,11 +85,14 @@ export class RecruiterAssignmentError extends Error {
       | 'ASSIGNEE_NOT_FOUND'
       | 'ASSIGNEE_NOT_RECRUITER'
       | 'STAFFING_ORDER_NOT_FOUND'
+      | 'CANDIDATE_SUBMISSION_NOT_FOUND'
+      | 'CANDIDATE_SUBMISSION_NOT_IN_ORDER'
+      | 'ORDER_NOT_OPEN'
       | 'ASSIGNMENT_ALREADY_EXISTS'
+      | 'NO_ACTIVE_ORDER_ASSIGNMENT'
       | 'NO_ACTIVE_ASSIGNMENT'
       | 'HANDLING_ALREADY_CLAIMED'
       | 'ROLE_NOT_PERMITTED'
-      | 'CROSS_ORDER_REVOKE'
       | 'INVALID_INPUT',
     message: string,
     public readonly httpStatus: number,
@@ -81,28 +104,39 @@ export class RecruiterAssignmentError extends Error {
 }
 
 /**
- * Build a stable 32-bit lock key from a string id (Postgres advisory lock
- * takes a `bigint`; `hashtext` returns int4 which we widen to bigint). The
- * key is order-scoped so two revokes on different orders do not contend.
+ * Acquire a deterministic order-scoped advisory lock.
+ * Same lock key used by assign + revoke + claim paths so they serialize.
  */
 async function acquireOrderLock(
   tx: PrismaTypes.TransactionClient,
   staffingOrderId: string,
 ): Promise<void> {
-  // Strip the sign bit from hashtext() to keep the key in the signed-bigint
-  // range pg_advisory_xact_lock accepts. Equivalent to the SQL pattern
-  // `(hashtext($1)::bigint & x'7fffffff'::bigint)` but portable through
-  // $executeRawUnsafe string interpolation.
   await tx.$executeRawUnsafe(
     "SELECT pg_advisory_xact_lock( (hashtext($1)::bigint) & 9223372036854775807::bigint )",
     `p1a04:order:${staffingOrderId}`,
   );
 }
 
+/**
+ * Acquire a deterministic submission-scoped advisory lock for claim race.
+ */
+async function acquireSubmissionLock(
+  tx: PrismaTypes.TransactionClient,
+  submissionId: string,
+): Promise<void> {
+  await tx.$executeRawUnsafe(
+    "SELECT pg_advisory_xact_lock( (hashtext($1)::bigint) & 9223372036854775807::bigint )",
+    `p1a04:candidate:${submissionId}`,
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 1. assignRecruiterToOrder
+// ═══════════════════════════════════════════════════════════════════════════
+
 export interface AssignRecruiterInput {
   staffingOrderId: string;
   recruiterUserId: string;
-  /** Server-derived from AuthContext.role — service is the final authority. */
   actorRole: SystemRole;
   actorId: string;
   reason?: string;
@@ -112,34 +146,14 @@ export interface RecruiterAssignmentRow {
   id: string;
   staffingOrderId: string;
   recruiterUserId: string;
-  assignedByUserId: string | null;
-  source: 'HR_MANAGER_ASSIGN' | 'ORDER_RECRUITER_CLAIM';
+  assignedByUserId: string;
+  source: 'HR_MANAGER_ASSIGN';
   status: 'ACTIVE' | 'REVOKED';
-  startsAt: Date;
+  assignedAt: Date;
   revokedAt: Date | null;
   createdAt: Date;
 }
 
-export interface ClaimStaffingOrderInput {
-  staffingOrderId: string;
-  /** Self-claim source (HR_STAFF caller only). */
-  actorRole: SystemRole;
-  actorId: string;
-}
-
-export interface RevokeRecruiterInput {
-  /** id of the row to revoke. */
-  assignmentId: string;
-  actorRole: SystemRole;
-  actorId: string;
-  reason: string;
-}
-
-/**
- * HR_MANAGER / ADMIN assigns a recruiter to a staffing order.
- * Idempotent on (order, recruiter) — if a row is already ACTIVE the existing
- * row is returned and the caller sees no error. Other states are surfaced.
- */
 export async function assignRecruiterToOrder(
   tx: PrismaTypes.TransactionClient,
   input: AssignRecruiterInput,
@@ -179,7 +193,7 @@ export async function assignRecruiterToOrder(
 
   await acquireOrderLock(tx, input.staffingOrderId);
 
-  // Idempotency: existing ACTIVE row returns the existing row.
+  // Idempotency on (order, recruiter): existing ACTIVE row returns the existing row.
   const existing = await tx.staffingOrderRecruiterAssignment.findFirst({
     where: {
       staffingOrderId: input.staffingOrderId,
@@ -191,9 +205,6 @@ export async function assignRecruiterToOrder(
     return mapRow(existing);
   }
 
-  // RLS INSERT will pass (HR_MANAGER / ADMIN policy); partial unique index
-  // serializes any race against a concurrent INSERT for the same (order,
-  // recruiter). P2002 → ASSIGNMENT_ALREADY_EXISTS.
   try {
     const created = await tx.staffingOrderRecruiterAssignment.create({
       data: {
@@ -203,14 +214,13 @@ export async function assignRecruiterToOrder(
         source: RECRUITER_ASSIGNMENT_SOURCE.HR_MANAGER_ASSIGN,
         status: RECRUITER_ASSIGNMENT_STATUS.ACTIVE,
         reason: input.reason ?? null,
-        startsAt: new Date(),
+        assignedAt: new Date(),
       },
     });
     return mapRow(created);
   } catch (err) {
     if (
-      (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') ||
-      (typeof err === 'object' && err !== null && (err as { code?: string }).code === 'P2002')
+      err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002'
     ) {
       throw new RecruiterAssignmentError(
         'ASSIGNMENT_ALREADY_EXISTS',
@@ -223,89 +233,17 @@ export async function assignRecruiterToOrder(
   }
 }
 
-/**
- * HR_STAFF self-claims an unclaimed order. Advisory lock guarantees exactly
- * one winner. Race losers see HANDLING_ALREADY_CLAIMED.
- */
-export async function claimStaffingOrder(
-  tx: PrismaTypes.TransactionClient,
-  input: ClaimStaffingOrderInput,
-): Promise<RecruiterAssignmentRow> {
-  if (input.actorRole !== 'HR_STAFF') {
-    throw new RecruiterAssignmentError(
-      'ROLE_NOT_PERMITTED',
-      `Role ${input.actorRole} cannot self-claim a staffing order`,
-      403,
-    );
-  }
-  const order = await tx.staffingOrder.findUnique({
-    where: { id: input.staffingOrderId },
-    select: { id: true, status: true },
-  });
-  if (!order) {
-    throw new RecruiterAssignmentError('STAFFING_ORDER_NOT_FOUND', `StaffingOrder ${input.staffingOrderId} not found`, 404);
-  }
+// ═══════════════════════════════════════════════════════════════════════════
+// 2. revokeRecruiterFromOrder
+// ═══════════════════════════════════════════════════════════════════════════
 
-  await acquireOrderLock(tx, input.staffingOrderId);
-
-  // Same recruiter self-claim: idempotent replay returns the existing ACTIVE row.
-  const selfActive = await tx.staffingOrderRecruiterAssignment.findFirst({
-    where: {
-      staffingOrderId: input.staffingOrderId,
-      recruiterUserId: input.actorId,
-      status: RECRUITER_ASSIGNMENT_STATUS.ACTIVE,
-    },
-  });
-  if (selfActive) {
-    return mapRow(selfActive);
-  }
-
-  // Race serialization: the partial unique index
-  // `staffing_order_recruiter_assignments_active_order_unique_idx` blocks
-  // concurrent INSERTs for any ACTIVE row on the same order (regardless of
-  // which recruiter holds it). The advisory lock on the order prevents
-  // overlapping SELECT-then-INSERT windows. P2002 is the canonical race-loser
-  // signal — the catch runs OUTSIDE the aborted tx via a separate
-  // connection (the caller-provided client) so we can read the winning row.
-  try {
-    const created = await tx.staffingOrderRecruiterAssignment.create({
-      data: {
-        staffingOrderId: input.staffingOrderId,
-        recruiterUserId: input.actorId,
-        assignedByUserId: null,
-        source: RECRUITER_ASSIGNMENT_SOURCE.ORDER_RECRUITER_CLAIM,
-        status: RECRUITER_ASSIGNMENT_STATUS.ACTIVE,
-        startsAt: new Date(),
-      },
-    });
-    return mapRow(created);
-  } catch (err) {
-    if (
-      (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') ||
-      (typeof err === 'object' && err !== null && (err as { code?: string }).code === 'P2002')
-    ) {
-      throw new RecruiterAssignmentError(
-        'HANDLING_ALREADY_CLAIMED',
-        `StaffingOrder ${input.staffingOrderId} was claimed by another recruiter during your claim`,
-        409,
-        { staffingOrderId: input.staffingOrderId },
-      );
-    }
-    throw err;
-  }
+export interface RevokeRecruiterInput {
+  assignmentId: string;
+  actorRole: SystemRole;
+  actorId: string;
+  reason: string;
 }
 
-/**
- * Revoke an assignment. Deterministic mutex: advisory lock on the order,
- * conditional UPDATE on status = ACTIVE. Conditional UPDATE returns count=0
- * if the row is already REVOKED or has been deleted by a concurrent path —
- * we surface NO_ACTIVE_ASSIGNMENT.
- *
- * Cross-order safety: the row's order id is loaded inside the locked section
- * and used as the lock key; the conditional UPDATE additionally checks the
- * row's own (status, recruiter, order) to defend against ordering edge cases
- * in test fixtures.
- */
 export async function revokeRecruiterFromOrder(
   tx: PrismaTypes.TransactionClient,
   input: RevokeRecruiterInput,
@@ -313,7 +251,7 @@ export async function revokeRecruiterFromOrder(
   if (!input.assignmentId) {
     throw new RecruiterAssignmentError('INVALID_INPUT', 'assignmentId is required', 400);
   }
-  if (input.actorRole !== 'HR_STAFF' && input.actorRole !== 'HR_MANAGER' && input.actorRole !== 'ADMIN') {
+  if (input.actorRole !== 'HR_MANAGER' && input.actorRole !== 'ADMIN') {
     throw new RecruiterAssignmentError(
       'ROLE_NOT_PERMITTED',
       `Role ${input.actorRole} cannot revoke recruiter assignments`,
@@ -337,24 +275,6 @@ export async function revokeRecruiterFromOrder(
   }
 
   await acquireOrderLock(tx, target.staffingOrderId);
-
-  // HR_STAFF can only revoke their own ORDER_RECRUITER_CLAIM rows.
-  if (input.actorRole === 'HR_STAFF') {
-    if (target.recruiterUserId !== input.actorId) {
-      throw new RecruiterAssignmentError(
-        'CROSS_ORDER_REVOKE',
-        `HR_STAFF may only revoke their own assignments`,
-        400,
-      );
-    }
-    if (target.source !== RECRUITER_ASSIGNMENT_SOURCE.ORDER_RECRUITER_CLAIM) {
-      throw new RecruiterAssignmentError(
-        'CROSS_ORDER_REVOKE',
-        `HR_STAFF may only revoke self-claimed assignments (source=${target.source})`,
-        400,
-      );
-    }
-  }
 
   const now = new Date();
   const result = await tx.staffingOrderRecruiterAssignment.updateMany({
@@ -384,168 +304,241 @@ export async function revokeRecruiterFromOrder(
   return mapRow(updated);
 }
 
-function mapRow(row: {
-  id: string;
+// ═══════════════════════════════════════════════════════════════════════════
+// 3. claimCandidateSubmission (HR_STAFF candidate-claim)
+// ═══════════════════════════════════════════════════════════════════════════
+
+export interface ClaimCandidateInput {
+  submissionId: string;
+  actorRole: SystemRole;
+  actorId: string;
+}
+
+export interface ClaimCandidateResult {
+  handlingAssignmentId: string;
+  submissionId: string;
   staffingOrderId: string;
-  recruiterUserId: string;
-  assignedByUserId: string | null;
-  source: string;
-  status: string;
+  slotId: string;
+  laborProfileId: string | null;
+  assigneeUserId: string;
+  source: typeof HANDLING_ASSIGNMENT_SOURCE.ORDER_RECRUITER_CLAIM;
   startsAt: Date;
-  revokedAt: Date | null;
-  createdAt: Date;
-}): RecruiterAssignmentRow {
-  return {
-    id: row.id,
-    staffingOrderId: row.staffingOrderId,
-    recruiterUserId: row.recruiterUserId,
-    assignedByUserId: row.assignedByUserId,
-    source: row.source as RecruiterAssignmentRow['source'],
-    status: row.status as RecruiterAssignmentRow['status'],
-    startsAt: row.startsAt,
-    revokedAt: row.revokedAt,
-    createdAt: row.createdAt,
-  };
+  expiresAt: Date;
 }
 
 /**
- * Read: list unclaimed staffing orders (HR_STAFF candidate queue).
- * Returns orders that:
- *   - are OPEN,
- *   - have no ACTIVE `StaffingOrderRecruiterAssignment`,
- *   - are visible to the caller per the existing `hrp_project_visible_for`
- *     rule (the read service runs inside a `withDbContext` tx so the
- *     project-level RLS filters out non-visible orders automatically).
+ * HR_STAFF claims an unclaimed candidate on their assigned order.
+ *
+ * Steps inside one tx:
+ *   1. Re-read submission server-side, derive `slot -> staffing_order_id`
+ *      and `slot -> placement_case_id -> labor_profile_id` (no client trust).
+ *   2. Verify actor has an ACTIVE `StaffingOrderRecruiterAssignment` on the
+ *      derived order; fail closed with NO_ACTIVE_ORDER_ASSIGNMENT otherwise.
+ *   3. Verify the order is OPEN; fail closed with ORDER_NOT_OPEN otherwise.
+ *   4. Acquire submission-scoped advisory lock (defense in depth).
+ *   5. If an ACTIVE `LaborProfileHandlingAssignment` for the same
+ *      `labor_profile_id` (or same submission) already exists → return it
+ *      (idempotent replay) AND verify the assignee is the actor; otherwise
+ *      raise HANDLING_ALREADY_CLAIMED (409).
+ *   6. Create the LaborProfileHandlingAssignment with
+ *      source = ORDER_RECRUITER_CLAIM. The default 7-day handling window
+ *      matches AFF-05A-R2 canonical contract.
+ *
+ * The candidate is delivered to the winner as the canonical "claimed"
+ * outcome; non-winners receive HANDLING_ALREADY_CLAIMED.
  */
-export interface UnclaimedStaffingOrderRow {
-  staffingOrderId: string;
-  projectId: string;
-  code: string;
-  title: string;
-  status: string;
-  projectName: string;
-  companyName: string | null;
-  slotsCount: number;
-  slotsTotal: number;
-  openSince: string;
-}
-
-export async function listUnclaimedStaffingOrders(
+export async function claimCandidateSubmission(
   tx: PrismaTypes.TransactionClient,
-  options: { limit?: number } = {},
-): Promise<UnclaimedStaffingOrderRow[]> {
-  const limit = Math.min(Math.max(options.limit ?? 50, 1), 100);
-  // Orders without an active recruiter assignment. RLS narrows the result
-  // to orders the caller can see (HR_STAFF gets empty if they have no
-  // visible projects — that's a deny-by-default, not a 200 with rows).
-  const rows = await tx.staffingOrder.findMany({
-    where: {
-      status: 'OPEN',
-      recruiterAssignments: { none: { status: RECRUITER_ASSIGNMENT_STATUS.ACTIVE } },
-    },
-    orderBy: { createdAt: 'asc' },
-    take: limit,
+  input: ClaimCandidateInput,
+): Promise<ClaimCandidateResult> {
+  if (input.actorRole !== 'HR_STAFF') {
+    throw new RecruiterAssignmentError(
+      'ROLE_NOT_PERMITTED',
+      `Role ${input.actorRole} cannot claim candidates`,
+      403,
+    );
+  }
+  if (!input.submissionId || typeof input.submissionId !== 'string') {
+    throw new RecruiterAssignmentError('INVALID_INPUT', 'submissionId is required', 400);
+  }
+
+  // (1) Server-derive the canonical chain. NEVER trust client-supplied
+  //     orderId or profileId — both are re-read here inside the same tx.
+  const submission = await tx.candidateSubmission.findUnique({
+    where: { id: input.submissionId },
     select: {
       id: true,
-      projectId: true,
-      code: true,
-      title: true,
-      status: true,
-      createdAt: true,
-      project: { select: { name: true, clientCompany: { select: { name: true } } } },
-      slots: { select: { id: true, slotsNeeded: true } },
-    },
-  });
-  return rows.map((r) => ({
-    staffingOrderId: r.id,
-    projectId: r.projectId,
-    code: r.code,
-    title: r.title,
-    status: r.status,
-    projectName: r.project?.name ?? '',
-    companyName: r.project?.clientCompany?.name ?? null,
-    slotsCount: r.slots.length,
-    slotsTotal: r.slots.reduce((sum: number, s: { slotsNeeded: number }) => sum + s.slotsNeeded, 0),
-    openSince: r.createdAt.toISOString(),
-  }));
-}
-
-/**
- * Read: list the caller's own ACTIVE recruiter assignments. For the
- * recruiter's "My Orders" surface.
- */
-export interface MyStaffingOrderRow {
-  assignmentId: string;
-  staffingOrderId: string;
-  source: 'HR_MANAGER_ASSIGN' | 'ORDER_RECRUITER_CLAIM';
-  startsAt: string;
-  code: string;
-  title: string;
-  projectId: string;
-  projectName: string;
-  companyName: string | null;
-  slotsCount: number;
-  slotsTotal: number;
-  orderStatus: string;
-}
-
-export async function listMyActiveStaffingOrders(
-  tx: PrismaTypes.TransactionClient,
-  recruiterUserId: string,
-): Promise<MyStaffingOrderRow[]> {
-  const rows = await tx.staffingOrderRecruiterAssignment.findMany({
-    where: {
-      recruiterUserId,
-      status: RECRUITER_ASSIGNMENT_STATUS.ACTIVE,
-    },
-    orderBy: { startsAt: 'asc' },
-    select: {
-      id: true,
-      source: true,
-      startsAt: true,
-      staffingOrder: {
+      slotId: true,
+      placementCaseId: true,
+      slot: {
         select: {
           id: true,
-          code: true,
-          title: true,
-          status: true,
-          projectId: true,
-          project: { select: { name: true, clientCompany: { select: { name: true } } } },
-          slots: { select: { id: true, slotsNeeded: true } },
+          staffingOrderId: true,
         },
+      },
+      placementCase: {
+        select: { id: true, laborProfileId: true },
       },
     },
   });
-  return rows.map((r) => ({
-    assignmentId: r.id,
-    staffingOrderId: r.staffingOrder.id,
-    source: r.source as MyStaffingOrderRow['source'],
-    startsAt: r.startsAt.toISOString(),
-    code: r.staffingOrder.code,
-    title: r.staffingOrder.title,
-    projectId: r.staffingOrder.projectId,
-    projectName: r.staffingOrder.project?.name ?? '',
-    companyName: r.staffingOrder.project?.clientCompany?.name ?? null,
-    slotsCount: r.staffingOrder.slots.length,
-    slotsTotal: r.staffingOrder.slots.reduce((sum: number, s: { slotsNeeded: number }) => sum + s.slotsNeeded, 0),
-    orderStatus: r.staffingOrder.status,
-  }));
+  if (!submission) {
+    throw new RecruiterAssignmentError(
+      'CANDIDATE_SUBMISSION_NOT_FOUND',
+      `CandidateSubmission ${input.submissionId} not found`,
+      404,
+    );
+  }
+  if (!submission.slot) {
+    throw new RecruiterAssignmentError(
+      'CANDIDATE_SUBMISSION_NOT_IN_ORDER',
+      `CandidateSubmission ${input.submissionId} is not bound to a slot (no StaffingOrder)`,
+      404,
+    );
+  }
+  const staffingOrderId = submission.slot.staffingOrderId;
+  const laborProfileId = submission.placementCase?.laborProfileId ?? null;
+
+  // (2) Order-level authority check.
+  const orderAssignment = await tx.staffingOrderRecruiterAssignment.findFirst({
+    where: {
+      staffingOrderId,
+      recruiterUserId: input.actorId,
+      status: RECRUITER_ASSIGNMENT_STATUS.ACTIVE,
+    },
+    select: { id: true },
+  });
+  if (!orderAssignment) {
+    throw new RecruiterAssignmentError(
+      'NO_ACTIVE_ORDER_ASSIGNMENT',
+      `Actor ${input.actorId} is not an ACTIVE recruiter for StaffingOrder ${staffingOrderId}`,
+      403,
+    );
+  }
+
+  // (3) Order must be OPEN.
+  const order = await tx.staffingOrder.findUnique({
+    where: { id: staffingOrderId },
+    select: { status: true },
+  });
+  if (!order || order.status !== 'OPEN') {
+    throw new RecruiterAssignmentError(
+      'ORDER_NOT_OPEN',
+      `StaffingOrder ${staffingOrderId} is not OPEN (status=${order?.status ?? 'missing'})`,
+      409,
+    );
+  }
+
+  // (4) Submission-scoped advisory lock to serialize concurrent claim attempts
+  //     on the SAME submission. The handling-assignment partial unique index
+  //     serializes per-profile at the DB level. Both are required: the index
+  //     alone catches the common case; the lock prevents races on submissions
+  //     that don't yet have a profile (race-to-create).
+  await acquireSubmissionLock(tx, input.submissionId);
+
+  // (5) Idempotent replay: if an ACTIVE handling assignment already exists
+  //     for this labor profile AND the assignee is the actor, return it.
+  //     Otherwise: HANDLING_ALREADY_CLAIMED.
+  const now = new Date();
+  if (laborProfileId) {
+    const existingActive = await tx.laborProfileHandlingAssignment.findFirst({
+      where: {
+        laborProfileId,
+        status: HANDLING_ASSIGNMENT_STATUS.ACTIVE,
+      },
+      select: { id: true, assigneeUserId: true, startsAt: true, expiresAt: true, source: true },
+    });
+    if (existingActive) {
+      if (existingActive.assigneeUserId === input.actorId) {
+        // Idempotent replay — same winner, same row.
+        return {
+          handlingAssignmentId: existingActive.id,
+          submissionId: input.submissionId,
+          staffingOrderId,
+          slotId: submission.slotId!,
+          laborProfileId,
+          assigneeUserId: existingActive.assigneeUserId,
+          source: HANDLING_ASSIGNMENT_SOURCE.ORDER_RECRUITER_CLAIM,
+          startsAt: existingActive.startsAt,
+          expiresAt: existingActive.expiresAt ?? new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
+        };
+      }
+      throw new RecruiterAssignmentError(
+        'HANDLING_ALREADY_CLAIMED',
+        `LaborProfile ${laborProfileId} is already claimed by another recruiter (assignmentId=${existingActive.id})`,
+        409,
+        { submissionId: input.submissionId, staffingOrderId },
+      );
+    }
+  }
+
+  // (6) Create the handling assignment. Without a labor profile (rare — no
+  //     placement case yet), we still need a profile-id-like anchor. The
+  //     schema requires laborProfileId NOT NULL, so we cannot create a
+  //     handling assignment without one. If the submission is unlinked to
+  //     a placement case, this is a contract violation by the submission
+  //     (no candidate profile yet). Fail closed.
+  if (!laborProfileId) {
+    throw new RecruiterAssignmentError(
+      'CANDIDATE_SUBMISSION_NOT_IN_ORDER',
+      `CandidateSubmission ${input.submissionId} has no LaborProfile anchor (placementCaseId=${submission.placementCaseId ?? 'missing'}); cannot claim`,
+      404,
+    );
+  }
+
+  const expiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  try {
+    const created = await tx.laborProfileHandlingAssignment.create({
+      data: {
+        laborProfileId,
+        assigneeUserId: input.actorId,
+        assignedByUserId: null,
+        source: HANDLING_ASSIGNMENT_SOURCE.ORDER_RECRUITER_CLAIM,
+        startsAt: now,
+        expiresAt,
+        status: HANDLING_ASSIGNMENT_STATUS.ACTIVE,
+      },
+      select: { id: true, startsAt: true, expiresAt: true, assigneeUserId: true },
+    });
+    return {
+      handlingAssignmentId: created.id,
+      submissionId: input.submissionId,
+      staffingOrderId,
+      slotId: submission.slotId!,
+      laborProfileId,
+      assigneeUserId: created.assigneeUserId,
+      source: HANDLING_ASSIGNMENT_SOURCE.ORDER_RECRUITER_CLAIM,
+      startsAt: created.startsAt,
+      expiresAt: created.expiresAt ?? expiresAt,
+    };
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      // Lost the race to another concurrent claim attempt. Re-read to surface
+      // the canonical HANDLING_ALREADY_CLAIMED message.
+      throw new RecruiterAssignmentError(
+        'HANDLING_ALREADY_CLAIMED',
+        `CandidateSubmission ${input.submissionId} was claimed by another recruiter during your claim`,
+        409,
+        { submissionId: input.submissionId, staffingOrderId },
+      );
+    }
+    throw err;
+  }
 }
 
-/**
- * Read: list all ACTIVE recruiter assignments on an order.
- * Used by the assignment preview route.
- */
+// ═══════════════════════════════════════════════════════════════════════════
+// 4. listOrderRecruiterAssignments
+// ═══════════════════════════════════════════════════════════════════════════
+
 export interface OrderRecruiterAssignmentRow {
   assignmentId: string;
   recruiterUserId: string;
   recruiterName: string | null;
-  source: 'HR_MANAGER_ASSIGN' | 'ORDER_RECRUITER_CLAIM';
-  startsAt: string;
+  source: 'HR_MANAGER_ASSIGN';
+  assignedAt: string;
   status: 'ACTIVE' | 'REVOKED';
   revokedAt: string | null;
   revokedByUserId: string | null;
-  assignedByUserId: string | null;
+  assignedByUserId: string;
   reason: string | null;
 }
 
@@ -555,12 +548,12 @@ export async function listOrderRecruiterAssignments(
 ): Promise<OrderRecruiterAssignmentRow[]> {
   const rows = await tx.staffingOrderRecruiterAssignment.findMany({
     where: { staffingOrderId },
-    orderBy: { startsAt: 'asc' },
+    orderBy: { assignedAt: 'asc' },
     select: {
       id: true,
       recruiterUserId: true,
       source: true,
-      startsAt: true,
+      assignedAt: true,
       status: true,
       revokedAt: true,
       revokedByUserId: true,
@@ -574,7 +567,7 @@ export async function listOrderRecruiterAssignments(
     recruiterUserId: r.recruiterUserId,
     recruiterName: r.recruiter?.name ?? null,
     source: r.source as OrderRecruiterAssignmentRow['source'],
-    startsAt: r.startsAt.toISOString(),
+    assignedAt: r.assignedAt.toISOString(),
     status: r.status as OrderRecruiterAssignmentRow['status'],
     revokedAt: r.revokedAt ? r.revokedAt.toISOString() : null,
     revokedByUserId: r.revokedByUserId,
@@ -583,12 +576,188 @@ export async function listOrderRecruiterAssignments(
   }));
 }
 
-/**
- * Internal: assert that the caller is the active recruiter for the order's
- * slot in question. Used by placement dual authority. The function returns
- * the assignment id; absence → throws `RecruiterAssignmentError` with code
- * ROLE_NOT_PERMITTED (404 — same shape as "no active assignment").
- */
+// ═══════════════════════════════════════════════════════════════════════════
+// 5. listMyClaimedCandidates (Recruiter Workbench MINE rail)
+// ═══════════════════════════════════════════════════════════════════════════
+
+export interface ClaimedCandidateRow {
+  submissionId: string;
+  staffingOrderId: string;
+  staffingOrderCode: string;
+  staffingOrderTitle: string;
+  slotId: string;
+  slotPositionTitle: string;
+  handlingAssignmentId: string;
+  candidateFullName: string;
+  /** Always present for the winner; null if not stored. */
+  candidatePhoneMasked: string | null;
+  candidateStatus: string;
+  claimedAt: string;
+  expiresAt: string;
+}
+
+export async function listMyClaimedCandidates(
+  tx: PrismaTypes.TransactionClient,
+  recruiterUserId: string,
+): Promise<ClaimedCandidateRow[]> {
+  // Pull ACTIVE handling assignments where source = ORDER_RECRUITER_CLAIM
+  // AND the assignee is the caller. Derive submission through
+  // laborProfile -> placementCase -> candidateSubmission (the canonical chain).
+  const rows = await tx.laborProfileHandlingAssignment.findMany({
+    where: {
+      assigneeUserId: recruiterUserId,
+      status: HANDLING_ASSIGNMENT_STATUS.ACTIVE,
+      source: HANDLING_ASSIGNMENT_SOURCE.ORDER_RECRUITER_CLAIM,
+    },
+    orderBy: { createdAt: 'desc' },
+    select: {
+      id: true,
+      startsAt: true,
+      expiresAt: true,
+      laborProfile: {
+        select: {
+          id: true,
+          placementCases: {
+            take: 1,
+            orderBy: { createdAt: 'desc' },
+            select: {
+              submissions: {
+                take: 1,
+                orderBy: { createdAt: 'desc' },
+                select: {
+                  id: true,
+                  fullName: true,
+                  phone: true,
+                  status: true,
+                  slotId: true,
+                  slot: {
+                    select: {
+                      id: true,
+                      positionTitle: true,
+                      staffingOrderId: true,
+                      staffingOrder: {
+                        select: { id: true, code: true, title: true },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+  const out: ClaimedCandidateRow[] = [];
+  for (const r of rows) {
+    const cs = r.laborProfile?.placementCases?.[0]?.submissions?.[0];
+    if (!cs || !cs.slot) continue;
+    out.push({
+      submissionId: cs.id,
+      staffingOrderId: cs.slot.staffingOrderId,
+      staffingOrderCode: cs.slot.staffingOrder.code,
+      staffingOrderTitle: cs.slot.staffingOrder.title,
+      slotId: cs.slot.id,
+      slotPositionTitle: cs.slot.positionTitle,
+      handlingAssignmentId: r.id,
+      candidateFullName: cs.fullName,
+      // Winner sees the masked phone (PII containment for non-final reads;
+      // unmasking is server-derived through the same flow).
+      candidatePhoneMasked: maskPhone(cs.phone),
+      candidateStatus: cs.status,
+      claimedAt: r.startsAt.toISOString(),
+      expiresAt: (r.expiresAt ?? new Date(r.startsAt.getTime() + 7 * 24 * 60 * 60 * 1000)).toISOString(),
+    });
+  }
+  return out;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 6. listMaskedUnclaimedCandidatesForOrder (assigned-recruiter candidate queue)
+// ═══════════════════════════════════════════════════════════════════════════
+
+export interface MaskedCandidateRow {
+  submissionId: string;
+  slotId: string;
+  slotPositionTitle: string;
+  candidateFullName: string;
+  /** ALWAYS masked for this view. */
+  candidatePhoneMasked: string | null;
+  candidateStatus: string;
+  submittedAt: string;
+}
+
+export async function listMaskedUnclaimedCandidatesForOrder(
+  tx: PrismaTypes.TransactionClient,
+  staffingOrderId: string,
+  actorId: string,
+): Promise<MaskedCandidateRow[]> {
+  // Server-side authority: actor must have an ACTIVE assignment on the order.
+  const active = await tx.staffingOrderRecruiterAssignment.findFirst({
+    where: {
+      staffingOrderId,
+      recruiterUserId: actorId,
+      status: RECRUITER_ASSIGNMENT_STATUS.ACTIVE,
+    },
+    select: { id: true },
+  });
+  if (!active) {
+    throw new RecruiterAssignmentError(
+      'NO_ACTIVE_ORDER_ASSIGNMENT',
+      `Actor ${actorId} is not an ACTIVE recruiter for StaffingOrder ${staffingOrderId}`,
+      403,
+    );
+  }
+
+  // Candidates: slots under the order, submissions on those slots, no ACTIVE
+  // handling assignment with source = ORDER_RECRUITER_CLAIM on the linked
+  // labor profile.
+  const candidates = await tx.candidateSubmission.findMany({
+    where: {
+      slot: { staffingOrderId },
+      OR: [
+        { placementCase: null },
+        {
+          placementCase: {
+            laborProfile: {
+              handlingAssignments: {
+                none: {
+                  status: HANDLING_ASSIGNMENT_STATUS.ACTIVE,
+                  source: HANDLING_ASSIGNMENT_SOURCE.ORDER_RECRUITER_CLAIM,
+                },
+              },
+            },
+          },
+        },
+      ],
+    },
+    take: 200,
+    orderBy: { createdAt: 'asc' },
+    select: {
+      id: true,
+      slotId: true,
+      fullName: true,
+      phone: true,
+      status: true,
+      createdAt: true,
+      slot: { select: { positionTitle: true } },
+    },
+  });
+  return candidates.map((c) => ({
+    submissionId: c.id,
+    slotId: c.slotId!,
+    slotPositionTitle: c.slot?.positionTitle ?? '',
+    candidateFullName: c.fullName,
+    candidatePhoneMasked: maskPhone(c.phone),
+    candidateStatus: c.status,
+    submittedAt: c.createdAt.toISOString(),
+  }));
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 7. assertActiveRecruiterForOrder (placement dual authority — first half)
+// ═══════════════════════════════════════════════════════════════════════════
+
 export async function assertActiveRecruiterForOrder(
   tx: PrismaTypes.TransactionClient,
   actorId: string,
@@ -596,7 +765,7 @@ export async function assertActiveRecruiterForOrder(
   staffingOrderId: string,
 ): Promise<void> {
   if (actorRole === 'HR_MANAGER' || actorRole === 'ADMIN') {
-    // These roles bypass the recruiter check.
+    // Bypass for non-recruiter roles.
     return;
   }
   if (actorRole !== 'HR_STAFF') {
@@ -616,12 +785,84 @@ export async function assertActiveRecruiterForOrder(
   });
   if (!active) {
     throw new RecruiterAssignmentError(
-      'NO_ACTIVE_ASSIGNMENT',
+      'NO_ACTIVE_ORDER_ASSIGNMENT',
       `Actor ${actorId} is not the active recruiter for order ${staffingOrderId}`,
-      404,
+      403,
     );
   }
 }
 
-/** Helper: `getPrisma()` for callers that need a typed client. */
+// ═══════════════════════════════════════════════════════════════════════════
+// 8. assertActiveHandlingForLaborProfile (placement dual authority — second half)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Verify the actor has an ACTIVE `LaborProfileHandlingAssignment` for the
+ * given LaborProfile. Required by the canonical Placement dual-authority
+ * contract (P1-A0.4 v1.3 §6).
+ */
+export async function assertActiveHandlingForLaborProfile(
+  tx: PrismaTypes.TransactionClient,
+  actorId: string,
+  actorRole: SystemRole,
+  laborProfileId: string,
+): Promise<void> {
+  if (actorRole === 'HR_MANAGER' || actorRole === 'ADMIN') {
+    return;
+  }
+  if (actorRole !== 'HR_STAFF') {
+    throw new RecruiterAssignmentError(
+      'ROLE_NOT_PERMITTED',
+      `Role ${actorRole} cannot act on a placement under labor profile ${laborProfileId}`,
+      403,
+    );
+  }
+  const now = new Date();
+  const active = await tx.laborProfileHandlingAssignment.findFirst({
+    where: {
+      laborProfileId,
+      assigneeUserId: actorId,
+      status: HANDLING_ASSIGNMENT_STATUS.ACTIVE,
+      startsAt: { lte: now },
+      OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+    },
+    select: { id: true },
+  });
+  if (!active) {
+    throw new RecruiterAssignmentError(
+      'NO_ACTIVE_ASSIGNMENT',
+      `Actor ${actorId} has no ACTIVE handling assignment for LaborProfile ${laborProfileId}`,
+      403,
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// helpers
+// ═══════════════════════════════════════════════════════════════════════════
+
+function mapRow(row: {
+  id: string;
+  staffingOrderId: string;
+  recruiterUserId: string;
+  assignedByUserId: string;
+  source: string;
+  status: string;
+  assignedAt: Date;
+  revokedAt: Date | null;
+  createdAt: Date;
+}): RecruiterAssignmentRow {
+  return {
+    id: row.id,
+    staffingOrderId: row.staffingOrderId,
+    recruiterUserId: row.recruiterUserId,
+    assignedByUserId: row.assignedByUserId,
+    source: 'HR_MANAGER_ASSIGN',
+    status: row.status as RecruiterAssignmentRow['status'],
+    assignedAt: row.assignedAt,
+    revokedAt: row.revokedAt,
+    createdAt: row.createdAt,
+  };
+}
+
 export type { PrismaClient };

@@ -98,6 +98,7 @@ export async function POST(req: NextRequest) {
     run: (tx, ctx, value) =>
       placementCreate(tx, {
         actorId: ctx.userId,
+        actorRole: ctx.role,
         placementCaseId: value.placementCaseId,
         jobOpeningId: value.jobOpeningId,
         ...(value.sourceCandidateSubmissionId
