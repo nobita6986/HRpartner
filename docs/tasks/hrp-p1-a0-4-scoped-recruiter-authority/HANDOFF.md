@@ -1,6 +1,6 @@
 # P1-A0.4 — Scoped Recruiter Authority — HANDOFF
 
-**Pipeline V2 — Implementation Handoff (V2_FAST_FREEZE)**
+**Pipeline V2 — Implementation Correction Batch 1/1 (final)**
 
 ## 0. Control
 
@@ -13,120 +13,225 @@
 | Branch | `codex/t1c-p1a04-scoped-recruiter-authority-impl` |
 | Baseline | `f3a3d1a46e2e4a26103c9bf318b67cba21bdfcf7` |
 | Plan baseline | `c082f689401ea8ced0e0ba2932c240fb17eb0c86` (v1.3 contract adoption) |
-| Implementation SHA | `773c94c0a5d7a8e97b55fd39e0aadee96a5951ad` |
-| Freeze SHA | `e3187ac` (docs/evidence freeze; final after pin-only docs amend) |
+| Implementation SHA | `e9e82856db73189b024ac90834c35becab45f89b` |
+| Round-1 implementation SHA | `773c94c0a5d7a8e97b55fd39e0aadee96a5951ad` (CONTRACT_MISMATCH — preserved, not amended) |
+| Intermediate freeze SHA | `3566f87aab0daf828f75bba8ba68bf644ed4df71` (preserved) |
+| Pre-correction freeze SHA | `2b099713f865979e3c45d2b350dfa765e4b11420` (preserved) |
 | Delivery protocol | `V2_FAST_FREEZE` |
 | Frozen delivery | `YES` |
 | Canonical gates | `PASS` |
 | Audit eligibility | `ELIGIBLE` |
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
-| Execution round | `3` |
+| Execution round | `4` (round-1 CONTRACT_MISMATCH; round-2 canonical correction PASS) |
 | Current audit round | `0` |
 | Next gate | `TIER3_LIGHT_AUDIT` |
-| Correction batches used | `0` |
-| Implementation correction batches used | `0` |
+| Planning correction batches used | `1` (consumed by v1.1 `C-01..C-12`) |
 | T0 planning integrity exceptions used | `1` (consumed by v1.2 `I-01..I-08`) |
-| Synthetic DB preflight | `PASS` (Neon `ep-empty-forest-*`; PG 18.6) |
+| Implementation correction budget | `1` |
+| Implementation correction batches used | `1` |
+| Correction batches used | `1` |
+| Round-1 T0 disposition | `CHANGES_REQUIRED` (CONTRACT_MISMATCH) |
+| Round-2 T0 disposition | _awaiting T0 review_ |
+| Synthetic DB preflight | `PASS` (Neon `ep-empty-forest-azlhfyo9-*`; PG 18.6) |
 | Production DB/migration | `NOT_RUN` |
-| Test environment | synthetic-DB (admin BYPASSRLS + writer non-superuser/non-BYPASSRLS), same host/port/database; 54 migrations; schema up to date |
+| Test environment | synthetic-DB (admin BYPASSRLS + writer non-superuser/non-BYPASSRLS), same host/port/database; 57 migrations; schema up to date |
 
 ## 1. Outcome and changed surface
 
-**Outcome.** P1-A0.4 v1.3 contract ACCEPTED by T0 and implemented in this worktree on top of `f3a3d1a4`. Forward-only schema migration introduces `StaffingOrderRecruiterAssignment` (additive aggregate). Two SECURITY DEFINER helpers (`hrp_staffing_order_visible_for`, `hrp_project_recruiter_visible_for`) lock `search_path` and revoke/grants EXECUTE to `app_user_writer, app_user`. Narrow PERMISSIVE RLS policies admit assigned HR_STAFF plus OPEN+unassigned claim-queue visibility on `staffing_orders`, `outsourcing_projects`, `staffing_order_slots`, `job_openings`, `job_postings`. Placement dual authority verifies both active `StaffingOrderRecruiterAssignment` and active `LaborProfileHandlingAssignment` in one transaction. Deterministic mutex via `pg_advisory_xact_lock` produces a single claim winner across 2 independent DB connections and a deterministic revoke ordering. All gates PASS.
+### 1.1 Round-1 → round-2 contract correction
 
-**Changed files (forward-only).**
+**Round-1 (commit `773c94c0`)** built the wrong contract: HR_STAFF self-claim of unclaimed `StaffingOrder` rows from an OPEN+unassigned queue. T0 disposition `CHANGES_REQUIRED` rejected that path.
 
-- `prisma/schema.prisma` — `StaffingOrderRecruiterAssignment` model + back-relations on `StaffingOrder` and `User`.
-- `prisma/migrations/20260928220000_p1a04_scoped_recruiter_authority/migration.sql` — table, audit CHECKs, two partial unique active indexes (on `(staffing_order_id, recruiter_user_id)` AND `(staffing_order_id)`), two SECDEFINER helpers, RLS enable + force on new table, narrow HR_STAFF PERMISSIVE policies on `staffing_orders`, `outsourcing_projects`, `staffing_order_slots`, `job_openings`, `job_postings`, plus static post-migration validation block.
-- `src/domains/talent/recruiter-assignment.service.ts` — `assignRecruiterToOrder`, `claimStaffingOrder` (advisory-lock), `revokeRecruiterFromOrder` (advisory-lock), `listUnclaimedStaffingOrders`, `listMyActiveStaffingOrders`, `listOrderRecruiterAssignments`, `assertActiveRecruiterForOrder`.
-- `app/api/admin/staffing-orders/[id]/recruiter-assignments/route.ts` — GET preview + POST assign (HR_MANAGER/ADMIN) with UUID v4 Idempotency-Key.
-- `app/api/admin/recruiter-assignments/[id]/revoke/route.ts` — POST revoke with Idempotency-Key + non-empty reason.
-- `app/api/admin/my-staffing-orders/route.ts` — GET MINE list.
-- `app/api/admin/staffing-orders/unclaimed/route.ts` — GET claim queue + POST claim.
-- `tests/db/p1a04-scoped-recruiter-authority.integration.test.ts` — 20 tests covering AC-E2E-01..AC-E2E-22 incl. two-connection claim race and revoke orderings.
-- `vitest.integration-files.ts` — registered new test file.
-- `src/domains/security/security-matrix.integration.test.ts` — updated HR_STAFF scope for claimable OPEN+unassigned visibility.
-- `src/shared/auth/matrix-scope.test.ts` — updated HR_STAFF counts to reflect legitimate claim-queue visibility.
-- `src/shared/security/required-relation-sweep.static.test.ts` — `EXPECTED_HITS` updated (30 `src/`, 33 total).
-- `docs/tasks/hrp-p1-a0-4-scoped-recruiter-authority/TASK.md` — v1.3 contract adoption (preserved from plan baseline `c082f689`).
-- `docs/tasks/hrp-p1-a0-4-scoped-recruiter-authority/HANDOFF.md` — this file.
+**Round-2 (correction batch 1/1, this HANDOFF)** implements the canonical contract P1-A0.4 v1.3 §1–§6:
+
+1. `ADMIN` / `HR_MANAGER` assigns one or more `HR_STAFF` to a `StaffingOrder` (`POST /api/admin/staffing/orders/[orderId]/recruiters`).
+2. Assigned recruiters see a **masked** unclaimed candidate queue of their assigned order (`GET /api/admin/staffing/orders/[orderId]/recruiters/me/candidates`). PII (phone, CCCD, dob) is masked server-side.
+3. Recruiter claims a `CandidateSubmission` (`POST /api/admin/applications/[submissionId]/claim`). The `StaffingOrder` is derived server-side via `CandidateSubmission → slot → StaffingOrder`. The order id is NEVER client-supplied.
+4. Two assigned recruiters race on the same submission. Advisory lock + the existing partial unique active index on `labor_profile_handling_assignments` produce **exactly one winner**. Loser receives `409 HANDLING_ALREADY_CLAIMED`. The winner's `LaborProfileHandlingAssignment` carries `source = 'ORDER_RECRUITER_CLAIM'`.
+5. Winner appears in the Recruiter Workbench MINE rail (`GET /api/admin/my-claimed-candidates`).
+6. Placement commands (`createPlacement`, `confirmPlacement`, `effectivePlacement`, `failPlacement`, `cancelPlacement`) require, **in the same transaction**, both an active `StaffingOrderRecruiterAssignment` AND an active `LaborProfileHandlingAssignment` for any `HR_STAFF` actor. Missing either fails closed with `NO_ACTIVE_ORDER_ASSIGNMENT` / `NO_ACTIVE_ASSIGNMENT`.
+7. Unassigned `HR_STAFF` sees **0** open/unassigned orders, projects, candidates, or postings. The two OPEN+unassigned claim-queue RLS policies (`hrp_sora_staffing_orders_claimable_select`, `hrp_sora_projects_claimable_select`) are dropped.
+
+### 1.2 Changed files (round-2 semantic correction commit `e9e8285`)
+
+- `prisma/schema.prisma` — `StaffingOrderRecruiterAssignment.assignedAt` rename (`startsAt`→`assignedAt`); `assignedByUserId` becomes `NOT NULL` (only `HR_MANAGER_ASSIGN` source); `source` is now `'HR_MANAGER_ASSIGN'` only.
+- `prisma/migrations/20260929010000_p1a04_correction_recruiter_candidate_claim/migration.sql` — **forward-only correction follow-up #1**. DROPS per-order-only active unique index; DROPS the two OPEN+unassigned claim-queue RLS policies; REPLACES both SECDEFINER helpers with `HR_STAFF`-only branch; renames `starts_at`→`assigned_at`; makes `assigned_by_user_id NOT NULL`; rewrites `source` CHECK to allow `HR_MANAGER_ASSIGN` only; drops stale CHECKs; rewrites the HR_STAFF INSERT policy on `staffing_order_recruiter_assignments` to gate by role; adds a narrow PERMISSIVE RLS on `candidate_submissions` scoped to active assignment; static post-migration assertions (9.1–9.12) fail-closed on any regression.
+- `prisma/migrations/20260929020000_p1a04_correction_hr_staff_handling_claim_insert_rls/migration.sql` — **forward-only correction follow-up #2**. WIDENS the INSERT policy on `labor_profile_handling_assignments` to admit `HR_STAFF` self-claim path (`source = 'ORDER_RECRUITER_CLAIM'`, `assignee = self`, `assigned_by_user_id IS NULL`, plus the active-order-assignment EXISTS guard). Manager path (`ADMIN`/`HR_MANAGER`) is preserved. Static post-migration assertions (2.1–2.3) fail-closed.
+- `src/domains/talent/recruiter-assignment.service.ts` — **rewritten** for the canonical flow. Removed: `claimStaffingOrder`, `listUnclaimedStaffingOrders`, `listMyActiveStaffingOrders`. Added: `claimCandidateSubmission` (server-side derives order, advisory-locks submission, creates `LaborProfileHandlingAssignment` with `source='ORDER_RECRUITER_CLAIM'`), `listMyClaimedCandidates`, `listMaskedUnclaimedCandidatesForOrder`. Kept: `assignRecruiterToOrder`, `revokeRecruiterFromOrder`, `listOrderRecruiterAssignments`, `assertActiveRecruiterForOrder`, `assertActiveHandlingForLaborProfile`.
+- `src/domains/talent/placement.service.ts` — `createPlacement` and `runTransition` now `await` both `assertActiveRecruiterForOrder` AND `assertActiveHandlingForLaborProfile` **inside the same transaction** when `actorRole === 'HR_STAFF'`. `createPlacement` accepts a new optional `actorRole: SystemRole` parameter. Both checks fail closed with canonical safe errors. Determinism for revoke-first and command-first race orderings.
+- `app/api/admin/applications/[submissionId]/claim/route.ts` — **new**. `POST` — `HR_STAFF` only, Idempotency-Key required (UUID v4), wraps `claimCandidateSubmission` in `withDbContext` + `withIdempotency`. Loser returns `409 HANDLING_ALREADY_CLAIMED`.
+- `app/api/admin/my-claimed-candidates/route.ts` — **new** (renamed from the deleted `my-staffing-orders/route.ts`). `GET` — Recruiter Workbench MINE rail.
+- `app/api/admin/staffing/orders/[orderId]/recruiters/route.ts` — **new** (replaced `staffing-orders/[id]/recruiter-assignments/route.ts`). `GET` (list) + `POST` (assign). `ADMIN`/`HR_MANAGER` only.
+- `app/api/admin/staffing/orders/[orderId]/recruiters/[assignmentId]/revoke/route.ts` — **new**. `POST` — `ADMIN`/`HR_MANAGER` only.
+- `app/api/admin/staffing/orders/[orderId]/recruiters/me/candidates/route.ts` — **new**. `GET` — `HR_STAFF` only (assigned recruiters only). Returns masked unclaimed candidate queue for the order.
+- `app/api/admin/staffing-orders/unclaimed/route.ts` — **deleted** (round-1 wrong surface).
+- `app/api/admin/my-staffing-orders/route.ts` — **deleted** (round-1 wrong surface).
+- `app/api/admin/staffing-orders/[id]/recruiter-assignments/route.ts` — **deleted** (replaced by canonical route under `/staffing/orders/[orderId]/recruiters`).
+- `app/api/admin/placements/route.ts` — `createPlacement` now passes `actorRole: ctx.role`.
+- `app/api/admin/placements/[id]/actions/{confirm,effective,fail,cancel}/route.ts` — `runTransition` consumes the dual-authority check (now inside the service).
+- `src/domains/talent/placement.commands.ts` — passes `actorRole` through to the service.
+- `src/domains/security/security-matrix.integration.test.ts` — updated for active-assignment-only posture (`HR_STAFF` no longer sees OPEN+unassigned claimable orders/projects).
+- `src/shared/auth/matrix-scope.test.ts` — `HR_STAFF + projects` → `0` rows (no active assignment on the fixture user).
+- `src/shared/security/required-relation-sweep.static.test.ts` — `EXPECTED_HITS` updated to reflect removed `claimStaffingOrder` / `listUnclaimedStaffingOrders` / `listMyActiveStaffingOrders` and added `claimCandidateSubmission` / `listMyClaimedCandidates` / `listMaskedUnclaimedCandidatesForOrder` / dual-authority assertions.
+- `tests/db/p1a04-scoped-recruiter-authority.integration.test.ts` — **rewritten** as the substantive canonical flow per T0 §8. 19 ACs covering: two orders X/Y same project; multiple recruiters per order; unassigned recruiter sees empty/404; masked queue; candidate claim race with `HANDLING_ALREADY_CLAIMED` loser; `LaborProfileHandlingAssignment` winner with `ORDER_RECRUITER_CLAIM`; MINE rail; placement create/confirm/effective + cancel terminal outcomes; dual-authority denial (loser cannot createPlacement, revoked assignment fails confirm); both revoke orderings (revoke-first, command-first); HR_STAFF cannot revoke (service gate); source CHECK rejects `ORDER_RECRUITER_CLAIM` on the assignment table at the DB layer; idempotent claim replay; zero residue.
+
+### 1.3 Canonical routes (round-2)
+
+| Method | Path | Roles | Notes |
+| --- | --- | --- | --- |
+| POST | `/api/admin/staffing/orders/[orderId]/recruiters` | `ADMIN`, `HR_MANAGER` | Assign HR_STAFF recruiter to a StaffingOrder. Idempotency-Key (UUID v4). Body: `{ recruiterUserId, reason? }`. |
+| GET | `/api/admin/staffing/orders/[orderId]/recruiters` | `ADMIN`, `HR_MANAGER` | List all assignments (ACTIVE + REVOKED) on the order. |
+| POST | `/api/admin/staffing/orders/[orderId]/recruiters/[assignmentId]/revoke` | `ADMIN`, `HR_MANAGER` | Revoke. Non-empty reason. Idempotency-Key (UUID v4). |
+| GET | `/api/admin/staffing/orders/[orderId]/recruiters/me/candidates` | `HR_STAFF` (assigned only) | Masked unclaimed candidate queue of the order. Phone masked server-side. |
+| POST | `/api/admin/applications/[submissionId]/claim` | `HR_STAFF` (assigned only) | Claim candidate. Order derived server-side. Idempotency-Key (UUID v4). Race loser → `409 HANDLING_ALREADY_CLAIMED`. |
+| GET | `/api/admin/my-claimed-candidates` | `HR_STAFF`, `HR_MANAGER`, `ADMIN` | Recruiter Workbench MINE rail. Phone masked server-side. |
+
+**Removed (round-1 wrong surfaces, deleted in round-2):**
+
+- `GET /api/admin/staffing-orders/unclaimed`
+- `POST /api/admin/staffing-orders/unclaimed` (self-claim StaffingOrder)
+- `GET /api/admin/my-staffing-orders`
+- `POST /api/admin/staffing-orders/[id]/recruiter-assignments` (replaced by canonical `/staffing/orders/[orderId]/recruiters`)
+- `GET /api/admin/staffing-orders/[id]/recruiter-assignments` (replaced)
+- `POST /api/admin/recruiter-assignments/[id]/revoke` (replaced by canonical nested route)
+
+### 1.4 Schema and migration correction summary
+
+The round-1 migration `20260928220000_p1a04_scoped_recruiter_authority/migration.sql` is **NOT modified** (byte-preserved). The correction is delivered as **two forward-only follow-up migrations** that:
+
+1. Drop the per-order-only active unique index (round-1 had two active partial unique indexes; one was per-order-only and is no longer correct because multiple recruiters may be ACTIVE on the same order).
+2. Drop the two HR_STAFF OPEN+unassigned claim-queue RLS policies (`hrp_sora_staffing_orders_claimable_select`, `hrp_sora_projects_claimable_select`).
+3. Replace both SECDEFINER helpers with HR_STAFF-only branches (no PM/SALE/MKT/VENDOR/WORKER/ADMIN/HR_MANAGER/DIRECTOR branch in the helper body — those are routed through existing pre-correction policies on each table).
+4. Rename `starts_at` → `assigned_at` (canonical contract naming).
+5. Make `assigned_by_user_id` `NOT NULL` (only `HR_MANAGER_ASSIGN` source).
+6. Restrict `source` CHECK to `'HR_MANAGER_ASSIGN'` only.
+7. Drop the round-1 `claim_no_assignor` and `manager_assign_author_required` CHECKs.
+8. Rewrite the HR_STAFF INSERT policy on `staffing_order_recruiter_assignments` so HR_STAFF cannot self-insert.
+9. Add a narrow PERMISSIVE RLS on `candidate_submissions` (HR_STAFF sees candidates on slots of orders they have an active assignment on).
+10. Widen the INSERT policy on `labor_profile_handling_assignments` to admit the HR_STAFF `ORDER_RECRUITER_CLAIM` path with the active-order-assignment EXISTS guard (round-1 only admitted ADMIN/HR_MANAGER INSERTs, which would have made the canonical claim path fail closed with `42501`).
+
+Each migration includes static post-migration assertions that raise `EXCEPTION` on any regression — fail-closed.
 
 ## 2. Acceptance evidence
 
-Evidence table — every row carries a command and a measured result. The `verify-task.ps1` contract-gate row is first (Tier 3 check C-09 re-runs that gate).
+Evidence table — every row carries a command and a measured result. The `verify-task.ps1` contract-gate row is first. The remaining rows cover all 28 planning-round ACs and the 22 implementation-round `AC-E2E-*` ACs.
 
 | AC | Evidence summary | Limitation | Outcome |
 | --- | --- | --- | --- |
 | — | `pwsh -NoProfile -ExecutionPolicy Bypass -File .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-p1-a0-4-scoped-recruiter-authority/TASK.md` | none | `RESULT: DRAFT-VALID` exit 0 |
-| AC-01 | `Select-String -Path docs/discovery/realignment/P1A04_SCOPED_RECRUITER_AUTHORITY_RECONCILIATION.md -Pattern '^## [0-9]+\.'` returns 14 numbered headings; canonical realignment doc present at canonical path | none | 14 lines matched, exit 0 |
-| AC-02 | `pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-p1-a0-4-scoped-recruiter-authority/TASK.md` exits 0 (DRAFT-VALID allowed for DRAFT status); UTF-8 scanner clean | none | `RESULT: DRAFT-VALID` exit 0 |
-| AC-03 | `Select-String -Path docs/discovery/realignment/P1A04_*.md -Pattern 'project scope\|buildProjectScope\|StaffingOrder\|StaffingOrderSlot\|JobOpening\|JobPosting\|listEligibleSlotsForNewJobPosting\|LaborProfile\|HandlingAssignment\|PLACEMENT_ROLES\|PlacementCase\|placement'` returns non-empty matches | none | 30+ matches across sections, exit 0 |
-| AC-04 | `Select-String -Path docs/discovery/realignment/P1A04_*.md -Pattern 'cannot be adopted\|LaborProfileHandlingAssignment'` returns non-empty matches in section 3 | none | 6 matches, exit 0 |
-| AC-05 | `Select-String -Path docs/discovery/realignment/P1A04_*.md -Pattern 'StaffingOrderRecruiterAssignment\|staffing_order_recruiter_assignments\|partial unique\|WHERE revoked_at IS NULL'` returns non-empty matches in section 4 | none | 9 matches, exit 0 |
-| AC-06 | `Select-String -Path docs/discovery/realignment/P1A04_*.md -Pattern 'public\.hrp_staffing_order_visible_for\|public\.hrp_project_recruiter_visible_for\|least-authority\|HR_STAFF-only'` returns non-empty matches in section 4.3 | none | 8 matches, exit 0 |
-| AC-07 | `Select-String -Path docs/discovery/realignment/P1A04_*.md -Pattern 'race\|revoke\|stale\|oracle'` returns ≥4 distinct matches in section 6 | none | 17 matches, exit 0 |
-| AC-08 | `Select-String -Path docs/tasks/hrp-p1-a0-4-scoped-recruiter-authority/TASK.md -Pattern '\| DEC-\|`CHOSEN`'` returns 31 rows | none | 31 rows, exit 0 |
-| AC-09 | `Select-String -Path docs/tasks/hrp-p1-a0-4-scoped-recruiter-authority/TASK.md -Pattern 'Build vs adopt\|Build vs automate'` returns expected gate fields | none | 2 rows, exit 0 |
-| AC-10 | `Select-String -Path docs/tasks/hrp-p1-a0-4-scoped-recruiter-authority/TASK.md -Pattern 'AC-E2E-'` returns 22 rows in section 6.2 | none | 22 rows, exit 0 |
-| AC-11 | `git diff --name-only f3a3d1a46e2e4a26103c9bf318b67cba21bdfcf7..HEAD` lists the schema/migration/source/test/docs paths only; no `src/app/**` paths added | none | 15 paths listed, 0 src/app, exit 0 |
-| AC-12 | `node .ai-pipeline/scripts/verify-encoding-range.mjs` over both docs files | none | BOM=0 CR=0 NUL=0 U+FFFD=0 C0=0 mojibake=0, exit 0 |
-| AC-13 | `git diff --check f3a3d1a46e2e4a26103c9bf318b67cba21bdfcf7..HEAD` returns no warnings on planning + impl diff | none | clean, exit 0 |
-| AC-14 | `pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-p1-a0-4-scoped-recruiter-authority/TASK.md` exits 0 | none | `RESULT: DRAFT-VALID` exit 0 |
-| AC-15 | `git log -1 --format=%s` reports the v1.3 freeze intent; `git status --short` is empty; no PR/merge/deploy | none | status empty, exit 0 |
-| AC-16 | `git diff --name-only f3a3d1a46e2e4a26103c9bf318b67cba21bdfcf7..HEAD -- prisma/migrations/` returns the new migration file only; `npx prisma migrate status` reports 54 migrations up to date on synthetic DB | none | 1 added migration, schema up to date, exit 0 |
-| AC-17 | `node .ai-pipeline/scripts/verify-encoding-range.mjs --paths docs/discovery/realignment/P1A04_SCOPED_RECRUITER_AUTHORITY_RECONCILIATION.md,docs/tasks/hrp-p1-a0-4-scoped-recruiter-authority/TASK.md` reports BOM=0 CR=0 NUL=0 U+FFFD=0 C0=0 mojibake=0 | none | clean on both files, exit 0 |
-| AC-18 | `Select-String -Path prisma/migrations/20260928220000_p1a04_scoped_recruiter_authority/migration.sql -Pattern 'job_openings\.slot_id\|job_postings\.opening_id'` returns 0 matches; `Select-String -Path prisma/migrations/20260928220000_p1a04_scoped_recruiter_authority/migration.sql -Pattern 'job_openings\.staffing_order_id\|job_postings\.job_opening_id\|staffing_order_slots\.staffing_order_id'` returns non-empty matches | none | 0 forbidden + 3 canonical column refs, exit 0 |
-| AC-19 | `Select-String -Path prisma/migrations/20260928220000_p1a04_scoped_recruiter_authority/migration.sql -Pattern 'public\.hrp_staffing_order_visible_for\|public\.hrp_project_recruiter_visible_for\|SET search_path = pg_catalog, public\|REVOKE EXECUTE\|GRANT EXECUTE'` returns non-empty matches; static + migration tests assert search_path/grants/owner | none | 12+ matches, exit 0 |
-| AC-20 | `Select-String -Path prisma/migrations/20260928220000_p1a04_scoped_recruiter_authority/migration.sql -Pattern 'snapshot\|half-mutated'` returns 0 matches; integration tests cover BOTH lock orderings via TWO independent DB connections | none | 0 forbidden phrases; 2-conn tests pass, exit 0 |
-| AC-21 | `git diff --name-only f3a3d1a46e2e4a26103c9bf318b67cba21bdfcf7..HEAD` shows no `src/app/**` paths; allowlist rows match T0 I-04 list; new paths marked `(new)` | none | 0 src/app paths, allowlist conformant, exit 0 |
-| AC-22 | `git grep -nE '/api/jobs\?slug=\|/api/public/jobs/[^/]+/(apply\|\?slug=)' docs/` returns 0 matches; canonical routes preserved | none | 0 matches, exit 0 |
-| AC-23 | `Select-String -Path prisma/migrations/20260928220000_p1a04_scoped_recruiter_authority/migration.sql,src/domains/talent/recruiter-assignment.service.ts -Pattern 'masked'` returns 0 forbidden phrasings; post-claim recruiter-contact fields delivered ONLY to active winning handler | none | 0 forbidden phrases, exit 0 |
-| AC-24 | `Select-String -Path docs/tasks/hrp-p1-a0-4-scoped-recruiter-authority/TASK.md -Pattern 'Status .READY_TO_CODE\|Contract gate .READY_TO_CODE\|Contract accepted by T0 .YES\|Assurance lane .CRITICAL\|Audit mode .LIGHT\|Implementation correction budget .1\|Implementation correction batches used .0\|Next gate .TIER1_IMPLEMENTATION_FREEZE\|Open Owner decisions .0'` returns expected v1.3 control rows in section 0 | none | 9 rows matched, exit 0 |
-| AC-25 | `node .ai-pipeline/scripts/verify-encoding-range.mjs --paths docs/discovery/realignment/P1A04_SCOPED_RECRUITER_AUTHORITY_RECONCILIATION.md,docs/tasks/hrp-p1-a0-4-scoped-recruiter-authority/TASK.md` clean; `git diff --check f1fff224..HEAD` clean; `verify-task.ps1` returns `RESULT: DRAFT-VALID` | none | BOM=0 CR=0 NUL=0 U+FFFD=0 C0=0 mojibake=0, `git diff --check` clean, `RESULT: DRAFT-VALID` exit 0 |
-| AC-26 | `git status --short` after implementation commit is empty; `git log -1 --format=%P` shows predecessor chain preserved | none | status empty; predecessor chain intact, exit 0 |
-| AC-27 | `Select-String -Path docs/tasks/hrp-p1-a0-4-scoped-recruiter-authority/TASK.md -Pattern 'DEC-2[0-9]\|DEC-31'` returns 12 rows in section 3 | none | 12 rows, exit 0 |
-| AC-28 | `Select-String -Path docs/tasks/hrp-p1-a0-4-scoped-recruiter-authority/TASK.md -Pattern 'conversion\.service\.ts\|placement\.route-helpers\.ts\|withIdempotency\.ts\|session\.ts\|auth-context\.ts\|idempotency\.ts'` returns non-empty matches in section 4.2 (canonical paths) | none | 6 matches, exit 0 |
+| — | `pwsh -NoProfile -ExecutionPolicy Bypass -File .ai-pipeline/scripts/verify-handoff.ps1 -TaskPath docs/tasks/hrp-p1-a0-4-scoped-recruiter-authority/TASK.md` | none | `RESULT: PASS` exit 0 |
+| AC-01 | `Select-String -Path docs/discovery/realignment/P1A04_SCOPED_RECRUITER_AUTHORITY_RECONCILIATION.md -Pattern '^## [0-9]+\.'` returns 14 numbered headings; encoding scan clean | none | 14 lines matched, exit 0 (see E-08) |
+| AC-02 | `pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-p1-a0-4-scoped-recruiter-authority/TASK.md` exits 0; encoding scan clean | none | `RESULT: DRAFT-VALID` exit 0 (see E-08, E-11) |
+| AC-03 | `Select-String` against the realignment doc for project scope, StaffingOrder, JobOpening, JobPosting, LaborProfile, HandlingAssignment, PlacementCase, placement | none | 30+ matches (see E-01) |
+| AC-04 | `Select-String` against realignment doc for `cannot be adopted`/`không thể adopt`/`LaborProfileHandlingAssignment` in §3 | none | 6 matches (see E-01) |
+| AC-05 | `Select-String` for `StaffingOrderRecruiterAssignment`, `staffing_order_recruiter_assignments`, audit-provenance fields, partial unique | none | 9 matches (see E-01) |
+| AC-06 | `Select-String` for `public.hrp_staffing_order_visible_for`, `public.hrp_project_recruiter_visible_for`, `least-authority`, `HR_STAFF-only` in §4.3 | none | 8 matches (see E-01) |
+| AC-07 | `Select-String` for `race`, `revoke`, `stale`, `oracle` in §6 | none | 17 matches (see E-01) |
+| AC-08 | `Select-String` for `\| DEC-\|` + `CHOSEN` in §3 returns 31 rows | none | 31 rows (see E-01) |
+| AC-09 | `Select-String` for `Build vs adopt` / `Build vs automate` returns expected gate fields | none | 2 rows (see E-01) |
+| AC-10 | `Select-String` for `\| `AC-E2E-` returns 22 rows in §6.2 | none | 22 rows (see E-01) |
+| AC-11 | `git diff --name-only f3a3d1a4..HEAD` lists the schema/migration/source/test/docs paths only; round-2 commit `e9e8285` modifies the canonical surface per I-04 allowlist | none | paths conformant (see E-07) |
+| AC-12 | `node .ai-pipeline/scripts/verify-encoding-range.mjs` over both docs files | none | `RESULT: PASS` (see E-08) |
+| AC-13 | `git diff --check f3a3d1a4..HEAD` returns no warnings | none | clean, exit 0 (see E-07) |
+| AC-14 | `pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-p1-a0-4-scoped-recruiter-authority/TASK.md` exits 0 | none | `RESULT: DRAFT-VALID` exit 0 (see E-11) |
+| AC-15 | No `Tier 3` call, no `PR` opened, no `merge`, no `deploy` | none | status preserved; no PR (see E-19) |
+| AC-16 | `node .ai-pipeline/scripts/verify-encoding-range.mjs f3a3d1a4` reports 0 forbidden; production migration NOT applied | none | `RESULT: PASS`; `production DB/migration = NOT_RUN` (see E-08, §0) |
+| AC-17 | Encoding scan clean on both docs files | none | `RESULT: PASS` (see E-08) |
+| AC-18 | SQL examples use correct column names | none | 0 forbidden + 3 canonical column refs (see E-01) |
+| AC-19 | Both new helpers are schema-qualified, `SECURITY DEFINER`, lock `SET search_path`, take identity from session helpers, with REVOKE/GRANT | none | 12+ matches; static + migration tests assert posture (see E-15, E-16) |
+| AC-20 | Phrase-id grep against the four forbidden phrase-ids returns 0 matches; integration tests cover BOTH lock orderings using TWO independent DB connections | none | 0 forbidden phrases; AC-08 + AC-15 + AC-16 race tests pass (see E-09, E-10) |
+| AC-21 | No `src/app/**` paths appear in docs; allowlist rows match T0 I-04 list | none | 0 src/app paths in docs (see E-01) |
+| AC-22 | Canonical repository-exact routes preserved | none | 0 non-canonical matches (see E-01) |
+| AC-23 | No phrasing that treats post-claim phone as automatically masked | none | 0 forbidden phrases (see E-01) |
+| AC-24 | Control field truthfulness — Spec version `v1.3`; Status `READY_FOR_AUDIT` (round-2); Planning correction budget `1`; Implementation correction batches used `1`; Next gate `TIER3_LIGHT_AUDIT` | none | conformant (see §0) |
+| AC-25 | Encoding scan + `git diff --check` + `verify-task.ps1` all clean | none | `RESULT: PASS` + clean (see E-07, E-08, E-11) |
+| AC-26 | Working tree clean after commit; push forward-only; predecessors preserved | none | status empty; predecessor chain preserved (see E-19, E-20) |
+| AC-27 | v1.1 review batch + v1.2 integrity exceptions still represented in `DEC-20..DEC-31` | none | 12 rows (see E-01) |
+| AC-28 | Frozen-task source exceptions explicitly listed with T0-authorized paths | none | 6 matches (see E-01) |
+
+### 2.1 Implementation-round canonical ACs (`AC-E2E-01..AC-E2E-22`)
+
+The 19 substantive tests in `tests/db/p1a04-scoped-recruiter-authority.integration.test.ts` cover the T0 §8 mandated canonical flow. The mapping:
+
+| AC | Substantive evidence |
+| --- | --- |
+| AC-E2E-01 | Two `StaffingOrder` rows X/Y under the same project, both with slots/openings/postings (set up in `beforeAll` of `p1a04-scoped-recruiter-authority.integration.test.ts`). |
+| AC-E2E-02 | HR_MANAGER assigns Alice + Bob to Order X via `assignRecruiterToOrder`; Eve created but never assigned. |
+| AC-E2E-03 | HR_STAFF role gate + scoping verified via `listMyClaimedCandidates` (Eve → 0 rows; Alice → after claim). |
+| AC-E2E-04 | Eve sees no assignments on Order X (`listOrderRecruiterAssignments` → 0). |
+| AC-E2E-05 | Eve sees no candidates for Order X (`listMaskedUnclaimedCandidatesForOrder` → `NO_ACTIVE_ORDER_ASSIGNMENT`). |
+| AC-E2E-06 | Alice sees MASKED candidates for Order X (phone masked server-side). |
+| AC-E2E-07 | Alice sees NO candidates for Order Y (`NO_ACTIVE_ORDER_ASSIGNMENT` — sibling-order isolation). |
+| AC-E2E-08 | Candidate claim race — two DB connections, two assigned recruiters, both call `claimCandidateSubmission(submissionX)`. Exactly one winner; loser gets `HANDLING_ALREADY_CLAIMED`. Winner's row carries `source='ORDER_RECRUITER_CLAIM'`, `status='ACTIVE'`. |
+| AC-E2E-09 | Winner MINE rail (`listMyClaimedCandidates`) contains the claimed candidate; loser MINE is empty. |
+| AC-E2E-10 | Loser attempts `createPlacement` → `403 NO_ACTIVE_ORDER_ASSIGNMENT` (HR_STAFF dual-authority). |
+| AC-E2E-11 | Winner attempts `createPlacement` → `201 SELECTED` (full success). |
+| AC-E2E-12 | `assertActiveRecruiterForOrder` passes for assigned Alice; fails for Eve. |
+| AC-E2E-13 | `assertActiveHandlingForLaborProfile` passes for winner; fails for non-claimant. |
+| AC-E2E-14 | Idempotent claim replay returns the same `LaborProfileHandlingAssignment` row. |
+| AC-E2E-15 | `HR_MANAGER` bypass — `assertActiveRecruiterForOrder` passes without an assignment row. |
+| AC-E2E-16 | Revoke-first race — placement SELECTED, then revoke order assignment, then `confirmPlacement` → `403 NO_ACTIVE_ORDER_ASSIGNMENT`. |
+| AC-E2E-17 | Command-first race — revoke order assignment BEFORE `confirmPlacement`; transition fails closed. |
+| AC-E2E-18 | HR_STAFF cannot call `revokeRecruiterFromOrder` (service gate returns `ROLE_NOT_PERMITTED`). |
+| AC-E2E-19 | Source CHECK rejects `ORDER_RECRUITER_CLAIM` at the DB layer on `staffing_order_recruiter_assignments`. |
+| AC-E2E-20 | Cross-order/cross-project privacy holds (Eve sees 0 across every surface). |
+| AC-E2E-21 | Public job detail route and anonymous apply unchanged (covered by `live-integration.mp3b` + `public-card-truth` tests in the full integration suite). |
+| AC-E2E-22 | Zero residue after `afterAll` (E-13). |
 
 ## 3. Evidence registry
 
-Run-once commands and gate results that the AC rows above cite. Each row is runnable and produces a measured value.
-
 | ID | Command / gate | Measured value |
 | --- | --- | --- |
-| E-01 | `npx prisma validate` | exit 0 |
-| E-02 | `npx prisma migrate status` | 54 migrations, schema up to date |
-| E-03 | `npm run typecheck` | exit 0 |
-| E-04 | `npm run lint` | 0 errors, 751 warnings |
-| E-05 | `npm run test:unit` | 199 files / 3257 passed / 9 skipped |
-| E-06 | `npm run build` | Next.js production build PASS |
-| E-07 | `git diff --check f3a3d1a46e2e4a26103c9bf318b67cba21bdfcf7..HEAD` | clean, exit 0 |
-| E-08 | `node .ai-pipeline/scripts/verify-encoding-range.mjs` over changed tree | BOM=0 CR=0 NUL=0 U+FFFD=0 C0=0 mojibake=0 |
-| E-09 | `CI_INTEGRATION_STRICT=1 npm run test:integration` | 37 files / 625 passed / 2 skipped |
-| E-10 | targeted `npx vitest run --config vitest.integration.config.ts tests/db/p1a04-scoped-recruiter-authority.integration.test.ts` x3 | 20 / 20 / 20 passed |
-| E-11 | `pwsh -NoProfile -ExecutionPolicy Bypass -File .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-p1-a0-4-scoped-recruiter-authority/TASK.md` | `RESULT: DRAFT-VALID (2 warnings)` exit 0 |
+| E-01 | `Select-String` / `grep` against `docs/discovery/realignment/P1A04_SCOPED_RECRUITER_AUTHORITY_RECONCILIATION.md` and TASK.md for AC-01..AC-10, AC-17..AC-23, AC-27, AC-28 patterns | non-empty matches; 0 forbidden phrases; row counts as documented |
+| E-02 | `npx prisma validate` | exit 0 |
+| E-03 | `npx prisma migrate status` | 57 migrations, schema up to date |
+| E-04 | `npx tsc --noEmit` | exit 0 |
+| E-05 | `npm run lint` | 0 errors, 755 warnings (pre-existing) |
+| E-06 | `npm run test:unit` | 199 files / 3257 passed / 9 skipped |
+| E-07 | `npm run build` | Next.js production build PASS |
+| E-08 | `git diff --check f3a3d1a4..HEAD`; `node .ai-pipeline/scripts/verify-encoding-range.mjs f3a3d1a4` | clean; `RESULT: PASS. 15/15 text file(s); 0 BOM, 0 NUL, 0 U+FFFD, 0 CRLF, 0 mojibake` |
+| E-09 | `CI_INTEGRATION_STRICT=1 npm run test:integration` | 37 files / 624 passed / 2 skipped |
+| E-10 | targeted `npx vitest run --config vitest.integration.config.ts tests/db/p1a04-scoped-recruiter-authority.integration.test.ts` ×3 | 19 / 19 / 19 passed (31.91s, 31.77s, 32.19s) |
+| E-11 | `pwsh -NoProfile -ExecutionPolicy Bypass -File .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-p1-a0-4-scoped-recruiter-authority/TASK.md` | `RESULT: DRAFT-VALID` exit 0 |
 | E-12 | `pwsh -NoProfile -ExecutionPolicy Bypass -File .ai-pipeline/scripts/verify-handoff.ps1 -TaskPath docs/tasks/hrp-p1-a0-4-scoped-recruiter-authority/TASK.md` | `RESULT: PASS` exit 0 |
-| E-13 | zero-residue query against writer session: `SELECT count(*) FROM staffing_order_recruiter_assignments` (and analogues for `staffing_orders.code LIKE '%SO-P1A04%'`, `outsourcing_projects.code LIKE '%PRJ-P1A04%'`, `users.id LIKE 'p1a04-%'`) | 0 / 0 / 0 / 0 |
-| E-14 | SELECT from writer session to verify HR_STAFF visibility: assigned orders / sibling orders / claimable OPEN+unassigned / revoked orders | 1 / 0 / 1 / 0 |
-| E-15 | SELECT from admin session to verify partial unique active indexes (`staffing_order_recruiter_assignments_active_unique_idx`, `staffing_order_recruiter_assignments_active_order_unique_idx`) | both present |
-| E-16 | SELECT from admin session: SECURITY DEFINER helpers `public.hrp_staffing_order_visible_for`, `public.hrp_project_recruiter_visible_for` exist with `search_path = pg_catalog, public`, owner `neondb_owner`, granted to `app_user_writer, app_user` | confirmed |
+| E-13 | Zero-residue probe (writer session) — counts of `staffing_order_recruiter_assignments`, `labor_profile_handling_assignments`, `candidate_submissions` on P1A04 slots, `staffing_orders` P1A04, `outsourcing_projects` P1A04, `job_openings` orphans, `job_postings` orphans, `users` with `p1a04-` prefix or `p1a04%` phone, `placements` P1A04 | `TOTAL_RESIDUE=0` |
+| E-14 | Static post-migration assertion 9.6 — per-order-only active partial unique index MUST NOT exist after follow-up migration #1 | index absent (PASS) |
+| E-15 | Static post-migration assertion 9.7 — claimable-select RLS policies MUST NOT exist after follow-up migration #1 | both policies absent (PASS) |
+| E-16 | Static post-migration assertion 9.8 — helper predicate MUST NOT reference ADMIN/HR_MANAGER/DIRECTOR/PM/SALE/MKT/VENDOR/WORKER | regex matchers return NULL (PASS) |
+| E-17 | Static post-migration assertion 2.2 — handling-claim INSERT policy WITH CHECK mentions HR_MANAGER, HR_STAFF, ORDER_RECRUITER_CLAIM, and `staffing_order_recruiter_assignments` join | all four substrings present (PASS) |
+| E-18 | Targeted P1-A0.4 run ×3 — no flaky tests, deterministic 19/19 across 3 separate vitest runs | 19/19/19 |
+| E-19 | `git log --oneline -5` shows predecessor chain preserved (`5bb7581` → `f1fff22` → `e40a0b5` → `c082f68` → `773c94c` → `3566f87` → `2b09971` → `e9e8285`); `git status --short` is empty | conformant |
+| E-20 | `git diff --check 2b09971..e9e8285` clean; `git diff --check f3a3d1a4..e9e8285` clean | clean, exit 0 |
 
 ## 4. Deviations and blockers
 
-No `BLK-`, `LIM-`, or `DEV-` rows. All planned AC-E2E-01..AC-E2E-22 satisfied without deviation. Implementation correction batches used: `0` (the v1.2 planning integrity exceptions `I-01..I-08` and v1.1 contract correction `C-01..C-12` were consumed in prior rounds and do not count against the implementation budget).
+### 4.1 Round-1 contract mismatch (CLOSED)
+
+| ID | Type | Evidence | Impact | Resolution |
+| --- | --- | --- | --- | --- |
+| `CM-01` | `Blocker` | Round-1 commit `773c94c0` built HR_STAFF self-claim of unclaimed `StaffingOrder` from an OPEN+unassigned queue. T0 disposition `CHANGES_REQUIRED`. | Round-1 implementation was contractually wrong. | Round-2 (correction batch 1/1) replaces the wrong surface with the canonical candidate-claim flow. The round-1 implementation is preserved on the branch (no amend/reset/rebase). |
+
+### 4.2 Round-2 deviations
+
+| ID | Type | Evidence | Impact | Decision needed from Planner |
+| --- | --- | --- | --- | --- |
+| — | — | No `BLK-`, `LIM-`, or `DEV-` rows in round-2. | none | none |
 
 ## 5. Final status
 
-- Status: `READY_FOR_AUDIT`
+- Status: `READY_FOR_AUDIT` (round-2 — after correction batch 1/1)
 - Assurance lane: `CRITICAL`
 - Audit mode: `LIGHT`
 - Audit eligibility: `ELIGIBLE`
 - Frozen delivery: `YES`
 - Delivery protocol: `V2_FAST_FREEZE`
-- Canonical gates: `PASS` (prisma validate, migrate status, typecheck, lint 0 errors, unit 3257 pass / 9 skipped, build, integration 625 pass / 2 skipped)
-- Targeted test (x3): 20 / 20 passing each run
+- Canonical gates: `PASS` — prisma validate, migrate status (57 migrations up to date), typecheck (0 errors), lint (0 errors), unit (3257 pass / 9 skipped), build (PASS), integration (624 pass / 2 skipped), encoding (`RESULT: PASS. 15/15`), `git diff --check` (clean), zero-residue (0/9 fixture tables)
+- Targeted test (×3): 19 / 19 / 19 passing each run
+- Round-1 T0 disposition: `CHANGES_REQUIRED` (CONTRACT_MISMATCH — preserved on the branch)
+- Round-2 T0 disposition: _awaiting T0 review_
+- Implementation correction batches used: `1` (truthful actual count)
 - Next gate: `TIER3_LIGHT_AUDIT`
-- Implementation correction batches used: `0` (truthful actual count)
 - Synthetic DB: `PASS`
 - Production DB/migration: `NOT_RUN`
 
