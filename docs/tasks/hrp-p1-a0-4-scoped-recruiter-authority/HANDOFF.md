@@ -22,7 +22,8 @@
 | F-01..F-08 correction SHA-3 | `0af686b1` (chore: drop commit-msg scratch file) |
 | F-01..F-08 correction SHA-4 | `c72720bd` (F-08 UI surface static guard) |
 | F-01..F-08 correction SHA-5 | `1762393f` (docs re-freeze v1.3 round-3) |
-| **HEAD** | `1762393f` |
+| F-01..F-08 correction SHA-6 | `f56a71c1` (docs round-3: HEAD + encoding count to measured values) |
+| **HEAD** | `f56a71c1` |
 | Delivery protocol | `V2_FAST_FREEZE` |
 | Frozen delivery | `YES` |
 | Canonical gates | `PASS` |
