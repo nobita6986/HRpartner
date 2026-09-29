@@ -451,13 +451,18 @@ model StaffingOrder {
 //   ACTIVE → REVOKED (deterministic, dual-DB-connection mutex)
 //
 // Source values:
-//   HR_MANAGER_ASSIGN — admin/HR_MANAGER POSTed an assignment.
-//   ORDER_RECRUITER_CLAIM — recruiter self-claimed an unclaimed order.
+//   HR_MANAGER_ASSIGN — admin/HR_MANAGER POSTed an assignment. The only
+//     supported source. The DB-level CHECK constraint rejects any other
+//     value at INSERT (verified by AC-18 / static post-migration assertion
+//     9.x). HR_STAFF self-claim of an order is NOT permitted; the canonical
+//     HR_STAFF flow is `claimCandidateSubmission` on a submission attached
+//     to the order, which creates a LaborProfileHandlingAssignment with
+//     source='ORDER_RECRUITER_CLAIM' (different aggregate, different table).
 //
 // This is a separate aggregate from `LaborProfileHandlingAssignment` (the
 // latter tracks who handles a *LaborProfile*; this one tracks who is the
 // recruiter of an *order*). Placement mutations in P1-A0.4 require BOTH
-// aggregates to be ACTIVE for the caller (dual authority).
+// aggregates to be ACTIVE for the caller (dual authority, F-03).
 model StaffingOrderRecruiterAssignment {
   id                String   @id @default(uuid())
   staffingOrderId   String   @map("staffing_order_id")

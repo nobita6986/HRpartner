@@ -805,6 +805,7 @@ describe.skipIf(!HAS_TEST_DB)('P1-A0.4 Scoped Recruiter Authority (canonical can
     // (2) Revoke Alice's assignment on Order Y.
     await withContext(admin, managerUserId, 'HR_MANAGER', '', '', (tx) =>
       revokeRecruiterFromOrder(tx, {
+        staffingOrderId: orderYAssign.staffingOrderId,
         assignmentId: orderYAssign.id,
         actorRole: 'HR_MANAGER',
         actorId: managerUserId,
@@ -859,6 +860,7 @@ describe.skipIf(!HAS_TEST_DB)('P1-A0.4 Scoped Recruiter Authority (canonical can
     // (1) Revoke Alice's X assignment.
     await withContext(admin, managerUserId, 'HR_MANAGER', '', '', (tx) =>
       revokeRecruiterFromOrder(tx, {
+        staffingOrderId: assignmentXAlice!.staffingOrderId,
         assignmentId: assignmentXAlice!.id,
         actorRole: 'HR_MANAGER',
         actorId: managerUserId,
@@ -893,6 +895,7 @@ describe.skipIf(!HAS_TEST_DB)('P1-A0.4 Scoped Recruiter Authority (canonical can
     try {
       await withContext(admin, aliceId, 'HR_STAFF', '', '', (tx) =>
         revokeRecruiterFromOrder(tx, {
+          staffingOrderId: orderX,
           assignmentId: assignmentBobX,
           actorRole: 'HR_STAFF',
           actorId: aliceId,

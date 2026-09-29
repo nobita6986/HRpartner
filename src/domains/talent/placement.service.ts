@@ -42,6 +42,7 @@ import { resolveClientCompanyIdForJobOpening, assertClassifiedJobOpening } from 
 import {
   assertActiveRecruiterForOrder,
   assertActiveHandlingForLaborProfile,
+  assertRecruiterAndHandlingDualAuthorityForPlacement,
 } from './recruiter-assignment.service';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -166,16 +167,21 @@ export async function createPlacement(
 
   const resolved = await resolveClientCompanyIdForJobOpening(tx, jobOpening);
 
-  // Bước 2b: P1-A0.4 dual-authority (HR_STAFF only). Same-tx checks for
-  // (a) ACTIVE StaffingOrderRecruiterAssignment on the order derived from
-  //     jobOpening.staffingOrderId, and
-  // (b) ACTIVE LaborProfileHandlingAssignment for the laborProfileId.
-  // Missing either → fail closed with NO_ACTIVE_ORDER_ASSIGNMENT /
-  // NO_ACTIVE_ASSIGNMENT (canonical RecruiterAssignmentError). HR_MANAGER /
-  // ADMIN bypass via `assertActiveRecruiterForOrder` / `assertActiveHandlingForLaborProfile`.
+  // Bước 2b: P1-A0.4 dual-authority + lock contract (F-02 + F-03).
+  //   The same-transaction dual-authority check acquires the order-scoped
+  //   advisory lock (canonical F-02 primitive from recruiter-assignment.service),
+  //   then re-reads BOTH authority rows after the lock is held. A concurrent
+  //   revoke that committed between the pre-check and the lock acquisition
+  //   is observed; the mutation then rolls back atomically. ADMIN/HR_MANAGER
+  //   bypass per DEC-25. Missing either check → fail closed with
+  //   NO_ACTIVE_ORDER_ASSIGNMENT / NO_ACTIVE_ASSIGNMENT.
   if (input.actorRole === 'HR_STAFF') {
-    await assertActiveRecruiterForOrder(tx, input.actorId, input.actorRole, jobOpening.staffingOrderId);
-    await assertActiveHandlingForLaborProfile(tx, input.actorId, input.actorRole, input.laborProfileId);
+    await assertRecruiterAndHandlingDualAuthorityForPlacement(tx, {
+      actorId: input.actorId,
+      actorRole: input.actorRole,
+      staffingOrderId: jobOpening.staffingOrderId,
+      laborProfileId: input.laborProfileId,
+    });
   }
 
   // Bước 3: idempotent replay (DEC-09).
@@ -361,13 +367,14 @@ async function runTransition(
     return { placementId: row.id, status: row.status, replayed: true };
   }
 
-  // P1-A0.4 dual-authority (HR_STAFF only). Same-tx checks for both
-  // (a) ACTIVE StaffingOrderRecruiterAssignment on the order derived from
-  //     placement.jobOpening.staffingOrderId, and
-  // (b) ACTIVE LaborProfileHandlingAssignment for placement.laborProfileId.
-  // The transition runs INSIDE the same tx as the conditional UPDATE so a
-  // concurrent revoke between check and UPDATE will be visible to the UPDATE
-  // (which would then fail-closed via its own status-guard path).
+  // P1-A0.4 dual-authority + lock contract (F-02 + F-03). Same as
+  // createPlacement — the combined helper acquires the order lock, then
+  // re-reads BOTH authority rows after the lock. Concurrent revoke observed
+  // → transition UPDATE guard fails closed (placement status no-op or
+  // conflict); the surrounding transaction rolls back atomically. The
+  // transition runs INSIDE the same tx as the lock + the post-lock re-read
+  // + the authority check, so no half-mutated row is persisted on any
+  // error path.
   if (args.actorRole === 'HR_STAFF') {
     if (!row.jobOpening) {
       throw new PlacementValidationError(
@@ -375,8 +382,12 @@ async function runTransition(
         { placementId: row.id },
       );
     }
-    await assertActiveRecruiterForOrder(args.tx, args.actorId, args.actorRole, row.jobOpening.staffingOrderId);
-    await assertActiveHandlingForLaborProfile(args.tx, args.actorId, args.actorRole, row.laborProfileId);
+    await assertRecruiterAndHandlingDualAuthorityForPlacement(args.tx, {
+      actorId: args.actorId,
+      actorRole: args.actorRole,
+      staffingOrderId: row.jobOpening.staffingOrderId,
+      laborProfileId: row.laborProfileId,
+    });
   }
 
   const managementMode: 'HRP_MANAGED' | 'CLIENT_MANAGED' | null = row.serviceModelSnapshot

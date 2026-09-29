@@ -166,12 +166,12 @@ const EXPECTED_HITS = [
   //     dual-authority assert to fire in the same tx.
   // All safe: RLS chains already cover (placement_case_visible_for, labor_profile_visible_for,
   // hrp_project_visible_for). p1-a04 prior had 25 src hits; this batch adds 6 net (28 src total).
-  'src/domains/talent/recruiter-assignment.service.ts:379 placementCase',
-  'src/domains/talent/recruiter-assignment.service.ts:617 laborProfile',
-  'src/domains/talent/recruiter-assignment.service.ts:638 staffingOrder',
-  'src/domains/talent/recruiter-assignment.service.ts:721 placementCase',
-  'src/domains/talent/recruiter-assignment.service.ts:722 laborProfile',
-  'src/domains/talent/placement.service.ts:328 jobOpening',
+  'src/domains/talent/recruiter-assignment.service.ts:420 placementCase',
+  'src/domains/talent/recruiter-assignment.service.ts:706 laborProfile',
+  'src/domains/talent/recruiter-assignment.service.ts:727 staffingOrder',
+  'src/domains/talent/recruiter-assignment.service.ts:826 placementCase',
+  'src/domains/talent/recruiter-assignment.service.ts:827 laborProfile',
+  'src/domains/talent/placement.service.ts:334 jobOpening',
 ] as const;
 
 interface SourceEntry {

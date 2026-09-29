@@ -80,6 +80,7 @@ export async function POST(
         requestBody: { orderId, assignmentId, reason },
         handler: async () => ({
           body: await revokeRecruiterFromOrder(tx, {
+            staffingOrderId: orderId,
             assignmentId,
             actorRole: ctx.role,
             actorId: ctx.userId,

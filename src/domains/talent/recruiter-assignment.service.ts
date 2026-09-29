@@ -104,10 +104,34 @@ export class RecruiterAssignmentError extends Error {
 }
 
 /**
- * Acquire a deterministic order-scoped advisory lock.
- * Same lock key used by assign + revoke + claim paths so they serialize.
+ * Acquire a deterministic order-scoped advisory lock — canonical P1-A0.4
+ * contract primitive (F-02). The exact same lock key MUST be acquired by:
+ *   - `assignRecruiterToOrder`         (admin/HR_MANAGER assigns recruiter)
+ *   - `revokeRecruiterFromOrder`       (admin/HR_MANAGER revokes recruiter)
+ *   - `claimCandidateSubmission`       (assigned HR_STAFF claims candidate)
+ *   - `createPlacement`                (candidate-specific Placement create)
+ *   - `runTransition`                  (placement transition commands)
+ *   - `openPlacementCase` (recruiter-scoped)  (placement-case recruiter flow)
+ *
+ * Because all paths acquire the same `pg_advisory_xact_lock(hash, hash)`
+ * keyed by `p1a04:order:<staffingOrderId>`, they serialize on a per-order
+ * basis. The lock is **transaction-scoped** (`pg_advisory_xact_lock`); it
+ * is automatically released when the enclosing transaction commits or
+ * rolls back — no orphan locks, no risk of deadlocks from cross-process
+ * lock leakage. Any error in the calling code path causes the entire
+ * transaction to roll back, so a half-mutated row is impossible.
+ *
+ * Deterministic lock-order contract (F-02 proof):
+ *   - command first → command holds lock; revoke WAITS; after command
+ *     commits, revoke acquires lock and observes the (possibly new)
+ *     state of the assignment.
+ *   - revoke first → revoke holds lock; command WAITS; after revoke
+ *     commits, command acquires lock and re-reads the assignment; if
+ *     `status='ACTIVE'` no longer holds → `assertActiveRecruiterForOrder`
+ *     throws NO_ACTIVE_ORDER_ASSIGNMENT and the placement mutation is
+ *     rolled back atomically (no orphan row).
  */
-async function acquireOrderLock(
+export async function acquireOrderAdvisoryLock(
   tx: PrismaTypes.TransactionClient,
   staffingOrderId: string,
 ): Promise<void> {
@@ -120,7 +144,7 @@ async function acquireOrderLock(
 /**
  * Acquire a deterministic submission-scoped advisory lock for claim race.
  */
-async function acquireSubmissionLock(
+export async function acquireSubmissionLock(
   tx: PrismaTypes.TransactionClient,
   submissionId: string,
 ): Promise<void> {
@@ -191,7 +215,7 @@ export async function assignRecruiterToOrder(
     throw new RecruiterAssignmentError('STAFFING_ORDER_NOT_FOUND', `StaffingOrder ${input.staffingOrderId} not found`, 404);
   }
 
-  await acquireOrderLock(tx, input.staffingOrderId);
+  await acquireOrderAdvisoryLock(tx, input.staffingOrderId);
 
   // Idempotency on (order, recruiter): existing ACTIVE row returns the existing row.
   const existing = await tx.staffingOrderRecruiterAssignment.findFirst({
@@ -238,6 +262,8 @@ export async function assignRecruiterToOrder(
 // ═══════════════════════════════════════════════════════════════════════════
 
 export interface RevokeRecruiterInput {
+  /** Server-derived orderId from the URL — required. */
+  staffingOrderId: string;
   assignmentId: string;
   actorRole: SystemRole;
   actorId: string;
@@ -250,6 +276,9 @@ export async function revokeRecruiterFromOrder(
 ): Promise<RecruiterAssignmentRow> {
   if (!input.assignmentId) {
     throw new RecruiterAssignmentError('INVALID_INPUT', 'assignmentId is required', 400);
+  }
+  if (!input.staffingOrderId) {
+    throw new RecruiterAssignmentError('INVALID_INPUT', 'staffingOrderId is required (derived from URL)', 400);
   }
   if (input.actorRole !== 'HR_MANAGER' && input.actorRole !== 'ADMIN') {
     throw new RecruiterAssignmentError(
@@ -267,6 +296,7 @@ export async function revokeRecruiterFromOrder(
     select: { id: true, staffingOrderId: true, recruiterUserId: true, source: true, status: true },
   });
   if (!target) {
+    // Privacy-safe 404 — do not leak whether the assignment id exists.
     throw new RecruiterAssignmentError(
       'NO_ACTIVE_ASSIGNMENT',
       `Assignment ${input.assignmentId} not found`,
@@ -274,7 +304,18 @@ export async function revokeRecruiterFromOrder(
     );
   }
 
-  await acquireOrderLock(tx, target.staffingOrderId);
+  // F-01 binding: the URL-derived orderId MUST equal the assignment's parent order.
+  // Mismatch returns a privacy-safe 404 with zero mutation (no row touched, no
+  // advisory lock acquired on the unrelated order).
+  if (target.staffingOrderId !== input.staffingOrderId) {
+    throw new RecruiterAssignmentError(
+      'NO_ACTIVE_ASSIGNMENT',
+      `Assignment ${input.assignmentId} is not on order ${input.staffingOrderId}`,
+      404,
+    );
+  }
+
+  await acquireOrderAdvisoryLock(tx, target.staffingOrderId);
 
   const now = new Date();
   const result = await tx.staffingOrderRecruiterAssignment.updateMany({
@@ -411,6 +452,32 @@ export async function claimCandidateSubmission(
     throw new RecruiterAssignmentError(
       'NO_ACTIVE_ORDER_ASSIGNMENT',
       `Actor ${input.actorId} is not an ACTIVE recruiter for StaffingOrder ${staffingOrderId}`,
+      403,
+    );
+  }
+
+  // (2b) Acquire the canonical order-scoped advisory lock (F-02). The claim
+  //      path and the revoke path share this lock; an in-flight revoke will
+  //      either commit before us (we re-read ACTIVE → fail closed) or wait
+  //      until our tx commits. Either way no half-mutated row is possible.
+  await acquireOrderAdvisoryLock(tx, staffingOrderId);
+
+  // (2c) Re-verify the order assignment is still ACTIVE after acquiring the
+  //      lock — a concurrent revoke that committed between the pre-check
+  //      and our lock acquisition would have changed the state. Re-read
+  //      fails closed.
+  const stillActive = await tx.staffingOrderRecruiterAssignment.findFirst({
+    where: {
+      staffingOrderId,
+      recruiterUserId: input.actorId,
+      status: RECRUITER_ASSIGNMENT_STATUS.ACTIVE,
+    },
+    select: { id: true },
+  });
+  if (!stillActive) {
+    throw new RecruiterAssignmentError(
+      'NO_ACTIVE_ORDER_ASSIGNMENT',
+      `Actor ${input.actorId} is no longer an ACTIVE recruiter for StaffingOrder ${staffingOrderId} after order lock acquisition`,
       403,
     );
   }
@@ -589,16 +656,38 @@ export interface ClaimedCandidateRow {
   slotPositionTitle: string;
   handlingAssignmentId: string;
   candidateFullName: string;
-  /** Always present for the winner; null if not stored. */
+  /**
+   * Pre-claim queue: ALWAYS masked (see `listMaskedUnclaimedCandidatesForOrder`).
+   * Post-claim / MINE rail (F-05): the active winning handler receives the
+   * FULL phone value (this is what the recruiter needs to call the candidate).
+   * Loser, revoked, or unrelated HR_STAFF receives the MASKED form.
+   * CCCD image and raw evidence are NEVER included in this surface — the
+   * existing evidence authorization path remains the canonical path for
+   * sensitive PII.
+   */
+  candidatePhone: string | null;
+  /**
+   * Masked phone (always delivered). `null` only when the source phone is
+   * itself `null` (no phone on file). The pre-claim queue is ALWAYS masked;
+   * the post-claim MINE rail always provides this AND optionally the full
+   * value via `candidatePhone` (gated on F-05 active-handler predicate).
+   */
   candidatePhoneMasked: string | null;
   candidateStatus: string;
   claimedAt: string;
   expiresAt: string;
+  /**
+   * True iff the caller is the current ACTIVE winning handler for this
+   * submission/labor-profile. Tells the UI whether to surface `candidatePhone`
+   * (full) or only `candidatePhoneMasked`.
+   */
+  isActiveHandler: boolean;
 }
 
 export async function listMyClaimedCandidates(
   tx: PrismaTypes.TransactionClient,
   recruiterUserId: string,
+  options?: { canSeeSensitive?: boolean; actorRole?: string },
 ): Promise<ClaimedCandidateRow[]> {
   // Pull ACTIVE handling assignments where source = ORDER_RECRUITER_CLAIM
   // AND the assignee is the caller. Derive submission through
@@ -652,6 +741,16 @@ export async function listMyClaimedCandidates(
   for (const r of rows) {
     const cs = r.laborProfile?.placementCases?.[0]?.submissions?.[0];
     if (!cs || !cs.slot) continue;
+    // F-05 contact-data boundary: the caller is the assigneeUserId by
+    // construction (the findMany above filters on it), so the caller is
+    // ALWAYS the active winning handler for the rows returned here. The
+    // full phone is therefore delivered for THIS caller; other roles
+    // (HR_MANAGER, ADMIN) only see the masked form unless they have
+    // CAN_VIEW_WORKER_SENSITIVE (the existing sensitive-data path).
+    const isActiveHandler = true;
+    const canSeeSensitive = options?.canSeeSensitive === true;
+    const isHrStaff = options?.actorRole === 'HR_STAFF';
+    const exposeFullPhone = isActiveHandler && (isHrStaff || canSeeSensitive);
     out.push({
       submissionId: cs.id,
       staffingOrderId: cs.slot.staffingOrderId,
@@ -661,12 +760,18 @@ export async function listMyClaimedCandidates(
       slotPositionTitle: cs.slot.positionTitle,
       handlingAssignmentId: r.id,
       candidateFullName: cs.fullName,
-      // Winner sees the masked phone (PII containment for non-final reads;
-      // unmasking is server-derived through the same flow).
+      // F-05: post-claim active handler receives the FULL phone (recruiter-
+      // contact field). Loser / revoked / unrelated HR_STAFF receive the
+      // masked form. The same call site cannot produce loser rows because
+      // the SQL filter restricts to `assigneeUserId = caller`. A future
+      // variant that surfaces loser rows would force `candidatePhone = null`
+      // and `candidatePhoneMasked = maskPhone(cs.phone)` here.
+      candidatePhone: exposeFullPhone ? cs.phone : null,
       candidatePhoneMasked: maskPhone(cs.phone),
       candidateStatus: cs.status,
       claimedAt: r.startsAt.toISOString(),
       expiresAt: (r.expiresAt ?? new Date(r.startsAt.getTime() + 7 * 24 * 60 * 60 * 1000)).toISOString(),
+      isActiveHandler,
     });
   }
   return out;
@@ -832,6 +937,108 @@ export async function assertActiveHandlingForLaborProfile(
     throw new RecruiterAssignmentError(
       'NO_ACTIVE_ASSIGNMENT',
       `Actor ${actorId} has no ACTIVE handling assignment for LaborProfile ${laborProfileId}`,
+      403,
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 9. assertRecruiterAndHandlingDualAuthorityForPlacement (F-02 + F-03)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Same-transaction dual-authority check for candidate-specific Placement
+ * commands (F-03, DEC-25). Mandatory for HR_STAFF; bypass for
+ * ADMIN/HR_MANAGER (per DEC-25 canonical behavior). The contract:
+ *
+ *   1. Acquire the order-scoped advisory lock (F-02 canonical primitive).
+ *      This serializes the call with any in-flight `revokeRecruiterFromOrder`
+ *      on the SAME `staffingOrderId`. The lock is `xact`-scoped, so it is
+ *      released automatically when the surrounding tx commits or rolls back.
+ *   2. After acquiring the lock, re-verify BOTH authority rows are still
+ *      ACTIVE. The pre-lock check is advisory only; the post-lock check is
+ *      authoritative. A concurrent revoke that committed before our lock
+ *      acquisition will have flipped `status='ACTIVE' → 'REVOKED'` (or
+ *      removed the handling row); the post-lock re-read detects it and
+ *      throws `NO_ACTIVE_ORDER_ASSIGNMENT` / `NO_ACTIVE_ASSIGNMENT`. The
+ *      surrounding transaction rolls back, so no half-mutated row is
+ *      persisted.
+ *   3. The mutation (e.g. `placement.create` INSERT or
+ *      `placement.transition` UPDATE) runs in the SAME transaction as the
+ *      lock + the post-lock re-read + the authority check — atomicity is
+ *      enforced by Prisma `tx`.
+ *
+ * Must be called from inside the calling service's `tx` (the same
+ * transaction that performs the mutation). The lock is the same lock
+ * used by `assignRecruiterToOrder`, `revokeRecruiterFromOrder`, and
+ * `claimCandidateSubmission` — they all serialize on the order.
+ *
+ * Error model (canonical wire codes):
+ *   - NO_ACTIVE_ORDER_ASSIGNMENT — order-level recruiter row not ACTIVE.
+ *   - NO_ACTIVE_ASSIGNMENT       — handling row not ACTIVE.
+ *   - ROLE_NOT_PERMITTED         — non-HR_STAFF, non-bypass role.
+ */
+export async function assertRecruiterAndHandlingDualAuthorityForPlacement(
+  tx: PrismaTypes.TransactionClient,
+  args: {
+    actorId: string;
+    actorRole: SystemRole;
+    staffingOrderId: string;
+    laborProfileId: string;
+  },
+): Promise<void> {
+  // ADMIN / HR_MANAGER bypass — same canonical behavior as
+  // `assertActiveRecruiterForOrder` (DEC-25).
+  if (args.actorRole === 'HR_MANAGER' || args.actorRole === 'ADMIN') {
+    return;
+  }
+  if (args.actorRole !== 'HR_STAFF') {
+    throw new RecruiterAssignmentError(
+      'ROLE_NOT_PERMITTED',
+      `Role ${args.actorRole} cannot act on a recruiter-scoped placement`,
+      403,
+    );
+  }
+
+  // (1) Order-scoped advisory lock — same primitive as assign/revoke/claim.
+  //     The lock is `xact`-scoped; auto-released on commit/rollback. No
+  //     orphan locks even on error paths.
+  await acquireOrderAdvisoryLock(tx, args.staffingOrderId);
+
+  // (2) Re-read BOTH authority rows after the lock. A concurrent revoke
+  //     that committed before our lock would have flipped the assignment
+  //     status. The post-lock check is authoritative.
+  const stillOrderActive = await tx.staffingOrderRecruiterAssignment.findFirst({
+    where: {
+      staffingOrderId: args.staffingOrderId,
+      recruiterUserId: args.actorId,
+      status: RECRUITER_ASSIGNMENT_STATUS.ACTIVE,
+    },
+    select: { id: true },
+  });
+  if (!stillOrderActive) {
+    throw new RecruiterAssignmentError(
+      'NO_ACTIVE_ORDER_ASSIGNMENT',
+      `Actor ${args.actorId} is no longer an ACTIVE recruiter for order ${args.staffingOrderId} after order lock acquisition`,
+      403,
+    );
+  }
+
+  const now = new Date();
+  const stillHandlingActive = await tx.laborProfileHandlingAssignment.findFirst({
+    where: {
+      laborProfileId: args.laborProfileId,
+      assigneeUserId: args.actorId,
+      status: HANDLING_ASSIGNMENT_STATUS.ACTIVE,
+      startsAt: { lte: now },
+      OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+    },
+    select: { id: true },
+  });
+  if (!stillHandlingActive) {
+    throw new RecruiterAssignmentError(
+      'NO_ACTIVE_ASSIGNMENT',
+      `Actor ${args.actorId} no longer has an ACTIVE handling assignment for LaborProfile ${args.laborProfileId} after order lock acquisition`,
       403,
     );
   }
