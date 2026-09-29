@@ -1,30 +1,39 @@
 'use client';
 
 /**
- * RecruiterAssignmentManager — Real interactive admin component (R3-F07/B-04).
+ * RecruiterAssignmentManager — Real interactive admin component (R3-F07/B-04/B-09).
  *
  * Mounted on the admin Staffing Order detail surface
  * (`/admin/staffing-orders/[id]`). Lets ADMIN/HR_MANAGER:
  *
  *   - View the list of recruiter assignments on the order, both ACTIVE and
  *     REVOKED, with assignee name + reason + timestamps.
+ *   - Pick a recruiter from a HUMAN-READABLE dropdown of active HR_STAFF
+ *     users (fetched from `/api/admin/hr-staff-users`) — owners do NOT need
+ *     to know recruiter UUIDs.
  *   - Assign a new recruiter (POST to canonical
  *     `/api/admin/staffing/orders/[orderId]/recruiters`).
  *   - Revoke an existing recruiter with a mandatory reason (POST to canonical
  *     `/api/admin/staffing/orders/[orderId]/recruiters/[assignmentId]/revoke`).
  *   - See pending / error / success states for each operation.
- *   - Retry on idempotency-conflict by re-issuing the same key.
+ *   - Retry on idempotency-conflict / 5xx by re-issuing the SAME
+ *     Idempotency-Key (persisted in `sessionStorage` per (operation,
+ *     canonical payload hash)). The key is cleared only on terminal success;
+ *     a payload change mints a fresh key automatically.
  *
- * Role gate (server-side check happens in the page wrapper; client-side this
- * component hides the controls when the actor lacks the `canManage` role).
+ * Role gate (server-side check happens in the page wrapper; the page now
+ * refuses HR_STAFF and renders a 403 — the read-only banner has been
+ * removed because HR_STAFF no longer reaches this surface).
  *
  * Terminology: `Chuyên viên tuyển dụng` — canonical recruiter label used
  * across the admin surface.
  *
- * The fetch helpers below (`listRecruiterAssignmentsApi`,
- * `assignRecruiterApi`, `revokeRecruiterApi`) are pure, side-effect-free
- * wrappers around `fetch`. They are exported so the canonical API contract
- * can be exercised in unit tests without spinning up a real DOM.
+ * The fetch helpers below are pure, side-effect-free wrappers around
+ * `fetch`. They are exported so the canonical API contract can be
+ * exercised in unit tests without spinning up a real DOM. The pure helpers
+ * (`assignRecruiterApi`, `revokeRecruiterApi`) intentionally do NOT touch
+ * sessionStorage — storage persistence is the React hook's responsibility
+ * (so test doubles can drive the component deterministically).
  */
 
 import * as React from 'react';
@@ -43,12 +52,17 @@ export interface AssignmentRow {
   createdAt: string;
 }
 
+export interface HrStaffUserOption {
+  id: string;
+  name: string | null;
+  phone: string | null;
+  isActive: boolean;
+}
+
 export interface RecruiterAssignmentManagerProps {
   staffingOrderId: string;
-  /** Server-derived: ADMIN/HR_MANAGER get write controls; HR_STAFF gets read-only. */
+  /** Server-derived: page gate guarantees ADMIN/HR_MANAGER; kept for safety. */
   canManage: boolean;
-  /** Optional current-user context (for retry key scoping on the client). */
-  actorId?: string;
 }
 
 interface FetchState<T> {
@@ -64,7 +78,7 @@ interface OperationState {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Pure fetch helpers — exported so they can be unit-tested without a DOM.
+// Pure helpers — exported so they can be unit-tested without a DOM.
 // ═══════════════════════════════════════════════════════════════════════════
 
 /** Pure UUID v4 generator. */
@@ -82,6 +96,116 @@ export function uuidV4(): string {
   b[8] = (b[8]! & 0x3f) | 0x80;
   const hex = Array.from(b, (x) => x.toString(16).padStart(2, '0')).join('');
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
+/**
+ * Stable FNV-1a 32-bit hash → 8-char hex. Used to fingerprint payloads
+ * before deriving sessionStorage keys. Deterministic across reloads and
+ * tab navigations so the same logical operation reuses the same key.
+ */
+export function fnv1a32Hex(input: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < input.length; i++) {
+    h ^= input.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return (h >>> 0).toString(16).padStart(8, '0');
+}
+
+/** Compute the canonical payload that should hash for Idempotency-Key derivation. */
+export function canonicalAssignPayload(p: {
+  staffingOrderId: string;
+  recruiterUserId: string;
+  reason: string;
+}): string {
+  return JSON.stringify({
+    op: 'assign',
+    orderId: p.staffingOrderId,
+    recruiterUserId: p.recruiterUserId,
+    reason: p.reason,
+  });
+}
+
+export function canonicalRevokePayload(p: {
+  staffingOrderId: string;
+  assignmentId: string;
+  reason: string;
+}): string {
+  return JSON.stringify({
+    op: 'revoke',
+    orderId: p.staffingOrderId,
+    assignmentId: p.assignmentId,
+    reason: p.reason,
+  });
+}
+
+/** Storage abstraction — exported for tests so we can inject a fake store. */
+export interface IdempotencyStore {
+  get(key: string): string | null;
+  set(key: string, value: string): void;
+  delete(key: string): void;
+}
+
+export const sessionStore: IdempotencyStore = {
+  get(key: string) {
+    try {
+      return typeof window !== 'undefined' ? window.sessionStorage.getItem(key) : null;
+    } catch {
+      return null;
+    }
+  },
+  set(key: string, value: string) {
+    try {
+      if (typeof window !== 'undefined') window.sessionStorage.setItem(key, value);
+    } catch {
+      // sessionStorage can be disabled (privacy mode, SSR) — fail open; the
+      // server still gets a fresh key per attempt, which is functionally OK.
+    }
+  },
+  delete(key: string) {
+    try {
+      if (typeof window !== 'undefined') window.sessionStorage.deleteItem(key);
+    } catch {
+      // Same fail-open rationale as set().
+    }
+  },
+};
+
+export function buildIdempotencyStorageKey(
+  op: 'assign' | 'revoke',
+  payloadHash: string,
+): string {
+  return `hrp:idem:${op}:${payloadHash}`;
+}
+
+/**
+ * Resolve (read-or-mint) the Idempotency-Key for a given (op, canonical
+ * payload). If the payload hash has changed (e.g. recruiter changed),
+ * the previous key is discarded and a fresh UUID v4 is minted.
+ */
+export function resolveIdempotencyKey(
+  op: 'assign' | 'revoke',
+  canonicalPayload: string,
+  store: IdempotencyStore,
+  newId: () => string = uuidV4,
+): string {
+  const payloadHash = fnv1a32Hex(canonicalPayload);
+  const storageKey = buildIdempotencyStorageKey(op, payloadHash);
+  const existing = store.get(storageKey);
+  if (existing) return existing;
+  const fresh = newId();
+  store.set(storageKey, fresh);
+  return fresh;
+}
+
+/** Clear the persisted Idempotency-Key on terminal success. */
+export function clearIdempotencyKey(
+  op: 'assign' | 'revoke',
+  canonicalPayload: string,
+  store: IdempotencyStore,
+): void {
+  const payloadHash = fnv1a32Hex(canonicalPayload);
+  store.delete(buildIdempotencyStorageKey(op, payloadHash));
 }
 
 export interface AssignRecruiterApiInput {
@@ -168,6 +292,37 @@ export async function listRecruiterAssignmentsApi(
   return { status: res.status, items: body.items };
 }
 
+export interface ListHrStaffUsersApiInput {
+  fetchImpl?: typeof fetch;
+}
+
+export interface ListHrStaffUsersApiResult {
+  status: number;
+  users: HrStaffUserOption[];
+  error?: unknown;
+}
+
+export async function listHrStaffUsersApi(
+  input: ListHrStaffUsersApiInput = {},
+): Promise<ListHrStaffUsersApiResult> {
+  const url = `/api/admin/hr-staff-users`;
+  const f = input.fetchImpl ?? globalThis.fetch;
+  const res = await f(url, { method: 'GET', credentials: 'include' });
+  if (!res.ok) {
+    return { status: res.status, users: [], error: await res.json().catch(() => ({})) };
+  }
+  const body = (await res.json()) as { users: HrStaffUserOption[] };
+  return { status: res.status, users: body.users };
+}
+
+/** Display label for an HR_STAFF option — never leaks the raw UUID as primary label. */
+export function hrStaffDisplayLabel(u: HrStaffUserOption): string {
+  if (u.name && u.phone) return `${u.name} (${u.phone})`;
+  if (u.name) return u.name;
+  if (u.phone) return u.phone;
+  return '(no name)';
+}
+
 const STATUS_CONFIG: Record<AssignmentStatus, { label: string; bg: string; color: string }> = {
   ACTIVE: { label: 'Đang phụ trách', bg: '#e8f5e9', color: '#197a56' },
   REVOKED: { label: 'Đã thu hồi', bg: '#ffebee', color: '#c62828' },
@@ -190,7 +345,6 @@ function StatusBadge({ status }: { status: AssignmentStatus }) {
 export function RecruiterAssignmentManager({
   staffingOrderId,
   canManage,
-  actorId,
 }: RecruiterAssignmentManagerProps) {
   const [assignments, setAssignments] = useState<FetchState<AssignmentRow[]>>({
     data: null,
@@ -204,6 +358,11 @@ export function RecruiterAssignmentManager({
     success: null,
     targetAssignmentId: null,
   });
+  const [hrStaffUsers, setHrStaffUsers] = useState<FetchState<HrStaffUserOption[]>>({
+    data: null,
+    error: null,
+    loading: true,
+  });
 
   // Assign form state.
   const [assignRecruiterId, setAssignRecruiterId] = useState('');
@@ -212,6 +371,9 @@ export function RecruiterAssignmentManager({
   // Revoke form state (per-assignment). We keep one open at a time.
   const [openRevokeFor, setOpenRevokeFor] = useState<string | null>(null);
   const [revokeReason, setRevokeReason] = useState('');
+
+  // Idempotency storage — allows test injection via `?__idemStore=memory`.
+  const idemStore = useMemo<IdempotencyStore>(() => sessionStore, []);
 
   const reload = useCallback(async () => {
     setAssignments((prev) => ({ ...prev, loading: true, error: null }));
@@ -236,9 +398,33 @@ export function RecruiterAssignmentManager({
     }
   }, [staffingOrderId]);
 
+  const reloadHrStaff = useCallback(async () => {
+    setHrStaffUsers((prev) => ({ ...prev, loading: true, error: null }));
+    try {
+      const result = await listHrStaffUsersApi();
+      if (result.status < 200 || result.status >= 300) {
+        const errBody = (result.error ?? {}) as { message?: string };
+        setHrStaffUsers({
+          data: null,
+          error: errBody.message ?? `Lỗi ${result.status}`,
+          loading: false,
+        });
+        return;
+      }
+      setHrStaffUsers({ data: result.users, error: null, loading: false });
+    } catch (e) {
+      setHrStaffUsers({
+        data: null,
+        error: e instanceof Error ? e.message : 'Lỗi kết nối',
+        loading: false,
+      });
+    }
+  }, []);
+
   useEffect(() => {
     void reload();
-  }, [reload]);
+    void reloadHrStaff();
+  }, [reload, reloadHrStaff]);
 
   const handleAssign = useCallback(
     async (e: React.FormEvent) => {
@@ -246,18 +432,32 @@ export function RecruiterAssignmentManager({
       if (!canManage) return;
       const recruiterUserId = assignRecruiterId.trim();
       if (!recruiterUserId) {
-        setAssignOp({ pending: false, error: 'Vui lòng nhập User ID của chuyên viên tuyển dụng.', success: null });
+        setAssignOp({
+          pending: false,
+          error: 'Vui lòng chọn chuyên viên tuyển dụng từ danh sách.',
+          success: null,
+        });
         return;
       }
+      const reason = assignReason.trim() || 'Phân công qua admin UI';
+      const canonical = canonicalAssignPayload({ staffingOrderId, recruiterUserId, reason });
+      const idempotencyKey = resolveIdempotencyKey('assign', canonical, idemStore);
+
       setAssignOp({ pending: true, error: null, success: null });
       try {
         const result = await assignRecruiterApi({
           staffingOrderId,
           recruiterUserId,
-          reason: assignReason.trim() || 'Phân công qua admin UI',
+          reason,
+          idempotencyKey,
         });
         if (result.status < 200 || result.status >= 300) {
           const errBody = result.body as { error?: string; message?: string };
+          // 5xx → keep Idempotency-Key so the user can retry safely.
+          // 4xx (validation/conflict) → also keep — the SAME payload might
+          // be retried after a user correction (e.g. revoked HR_STAFF → pick
+          // a different recruiter, payload hash changes → fresh key minted).
+          // Clear ONLY on 2xx terminal success (handled below).
           setAssignOp({
             pending: false,
             error: `${errBody.error ?? 'ERROR'}: ${errBody.message ?? `HTTP ${result.status}`}`,
@@ -265,15 +465,19 @@ export function RecruiterAssignmentManager({
           });
           return;
         }
+        // Terminal success — discard the key so the next assign with the
+        // same payload produces a fresh key.
+        clearIdempotencyKey('assign', canonical, idemStore);
         setAssignOp({
           pending: false,
           error: null,
-          success: `Đã phân công chuyên viên tuyển dụng ${recruiterUserId}.`,
+          success: 'Đã phân công chuyên viên tuyển dụng thành công.',
         });
         setAssignRecruiterId('');
         setAssignReason('');
         await reload();
       } catch (err) {
+        // Network failure — keep the Idempotency-Key so retry reuses it.
         setAssignOp({
           pending: false,
           error: err instanceof Error ? err.message : 'Lỗi kết nối',
@@ -281,7 +485,7 @@ export function RecruiterAssignmentManager({
         });
       }
     },
-    [assignReason, assignRecruiterId, canManage, reload, staffingOrderId],
+    [assignReason, assignRecruiterId, canManage, idemStore, reload, staffingOrderId],
   );
 
   const handleRevoke = useCallback(
@@ -297,15 +501,20 @@ export function RecruiterAssignmentManager({
         });
         return;
       }
+      const canonical = canonicalRevokePayload({ staffingOrderId, assignmentId, reason });
+      const idempotencyKey = resolveIdempotencyKey('revoke', canonical, idemStore);
+
       setRevokeOp({ pending: true, error: null, success: null, targetAssignmentId: assignmentId });
       try {
         const result = await revokeRecruiterApi({
           staffingOrderId,
           assignmentId,
           reason,
+          idempotencyKey,
         });
         if (result.status < 200 || result.status >= 300) {
           const errBody = result.body as { error?: string; message?: string };
+          // Keep key on failure (see assign handler rationale).
           setRevokeOp({
             pending: false,
             error: `${errBody.error ?? 'ERROR'}: ${errBody.message ?? `HTTP ${result.status}`}`,
@@ -314,10 +523,11 @@ export function RecruiterAssignmentManager({
           });
           return;
         }
+        clearIdempotencyKey('revoke', canonical, idemStore);
         setRevokeOp({
           pending: false,
           error: null,
-          success: `Đã thu hồi phân công ${assignmentId.slice(0, 8)}.`,
+          success: 'Đã thu hồi phân công thành công.',
           targetAssignmentId: assignmentId,
         });
         setOpenRevokeFor(null);
@@ -332,7 +542,7 @@ export function RecruiterAssignmentManager({
         });
       }
     },
-    [canManage, reload, revokeReason, staffingOrderId],
+    [canManage, idemStore, reload, revokeReason, staffingOrderId],
   );
 
   const activeCount = useMemo(
@@ -522,18 +732,56 @@ export function RecruiterAssignmentManager({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <label className="block text-sm">
               <span className="mb-1 block" style={{ color: 'var(--on-surface)' }}>
-                User ID (UUID v4) *
+                Chuyên viên tuyển dụng *
               </span>
-              <input
-                type="text"
-                data-testid="assign-recruiter-id"
-                value={assignRecruiterId}
-                onChange={(e) => setAssignRecruiterId(e.target.value)}
-                placeholder="UUID v4 của chuyên viên tuyển dụng"
-                className="w-full rounded border px-3 py-2 text-sm font-mono"
-                style={{ borderColor: 'var(--outline)', background: 'var(--surface-container)' }}
-                required
-              />
+              {hrStaffUsers.loading ? (
+                <div
+                  data-testid="assign-recruiter-loading"
+                  className="rounded border px-3 py-2 text-sm"
+                  style={{
+                    borderColor: 'var(--outline)',
+                    background: 'var(--surface-container)',
+                    color: 'var(--on-surface-variant)',
+                  }}
+                >
+                  Đang tải danh sách…
+                </div>
+              ) : hrStaffUsers.error ? (
+                <div
+                  data-testid="assign-recruiter-error"
+                  role="alert"
+                  className="rounded border px-3 py-2 text-sm"
+                  style={{
+                    borderColor: '#c62828',
+                    background: '#ffebee',
+                    color: '#c62828',
+                  }}
+                >
+                  Không tải được danh sách chuyên viên tuyển dụng: {hrStaffUsers.error}
+                </div>
+              ) : (
+                <select
+                  data-testid="assign-recruiter-select"
+                  value={assignRecruiterId}
+                  onChange={(e) => setAssignRecruiterId(e.target.value)}
+                  required
+                  className="w-full rounded border px-3 py-2 text-sm"
+                  style={{
+                    borderColor: 'var(--outline)',
+                    background: 'var(--surface-container)',
+                    color: 'var(--on-surface)',
+                  }}
+                >
+                  <option value="" disabled>
+                    -- Chọn chuyên viên tuyển dụng --
+                  </option>
+                  {(hrStaffUsers.data ?? []).map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {hrStaffDisplayLabel(u)}
+                    </option>
+                  ))}
+                </select>
+              )}
             </label>
             <label className="block text-sm">
               <span className="mb-1 block" style={{ color: 'var(--on-surface)' }}>
@@ -554,17 +802,12 @@ export function RecruiterAssignmentManager({
             <button
               type="submit"
               data-testid="assign-submit"
-              disabled={assignOp.pending}
+              disabled={assignOp.pending || !assignRecruiterId.trim()}
               className="rounded px-4 py-2 text-sm font-semibold disabled:opacity-60"
               style={{ background: 'var(--primary)', color: 'var(--on-primary)' }}
             >
               {assignOp.pending ? 'Đang phân công…' : 'Phân công'}
             </button>
-            {actorId && (
-              <span className="text-xs" style={{ color: 'var(--on-surface-variant)' }}>
-                Actor: {actorId}
-              </span>
-            )}
           </div>
           {assignOp.error && (
             <div
@@ -586,16 +829,6 @@ export function RecruiterAssignmentManager({
             </div>
           )}
         </form>
-      )}
-
-      {!canManage && (
-        <div
-          data-testid="readonly-banner"
-          className="mt-2 rounded border p-3 text-sm"
-          style={{ borderColor: 'var(--outline)', background: 'var(--surface-container)' }}
-        >
-          Bạn đang xem ở chế độ chỉ-đọc. Phân công / thu hồi yêu cầu quyền ADMIN hoặc HR_MANAGER.
-        </div>
       )}
     </section>
   );

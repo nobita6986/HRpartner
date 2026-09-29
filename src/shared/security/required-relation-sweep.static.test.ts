@@ -172,6 +172,14 @@ const EXPECTED_HITS = [
   'src/domains/talent/recruiter-assignment.service.ts:838 placementCase',
   'src/domains/talent/recruiter-assignment.service.ts:839 laborProfile',
   'src/domains/talent/placement.service.ts:334 jobOpening',
+  // P1-A04 B-08 (2026-09-29): `recruiterPlacementCreate` /
+  // `derivePlacementAnchors` preloads `placement.jobOpening.staffingOrderId` to
+  // compute the canonical order advisory lock key for the dual-authority
+  // assert. `JobOpening` is required in schema `placement` (không optional,
+  // không list) — sweep đếm là đúng. Chạy trong `runRecruiterPlacementCommand`
+  // → `withDbContext(role=HR_STAFF)` nên RLS chain đã lọc theo role/handler
+  // pool. An toàn.
+  'src/domains/talent/recruiter-placement.adapter.ts:279 jobOpening',
 ] as const;
 
 interface SourceEntry {
@@ -388,7 +396,10 @@ describe('quan hệ BẮT BUỘC trên bảng bị RLS che: tập vị trí sele
     // và `listMyActiveStaffingOrders` (self-claim path) → -5 dòng ở recruiter-assignment.service.ts.
     // Thêm 6 dòng mới (claimCandidateSubmission + listMaskedUnclaimedCandidatesForOrder +
     // placement.service.ts runTransition). Tổng src = 25 + 6 = 31, tổng all = 28 + 6 = 34.
-    expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(31);
+    // Sau P1-A04 B-08 (2026-09-29): recruiter-placement.adapter.ts derivePlacementAnchors
+    // chọn `placement.jobOpening.staffingOrderId` để compute canonical order advisory lock.
+    // +1 dòng ở src/. Tổng src = 31 + 1 = 32, tổng all = 34 + 1 = 35.
+    expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(32);
   });
 });
 

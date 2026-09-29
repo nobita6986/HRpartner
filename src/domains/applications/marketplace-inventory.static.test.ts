@@ -212,49 +212,68 @@ function classifyMutatingPlacementRoute(
     return { guarded: false, reason: 'no_delegate_handler_auth_call' };
   }
 
-  // Path C: delegates to `placement.route-helpers` — require BOTH import AND call.
-  const helperImportRegex = /from\s+['"]@?\.?\/?src\/domains\/talent\/placement\.route-helpers['"]/;
-  if (!helperImportRegex.test(code)) {
+  // Path C: delegates to `placement.route-helpers` (canonical ADMIN/HR_MANAGER
+  // surface) OR `recruiter-placement.route-helpers` (canonical HR_STAFF
+  // surface introduced in P1-A0.4 B-08). Both helpers enforce the same
+  // security pipeline: `getAuthContext(` + `withDbContext(` + role gate +
+  // idempotency. Detection requires BOTH import AND call; the helper MUST
+  // export the named function AND contain the security markers.
+  const HELPER_IMPORT_RE =
+    /from\s+['"]@?\.?\/?src\/domains\/talent\/(placement|recruiter-placement)\.route-helpers['"]/;
+  if (!HELPER_IMPORT_RE.test(code)) {
     return { guarded: false, reason: 'no_helper_import' };
   }
 
   // Require call expression (not just identifier in comment/type).
-  if (!/\brunPlacementCommand\s*\(/.test(code)) {
+  const HELPER_CALL_RE =
+    /\b(?:runPlacementCommand|runRecruiterPlacementCommand)\s*\(/;
+  if (!HELPER_CALL_RE.test(code)) {
     return { guarded: false, reason: 'no_helper_call' };
   }
 
-  // Require helper itself to have the actual security markers (or use
-  // the injected helper source provided by tests).
-  if (!placementHelperHasSecurityMarkers(options)) {
+  // Resolve the helper file the route imports (placement vs
+  // recruiter-placement) and require it to export the named function with
+  // security markers.
+  const helperKindMatch = code.match(HELPER_IMPORT_RE);
+  const helperKind: 'placement' | 'recruiter-placement' =
+    helperKindMatch?.[1] === 'recruiter-placement' ? 'recruiter-placement' : 'placement';
+  if (!helperHasSecurityMarkers(helperKind, options)) {
     return { guarded: false, reason: 'helper_missing_security_markers' };
   }
 
   return { guarded: true, path: 'C' };
 }
 
-function placementHelperHasSecurityMarkers(options?: {
-  readonly helperSource?: string;
-  readonly helperExists?: boolean;
-}): boolean {
+function helperHasSecurityMarkers(
+  kind: 'placement' | 'recruiter-placement',
+  options?: {
+    readonly helperSource?: string;
+    readonly helperExists?: boolean;
+  },
+): boolean {
   // F-04B: tests can inject helper source to exercise the
   // `helper_missing_security_markers` branch without mutating the
   // canonical production helper. `helperExists=false` simulates a missing
   // helper; `helperSource` overrides the file-system read.
   let helper: string;
+  const expectedFn =
+    kind === 'placement' ? 'runPlacementCommand' : 'runRecruiterPlacementCommand';
   if (options && Object.prototype.hasOwnProperty.call(options, 'helperSource')) {
     helper = strip(options.helperSource ?? '');
   } else if (options && options.helperExists === false) {
     return false;
-  } else if (!existsSync(PLACEMENT_ROUTE_HELPER)) {
-    return false;
   } else {
-    helper = strip(read(PLACEMENT_ROUTE_HELPER));
+    const helperPath = join(ROOT, `src/domains/talent/${kind}.route-helpers.ts`);
+    if (!existsSync(helperPath)) return false;
+    helper = strip(read(helperPath));
   }
-  const exportsRunPlacementCommand = /export\s+(?:async\s+)?function\s+runPlacementCommand\b/.test(helper);
+  const exportsFn = new RegExp(
+    `export\\s+(?:async\\s+)?function\\s+${expectedFn}\\b`,
+  ).test(helper);
   // Require call expressions, not bare identifiers.
   const hasGetAuthContext = /\bgetAuthContext\s*\(/.test(helper);
   const hasWithDbContext = /\bwithDbContext\s*\(/.test(helper);
-  return exportsRunPlacementCommand && hasGetAuthContext && hasWithDbContext;
+  return exportsFn && hasGetAuthContext && hasWithDbContext;
 }
 
 /**

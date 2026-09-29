@@ -184,8 +184,47 @@ describe('P1-A0.4 F-08 UI surface — static guards', () => {
     const pageSrc = codeFor(pagePath);
     expect(pageSrc).toContain('RecruiterAssignmentManager');
     expect(pageSrc).toContain("from './recruiter-assignment-manager'");
-    // Role gate: ADMIN/HR_MANAGER get canManage=true.
-    expect(pageSrc).toMatch(/canManage\s*=\s*MANAGE_ROLES\.has|MANAGE_ROLES\.has.*canManage/);
+    // Role gate: ADMIN/HR_MANAGER only (B-09 mandate).
+    expect(pageSrc).toMatch(/MANAGE_ROLES\.has/);
+    expect(pageSrc).toMatch(/ADMIN/);
+    expect(pageSrc).toMatch(/HR_MANAGER/);
+  });
+
+  it('F-08/7 (B-09) Assignment UI is operational: selectable HR_STAFF dropdown, no raw UUID, Idempotency-Key persisted, navigation from list', () => {
+    const componentPath = join(APP_DIR, 'admin', 'staffing-orders', '[id]', 'recruiter-assignment-manager.tsx');
+    const componentSrc = codeFor(componentPath);
+
+    // (a) Selectable HR_STAFF dropdown (NOT a raw UUID input).
+    expect(componentSrc).toContain('assign-recruiter-select');
+    expect(componentSrc).toContain('listHrStaffUsersApi');
+    expect(componentSrc).toContain('/api/admin/hr-staff-users');
+    expect(componentSrc).not.toMatch(/data-testid="assign-recruiter-id"/);
+    expect(componentSrc).not.toMatch(/User ID \(UUID v4\)/);
+
+    // (b) Idempotency-Key persistence: stored in sessionStorage keyed by
+    // (op, payloadHash), reused on retry, cleared on terminal success,
+    // minted fresh when payload changes.
+    expect(componentSrc).toContain('sessionStorage');
+    expect(componentSrc).toContain('resolveIdempotencyKey');
+    expect(componentSrc).toContain('clearIdempotencyKey');
+    expect(componentSrc).toContain('canonicalAssignPayload');
+    expect(componentSrc).toContain('canonicalRevokePayload');
+    expect(componentSrc).toContain('fnv1a32Hex');
+
+    // (c) NO actor UUID is rendered in the component.
+    expect(componentSrc).not.toMatch(/Actor:\s*\{/);
+
+    // (d) HR_STAFF endpoint exists + is the dropdown source.
+    const hrStaffRoute = join(APP_DIR, 'api', 'admin', 'hr-staff-users', 'route.ts');
+    expect(statSync(hrStaffRoute).isFile(), '/api/admin/hr-staff-users must exist').toBe(true);
+
+    // (e) Navigation from canonical StaffingOrder list surface → detail.
+    const listPath = join(APP_DIR, 'admin', 'staffing', 'staffing-list-client.tsx');
+    if (statSync(listPath).isFile()) {
+      const listSrc = codeFor(listPath);
+      expect(listSrc).toMatch(/\/admin\/staffing-orders\/\$\{o\.id\}/);
+      expect(listSrc).toContain('staffing-order-link-');
+    }
   });
 });
 

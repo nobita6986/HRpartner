@@ -22,6 +22,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   candidateSubmissionFindUnique: vi.fn(),
+  candidateSubmissionUpdate: vi.fn(async () => ({ count: 0 })),
   $executeRawUnsafe: vi.fn(async () => undefined),
   assertDual: vi.fn(),
   openPlacementCase: vi.fn(),
@@ -64,7 +65,10 @@ import { RecruiterAssignmentError } from '@/src/domains/talent/recruiter-assignm
 
 function fakeTx() {
   return {
-    candidateSubmission: { findUnique: mocks.candidateSubmissionFindUnique },
+    candidateSubmission: {
+      findUnique: mocks.candidateSubmissionFindUnique,
+      updateMany: mocks.candidateSubmissionUpdate,
+    },
     $executeRawUnsafe: mocks.$executeRawUnsafe,
   };
 }
@@ -154,6 +158,33 @@ describe('recruiter-placement.adapter — recruiter-scoped production adapter (B
     expect(mocks.createPlacement).not.toHaveBeenCalled();
   });
 
+  it('B-07 placementCaseId=null is NOT rejected (it triggers canonical case opener)', async () => {
+    // The pre-B-07 behaviour rejected `placementCaseId = null` with
+    // `placement_case_missing`. B-07 changes that: the recruiter-scoped
+    // adapter now opens a canonical case on demand for an eligible claimed
+    // submission that has no case yet. This test guards against regressing
+    // back to the rejection path.
+    mocks.candidateSubmissionFindUnique.mockResolvedValue({
+      id: SUBMISSION_ID,
+      laborProfileId: LP_ID,
+      placementCaseId: null,
+      slot: { staffingOrderId: ORDER_ID, jobOpeningId: OPENING_ID },
+    });
+    mocks.assertDual.mockResolvedValue(undefined);
+    mocks.candidateSubmissionUpdate.mockResolvedValue({ count: 1 });
+
+    await expect(
+      recruiterPlacementCreate(fakeTx() as any, {
+        sourceCandidateSubmissionId: SUBMISSION_ID,
+        actorId: ACTOR,
+        actorRole: 'HR_STAFF',
+      }),
+    ).resolves.toMatchObject({ placementCaseId: CASE_ID });
+
+    // openPlacementCase IS invoked (B-07: on-demand canonical opener).
+    expect(mocks.openPlacementCase).toHaveBeenCalledOnce();
+  });
+
   it('missing slot → NO_ACTIVE_ASSIGNMENT, no authority, no canonical service', async () => {
     mocks.candidateSubmissionFindUnique.mockResolvedValue({
       id: SUBMISSION_ID,
@@ -187,25 +218,6 @@ describe('recruiter-placement.adapter — recruiter-scoped production adapter (B
         actorRole: 'HR_STAFF',
       }),
     ).rejects.toMatchObject({ code: 'NO_ACTIVE_ASSIGNMENT', details: { reason: 'labor_profile_missing' } });
-    expect(mocks.assertDual).not.toHaveBeenCalled();
-    expect(mocks.openPlacementCase).not.toHaveBeenCalled();
-    expect(mocks.createPlacement).not.toHaveBeenCalled();
-  });
-
-  it('missing placementCaseId → NO_ACTIVE_ASSIGNMENT, no authority, no canonical service', async () => {
-    mocks.candidateSubmissionFindUnique.mockResolvedValue({
-      id: SUBMISSION_ID,
-      laborProfileId: LP_ID,
-      placementCaseId: null,
-      slot: { staffingOrderId: ORDER_ID, jobOpeningId: OPENING_ID },
-    });
-    await expect(
-      recruiterPlacementCreate(fakeTx() as any, {
-        sourceCandidateSubmissionId: SUBMISSION_ID,
-        actorId: ACTOR,
-        actorRole: 'HR_STAFF',
-      }),
-    ).rejects.toMatchObject({ code: 'NO_ACTIVE_ASSIGNMENT', details: { reason: 'placement_case_missing' } });
     expect(mocks.assertDual).not.toHaveBeenCalled();
     expect(mocks.openPlacementCase).not.toHaveBeenCalled();
     expect(mocks.createPlacement).not.toHaveBeenCalled();
@@ -253,6 +265,85 @@ describe('recruiter-placement.adapter — recruiter-scoped production adapter (B
     ).rejects.toMatchObject({ code: 'NO_ACTIVE_ASSIGNMENT' });
     expect(mocks.openPlacementCase).not.toHaveBeenCalled();
     expect(mocks.createPlacement).not.toHaveBeenCalled();
+  });
+
+  it('B-07 placementCaseId=null → openPlacementCase opens a case, createPlacement uses it, updateMany links the submission', async () => {
+    mocks.candidateSubmissionFindUnique.mockResolvedValue({
+      id: SUBMISSION_ID,
+      laborProfileId: LP_ID,
+      placementCaseId: null, // B-07: claimed submission without a PlacementCase
+      slot: { staffingOrderId: ORDER_ID, jobOpeningId: OPENING_ID },
+    });
+    mocks.assertDual.mockResolvedValue(undefined);
+    // updateMany is now invoked on the submission to link it to the new case.
+    const updateMany = vi.fn(async () => ({ count: 1 }));
+    mocks.candidateSubmissionUpdate.mockResolvedValue({ count: 1 });
+
+    const out = await recruiterPlacementCreate(fakeTx() as any, {
+      sourceCandidateSubmissionId: SUBMISSION_ID,
+      actorId: ACTOR,
+      actorRole: 'HR_STAFF',
+    });
+
+    // Dual-authority runs FIRST (revoked recruiter never opens a case).
+    expect(mocks.assertDual).toHaveBeenCalledOnce();
+    expect(mocks.openPlacementCase).toHaveBeenCalledOnce();
+    expect(mocks.createPlacement).toHaveBeenCalledOnce();
+
+    // createPlacement receives the case from openPlacementCase (NOT the null
+    // submission row), and the LP / opening IDs derived from the submission.
+    const createInput = mocks.createPlacement.mock.calls[0][1];
+    expect(createInput.placementCaseId).toBe(CASE_ID);
+    expect(createInput.laborProfileId).toBe(LP_ID);
+    expect(createInput.jobOpeningId).toBe(OPENING_ID);
+    expect(createInput.sourceCandidateSubmissionId).toBe(SUBMISSION_ID);
+
+    // Submission row linked to the newly opened case.
+    expect(mocks.candidateSubmissionUpdate).toHaveBeenCalledOnce();
+    expect(mocks.candidateSubmissionUpdate).toHaveBeenCalledWith({
+      where: { id: SUBMISSION_ID, placementCaseId: null },
+      data: { placementCaseId: CASE_ID },
+    });
+
+    // Result surface reflects the canonical case, not the null row.
+    expect(out).toMatchObject({
+      placementId: 'pl-1',
+      placementCaseId: CASE_ID,
+      staffingOrderId: ORDER_ID,
+      laborProfileId: LP_ID,
+      jobOpeningId: OPENING_ID,
+      status: 'SELECTED',
+      replayed: false,
+    });
+  });
+
+  it('B-07 revoked actor + placementCaseId=null → NO canonical rows persisted, no openPlacementCase, no createPlacement', async () => {
+    // Defense-in-depth ordering: dual-authority runs BEFORE openPlacementCase,
+    // so a revoked actor never causes a PlacementCase row to be inserted and
+    // never causes a CandidateSubmission.placementCaseId to be set.
+    mocks.candidateSubmissionFindUnique.mockResolvedValue({
+      id: SUBMISSION_ID,
+      laborProfileId: LP_ID,
+      placementCaseId: null,
+      slot: { staffingOrderId: ORDER_ID, jobOpeningId: OPENING_ID },
+    });
+    mocks.assertDual.mockRejectedValue(
+      new RecruiterAssignmentError('NO_ACTIVE_ORDER_ASSIGNMENT', 'Order assignment not active', 403, {
+        reason: 'assignment_revoked',
+      }),
+    );
+
+    await expect(
+      recruiterPlacementCreate(fakeTx() as any, {
+        sourceCandidateSubmissionId: SUBMISSION_ID,
+        actorId: ACTOR,
+        actorRole: 'HR_STAFF',
+      }),
+    ).rejects.toMatchObject({ code: 'NO_ACTIVE_ORDER_ASSIGNMENT' });
+
+    expect(mocks.openPlacementCase).not.toHaveBeenCalled();
+    expect(mocks.createPlacement).not.toHaveBeenCalled();
+    expect(mocks.candidateSubmissionUpdate).not.toHaveBeenCalled();
   });
 
   it('propagates actorRole=HR_STAFF to the dual-authority helper (no optional-bypass)', async () => {
