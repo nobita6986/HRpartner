@@ -14,14 +14,14 @@
 | Baseline | `f3a3d1a46e2e4a26103c9bf318b67cba21bdfcf7` |
 | Plan baseline | `c082f689401ea8ced0e0ba2932c240fb17eb0c86` (v1.3 contract adoption) |
 | Round-7 R3-B01..B05 Implementation SHA | `8bc023f8cee1c3e039a2347012619e3f3026f97b` (preserved; forward-only on top of `7f9e06b0`) |
-| Round-8 R3-B06..B09 Implementation SHA | `bb47ff8521c43e14ad28f75537d2585435abc3fa` (preserved; forward-only on top of `8bc023f8`) |
-| Round-8 R3-B06..B09 — note | T0 directive 2026-09-29 second CHANGES_REQUIRED verdict issued B-06..B-09 blockers. Round-8 is the BLOCKER REPAIR round — it is NOT a new freeze. Predecessor chain `7ad217fd` → `1d459db` → `7f9e06b0` → `8bc023f` → `bb47ff85` all preserved (no amend/reset/rebase/force-push). Round-8 SHA `bb47ff85` is the in-flight semantic repair handback SHA; a new freeze SHA will be promoted only after T0_R3_SEMANTIC_REVIEW approves B-06..B-09. |
+| Round-8 R3-B06..B09 handback SHA | `bb47ff8521c43e14ad28f75537d2585435abc3fa` (pinned in T0 directive 2026-09-29 second CHANGES_REQUIRED; predecessor chain stops at this SHA per T0 pinning rule) |
+| Round-8 R3-B06..B09 Implementation SHA | `6959c975140241ef6fa353bdf9063f3c4cbcd2f7` (NEW forward commit on top of `bb47ff85`; T0_R3_SEMANTIC_REVIEW handback SHA; will be promoted to "freeze" only after T0_R3_SEMANTIC_REVIEW approves B-06..B-09) |
 | R3 docs/evidence freeze SHA | `7f9e06b0c80aba99f2c3999d9142a13fce46cbc5` (preserved) |
-| Predecessor chain preserved | `7ad217fd` → `1d459db` → `7f9e06b0` → `8bc023f` → `bb47ff85` (no amend/reset/rebase/force-push) |
+| Predecessor chain preserved | `7ad217fd` → `1d459db` → `7f9e06b0` → `8bc023f` → `bb47ff85` → `6959c975` (no amend/reset/rebase/force-push) |
 | Delivery protocol | `V2_FAST_FREEZE` |
 | Correction batches used | `1` |
 | Correction batches used — note | Round-2 batch was the only batch consumed; rounds 3, 4, 5, 6, 7, 8 are T0-mandated blocker repairs / integrity exceptions on top of it, NOT new correction budgets |
-| Frozen delivery | `NO` (round-8 B-06..B-09 repair landed in `bb47ff85`; awaiting T0_R3_SEMANTIC_REVIEW) |
+| Frozen delivery | `NO` (round-8 B-06..B-09 repair landed in `6959c975`; awaiting T0_R3_SEMANTIC_REVIEW) |
 | Canonical gates | `FAIL — SEMANTIC_GAPS` (B-06..B-09 semantic repair landed; runtime ×3 still env-blocked → `ENV_BLOCKED` ONLY AFTER semantic is clean) |
 | Audit eligibility | `NOT_ELIGIBLE` (semantic gaps + runtime env-blocked) |
 | Assurance lane | `CRITICAL` |
@@ -311,7 +311,7 @@ T0 directive 2026-09-29 (verdict `CHANGES_REQUIRED` on HEAD `bb47ff85`) — wait
 - Audit eligibility: `NOT_ELIGIBLE` (semantic gaps + runtime env-blocked)
 - Frozen delivery: `NO` (semantic surface under active review; no NEW freeze SHA until B-06..B-09 are T0-approved)
 - Delivery protocol: `V2_FAST_FREEZE`
-- Canonical gates (non-runtime): FAIL — SEMANTIC_GAPS — R3-B06 (deterministic race gates), R3-B07 (PlacementCase on-demand), R3-B08 (HR_STAFF placement transitions), R3-B09 (assignment UI operational) all repaired this round; semantic repair SHA `bb47ff8521c43e14ad28f75537d2585435abc3fa` (forward commit on top of `8bc023f`; not promoted to "freeze" per T0 §B-05)
+- Canonical gates (non-runtime): FAIL — SEMANTIC_GAPS — R3-B06 (deterministic race gates), R3-B07 (PlacementCase on-demand), R3-B08 (HR_STAFF placement transitions), R3-B09 (assignment UI operational) all repaired this round; semantic repair SHA `6959c975140241ef6fa353bdf9063f3c4cbcd2f7` (forward commit on top of `bb47ff85`; not promoted to "freeze" per T0 §B-05)
 - Canonical gates (synthetic runtime): ENV_BLOCKED — `BLK-01`; see §4.3
 - Targeted route unit (F-08): `src/domains/talent/recruiter-assignment.routes.test.ts` 21/21 passing
 - Targeted UI guard (F-08): `src/domains/talent/recruiter-assignment.ui.test.ts` 7/7 passing (F-08/7 B-09 added)
@@ -338,9 +338,9 @@ T0 directive 2026-09-29 (verdict `CHANGES_REQUIRED` on HEAD `bb47ff85`) — wait
 - Synthetic DB: preflight PASS (Neon `ep-empty-forest-azlhfyo9-*`; PG 18.6); runtime ×3 NOT_RUN in this sandbox
 - Production DB/migration: `NOT_RUN`
 - R3-B01..B05 handback SHA: `8bc023f8cee1c3e039a2347012619e3f3026f97b` (preserved)
-- R3-B06..B09 handback SHA: `bb47ff8521c43e14ad28f75537d2585435abc3fa` (this round; forward-only; no amend/reset/rebase/force-push)
-- Predecessor chain preserved: `7ad217fd` → `1d459db` → `7f9e06b0` → `8bc023f` → `bb47ff85`
-- Working tree: ready for T0 commit (changes staged, no commit yet — T0 directive pins the predecessor chain up to `bb47ff85`; this round-8 semantic repair SHA will be a NEW forward commit on top of `bb47ff85`)
+- R3-B06..B09 handback SHA: `6959c975140241ef6fa353bdf9063f3c4cbcd2f7` (this round; forward-only; no amend/reset/rebase/force-push)
+- Predecessor chain preserved: `7ad217fd` → `1d459db` → `7f9e06b0` → `8bc023f` → `bb47ff85` → `6959c975`
+- Working tree: clean (HANDOFF.md metadata update folded into last commit)
 
 Handoff status: BLOCKED
 
