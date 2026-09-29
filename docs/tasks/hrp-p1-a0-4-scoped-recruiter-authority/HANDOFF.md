@@ -19,13 +19,14 @@
 | R3 docs/evidence freeze SHA | `7f9e06b0c80aba99f2c3999d9142a13fce46cbc5` (preserved) |
 | B-08 Workbench wiring SHA | `3b1898f5af5186f4b14072d3d3da9cd11e381b9b` (preserved; accepted semantically per T0 third CHANGES_REQUIRED; not modified in round-9) |
 | Round-9.3 Implementation SHA | `2056c408283b1f0281ce0ca3b4117c25df82b239` (NEW forward commit on top of `3b1898f5`; round-9.1 runtime fixture precondition + FK teardown correction (C-01..C-03 + C-05..C-11) + round-9.2 final canonical correction (C-12 raw-vs-rounded overdue authority + C-13 AC-04 fixture isolation) + round-9.3 final static-integrity repair (`:649 → :676` historical comment in `required-relation-sweep.static.test.ts`); T0 reproduction PASS ×3 on synthetic DB `ep-empty-forest-azlhfyo9-*`; promoted to freeze by T0 directive 2026-09-29 round-9.3) |
+| Implementation SHA | `2056c408283b1f0281ce0ca3b4117c25df82b239` |
 | Predecessor chain preserved | `7ad217fd` → `1d459db` → `7f9e06b0` → `8bc023f` → `bb47ff85` → `6959c975` → `a011457d` → `3b1898f5` → `2056c408` → `_docs_evidence_freeze_` (no amend/reset/rebase/force-push) |
 | Delivery protocol | `V2_FAST_FREEZE` |
 | Correction batches used | `1` |
 | Correction batches used — note | Round-2 batch was the only T1C correction batch consumed; rounds 3, 4, 5, 6, 7, 8, 9, 9.2, 9.3 are T0-mandated blocker repairs / integrity exceptions / freeze authorization on top of it, NOT new T1C correction budgets |
-| Frozen delivery | `YES` (round-9.3 semantic + docs frozen per T0 directive 2026-09-29 round-9.3; T0 reproduction PASS ×3 on synthetic DB; canonical gates PASS; C-04 PASS) |
-| Canonical gates | `PASS` (T0 reproduction PASS ×3 on synthetic DB; C-04 = PASS; `p1a04-scoped-recruiter-authority` 19/19 PASS ×3; `p1a04-canonical-flow` 11/11 PASS ×3; `p1a04-r3-substantive` 7/7 PASS ×3; `recruiter-workbench.integration.test.ts` 20/20 PASS ×3; targeted derive 50/50; read-service 69/69; required-relation sweep 11/11 / exactly 35 hits; full canonical strict 39/39 files / 642 passed / 0 failed; full unit 205/205 files / 3418 passed / 0 failed; typecheck PASS; lint 0 errors; build PASS; Prisma validate PASS; residue sweep all tracked tables = 0; `git diff --check` PASS; strict UTF-8 scan PASS) |
-| Audit eligibility | `ELIGIBLE` (T0 reproduction PASS ×3; canonical gates PASS; frozen delivery YES; semantic + docs surface frozen in `2056c408`; ready for `TIER3_LIGHT_AUDIT`; P1 release blockers visible but do not gate P1-A0.4 audit) |
+| Frozen delivery | `YES` |
+| Canonical gates | `PASS` |
+| Audit eligibility | `ELIGIBLE` |
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
 | Execution round | `9.3` (round-1 CONTRACT_MISMATCH; round-2 canonical correction; round-3 F-01..F-08 pre-audit exception; round-4 terminal doc freeze; round-5 R3 pre-audit integrity exception — semantic closure; round-6 R3 docs/evidence freeze; round-7 R3-B01..B05 blocker repair; round-8 R3-B06..B09 blocker repair; round-9 runtime correction; round-9.2 final canonical correction; round-9.3 terminal semantic + docs freeze authorization) |
