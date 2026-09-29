@@ -122,7 +122,7 @@ const EXPECTED_HITS = [
   // đếm là đúng. An toàn vì query chạy trong `withDbContext(... role=ADMIN | HR_MANAGER | HR_STAFF)`
   // với GUC session-scoped nên RLS `hrp_labor_profile_visible_for` đã lọc theo role/handler pool.
   // PII `phone`/`cccdNumber` được mask khi thiếu `CAN_VIEW_WORKER_SENSITIVE` (DEC-05).
-  'src/domains/talent/recruiter-workbench.read-service.ts:652 laborProfile',
+  'src/domains/talent/recruiter-workbench.read-service.ts:676 laborProfile',
   // hrp-p1-e0 STEP-06 (2026-09-26): E0-F05 job context projection cần đọc
   // `placement.jobOpening.posting.title` và `placement.jobOpening.staffingOrder.project.name`/
   // `.clientCompanyName`. `JobOpening` (qua `Placement.jobOpening`) là quan hệ BẮT BUỘC trong schema
@@ -139,12 +139,12 @@ const EXPECTED_HITS = [
   // giống chain trên (`hrp_project_visible_for` đã thoả qua placement_case → withDbContext).
   // P1-F1 cũng thêm `status`/`serviceModelSnapshot`/`jobOpeningId` vào `placements` select
   // → line numbers của chain `placements.jobOpening.staffingOrder.project` SHIFTED.
-  'src/domains/talent/recruiter-workbench.read-service.ts:682 jobOpening',
-  'src/domains/talent/recruiter-workbench.read-service.ts:686 staffingOrder',
-  'src/domains/talent/recruiter-workbench.read-service.ts:688 project',
-  'src/domains/talent/recruiter-workbench.read-service.ts:715 jobOpening',
-  'src/domains/talent/recruiter-workbench.read-service.ts:719 staffingOrder',
-  'src/domains/talent/recruiter-workbench.read-service.ts:721 project',
+  'src/domains/talent/recruiter-workbench.read-service.ts:706 jobOpening',
+  'src/domains/talent/recruiter-workbench.read-service.ts:710 staffingOrder',
+  'src/domains/talent/recruiter-workbench.read-service.ts:712 project',
+  'src/domains/talent/recruiter-workbench.read-service.ts:739 jobOpening',
+  'src/domains/talent/recruiter-workbench.read-service.ts:743 staffingOrder',
+  'src/domains/talent/recruiter-workbench.read-service.ts:745 project',
   // hrp-p1-a04 correction batch 1/1 (2026-09-29): `listUnclaimedStaffingOrders` and
   // `listMyActiveStaffingOrders` (the SELF-CLAIM-StaffingOrder surfaces) were DROPPED
   // in favor of `claimCandidateSubmission` (candidate-side claim). The 5 prior hits
@@ -375,14 +375,14 @@ describe('quan hệ BẮT BUỘC trên bảng bị RLS che: tập vị trí sele
     // → 136/139/218/226) — không đếm thêm, không trừ.
     // Sau P1-A1 (2026-09-25): +2 dòng ở public.service.ts (staffingOrder, project) do nguồn
     // chuyển từ Project sang JobPosting chain. Tổng src = 18, tổng all = 21.
-    // Sau P1-E0 (2026-09-26): +1 dòng ở recruiter-workbench.read-service.ts:649 (laborProfile) — quan hệ
+    // Sau P1-E0 (2026-09-26): +1 dòng ở recruiter-workbench.read-service.ts:676 (laborProfile) — quan hệ
     // bắt buộc trong schema `placement_case`, cần thiết để project `fullName`/`phone`/`cccdNumber`/
     // `identityVerification`/`completeness` (§4.3 RQ-02). Chạy trong `withDbContext` nên RLS
     // `hrp_labor_profile_visible_for` đã lọc; PII được mask khi thiếu `CAN_VIEW_WORKER_SENSITIVE`.
     // Tổng src = 19, tổng all = 22.
     // Sau P1-E0 STEP-06 (2026-09-26): E0-F05 job context projection. Số dòng recruiter-workbench cũ
     // (475) đã lệch vì E0-F01/E0-F06 chèn thêm composable AND clauses + permissions param; dòng thật
-    // bây giờ là 649. Thêm 3 dòng cho JobOpening → StaffingOrder → Project chain
+    // bây giờ là 676. Thêm 3 dòng cho JobOpening → StaffingOrder → Project chain
     // (679 jobOpening, 683 staffingOrder, 685 project). Tổng src = 22, tổng all = 25.
     // Sau P1-E0 correction round-2 (2026-09-26): F-10/F-11 không thêm quan hệ, chỉ thay đổi
     // hình thức OR; line numbers shift vì code reorganization. Sweep dùng line literals nên
@@ -392,6 +392,13 @@ describe('quan hệ BẮT BUỘC trên bảng bị RLS che: tập vị trí sele
     // Plus: thêm status/serviceModelSnapshot/jobOpeningId vào placements.select làm chain
     // `placements.jobOpening.staffingOrder.project` SHIFTED 679/683/685 → 715/719/721 (line shift
     // không thêm dòng). Tổng src = 25, tổng all = 28.
+    // Sau C-15 (Round-9.3 final static-integrity repair, 2026-09-29): C-12 (raw-vs-rounded
+    // `computeAge`) + C-14 (boundary completion `lte`/`gt` in `buildPlacementCaseWhere`) chèn thêm
+    // header comment block trên `buildPlacementCaseWhere` + a new explicit comment block on
+    // `computeAge` that explains the raw-vs-display split. KHÔNG thêm quan hệ nguy hiểm; CHỈ line
+    // shift cho 7 vị trí `recruiter-workbench.read-service.ts` đã có sẵn: 652→676 laborProfile,
+    // 682→706 jobOpening, 686→710 staffingOrder, 688→712 project, 715→739 jobOpening, 719→743
+    // staffingOrder, 721→745 project. Tập ĐÓNG vẫn = 35; sweep vẫn chính xác.
     // Sau P1-A04 correction batch 1/1 (2026-09-29): DROPPED `listUnclaimedStaffingOrders`
     // và `listMyActiveStaffingOrders` (self-claim path) → -5 dòng ở recruiter-assignment.service.ts.
     // Thêm 6 dòng mới (claimCandidateSubmission + listMaskedUnclaimedCandidatesForOrder +

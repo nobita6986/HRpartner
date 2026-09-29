@@ -71,6 +71,11 @@ import {
   RecruiterAssignmentError,
 } from '@/src/domains/talent/recruiter-assignment.service';
 import {
+  recruiterPlacementCreate,
+  recruiterPlacementConfirm,
+  recruiterPlacementCancel,
+} from '@/src/domains/talent/recruiter-placement.adapter';
+import {
   createPlacement,
   confirmPlacement,
   cancelPlacement,
@@ -78,10 +83,15 @@ import {
 import {
   createOrReuseJobOpeningForSlot,
   createOrReuseJobPostingDraftForOpening,
+  updateDraftContent,
   publishJobPosting,
 } from '@/src/domains/staffing/job-posting-authoring.service';
-import { createCandidateSubmissionFromIntake } from '@/src/domains/talent/intake-writer.service';
+import {
+  submitPublicApplication,
+  type PublicApplyInput,
+} from '@/src/domains/applications/application.service';
 import { createStaffingOrder } from '@/src/domains/staffing/order.service';
+import { JOB_POSTING_RICH_TEXT_SCHEMA_VERSION } from '@/src/shared/content/job-posting-rich-text';
 import { getRecruiterWorkbenchList } from '@/src/domains/talent/recruiter-workbench.read-service';
 import type { AuthContext } from '@/src/shared/auth/auth-context';
 import { maskPhone } from '@/src/shared/privacy/mask';
@@ -92,7 +102,38 @@ const HAS_TEST_DB =
   !!adminUrl && !!writerUrl &&
   !adminUrl.includes('placeholder') && !writerUrl.includes('placeholder');
 
-const runId = `p1a04-r3-${randomUUID().slice(0, 8)}`;
+const runToken = randomUUID().replaceAll('-', '').slice(0, 12);
+const runId = `p1a04-r3-${runToken}`;
+
+// ─── C-06: run-scoped valid phone + fullName generators ─────────────────────────
+//   format: "09" + 6 run-scoped decimal digits + 2 scenario-index digits
+//   invariant: /^09\d{8}$/
+//   indices 1..99; each fixture receives a different phone; no shared applicant
+//   phone. Same invariant as `tests/db/p1a1-jobposting-public-apply.integration.test.ts`
+//   and `tests/db/p1a04-canonical-flow.integration.test.ts`.
+function runPhone(scenarioIdx: number): string {
+  if (!Number.isInteger(scenarioIdx)) {
+    throw new TypeError(`runPhone: scenarioIdx must be integer, got ${scenarioIdx}`);
+  }
+  if (scenarioIdx < 1 || scenarioIdx > 99) {
+    throw new RangeError(`runPhone: scenarioIdx must be in [1, 99], got ${scenarioIdx}`);
+  }
+  const runPrefix = runToken
+    .slice(0, 6)
+    .split('')
+    .map((c) => parseInt(c, 16) % 10)
+    .join('');
+  const scenarioSuffix = String(scenarioIdx).padStart(2, '0');
+  const phone = `09${runPrefix}${scenarioSuffix}`;
+  if (!/^09\d{8}$/.test(phone)) {
+    throw new Error(`runPhone: produced malformed phone ${phone}`);
+  }
+  return phone;
+}
+
+function runFullName(scenarioIdx: number): string {
+  return `${runId} Applicant ${String(scenarioIdx).padStart(2, '0')}`;
+}
 
 function makeClient(url: string): PrismaClient {
   return new PrismaClient({ datasources: { db: { url } } });
@@ -140,9 +181,18 @@ describe.skipIf(!HAS_TEST_DB)('P1-A0.4 R3 substantive (F-02..F-07)', () => {
     postingSlug: string;
     assignmentAlice: string;
     assignmentBob: string;
-    submissionId: string;
-    placementCaseId: string;
-    laborProfileId: string;
+    // C-08 / F02 fixture pollution fix: each fixture has TWO independent
+    // public-apply submissions (Alice's + Bob's) on the SAME opening+slot.
+    // F02 COMMAND-FIRST runs the Alice path; F02 REVOKE-FIRST runs the Bob
+    // path. They MUST NOT share a submission because `claimCandidateSubmission`
+    // is one-winner-per-submission — sharing would let COMMAND-FIRST claim
+    // Alice's LPHA and contaminate REVOKE-FIRST's Bob claim.
+    submissionAlice: string;
+    submissionBob: string;
+    laborProfileAlice: string;
+    laborProfileBob: string;
+    placementCaseAlice: string;
+    placementCaseBob: string;
     placementId: string;
   };
 
@@ -154,6 +204,7 @@ describe.skipIf(!HAS_TEST_DB)('P1-A0.4 R3 substantive (F-02..F-07)', () => {
     openingIds: [] as string[],
     postingIds: [] as string[],
     submissionIds: [] as string[],
+    submissionHistoryIds: [] as string[],
     placementCaseIds: [] as string[],
     laborProfileIds: [] as string[],
     assignmentIds: [] as string[],
@@ -217,11 +268,56 @@ describe.skipIf(!HAS_TEST_DB)('P1-A0.4 R3 substantive (F-02..F-07)', () => {
       return op.id;
     });
 
+    // Fixture precondition (NOT a production command):
+    //   `createOrReuseJobOpeningForSlot` creates a JobOpening with the
+    //   schema default `status = 'DRAFT'`, but the canonical
+    //   `publishJobPosting` invariant requires the underlying JobOpening to
+    //   be `OPEN` (see `tests/db/job-posting-authoring.integration.test.ts`
+    //   AC-08). At the time of writing, the production lifecycle path for
+    //   transitioning DRAFT → OPEN is not yet exposed via recruiter/admin
+    //   surface — see `P1_RELEASE_BLOCKER_JOB_OPENING_ACTIVATION` in
+    //   HANDOFF.md §4.5. The fixture therefore transitions the opening with
+    //   admin (bypassrls) authority under the same runId-scoped fixture
+    //   ownership, BEFORE invoking `publishJobPosting`. This mirrors the
+    //   precedent in `tests/db/job-posting-authoring.integration.test.ts`
+    //   (AC-08 publish-succeeds-when-JobOpening-OPEN) and does NOT relax the
+    //   production invariant.
+    //
+    //   `createPlacement` additionally requires `JobOpening.serviceModel !==
+    //   null` per `assertClassifiedJobOpening` (DEC-10). The production
+    //   lifecycle path for `ServiceModel` classification is also
+    //   not-yet-exposed (see `P1_RELEASE_BLOCKER_SERVICE_MODEL_CLASSIFY`).
+    //   The fixture classifies the opening with `STAFFING_SUPPLY` via admin
+    //   (bypassrls) authority — this is the most permissive default for the
+    //   canonical flow proof and does NOT modify production code.
+    await admin.jobOpening.update({
+      where: { id: openingId },
+      data: { status: 'OPEN', openedAt: new Date(), serviceModel: 'STAFFING_SUPPLY' },
+    });
+
     const postingId = await withContext(admin, managerUserId, 'HR_MANAGER', async (tx) => {
       const draft = await createOrReuseJobPostingDraftForOpening(tx, makeAuth(managerUserId, 'HR_MANAGER'), { jobOpeningId: openingId });
+      // publishJobPosting requires `title` + `descriptionJson` on the draft
+      // (validator fail-closed per `JOB_POSTING_NOT_PUBLISHABLE`). The DRAFT
+      // created by `createOrReuseJobPostingDraftForOpening` carries only a
+      // placeholder title and no rich content, so we set title + description
+      // via the canonical `updateDraftContent` before publishing. Mirrors the
+      // AC-08 publish-succeeds-when-JobOpening-OPEN precedent in
+      // `tests/db/job-posting-authoring.integration.test.ts`.
+      const updated = await updateDraftContent(
+        tx,
+        makeAuth(managerUserId, 'HR_MANAGER'),
+        {
+          jobPostingId: draft.id,
+          expectedRevision: draft.revision,
+          title: `R3 fixture ${idx} posting`,
+          descriptionJson: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: `R3 fixture ${idx} description.` }] }] },
+          contentSchemaVersion: JOB_POSTING_RICH_TEXT_SCHEMA_VERSION,
+        },
+      );
       const pub = await publishJobPosting(tx, makeAuth(managerUserId, 'HR_MANAGER'), {
-        jobPostingId: draft.id,
-        expectedRevision: draft.revision,
+        jobPostingId: updated.id,
+        expectedRevision: updated.revision,
       });
       setIds.postingIds.push(pub.id);
       return pub.id;
@@ -232,24 +328,71 @@ describe.skipIf(!HAS_TEST_DB)('P1-A0.4 R3 substantive (F-02..F-07)', () => {
       select: { slug: true },
     });
 
-    const phone = `09${runId.replace(/-/g, '').slice(0, 8).padEnd(8, '0')}`.slice(0, 10);
-    const intake = await withContext(admin, adminUserId, 'ADMIN', async (tx) =>
-      createCandidateSubmissionFromIntake(tx, {
-        applicant: { fullName: `R3 Candidate ${idx}`, phone },
-        channel: 'PUBLIC_MARKETPLACE',
-        intent: 'JOB_INTEREST',
-        jobOpeningId: openingId,
-        actorId: adminUserId,
-        consentAt: new Date(),
-      }),
-    );
-    expect(intake.match).toBeTruthy();
-    const submissionId = intake.candidateSubmission.id;
-    const laborProfileId = intake.candidateSubmission.laborProfileId!;
-    const placementCaseId = intake.candidateSubmission.placementCaseId!;
-    setIds.submissionIds.push(submissionId);
-    setIds.laborProfileIds.push(laborProfileId);
-    setIds.placementCaseIds.push(placementCaseId);
+    // C-05: Use the canonical public RPC `submitPublicApplication` (calls
+    // `hrp_public_apply_submission` SECURITY DEFINER, hrp_public_rpc owner).
+    // The slot is server-derived from the published slug → JobPosting →
+    // JobOpening → StaffingOrderSlot. The RPC populates CandidateSubmission +
+    // LaborProfile + PlacementCase + ApplicationStatusHistory atomically. It
+    // MUST NOT be replaced with the generic N1 intake writer (which does NOT
+    // persist slotId/jobOpeningId and would not be reachable through the
+    // canonical claimCandidateSubmission path).
+    //
+    // Writer connection: NO `withContext` — this is the anonymous path,
+    // `app.role` MUST NOT be set to an authenticated role.
+    //
+    // C-08 / F02 fixture pollution fix: create TWO independent submissions on
+    // the same opening (Alice's + Bob's). Each `runPhone(idx)` MUST be unique;
+    // we pre-validate uniqueness in `beforeAll`. The shared openingId +
+    // staffingOrderId lets both F02 COMMAND-FIRST (Alice) and F02 REVOKE-FIRST
+    // (Bob) operate against the SAME order advisory lock surface — without
+    // competing on the SAME submission's LPHA.
+    const applyAlice: PublicApplyInput = {
+      slug: postingRow.slug,
+      fullName: runFullName(idx * 2 + 1),
+      phone: runPhone(idx * 2 + 1),
+      consentAt: new Date().toISOString(),
+      idempotencyKey: randomUUID(),
+      cv: null,
+    };
+    const applyBob: PublicApplyInput = {
+      slug: postingRow.slug,
+      fullName: runFullName(idx * 2 + 2),
+      phone: runPhone(idx * 2 + 2),
+      consentAt: new Date().toISOString(),
+      idempotencyKey: randomUUID(),
+      cv: null,
+    };
+    await writer.$transaction((tx) => submitPublicApplication(tx, applyAlice));
+    await writer.$transaction((tx) => submitPublicApplication(tx, applyBob));
+
+    // Resolve the created submissions by fullName (canonical-flow scoped
+    // lookup pattern). Track history rows for teardown.
+    const submissionAliceRow = await admin.candidateSubmission.findFirstOrThrow({
+      where: { fullName: applyAlice.fullName },
+      include: { statusHistory: true, slot: true },
+    });
+    const submissionBobRow = await admin.candidateSubmission.findFirstOrThrow({
+      where: { fullName: applyBob.fullName },
+      include: { statusHistory: true, slot: true },
+    });
+    for (const s of [submissionAliceRow, submissionBobRow]) {
+      expect(s.slotId, 'server-derived slotId matches fixture slot').toBe(orderResult.slots[0]!.id);
+      expect(s.laborProfileId, 'laborProfileId non-null').toBeTruthy();
+      expect(s.placementCaseId, 'placementCaseId non-null').toBeTruthy();
+      expect(s.statusHistory).toHaveLength(1);
+      expect(s.statusHistory[0]).toMatchObject({
+        fromStatus: null,
+        toStatus: 'NEW',
+        reason: 'PUBLIC_APPLY',
+      });
+      setIds.submissionIds.push(s.id);
+      for (const h of s.statusHistory) setIds.submissionHistoryIds.push(h.id);
+      setIds.laborProfileIds.push(s.laborProfileId!);
+      setIds.placementCaseIds.push(s.placementCaseId!);
+    }
+
+    // C-06: no shared applicant phone. Each fixture uses a unique runPhone(idx).
+    // The unique constraint is verified at beforeAll startup.
 
     const assignmentAlice = await withContext(admin, managerUserId, 'HR_MANAGER', (tx) =>
       assignRecruiterToOrder(tx, {
@@ -283,9 +426,12 @@ describe.skipIf(!HAS_TEST_DB)('P1-A0.4 R3 substantive (F-02..F-07)', () => {
       postingSlug: postingRow.slug,
       assignmentAlice: assignmentAlice.id,
       assignmentBob: assignmentBob.id,
-      submissionId,
-      placementCaseId,
-      laborProfileId,
+      submissionAlice: submissionAliceRow.id,
+      submissionBob: submissionBobRow.id,
+      laborProfileAlice: submissionAliceRow.laborProfileId!,
+      laborProfileBob: submissionBobRow.laborProfileId!,
+      placementCaseAlice: submissionAliceRow.placementCaseId!,
+      placementCaseBob: submissionBobRow.placementCaseId!,
       placementId: '',
     };
   }
@@ -294,6 +440,19 @@ describe.skipIf(!HAS_TEST_DB)('P1-A0.4 R3 substantive (F-02..F-07)', () => {
     admin = makeClient(adminUrl);
     writer = makeClient(writerUrl);
     writer2 = makeClient(writerUrl);
+
+    // C-06: validate uniqueness of every run-scoped phone we'll use across
+    // the 6 fixture sets. Each fixture now creates 2 independent submissions
+    // (Alice's + Bob's) → 12 phones total per run. Each phone must be distinct.
+    const allPhones = [
+      runPhone(1), runPhone(2), runPhone(3), runPhone(4),
+      runPhone(5), runPhone(6), runPhone(7), runPhone(8),
+      runPhone(9), runPhone(10), runPhone(11), runPhone(12),
+    ];
+    const uniquePhones = new Set(allPhones);
+    if (uniquePhones.size !== allPhones.length) {
+      throw new Error(`runPhone: collision in R3 substantive ${allPhones}`);
+    }
 
     await admin.user.createMany({
       data: [
@@ -305,31 +464,124 @@ describe.skipIf(!HAS_TEST_DB)('P1-A0.4 R3 substantive (F-02..F-07)', () => {
       ],
     });
 
-    // Pre-build 4 fixture sets: one for the recruiter placement flow + 3 each
-    // for the two-connection revoke races ×3.
-    for (let i = 0; i < 4; i++) {
+    // Fixture index allocation (C-08 fixture pollution fix):
+    //   fixtureSets[0..2]: F02 COMMAND-FIRST (Alice) + F02 REVOKE-FIRST (Bob).
+    //     Each fixture carries TWO submissions (Alice's + Bob's) so the two
+    //     race orderings do NOT collide on the same LPHA.
+    //   fixtureSets[3]:    F02 LIVE-OVERLAP alias (Alice).
+    //   fixtureSets[4]:    F04 (Alice), F05 (Alice), F05-revoked (revoke Alice).
+    //   fixtureSets[5]:    F05 negative-control orderId (fx2), F06 (Bob).
+    // F02 MUST run BEFORE F05-revoked (which mutates the assignment state
+    // on fixtureSets[0]). Separate fixture sets for F02 vs F04..F06
+    // eliminates the assignment-state coupling.
+    const F02_FIXTURE_COUNT = 4;
+    const WORKBENCH_FIXTURE_COUNT = 2;
+    const totalFixtures = F02_FIXTURE_COUNT + WORKBENCH_FIXTURE_COUNT;
+    for (let i = 0; i < totalFixtures; i++) {
       fixtureSets.push(await buildFixtureSet(i));
     }
   }, 120_000);
 
   afterAll(async () => {
-    await Promise.all([
-      admin.placement.deleteMany({ where: { id: { in: setIds.placementIds } } }),
-      admin.candidateSubmission.deleteMany({ where: { id: { in: setIds.submissionIds } } }),
-      admin.jobPosting.deleteMany({ where: { id: { in: setIds.postingIds } } }),
-      admin.jobOpening.deleteMany({ where: { id: { in: setIds.openingIds } } }),
-      admin.staffingOrderRecruiterAssignment.deleteMany({ where: { id: { in: setIds.assignmentIds } } }),
-      admin.staffingOrderSlot.deleteMany({ where: { id: { in: setIds.slotIds } } }),
-      admin.staffingOrder.deleteMany({ where: { id: { in: setIds.orderIds } } }),
-      admin.placementCase.deleteMany({ where: { id: { in: setIds.placementCaseIds } } }),
-      admin.laborProfile.deleteMany({ where: { id: { in: setIds.laborProfileIds } } }),
-      admin.project.deleteMany({ where: { id: { in: setIds.projectIds } } }),
-      admin.clientCompany.deleteMany({ where: { id: { in: setIds.companyIds } } }),
-      admin.user.deleteMany({
+    // C-09: Reverse-FK zero-residue cleanup. Sequential `await` (no
+    // `Promise.all`) to honor the FK hierarchy; only disconnects are run in
+    // parallel. Idempotent: scoped by exact runId-derived IDs collected
+    // during the run. Does NOT swallow errors — if a step fails, the test
+    // surfaces the failure and `finally` still disconnects.
+    //
+    // Cleanup order:
+    //   0. application_status_history (for tracked submissions) [C-09]
+    //   1. placements (FK → case, profile, opening)
+    //   2. candidate submissions (FK → slot, profile)
+    //   3. job postings (FK → opening)
+    //   4. recruiter assignments + handling assignments
+    //   5. job openings (FK → order)
+    //   6. staffing order slots (FK → order) — clear reverse FK first
+    //   7. staffing orders
+    //   8. placement cases (FK → profile)
+    //   9. labor profiles
+    //  10. projects (FK → company)
+    //  11. client companies
+    //  12. test users
+    try {
+      // 0. application_status_history (FK → submission).
+      await admin.applicationStatusHistory.deleteMany({
+        where: { id: { in: setIds.submissionHistoryIds } },
+      });
+      // 1. placements (FK → case, profile, opening).
+      await admin.placement.deleteMany({ where: { id: { in: setIds.placementIds } } });
+      // 2. candidate submissions (FK → slot, profile).
+      await admin.candidateSubmission.deleteMany({ where: { id: { in: setIds.submissionIds } } });
+      // 3. job postings (FK → opening).
+      await admin.jobPosting.deleteMany({ where: { id: { in: setIds.postingIds } } });
+      // 4. recruiter assignments + handling assignments (FK → order / profile).
+      await admin.staffingOrderRecruiterAssignment.deleteMany({ where: { id: { in: setIds.assignmentIds } } });
+      await admin.laborProfileHandlingAssignment.deleteMany({
+        where: { laborProfileId: { in: setIds.laborProfileIds } },
+      });
+      // 5. job openings (FK → order).
+      await admin.jobOpening.deleteMany({ where: { id: { in: setIds.openingIds } } });
+      // 6. staffing order slots (FK → order). Clear reverse FK first.
+      await admin.staffingOrderSlot.updateMany({
+        where: { id: { in: setIds.slotIds } },
+        data: { jobOpeningId: null },
+      });
+      await admin.staffingOrderSlot.deleteMany({ where: { id: { in: setIds.slotIds } } });
+      // 7. staffing orders.
+      await admin.staffingOrder.deleteMany({ where: { id: { in: setIds.orderIds } } });
+      // 8. placement cases (FK → profile).
+      await admin.placementCase.deleteMany({ where: { id: { in: setIds.placementCaseIds } } });
+      // 9. labor profiles.
+      await admin.laborProfile.deleteMany({ where: { id: { in: setIds.laborProfileIds } } });
+      // 10. projects (FK → company).
+      await admin.project.deleteMany({ where: { id: { in: setIds.projectIds } } });
+      // 11. client companies.
+      await admin.clientCompany.deleteMany({ where: { id: { in: setIds.companyIds } } });
+      // 12. test users.
+      await admin.user.deleteMany({
         where: { id: { in: [adminUserId, managerUserId, aliceId, bobId, eveId] } },
-      }),
-    ]);
-    await Promise.all([admin.$disconnect(), writer.$disconnect(), writer2.$disconnect()]);
+      });
+
+      // C-10: Exact-ID zero-residue proof. Scoped to TRACKED IDs only (no
+      // LIKE-prefix). Each count MUST be 0 for the row to be considered
+      // clean. UUID-shaped IDs mean a LIKE-prefix check can pass even when
+      // the actual run rows remain; exact-ID Prisma count is the only
+      // substantive proof.
+      const residue = {
+        historyRows: await admin.applicationStatusHistory.count({
+          where: { id: { in: setIds.submissionHistoryIds } },
+        }),
+        placements: await admin.placement.count({ where: { id: { in: setIds.placementIds } } }),
+        submissions: await admin.candidateSubmission.count({
+          where: { id: { in: setIds.submissionIds } },
+        }),
+        postings: await admin.jobPosting.count({ where: { id: { in: setIds.postingIds } } }),
+        openings: await admin.jobOpening.count({ where: { id: { in: setIds.openingIds } } }),
+        slots: await admin.staffingOrderSlot.count({ where: { id: { in: setIds.slotIds } } }),
+        orders: await admin.staffingOrder.count({ where: { id: { in: setIds.orderIds } } }),
+        cases: await admin.placementCase.count({
+          where: { id: { in: setIds.placementCaseIds } },
+        }),
+        profiles: await admin.laborProfile.count({
+          where: { id: { in: setIds.laborProfileIds } },
+        }),
+        projects: await admin.project.count({ where: { id: { in: setIds.projectIds } } }),
+        companies: await admin.clientCompany.count({
+          where: { id: { in: setIds.companyIds } },
+        }),
+        users: await admin.user.count({
+          where: { id: { in: [adminUserId, managerUserId, aliceId, bobId, eveId] } },
+        }),
+        recruiterAssignments: await admin.staffingOrderRecruiterAssignment.count({
+          where: { id: { in: setIds.assignmentIds } },
+        }),
+      };
+      for (const [k, v] of Object.entries(residue)) {
+        expect(v, `zero-residue.${k} for R3 substantive runId=${runId}`).toBe(0);
+      }
+    } finally {
+      await Promise.all([admin.$disconnect(), writer.$disconnect(), writer2.$disconnect()]);
+    }
   }, 120_000);
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -337,11 +589,14 @@ describe.skipIf(!HAS_TEST_DB)('P1-A0.4 R3 substantive (F-02..F-07)', () => {
   // ═══════════════════════════════════════════════════════════════════════════
 
   it('R3-F04 winner appears in canonical Workbench MINE rail after claim', async () => {
-    const fx = fixtureSets[0]!;
-    // Alice claims the submission on writer connection.
+    const fx = fixtureSets[4]!;
+    // Alice claims her submission on writer connection.
+    // (C-08 / F02 fixture pollution fix: F04/F05 use the dedicated workbench
+    // fixture set [4..5], not the F02 fixture set [0..3], so the F02 revoke
+    // choreography and F05-revoked do not cross-contaminate the LPHA state.)
     await withContext(writer, aliceId, 'HR_STAFF', (tx) =>
       claimCandidateSubmission(tx, {
-        submissionId: fx.submissionId,
+        submissionId: fx.submissionAlice,
         actorRole: 'HR_STAFF',
         actorId: aliceId,
       }),
@@ -359,13 +614,13 @@ describe.skipIf(!HAS_TEST_DB)('P1-A0.4 R3 substantive (F-02..F-07)', () => {
         new Date(),
       ),
     );
-    const row = mine.items.find((r) => r.candidate.laborProfileId === fx.laborProfileId);
+    const row = mine.items.find((r) => r.candidate.laborProfileId === fx.laborProfileAlice);
     expect(row).toBeTruthy();
     // The handler is alice.
     expect(row!.handler?.assigneeUserId).toBe(aliceId);
 
-    // Bob (the loser who never claimed) sees ZERO rows on the canonical MINE
-    // rail for THIS labor profile.
+    // Bob (the loser who never claimed THIS submission) sees ZERO rows on
+    // the canonical MINE rail for Alice's labor profile.
     const bobMine = await withContext(writer, bobId, 'HR_STAFF', (tx) =>
       getRecruiterWorkbenchList(
         tx,
@@ -375,7 +630,7 @@ describe.skipIf(!HAS_TEST_DB)('P1-A0.4 R3 substantive (F-02..F-07)', () => {
         new Date(),
       ),
     );
-    expect(bobMine.items.find((r) => r.candidate.laborProfileId === fx.laborProfileId)).toBeUndefined();
+    expect(bobMine.items.find((r) => r.candidate.laborProfileId === fx.laborProfileAlice)).toBeUndefined();
 
     // Eve (never assigned) sees ZERO rows on MINE.
     const eveMine = await withContext(writer, eveId, 'HR_STAFF', (tx) =>
@@ -387,18 +642,19 @@ describe.skipIf(!HAS_TEST_DB)('P1-A0.4 R3 substantive (F-02..F-07)', () => {
         new Date(),
       ),
     );
-    expect(eveMine.items.find((r) => r.candidate.laborProfileId === fx.laborProfileId)).toBeUndefined();
+    expect(eveMine.items.find((r) => r.candidate.laborProfileId === fx.laborProfileAlice)).toBeUndefined();
   }, 60_000);
 
   it('R3-F05 winner full phone, loser/revoked/pre-claim MASKED; CCCD never exposed', async () => {
-    const fx = fixtureSets[0]!;
+    const fx = fixtureSets[4]!;
     // Winner: Alice's MINE row carries the FULL phone because she is the
     // active handler with an active order assignment AND an active handling
-    // assignment.
+    // assignment. Uses Alice's submission (not Bob's) so the F02 REVOKE-FIRST
+    // run on the same fixture doesn't collide.
     const aliceMine = await withContext(writer, aliceId, 'HR_STAFF', (tx) =>
       listMyClaimedCandidates(tx, aliceId, { actorRole: 'HR_STAFF', canSeeSensitive: false }),
     );
-    const aliceRow = aliceMine.find((r) => r.submissionId === fx.submissionId);
+    const aliceRow = aliceMine.find((r) => r.submissionId === fx.submissionAlice);
     expect(aliceRow).toBeTruthy();
     // Full phone exposed.
     expect(aliceRow!.candidatePhone).toMatch(/^0[0-9]{9}$/);
@@ -409,17 +665,17 @@ describe.skipIf(!HAS_TEST_DB)('P1-A0.4 R3 substantive (F-02..F-07)', () => {
     expect((aliceRow as any).candidateCccd).toBeUndefined();
     expect((aliceRow as any).candidateEvidence).toBeUndefined();
 
-    // Pre-claim masked queue: even the active handler, while her order
-    // assignment is ACTIVE, sees only masked phones in the unclaimed queue
-    // for OTHER submissions.
-    const fx2 = fixtureSets[1]!;
-    // Another submission exists on a different order — masked queue is empty
-    // because we never assigned Alice to order 2; verify the order-2 masked
-    // queue denies non-assigned recruiters (server-side authority).
+    // Pre-claim masked queue: a NON-ASSIGNED recruiter (Eve) MUST be denied
+    // by the order-2 masked queue (server-side authority). Each fixture set
+    // assigns Alice + Bob on the SAME order, so a recruiter assigned on
+    // order 0 is ALSO assigned on order 1..3 — so the only true
+    // non-assigned HR_STAFF actor we can use for the negative-control is
+    // Eve, who is never assigned to any order.
+    const fx2 = fixtureSets[5]!;
     let forbidden = false;
     try {
-      await withContext(writer, aliceId, 'HR_STAFF', (tx) =>
-        listMaskedUnclaimedCandidatesForOrder(tx, fx2.orderId, aliceId),
+      await withContext(writer, eveId, 'HR_STAFF', (tx) =>
+        listMaskedUnclaimedCandidatesForOrder(tx, fx2.orderId, eveId),
       );
     } catch (e) {
       if (e instanceof RecruiterAssignmentError) {
@@ -430,12 +686,16 @@ describe.skipIf(!HAS_TEST_DB)('P1-A0.4 R3 substantive (F-02..F-07)', () => {
     expect(forbidden).toBe(true);
   }, 60_000);
 
-  it('R3-F05-revoked after revoke the winning row remains but placement create fails closed (admin path)', async () => {
-    const fx = fixtureSets[0]!;
-    // Revoke Alice's order assignment. The handling assignment (LPHA) remains
-    // ACTIVE — this represents the masked historical state. The MINE row
-    // therefore still appears for Alice (the row is masked historical state),
-    // BUT placement create must fail because the order assignment is gone.
+  it('R3-F05-revoked after revoke the MINE row drops (RLS at DB row level) and placement create fails closed', async () => {
+    const fx = fixtureSets[4]!;
+    // Revoke Alice's order assignment. The LPHA remains ACTIVE — but the
+    // candidate_submissions SELECT policy is gated on the slot's order
+    // assignment being ACTIVE (`hrp_sora_candidate_submissions_staff_select`).
+    // So after revoke, HR_STAFF sees ZERO rows on MINE — the contact-data
+    // boundary is enforced at the DB row level, not at the unmask level.
+    // (See AC-E2E-21d-revoked in canonical-flow for the same contract.)
+    // Uses Alice's submission so it does NOT collide with F02 REVOKE-FIRST
+    // (which revokes Bob on the same fixture).
     await withContext(admin, managerUserId, 'HR_MANAGER', (tx) =>
       revokeRecruiterFromOrder(tx, {
         staffingOrderId: fx.orderId,
@@ -445,36 +705,27 @@ describe.skipIf(!HAS_TEST_DB)('P1-A0.4 R3 substantive (F-02..F-07)', () => {
         reason: 'R3-F05 revoke for boundary test',
       }),
     );
-    // Alice still sees the row in listMyClaimedCandidates (masked historical
-    // state). The full-phone path is gated by `isActiveHandler && order
-    // assignment ACTIVE` — after revoke, she does NOT have the order
-    // assignment, so candidatePhone must be NULL (masked only).
     const aliceAfterRevoke = await withContext(writer, aliceId, 'HR_STAFF', (tx) =>
       listMyClaimedCandidates(tx, aliceId, { actorRole: 'HR_STAFF', canSeeSensitive: false }),
     );
-    const aliceRow = aliceAfterRevoke.find((r) => r.submissionId === fx.submissionId);
-    expect(aliceRow).toBeTruthy();
-    // After revoke, full phone MUST disappear — candidatePhone MUST be null.
-    expect(aliceRow!.candidatePhone).toBeNull();
-    // The masked form is still delivered (so the recruiter knows what the
-    // candidate is, but cannot call them).
-    expect(aliceRow!.candidatePhoneMasked).toBe(maskPhone('0999999999'));
-    // The row is now non-active-handler for placement authority purposes; the
-    // MINE DTO still says isActiveHandler=true because the LPHA is still
-    // ACTIVE — but the order assignment is REVOKED so the contact boundary
-    // refuses to deliver the full phone. (We assert this at the *boundary*
-    // level, where candidatePhone=null is the authoritative result.)
+    expect(
+      aliceAfterRevoke.find((r) => r.submissionId === fx.submissionAlice),
+      'revoked HR_STAFF sees zero rows on MINE (RLS at DB row level)',
+    ).toBeUndefined();
 
-    // placement create by Alice (revoked) MUST fail closed.
+    // C-08: placement create by Alice (revoked) MUST fail closed via the
+    // canonical recruiter-scoped adapter (production path that mirrors
+    // POST /api/admin/recruiter/placements). The adapter enforces dual
+    // authority (BOTH order assignment AND handling claim) under the
+    // canonical order advisory lock, and throws `RecruiterAssignmentError`
+    // with NO_ACTIVE_ORDER_ASSIGNMENT/NO_ACTIVE_ASSIGNMENT for fail-closed.
     let denied = false;
     try {
       await withContext(writer, aliceId, 'HR_STAFF', (tx) =>
-        createPlacement(tx, {
+        recruiterPlacementCreate(tx, {
+          sourceCandidateSubmissionId: fx.submissionAlice,
           actorId: aliceId,
           actorRole: 'HR_STAFF',
-          laborProfileId: fx.laborProfileId,
-          placementCaseId: fx.placementCaseId,
-          jobOpeningId: fx.openingId,
         }),
       );
     } catch (e) {
@@ -489,39 +740,49 @@ describe.skipIf(!HAS_TEST_DB)('P1-A0.4 R3 substantive (F-02..F-07)', () => {
   // ═══════════════════════════════════════════════════════════════════════════
   // R3-F06: The WINNING RECRUITER (not ADMIN) completes the full placement
   // outcome. Bob is assigned to fixtureSet[1] and claims there, then
-  // createPlacement + confirmPlacement run with actorRole='HR_STAFF' (not
-  // admin). Both commands succeed under the dual-authority predicate.
+  // recruiterPlacementCreate + recruiterPlacementConfirm run with
+  // actorRole='HR_STAFF' (not admin). Both commands succeed under the
+  // dual-authority predicate.
   // ═══════════════════════════════════════════════════════════════════════════
 
-  it('R3-F06 winning RECRUITER (HR_STAFF) completes Placement create + confirm to valid status', async () => {
-    const fx = fixtureSets[1]!;
-    // Bob claims fixtureSet[1] submission.
+  it('R3-F06 winning RECRUITER (HR_STAFF) completes Placement via recruiterPlacementCreate/Confirm', async () => {
+    const fx = fixtureSets[5]!;
+    // Bob claims Bob's submission on fixtureSet[1]. (C-08 fixture pollution
+    // fix: each fixture has TWO submissions — Alice's and Bob's. F06 uses
+    // Bob's so the LPHA belongs to Bob; otherwise the F02 REVOKE-FIRST path
+    // on the same fixture would conflict.)
     const claim = await withContext(writer, bobId, 'HR_STAFF', (tx) =>
       claimCandidateSubmission(tx, {
-        submissionId: fx.submissionId,
+        submissionId: fx.submissionBob,
         actorRole: 'HR_STAFF',
         actorId: bobId,
       }),
     );
-    expect(claim.laborProfileId).toBe(fx.laborProfileId);
+    expect(claim.laborProfileId).toBe(fx.laborProfileBob);
 
-    // Bob (HR_STAFF, not admin) creates the placement under the dual-
-    // authority predicate. ADMIN/HR_MANAGER bypass is NOT used here.
+    // C-08: Bob (HR_STAFF, not admin) creates the placement via the
+    // production recruiter-scoped adapter. ADMIN/HR_MANAGER bypass is NOT
+    // used here. Server-derives slot/order/case/laborProfile from the
+    // submission ID — no client-supplied canonical IDs.
     const placement = await withContext(writer, bobId, 'HR_STAFF', (tx) =>
-      createPlacement(tx, {
+      recruiterPlacementCreate(tx, {
+        sourceCandidateSubmissionId: fx.submissionBob,
         actorId: bobId,
-        actorRole: 'HR_STAFF', // explicit server-derived role — not optional
-        laborProfileId: fx.laborProfileId,
-        placementCaseId: fx.placementCaseId,
-        jobOpeningId: fx.openingId,
+        actorRole: 'HR_STAFF',
       }),
     );
     expect(placement.status).toBe('SELECTED');
+    expect(placement.placementId).toBeTruthy();
+    expect(placement.placementCaseId).toBe(fx.placementCaseBob);
+    expect(placement.laborProfileId).toBe(fx.laborProfileBob);
+    expect(placement.staffingOrderId).toBe(fx.orderId);
+    expect(placement.jobOpeningId).toBe(fx.openingId);
     setIds.placementIds.push(placement.placementId);
 
-    // Bob confirms it. Same dual-authority predicate is applied.
+    // C-08: Bob confirms via the recruiter-scoped transition adapter
+    // (POST /api/admin/recruiter/placements/[id]/actions/confirm).
     const confirmed = await withContext(writer, bobId, 'HR_STAFF', (tx) =>
-      confirmPlacement(tx, {
+      recruiterPlacementConfirm(tx, {
         placementId: placement.placementId,
         actorId: bobId,
         actorRole: 'HR_STAFF',
@@ -534,9 +795,10 @@ describe.skipIf(!HAS_TEST_DB)('P1-A0.4 R3 substantive (F-02..F-07)', () => {
       expect(confirmed.replayed).toBe(false);
     }
 
-    // Bob cancels it (terminal) to close out fixtureSet[1].
+    // Bob cancels it (terminal) to close out fixtureSet[1] via the
+    // recruiter-scoped cancel adapter (C-08 — production path).
     const cancelled = await withContext(writer, bobId, 'HR_STAFF', (tx) =>
-      cancelPlacement(tx, {
+      recruiterPlacementCancel(tx, {
         placementId: placement.placementId,
         actorId: bobId,
         actorRole: 'HR_STAFF',
@@ -672,6 +934,9 @@ describe.skipIf(!HAS_TEST_DB)('P1-A0.4 R3 substantive (F-02..F-07)', () => {
     fx: FixtureSet,
     recruiterId: string,
     assignmentId: string,
+    submissionId: string,
+    laborProfileId: string,
+    placementCaseId: string,
     witnessClient: PrismaClient,
   ): Promise<{
     placementFinalStatus: string;
@@ -681,14 +946,48 @@ describe.skipIf(!HAS_TEST_DB)('P1-A0.4 R3 substantive (F-02..F-07)', () => {
     revokePid: number;
     revokeBlockedObserved: boolean;
   }> {
-    // Pre-create the placement under the recruiter's authority so the race
-    // is about the confirm transition + revoke.
+    // Pre-create the placement via the lower-level service (`createPlacement`)
+    // so the race is solely about the confirm transition + revoke lock
+    // choreography — the F02 races intentionally probe the lock-contention
+    // path, NOT the C-08 recruiter adapter (which is exercised by the F-06
+    // no-developer E2E proof and would otherwise require a separate claim
+    // step that contaminates the race window).
+    //
+    // Even the lower-level createPlacement enforces the F-02 dual-authority
+    // predicate when actorRole='HR_STAFF' (order assignment + handling
+    // assignment ACTIVE), so we MUST claim the submission on THIS fx
+    // (not on a different fx) so the LPHA on this submission's laborProfileId
+    // is ACTIVE for the actor. The canonical idempotent replay path applies.
+    try {
+      await withContext(writer, recruiterId, 'HR_STAFF', (tx) =>
+        claimCandidateSubmission(tx, {
+          submissionId,
+          actorRole: 'HR_STAFF',
+          actorId: recruiterId,
+        }),
+      );
+    } catch (e) {
+      // If the claim race already happened in a previous run on the same
+      // fx (the LPHA is now ACTIVE on the OTHER actor), the canonical
+      // service throws HANDLING_ALREADY_CLAIMED. We accept that and
+      // continue — the test still exercises the lock choreography on the
+      // same placement.
+      if (!(e instanceof RecruiterAssignmentError)) throw e;
+    }
+    // Sanity check (debug): the JobOpening referenced by fx must still
+    // exist (RLS on candidate_submissions makes some rows invisible, but
+    // the OPENING itself is a separate table — we explicitly verify before
+    // calling createPlacement).
+    const openingRow = await admin.jobOpening.findUnique({ where: { id: fx.openingId }, select: { id: true, status: true } });
+    if (!openingRow) {
+      throw new Error(`FIXTURE_MISSING openingId=${fx.openingId} for fx order=${fx.orderId} submission=${submissionId}`);
+    }
     const placementPre = await withContext(writer, recruiterId, 'HR_STAFF', (tx) =>
       createPlacement(tx, {
         actorId: recruiterId,
         actorRole: 'HR_STAFF',
-        laborProfileId: fx.laborProfileId,
-        placementCaseId: fx.placementCaseId,
+        laborProfileId,
+        placementCaseId,
         jobOpeningId: fx.openingId,
       }),
     );
@@ -821,21 +1120,44 @@ describe.skipIf(!HAS_TEST_DB)('P1-A0.4 R3 substantive (F-02..F-07)', () => {
     fx: FixtureSet,
     recruiterId: string,
     assignmentId: string,
+    submissionId: string,
+    laborProfileId: string,
+    placementCaseId: string,
     witnessClient: PrismaClient,
   ): Promise<{
     placementFinalStatus: string;
     assignmentFinalStatus: string;
     commandError: string | null;
+    commandErrorCode: string | null;
     revokePid: number;
     commandPid: number;
     commandBlockedObserved: boolean;
   }> {
+    // See note in runCommandFirstRace — we MUST claim first so the dual-
+    // authority predicate (lower-level createPlacement also enforces it for
+    // actorRole='HR_STAFF') finds an ACTIVE LPHA on this submission's
+    // laborProfileId. F02 REVOKE-FIRST uses Bob's submission on the same
+    // fixture so COMMAND-FIRST's Alice LPHA does not collide.
+    try {
+      await withContext(writer, recruiterId, 'HR_STAFF', (tx) =>
+        claimCandidateSubmission(tx, {
+          submissionId,
+          actorRole: 'HR_STAFF',
+          actorId: recruiterId,
+        }),
+      );
+    } catch (e) {
+      if (!(e instanceof RecruiterAssignmentError)) throw e;
+    }
+    // Pre-create the placement via the lower-level service (`createPlacement`)
+    // so the race is solely about the confirm transition + revoke lock
+    // choreography — see note in runCommandFirstRace above.
     const placementPre = await withContext(writer, recruiterId, 'HR_STAFF', (tx) =>
       createPlacement(tx, {
         actorId: recruiterId,
         actorRole: 'HR_STAFF',
-        laborProfileId: fx.laborProfileId,
-        placementCaseId: fx.placementCaseId,
+        laborProfileId,
+        placementCaseId,
         jobOpeningId: fx.openingId,
       }),
     );
@@ -849,6 +1171,7 @@ describe.skipIf(!HAS_TEST_DB)('P1-A0.4 R3 substantive (F-02..F-07)', () => {
     let revokePid = -1;
     let commandPid = -1;
     let commandError: string | null = null;
+    let commandErrorCode: string | null = null;
 
     // 1) Revoke tx: capture PID → acquire lock → signal → await gate → run revoke.
     const revokePromise = revokeConn.$transaction(async (tx) => {
@@ -909,6 +1232,7 @@ describe.skipIf(!HAS_TEST_DB)('P1-A0.4 R3 substantive (F-02..F-07)', () => {
         });
       } catch (e) {
         commandError = e instanceof Error ? e.message : String(e);
+        commandErrorCode = e instanceof RecruiterAssignmentError ? e.code : null;
         throw e;
       }
     }).catch(() => undefined);
@@ -942,6 +1266,7 @@ describe.skipIf(!HAS_TEST_DB)('P1-A0.4 R3 substantive (F-02..F-07)', () => {
       placementFinalStatus: placementRow?.status ?? 'UNKNOWN',
       assignmentFinalStatus: assignmentRow?.status ?? 'UNKNOWN',
       commandError,
+      commandErrorCode,
       revokePid,
       commandPid,
       commandBlockedObserved,
@@ -959,6 +1284,9 @@ describe.skipIf(!HAS_TEST_DB)('P1-A0.4 R3 substantive (F-02..F-07)', () => {
     fx: FixtureSet,
     recruiterId: string,
     assignmentId: string,
+    submissionId: string,
+    laborProfileId: string,
+    placementCaseId: string,
     witnessClient: PrismaClient,
   ): Promise<{
     placementFinalStatus: string;
@@ -966,7 +1294,7 @@ describe.skipIf(!HAS_TEST_DB)('P1-A0.4 R3 substantive (F-02..F-07)', () => {
     commandError: string | null;
     revokeBlockedObserved: boolean;
   }> {
-    const r = await runCommandFirstRace(fx, recruiterId, assignmentId, witnessClient);
+    const r = await runCommandFirstRace(fx, recruiterId, assignmentId, submissionId, laborProfileId, placementCaseId, witnessClient);
     return {
       placementFinalStatus: r.placementFinalStatus,
       assignmentFinalStatus: r.assignmentFinalStatus,
@@ -980,7 +1308,11 @@ describe.skipIf(!HAS_TEST_DB)('P1-A0.4 R3 substantive (F-02..F-07)', () => {
       const fx = fixtureSets[run - 1]!;
       const recruiterId = aliceId;
       const assignmentId = fx.assignmentAlice;
-      const result = await runCommandFirstRace(fx, recruiterId, assignmentId, writer2);
+      const result = await runCommandFirstRace(
+        fx, recruiterId, assignmentId,
+        fx.submissionAlice, fx.laborProfileAlice, fx.placementCaseAlice,
+        writer2,
+      );
       // PIDs were captured inside the tx — they MUST be a real PG backend.
       expect(result.commandPid, `run=${run} command PID captured`).toBeGreaterThan(0);
       expect(result.revokePid, `run=${run} revoke PID captured`).toBeGreaterThan(0);
@@ -1003,7 +1335,13 @@ describe.skipIf(!HAS_TEST_DB)('P1-A0.4 R3 substantive (F-02..F-07)', () => {
       const fx = fixtureSets[run - 1]!;
       const recruiterId = bobId;
       const assignmentId = fx.assignmentBob;
-      const result = await runRevokeFirstRace(fx, recruiterId, assignmentId, writer2);
+      // F02 REVOKE-FIRST uses Bob's submission so COMMAND-FIRST's Alice LPHA
+      // does not pollute this run's dual-authority predicate.
+      const result = await runRevokeFirstRace(
+        fx, recruiterId, assignmentId,
+        fx.submissionBob, fx.laborProfileBob, fx.placementCaseBob,
+        writer2,
+      );
       // PIDs were captured inside the tx.
       expect(result.revokePid, `run=${run} revoke PID captured`).toBeGreaterThan(0);
       expect(result.commandPid, `run=${run} command PID captured`).toBeGreaterThan(0);
@@ -1014,10 +1352,16 @@ describe.skipIf(!HAS_TEST_DB)('P1-A0.4 R3 substantive (F-02..F-07)', () => {
         result.commandBlockedObserved,
         `run=${run} witness must observe command session blocked on the canonical order advisory lock`,
       ).toBe(true);
-      // Command MUST have failed closed with NO_ACTIVE_ORDER_ASSIGNMENT.
-      expect(result.commandError, `revoke-first run=${run} command error`).toMatch(
-        /NO_ACTIVE_ORDER_ASSIGNMENT|NO_ACTIVE_ASSIGNMENT/,
-      );
+      // Command MUST have failed closed. We assert on the canonical
+      // `RecruiterAssignmentError.code` (the contractual surface) — NOT the
+      // human message text, which is unstable across refactors.
+      // The CODE MUST be exactly one of the two canonical fail-closed codes
+      // (DEC-25 + F-02 / F-03).
+      expect(result.commandErrorCode, `revoke-first run=${run} commandErrorCode MUST be set (got message: ${result.commandError})`).toBeTruthy();
+      expect(
+        result.commandErrorCode,
+        `revoke-first run=${run} command must fail closed with NO_ACTIVE_ORDER_ASSIGNMENT or NO_ACTIVE_ASSIGNMENT`,
+      ).toMatch(/^NO_ACTIVE_(ORDER_)?ASSIGNMENT$/);
       // Placement status UNCHANGED — confirm never ran.
       expect(['SELECTED', 'UNKNOWN']).toContain(result.placementFinalStatus);
       // Assignment is REVOKED.
@@ -1029,7 +1373,11 @@ describe.skipIf(!HAS_TEST_DB)('P1-A0.4 R3 substantive (F-02..F-07)', () => {
     const fx = fixtureSets[3]!;
     const recruiterId = aliceId;
     const assignmentId = fx.assignmentAlice;
-    const result = await runLiveOverlapRace(fx, recruiterId, assignmentId, writer2);
+    const result = await runLiveOverlapRace(
+      fx, recruiterId, assignmentId,
+      fx.submissionAlice, fx.laborProfileAlice, fx.placementCaseAlice,
+      writer2,
+    );
     expect(result.revokeBlockedObserved).toBe(true);
     expect(result.placementFinalStatus).toBe('CONFIRMED');
     expect(result.assignmentFinalStatus).toBe('REVOKED');

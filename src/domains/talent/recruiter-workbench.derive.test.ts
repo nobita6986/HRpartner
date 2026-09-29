@@ -479,7 +479,7 @@ describe('computeAge — AC-04', () => {
     });
   });
 
-  it('exactly 72h → not overdue (>=) actually IS overdue (>=) per spec', () => {
+  it('exactly 72h → overdue with CASE_AGE_THRESHOLD (rawHours >= 72)', () => {
     const opened = new Date(NOW.getTime() - 72 * 60 * 60 * 1000);
     const out = computeAge({ openedAt: opened, handlerExpiresAt: null }, NOW);
     expect(out.isOverdue).toBe(true);
@@ -545,6 +545,68 @@ describe('computeAge — AC-04', () => {
       isOverdue: false,
       overdueReason: null,
     });
+  });
+
+  // C-12 (Round-9.2): boundary proofs around the 72h threshold. The
+  // decision authority is `rawHours >= 72`, NOT the rounded display
+  // value `ageHours`. The DB where-clause in `buildPlacementCaseWhere`
+  // also uses the raw 72h boundary (`openedAt < now - 72h`). These tests
+  // lock the consistency between the two surfaces.
+  it('C-12 (1) 71h59m59s elapsed → isOverdue=false, overdueReason=null', () => {
+    const opened = new Date(NOW.getTime() - (71 * 60 * 60 * 1000 + 59 * 60 * 1000 + 59 * 1000));
+    const out = computeAge({ openedAt: opened, handlerExpiresAt: null }, NOW);
+    expect(out.isOverdue).toBe(false);
+    expect(out.overdueReason).toBeNull();
+    // Display rounded to one decimal: 71.99972… → 72.0. The C-12 fix is
+    // precisely that this display rounding MUST NOT promote the decision.
+    expect(out.ageHours).toBe(72);
+  });
+
+  it('C-12 (2) exactly 72h → isOverdue=true, overdueReason=CASE_AGE_THRESHOLD', () => {
+    const opened = new Date(NOW.getTime() - 72 * 60 * 60 * 1000);
+    const out = computeAge({ openedAt: opened, handlerExpiresAt: null }, NOW);
+    expect(out.isOverdue).toBe(true);
+    expect(out.overdueReason).toBe('CASE_AGE_THRESHOLD');
+    expect(out.ageHours).toBe(72);
+  });
+
+  it('C-12 (3) sub-72h value whose displayed ageHours rounds to 72.0 must still NOT be overdue', () => {
+    // 71.97h raw → ageHours rounds to 72.0 under `Math.round(raw * 10) / 10`.
+    // Without the C-12 fix, the previous shape would have flagged this as
+    // CASE_AGE_THRESHOLD (because it compared the rounded value to 72). With
+    // the fix, the decision authority is `rawHours`, so 71.97 < 72 → not overdue.
+    const opened = new Date(NOW.getTime() - (71 * 60 * 60 * 1000 + 58 * 60 * 1000 + 200));
+    const out = computeAge({ openedAt: opened, handlerExpiresAt: null }, NOW);
+    // rawHours ≈ 71.97 → display rounds to 72.0, but rawHours < 72.
+    expect(out.ageHours).toBe(72);
+    expect(out.isOverdue).toBe(false);
+    expect(out.overdueReason).toBeNull();
+  });
+
+  it('C-12 (4) expired handler below 72h remains HANDLER_EXPIRED (precedence preserved)', () => {
+    // Opened only 10h ago; handler expired 5h ago → overdue for the handler
+    // reason, NOT for the age reason. C-12 must not regress precedence.
+    const opened = new Date(NOW.getTime() - 10 * 60 * 60 * 1000);
+    const handlerExpired = new Date(NOW.getTime() - 5 * 60 * 60 * 1000);
+    const out = computeAge(
+      { openedAt: opened, handlerExpiresAt: handlerExpired },
+      NOW,
+    );
+    expect(out.isOverdue).toBe(true);
+    expect(out.overdueReason).toBe('HANDLER_EXPIRED');
+  });
+
+  it('C-12: handlerExpiresAt exactly equal to now is NOT expired (strict < boundary)', () => {
+    const opened = new Date(NOW.getTime() - 10 * 60 * 60 * 1000);
+    const handlerAtNow = new Date(NOW.getTime());
+    const out = computeAge(
+      { openedAt: opened, handlerExpiresAt: handlerAtNow },
+      NOW,
+    );
+    // handlerExpiresAt === now → NOT < now → handler not expired.
+    // No other overdue branch hits → isOverdue=false.
+    expect(out.isOverdue).toBe(false);
+    expect(out.overdueReason).toBeNull();
   });
 });
 

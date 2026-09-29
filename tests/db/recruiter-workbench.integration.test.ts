@@ -586,11 +586,17 @@ describe.skipIf(!HAS_TEST_DB)('P1-E0 RecruiterWorkbench integration', () => {
   // caseId via Set, NOT by item.length: a loop would silently pass on an
   // empty result, which is exactly the bug class the F-10 fix prevents.
   //
-  // Production where-clause (read-service.ts after E0-F01+correction 2/3):
-  //   overdue=true  → case.openedAt < (now - 72h) OR a profile ACTIVE
+  // Production where-clause (read-service.ts after C-14 boundary completion):
+  //   overdue=true  → case.openedAt <= (now - 72h) OR a profile ACTIVE
   //                   assignment with expiresAt < now.
-  //   overdue=false → NOT (above). Equivalent to: ageHours < 72 AND no
+  //                   (lte mirrors `rawHours >= 72` in computeAge; the strict
+  //                   `lt` would split the exactly-72h case between the two
+  //                   filters and contradict the canonical `>= 72` rule.)
+  //   overdue=false → NOT (above). Equivalent to: openedAt > (now - 72h) AND no
   //                   expired ACTIVE assignment.
+  //                   (gt mirrors `rawHours < 72` in computeAge.)
+  //   Handler expiry branch keeps `expiresAt < now` (strict `<`) because
+  //   `computeAge` uses `expiresAt < now`, NOT `<= now` (E0-F04 boundary).
   it('F-14: overdue=true|false on isolated fixtures (case 1: >72h, no assignment)', async () => {
     const profile = await makeProfile('f14-overdue-old', {
       identity: 'VERIFIED',
@@ -834,32 +840,96 @@ describe.skipIf(!HAS_TEST_DB)('P1-E0 RecruiterWorkbench integration', () => {
     expect(out.items[0].overdueReason).toBe('CASE_AGE_THRESHOLD');
   }, 30_000);
 
-  it('AC-04: filter overdue=true returns the case, overdue=false excludes it', async () => {
+  // C-13 (Round-9.2): the previous form iterated over arbitrary shared-DB
+  // rows from `view=ALL`, which is non-vacuous only by accident — when
+  // production data drifts and an `overdue=false` row happens to carry
+  // `isOverdue=true` (the very C-12 defect), the test silently passes on
+  // membership but cannot prove the filter actually excluded that row.
+  //
+  // The corrected proof builds two fresh run-scoped fixtures owned by this
+  // test (no pre-existing rows involved), narrowed to ONE row each via a
+  // unique `search` marker that this test embeds in `profile.fullName`.
+  // The expected DTO values (`isOverdue`, `overdueReason`, exact caseId)
+  // are then asserted exact — not membership. Each fixture enters the
+  // existing FK-safe teardown arrays so cleanup is unchanged.
+  //
+  // Production where-clause (read-service.ts after C-14 boundary completion):
+  //   overdue=true  → case.openedAt <= (now - 72h) OR a profile ACTIVE
+  //                   assignment with expiresAt < now.
+  //                   (lte mirrors `rawHours >= 72` in computeAge.)
+  //   overdue=false → NOT (above). Equivalent to: openedAt > (now - 72h) AND no
+  //                   expired ACTIVE assignment.
+  //                   (gt mirrors `rawHours < 72` in computeAge.)
+  //   Handler expiry branch keeps `expiresAt < now` (strict `<`) because
+  //   `computeAge` uses `expiresAt < now`, NOT `<= now` (E0-F04 boundary).
+  it('C-13: overdue=true|false on isolated run-scoped fixtures (search-narrowed)', async () => {
     const ctx: AuthContext = { userId: managerId, role: 'HR_MANAGER' };
-    const yes = await withContext(writer, ctx, (tx) =>
+
+    // Shared search marker for this test. `makeProfile` appends the runId
+    // to `fullName`, so the resulting marker is unique across runs and
+    // matches exactly two rows on the synthetic DB (this fixture plus any
+    // pre-existing row whose fullName already contains the literal marker).
+    // To guarantee isolation, the marker MUST embed the runId — the search
+    // filter is `contains` (case-insensitive) on `laborProfile.fullName`,
+    // and the production DTO has only this column available for narrowing.
+    const marker = `c13-${runId}`;
+
+    // Fixture A: overdue, no expired handler. Opened 80h ago → CASE_AGE_THRESHOLD.
+    const profileOverdue = await makeProfile(`${marker} overdue`, {
+      identity: 'VERIFIED',
+      completeness: 'COMPLETE',
+    });
+    const caseOverdue = await makeCase(profileOverdue.id, 'OPEN', 80);
+
+    // Fixture B: NOT overdue, no expired handler. Opened 1h ago → <72h.
+    const profileFresh = await makeProfile(`${marker} fresh`, {
+      identity: 'VERIFIED',
+      completeness: 'COMPLETE',
+    });
+    const caseFresh = await makeCase(profileFresh.id, 'OPEN', 1);
+
+    // overdue=true → must return exactly the 80h fixture. The 1h fixture
+    // is excluded because `openedAt > now - 72h` and there is no expired
+    // ACTIVE assignment on either profile.
+    const outTrue = await withContext(writer, ctx, (tx) =>
       getRecruiterWorkbenchList(tx, ctx, {
         view: 'ALL',
         overdue: true,
+        search: marker,
         page: 1,
-        pageSize: 100,
+        pageSize: 50,
       }, FULL_PERMS),
     );
-    const no = await withContext(writer, ctx, (tx) =>
+    expect(outTrue.total).toBe(1);
+    expect(outTrue.items.length).toBe(1);
+    const yes = outTrue.items[0]!;
+    expect(yes.caseId).toBe(caseOverdue.id);
+    expect(yes.isOverdue).toBe(true);
+    expect(yes.overdueReason).toBe('CASE_AGE_THRESHOLD');
+    // Negative side: the fresh fixture MUST NOT appear.
+    const yesIds = outTrue.items.map((r) => r.caseId);
+    expect(yesIds).not.toContain(caseFresh.id);
+
+    // overdue=false → must return exactly the 1h fixture. The 80h fixture
+    // is excluded because `openedAt <= now - 72h` (CASE_AGE_THRESHOLD).
+    const outFalse = await withContext(writer, ctx, (tx) =>
       getRecruiterWorkbenchList(tx, ctx, {
         view: 'ALL',
         overdue: false,
+        search: marker,
         page: 1,
-        pageSize: 100,
+        pageSize: 50,
       }, FULL_PERMS),
     );
-    // All rows in `yes` must be overdue.
-    for (const r of yes.items) {
-      expect(r.isOverdue).toBe(true);
-    }
-    // All rows in `no` must NOT be overdue.
-    for (const r of no.items) {
-      expect(r.isOverdue).toBe(false);
-    }
+    expect(outFalse.total).toBe(1);
+    expect(outFalse.items.length).toBe(1);
+    const no = outFalse.items[0]!;
+    expect(no.caseId).toBe(caseFresh.id);
+    expect(no.isOverdue).toBe(false);
+    expect(no.overdueReason).toBeNull();
+    // Negative side: the overdue fixture MUST NOT appear.
+    const noIds = outFalse.items.map((r) => r.caseId);
+    expect(noIds).not.toContain(caseOverdue.id);
   }, 30_000);
 
   it('AC-08: count + items returned in same tx share the same where filter', async () => {

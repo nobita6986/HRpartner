@@ -227,12 +227,25 @@ const CASE_AGE_OVERDUE_HOURS = 72;
 /**
  * Compute `ageHours`, `isOverdue`, `overdueReason` (AC-04, RQ-08).
  *
- *   - `ageHours` = (now - openedAt) / 1h, rounded to 1 decimal.
- *   - `isOverdue` = `ageHours >= 72` OR `handlerExpiresAt < now` (HANDLER_EXPIRED takes precedence).
+ *   - `ageHours` = (now - openedAt) / 1h, rounded to 1 decimal for DISPLAY.
+ *   - `isOverdue` = rawHours >= 72 OR `handlerExpiresAt < now`
+ *     (HANDLER_EXPIRED takes precedence). The decision authority is the
+ *     RAW elapsed hours, NOT the rounded display value. This keeps the
+ *     DTO consistent with the DB where-clause (`openedAt <= now - 72h` on
+ *     the `overdue=true` side, `openedAt > now - 72h` on the `overdue=false`
+ *     side — see `buildPlacementCaseWhere` for the canonical operators) and
+ *     prevents a sub-72h case whose displayed `ageHours` rounds up to
+ *     72.0 from being mis-flagged as overdue.
  *   - `overdueReason`:
  *       - `HANDLER_EXPIRED`    if `handlerExpiresAt < now`.
- *       - `CASE_AGE_THRESHOLD` if `ageHours >= 72` (and not already handler-expired).
+ *       - `CASE_AGE_THRESHOLD` if `rawHours >= 72` (and not already handler-expired).
  *       - `null`               otherwise.
+ *
+ * C-12 (Round-9.2): the previous implementation compared the rounded
+ * `ageHours >= 72`, which could promote a 71.97h case (display 72.0) to
+ * `isOverdue=true` while the DB filter still excluded it, producing an
+ * `overdue=false` row whose DTO carried `isOverdue=true`. The decision is
+ * now anchored on `rawHours`; the rounded value is display-only.
  */
 export function computeAge(
   input: ComputeAgeInput,
@@ -251,7 +264,7 @@ export function computeAge(
   if (handlerExpired) {
     isOverdue = true;
     overdueReason = 'HANDLER_EXPIRED';
-  } else if (ageHours >= CASE_AGE_OVERDUE_HOURS) {
+  } else if (rawHours >= CASE_AGE_OVERDUE_HOURS) {
     isOverdue = true;
     overdueReason = 'CASE_AGE_THRESHOLD';
   }
@@ -528,12 +541,23 @@ export function buildPlacementCaseWhere(
   // Prisma constraint: when a single relation field appears in multiple OR
   // branches, each branch is treated independently, so the AND of the OR
   // holds correctly across both branches.
+  // C-14 (Round-9.2 boundary completion): the DB filter must mirror the
+  // locked `computeAge` rule, which decides `isOverdue` from `rawHours >= 72`.
+  // The boundary operator MUST therefore be inclusive (`lte`) on the
+  // `overdue=true` side and strictly exclusive (`gt`) on the `overdue=false`
+  // side. Using `lt` / `gte` would split the exactly-72h case between the two
+  // filters (counted in neither), contradicting the canonical `>= 72` rule.
+  //
+  // The handler-expired OR branch keeps its existing strict `lt` operator
+  // because `computeAge` uses `expiresAt < now` (NOT `<= now`); see E0-F04
+  // boundary semantics in `computeAge`. HANDLER_EXPIRED precedence is
+  // preserved unchanged.
   if (filter.overdue === true) {
     const ageThreshold = new Date(
       now.getTime() - CASE_AGE_OVERDUE_HOURS * 60 * 60 * 1000,
     );
     where.OR = [
-      { openedAt: { lt: ageThreshold } },
+      { openedAt: { lte: ageThreshold } },
       {
         laborProfile: {
           is: {
@@ -551,7 +575,7 @@ export function buildPlacementCaseWhere(
     const ageThreshold = new Date(
       now.getTime() - CASE_AGE_OVERDUE_HOURS * 60 * 60 * 1000,
     );
-    where.openedAt = { gte: ageThreshold };
+    where.openedAt = { gt: ageThreshold };
     laborProfileAnd.push({
       handlingAssignments: {
         none: {
