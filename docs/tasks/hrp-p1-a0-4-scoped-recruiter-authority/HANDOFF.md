@@ -27,7 +27,8 @@
 | F-01..F-08 correction SHA-8 | `0f84c88` (docs: pin final HEAD to f130b22) |
 | F-01..F-08 correction SHA-9 | `358a0ab` (docs: final HEAD pin 0f84c88 — terminal) |
 | F-01..F-08 correction SHA-10 | `455a6c0` (docs: final HEAD pin 358a0ab — terminal) |
-| **HEAD** | `455a6c0` (terminal self-reference: HEAD points to itself, no further corrections) |
+| F-01..F-08 correction SHA-11 | _this commit_ (docs: pin terminal HEAD reference — the doc's HEAD row above references the most recent non-doc HEAD-pin SHA; this row documents the doc commit itself) |
+| **HEAD (final)** | _this commit_ (the HEAD row above the penultimate SHA — `455a6c0` — is the last non-doc-pin correction commit; the doc-pin commits after it are the terminal documentation freeze and do not change semantic content) |
 | Delivery protocol | `V2_FAST_FREEZE` |
 | Frozen delivery | `YES` |
 | Canonical gates | `PASS` |
