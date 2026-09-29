@@ -741,13 +741,27 @@ export async function listMyClaimedCandidates(
   for (const r of rows) {
     const cs = r.laborProfile?.placementCases?.[0]?.submissions?.[0];
     if (!cs || !cs.slot) continue;
-    // F-05 contact-data boundary: the caller is the assigneeUserId by
-    // construction (the findMany above filters on it), so the caller is
-    // ALWAYS the active winning handler for the rows returned here. The
-    // full phone is therefore delivered for THIS caller; other roles
-    // (HR_MANAGER, ADMIN) only see the masked form unless they have
-    // CAN_VIEW_WORKER_SENSITIVE (the existing sensitive-data path).
-    const isActiveHandler = true;
+    // F-05 contact-data boundary (R3-F05): the caller is the assigneeUserId
+    // by construction (the findMany above filters on it). The `isActiveHandler`
+    // predicate alone is not enough — the canonical R3-F05 contract requires
+    // BOTH the active `LaborProfileHandlingAssignment` (which holds here)
+    // AND the active `StaffingOrderRecruiterAssignment` for the candidate's
+    // exact order. After a `revokeRecruiterFromOrder` the LPHA stays ACTIVE
+    // (the LPHA is the historical "claimed" record) but the order assignment
+    // is REVOKED, so the caller is no longer the "active winning recruiter"
+    // for placement authority purposes. The full phone MUST disappear in
+    // that state. We re-read the order-assignment here inside the same tx
+    // so the boundary reflects the CURRENT order authority.
+    const orderAssignment = await tx.staffingOrderRecruiterAssignment.findFirst({
+      where: {
+        staffingOrderId: cs.slot.staffingOrderId,
+        recruiterUserId: recruiterUserId,
+        status: RECRUITER_ASSIGNMENT_STATUS.ACTIVE,
+      },
+      select: { id: true },
+    });
+    const hasActiveOrderAssignment = orderAssignment !== null;
+    const isActiveHandler = hasActiveOrderAssignment; // both halves required
     const canSeeSensitive = options?.canSeeSensitive === true;
     const isHrStaff = options?.actorRole === 'HR_STAFF';
     const exposeFullPhone = isActiveHandler && (isHrStaff || canSeeSensitive);
@@ -760,12 +774,10 @@ export async function listMyClaimedCandidates(
       slotPositionTitle: cs.slot.positionTitle,
       handlingAssignmentId: r.id,
       candidateFullName: cs.fullName,
-      // F-05: post-claim active handler receives the FULL phone (recruiter-
-      // contact field). Loser / revoked / unrelated HR_STAFF receive the
-      // masked form. The same call site cannot produce loser rows because
-      // the SQL filter restricts to `assigneeUserId = caller`. A future
-      // variant that surfaces loser rows would force `candidatePhone = null`
-      // and `candidatePhoneMasked = maskPhone(cs.phone)` here.
+      // F-05 + R3-F05: post-claim active handler receives the FULL phone
+      // (recruiter-contact field) ONLY when BOTH halves of the dual authority
+      // are active. Loser, revoked, or unrelated HR_STAFF receive the masked
+      // form (or zero rows when filter excludes them entirely).
       candidatePhone: exposeFullPhone ? cs.phone : null,
       candidatePhoneMasked: maskPhone(cs.phone),
       candidateStatus: cs.status,

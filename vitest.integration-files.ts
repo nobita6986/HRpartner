@@ -169,4 +169,12 @@ export const INTEGRATION_TEST_FILES: string[] = [
   // createPlacement dual-authority, ADMIN bypass. Self-skips when
   // DATABASE_URL_TEST + DATABASE_URL_ADMIN_TEST absent (ENV_BLOCKED).
   'tests/db/p1a04-canonical-flow.integration.test.ts',
+  // hrp-p1-a0-4-scoped-recruiter-authority R3 substantive closure (R3-F02..R3-F07):
+  // real two-connection revoke race × 3 each ordering with barriers, R3-F04
+  // Workbench MINE rail proof via getRecruiterWorkbenchList, R3-F05 contact-
+  // data boundary (full phone disappears after revoke; loser/revoked get
+  // masked), R3-F06 winning recruiter completes Placement create+confirm.
+  // Self-skips via describe.skipIf when DATABASE_URL_TEST + DATABASE_URL_ADMIN_TEST
+  // are absent (ENV_BLOCKED).
+  'tests/db/p1a04-r3-substantive.integration.test.ts',
 ];

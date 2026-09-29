@@ -169,8 +169,8 @@ const EXPECTED_HITS = [
   'src/domains/talent/recruiter-assignment.service.ts:420 placementCase',
   'src/domains/talent/recruiter-assignment.service.ts:706 laborProfile',
   'src/domains/talent/recruiter-assignment.service.ts:727 staffingOrder',
-  'src/domains/talent/recruiter-assignment.service.ts:826 placementCase',
-  'src/domains/talent/recruiter-assignment.service.ts:827 laborProfile',
+  'src/domains/talent/recruiter-assignment.service.ts:838 placementCase',
+  'src/domains/talent/recruiter-assignment.service.ts:839 laborProfile',
   'src/domains/talent/placement.service.ts:334 jobOpening',
 ] as const;
 

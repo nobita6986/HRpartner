@@ -18,6 +18,9 @@ const mocks = vi.hoisted(() => ({
   resolvePerms: vi.fn(),
   preview: vi.fn(),
   activate: vi.fn(),
+  // P1-A0.4: defaults to no submission (preflight short-circuits); tests that
+  // exercise the HR_STAFF dual-authority path override this mock.
+  candidateSubmissionFindUnique: vi.fn(async () => null),
 }));
 
 vi.mock('@/src/lib/db', () => ({ getPrisma: mocks.getPrisma }));
@@ -37,7 +40,9 @@ import { PlacementError } from './assignment-placement.service';
 import { POST as PREVIEW } from '@/app/api/admin/assignments/preview/route';
 import { POST as ACTIVATE } from '@/app/api/admin/assignments/route';
 
-/** Fake tx that only needs the idempotencyKey delegate used by withIdempotency. */
+/** Fake tx that supports both withIdempotency (idempotencyKey) and the
+ *  P1-A0.4 dual-authority preflight (candidateSubmission). No submission
+ *  matches by default — tests that need it inject via mocks.candidateSubmission. */
 function fakeTx() {
   return {
     idempotencyKey: {
@@ -51,6 +56,9 @@ function fakeTx() {
         store.rows.set(id, { requestHash: data.requestHash, response: data.response, statusCode: data.statusCode, expiresAt: data.expiresAt });
         return data;
       }),
+    },
+    candidateSubmission: {
+      findUnique: mocks.candidateSubmissionFindUnique,
     },
   };
 }

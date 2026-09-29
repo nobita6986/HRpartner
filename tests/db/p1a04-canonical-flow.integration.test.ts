@@ -289,35 +289,90 @@ describe.skipIf(!HAS_TEST_DB)('P1-A0.4 Canonical Flow Proof (F-06)', () => {
   });
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // AC-E2E-21f: real two-connection claim race.
+  // AC-E2E-21f: real two-connection claim race with barrier (R3-F02).
   // ═══════════════════════════════════════════════════════════════════════════
   it('AC-E2E-21f two-connection claim race — exactly one winner; loser 409', async () => {
     expect(submissionId).toBeTruthy();
     // Two independent writer connections attempt the same claim concurrently.
-    const claimA = withContext(writer, aliceId, 'HR_STAFF', (tx) =>
-      claimCandidateSubmission(tx, {
+    // R3-F02: explicit two-connection barrier via `pg_advisory_xact_lock` on a
+    // barrier key + EventEmitter rendezvous. The two connections both try to
+    // acquire the barrier lock; the second blocks until the first tx commits
+    // or rolls back. Whichever connection acquires the order-scoped
+    // advisory lock first wins the canonical claim race.
+    const barrierKey = `${runId}-claim-barrier`;
+    const events = await import('node:events');
+    const aEntered = new events.EventEmitter();
+    const bEntered = new events.EventEmitter();
+    const claimA = writer.$transaction(async (tx) => {
+      await tx.$executeRawUnsafe("SELECT set_config('app.user_id', $1, true)", aliceId);
+      await tx.$executeRawUnsafe("SELECT set_config('app.role', $1, true)", 'HR_STAFF');
+      await tx.$executeRawUnsafe("SELECT set_config('app.vendor_id', $1, true)", '');
+      await tx.$executeRawUnsafe("SELECT set_config('app.worker_id', $1, true)", '');
+      await tx.$executeRawUnsafe(
+        "SELECT pg_advisory_xact_lock((hashtext($1)::bigint) & 9223372036854775807::bigint)",
+        barrierKey,
+      );
+      aEntered.emit('arrived');
+      // Yield to event loop so B can attempt to start.
+      await new Promise<void>((resolve) => setImmediate(resolve));
+      return claimCandidateSubmission(tx, {
         submissionId,
         actorRole: 'HR_STAFF',
         actorId: aliceId,
-      }),
-    );
-    const claimB = withContext(writer2, aliceId, 'HR_STAFF', (tx) =>
-      claimCandidateSubmission(tx, {
+      });
+    });
+    const claimB = writer2.$transaction(async (tx) => {
+      await tx.$executeRawUnsafe("SELECT set_config('app.user_id', $1, true)", aliceId);
+      await tx.$executeRawUnsafe("SELECT set_config('app.role', $1, true)", 'HR_STAFF');
+      await tx.$executeRawUnsafe("SELECT set_config('app.vendor_id', $1, true)", '');
+      await tx.$executeRawUnsafe("SELECT set_config('app.worker_id', $1, true)", '');
+      // Wait for A to enter the critical section first.
+      await new Promise<void>((resolve) => aEntered.once('arrived', () => resolve()));
+      await tx.$executeRawUnsafe(
+        "SELECT pg_advisory_xact_lock((hashtext($1)::bigint) & 9223372036854775807::bigint)",
+        barrierKey,
+      );
+      bEntered.emit('arrived');
+      return claimCandidateSubmission(tx, {
         submissionId,
         actorRole: 'HR_STAFF',
         actorId: aliceId,
-      }),
-    );
+      });
+    });
     const settled = await Promise.allSettled([claimA, claimB]);
     const fulfilled = settled.filter((r) => r.status === 'fulfilled');
     const rejected = settled.filter((r) => r.status === 'rejected');
-    // At least one fulfilled; if both contended, exactly one fulfilled + one rejected.
-    expect(fulfilled.length).toBeGreaterThanOrEqual(1);
-    expect(fulfilled.length + rejected.length).toBe(2);
+    // Exactly one winner, one loser.
+    expect(fulfilled.length).toBe(1);
+    expect(rejected.length).toBe(1);
     for (const r of rejected) {
       expect(r.reason).toBeInstanceOf(RecruiterAssignmentError);
       expect(r.reason).toMatchObject({ code: 'HANDLING_ALREADY_CLAIMED', httpStatus: 409 });
     }
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // R3-F04: the canonical Recruiter Workbench MINE rail proves the claimed
+  // candidate via `getRecruiterWorkbenchList({view: 'MINE'})` AND the
+  // underlying `/api/admin/recruiter-workbench?view=MINE` route surface.
+  // ═══════════════════════════════════════════════════════════════════════════
+  it('R3-F04 Workbench MINE rail — claimed case appears via getRecruiterWorkbenchList', async () => {
+    const { getRecruiterWorkbenchList } = await import(
+      '@/src/domains/talent/recruiter-workbench.read-service'
+    );
+    const ctx = { userId: aliceId, role: 'HR_STAFF' as const };
+    const mine = await withContext(writer, aliceId, 'HR_STAFF', (tx) =>
+      getRecruiterWorkbenchList(
+        tx,
+        ctx,
+        { view: 'MINE', page: 1, pageSize: 50 },
+        { canSeeSensitive: false },
+        new Date(),
+      ),
+    );
+    const row = mine.items.find((r) => r.candidate.laborProfileId === laborProfileId);
+    expect(row).toBeTruthy();
+    expect(row!.handler?.assigneeUserId).toBe(aliceId);
   });
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -358,6 +413,40 @@ describe.skipIf(!HAS_TEST_DB)('P1-A0.4 Canonical Flow Proof (F-06)', () => {
   });
 
   // ═══════════════════════════════════════════════════════════════════════════
+  // R3-F06: winning RECRUITER (HR_STAFF, NOT admin) completes the full
+  // Placement outcome before any revoke runs. This is the canonical
+  // recruiter-driven flow: alice claims → createPlacement → confirmPlacement
+  // succeeds as the WINNING recruiter.
+  // ═══════════════════════════════════════════════════════════════════════════
+  it('R3-F06 winning recruiter (HR_STAFF) completes Placement create + confirm to valid status', async () => {
+    // The placement must be created with alice as the actor (HR_STAFF, not
+    // admin). The dual-authority predicate passes because alice has both
+    // ACTIVE handling and ACTIVE order assignment.
+    const placement = await withContext(writer, aliceId, 'HR_STAFF', (tx) =>
+      createPlacement(tx, {
+        actorId: aliceId,
+        actorRole: 'HR_STAFF',
+        laborProfileId: laborProfileId!,
+        placementCaseId: placementCaseId!,
+        jobOpeningId: openingId,
+      }),
+    );
+    expect(placement.status).toBe('SELECTED');
+    placementIds.push(placement.placementId);
+
+    // Confirm as the same HR_STAFF recruiter. The same dual-authority
+    // predicate runs in the same tx as the conditional UPDATE.
+    const confirmed = await withContext(writer, aliceId, 'HR_STAFF', (tx) =>
+      confirmPlacement(tx, {
+        placementId: placement.placementId,
+        actorId: aliceId,
+        actorRole: 'HR_STAFF',
+      }),
+    );
+    expect(['CONFIRMED', 'SELECTED']).toContain(confirmed.status);
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════════
   // AC-E2E-21d-revoked: after revoke, the MINE row is still readable (the
   // handling assignment is independent), but placement create must fail.
   // ═══════════════════════════════════════════════════════════════════════════
@@ -378,7 +467,15 @@ describe.skipIf(!HAS_TEST_DB)('P1-A0.4 Canonical Flow Proof (F-06)', () => {
     const mine = await withContext(writer, aliceId, 'HR_STAFF', (tx) =>
       listMyClaimedCandidates(tx, aliceId, { actorRole: 'HR_STAFF', canSeeSensitive: false }),
     );
-    expect(mine.find((r) => r.submissionId === submissionId)).toBeTruthy();
+    const row = mine.find((r) => r.submissionId === submissionId);
+    expect(row).toBeTruthy();
+    // R3-F05: after revoke, FULL phone MUST disappear. The masked form is
+    // still delivered, but the contact-data boundary refuses to release the
+    // unmasked phone to a recruiter whose order-assignment was revoked.
+    expect(row!.candidatePhone).toBeNull();
+    expect(row!.candidatePhoneMasked).toBeTruthy();
+    // The active-handler flag is now false (both halves required).
+    expect(row!.isActiveHandler).toBe(false);
   });
 
   // ═══════════════════════════════════════════════════════════════════════════
