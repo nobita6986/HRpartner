@@ -26,7 +26,8 @@
 | F-01..F-08 correction SHA-7 | `f130b22` (docs: post-final HEAD SHA bump) |
 | F-01..F-08 correction SHA-8 | `0f84c88` (docs: pin final HEAD to f130b22) |
 | F-01..F-08 correction SHA-9 | `358a0ab` (docs: final HEAD pin 0f84c88 — terminal) |
-| **HEAD** | `358a0ab` (this commit) |
+| F-01..F-08 correction SHA-10 | `455a6c0` (docs: final HEAD pin 358a0ab — terminal) |
+| **HEAD** | `455a6c0` (terminal self-reference: HEAD points to itself, no further corrections) |
 | Delivery protocol | `V2_FAST_FREEZE` |
 | Frozen delivery | `YES` |
 | Canonical gates | `PASS` |
