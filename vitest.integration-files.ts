@@ -160,4 +160,13 @@ export const INTEGRATION_TEST_FILES: string[] = [
   // policies on the new table. Self-skips when DATABASE_URL_TEST +
   // DATABASE_URL_ADMIN_TEST absent (ENV_BLOCKED).
   'tests/db/p1a04-scoped-recruiter-authority.integration.test.ts',
+  // hrp-p1-a0-4-scoped-recruiter-authority (F-06 canonical flow proof, AC-E2E-21):
+  // end-to-end canonical authoring + public + intake + claim race + placement
+  // proves AC-E2E-21 substantively. Uses createStaffingOrder, listEligibleSlots,
+  // createOrReuseJobOpeningForSlot, createOrReuseJobPostingDraftForOpening,
+  // publishJobPosting, getPublicJobDetail, createCandidateSubmissionFromIntake,
+  // two-connection claim race, listMyClaimedCandidates F-05 boundary,
+  // createPlacement dual-authority, ADMIN bypass. Self-skips when
+  // DATABASE_URL_TEST + DATABASE_URL_ADMIN_TEST absent (ENV_BLOCKED).
+  'tests/db/p1a04-canonical-flow.integration.test.ts',
 ];
