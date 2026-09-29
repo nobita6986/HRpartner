@@ -196,11 +196,28 @@ export default async function RecruiterWorkbenchPage({ searchParams }: PageProps
 
   const finalFilter = { ...parsed.filter, view: effectiveView };
 
-  // F-02 / AC-03: derive `canMutatePlacement` server-side from the
-  // authenticated role. Server F0 authorization remains canonical; this
-  // flag is purely UX affordance.
+  // F-02 / AC-03 / F-04 / B-08: derive the placement route family AND
+  // `canMutatePlacement` server-side from the authenticated role + view.
+  //
+  // Rules:
+  //   - ADMIN / HR_MANAGER → family='admin', `canMutatePlacement=true`.
+  //   - HR_STAFF + view=MINE → family='recruiter', `canMutatePlacement=true`.
+  //     The page can only see the recruiter affordance; the server F0/B-08
+  //     routes still fail closed if the dual-authority predicate no longer
+  //     holds.
+  //   - HR_STAFF + view∈{ALL, UNASSIGNED} → forbidden above (already
+  //     short-circuited by the HR_STAFF view gate), so this branch is
+  //     unreachable in practice but kept defensive.
+  //   - any other role → `canMutatePlacement=false` (defensive; the role
+  //     gate at the top of the page already blocked them).
+  const placementRouteFamily: 'admin' | 'recruiter' =
+    session.role === 'HR_STAFF' && effectiveView === 'MINE'
+      ? 'recruiter'
+      : 'admin';
   const canMutatePlacement =
-    session.role === 'ADMIN' || session.role === 'HR_MANAGER';
+    session.role === 'ADMIN' ||
+    session.role === 'HR_MANAGER' ||
+    (session.role === 'HR_STAFF' && effectiveView === 'MINE');
 
   // Call E0 service inside withDbContext for RLS.
   const prisma = getPrisma();
@@ -276,7 +293,11 @@ export default async function RecruiterWorkbenchPage({ searchParams }: PageProps
         </div>
       </section>
 
-      <RecruiterWorkbenchTable items={data.items} canMutatePlacement={canMutatePlacement} />
+      <RecruiterWorkbenchTable
+        items={data.items}
+        canMutatePlacement={canMutatePlacement}
+        placementRouteFamily={placementRouteFamily}
+      />
 
       <PaginationControls
         page={activePage}

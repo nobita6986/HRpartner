@@ -67,6 +67,25 @@ export type EffectiveEvidencePayload = z.infer<typeof EFFECTIVE_EVIDENCE_SCHEMA>
 // 1. Canonical command name (route dispatch table).
 // ─────────────────────────────────────────────────────────────────────────
 
+/**
+ * F-04 / P1-A0.4: route family discriminator.
+ *
+ * - `'admin'`    → canonical Placement lifecycle route family
+ *                  (`/api/admin/placements`, `/api/admin/placements/[id]/actions/*`)
+ *                  used by ADMIN and HR_MANAGER.
+ * - `'recruiter'`→ HR_STAFF-scoped Placement route family
+ *                  (`/api/admin/recruiter/placements`,
+ *                  `/api/admin/recruiter/placements/[id]/actions/*`)
+ *                  used by HR_STAFF recruiters who hold BOTH the order
+ *                  assignment AND the handling claim.
+ *
+ * The server is the authority: even when the UI mints a 'recruiter' URL,
+ * the route still fails closed if the dual-authority predicate no longer
+ * holds. The UI flag is purely an affordance — the F0 admin route and
+ * the B-08 recruiter route are both gated server-side.
+ */
+export type PlacementRouteFamily = 'admin' | 'recruiter';
+
 export type PlacementCommandName =
   | 'placement.create'
   | 'placement.confirm'
@@ -82,6 +101,49 @@ export const PLACEMENT_COMMANDS = [
   'placement.cancel',
 ] as const satisfies ReadonlyArray<PlacementCommandName>;
 
+/**
+ * Recruiter-scoped Placement command URLs (HR_STAFF only).
+ *
+ * The canonical URL set mirrors the admin family 1:1 but with
+ * `/api/admin/recruiter/placements` as the root instead of
+ * `/api/admin/placements`. The `placement.create` URL is the same root
+ * (no `[id]`); all four transition actions share the same shape.
+ *
+ * These are the canonical F0 surface for B-08 (`recruiterPlacement*`
+ * adapter family). Routes are POST-only.
+ */
+export const RECRUITER_PLACEMENT_COMMAND_ROUTES = {
+  create: 'POST:/api/admin/recruiter/placements',
+  confirm: 'POST:/api/admin/recruiter/placements/[id]/actions/confirm',
+  effective: 'POST:/api/admin/recruiter/placements/[id]/actions/effective',
+  fail: 'POST:/api/admin/recruiter/placements/[id]/actions/fail',
+  cancel: 'POST:/api/admin/recruiter/placements/[id]/actions/cancel',
+} as const;
+
+/**
+ * Client-side command payload shape.
+ *
+ * Discriminator = `command`. For `placement.create` the `placementCaseId`
+ * and `jobOpeningId` are REQUIRED by the canonical admin family
+ * (`/api/admin/placements`) but NEVER serialized by the recruiter family
+ * (`/api/admin/recruiter/placements`) — the recruiter adapter derives
+ * them server-side from `sourceCandidateSubmissionId` (DEC-01, B-08). The
+ * caller still threads all three in memory so the page can render the
+ * drawer previews; the fetch helper strips the admin-only fields when
+ * `routeFamily === 'recruiter'`.
+ *
+ * Body shape on the wire:
+ *   - admin  : `{ placementCaseId, jobOpeningId, sourceCandidateSubmissionId? }`
+ *   - recruit: `{ sourceCandidateSubmissionId }`
+ *
+ * The `scope` used to derive the sessionStorage Idempotency-Key is
+ * `placementCaseId` for create (mirrors the existing F0 admin code path)
+ * and `placementId` for the four transition commands. The recruiter
+ * route still receives `placementCaseId` server-side — derived from the
+ * submission inside the same transaction — and routes the Idempotency-Key
+ * through the canonical `withIdempotency` wrapper keyed by
+ * `(route, actorId, key)`.
+ */
 export type PlacementCommandPayloadShape =
   | {
       command: 'placement.create';
@@ -386,21 +448,28 @@ export function canonicalizePayload(payload: unknown): string {
 /**
  * Per-tab sessionStorage scoping key (LOCK-13).
  *
- * Format: `hrp.p1f1.idem.<command>.<scope>.<payloadHash>` where:
+ * Format: `hrp.p1f1.idem.<routeFamily>.<command>.<scope>.<payloadHash>` where:
+ *   - `routeFamily` is `'admin'` or `'recruiter'` (B-08). Keeping the family
+ *     in the key prevents the admin and recruiter namespaces from colliding
+ *     even when both happen to target the same `(command, scope, payload)`
+ *     triple. Each family mints its own UUID; each family's F0 route keeps
+ *     its own `idempotency_keys` row keyed by `(route, actorId, key)`.
  *   - `command` is the canonical PlacementCommandName;
  *   - `scope` is the placement/case id (the ONLY mutable-key dimension);
  *   - `payloadHash` is the FNV-1a hash of the canonical payload.
  *
- * Two clicks with the same scope and payload hit the same key (idempotent
- * retry). A payload change mints a fresh key.
+ * Two clicks with the same family, scope and payload hit the same key
+ * (idempotent retry). A payload change mints a fresh key. Crossing the
+ * family boundary always mints a fresh key.
  */
 export function sessionStorageKeyForPlacementCommand(args: {
+  routeFamily: PlacementRouteFamily;
   command: PlacementCommandName;
   scope: string;
   payload: unknown;
 }): string {
   const hash = fnv1a32Hex(args.payload);
-  return `hrp.p1f1.idem.${args.command}.${args.scope}.${hash}`;
+  return `hrp.p1f1.idem.${args.routeFamily}.${args.command}.${args.scope}.${hash}`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────

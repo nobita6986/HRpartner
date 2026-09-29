@@ -72,18 +72,31 @@ export interface RecruiterWorkbenchTableProps {
   /** When true, render the empty state. The page decides based on `total`. */
   forceEmpty?: boolean;
   /**
-   * F-02: server-derived affordance flag. `true` only for ADMIN and
-   * HR_MANAGER. When false, the placement action cell renders NO mutation
-   * affordance (just a `—` sentinel). Server F0 authorization remains
-   * canonical; this is UX-only.
+   * F-02: server-derived affordance flag. `true` for ADMIN, HR_MANAGER,
+   * AND HR_STAFF + view=MINE (F-04 / B-08) — the recruiter family targets
+   * the B-08 surface. When false, the placement action cell renders NO
+   * mutation affordance (just a `—` sentinel). Server F0 authorization
+   * remains canonical; this is UX-only.
    */
   canMutatePlacement?: boolean;
+  /**
+   * F-04 / B-08: route family discriminator threaded from the page.
+   *   - `'admin'`     → ADMIN and HR_MANAGER; mutations POST to
+   *                     `/api/admin/placements[/...actions/<verb>]`.
+   *   - `'recruiter'` → HR_STAFF + view=MINE only; mutations POST to
+   *                     `/api/admin/recruiter/placements[/...actions/<verb>]`.
+   *
+   * The cell never decides which family to use; it only mirrors what the
+   * page-level server render selected based on role + view.
+   */
+  placementRouteFamily?: 'admin' | 'recruiter';
 }
 
 export function RecruiterWorkbenchTable({
   items,
   forceEmpty = false,
   canMutatePlacement = false,
+  placementRouteFamily = 'admin',
 }: RecruiterWorkbenchTableProps): React.ReactElement {
   if (forceEmpty || items.length === 0) {
     return (
@@ -211,6 +224,7 @@ export function RecruiterWorkbenchTable({
                       placementOptions: row.placementOptions,
                       nextAction: row.nextAction,
                     }}
+                    placementRouteFamily={placementRouteFamily}
                     canMutatePlacement={canMutatePlacement}
                   />
                 </td>

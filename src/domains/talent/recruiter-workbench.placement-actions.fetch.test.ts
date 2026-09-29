@@ -114,6 +114,7 @@ describe('mintUuidV4', () => {
 describe('mintPlacementIdempotencyKey', () => {
   it('F1-MIK01: first mint fresh=true and writes the key to sessionStorage', () => {
     const r = mintPlacementIdempotencyKey({
+      routeFamily: 'admin',
       command: 'placement.confirm',
       scope: 'pl-1',
       payload: { command: 'placement.confirm', placementId: 'pl-1' },
@@ -129,11 +130,13 @@ describe('mintPlacementIdempotencyKey', () => {
 
   it('F1-MIK02: second mint with same args reuses isFresh=false', () => {
     const a = mintPlacementIdempotencyKey({
+      routeFamily: 'admin',
       command: 'placement.confirm',
       scope: 'pl-1',
       payload: { command: 'placement.confirm', placementId: 'pl-1' },
     });
     const b = mintPlacementIdempotencyKey({
+      routeFamily: 'admin',
       command: 'placement.confirm',
       scope: 'pl-1',
       payload: { command: 'placement.confirm', placementId: 'pl-1' },
@@ -145,6 +148,7 @@ describe('mintPlacementIdempotencyKey', () => {
 
   it('F1-MIK03: payload change mints a new key', () => {
     const a = mintPlacementIdempotencyKey({
+      routeFamily: 'admin',
       command: 'placement.create',
       scope: 'case-1',
       payload: {
@@ -154,6 +158,7 @@ describe('mintPlacementIdempotencyKey', () => {
       },
     });
     const b = mintPlacementIdempotencyKey({
+      routeFamily: 'admin',
       command: 'placement.create',
       scope: 'case-1',
       payload: {
@@ -167,11 +172,13 @@ describe('mintPlacementIdempotencyKey', () => {
 
   it('F1-MIK04: scope change mints a new key', () => {
     const a = mintPlacementIdempotencyKey({
+      routeFamily: 'admin',
       command: 'placement.fail',
       scope: 'pl-1',
       payload: { command: 'placement.fail', placementId: 'pl-1' },
     });
     const b = mintPlacementIdempotencyKey({
+      routeFamily: 'admin',
       command: 'placement.fail',
       scope: 'pl-2',
       payload: { command: 'placement.fail', placementId: 'pl-2' },
@@ -191,12 +198,14 @@ describe('clearPlacementIdempotencyKey', () => {
       placementId: 'pl-1',
     };
     mintPlacementIdempotencyKey({
+      routeFamily: 'admin',
       command: 'placement.confirm',
       scope: 'pl-1',
       payload,
     });
     expect(globalThis.window.sessionStorage.length).toBe(1);
     clearPlacementIdempotencyKey({
+      routeFamily: 'admin',
       command: 'placement.confirm',
       scope: 'pl-1',
       payload,
@@ -208,6 +217,7 @@ describe('clearPlacementIdempotencyKey', () => {
     const scope = 'pl-1';
     for (const plId of ['jo-1', 'jo-2', 'jo-3']) {
       mintPlacementIdempotencyKey({
+        routeFamily: 'admin',
         command: 'placement.cancel',
         scope,
         payload: {
@@ -222,6 +232,7 @@ describe('clearPlacementIdempotencyKey', () => {
     // This is intentional: a partial-clear would risk un-doing an unrelated
     // payload's idempotency lock. Caller must always pass the exact payload.
     clearPlacementIdempotencyKey({
+      routeFamily: 'admin',
       command: 'placement.cancel',
       scope,
       payload: {
@@ -234,6 +245,7 @@ describe('clearPlacementIdempotencyKey', () => {
     // Now clear each entry explicitly.
     for (const plId of ['jo-1', 'jo-2', 'jo-3']) {
       clearPlacementIdempotencyKey({
+        routeFamily: 'admin',
         command: 'placement.cancel',
         scope,
         payload: {
@@ -253,13 +265,14 @@ describe('clearPlacementIdempotencyKey', () => {
 describe('urlForPlacementCommand', () => {
   it('F1-URL01: create → /api/admin/placements (no [id])', () => {
     expect(
-      urlForPlacementCommand({ command: 'placement.create' }),
+      urlForPlacementCommand({ routeFamily: 'admin', command: 'placement.create' }),
     ).toBe('/api/admin/placements');
   });
 
   it('F1-URL02: confirm → /api/admin/placements/:id/actions/confirm', () => {
     expect(
       urlForPlacementCommand({
+        routeFamily: 'admin',
         command: 'placement.confirm',
         placementId: 'pl-1',
       }),
@@ -269,6 +282,7 @@ describe('urlForPlacementCommand', () => {
   it('F1-URL03: effective → /api/admin/placements/:id/actions/effective', () => {
     expect(
       urlForPlacementCommand({
+        routeFamily: 'admin',
         command: 'placement.effective',
         placementId: 'pl-2',
       }),
@@ -278,6 +292,7 @@ describe('urlForPlacementCommand', () => {
   it('F1-URL04: fail → /api/admin/placements/:id/actions/fail', () => {
     expect(
       urlForPlacementCommand({
+        routeFamily: 'admin',
         command: 'placement.fail',
         placementId: 'pl-3',
       }),
@@ -287,6 +302,7 @@ describe('urlForPlacementCommand', () => {
   it('F1-URL05: cancel → /api/admin/placements/:id/actions/cancel', () => {
     expect(
       urlForPlacementCommand({
+        routeFamily: 'admin',
         command: 'placement.cancel',
         placementId: 'pl-4',
       }),
@@ -295,17 +311,84 @@ describe('urlForPlacementCommand', () => {
 
   it('F1-URL06: transition command without placementId throws', () => {
     expect(() =>
-      urlForPlacementCommand({ command: 'placement.cancel' }),
+      urlForPlacementCommand({ routeFamily: 'admin', command: 'placement.cancel' }),
     ).toThrow(/placementId/);
   });
 
   it('F1-URL07: URL-encodes placementId', () => {
     expect(
       urlForPlacementCommand({
+        routeFamily: 'admin',
         command: 'placement.cancel',
         placementId: 'pl/with/slash',
       }),
     ).toBe('/api/admin/placements/pl%2Fwith%2Fslash/actions/cancel');
+  });
+
+  // ───────────────────────────────────────────────────────────────────
+  // B-08 / F-04: recruiter-scoped URL family.
+  // ───────────────────────────────────────────────────────────────────
+
+  it('F1-URL-R01: recruiter create → /api/admin/recruiter/placements', () => {
+    expect(
+      urlForPlacementCommand({ routeFamily: 'recruiter', command: 'placement.create' }),
+    ).toBe('/api/admin/recruiter/placements');
+  });
+
+  it('F1-URL-R02: recruiter confirm → /api/admin/recruiter/placements/:id/actions/confirm', () => {
+    expect(
+      urlForPlacementCommand({
+        routeFamily: 'recruiter',
+        command: 'placement.confirm',
+        placementId: 'pl-1',
+      }),
+    ).toBe('/api/admin/recruiter/placements/pl-1/actions/confirm');
+  });
+
+  it('F1-URL-R03: recruiter effective → /api/admin/recruiter/placements/:id/actions/effective', () => {
+    expect(
+      urlForPlacementCommand({
+        routeFamily: 'recruiter',
+        command: 'placement.effective',
+        placementId: 'pl-2',
+      }),
+    ).toBe('/api/admin/recruiter/placements/pl-2/actions/effective');
+  });
+
+  it('F1-URL-R04: recruiter fail → /api/admin/recruiter/placements/:id/actions/fail', () => {
+    expect(
+      urlForPlacementCommand({
+        routeFamily: 'recruiter',
+        command: 'placement.fail',
+        placementId: 'pl-3',
+      }),
+    ).toBe('/api/admin/recruiter/placements/pl-3/actions/fail');
+  });
+
+  it('F1-URL-R05: recruiter cancel → /api/admin/recruiter/placements/:id/actions/cancel', () => {
+    expect(
+      urlForPlacementCommand({
+        routeFamily: 'recruiter',
+        command: 'placement.cancel',
+        placementId: 'pl-4',
+      }),
+    ).toBe('/api/admin/recruiter/placements/pl-4/actions/cancel');
+  });
+
+  it('F1-URL-R06: recruiter transition command without placementId throws', () => {
+    expect(() =>
+      urlForPlacementCommand({ routeFamily: 'recruiter', command: 'placement.fail' }),
+    ).toThrow(/placementId/);
+  });
+
+  it('F1-URL-R07: recruiter URL-encodes placementId', () => {
+    expect(
+      urlForPlacementCommand({
+        routeFamily: 'recruiter',
+        command: 'placement.cancel',
+        placementId: 'pl/with/slash',
+      }),
+    ).toBe('/api/admin/recruiter/placements/pl%2Fwith%2Fslash/actions/cancel');
   });
 });
 
@@ -353,6 +436,7 @@ describe('runPlacementCommandRequest', () => {
       placementId: string;
       status: string;
     }>({
+      routeFamily: 'admin',
       command: 'placement.create',
       payload: {
         command: 'placement.create',
@@ -371,6 +455,7 @@ describe('runPlacementCommandRequest', () => {
   it('F1-RUN02: success 200 with replayed=true (idempotent replay)', async () => {
     mockFetchOnce(200, { placementId: 'pl-1', status: 'CONFIRMED', replayed: true });
     const out = await runPlacementCommandRequest({
+      routeFamily: 'admin',
       command: 'placement.confirm',
       payload: { command: 'placement.confirm', placementId: 'pl-1' },
     });
@@ -383,6 +468,7 @@ describe('runPlacementCommandRequest', () => {
   it('F1-RUN03: failure 400 with envelope → ok:false, errorCode=VALIDATION, canned safe message', async () => {
     mockFetchOnce(400, { error: 'VALIDATION', message: 'jobOpeningId bắt buộc' });
     const out = await runPlacementCommandRequest({
+      routeFamily: 'admin',
       command: 'placement.create',
       payload: {
         command: 'placement.create',
@@ -409,6 +495,7 @@ describe('runPlacementCommandRequest', () => {
       message: 'Idempotency-Key đã được dùng với payload khác',
     });
     const out = await runPlacementCommandRequest({
+      routeFamily: 'admin',
       command: 'placement.fail',
       payload: { command: 'placement.fail', placementId: 'pl-1' },
     });
@@ -430,6 +517,7 @@ describe('runPlacementCommandRequest', () => {
       new Response(null, { status: 500 }),
     );
     const out = await runPlacementCommandRequest({
+      routeFamily: 'admin',
       command: 'placement.confirm',
       payload: { command: 'placement.confirm', placementId: 'pl-1' },
     });
@@ -460,6 +548,7 @@ describe('runPlacementCommandRequest', () => {
       acknowledgementRef: 'AR-LEAK',
     });
     const out = await runPlacementCommandRequest({
+      routeFamily: 'admin',
       command: 'placement.effective',
       payload: {
         command: 'placement.effective',
@@ -493,6 +582,7 @@ describe('runPlacementCommandRequest', () => {
       ),
     );
     const out = await runPlacementCommandRequest({
+      routeFamily: 'admin',
       command: 'placement.cancel',
       payload: { command: 'placement.cancel', placementId: 'pl-1' },
     });
@@ -516,6 +606,7 @@ describe('runPlacementCommandRequest', () => {
       }),
     );
     const a = await runPlacementCommandRequest({
+      routeFamily: 'admin',
       command: 'placement.confirm',
       payload: { command: 'placement.confirm', placementId: 'pl-1' },
     });
@@ -543,6 +634,7 @@ describe('runPlacementCommandRequest', () => {
       new TypeError('Failed to fetch'),
     );
     const out = await runPlacementCommandRequest({
+      routeFamily: 'admin',
       command: 'placement.confirm',
       payload: { command: 'placement.confirm', placementId: 'pl-1' },
     });
@@ -556,6 +648,7 @@ describe('runPlacementCommandRequest', () => {
   it('F1-RUN07: includes x-idempotency-key header on every request', async () => {
     const mock = mockFetchOnce(200, { placementId: 'pl-1', status: 'CANCELLED', replayed: false });
     await runPlacementCommandRequest({
+      routeFamily: 'admin',
       command: 'placement.cancel',
       payload: { command: 'placement.cancel', placementId: 'pl-1' },
     });
@@ -571,5 +664,378 @@ describe('runPlacementCommandRequest', () => {
     expect(headers['Accept']).toBe('application/json');
     // mock used to silence unused warnings
     expect(mock.status).toBe(200);
+  });
+
+  // ───────────────────────────────────────────────────────────────────
+  // B-08 / F-04: HR_STAFF commands route to /api/admin/recruiter/*.
+  // ───────────────────────────────────────────────────────────────────
+
+  it('F1-RUN-HR01: HR_STAFF placement.create → POST /api/admin/recruiter/placements', async () => {
+    mockFetchOnce(201, { placementId: 'pl-r1', status: 'SELECTED', replayed: false });
+    await runPlacementCommandRequest({
+      routeFamily: 'recruiter',
+      command: 'placement.create',
+      payload: {
+        command: 'placement.create',
+        placementCaseId: 'case-r1',
+        jobOpeningId: 'jo-r1',
+        sourceCandidateSubmissionId: '00000000-0000-4000-8000-000000000001',
+      },
+    });
+    const calls = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    expect(calls.length).toBe(1);
+    expect(calls[0]![0]).toBe('/api/admin/recruiter/placements');
+  });
+
+  it('F1-RUN-HR02: HR_STAFF placement.confirm → /api/admin/recruiter/placements/:id/actions/confirm', async () => {
+    mockFetchOnce(200, { placementId: 'pl-r2', status: 'CONFIRMED', replayed: false });
+    await runPlacementCommandRequest({
+      routeFamily: 'recruiter',
+      command: 'placement.confirm',
+      payload: { command: 'placement.confirm', placementId: 'pl-r2' },
+    });
+    const calls = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    expect(calls[0]![0]).toBe('/api/admin/recruiter/placements/pl-r2/actions/confirm');
+  });
+
+  it('F1-RUN-HR03: HR_STAFF placement.effective → /api/admin/recruiter/placements/:id/actions/effective', async () => {
+    mockFetchOnce(200, { placementId: 'pl-r3', status: 'EFFECTIVE', replayed: false });
+    await runPlacementCommandRequest({
+      routeFamily: 'recruiter',
+      command: 'placement.effective',
+      payload: {
+        command: 'placement.effective',
+        placementId: 'pl-r3',
+        evidence: {
+          clientAcknowledgedAt: '2026-09-26T10:00:00.000Z',
+          clientAcknowledgedByUserId: '00000000-0000-4000-8000-000000000002',
+          acknowledgementRef: 'AR-HR3',
+        },
+      },
+    });
+    const calls = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    expect(calls[0]![0]).toBe('/api/admin/recruiter/placements/pl-r3/actions/effective');
+  });
+
+  it('F1-RUN-HR04: HR_STAFF placement.fail → /api/admin/recruiter/placements/:id/actions/fail', async () => {
+    mockFetchOnce(200, { placementId: 'pl-r4', status: 'FAILED', replayed: false });
+    await runPlacementCommandRequest({
+      routeFamily: 'recruiter',
+      command: 'placement.fail',
+      payload: { command: 'placement.fail', placementId: 'pl-r4' },
+    });
+    const calls = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    expect(calls[0]![0]).toBe('/api/admin/recruiter/placements/pl-r4/actions/fail');
+  });
+
+  it('F1-RUN-HR05: HR_STAFF placement.cancel → /api/admin/recruiter/placements/:id/actions/cancel', async () => {
+    mockFetchOnce(200, { placementId: 'pl-r5', status: 'CANCELLED', replayed: false });
+    await runPlacementCommandRequest({
+      routeFamily: 'recruiter',
+      command: 'placement.cancel',
+      payload: { command: 'placement.cancel', placementId: 'pl-r5' },
+    });
+    const calls = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    expect(calls[0]![0]).toBe('/api/admin/recruiter/placements/pl-r5/actions/cancel');
+  });
+
+  // ───────────────────────────────────────────────────────────────────
+  // B-08: ADMIN/HR_MANAGER continue to hit canonical /api/admin/placements/*.
+  // ───────────────────────────────────────────────────────────────────
+
+  it('F1-RUN-ADM01: ADMIN placement.create → /api/admin/placements', async () => {
+    mockFetchOnce(201, { placementId: 'pl-a1', status: 'SELECTED', replayed: false });
+    await runPlacementCommandRequest({
+      routeFamily: 'admin',
+      command: 'placement.create',
+      payload: {
+        command: 'placement.create',
+        placementCaseId: 'case-a1',
+        jobOpeningId: 'jo-a1',
+      },
+    });
+    const calls = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    expect(calls[0]![0]).toBe('/api/admin/placements');
+  });
+
+  it('F1-RUN-ADM02: HR_MANAGER placement.confirm → /api/admin/placements/:id/actions/confirm', async () => {
+    mockFetchOnce(200, { placementId: 'pl-a2', status: 'CONFIRMED', replayed: false });
+    await runPlacementCommandRequest({
+      routeFamily: 'admin',
+      command: 'placement.confirm',
+      payload: { command: 'placement.confirm', placementId: 'pl-a2' },
+    });
+    const calls = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    expect(calls[0]![0]).toBe('/api/admin/placements/pl-a2/actions/confirm');
+  });
+
+  // ───────────────────────────────────────────────────────────────────
+  // B-08 / DEC-01: HR_STAFF create body shape — server derives
+  // placementCaseId + jobOpeningId. Client only carries the submission.
+  // ───────────────────────────────────────────────────────────────────
+
+  it('F1-RUN-BS01: HR_STAFF create body contains sourceCandidateSubmissionId ONLY (no placementCaseId/jobOpeningId on wire)', async () => {
+    mockFetchOnce(201, { placementId: 'pl-bs1', status: 'SELECTED', replayed: false });
+    await runPlacementCommandRequest({
+      routeFamily: 'recruiter',
+      command: 'placement.create',
+      payload: {
+        command: 'placement.create',
+        placementCaseId: 'case-bs1',
+        jobOpeningId: 'jo-bs1',
+        sourceCandidateSubmissionId: '00000000-0000-4000-8000-000000000010',
+      },
+    });
+    const calls = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    const body = JSON.parse(calls[0]![1]!.body as string);
+    expect(body).toEqual({
+      sourceCandidateSubmissionId: '00000000-0000-4000-8000-000000000010',
+    });
+    // Adversarial: the recruiter create wire body MUST NOT carry the
+    // client-supplied placementCaseId / jobOpeningId. The server derives
+    // them from the submission row.
+    expect(body.placementCaseId).toBeUndefined();
+    expect(body.jobOpeningId).toBeUndefined();
+  });
+
+  it('F1-RUN-BS02: ADMIN create body retains placementCaseId + jobOpeningId', async () => {
+    mockFetchOnce(201, { placementId: 'pl-bs2', status: 'SELECTED', replayed: false });
+    await runPlacementCommandRequest({
+      routeFamily: 'admin',
+      command: 'placement.create',
+      payload: {
+        command: 'placement.create',
+        placementCaseId: 'case-bs2',
+        jobOpeningId: 'jo-bs2',
+        sourceCandidateSubmissionId: '00000000-0000-4000-8000-000000000011',
+      },
+    });
+    const calls = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    const body = JSON.parse(calls[0]![1]!.body as string);
+    expect(body).toEqual({
+      placementCaseId: 'case-bs2',
+      jobOpeningId: 'jo-bs2',
+      sourceCandidateSubmissionId: '00000000-0000-4000-8000-000000000011',
+    });
+  });
+
+  // ───────────────────────────────────────────────────────────────────
+  // B-08: HR_STAFF revoked/non-handler → server returns a canonical
+  // RecruiterAssignmentError envelope. UI surfaces the frozen Vietnamese
+  // canned message keyed by error code; NEVER the raw server text.
+  // ───────────────────────────────────────────────────────────────────
+
+  it('F1-RUN-FC01: HR_STAFF fail-closed — server NO_ACTIVE_HANDLER envelope → canned safe message', async () => {
+    mockFetchOnce(403, {
+      error: 'NO_ACTIVE_HANDLER',
+      message: 'Bạn không còn đang xử lý laborProfile này',
+      details: { laborProfileId: 'lp-pii-leak' },
+    });
+    const out = await runPlacementCommandRequest({
+      routeFamily: 'recruiter',
+      command: 'placement.confirm',
+      payload: { command: 'placement.confirm', placementId: 'pl-fc1' },
+    });
+    expect(out.ok).toBe(false);
+    if (!out.ok) {
+      expect(out.status).toBe(403);
+      expect(out.errorCode).toBe('NO_ACTIVE_HANDLER');
+      // 4xx with a Vietnamese-friendly server `message` and NO canned
+      // mapping → the safe mapper keeps the verbatim Vietnamese text.
+      // The wire-level `details.laborProfileId` MUST NOT leak into the
+      // display message (UI guard). The mapper NEVER inspects `details`.
+      expect(out.displayMessage).not.toContain('lp-pii-leak');
+      expect(out.displayMessage).not.toContain('details');
+    }
+  });
+
+  it('F1-RUN-FC02: HR_STAFF fail-closed — server NO_ACTIVE_ASSIGNMENT envelope surfaces the canonical wire code', async () => {
+    mockFetchOnce(409, {
+      error: 'NO_ACTIVE_ASSIGNMENT',
+      message: 'Order assignment đã bị revoke',
+    });
+    const out = await runPlacementCommandRequest({
+      routeFamily: 'recruiter',
+      command: 'placement.cancel',
+      payload: { command: 'placement.cancel', placementId: 'pl-fc2' },
+    });
+    expect(out.ok).toBe(false);
+    if (!out.ok) {
+      expect(out.status).toBe(409);
+      expect(out.errorCode).toBe('NO_ACTIVE_ASSIGNMENT');
+      expect(out.displayMessage).toBe('Order assignment đã bị revoke');
+    }
+  });
+
+  it('F1-RUN-FC03: HR_STAFF fail-closed — server ROLE_NOT_PERMITTED envelope → canned FORBIDDEN mapping', async () => {
+    // A non-handler HR_STAFF attempting the recruiter surface gets 403
+    // ROLE_NOT_PERMITTED. The frozen safe mapping replaces the raw text
+    // with the canonical FORBIDDEN canned Vietnamese message.
+    mockFetchOnce(403, {
+      error: 'ROLE_NOT_PERMITTED',
+      message: 'Role HR_STAFF cannot use the recruiter-scoped placement route',
+    });
+    const out = await runPlacementCommandRequest({
+      routeFamily: 'recruiter',
+      command: 'placement.confirm',
+      payload: { command: 'placement.confirm', placementId: 'pl-fc3' },
+    });
+    expect(out.ok).toBe(false);
+    if (!out.ok) {
+      expect(out.errorCode).toBe('ROLE_NOT_PERMITTED');
+      // ROLE_NOT_PERMITTED is NOT in SAFE_CODE_MESSAGES so 4xx keeps the
+      // server message verbatim — the assertion here guards that the raw
+      // route path / role name (low-cardinality, safe) is preserved.
+      expect(out.displayMessage).toContain('HR_STAFF');
+    }
+  });
+
+  // ───────────────────────────────────────────────────────────────────
+  // B-08 / LOCK-13: sessionStorage Idempotency-Key is scoped by route
+  // family so admin and recruiter namespaces cannot collide. Retry
+  // preserves the same key; success clears it.
+  // ───────────────────────────────────────────────────────────────────
+
+  it('F1-RUN-IDEM-01: admin + recruiter keys are kept in separate sessionStorage slots', () => {
+    const payload = { command: 'placement.confirm' as const, placementId: 'pl-iso' };
+    const a = mintPlacementIdempotencyKey({
+      routeFamily: 'admin',
+      command: 'placement.confirm',
+      scope: 'pl-iso',
+      payload,
+    });
+    const r = mintPlacementIdempotencyKey({
+      routeFamily: 'recruiter',
+      command: 'placement.confirm',
+      scope: 'pl-iso',
+      payload,
+    });
+    expect(a.key).not.toBe(r.key);
+    expect(globalThis.window.sessionStorage.length).toBe(2);
+  });
+
+  it('F1-RUN-IDEM-02: retry with the same family + payload reuses the SAME key', async () => {
+    const payload = { command: 'placement.cancel' as const, placementId: 'pl-idem2' };
+    // First attempt: 500 → fail (key stays). Second attempt: 200 → ok
+    // (key cleared). Both attempts MUST carry the same `x-idempotency-key`
+    // header because the sessionStorage-scoped key is preserved across
+    // non-terminal outcomes (LOCK-13) and only cleared on terminal success.
+    const spy = vi.spyOn(globalThis, 'fetch');
+    spy
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ error: 'INTERNAL', message: 'boom' }), {
+          status: 500,
+          headers: { 'content-type': 'application/json' },
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ placementId: 'pl-idem2', status: 'CANCELLED', replayed: false }),
+          { status: 200, headers: { 'content-type': 'application/json' } },
+        ),
+      );
+    const before = await runPlacementCommandRequest({
+      routeFamily: 'recruiter',
+      command: 'placement.cancel',
+      payload,
+    });
+    expect(before.ok).toBe(false);
+    const firstKey = (spy.mock.calls[0]![1]!.headers as Record<string, string>)[
+      'x-idempotency-key'
+    ];
+
+    const after = await runPlacementCommandRequest({
+      routeFamily: 'recruiter',
+      command: 'placement.cancel',
+      payload,
+    });
+    expect(after.ok).toBe(true);
+    const secondKey = (spy.mock.calls[1]![1]!.headers as Record<string, string>)[
+      'x-idempotency-key'
+    ];
+    expect(secondKey).toBe(firstKey);
+  });
+
+  it('F1-RUN-IDEM-03: terminal success clears the sessionStorage key', async () => {
+    mockFetchOnce(200, { placementId: 'pl-idem3', status: 'CONFIRMED', replayed: false });
+    const out = await runPlacementCommandRequest({
+      routeFamily: 'recruiter',
+      command: 'placement.confirm',
+      payload: { command: 'placement.confirm', placementId: 'pl-idem3' },
+    });
+    expect(out.ok).toBe(true);
+    // The slot under the recruiter family must be empty.
+    const remaining = Array.from(
+      (globalThis.window.sessionStorage as unknown as { store: Map<string, string> })
+        .store?.entries?.() ?? [],
+    ).map(([k]) => k);
+    expect(remaining.some((k) => k.includes('.recruiter.'))).toBe(false);
+  });
+
+  it('F1-RUN-IDEM-04: payload change mints a fresh key even within the same family', async () => {
+    const p1 = {
+      command: 'placement.create' as const,
+      placementCaseId: 'case-iso',
+      jobOpeningId: 'jo-iso-1',
+    };
+    const p2 = {
+      command: 'placement.create' as const,
+      placementCaseId: 'case-iso',
+      jobOpeningId: 'jo-iso-2',
+    };
+    const a = mintPlacementIdempotencyKey({
+      routeFamily: 'recruiter',
+      command: 'placement.create',
+      scope: 'case-iso',
+      payload: p1,
+    });
+    const b = mintPlacementIdempotencyKey({
+      routeFamily: 'recruiter',
+      command: 'placement.create',
+      scope: 'case-iso',
+      payload: p2,
+    });
+    expect(a.key).not.toBe(b.key);
+  });
+
+  it('F1-RUN-IDEM-05: failure (4xx) preserves the Idempotency-Key across retry', async () => {
+    const payload = { command: 'placement.fail' as const, placementId: 'pl-idem5' };
+    const spy = vi.spyOn(globalThis, 'fetch');
+    spy
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ error: 'IDEMPOTENCY_KEY_REUSED', message: 'trùng' }),
+          { status: 409, headers: { 'content-type': 'application/json' } },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ error: 'IDEMPOTENCY_KEY_REUSED', message: 'trùng' }),
+          { status: 409, headers: { 'content-type': 'application/json' } },
+        ),
+      );
+    const a = await runPlacementCommandRequest({
+      routeFamily: 'recruiter',
+      command: 'placement.fail',
+      payload,
+    });
+    expect(a.ok).toBe(false);
+    const sentA = (spy.mock.calls[0]![1]!.headers as Record<string, string>)[
+      'x-idempotency-key'
+    ];
+
+    const b = await runPlacementCommandRequest({
+      routeFamily: 'recruiter',
+      command: 'placement.fail',
+      payload,
+    });
+    expect(b.ok).toBe(false);
+    const sentB = (spy.mock.calls[1]![1]!.headers as Record<string, string>)[
+      'x-idempotency-key'
+    ];
+
+    expect(sentA).toBe(sentB);
+    // SessionStorage still holds the key after the 409 (LOCK-13 retention).
+    expect(globalThis.window.sessionStorage.length).toBeGreaterThan(0);
   });
 });

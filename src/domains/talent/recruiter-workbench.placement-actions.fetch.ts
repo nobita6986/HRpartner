@@ -26,8 +26,10 @@ import { PLACEMENT_COMMAND_ROUTES } from '@/src/domains/talent/placement.command
 
 import {
   NETWORK_GENERIC_VI,
+  RECRUITER_PLACEMENT_COMMAND_ROUTES,
   type PlacementCommandName,
   type PlacementCommandPayloadShape,
+  type PlacementRouteFamily,
   SAFE_CODE_MESSAGES,
   SERVER_GENERIC_VI,
   sessionStorageKeyForPlacementCommand,
@@ -46,9 +48,13 @@ export function mintUuidV4(): string {
 
 /**
  * Mint-or-reuse the per-tab sessionStorage Idempotency-Key for the given
- * canonical command + scope + payload.
+ * canonical command + scope + payload + routeFamily.
+ *
+ * Route family is included in the scope (LOCK-13 / B-08) so admin and
+ * recruiter namespaces cannot collide.
  */
 export function mintPlacementIdempotencyKey(args: {
+  routeFamily: PlacementRouteFamily;
   command: PlacementCommandName;
   scope: string;
   payload: unknown;
@@ -76,12 +82,14 @@ export function mintPlacementIdempotencyKey(args: {
  * result.
  */
 export function clearPlacementIdempotencyKey(args: {
+  routeFamily: PlacementRouteFamily;
   command: PlacementCommandName;
   scope: string;
   payload: unknown;
 }): void {
   if (typeof globalThis.window === 'undefined') return;
   const storageKey = sessionStorageKeyForPlacementCommand({
+    routeFamily: args.routeFamily,
     command: args.command,
     scope: args.scope,
     payload: args.payload,
@@ -90,14 +98,31 @@ export function clearPlacementIdempotencyKey(args: {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// 2. URL building — canonical F0 endpoints.
+// 2. URL building — canonical F0 endpoints (admin + recruiter families).
 // ─────────────────────────────────────────────────────────────────────────
 
+/**
+ * Build the canonical URL for the given F0 placement command + route family.
+ *
+ * Route family discrimination (B-08):
+ *   - `'admin'`     → `/api/admin/placements[/...actions/<verb>]`
+ *   - `'recruiter'` → `/api/admin/recruiter/placements[/...actions/<verb>]`
+ *
+ * Admin/HR_MANAGER requests flow to the canonical admin URLs; HR_STAFF
+ * requests (with the dual-authority predicate enforced server-side) flow
+ * to the recruiter URLs. The transition commands (`confirm/effective/fail/
+ * cancel`) require `placementId`; `placement.create` does not.
+ */
 export function urlForPlacementCommand(args: {
+  routeFamily: PlacementRouteFamily;
   command: PlacementCommandName;
   placementId?: string;
 }): string {
-  const route = PLACEMENT_COMMAND_ROUTES[
+  const table =
+    args.routeFamily === 'recruiter'
+      ? RECRUITER_PLACEMENT_COMMAND_ROUTES
+      : PLACEMENT_COMMAND_ROUTES;
+  const route = table[
     args.command === 'placement.create'
       ? 'create'
       : args.command === 'placement.confirm'
@@ -172,6 +197,7 @@ function safeMessageForError(
 // ─────────────────────────────────────────────────────────────────────────
 
 export interface PlacementCommandRequest {
+  routeFamily: PlacementRouteFamily;
   command: PlacementCommandName;
   payload: PlacementCommandPayloadShape;
 }
@@ -221,7 +247,7 @@ export function headersForPlacementCommand(idempotencyKey: string): HeadersInit 
 export async function runPlacementCommandRequest<TBody>(
   req: PlacementCommandRequest,
 ): Promise<PlacementCommandResult<TBody>> {
-  const { command, payload } = req;
+  const { routeFamily, command, payload } = req;
 
   const scope =
     command === 'placement.create'
@@ -243,11 +269,13 @@ export async function runPlacementCommandRequest<TBody>(
         >).placementId;
 
   const url = urlForPlacementCommand({
+    routeFamily,
     command,
     ...(placementIdForUrl ? { placementId: placementIdForUrl } : {}),
   });
 
   const { key: idempotencyKey } = mintPlacementIdempotencyKey({
+    routeFamily,
     command,
     scope,
     payload,
@@ -260,19 +288,30 @@ export async function runPlacementCommandRequest<TBody>(
       headers: headersForPlacementCommand(idempotencyKey),
       body: JSON.stringify(
         command === 'placement.create'
-          ? {
-              placementCaseId: (payload as { placementCaseId: string })
-                .placementCaseId,
-              jobOpeningId: (payload as { jobOpeningId: string }).jobOpeningId,
-              ...((payload as { sourceCandidateSubmissionId?: string })
-                .sourceCandidateSubmissionId
-                ? {
-                    sourceCandidateSubmissionId: (
-                      payload as { sourceCandidateSubmissionId: string }
-                    ).sourceCandidateSubmissionId,
-                  }
-                : {}),
-            }
+          ? routeFamily === 'recruiter'
+            ? // B-08 / DEC-01: recruiter-scoped create derives
+              // `placementCaseId` + `jobOpeningId` server-side from the
+              // submission. The client MUST only carry the canonical
+              // `sourceCandidateSubmissionId` so the server can enforce
+              // boundary integrity and fail closed on mismatch.
+              {
+                sourceCandidateSubmissionId: (
+                  payload as { sourceCandidateSubmissionId: string }
+                ).sourceCandidateSubmissionId,
+              }
+            : {
+                placementCaseId: (payload as { placementCaseId: string })
+                  .placementCaseId,
+                jobOpeningId: (payload as { jobOpeningId: string }).jobOpeningId,
+                ...((payload as { sourceCandidateSubmissionId?: string })
+                  .sourceCandidateSubmissionId
+                  ? {
+                      sourceCandidateSubmissionId: (
+                        payload as { sourceCandidateSubmissionId: string }
+                      ).sourceCandidateSubmissionId,
+                    }
+                  : {}),
+              }
           : command === 'placement.effective'
             ? {
                 evidence: (payload as Extract<
@@ -315,7 +354,7 @@ export async function runPlacementCommandRequest<TBody>(
     // LOCK-13: clear the idempotency key ONLY on terminal success. A
     // subsequent click with the same payload is treated as a fresh user
     // action (UX intent: the user sees the updated status and clicks again).
-    clearPlacementIdempotencyKey({ command, scope, payload });
+    clearPlacementIdempotencyKey({ routeFamily, command, scope, payload });
 
     return {
       ok: true,

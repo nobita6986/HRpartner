@@ -521,11 +521,13 @@ describe('sessionStorageKeyForPlacementCommand', () => {
 
   it('F1-SSK01: same command + scope + payload → same key (idempotent retry)', () => {
     const a = sessionStorageKeyForPlacementCommand({
+      routeFamily: 'admin',
       command: 'placement.confirm',
       scope: 'pl-1',
       payload: p1,
     });
     const b = sessionStorageKeyForPlacementCommand({
+      routeFamily: 'admin',
       command: 'placement.confirm',
       scope: 'pl-1',
       payload: p1,
@@ -535,11 +537,13 @@ describe('sessionStorageKeyForPlacementCommand', () => {
 
   it('F1-SSK02: payload hash differs when payload changes', () => {
     const a = sessionStorageKeyForPlacementCommand({
+      routeFamily: 'admin',
       command: 'placement.confirm',
       scope: 'pl-1',
       payload: p1,
     });
     const b = sessionStorageKeyForPlacementCommand({
+      routeFamily: 'admin',
       command: 'placement.cancel',
       scope: 'pl-1',
       payload: p2,
@@ -549,11 +553,13 @@ describe('sessionStorageKeyForPlacementCommand', () => {
 
   it('F1-SSK03: scope differs when placementId differs', () => {
     const a = sessionStorageKeyForPlacementCommand({
+      routeFamily: 'admin',
       command: 'placement.confirm',
       scope: 'pl-1',
       payload: p1,
     });
     const b = sessionStorageKeyForPlacementCommand({
+      routeFamily: 'admin',
       command: 'placement.confirm',
       scope: 'pl-2',
       payload: p1,
@@ -561,13 +567,32 @@ describe('sessionStorageKeyForPlacementCommand', () => {
     expect(a).not.toBe(b);
   });
 
-  it('F1-SSK04: key prefix is `hrp.p1f1.idem.<command>`', () => {
+  it('F1-SSK04: key prefix is `hrp.p1f1.idem.<routeFamily>.<command>`', () => {
     const a = sessionStorageKeyForPlacementCommand({
+      routeFamily: 'admin',
       command: 'placement.create',
       scope: 'case-7',
       payload: { placementCaseId: 'case-7', jobOpeningId: 'jo-9' },
     });
-    expect(a.startsWith('hrp.p1f1.idem.placement.create.case-7.')).toBe(true);
+    expect(a.startsWith('hrp.p1f1.idem.admin.placement.create.case-7.')).toBe(true);
+  });
+
+  it('F1-SSK05: routeFamily is in the prefix → admin/recruiter keys do NOT collide', () => {
+    const a = sessionStorageKeyForPlacementCommand({
+      routeFamily: 'admin',
+      command: 'placement.create',
+      scope: 'case-7',
+      payload: { placementCaseId: 'case-7', jobOpeningId: 'jo-9' },
+    });
+    const b = sessionStorageKeyForPlacementCommand({
+      routeFamily: 'recruiter',
+      command: 'placement.create',
+      scope: 'case-7',
+      payload: { placementCaseId: 'case-7', jobOpeningId: 'jo-9' },
+    });
+    expect(a).not.toBe(b);
+    expect(a.startsWith('hrp.p1f1.idem.admin.')).toBe(true);
+    expect(b.startsWith('hrp.p1f1.idem.recruiter.')).toBe(true);
   });
 });
 
