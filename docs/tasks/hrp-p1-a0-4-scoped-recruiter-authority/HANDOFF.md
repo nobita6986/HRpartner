@@ -21,7 +21,8 @@
 | F-01..F-08 correction SHA-2 | `85615eef` (F-06 canonical flow proof) |
 | F-01..F-08 correction SHA-3 | `0af686b1` (chore: drop commit-msg scratch file) |
 | F-01..F-08 correction SHA-4 | `c72720bd` (F-08 UI surface static guard) |
-| **HEAD** | `c72720bd...d3b9d3` |
+| F-01..F-08 correction SHA-5 | `1762393f` (docs re-freeze v1.3 round-3) |
+| **HEAD** | `1762393f` |
 | Delivery protocol | `V2_FAST_FREEZE` |
 | Frozen delivery | `YES` |
 | Canonical gates | `PASS` |
@@ -105,7 +106,7 @@
 
 ### 1.4 Round-3 F-01..F-08 pre-audit integrity exception (correction batch 1/1)
 
-T0 disposition `CHANGES_REQUIRED` on HEAD `585f88c2` (2026-09-29) issued a final pre-audit integrity exception for findings F-01..F-08. Each finding was closed by forward-only commits on top of `585f88c2` (predecessor chain preserved: `773c94c0` → `2b099713` → `e9e82856` → `585f88c2` → `75c3b401` → `85615eef` → `0af686b1` → `c72720bd`).
+T0 disposition `CHANGES_REQUIRED` on HEAD `585f88c2` (2026-09-29) issued a final pre-audit integrity exception for findings F-01..F-08. Each finding was closed by forward-only commits on top of `585f88c2` (predecessor chain preserved: `773c94c0` → `2b099713` → `e9e82856` → `585f88c2` → `75c3b401` → `85615eef` → `0af686b1` → `c72720bd` → `1762393f`).
 
 | Finding | Service / route / test change | Commit |
 | --- | --- | --- |
@@ -253,7 +254,7 @@ The 19 substantive tests in `tests/db/p1a04-scoped-recruiter-authority.integrati
 - Audit eligibility: `ELIGIBLE`
 - Frozen delivery: `YES`
 - Delivery protocol: `V2_FAST_FREEZE`
-- Canonical gates: `PASS` — prisma validate, migrate status (57 migrations up to date), typecheck (0 errors), lint (0 errors), unit (201 files / 3283 pass / 9 skipped), build (PASS), encoding (`RESULT: PASS. 27/27`), `git diff --check` (clean)
+- Canonical gates: `PASS` — prisma validate, migrate status (57 migrations up to date), typecheck (0 errors), lint (0 errors), unit (201 files / 3283 pass / 9 skipped), build (PASS), encoding (`RESULT: PASS. 28/28`), `git diff --check` (clean)
 - Targeted route unit (×1, F-08): `src/domains/talent/recruiter-assignment.routes.test.ts` 21/21 passing
 - Targeted UI guard (×1, F-08): `src/domains/talent/recruiter-assignment.ui.test.ts` 5/5 passing
 - Targeted integration (×1, F-06): `tests/db/p1a04-canonical-flow.integration.test.ts` (ENV_BLOCKED until DB envs supplied; describe.skipIf guard)
