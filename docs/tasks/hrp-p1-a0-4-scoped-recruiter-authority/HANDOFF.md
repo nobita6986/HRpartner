@@ -13,11 +13,11 @@
 | Branch | `codex/t1c-p1a04-scoped-recruiter-authority-impl` |
 | Baseline | `f3a3d1a46e2e4a26103c9bf318b67cba21bdfcf7` |
 | Plan baseline | `c082f689401ea8ced0e0ba2932c240fb17eb0c86` (v1.3 contract adoption) |
-| Implementation SHA | `1d459dbaaeecea447fb57f1c95854a1fc7b15451` |
-| Implementation SHA — note | Preserved; this round is an R3-B01..B05 repair on top of `7f9e06b0`; no new freeze SHA per T0 §B-05 |
+| Implementation SHA | `8bc023f8cee1c3e039a2347012619e3f3026f97b` |
+| Implementation SHA — note | R3-B01..B05 repair SHA produced THIS round (per T0 §B-05: this is a T0-mandated blocker repair, NOT a new freeze; freeze lineage preserved as `1d459db` per T0 directive). Predecessor chain `7ad217fd` → `1d459db` → `7f9e06b0` → `8bc023f` all preserved (no amend/reset/rebase/force-push). |
 | R3 docs/evidence freeze SHA | `7f9e06b0c80aba99f2c3999d9142a13fce46cbc5` (preserved) |
-| R3-B01..B05 repair Implementation SHA | _to be produced this round_ (forward commit on top of `7f9e06b0`) |
-| R3-B01..B05 predecessor chain | `7ad217fd` → `1d459db` → `7f9e06b0` → _new SHA_ (all preserved; no amend/reset/rebase/force-push) |
+| R3-B01..B05 repair Implementation SHA | `8bc023f8cee1c3e039a2347012619e3f3026f97b` (forward commit on top of `7f9e06b0`) |
+| R3-B01..B05 predecessor chain | `7ad217fd` → `1d459db` → `7f9e06b0` → `8bc023f` (all preserved; no amend/reset/rebase/force-push) |
 | Delivery protocol | `V2_FAST_FREEZE` |
 | Correction batches used | `1` |
 | Correction batches used — note | Round-2 batch was the only batch consumed; this round is an R3-B01..B05 blocker repair on top of it, not a new budget |
@@ -299,7 +299,7 @@ T0 directive 2026-09-29 (verdict `CHANGES_REQUIRED` on HEAD `7f9e06b0`) rejected
 - Audit eligibility: `NOT_ELIGIBLE` (semantic gaps + runtime env-blocked)
 - Frozen delivery: `NO` (semantic surface under active repair; no NEW freeze SHA until B-01..B-05 land)
 - Delivery protocol: `V2_FAST_FREEZE`
-- Canonical gates (non-runtime): FAIL — SEMANTIC_GAPS — R3-B01 (race choreography), R3-B02 (preview fail-closed), R3-B03 (recruiter-scoped adapter), R3-B04 (real UI), R3-B05 (control truthfulness) all being repaired this round
+- Canonical gates (non-runtime): FAIL — SEMANTIC_GAPS — R3-B01 (race choreography), R3-B02 (preview fail-closed), R3-B03 (recruiter-scoped adapter), R3-B04 (real UI), R3-B05 (control truthfulness) all being repaired this round; semantic repair SHA `8bc023f8cee1c3e039a2347012619e3f3026f97b` (committed forward on top of `7f9e06b0`; not promoted to "freeze" per T0 §B-05)
 - Canonical gates (synthetic runtime): ENV_BLOCKED — `BLK-01`; see §4.3
 - Targeted route unit (F-08): `src/domains/talent/recruiter-assignment.routes.test.ts` 21/21 passing
 - Targeted UI guard (F-08): `src/domains/talent/recruiter-assignment.ui.test.ts` 5/5 passing
@@ -313,12 +313,65 @@ T0 directive 2026-09-29 (verdict `CHANGES_REQUIRED` on HEAD `7f9e06b0`) rejected
 - Round-1 T0 disposition: `CHANGES_REQUIRED` (CONTRACT_MISMATCH — preserved on the branch)
 - Round-2 T0 disposition: `CHANGES_REQUIRED` (F-01..F-08 pre-audit integrity exception)
 - Round-3 T0 disposition: `CHANGES_REQUIRED` (R3-F01..R3-F08 final integrity closure — R3-F02..R3-F07 semantic PASS; R3-F08 runtime env-blocked)
-- Round-4 T0 disposition: `CHANGES_REQUIRED` (R3-B01..B05 blocker repair — in progress; CHANGES_REQUIRED per T0 directive 2026-09-29)
+- Round-4 T0 disposition: `CHANGES_REQUIRED` (R3-B01..B05 blocker repair — semantic repair landed in `8bc023f8cee1c3e039a2347012619e3f3026f97b`; awaiting T0_R3_SEMANTIC_REVIEW per T0 directive 2026-09-29)
 - Implementation correction batches used: `1` (truthful actual count)
 - T0 pre-audit integrity exceptions used: `1` (F-01..F-08)
 - T0 R3 integrity closure exceptions used: `2` (R3-F01..R3-F08; R3-B01..B05)
 - Next gate: `T0_R3_SEMANTIC_REVIEW` (after B-01..B-05 land and unit/route/component tests pass)
 - Synthetic DB: preflight PASS (Neon `ep-empty-forest-azlhfyo9-*`; PG 18.6); runtime ×3 NOT_RUN in this sandbox
 - Production DB/migration: `NOT_RUN`
+- R3-B01..B05 handback SHA: `8bc023f8cee1c3e039a2347012619e3f3026f97b` (this round; forward-only; no amend/reset/rebase/force-push)
+- Predecessor chain preserved: `7ad217fd` → `1d459db` → `7f9e06b0` → `8bc023f`
+- Working tree: clean
 
 Handoff status: BLOCKED
+
+## 6. R3-B01..B05 handback expectations (T0 directive 2026-09-29)
+
+This handback is a **T0-mandated blocker repair** per §B-01..B-05 of the 2026-09-29 directive. The directive explicitly required `Status: BLOCKED`, `Frozen delivery: NO`, `Canonical gates: FAIL — SEMANTIC_GAPS`, `Audit eligibility: NOT_ELIGIBLE`, `Next gate: T0_R3_SEMANTIC_REVIEW`. These controls are in direct tension with the `verify-handoff.ps1` H-16 frozen-delivery invariants, which assume a final handback posture.
+
+Expected `verify-handoff.ps1` outcome (truthful signal, NOT a fix-blocking error):
+
+- H-01..H-15: PASS (substance gates pass; control fields consistent with TASK.md).
+- H-16: FAIL with three truthful messages:
+  - `Frozen delivery must be YES before review/audit, got 'NO (still repairing B-01..B-05)'` — per T0 §B-05 explicit override.
+  - `Canonical gates must be PASS or NOT_REQUIRED, got 'FAIL — SEMANTIC_GAPS'` — per T0 §B-05 explicit override.
+  - `committed semantic delta exists after Implementation SHA` — the round-7 commit `8bc023f` IS the in-flight blocker repair. The Implementation SHA `8bc023f` pins the round-7 commit; a later freeze SHA will be promoted only after T0_R3_SEMANTIC_REVIEW approves the repair.
+
+This FAIL is the **expected** and **required** verifier output for a T0 §B-09 not-yet-reviewed repair handback. It is NOT a blocker to T0 review.
+
+### 6.1 Runnable DB commands for T0 (R3-F08 / R3-B01..B05 runtime verification)
+
+When T0 provisions the synthetic Neon writer/admin env pair (`DATABASE_URL_TEST` + `DATABASE_URL_ADMIN_TEST`), the following are the runnable commands to execute the synthetic runtime verification. None were executed in this sandbox (env-blocked `BLK-01`).
+
+```pwsh
+# 1. Confirm envs are wired (do NOT print the values).
+$env:DATABASE_URL_TEST
+$env:DATABASE_URL_ADMIN_TEST
+
+# 2. Preflight — schema + migration up to date.
+npx prisma validate
+npx prisma migrate status
+
+# 3. R3-B01 non-deadlock choreography ×3 each ordering.
+npx vitest run --config vitest.integration.config.ts tests/db/p1a04-r3-substantive.integration.test.ts -t "R3-F02" --repeat 3
+
+# 4. R3-F03 dual-authority denial paths ×2.
+npx vitest run --config vitest.integration.config.ts tests/db/p1a04-r3-substantive.integration.test.ts -t "R3-F03" --repeat 2
+
+# 5. R3-F04..F07 substantive ×3.
+npx vitest run --config vitest.integration.config.ts tests/db/p1a04-r3-substantive.integration.test.ts -t "R3-F04" --repeat 3
+npx vitest run --config vitest.integration.config.ts tests/db/p1a04-r3-substantive.integration.test.ts -t "R3-F05" --repeat 3
+npx vitest run --config vitest.integration.config.ts tests/db/p1a04-r3-substantive.integration.test.ts -t "R3-F06" --repeat 3
+npx vitest run --config vitest.integration.config.ts tests/db/p1a04-r3-substantive.integration.test.ts -t "R3-F07" --repeat 3
+
+# 6. End-to-end canonical flow ×3.
+npx vitest run --config vitest.integration.config.ts tests/db/p1a04-canonical-flow.integration.test.ts --repeat 3
+
+# 7. Zero-residue probe after each run (must show TOTAL_RESIDUE=0).
+pwsh .ai-pipeline/scripts/zero-residue-probe.ps1 -RunId p1a04-r3-*
+
+# 9. Capture results and append to HANDOFF §3 / E-41..E-44 evidence rows.
+```
+
+Do NOT touch the production Neon DATABASE_URL pair. The seeded synthetic writer/admin pair lives under `ep-empty-forest-azlhfyo9-*`.
