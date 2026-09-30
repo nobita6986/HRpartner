@@ -1,8 +1,8 @@
 # P1-A0.5 — JobOpening Readiness + Final P1 E2E — Reconciliation
 
-> T0 directive 2026-09-30 v1.1 — Phase B planning round only. Discovery reconciliation artifact that supports `docs/tasks/hrp-p1-a0-5-job-opening-readiness/TASK.md` (v1.1). Planning outcome follows the contract in TASK.md, NOT this file. This file is the survey snapshot captured before implementation planning.
->
-> **Baseline for this survey (v1.1 corrected)**: `origin/main` at `a64c81e954325091a78ec9fb7f441a094df5dcfc` (P1-A0.4 ACCEPTED closeout PR #68 merged; planning SHA `19790cd5ead47...` preserved; PR #67 code/audit merged at `12460cf55...`; NO amend / reset / rebase / force-push). P1-A0.4 Scoped Recruiter Authority is `ACCEPTED` (Phase A closeout completed in T0 directive). Two P1 release blockers are transferred to P1-A0.5 and remain OPEN.
+> T0 directive 2026-09-30 v1.2 — Phase B planning round only. Discovery reconciliation artifact that supports `docs/tasks/hrp-p1-a0-5-job-opening-readiness/TASK.md` (v1.2). Planning outcome follows the contract in TASK.md, NOT this file. This file is the survey snapshot captured before implementation planning. v1.2 is the final pre-implementation integrity correction (T0-authorized planning integrity exception #1, NOT counted against implementation correction budget). v1.1 SHA preserved: `dae4bdbb93af807b51da6c54dc64b8d8f56b608b`. v1.2 SHA will be added at commit time. NO amend / reset / rebase / force-push.
+
+> **Baseline for this survey (v1.2 corrected)**: `origin/main` at `a64c81e954325091a78ec9fb7f441a094df5dcfc` (P1-A0.4 ACCEPTED closeout PR #68 merged; planning SHA `19790cd5ead47...` preserved; PR #67 code/audit merged at `12460cf55...`; NO amend / reset / rebase / force-push). P1-A0.4 Scoped Recruiter Authority is `ACCEPTED` (Phase A closeout completed in T0 directive). Two P1 release blockers are transferred to P1-A0.5 and remain OPEN; v1.2 §I-02 lifecycle governs when each state is recorded.
 
 ## 1. Scope (from T0 directive §LOCK-01)
 
@@ -19,7 +19,7 @@ Không tách thành hai implementation task độc lập. P1-A0.5 được phép
 | --- | --- | --- | --- |
 | JobOpening persistence + slot binding | **ADOPT** | `model JobOpening` (`prisma/schema.prisma:524`) — `id`, `staffingOrderId`, `staffingOrderSlotId`, `status` (DRAFT/OPEN/FILLED/CANCELLED), `openedAt`, `closedAt`, `serviceModel?`. No schema change. | None (no migration unless discovery finds blocker) |
 | Slot eligibility predicate (canonical) | **CUSTOM** (v1.1 §D — minimal shared-predicate refactor) | `eligibleSlotPredicateSql` (`src/domains/staffing/job-posting-list.service.ts`) shared by selector + write-path; used by `assertSlotEligibleForNewJobPosting`. | v1.1 §D refactor: extract base capacity/time/order predicate; authoring predicate = base + `NOT EXISTS job_postings` (keeps existing call semantic in `createOrReuseJobOpeningForSlot`); opening-eligibility predicate = base + open-specific rules, **NO `NOT EXISTS job_postings`** so presence of JobPosting DRAFT does NOT block `/open`. Existing call sites retain identical external behavior for authoring. |
-| JobOpening CRUD read DTO | **CUSTOM** (v1.1 §G — ADDITIVE READ-MODEL GAP) | `getJobOpeningDetail` (`src/domains/staffing/job-opening-read.service.ts:3-35`) returns `status`, `staffingOrder`, `jobPosting`, `metrics`, `associatedSlots`. **v1.0 wrongly listed as already-complete for v1.1 needs; v1.1 reclassifies as ADDITIVE READ-MODEL GAP.** | v1.1 §G: add `serviceModel`, `placementCount` (or `hasPlacement: boolean`), fields needed for server-derived open eligibility (parent `StaffingOrder.status`, opening deadline, slot capacity `slotsFilled`/`slotsNeeded`). NO leak of `assigneeId`, `actorId`, assignment audit metadata, PII. |
+| JobOpening CRUD read DTO | **CUSTOM** (v1.1 §G + v1.2 §I-06) | `getJobOpeningDetail` (`src/domains/staffing/job-opening-read.service.ts:3-35`) returns `status`, `staffingOrder`, `jobPosting`, `metrics`, `associatedSlots`. **v1.0 wrongly listed as already-complete for v1.1 needs; v1.1 reclassifies as ADDITIVE READ-MODEL GAP.** | v1.2 §I-06: add `serviceModel`, `placementCount` (or `hasPlacement: boolean`), parent `StaffingOrder.status`, **`StaffingOrder.deadlineDate`** (exact source field — not "opening deadline"), **`StaffingOrderSlot.validTo`** (exact source field), `slotsFilled`/`slotsNeeded`. NO leak of `assigneeId`, `actorId`, assignment audit metadata, PII. |
 | JobOpening status summary | **ADOPT** | `summarizeAllJobOpenings` (`src/domains/staffing/job-opening-status.ts`) — groupBy status, zero-fill 4 canonical statuses. | Reuse unchanged. |
 | ServiceModel taxonomy (STAFFING_SUPPLY/LABOR_LEASING/RECRUITMENT_SERVICE/REFERRAL_SERVICE) | **ADOPT** | `enum ServiceModel` (`prisma/schema.prisma:1600`). Mapping `STAFFING_SUPPLY|LABOR_LEASING → HRP_MANAGED`; `RECRUITMENT_SERVICE|REFERRAL_SERVICE → CLIENT_MANAGED` lives in `placement.lifecycle.ts::computeManagementMode`. | Reuse unchanged. **No new enum.** |
 | ManagementMode resolution + NULL fail-closed | **ADOPT** | `assertClassifiedJobOpening` + `resolveClientCompanyIdForJobOpening` (`src/domains/talent/placement.resolution.ts`) enforce DEC-10: NULL throws `PlacementValidationError`. | Reuse unchanged. ServiceModel NULL must remain fail-closed at every downstream gate. |
@@ -102,8 +102,8 @@ openJobOpening(tx, ctx, { openingId })
    │    (a) status === 'DRAFT'
    │    (b) serviceModel IS NOT NULL   (re-use assertClassifiedJobOpening → 422 SERVICE_MODEL_REQUIRED)
    │    (c) parent StaffingOrder.status === 'OPEN'  (→ 409 ORDER_NOT_OPEN)
-   │    (d) opening deadline chưa hết  (→ 409 SLOT_NOT_ELIGIBLE)
-   │    (e) slot chưa hết hạn          (→ 409 SLOT_NOT_ELIGIBLE)
+   │    (d) `StaffingOrder.deadlineDate` chưa hết  (v1.2 §I-06 — exact source field) (→ 409 SLOT_NOT_ELIGIBLE)
+   │    (e) `StaffingOrderSlot.validTo` chưa hết hạn  (v1.2 §I-06 — exact source field) (→ 409 SLOT_NOT_ELIGIBLE)
    │    (f) slotsFilled < slotsNeeded  (→ 409 SLOT_NOT_ELIGIBLE)
    │    (g) caller authority            (HR_STAFF without assignment → 403 NO_ACTIVE_ORDER_ASSIGNMENT;
    │                                      caller ngoài admission → 403 PERMISSION_DENIED)
@@ -199,7 +199,7 @@ Each threat below maps to a precondition enforced by `/classify` or `/open` (or 
 
 After surveying `prisma/schema.prisma`, `JobOpening` already carries `status` and `serviceModel` columns. No migration is required to close either blocker. The classification and activation are pure mutation authority gaps, not schema gaps. If implementation round discovers any blocker that requires a column or index change, Tier 1 MUST stop and notify T0 (LOCK-08).
 
-**v1.1 §G ADDITIVE READ-MODEL GAP**: `JobOpeningDetailDto` is currently INCOMPLETE for server-derived `canClassify` / `canOpen` derivation. A0.5 will additively extend it with `serviceModel`, `placementCount`/`hasPlacement`, and fields needed for server-derived open eligibility (parent `StaffingOrder.status`, opening deadline, slot capacity `slotsFilled`/`slotsNeeded`). This is a CUSTOM capability — NOT pre-existing reuse.
+**v1.1 §G ADDITIVE READ-MODEL GAP (carried forward to v1.2 §I-06 with exact source field names)**: `JobOpeningDetailDto` is currently INCOMPLETE for server-derived `canClassify` / `canOpen` derivation. A0.5 will additively extend it with `serviceModel`, `placementCount`/`hasPlacement`, and fields needed for server-derived open eligibility (parent `StaffingOrder.status`, **`StaffingOrder.deadlineDate`**, **`StaffingOrderSlot.validTo`**, slot capacity `slotsFilled`/`slotsNeeded`). This is a CUSTOM capability — NOT pre-existing reuse. v1.2 §I-06 mandates the exact source field names; the v1.1 prose "opening deadline" / "slot expiry" are NOT acceptable to substitute for placeholder identifiers — use `StaffingOrder.deadlineDate` and `StaffingOrderSlot.validTo` directly in code.
 
 ##  7. Existing integration test registry (to be updated)
 
@@ -223,7 +223,7 @@ After surveying `prisma/schema.prisma`, `JobOpening` already carries `status` an
 
 A0.5 consumes all of the above unchanged. A0.5 does NOT mutate any of the above artifacts except via addition (new files only).
 
-##  9. RQ → STEP → AC traceability (summary, full chain in TASK.md v1.1)
+##  9. RQ → STEP → AC traceability (summary, full chain in TASK.md v1.2)
 
 | RQ | Topic | STEP | AC chain |
 | --- | --- | --- | --- |
@@ -233,15 +233,15 @@ A0.5 consumes all of the above unchanged. A0.5 does NOT mutate any of the above 
 | RQ-05 | /open route (body rỗng) | STEP-04..STEP-05 | AC-04 |
 | RQ-06 | openJobOpening service | STEP-01 | AC-05 (v1.1 §D: full 7-precondition set) |
 | RQ-07 | atomic + race-safe | STEP-01 | AC-02, AC-05 |
-| RQ-08 | narrow UI Server + Client panel | STEP-06, STEP-07, STEP-07b | AC-06 |
+| RQ-08 | narrow UI Server + Client panel + page-level authorization test (v1.2 §I-04) | STEP-06, STEP-07, STEP-08, STEP-09 | AC-06 |
 | RQ-09 | typed `JobOpeningActivationError` envelope | STEP-01, STEP-02, STEP-04 | AC-02, AC-04 |
-| RQ-10 | test plan | all | AC-02, AC-04, AC-06, AC-07 |
-| RQ-11 | registry update | STEP-10 | AC-15 |
+| RQ-10 | test plan (incl. page-level auth test per v1.2 §I-04) | all | AC-02, AC-04, AC-06, AC-07 |
+| RQ-11 | registry update | STEP-14 | AC-15 |
 | RQ-12 | production DB NOT_RUN | all | AC-08, AC-09, AC-10, AC-12 |
-| RQ-13 (v1.1) | two-layer E2E (DB-integration + Runtime UI) | STEP-09 | AC-07, AC-E2E-01..AC-E2E-12 |
-| RQ-14 (v1.1) | additive DTO update | STEP-08b | AC-06, AC-15 |
+| RQ-13 (v1.1) | two-layer E2E (DB-integration + Runtime UI on main-compatible deployment; v1.2 §I-03 evidence pinning at `evidence/runtime-ui-e2e-main.md` mandatory + `evidence/runtime-ui-e2e-preview.md` for pre-merge) | STEP-13 | AC-07, AC-E2E-01..AC-E2E-12 |
+| RQ-14 (v1.1) | additive DTO update (v1.2 §I-06 exact source field names: `StaffingOrder.deadlineDate`, `StaffingOrderSlot.validTo`) | STEP-10 | AC-06, AC-15 |
 
-Total (v1.1 §B correction): **14 RQ + 12 STEP + 27 AC** (15 impl + 12 E2E) = **51 traceability nodes** (v1.0 wrongly called 53 "measurable AC"). See `docs/tasks/hrp-p1-a0-5-job-opening-readiness/TASK.md` v1.1 §6 for the full chain.
+| Total (v1.2 §I-01 — sequential STEP-01..STEP-15): **14 RQ + 15 STEP + 27 AC** (15 impl + 12 E2E) = **56 traceability nodes** (arithmetic addition, no subtraction; RQ/STEP entries are NOT counted as AC). See `docs/tasks/hrp-p1-a0-5-job-opening-readiness/TASK.md` v1.2 §6 for the full chain. v1.1's "51 nodes after subtracting double-counted STEP entries" was invalid arithmetic and is replaced. |
 
 ##  10. Open Owner decisions
 
@@ -267,9 +267,10 @@ src/shared/auth/                                                                
 src/shared/integrity/                                                             (READ ONLY)
 src/shared/security/                                                              (READ ONLY)
 app/api/admin/staffing/job-openings/                                              (NEW — adds /classify and /open route handlers + route tests)
-app/admin/job-openings/[id]/page.tsx                                              (Server Component — outer role admission broadened to include HR_STAAF gated by A0.4 RLS; server-derives canClassify/canOpen/blockedReason; renders <JobOpeningActions>)
+app/admin/job-openings/[id]/page.tsx                                              (Server Component — outer role admission broadened to include HR_STAFF gated by A0.4 RLS; server-derives canClassify/canOpen/blockedReason; renders <JobOpeningActions>)
 app/admin/job-openings/[id]/job-opening-actions.tsx                               (NEW Client Component with 'use client' — narrow action panel; sends commands; calls router.refresh() after success; inline status; NEVER re-derives authority)
 app/admin/job-openings/[id]/job-opening-actions.test.tsx                          (NEW — component test for HR_STAFF / ADMIN / HR_MANAGER / DIRECTOR / PM visibility matrix)
+app/admin/job-openings/[id]/page.test.tsx                                          (NEW v1.2 §I-04 — page-level authorization test, 8 minimum cases: no session → redirect; ADMIN; HR_MANAGER; DIRECTOR/PM read-only; assigned HR_STAFF; unassigned/revoked HR_STAFF; unsupported role; NO actor/assignment metadata forwarded to Client Component)
 app/admin/recruiter-workbench/                                                    (READ ONLY — canonical Workbench used by AC-E2E-08 with ?view=MINE)
 app/admin/jobs/job-postings/                                                      (READ ONLY — P1-A0/A0.1 carryover; UI should NOT regress)
 app/(jobs)/viec-lam/                                                              (READ ONLY — public visibility)
@@ -306,4 +307,13 @@ reuse PlacementValidationError cho JobOpening activation      — v1.1 §C/§D/�
 
 ---
 
-*Survey snapshot v1.1 captured from `origin/main` @ `a64c81e954325091a78ec9fb7f441a094df5dcfc` (P1-A0.4 ACCEPTED closeout PR #68 merged; planning SHA `19790cd5ead47bdf76343d36bfd5b39f4f80b2e1` preserved; NO amend / reset / rebase / force-push). This file is documentation only — planning contract lives in `docs/tasks/hrp-p1-a0-5-job-opening-readiness/TASK.md` v1.1.*
+*Survey snapshot v1.2 captured from `origin/main` @ `a64c81e954325091a78ec9fb7f441a094df5dcfc` (P1-A0.4 ACCEPTED closeout PR #68 merged; planning SHA `19790cd5ead47bdf76343d36bfd5b39f4f80b2e1` preserved; v1.1 SHA `dae4bdbb93af807b51da6c54dc64b8d8f56b608b` preserved; NO amend / reset / rebase / force-push). This file is documentation only — planning contract lives in `docs/tasks/hrp-p1-a0-5-job-opening-readiness/TASK.md` v1.2.*
+
+*v1.2 changes summary (T0-authorized planning integrity exception #1; NOT counted against implementation correction budget):*
+- *§I-01 — STEPS renumbered to sequential STEP-01..STEP-15; totals corrected to 14 RQ + 15 STEP + 27 AC = 56 traceability nodes (addition, no subtraction).*
+- *§I-02 — Blocker lifecycle clarified: pre-merge AUDIT pins `AUDITED_PENDING_MAIN_MERGE`; final `RESOLVED_BY_P1_A0_5` recorded only after runtime UI/HTTP E2E PASS on main-compatible deployment.*
+- *§I-03 — Pre-merge delivery gate separated from post-merge P1 release gate; evidence pinned at `evidence/runtime-ui-e2e-preview.md` (optional) and `evidence/runtime-ui-e2e-main.md` (mandatory).*
+- *§I-04 — Page-level authorization test (`page.test.tsx`) added to in-scope roots with 8 minimum cases.*
+- *§I-05 — AC-15 wording corrected: added AND modified files within allowlist; NO path outside allowlist may change.*
+- *§I-06 — Field/wording integrity: opening deadline = `StaffingOrder.deadlineDate`; slot expiry = `StaffingOrderSlot.validTo`; typo `HR_STAAF` → `HR_STAFF`; `SERVICE_MODEL_REQUIRED = 422` carries explicit typed-activation-error rationale.*
+- *§I-07 — Controls bumped to v1.2 (T0_REVIEW, DRAFT, contract NOT accepted by T0, CLOSED, 0 open, planning correction 1 consumed, T0 planning integrity exceptions 1, implementation correction batches 0, next gate T0_CONTRACT_REVIEW).*
