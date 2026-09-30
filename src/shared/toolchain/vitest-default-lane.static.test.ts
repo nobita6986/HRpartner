@@ -49,6 +49,7 @@ const RQ05_INCLUDE_GLOBS = [
   'packages/**/*.test.ts',
   'prisma/**/*.test.ts',
   'app/**/*.test.ts',
+  'app/**/*.test.tsx',
 ];
 
 /**
@@ -423,7 +424,7 @@ describe('rang cua hang rao — phep am tren config BIA (AC-06)', () => {
     // Sau P1-A0 bổ sung `src/**/*.test.tsx` (renderer.test.tsx); sau AFF-05A-R2 bổ sung `app/**/*.test.ts`
     // (route-handler unit coverage). DRIFTED_CONFIG làm bao bằng cách chỉ giữ 2 glob cũ nhất.
     expect(sorted(difference(RQ05_INCLUDE_GLOBS, globs!))).toEqual(
-      sorted(['app/**/*.test.ts', 'prisma/**/*.test.ts', 'src/**/*.test.tsx']),
+      sorted(['app/**/*.test.ts', 'app/**/*.test.tsx', 'prisma/**/*.test.ts', 'src/**/*.test.tsx']),
     );
     expect(sliceBlock(DRIFTED_CONFIG, 'poolOptions')).toMatch(/maxThreads:\s*8/);
   });

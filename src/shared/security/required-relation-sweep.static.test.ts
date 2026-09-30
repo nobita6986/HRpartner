@@ -85,8 +85,12 @@ const EXPECTED_HITS = [
   'src/domains/applications/conversion.service.ts:128 laborProfile',
   'src/domains/crm/client-read.service.ts:80 staffingOrder',
   'src/domains/crm/project-read.service.ts:40 clientCompany',
-  'src/domains/staffing/job-opening-read.service.ts:41 staffingOrder',
-  'src/domains/staffing/job-opening-read.service.ts:46 project',
+  // P1-A0.5 STEP-10 (hrp-p1-a0-5-job-opening-readiness): additive DTO fields
+  // (`serviceModel`, `placementCount`, order status/deadline, slot validTo/capacity).
+  // Line numbers shifted 41 → 86 and 46 → 94 because the new fields were added
+  // between the original `staffingOrder`/`project` selects.
+  'src/domains/staffing/job-opening-read.service.ts:86 staffingOrder',
+  'src/domains/staffing/job-opening-read.service.ts:94 project',
   // P1-A0 STEP-04 (hrp-p1-a0-jobposting-authoring-publish): publishJobPosting
   // reads the linked JobOpening to gate JobOpening.status = OPEN. RLS-covered.
   // hrp-p1-a0-1 (2026-09-26): line number shifted to 787 because updateDraftContent
