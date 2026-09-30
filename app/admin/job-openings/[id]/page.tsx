@@ -16,7 +16,8 @@
  *     assignment + ALL preconditions met:
  *     (a) status === 'DRAFT'
  *     (b) serviceModel !== null
- *     (c) parent StaffingOrder.status ∈ {OPEN, CLOSING_SOON}
+ *     (c) parent StaffingOrder.status === 'OPEN' (STRICT; CLOSING_SOON is
+ *         NOT accepted — pre-audit correction batch 1/1 §D)
  *     (d) StaffingOrder.deadlineDate null OR >= now
  *     (e) StaffingOrderSlot.validTo null OR >= now
  *     (f) slotsFilled < slotsNeeded

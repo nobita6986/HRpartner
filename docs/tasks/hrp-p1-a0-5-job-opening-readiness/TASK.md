@@ -31,8 +31,8 @@
 | T0 planning integrity exceptions used | `1` (v1.2; explicitly authorized by T0 directive 2026-09-30 v1.2 §I; not counted against implementation correction budget; v1.3 is docs-only materialization with NO new planning exception) |
 | Correction budget | `1` |
 | Implementation correction budget | `1` (one consolidated batch after Tier 3 LIGHT audit; pre-audit budget — UNCHANGED by v1.3) |
-| Implementation correction batches used | `1` (T0 → T1C pre-audit CHANGES_REQUIRED batch 1/1 in flight at HEAD; planner rounds v1.0/v1.2/v1.3 did NOT consume implementation budget) |
-| Test environment | `READY` |
+| Implementation correction batches used | `1` (T0 → T1C pre-audit CHANGES_REQUIRED batch 1/1; the T1C continuation commit is a FORWARD-ONLY continuation of the SAME consumed batch -- NOT a new correction round. v1.0/v1.1/v1.2/v1.3 did NOT consume implementation budget) |
+| Test environment | `READY` (synthetic Neon writer/admin pair `ep-empty-forest-azlhfyo9-*` available via process-local environment) |
 | Current execution round | `1` (implementation round, TIER1_IMPLEMENTATION_FREEZE entry point) |
 | Current audit round | `0` (Tier 3 not called) |
 | Next gate | `T0_SYNTHETIC_DB_REPRODUCE` (T0 → T1C pre-audit CHANGES_REQUIRED §A; do NOT call Tier 3 until §M Real Gates genuinely pass and §N Real Freeze commits) |

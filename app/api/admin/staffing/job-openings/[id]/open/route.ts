@@ -16,7 +16,8 @@
  *   - JobOpening missing → 404 NOT_FOUND.
  *   - JobOpening not DRAFT → 409 INVALID_STATE_TRANSITION.
  *   - serviceModel null → 422 SERVICE_MODEL_REQUIRED.
- *   - Parent StaffingOrder not OPEN/CLOSING_SOON → 409 ORDER_NOT_OPEN.
+ *   - Parent StaffingOrder.status !== 'OPEN' (STRICT; CLOSING_SOON → 409
+ *     ORDER_NOT_OPEN, pre-audit correction batch 1/1 §D).
  *   - Slot / order deadline / over-filled → 409 SLOT_NOT_ELIGIBLE.
  *   - Same Idempotency-Key + same payload → 200 + `replayed: true`.
  *   - Same Idempotency-Key + different payload → 409 IDEMPOTENCY_CONFLICT.
