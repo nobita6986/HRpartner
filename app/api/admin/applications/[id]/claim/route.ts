@@ -1,9 +1,26 @@
 /**
- * /api/admin/applications/[submissionId]/claim/route.ts
+ * /api/admin/applications/[id]/claim/route.ts
  *
- * P1-A0.4 canonical candidate-claim route (correction batch 1/1).
+ * P1 runtime route-slug hotfix (hrp-p1-runtime-route-slug-hotfix).
  *
- * POST /api/admin/applications/[submissionId]/claim
+ * The Next.js dynamic-segment slug for this route was renamed from
+ * `[submissionId]` to the canonical `[id]` to eliminate the
+ * `You cannot use different slug names for the same dynamic path
+ * ('id' !== 'submissionId')` collision under `app/api/admin/applications/`
+ * that blocks the application from serving any request. The
+ * external HTTP URL is unchanged: clients still POST to
+ * `POST /api/admin/applications/<submission UUID>/claim`.
+ *
+ * Internally, the param is read as `resolved.id` and aliased to
+ * `submissionId` so the domain naming is preserved. The durable
+ * idempotency namespace key (`ROUTE_KEY`) intentionally stays
+ * `POST:/api/admin/applications/[submissionId]/claim` so existing
+ * replay records (keyed by the durable route key, not by the
+ * filesystem slug) continue to match. See HANDOFF.md §1 for the
+ * documented distinction between filesystem slug and durable
+ * idempotency namespace.
+ *
+ * P1-A0.4 canonical candidate-claim route (frozen contract).
  *
  * HR_STAFF only — assigned recruiters only. The order is derived server-side
  * via `CandidateSubmission -> slot -> StaffingOrder`. No client-supplied
@@ -33,10 +50,13 @@ const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: Promise<{ submissionId: string }> },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const resolved = await params;
-  const submissionId = resolved.submissionId;
+  // Domain naming preserved: the URL segment is `[id]` (canonical for the
+  // App Router route tree under `app/api/admin/applications/`), but the
+  // value semantically IS a submission UUID.
+  const submissionId = resolved.id;
   if (!UUID_V4.test(submissionId)) {
     return NextResponse.json(
       { error: 'INVALID_INPUT', message: 'submissionId must be UUID v4' },

@@ -1,0 +1,28 @@
+{
+  "endpoint": "GET /login",
+  "expected": "200/302/404 acceptable",
+  "actual": 200,
+  "bytes": 19238,
+  "passed": true
+}
+{
+  "endpoint": "POST /api/auth/login",
+  "expected": "200/401/404 acceptable",
+  "actual": 401,
+  "note": "unauthenticated POST, route-initialization succeeded",
+  "passed": true
+}
+{
+  "endpoint": "GET /viec-lam",
+  "expected": "200/302/404 acceptable",
+  "actual": 200,
+  "bytes": 82551,
+  "passed": true
+}
+{
+  "endpoint": "POST /api/admin/applications/00000000-0000-4000-8000-000000000000/claim",
+  "expected": "200/401/403/404 acceptable",
+  "actual": 401,
+  "note": "unauthenticated POST against moved route, route compiled as [id]/claim",
+  "passed": true
+}

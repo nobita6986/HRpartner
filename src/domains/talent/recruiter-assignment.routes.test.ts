@@ -11,6 +11,9 @@
  *   2. POST /api/admin/staffing/orders/[orderId]/recruiters/[assignmentId]/revoke
  *      (revokeRecruiterFromOrder)
  *   3. POST /api/admin/applications/[submissionId]/claim
+ *      (filesystem segment = `[id]` after the P1 route-slug hotfix; the
+ *      external HTTP URL is unchanged and the durable idempotency
+ *      namespace key remains `POST:/api/admin/applications/[submissionId]/claim`.)
  *      (claimCandidateSubmission)
  *
  * AC mapping (F-08 contract):
@@ -85,6 +88,7 @@ vi.mock('@/src/domains/talent/recruiter-assignment.service', () => {
 // Import AFTER mocks.
 import { AuthSessionError, getAuthContext } from '@/src/shared/auth/auth-context';
 import { withDbContext } from '@/src/shared/auth/with-db-context';
+import { withIdempotency } from '@/src/shared/integrity/idempotency';
 import {
   assignRecruiterToOrder,
   revokeRecruiterFromOrder,
@@ -94,7 +98,11 @@ import {
 
 import { POST as POST_ASSIGN } from '@/app/api/admin/staffing/orders/[orderId]/recruiters/route';
 import { POST as POST_REVOKE } from '@/app/api/admin/staffing/orders/[orderId]/recruiters/[assignmentId]/revoke/route';
-import { POST as POST_CLAIM } from '@/app/api/admin/applications/[submissionId]/claim/route';
+// P1 runtime route-slug hotfix: filesystem segment renamed from
+// `[submissionId]` to `[id]` to eliminate the App Router
+// dynamic-segment collision under `app/api/admin/applications/`.
+// External HTTP URL is unchanged; route context now uses `{ id }`.
+import { POST as POST_CLAIM } from '@/app/api/admin/applications/[id]/claim/route';
 
 const ORDER_X = '11111111-1111-4111-8111-111111111111';
 const ORDER_Y = '22222222-2222-4222-8222-222222222222';
@@ -408,7 +416,7 @@ describe('P1-A0.4 F-08 route layer — assign / revoke / claim', () => {
       const req = makeReq(`http://x/api/admin/applications/not-a-uuid/claim`, {
         idempotency: IDEMPOTENCY,
       });
-      const res = await POST_CLAIM(req, { params: paramsPromise({ submissionId: 'not-a-uuid' }) });
+      const res = await POST_CLAIM(req, { params: paramsPromise({ id: 'not-a-uuid' }) });
       expect(res.status).toBe(400);
       expect(claimCandidateSubmission).not.toHaveBeenCalled();
     });
@@ -418,7 +426,7 @@ describe('P1-A0.4 F-08 route layer — assign / revoke / claim', () => {
       const req = makeReq(`http://x/api/admin/applications/${SUBMISSION}/claim`, {
         idempotency: IDEMPOTENCY,
       });
-      const res = await POST_CLAIM(req, { params: paramsPromise({ submissionId: SUBMISSION }) });
+      const res = await POST_CLAIM(req, { params: paramsPromise({ id: SUBMISSION }) });
       expect(res.status).toBe(401);
       expect(claimCandidateSubmission).not.toHaveBeenCalled();
     });
@@ -428,7 +436,7 @@ describe('P1-A0.4 F-08 route layer — assign / revoke / claim', () => {
       const req = makeReq(`http://x/api/admin/applications/${SUBMISSION}/claim`, {
         idempotency: IDEMPOTENCY,
       });
-      const res = await POST_CLAIM(req, { params: paramsPromise({ submissionId: SUBMISSION }) });
+      const res = await POST_CLAIM(req, { params: paramsPromise({ id: SUBMISSION }) });
       expect(res.status).toBe(403);
       expect(claimCandidateSubmission).not.toHaveBeenCalled();
     });
@@ -436,7 +444,7 @@ describe('P1-A0.4 F-08 route layer — assign / revoke / claim', () => {
     it('returns 400 when Idempotency-Key is missing', async () => {
       vi.mocked(getAuthContext).mockResolvedValue({ userId: RECRUITER, role: 'HR_STAFF' } as any);
       const req = makeReq(`http://x/api/admin/applications/${SUBMISSION}/claim`, {});
-      const res = await POST_CLAIM(req, { params: paramsPromise({ submissionId: SUBMISSION }) });
+      const res = await POST_CLAIM(req, { params: paramsPromise({ id: SUBMISSION }) });
       expect(res.status).toBe(400);
       expect(claimCandidateSubmission).not.toHaveBeenCalled();
     });
@@ -457,7 +465,7 @@ describe('P1-A0.4 F-08 route layer — assign / revoke / claim', () => {
       const req = makeReq(`http://x/api/admin/applications/${SUBMISSION}/claim`, {
         idempotency: IDEMPOTENCY,
       });
-      const res = await POST_CLAIM(req, { params: paramsPromise({ submissionId: SUBMISSION }) });
+      const res = await POST_CLAIM(req, { params: paramsPromise({ id: SUBMISSION }) });
       expect(res.status).toBe(201);
       const body = await res.json();
       expect(body.claim.source).toBe('ORDER_RECRUITER_CLAIM');
@@ -484,7 +492,7 @@ describe('P1-A0.4 F-08 route layer — assign / revoke / claim', () => {
       const req = makeReq(`http://x/api/admin/applications/${SUBMISSION}/claim`, {
         idempotency: IDEMPOTENCY,
       });
-      const res = await POST_CLAIM(req, { params: paramsPromise({ submissionId: SUBMISSION }) });
+      const res = await POST_CLAIM(req, { params: paramsPromise({ id: SUBMISSION }) });
       expect(res.status).toBe(409);
       const body = await res.json();
       expect(body.error).toBe('HANDLING_ALREADY_CLAIMED');
@@ -506,11 +514,39 @@ describe('P1-A0.4 F-08 route layer — assign / revoke / claim', () => {
       const req = makeReq(`http://x/api/admin/applications/${SUBMISSION}/claim`, {
         idempotency: IDEMPOTENCY,
       });
-      const res = await POST_CLAIM(req, { params: paramsPromise({ submissionId: SUBMISSION }) });
+      const res = await POST_CLAIM(req, { params: paramsPromise({ id: SUBMISSION }) });
       expect(res.status).toBe(403);
       const body = await res.json();
       expect(body.error).toBe('NO_ACTIVE_ORDER_ASSIGNMENT');
       expect(JSON.stringify(body)).not.toContain('phone');
+    });
+
+    it('preserves the durable idempotency namespace key across the [submissionId] → [id] rename', async () => {
+      // The filesystem slug was renamed to satisfy Next.js routing, but the
+      // durable idempotency namespace MUST stay
+      // `POST:/api/admin/applications/[submissionId]/claim` so existing
+      // replay records continue to match. Asserting the route constant here
+      // prevents a future refactor from silently changing the namespace.
+      const expectedRouteKey = 'POST:/api/admin/applications/[submissionId]/claim';
+      vi.mocked(getAuthContext).mockResolvedValue({ userId: RECRUITER, role: 'HR_STAFF' } as any);
+      vi.mocked(claimCandidateSubmission).mockResolvedValueOnce({
+        handlingAssignmentId: 'ha-2',
+        submissionId: SUBMISSION,
+        staffingOrderId: ORDER_X,
+        slotId: 'slot-2',
+        laborProfileId: 'lp-2',
+        assigneeUserId: RECRUITER,
+        source: 'ORDER_RECRUITER_CLAIM',
+        startsAt: new Date(),
+        expiresAt: new Date(),
+      } as any);
+      const req = makeReq(`http://x/api/admin/applications/${SUBMISSION}/claim`, {
+        idempotency: IDEMPOTENCY,
+      });
+      await POST_CLAIM(req, { params: paramsPromise({ id: SUBMISSION }) });
+      expect(withIdempotency).toHaveBeenCalledWith(
+        expect.objectContaining({ route: expectedRouteKey }),
+      );
     });
   });
 });
