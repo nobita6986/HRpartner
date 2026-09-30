@@ -46,6 +46,6 @@ export async function POST(
     placementId,
     statusCode: 200,
     parseBody: validateEmptyBody,
-    run: (tx, ctx) => placementFail(tx, { actorId: ctx.userId, placementId }),
+    run: (tx, ctx) => placementFail(tx, { actorId: ctx.userId, actorRole: ctx.role, placementId }),
   });
 }

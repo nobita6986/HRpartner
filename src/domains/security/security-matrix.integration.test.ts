@@ -183,7 +183,13 @@ describe.skipIf(!enabled)('V5-M1-07b PLN-01 — truthful security matrix (13+2 r
     { key: 'client_statements', fixtureId: CST1, query: (tx, id) => tx.clientStatement.findMany({ where: { id }, select: { id: true } }) },
   ];
 
-  // ── Truthful VISIBLE sets — derived verbatim from m13 USING clauses + fixtures ─
+  // ── Truthful VISIBLE sets — derived verbatim from current RLS policies + fixtures ─
+  // P1-A0.4 v1.3 (correction batch 1): HR_STAFF is restricted to active-assignment-only
+  // on `outsourcing_projects` and `staffing_orders` — must NOT see rows via the prior
+  // claimable-open-unassigned posture. The fixture seeds a StaffingOrder WITHOUT any
+  // recruiter assignment, so HR_STAFF's visibility on these two tables is denied.
+  // HR_STAFF's actual path is via `assignRecruiterToOrder` + `claimCandidateSubmission`,
+  // not via raw SELECT on these tables.
   const VISIBLE: Record<string, Set<string>> = {
     workers: new Set(['ADMIN', 'HR_MANAGER', 'DIRECTOR', 'HR_STAFF', 'SALE', 'PM', 'VENDOR_ADMIN', 'VENDOR_STAFF', 'CTV', 'WORKER']),
     outsourcing_projects: new Set(['ADMIN', 'HR_MANAGER', 'DIRECTOR', 'SALE', 'PM', 'WORKER', 'MKT', 'VENDOR_ADMIN', 'VENDOR_STAFF', 'CTV']),

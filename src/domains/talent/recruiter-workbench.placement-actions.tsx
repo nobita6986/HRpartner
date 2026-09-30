@@ -53,6 +53,7 @@ import {
   type EffectiveEvidencePayload,
   type PlacementCommandName,
   type PlacementCommandPayloadShape,
+  type PlacementRouteFamily,
 } from './recruiter-workbench.placement-actions.states';
 
 export {
@@ -79,6 +80,19 @@ export interface PlacementActionCellProps {
     'caseId' | 'caseStatus' | 'placement' | 'placementOptions'
   > & { nextAction: ServerDerivedNextAction };
   /**
+   * F-04 / B-08: server-derived route family flag.
+   *   - `'admin'`     → ADMIN and HR_MANAGER; mutations POST to
+   *                     `/api/admin/placements[/...actions/<verb>]`.
+   *   - `'recruiter'` → HR_STAFF + view=MINE only; mutations POST to
+   *                     `/api/admin/recruiter/placements[/...actions/<verb>]`.
+   *
+   * Server F0 authorization remains canonical. This flag is purely the
+   * UX selector for which route family to target — and the server fails
+   * closed (403 ROLE_NOT_PERMITTED / 404 / 409 IDEMPOTENCY_CONFLICT) if
+   * the dual-authority predicate no longer holds.
+   */
+  placementRouteFamily: PlacementRouteFamily;
+  /**
    * Server-derived affordance flag (F-02). `true` only for ADMIN and
    * HR_MANAGER; every other role renders NO mutation affordance at all.
    * Server F0 authorization remains canonical; this flag is purely UX.
@@ -98,6 +112,7 @@ export interface PlacementActionCellProps {
  */
 export function PlacementActionCell({
   row,
+  placementRouteFamily,
   canMutatePlacement,
 }: PlacementActionCellProps): React.ReactElement {
   const [open, setOpen] = React.useState(false);
@@ -114,6 +129,7 @@ export function PlacementActionCell({
         data-testid="placement-action-cell"
         data-case-id={row.caseId}
         data-authorized="false"
+        data-route-family={placementRouteFamily}
       >
         <span className="text-xs text-slate-500" aria-hidden="true">
           —
@@ -129,6 +145,7 @@ export function PlacementActionCell({
         data-testid="placement-action-cell"
         data-case-id={row.caseId}
         data-authorized="true"
+        data-route-family={placementRouteFamily}
       >
         <span className="text-xs text-slate-500" aria-hidden="true">
           —
@@ -151,6 +168,7 @@ export function PlacementActionCell({
         data-testid="placement-action-cell"
         data-case-id={row.caseId}
         data-authorized="true"
+        data-route-family={placementRouteFamily}
       >
         <span className="text-xs text-slate-500" aria-hidden="true">
           —
@@ -165,6 +183,7 @@ export function PlacementActionCell({
       data-testid="placement-action-cell"
       data-case-id={row.caseId}
       data-authorized="true"
+      data-route-family={placementRouteFamily}
     >
       <button
         type="button"
@@ -179,6 +198,7 @@ export function PlacementActionCell({
       </button>
       <PlacementActionDrawer
         row={row}
+        placementRouteFamily={placementRouteFamily}
         open={open}
         onClose={() => setOpen(false)}
       />
@@ -192,6 +212,11 @@ export function PlacementActionCell({
 
 export interface PlacementActionDrawerProps {
   row: PlacementActionCellProps['row'];
+  /**
+   * F-04 / B-08: which F0 route family to POST to. Forwarded by
+   * `PlacementActionCell` from the page-level discriminator.
+   */
+  placementRouteFamily: PlacementRouteFamily;
   open: boolean;
   onClose: () => void;
 }
@@ -210,6 +235,7 @@ const INITIAL_DRAWER_STATE: DrawerState = {
 
 export function PlacementActionDrawer({
   row,
+  placementRouteFamily,
   open,
   onClose,
 }: PlacementActionDrawerProps): React.ReactElement | null {
@@ -254,6 +280,7 @@ export function PlacementActionDrawer({
 
     const result: PlacementCommandResult<unknown> =
       await runPlacementCommandRequest({
+        routeFamily: placementRouteFamily,
         command,
         payload,
       });

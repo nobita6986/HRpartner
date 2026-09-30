@@ -335,11 +335,15 @@ describe('buildPlacementCaseWhere', () => {
     // F-10: overdue=true must produce exactly two top-level OR branches:
     //   1. openedAt older than threshold (case-age form).
     //   2. laborProfile.handlingAssignments.some { ACTIVE, expiresAt < now }.
+    // C-14: the age branch uses `lte` (inclusive at exactly 72h) to mirror
+    // computeAge's `rawHours >= 72` decision authority.
     expect(where.OR).toBeDefined();
     expect(Array.isArray(where.OR)).toBe(true);
     expect(where.OR!.length).toBe(2);
-    const firstBranch = where.OR![0] as { openedAt: { lt: Date } };
-    expect(firstBranch.openedAt.lt).toBeInstanceOf(Date);
+    const firstBranch = where.OR![0] as { openedAt: { lte: Date } };
+    expect(firstBranch.openedAt.lte).toBeInstanceOf(Date);
+    // C-14: the stale `lt` operator MUST NOT appear on the age branch.
+    expect((firstBranch.openedAt as { lt?: unknown }).lt).toBeUndefined();
     // Second branch is the expired-handler relation traversal.
     const secondBranch = where.OR![1] as {
       laborProfile: { is: { handlingAssignments: { some: unknown } } };
@@ -350,14 +354,18 @@ describe('buildPlacementCaseWhere', () => {
     });
   });
 
-  it('overdue=false builds openedAt gte 72h AND no expired active handler', () => {
+  it('overdue=false builds openedAt gt 72h AND no expired active handler', () => {
     const ctx = makeAdminCtx();
     const where = buildPlacementCaseWhere(
       { ...baseFilter, overdue: false },
       ctx,
       NOW,
     );
+    // C-14: overdue=false uses `gt` (strictly above 72h) so the exactly-72h
+    // case is classified by overdue=true, never overdue=false.
     expect(where.openedAt).toBeDefined();
+    expect((where.openedAt as { gt?: unknown }).gt).toBeInstanceOf(Date);
+    expect((where.openedAt as { gte?: unknown }).gte).toBeUndefined();
     expect(where.laborProfile).toMatchObject({
       AND: expect.arrayContaining([
         {
@@ -560,8 +568,8 @@ describe('buildPlacementCaseWhere', () => {
     expect(Array.isArray(where.OR)).toBe(true);
     expect((where.OR as unknown[]).length).toBe(2);
 
-    // Branch 1: openedAt older than 72h threshold.
-    expect(where.OR?.[0]).toEqual({ openedAt: { lt: F10_AGE_THRESHOLD } });
+    // Branch 1: C-14 — openedAt at or older than 72h threshold (lte, inclusive at exactly 72h).
+    expect(where.OR?.[0]).toEqual({ openedAt: { lte: F10_AGE_THRESHOLD } });
 
     // Branch 2: relation traversal to a LaborProfile that has at least one
     // ACTIVE handlingAssignment with expiresAt < now.
@@ -644,15 +652,16 @@ describe('buildPlacementCaseWhere', () => {
     expect(orStr).not.toContain('staff-42');
   });
 
-  it('F-10 overdue=false: openedAt gte threshold + no expired ACTIVE in AND', () => {
+  it('F-10 overdue=false: openedAt gt threshold + no expired ACTIVE in AND', () => {
     const ctx = makeManagerCtx();
     const where = buildPlacementCaseWhere(
       { ...baseFilter, overdue: false },
       ctx,
       NOW,
     );
-    // openedAt gte age threshold.
-    expect(where.openedAt).toEqual({ gte: F10_AGE_THRESHOLD });
+    // C-14: openedAt gt age threshold (strictly above 72h) so the exactly-72h
+    // case is classified by overdue=true, never overdue=false.
+    expect(where.openedAt).toEqual({ gt: F10_AGE_THRESHOLD });
     // No top-level OR for overdue=false.
     expect(where.OR).toBeUndefined();
     // AND arm contains the "no expired ACTIVE" predicate.
@@ -673,6 +682,99 @@ describe('buildPlacementCaseWhere', () => {
   // (gated behind `describe.skipIf(!HAS_TEST_DB)`). The unit-level proof
   // here is the WHERE-clause shape — Prisma applies the two OR branches
   // independently against the rest of the where clause.
+
+  // ───────────────────────────────────────────────────────────────────
+  // C-14 (Round-9.2 boundary completion) — explicit operator assertions.
+  // The DB filter must mirror the locked `computeAge` rule exactly:
+  //   isOverdue = rawHours >= 72 OR handlerExpiresAt < now.
+  // Boundary semantics:
+  //   overdue=true  → openedAt <= threshold (lte, inclusive at exactly 72h)
+  //   overdue=false → openedAt >  threshold (gt, strictly above 72h)
+  // The handler-expired OR branch keeps its strict `lt` operator because
+  // `computeAge` uses `expiresAt < now`. These tests lock those operators
+  // so a future refactor cannot silently regress the boundary.
+  // ───────────────────────────────────────────────────────────────────
+  it('C-14: overdue=true age branch uses exactly { lte: threshold }', () => {
+    const ctx = makeManagerCtx();
+    const where = buildPlacementCaseWhere(
+      { ...baseFilter, overdue: true },
+      ctx,
+      NOW,
+    );
+    expect(where.OR).toBeDefined();
+    const branch0 = where.OR?.[0] as { openedAt: Record<string, unknown> };
+    expect(Object.keys(branch0.openedAt)).toEqual(['lte']);
+    expect(branch0.openedAt.lte).toEqual(F10_AGE_THRESHOLD);
+    // Stale operators MUST NOT appear on the age branch.
+    expect(branch0.openedAt.lt).toBeUndefined();
+    expect(branch0.openedAt.gt).toBeUndefined();
+    expect(branch0.openedAt.gte).toBeUndefined();
+  });
+
+  it('C-14: overdue=false uses exactly { gt: threshold } on openedAt', () => {
+    const ctx = makeManagerCtx();
+    const where = buildPlacementCaseWhere(
+      { ...baseFilter, overdue: false },
+      ctx,
+      NOW,
+    );
+    expect(where.openedAt).toBeDefined();
+    expect(Object.keys(where.openedAt as object)).toEqual(['gt']);
+    expect((where.openedAt as { gt: Date }).gt).toEqual(F10_AGE_THRESHOLD);
+    // Stale operators MUST NOT appear on openedAt.
+    expect((where.openedAt as Record<string, unknown>).lt).toBeUndefined();
+    expect((where.openedAt as Record<string, unknown>).lte).toBeUndefined();
+    expect((where.openedAt as Record<string, unknown>).gte).toBeUndefined();
+  });
+
+  it('C-14: overdue=true OR-age operator matches computeAge boundary (lte)', () => {
+    // Boundary equivalence proof at the unit level: `computeAge` classifies
+    // exactly 72h as `isOverdue=true` (rawHours >= 72). The DB filter MUST
+    // therefore include the exactly-72h case in the overdue=true branch.
+    const ctx = makeManagerCtx();
+    const where = buildPlacementCaseWhere(
+      { ...baseFilter, overdue: true },
+      ctx,
+      NOW,
+    );
+    // openedAt exactly at the threshold MUST appear in the OR-age branch
+    // (the operator is inclusive `lte`).
+    const branch0 = where.OR![0] as { openedAt: { lte: Date } };
+    expect(branch0.openedAt.lte.getTime()).toBe(F10_AGE_THRESHOLD.getTime());
+    // Mirror: the exactly-72h case is excluded from overdue=false (`gt`).
+    const overdueFalseWhere = buildPlacementCaseWhere(
+      { ...baseFilter, overdue: false },
+      ctx,
+      NOW,
+    );
+    const gtOp = (overdueFalseWhere.openedAt as { gt: Date }).gt;
+    // The threshold must be ≤ `gt` (i.e. NOT above `gt`), which is what
+    // excludes the exactly-72h case from overdue=false.
+    expect(F10_AGE_THRESHOLD.getTime() <= gtOp.getTime()).toBe(true);
+  });
+
+  it('C-14: overdue=true OR second branch keeps strict `lt` on handler expiresAt', () => {
+    // The handler-expired branch uses `expiresAt < now` to match
+    // `computeAge`'s strict `handlerExpiresAt.getTime() < now.getTime()`.
+    // Must NOT regress to `lte` (would incorrectly mark the boundary
+    // `handlerExpiresAt === now` as expired).
+    const ctx = makeManagerCtx();
+    const where = buildPlacementCaseWhere(
+      { ...baseFilter, overdue: true },
+      ctx,
+      NOW,
+    );
+    const secondBranch = where.OR?.[1] as {
+      laborProfile: {
+        is: {
+          handlingAssignments: { some: { expiresAt: Record<string, unknown> } };
+        };
+      };
+    };
+    const expiresOp = secondBranch.laborProfile.is.handlingAssignments.some.expiresAt;
+    expect(Object.keys(expiresOp)).toEqual(['lt']);
+    expect((expiresOp as { lt: Date }).lt).toEqual(NOW);
+  });
 });
 
 // ═══════════════════════════════════════════════════════════════════════════

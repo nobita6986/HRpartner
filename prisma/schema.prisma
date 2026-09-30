@@ -172,6 +172,11 @@ model User {
   createdHandlingAssignments LaborProfileHandlingAssignment[] @relation("AssignedByAssignments")
   referralAttributions ReferralAttribution[]
 
+  // P1-A0.4 — Scoped Recruiter Authority: back-relations for StaffingOrderRecruiterAssignment.
+  recruiterOrderAssignments     StaffingOrderRecruiterAssignment[] @relation("OrderRecruiter")
+  recruiterOrderAssignmentsMade StaffingOrderRecruiterAssignment[] @relation("OrderRecruiterAssignedBy")
+  recruiterOrderAssignmentsRevoked StaffingOrderRecruiterAssignment[] @relation("OrderRecruiterRevokedBy")
+
   // AV1 — singleton HomepageSettings updater
   homepageSettingsUpdates HomepageSettings[]
 
@@ -423,9 +428,64 @@ model StaffingOrder {
   slots       StaffingOrderSlot[]
   jobOpenings JobOpening[]        @relation("OpeningOnOrder")
   assignments ProjectAssignment[]
+  // P1-A0.4 — Scoped Recruiter Authority: HR_MANAGER-bound recruiter assignment aggregate.
+  // One active assignment per (order, recruiter); a closed slot in a different order must not
+  // bleed. RLS policy is in 20260928220000_p1a04_scoped_recruiter_authority migration.
+  recruiterAssignments StaffingOrderRecruiterAssignment[]
 
   @@index([projectId, status])
   @@map("staffing_orders")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// P1-A0.4 — StaffingOrderRecruiterAssignment (additive aggregate)
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// DEC-02 / DEC-05: a recruiter (HR_STAFF) is ASSIGNED to a StaffingOrder by an
+// HR_MANAGER. At most one ACTIVE assignment per (order, recruiter) is allowed —
+// enforced by the partial unique index
+// `staffing_order_recruiter_assignments_active_unique_idx` (migration
+// 20260928220000_p1a04_scoped_recruiter_authority).
+//
+// Lifecycle:
+//   ACTIVE → REVOKED (deterministic, dual-DB-connection mutex)
+//
+// Source values:
+//   HR_MANAGER_ASSIGN — admin/HR_MANAGER POSTed an assignment. The only
+//     supported source. The DB-level CHECK constraint rejects any other
+//     value at INSERT (verified by AC-18 / static post-migration assertion
+//     9.x). HR_STAFF self-claim of an order is NOT permitted; the canonical
+//     HR_STAFF flow is `claimCandidateSubmission` on a submission attached
+//     to the order, which creates a LaborProfileHandlingAssignment with
+//     source='ORDER_RECRUITER_CLAIM' (different aggregate, different table).
+//
+// This is a separate aggregate from `LaborProfileHandlingAssignment` (the
+// latter tracks who handles a *LaborProfile*; this one tracks who is the
+// recruiter of an *order*). Placement mutations in P1-A0.4 require BOTH
+// aggregates to be ACTIVE for the caller (dual authority, F-03).
+model StaffingOrderRecruiterAssignment {
+  id                String   @id @default(uuid())
+  staffingOrderId   String   @map("staffing_order_id")
+  recruiterUserId   String   @map("recruiter_user_id")
+  assignedByUserId  String   @map("assigned_by_user_id") // HR_MANAGER/ADMIN that issued the assignment
+  source            String   // HR_MANAGER_ASSIGN (only)
+  status            String   // ACTIVE | REVOKED
+  reason            String?  @db.Text
+  assignedAt        DateTime @map("assigned_at")
+  revokedAt         DateTime? @map("revoked_at")
+  revokedByUserId   String?  @map("revoked_by_user_id")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  version           Int      @default(1)
+
+  staffingOrder StaffingOrder @relation(fields: [staffingOrderId], references: [id], onDelete: Cascade)
+  recruiter     User         @relation("OrderRecruiter", fields: [recruiterUserId], references: [id])
+  assignedBy    User         @relation("OrderRecruiterAssignedBy", fields: [assignedByUserId], references: [id])
+  revokedBy     User?        @relation("OrderRecruiterRevokedBy", fields: [revokedByUserId], references: [id])
+
+  @@index([staffingOrderId, status])
+  @@index([recruiterUserId, status])
+  @@map("staffing_order_recruiter_assignments")
 }
 
 model StaffingOrderSlot {

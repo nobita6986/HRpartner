@@ -524,7 +524,13 @@ describe('RecruiterWorkbenchPage (server component)', () => {
     expect(html).toContain('data-authorized="true"');
   });
 
-  it('F2-PG03: HR_STAFF → placement action cell is NOT mutating (data-authorized=false)', async () => {
+  it('F2-PG03: HR_STAFF + view=MINE → placement action cell IS mutating (data-authorized=true) AND threaded route-family=recruiter', async () => {
+    // F-04 / B-08: HR_STAFF + view=MINE is the only HR_STAFF combination
+    // that yields mutation affordance — it targets the B-08 recruiter
+    // surface. The page-level discriminator computes both
+    // `canMutatePlacement=true` AND `placementRouteFamily='recruiter'`
+    // from the same role+view pair, so the cell renders the trigger and
+    // threads the route family.
     mockedSession.mockResolvedValueOnce({
       userId: 'staff-1',
       role: 'HR_STAFF',
@@ -536,8 +542,12 @@ describe('RecruiterWorkbenchPage (server component)', () => {
       pageSize: 20,
     });
     const html = await renderPage({});
-    expect(html).toContain('data-authorized="false"');
-    expect(html).not.toContain('Mở bố trí');
+    expect(html).toContain('data-authorized="true"');
+    expect(html).toContain('data-route-family="recruiter"');
+    expect(html).toContain('Mở bố trí');
+    // Adversarial: HR_STAFF + view=MINE MUST NOT silently fall back to
+    // the admin route family.
+    expect(html).not.toContain('data-route-family="admin"');
   });
 
   it('F2-PG04: page renders the table even when nextAction is not REVIEW_PLACEMENT (no row affordance)', async () => {
@@ -551,5 +561,18 @@ describe('RecruiterWorkbenchPage (server component)', () => {
     const html = await renderPage({});
     expect(html).not.toContain('Mở bố trí');
     expect(html).toContain('data-testid="workbench-row"');
+  });
+
+  it('F2-PG05: ADMIN + view=ALL → cell is mutating with route-family=admin (canonical F0 surface)', async () => {
+    mockedSession.mockResolvedValueOnce({ userId: 'admin-1', role: 'ADMIN' });
+    mockedService.mockResolvedValueOnce({
+      items: [ADMIN_ROW],
+      total: 1,
+      page: 1,
+      pageSize: 20,
+    });
+    const html = await renderPage({});
+    expect(html).toContain('data-authorized="true"');
+    expect(html).toContain('data-route-family="admin"');
   });
 });

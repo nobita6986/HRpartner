@@ -488,11 +488,28 @@ export default function StaffingListClient({ canCreate }: StaffingListClientProp
                 {orders.map((o, i) => (
                   <tr
                     key={o.id}
+                    data-testid={`staffing-order-row-${o.id}`}
                     className="transition-colors duration-150 ease-out hover:bg-[var(--color-surface-container)]"
                     style={{ borderBottom: i < orders.length - 1 ? '1px solid var(--outline-variant)' : 'none' }}
                   >
-                    <td style={{ color: 'var(--primary)' }} className="px-4 py-3 font-mono text-xs">{o.code}</td>
-                    <td style={{ color: 'var(--on-surface)' }} className="px-4 py-3">{o.title}</td>
+                    <td style={{ color: 'var(--primary)' }} className="px-4 py-3 font-mono text-xs">
+                      <Link
+                        href={`/admin/staffing-orders/${o.id}`}
+                        data-testid={`staffing-order-link-${o.id}`}
+                        className="underline-offset-2 hover:underline"
+                      >
+                        {o.code}
+                      </Link>
+                    </td>
+                    <td style={{ color: 'var(--on-surface)' }} className="px-4 py-3">
+                      <Link
+                        href={`/admin/staffing-orders/${o.id}`}
+                        data-testid={`staffing-order-detail-${o.id}`}
+                        className="hover:underline"
+                      >
+                        {o.title}
+                      </Link>
+                    </td>
                     <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">{o.project?.name ?? o.project?.code ?? '—'}</td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-1">

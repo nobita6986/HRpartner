@@ -112,6 +112,7 @@ export async function POST(
     run: (tx, ctx, value) =>
       placementEffective(tx, {
         actorId: ctx.userId,
+        actorRole: ctx.role,
         placementId,
         evidence: value.evidence,
       }),

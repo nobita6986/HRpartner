@@ -116,7 +116,12 @@ describe('L2 RLS — §5.7 chống leak (counts/aggregates scoped)', () => {
     expect(n).toBe(0);
   });
 
-  it('HR_STAFF + projects → 0 (HR_STAFF không có scope project)', async () => {
+  // P1-A0.4 v1.3 (correction batch 1): HR_STAFF is restricted to active-assignment-only
+  // for `outsourcing_projects`. The prior claimable-OPEN-unassigned narrow RLS
+  // (`hrp_sora_projects_claimable_select`) was DROPPED in favor of additive policies
+  // limited to recruiters with an ACTIVE `StaffingOrderRecruiterAssignment`. The matrix
+  // account user `matrix-test` has no assignment, so HR_STAFF sees zero rows.
+  it('HR_STAFF + projects → 0 (no active assignment on matrix-test user)', async () => {
     const prisma = getPrisma();
     const n = await queryInScope(prisma, 'HR_STAFF', 'outsourcing_projects');
     expect(n).toBe(0);

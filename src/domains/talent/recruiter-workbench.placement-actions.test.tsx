@@ -113,6 +113,7 @@ describe('PlacementActionCell', () => {
           nextAction: 'NONE',
         }),
         canMutatePlacement: true,
+        placementRouteFamily: 'admin',
       }),
     );
     expect(html).toContain('—');
@@ -130,6 +131,7 @@ describe('PlacementActionCell', () => {
           nextAction: 'REVIEW_PLACEMENT',
         }),
         canMutatePlacement: true,
+        placementRouteFamily: 'admin',
       }),
     );
     expect(html).toContain('placement-stale-alert');
@@ -148,6 +150,7 @@ describe('PlacementActionCell', () => {
           nextAction: 'OPEN_INTAKE',
         }),
         canMutatePlacement: true,
+        placementRouteFamily: 'admin',
       }),
     );
     expect(html).toContain('—');
@@ -165,6 +168,7 @@ describe('PlacementActionCell', () => {
           nextAction: 'REVIEW_PLACEMENT',
         }),
         canMutatePlacement: true,
+        placementRouteFamily: 'admin',
       }),
     );
     expect(html).toContain('Mở bố trí');
@@ -182,6 +186,7 @@ describe('PlacementActionCell', () => {
           nextAction: 'REVIEW_PLACEMENT',
         }),
         canMutatePlacement: true,
+        placementRouteFamily: 'admin',
       }),
     );
     expect(html).toContain('Mở bố trí');
@@ -201,6 +206,7 @@ describe('PlacementActionCell', () => {
           nextAction: 'REVIEW_PLACEMENT',
         }),
         canMutatePlacement: true,
+        placementRouteFamily: 'admin',
       }),
     );
     expect(html).toContain('Mở bố trí');
@@ -233,6 +239,7 @@ describe('F-02 / AC-03 role gate (canMutatePlacement=false)', () => {
             nextAction: 'REVIEW_PLACEMENT',
           }),
           canMutatePlacement: r.canMutate,
+          placementRouteFamily: 'admin',
         }),
       );
       expect(html).not.toContain('Mở bố trí');
@@ -252,6 +259,7 @@ describe('F-02 / AC-03 role gate (canMutatePlacement=false)', () => {
             nextAction: 'REVIEW_PLACEMENT',
           }),
           canMutatePlacement: r.canMutate,
+          placementRouteFamily: 'admin',
         }),
       );
       expect(html).not.toContain('placement-drawer');
@@ -271,6 +279,7 @@ describe('F-02 / AC-03 role gate (canMutatePlacement=false)', () => {
           nextAction: 'REVIEW_PLACEMENT',
         }),
         canMutatePlacement: true,
+        placementRouteFamily: 'admin',
       }),
     );
     expect(html).toContain('Mở bố trí');
@@ -288,6 +297,7 @@ describe('F-02 / AC-03 role gate (canMutatePlacement=false)', () => {
           nextAction: 'REVIEW_PLACEMENT',
         }),
         canMutatePlacement: true,
+        placementRouteFamily: 'admin',
       }),
     );
     expect(html).toContain('Mở bố trí');
@@ -322,6 +332,7 @@ describe('F-06 / AC-16 nextAction matrix (7 closed enum values)', () => {
             nextAction: next,
           }),
           canMutatePlacement: true,
+        placementRouteFamily: 'admin',
         }),
       );
       expect(html).not.toContain('Mở bố trí');
@@ -338,6 +349,7 @@ describe('F-06 / AC-16 nextAction matrix (7 closed enum values)', () => {
             nextAction: next,
           }),
           canMutatePlacement: true,
+        placementRouteFamily: 'admin',
         }),
       );
       expect(html).toContain('placement-stale-alert');
@@ -355,6 +367,7 @@ describe('F-06 / AC-16 nextAction matrix (7 closed enum values)', () => {
           nextAction: 'REVIEW_PLACEMENT',
         }),
         canMutatePlacement: true,
+        placementRouteFamily: 'admin',
       }),
     );
     expect(html).toContain('Mở bố trí');
@@ -386,6 +399,7 @@ describe('F-05 / SlideOutDrawer adoption', () => {
           nextAction: 'REVIEW_PLACEMENT',
         }),
         canMutatePlacement: true,
+        placementRouteFamily: 'admin',
       }),
     );
     expect(html).toContain('placement-action-open');
@@ -412,6 +426,7 @@ describe('HRP-managed restrictions preserved (LOCK-15)', () => {
           nextAction: 'REVIEW_PLACEMENT',
         }),
         canMutatePlacement: true,
+        placementRouteFamily: 'admin',
       }),
     );
     expect(html).toContain('Mở bố trí');
@@ -470,6 +485,7 @@ describe('safe inline status / alert (LOCK-07)', () => {
           nextAction: 'REVIEW_PLACEMENT',
         }),
         canMutatePlacement: true,
+        placementRouteFamily: 'admin',
       }),
     );
     expect(html).toContain('role="alert"');
@@ -492,6 +508,7 @@ describe('no client-side audit log / no timeline (LOCK-08)', () => {
           nextAction: 'REVIEW_PLACEMENT',
         }),
         canMutatePlacement: true,
+        placementRouteFamily: 'admin',
       }),
     );
     expect(html).not.toContain('placement.timeline');
@@ -515,6 +532,7 @@ describe('Drawer structural conformance (single-row, no bulk)', () => {
           nextAction: 'REVIEW_PLACEMENT',
         }),
         canMutatePlacement: true,
+        placementRouteFamily: 'admin',
       }),
     );
     expect(html).not.toContain('bulk-action');
@@ -690,5 +708,102 @@ describe('C2-04: EffectiveEvidenceForm component-level invalid-timestamp wiring'
     );
     // The button is rendered with `disabled` attribute when pending.
     expect(html).toMatch(/disabled/);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// B-08 / F-04: HR_STAFF + view=MINE renders the placement trigger when
+// the row has an action AND `canMutatePlacement=true`. The cell
+// `data-route-family` attribute mirrors the family the page selected.
+// Server F0 authorization remains canonical; the UI flag is UX-only.
+// ─────────────────────────────────────────────────────────────────────────
+
+describe('B-08 / F-04: HR_STAFF + view=MINE render Placement actions', () => {
+  it('F1-WB-HR01: HR_STAFF + READY_TO_PLACE + options renders the trigger button with route-family=recruiter', () => {
+    const html = render(
+      createElement(PlacementActionCell, {
+        row: makeRowInput({
+          caseId: 'case-wb-hr1',
+          caseStatus: 'READY_TO_PLACE',
+          placement: null,
+          placementOptions: [makeOption({})],
+          nextAction: 'REVIEW_PLACEMENT',
+        }),
+        canMutatePlacement: true,
+        placementRouteFamily: 'recruiter',
+      }),
+    );
+    expect(html).toContain('Mở bố trí');
+    expect(html).toContain('placement-action-open');
+    expect(html).toContain('data-authorized="true"');
+    expect(html).toContain('data-route-family="recruiter"');
+    // Adversarial: the cell MUST NOT silently switch to admin family.
+    expect(html).not.toContain('data-route-family="admin"');
+  });
+
+  it('F1-WB-HR02: HR_STAFF + CONFIRMED + CLIENT_MANAGED renders the trigger for EFFECTIVE (recruiter family)', () => {
+    const html = render(
+      createElement(PlacementActionCell, {
+        row: makeRowInput({
+          caseId: 'case-wb-hr2',
+          caseStatus: 'READY_TO_PLACE',
+          placement: makePlacement({
+            status: 'CONFIRMED',
+            managementMode: 'CLIENT_MANAGED',
+          }),
+          placementOptions: null,
+          nextAction: 'REVIEW_PLACEMENT',
+        }),
+        canMutatePlacement: true,
+        placementRouteFamily: 'recruiter',
+      }),
+    );
+    expect(html).toContain('Mở bố trí');
+    expect(html).toContain('data-route-family="recruiter"');
+  });
+
+  it('F1-WB-AD01: ADMIN + READY_TO_PLACE + options renders the trigger button with route-family=admin', () => {
+    const html = render(
+      createElement(PlacementActionCell, {
+        row: makeRowInput({
+          caseId: 'case-wb-ad1',
+          caseStatus: 'READY_TO_PLACE',
+          placement: null,
+          placementOptions: [makeOption({})],
+          nextAction: 'REVIEW_PLACEMENT',
+        }),
+        canMutatePlacement: true,
+        placementRouteFamily: 'admin',
+      }),
+    );
+    expect(html).toContain('Mở bố trí');
+    expect(html).toContain('placement-action-open');
+    expect(html).toContain('data-route-family="admin"');
+  });
+
+  it('F1-WB-NR01: HR_STAFF + view≠MINE (defensive branch, unreachable in production) renders NO affordance', () => {
+    // Even if a future contributor wires HR_STAFF through the page with
+    // view≠MINE by mistake, the cell still gates on `canMutatePlacement`.
+    // The view gate lives at the page level; this test only verifies the
+    // cell is consistent.
+    const html = render(
+      createElement(PlacementActionCell, {
+        row: makeRowInput({
+          caseId: 'case-wb-nr1',
+          caseStatus: 'READY_TO_PLACE',
+          placement: null,
+          placementOptions: [makeOption({})],
+          nextAction: 'REVIEW_PLACEMENT',
+        }),
+        canMutatePlacement: false,
+        placementRouteFamily: 'recruiter',
+      }),
+    );
+    expect(html).not.toContain('Mở bố trí');
+    expect(html).toContain('data-authorized="false"');
+    // The forbidden cell still carries the route-family attribute so a
+    // test asserting server-side role enforcement can confirm the cell
+    // was rendered for the recruiter family.
+    expect(html).toContain('data-route-family="recruiter"');
   });
 });
