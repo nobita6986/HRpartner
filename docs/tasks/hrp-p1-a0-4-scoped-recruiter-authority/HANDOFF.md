@@ -8,7 +8,7 @@
 | --- | --- |
 | Task slug | `hrp-p1-a0-4-scoped-recruiter-authority` |
 | Spec version | `v1.3` |
-| Status | `READY_FOR_AUDIT` |
+| Status | `ACCEPTED` (T0 closeout 2026-09-30: Tier 3 LIGHT PASS, 50/50 AC, PR #67 merged into `main` at `12460cf55d77f193225e54cf4b8e1c1dfc8eaf59`; production migration/deploy deferred to the VPS release cutover; two P1 release blockers `P1_RELEASE_BLOCKER_SERVICE_MODEL_CLASSIFY` and `P1_RELEASE_BLOCKER_JOB_OPENING_ACTIVATION` are transferred to P1-A0.5 — they remain blocking P1 release as a whole and are NOT resolved in this closeout) |
 | Worktree | `C:\CodeApp\HrP-t1c-p1a04-impl` |
 | Branch | `codex/t1c-p1a04-scoped-recruiter-authority-impl` |
 | Baseline | `f3a3d1a46e2e4a26103c9bf318b67cba21bdfcf7` |
@@ -22,8 +22,8 @@
 | Implementation SHA | `2056c408283b1f0281ce0ca3b4117c25df82b239` |
 | Docs/evidence freeze SHA | `da0834665642721ea9f3f3a35b0ee2f72aaafcf3` |
 | Prior pin/update HEAD | `967f8fe5e4f8388e631c089528d9abfc25cea9e1` |
-| Audit-target HEAD (this round) | `_audit_target_` (forward-only docs/control commit on top of `967f8fe5`; no semantic change; replaced with this round's SHA at commit time — `2056c408` and `da083466` and `967f8fe5` are preserved by construction) |
-| Predecessor chain preserved | `7ad217fd` → `1d459db` → `7f9e06b0` → `8bc023f` → `bb47ff85` → `6959c975` → `a011457d` → `3b1898f5` → `2056c408` → `da0834665642721ea9f3f3a35b0ee2f72aaafcf3` (no amend/reset/rebase/force-push) |
+| Audit-target HEAD | `7d314fd2b4dc2d32eb5f035b9f00e33a04c3d07a` (Tier 3 LIGHT audit at `0f480f91`; `2056c408` and `da083466` and `967f8fe5` are preserved by construction) |
+| Predecessor chain preserved | `7ad217fd` → `1d459db` → `7f9e06b0` → `8bc023f` → `bb47ff85` → `6959c975` → `a011457d` → `3b1898f5` → `2056c408` → `da0834665642721ea9f3f3a35b0ee2f72aaafcf3` → `967f8fe5` (H-16 pin) → `7d314fd2` (Audit-target HEAD) → `0f480f91` (Audit-adoption SHA) → `be64e369` (Up-to-date branch merge SHA) → `12460cf55` (Production merge SHA, PR #67) → `<this closeout commit>` (no amend/reset/rebase/force-push) |
 | Delivery protocol | `V2_FAST_FREEZE` |
 | Correction batches used | `1` |
 | Correction batches used — note | Round-2 batch was the only T1C correction batch consumed; rounds 3, 4, 5, 6, 7, 8, 9, 9.2, 9.3 are T0-mandated blocker repairs / integrity exceptions / freeze authorization on top of it, NOT new T1C correction budgets |
@@ -33,15 +33,17 @@
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
 | Execution round | `9.3` (round-1 CONTRACT_MISMATCH; round-2 canonical correction; round-3 F-01..F-08 pre-audit exception; round-4 terminal doc freeze; round-5 R3 pre-audit integrity exception — semantic closure; round-6 R3 docs/evidence freeze; round-7 R3-B01..B05 blocker repair; round-8 R3-B06..B09 blocker repair; round-9 runtime correction; round-9.2 final canonical correction; round-9.3 terminal semantic + docs freeze authorization) |
-| Current audit round | `0` |
-| Next gate | `TIER3_LIGHT_AUDIT` (semantic + docs frozen; T0 reproduce PASS ×3 on synthetic DB; frozen delivery YES; canonical gates PASS; C-04 = PASS) |
+| Current audit round | `1` (Tier 3 LIGHT audit at AUDIT.md commit `0f480f91af11d414e603113518296bde9c388cb4`; verdict `PASS`; 50/50 AC PASS; 5 P3 non-blocking findings AUD-001..AUD-005) |
+| Next gate | `NONE — MERGED; production migration/deploy deferred to the VPS release cutover` |
 | T0 R3 integrity closure exceptions used | `3` (R3-F01..R3-F08 round-6; R3-B01..B05 round-7; R3-B06..B09 round-8) |
 | T0 R3-B01..B05 blocker repair exceptions used | `1` (R3-B01..B05 — T0 directive 2026-09-29 first CHANGES_REQUIRED) |
 | T0 R3-B06..B09 blocker repair exceptions used | `1` (R3-B06..B09 — T0 directive 2026-09-29 second CHANGES_REQUIRED) |
 | T0 runtime correction exceptions used | `2` (round-9 C-01..C-11 — T0 directive 2026-09-29 third CHANGES_REQUIRED; round-9.2 C-12 + C-13 — T0 directive 2026-09-29 fourth CHANGES_REQUIRED) |
 | Synthetic DB preflight | `PASS` (Neon `ep-empty-forest-azlhfyo9-*`; PG 18.6) |
 | Production DB/migration | `NOT_RUN` |
-| P1 release blockers visible | `P1_RELEASE_BLOCKER_JOB_OPENING_ACTIVATION` (§4.5), `P1_RELEASE_BLOCKER_SERVICE_MODEL_CLASSIFY` (§4.6) — both block P1 release independent of A0.4 outcome; P1-A0.4 audit eligibility is NOT gated on them |
+| Production merge SHA | `12460cf55d77f193225e54cf4b8e1c1dfc8eaf59` (PR #67 merged into `main` on 2026-09-30; up-to-date branch merge SHA `be64e369db28058c4afae5495cad321e6f956cdd` preserved by construction) |
+| Audit verdict | `PASS — accepted by T0` (Tier 3 LIGHT audit round 1 at AUDIT.md commit `0f480f91af11d414e603113518296bde9c388cb4`; 50/50 AC PASS; 5 P3 non-blocking findings AUD-001..AUD-005) |
+| P1 release blockers visible | `P1_RELEASE_BLOCKER_JOB_OPENING_ACTIVATION` (§4.5), `P1_RELEASE_BLOCKER_SERVICE_MODEL_CLASSIFY` (§4.6) — both block P1 release independent of A0.4 outcome; P1-A0.4 audit eligibility is NOT gated on them. **Transfer note (2026-09-30)**: both blockers are TRANSFERRED to P1-A0.5 (`hrp-p1-a0-5-job-opening-readiness`) — they remain OPEN and continue to block P1 release as a whole; they are NOT resolved in this A0.4 closeout. |
 
 ## 1. Outcome and changed surface
 
@@ -359,11 +361,12 @@ Carried over from prior rounds. No new movement in round-9.2. T0 must materializ
 
 ## 5. Final status
 
-- Status: `READY_FOR_AUDIT` (round-9.3 terminal semantic + docs freeze authorization per T0 directive 2026-09-29; Implementation SHA `2056c408283b1f0281ce0ca3b4117c25df82b239` carries the consolidated round-9.1 (C-01..C-03 + C-05..C-11) + round-9.2 (C-12 + C-13) + round-9.3 (`:649 → :676` static-guard historical comment) corrections; C-04 verification gate = `PASS`; T0 reproduce ×3 on synthetic DB `ep-empty-forest-azlhfyo9-*` = PASS; frozen delivery YES; canonical gates PASS; audit eligibility ELIGIBLE)
+- Status: `ACCEPTED` (T0 closeout 2026-09-30: Tier 3 LIGHT PASS at AUDIT.md commit `0f480f91af11d414e603113518296bde9c388cb4`, 50/50 AC PASS, 5 P3 non-blocking findings AUD-001..AUD-005; PR #67 merged into `main` at `12460cf55d77f193225e54cf4b8e1c1dfc8eaf59`; Implementation SHA `2056c408283b1f0281ce0ca3b4117c25df82b239` carries the consolidated round-9.1 (C-01..C-03 + C-05..C-11) + round-9.2 (C-12 + C-13) + round-9.3 (`:649 → :676` static-guard historical comment) corrections; C-04 verification gate = `PASS`; T0 reproduce ×3 on synthetic DB `ep-empty-forest-azlhfyo9-*` = PASS; frozen delivery YES; canonical gates PASS; audit eligibility ELIGIBLE; production migration/deploy deferred to the VPS release cutover)
 - Assurance lane: `CRITICAL`
 - Audit mode: `LIGHT`
-- Audit eligibility: `ELIGIBLE` (semantic + docs frozen in `2056c408`; canonical gates PASS; T0 reproduce PASS ×3 on synthetic DB; C-04 = PASS; P1 release blockers visible but do not gate P1-A0.4 audit eligibility)
-- Frozen delivery: `YES` (round-9.3 freeze landed in Implementation SHA `2056c408`; T0 reproduce PASS ×3; canonical gates PASS; C-04 = PASS)
+- Audit verdict: `PASS — accepted by T0` (Tier 3 LIGHT audit round 1 at AUDIT.md commit `0f480f91af11d414e603113518296bde9c388cb4`; 50/50 AC PASS)
+- Audit eligibility: `ELIGIBLE` (semantic + docs frozen in `2056c408`; canonical gates PASS; T0 reproduce PASS ×3 on synthetic DB; C-04 = PASS; P1 release blockers visible but do not gate P1-A0.4 audit eligibility; Tier 3 LIGHT PASS adopted 2026-09-30)
+- Frozen delivery: `YES` (round-9.3 freeze landed in Implementation SHA `2056c408`; T0 reproduce PASS ×3; canonical gates PASS; C-04 = PASS; Tier 3 LIGHT PASS; merged into `main` at `12460cf55d77f193225e54cf4b8e1c1dfc8eaf59`)
 - Delivery protocol: `V2_FAST_FREEZE`
 - Canonical gates (non-runtime): PASS — semantic surface frozen in `2056c408`; R3-B06 (deterministic race gates), R3-B07 (PlacementCase on-demand), R3-B08 (HR_STAFF placement transitions), R3-B09 (assignment UI operational) all repaired in round-8; round-9 + round-9.2 + round-9.3 corrections consolidated in `2056c408`; static guard line-number correction `:649 → :676` for `recruiter-workbench.read-service.ts` laborProfile hit landed in `2056c408`
 - Canonical gates (synthetic runtime): PASS — T0 reproduce ×3 on synthetic Neon `ep-empty-forest-azlhfyo9-*` PASS; C-04 = PASS; `p1a04-scoped-recruiter-authority` 19/19 PASS ×3; `p1a04-canonical-flow` 11/11 PASS ×3; `p1a04-r3-substantive` 7/7 PASS ×3; `recruiter-workbench.integration.test.ts` ×3 = 20/20/20 PASS; `recruiter-workbench.derive.test.ts` 50/50; `recruiter-workbench.read-service.test.ts` 73/73; `recruiter-assignment.routes.test.ts` 21/21; `recruiter-assignment.ui.test.ts` 7/7; `assignment-placement.routes.test.ts` 45/45; `recruiter-placement.adapter.test.ts` 10/10; `recruiter-placement.routes.test.ts` 21/21; `recruiter-placement.routes-transitions.test.ts` 23/23; `recruiter-assignment.manager.component.test.tsx` 33/33; `marketplace-inventory.static.test.ts` 47/47; required-relation sweep 11/11 / exactly 35 hits; full canonical strict 39/39 files / 642 passed / 2 skipped / 0 failed; full unit 205/205 files / 3418 passed / 9 skipped / 0 failed; typecheck PASS; lint 0 errors; build PASS; Prisma validate PASS; residue sweep all tracked tables = 0; `git diff --check` PASS; strict UTF-8 scan PASS
@@ -397,9 +400,10 @@ Carried over from prior rounds. No new movement in round-9.2. T0 must materializ
 - T0 R3 integrity closure exceptions used: `3` (R3-F01..R3-F08; R3-B01..B05; R3-B06..B09)
 - T0 runtime correction exceptions used: `2` (round-9 C-01..C-11; round-9.2 C-12 + C-13)
 - T0 freeze authorization exception used: `1` (round-9.3 freeze authorization per T0 directive 2026-09-29)
-- Next gate: `TIER3_LIGHT_AUDIT` (semantic + docs frozen; T0 reproduce PASS ×3 on synthetic DB; canonical gates PASS; C-04 = PASS)
+- Next gate: `NONE — MERGED; production migration/deploy deferred to the VPS release cutover`
 - Synthetic DB: PASS (Neon `ep-empty-forest-azlhfyo9-*`; PG 18.6); T0 reproduce ×3 PASS in round-9.3
 - Production DB/migration: `NOT_RUN`
+- Production merge SHA: `12460cf55d77f193225e54cf4b8e1c1dfc8eaf59` (PR #67 merged into `main` on 2026-09-30)
 - R3-B01..B05 handback SHA: `8bc023f8cee1c3e039a2347012619e3f3026f97b` (preserved)
 - R3-B06..B09 handback SHA: `6959c975140241ef6fa353bdf9063f3c4cbcd2f7` (preserved)
 - B-08 Workbench wiring SHA: `3b1898f5af5186f4b14072d3d3da9cd11e381b9b` (preserved; accepted semantically per T0 third CHANGES_REQUIRED; not modified in round-9 / round-9.2 / round-9.3)
@@ -408,11 +412,11 @@ Carried over from prior rounds. No new movement in round-9.2. T0 must materializ
 - Round-9.3 freeze authorization SHA: `2056c408283b1f0281ce0ca3b4117c25df82b239` (forward-only on top of `3b1898f5`; combines round-9.1 + round-9.2 + static-guard `:649 → :676` historical comment correction; T0 reproduce PASS ×3 on synthetic DB; promoted to freeze per T0 directive 2026-09-29 round-9.3)
 - Docs/evidence freeze SHA | `da0834665642721ea9f3f3a35b0ee2f72aaafcf3` (forward-only on top of `2056c408`; task-local evidence only; does NOT modify semantic surface)
 - Prior pin/update HEAD | `967f8fe5e4f8388e631c089528d9abfc25cea9e1` (H-16 control-field pin; forward-only on top of `da083466`; no semantic change)
-- Predecessor chain preserved: `7ad217fd` → `1d459db` → `7f9e06b0` → `8bc023f` → `bb47ff85` → `6959c975` → `a011457d` → `3b1898f5` → `2056c408` → `da083466` → `967f8fe5`
+- Predecessor chain preserved: `7ad217fd` → `1d459db` → `7f9e06b0` → `8bc023f` → `bb47ff85` → `6959c975` → `a011457d` → `3b1898f5` → `2056c408` → `da083466` → `967f8fe5` → `7d314fd2` (Audit-target HEAD) → `0f480f91` (Audit-adoption SHA) → `be64e369` (Up-to-date branch merge SHA) → `12460cf55` (Production merge SHA, PR #67) → `<this closeout commit>`
 - Working tree: clean after docs/evidence freeze commit
-- P1 release blockers visible: `P1_RELEASE_BLOCKER_JOB_OPENING_ACTIVATION` (§4.5) and `P1_RELEASE_BLOCKER_SERVICE_MODEL_CLASSIFY` (§4.6) — both remain blocking P1 release independent of A0.4 freeze outcome; P1-A0.4 audit eligibility is NOT gated on them
+- P1 release blockers visible: `P1_RELEASE_BLOCKER_JOB_OPENING_ACTIVATION` (§4.5) and `P1_RELEASE_BLOCKER_SERVICE_MODEL_CLASSIFY` (§4.6) — both remain blocking P1 release independent of A0.4 freeze outcome; P1-A0.4 audit eligibility is NOT gated on them. **Transfer note (2026-09-30)**: both blockers are TRANSFERRED to P1-A0.5 (`hrp-p1-a0-5-job-opening-readiness`) and remain OPEN — they are NOT resolved in this A0.4 closeout.
 
-Handoff status: READY_FOR_AUDIT
+Handoff status: ACCEPTED (T0 closeout 2026-09-30; PR #67 merged into `main` at `12460cf55d77f193225e54cf4b8e1c1dfc8eaf59`; production migration/deploy deferred to the VPS release cutover; both P1 release blockers transferred to P1-A0.5 and remain OPEN — they are NOT resolved in this closeout)
 
 ## 6. R3-B01..B05 handback expectations (T0 directive 2026-09-29)
 
