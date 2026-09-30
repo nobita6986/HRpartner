@@ -10,7 +10,7 @@
 | Accepted planning SHA | `dff23394471e4d654967246a81bb67ae06fb70af` |
 | Materialization SHA | `c6ae6cf4` |
 | Original implementation SHA | `00f076dc2b226d1fc0cfb745b368d434dd755890` |
-| Pre-audit correction commit SHA | (pinned by `git rev-parse HEAD` after the corrective commit lands; see §1.1) |
+| Pre-audit correction commit SHA | `4d99319f29b0185df7d67b2301cedd9c39c27692` (forward-only on top of `00f076dc...`) |
 | Baseline | `a64c81e954325091a78ec9fb7f441a094df5dcfc` (P1-A0.4 ACCEPTED closeout main) |
 | Status | `BLOCKED` |
 | Frozen delivery | `NO` |
@@ -54,19 +54,18 @@ genuinely pass and a Tier 3 LIGHT audit request can be made.
 
 ### 1.1 Pre-audit correction commit (this commit)
 
-- HEAD after the corrective commit (forward-only on top of the v1.3 docs-only
-  materialization at `c6ae6cf4` and the original implementation at
-  `00f076dc...`) will be pinned by running `git rev-parse HEAD` at the
-  freeze. The exact SHA is environment-dependent; this HANDOFF leaves the
-  pin to be recorded by `git rev-parse HEAD` in §1.2.
+- HEAD after the corrective commit: **`4d99319f29b0185df7d67b2301cedd9c39c27692`**
+  (forward-only on top of the v1.3 docs-only materialization at `c6ae6cf4` and
+  the original implementation at `00f076dc...`).
 
 ### 1.2 Pin mechanism
 
 After commit:
 
 ```bash
-git rev-parse HEAD
+git rev-parse HEAD   # → 4d99319f29b0185df7d67b2301cedd9c39c27692
 git diff --name-only a64c81e954325091a78ec9fb7f441a094df5dcfc..HEAD
+# → 8 paths, all inside the implementation allowlist
 ```
 
 Each file listed by the second command must be inside the implementation
@@ -286,13 +285,15 @@ deployment (LOCK-10).
 ## 5. Exact changed surface (AC-15)
 
 `git diff --name-only a64c81e954325091a78ec9fb7f441a094df5dcfc..HEAD`
-returns exactly the following allowlist paths:
+returns exactly the following allowlist paths (verified after the
+commit at `4d99319f...`):
 
 ```
 app/admin/job-openings/[id]/job-opening-actions.tsx
 app/admin/job-openings/[id]/page.tsx
 app/api/admin/staffing/job-openings/[id]/classify/route.ts
 app/api/admin/staffing/job-openings/[id]/open/route.ts
+docs/tasks/hrp-p1-a0-5-job-opening-readiness/HANDOFF.md
 docs/tasks/hrp-p1-a0-5-job-opening-readiness/TASK.md
 src/domains/staffing/job-opening-activation.service.test.ts
 src/domains/staffing/job-opening-activation.service.ts
@@ -300,8 +301,8 @@ src/domains/staffing/job-opening-activation.service.ts
 
 No path outside the implementation allowlist has been modified. No
 new untracked artifacts are present after `pnpm-lock.yaml` and
-`pnpm-workspace.yaml` removal. `git status` lists only the 7 modified
-files above.
+`pnpm-workspace.yaml` removal. `git status` lists only the 8 files
+above (after the SHA-pin docs commit lands).
 
 ## 6. Forbidden paths sweep
 
