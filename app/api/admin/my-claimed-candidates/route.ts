@@ -14,9 +14,11 @@
  * which is placement-case-centric and is the user-facing MINE UI surface.
  *
  * This endpoint exists for:
- *   - Programmatic access by the recruiter after a `POST /api/admin/
- *     applications/[submissionId]/claim` (the round-trip the recruiter
- *     flow needs to confirm the claim landed in the DB).
+ *   - Programmatic access by the recruiter after a
+ *     `POST /api/admin/applications/<submission UUID>/claim` (the
+ *     round-trip the recruiter flow needs to confirm the claim landed
+ *     in the DB). The route file's dynamic segment is `[id]` after the
+ *     P1 route-slug hotfix; the external URL is unchanged.
  *   - A narrower projection (no placement case, no DTO derivation, no
  *     next-action / age / overdue columns) that the claim flow can call
  *     without paying the Workbench DTO cost.

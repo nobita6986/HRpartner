@@ -12,6 +12,9 @@
  *   1. NO self-claim UI exists for `StaffingOrder` (the round-1
  *      self-claim-order surface is gone). The only "claim" affordance is
  *      the canonical `CandidateSubmission` claim, not an order claim.
+ *      The canonical claim route is at
+ *      `/api/admin/applications/[id]/claim/route.ts` (filesystem segment
+ *      `[id]`; external URL `/api/admin/applications/<uuid>/claim`).
  *   2. The canonical assign + revoke routes are referenced from
  *      recruiter-management UI controls (or an explicit allowlist says
  *      they are wired via admin shell).
@@ -115,7 +118,10 @@ describe('P1-A0.4 F-08 UI surface — static guards', () => {
     const revokeRoute = join(
       APP_DIR, 'api', 'admin', 'staffing', 'orders', '[orderId]', 'recruiters', '[assignmentId]', 'revoke', 'route.ts',
     );
-    const claimRoute = join(APP_DIR, 'api', 'admin', 'applications', '[submissionId]', 'claim', 'route.ts');
+    // P1 route-slug hotfix: filesystem segment under applications/ is
+    // `[id]` (canonical) — external HTTP URL `/api/admin/applications/<uuid>/claim`
+    // is unchanged.
+    const claimRoute = join(APP_DIR, 'api', 'admin', 'applications', '[id]', 'claim', 'route.ts');
     expect(statSync(assignRoute).isFile()).toBe(true);
     expect(statSync(revokeRoute).isFile()).toBe(true);
     expect(statSync(claimRoute).isFile()).toBe(true);
