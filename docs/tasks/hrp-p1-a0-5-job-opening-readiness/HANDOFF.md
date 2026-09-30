@@ -32,7 +32,7 @@ This round was a **forward-only continuation** of the consumed pre-audit correct
 
 The Tier 1 self-review identified the exact failures listed in the T0 → T1C pre-audit CHANGES_REQUIRED §A–§L directive and corrected them in source. The §J/§K/§L/§M/§N gates that require a synthetic Neon writer/admin pair (`ep-empty-forest-azlhfyo9-*`) were run in this continuation against the synthetic pair; results captured below in §3.
 
-**Cumulative delivery surface (from baseline `a64c81e9...` to this T1C HEAD):** **22 files** (enumerated in §5 below). The 8-file surface claim in the previous HANDOFF was a partial count taken at the SHA-pin docs commit `408e835c` (which only documented the §A–§I correction). The 22-file count is the complete baseline..HEAD surface including the original `00f076dc...` implementation commit.
+**Cumulative delivery surface (from baseline `a64c81e9...` to this T1C HEAD):** **23 paths** (enumerated in §5 below). The 8-file surface claim in the previous HANDOFF was a partial count taken at the SHA-pin docs commit `408e835c` (which only documented the §A–§I correction). The 23-path count is the complete baseline..HEAD surface including the original `00f076dc...` implementation commit.
 
 **Correction delta (this T1C continuation only):** 4 files (the §J integration test rewrite, the page+route header comments narrowed to strictly `OPEN`, the new forward-only migration `20260930090000_p1a05_hr_staff_job_openings_update_rls`, and the live updating of this HANDOFF).
 
@@ -65,7 +65,7 @@ After the T1C continuation commit lands:
 ```bash
 git rev-parse HEAD   # → <T1C continuation SHA, recorded in §1.1 above after commit>
 git diff --name-only a64c81e954325091a78ec9fb7f441a094df5dcfc..HEAD
-# → 22 paths, all inside the implementation allowlist
+# → 23 paths, all inside the implementation allowlist
 ```
 
 Each file listed by the second command must be inside the implementation
@@ -206,7 +206,7 @@ never written to `.env`/`.env.local`, never printed/logged):
 | `CI_INTEGRATION_STRICT=1 npm run test:integration` (full canonical) | full integration lane against synthetic pair | **PASS** (40 test files, 670 tests passed, 2 skipped, 0 failed) |
 | `git diff --check` | whitespace/EOF check | **PASS** (no issues) |
 | `node .ai-pipeline/scripts/verify-encoding.mjs` | (changed surface scan) | **PASS** (4 changed text file(s), strict UTF-8 without BOM) |
-| `node .ai-pipeline/scripts/verify-encoding-range.mjs a64c81e9543... HEAD` | (full baseline..HEAD scan) | **PASS** (22/22 files clean; 0 BOM, 0 NUL, 0 U+FFFD, 0 CRLF, 0 mojibake streaks) |
+| `node .ai-pipeline/scripts/verify-encoding-range.mjs a64c81e9543... HEAD` | (full baseline..HEAD scan) | **PASS** (23/23 files clean; 0 BOM, 0 NUL, 0 U+FFFD, 0 CRLF, 0 mojibake streaks) |
 
 ### 2.5 §N — Freeze preparation (this commit)
 
@@ -324,10 +324,10 @@ E2E PASS on a main-compatible deployment (LOCK-10).
 
 ## 5. Exact changed surface (AC-15)
 
-### 5.1 Cumulative baseline..HEAD surface (22 files)
+### 5.1 Cumulative baseline..HEAD surface (23 paths)
 
 `git diff --name-only a64c81e954325091a78ec9fb7f441a094df5dcfc..HEAD`
-returns exactly the following 22 paths (verified after the T1C
+returns exactly the following 23 paths (verified after the T1C
 continuation commit lands):
 
 ```
@@ -369,7 +369,7 @@ prisma/migrations/20260930090000_p1a05_hr_staff_job_openings_update_rls/  (new f
 ```
 
 This T1C correction delta is REPORTED SEPARATELY from the cumulative
-22-file baseline..HEAD surface per T0 directive §L requirement 4.
+23-path baseline..HEAD surface per T0 directive §L requirement 4.
 
 ## 6. Forbidden paths sweep
 
