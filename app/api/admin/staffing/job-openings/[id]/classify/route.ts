@@ -44,19 +44,23 @@ const ROUTE_KEY =
 const UUID_V4 =
   /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-const ClassifyBodySchema = z.object({
-  // serviceModel MUST be one of the 4 ServiceModel enums. NULL / missing /
-  // unknown → 400 INVALID_INPUT (Zod — v1.1 §C correction; v1.0 wrongly
-  // allowed NULL writes).
-  serviceModel: z.enum(
-    SERVICE_MODEL_ENUMS as [string, ...string[]],
-    {
-      errorMap: () => ({
-        message: `serviceModel phải là một trong ${SERVICE_MODEL_ENUMS.join(', ')} (null/missing/unknown đều bị reject)`,
-      }),
-    },
-  ),
-});
+const ClassifyBodySchema = z
+  .object({
+    // serviceModel MUST be one of the 4 ServiceModel enums. NULL / missing /
+    // unknown → 400 INVALID_INPUT (Zod — v1.1 §C correction; v1.0 wrongly
+    // allowed NULL writes). Pre-audit correction batch 1/1 §H: the schema
+    // is `.strict()` — any extra property in the request body is rejected
+    // with 400 INVALID_INPUT.
+    serviceModel: z.enum(
+      SERVICE_MODEL_ENUMS as [string, ...string[]],
+      {
+        errorMap: () => ({
+          message: `serviceModel phải là một trong ${SERVICE_MODEL_ENUMS.join(', ')} (null/missing/unknown đều bị reject)`,
+        }),
+      },
+    ),
+  })
+  .strict();
 
 export async function POST(
   req: NextRequest,
@@ -147,7 +151,14 @@ export async function POST(
         handler: async () => ({
           body: await classifyJobOpening(tx, ctx, {
             openingId,
-            serviceModel: parsed.data.serviceModel as never,
+            // Pre-audit correction batch 1/1 §H: do NOT cast parsed
+            // serviceModel `as never`. The Zod enum narrows to one of
+            // SERVICE_MODEL_ENUMS, and the service signature accepts
+            // `ServiceModel` (canonical Prisma enum). The runtime
+            // double-check lives in `isValidServiceModel` inside the
+            // service.
+            serviceModel: parsed.data
+              .serviceModel as (typeof SERVICE_MODEL_ENUMS)[number],
           }),
           statusCode: 200,
         }),

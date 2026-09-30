@@ -33,6 +33,7 @@ import { getServerSession } from '@/src/shared/auth/server-session';
 import { getPrisma } from '@/src/lib/db';
 import { withDbContext } from '@/src/shared/auth/with-db-context';
 import { getJobOpeningDetail } from '@/src/domains/staffing/job-opening-read.service';
+import { assertActiveRecruiterForOrder } from '@/src/domains/talent/recruiter-assignment.service';
 import { Breadcrumb } from '@/src/shared/ui/navigation/breadcrumb';
 import { RelatedObjects } from '@/src/shared/ui/data-display/related-objects';
 import { EmptyState } from '@/src/shared/ui/data-display/empty-state';
@@ -56,6 +57,18 @@ export default async function JobOpeningDetailPage(props: { params: Promise<{ id
     redirect(`/login?callback=/admin/job-openings/${params.id}`);
   }
 
+  // ── Outer role admission (pre-audit correction batch 1/1 §G) ───────────
+  // Reject unsupported roles BEFORE querying opening data so we never
+  // touch the DB on behalf of a caller who can never be admitted.
+  const isAdminOrHrManager = session.role === 'ADMIN' || session.role === 'HR_MANAGER';
+  const isDirectorOrPm = session.role === 'DIRECTOR' || session.role === 'PM';
+  const isHrStaff = session.role === 'HR_STAFF';
+
+  if (!isAdminOrHrManager && !isDirectorOrPm && !isHrStaff) {
+    // Unsupported role (VENDOR_*, WORKER, etc.) → fail closed.
+    notFound();
+  }
+
   const ctx = { userId: session.userId, role: session.role };
   const prisma = getPrisma();
 
@@ -67,37 +80,30 @@ export default async function JobOpeningDetailPage(props: { params: Promise<{ id
     notFound();
   }
 
-  // ── Outer role admission (P1-A0.5 / LOCK-04) ────────────────────────────
-  // ADMIN/HR_MANAGER/DIRECTOR/PM are unconditionally admitted. HR_STAFF
-  // requires an ACTIVE StaffingOrderRecruiterAssignment on the parent order.
-  const isAdminOrHrManager = session.role === 'ADMIN' || session.role === 'HR_MANAGER';
-  const isDirectorOrPm = session.role === 'DIRECTOR' || session.role === 'PM';
-  const isHrStaff = session.role === 'HR_STAFF';
-
-  if (!isAdminOrHrManager && !isDirectorOrPm && !isHrStaff) {
-    // Unsupported role (VENDOR_*, WORKER, etc.) → fail closed.
-    notFound();
-  }
-
-  // HR_STAFF scoped admission: must have an ACTIVE recruiter assignment on
-  // the parent order. We re-check this server-side inside the page (Server
-  // Component is the authoritative gate) and ALSO re-check inside the
-  // service layer for the `/open` mutation.
-  let hrStaffAssigned = false;
+  // ── HR_STAFF scoped admission (pre-audit §G, 2nd half) ─────────────────
+  // HR_STAFF requires an ACTIVE StaffingOrderRecruiterAssignment on the
+  // parent StaffingOrder. We REUSE `assertActiveRecruiterForOrder`
+  // (P1-A0.4 carryover) and catch the failure → notFound() so the page
+  // does not leak the unassigned/revoked state to the Client.
+  // ADMIN/HR_MANAGER/DIRECTOR/PM bypass inside `assertActiveRecruiterForOrder`.
   if (isHrStaff) {
-    hrStaffAssigned = await withDbContext(prisma, ctx, async (tx) => {
-      const a = await tx.staffingOrderRecruiterAssignment.findFirst({
-        where: {
-          staffingOrderId: opening.staffingOrder.id,
-          recruiterUserId: session.userId,
-          status: 'ACTIVE',
-        },
-        select: { id: true },
+    let assigned = false;
+    try {
+      await withDbContext(prisma, ctx, async (tx) => {
+        await assertActiveRecruiterForOrder(
+          tx,
+          session.userId,
+          session.role,
+          opening.staffingOrder.id,
+        );
+        assigned = true;
       });
-      return a !== null;
-    });
-    if (!hrStaffAssigned) {
-      // Unassigned / revoked HR_STAFF → fail closed.
+    } catch {
+      assigned = false;
+    }
+    if (!assigned) {
+      // Unassigned / revoked / role-not-permitted HR_STAFF → fail closed
+      // with the SAME notFound() envelope so we don't leak assignment state.
       notFound();
     }
   }
@@ -107,7 +113,12 @@ export default async function JobOpeningDetailPage(props: { params: Promise<{ id
   const isDraft = opening.status === 'DRAFT';
   const hasServiceModel = opening.serviceModel !== null;
   const orderStatus = opening.staffingOrder.status;
-  const orderOpenish = orderStatus === 'OPEN' || orderStatus === 'CLOSING_SOON';
+  // Pre-audit correction batch 1/1 §D — parent StaffingOrder.status must be
+  // exactly OPEN for the opening path. CLOSING_SOON is rejected with
+  // ORDER_NOT_OPEN (409) at the service layer. The selector for authoring
+  // legitimately accepts OPEN|CLOSING_SOON; the OPENING predicate is
+  // narrower.
+  const orderStrictlyOpen = orderStatus === 'OPEN';
   const deadlineOk =
     opening.staffingOrder.deadlineDate === null ||
     new Date(opening.staffingOrder.deadlineDate) >= now;
@@ -118,17 +129,25 @@ export default async function JobOpeningDetailPage(props: { params: Promise<{ id
   const slotCapacityOk =
     opening.slot === null ||
     opening.slot.slotsFilled < opening.slot.slotsNeeded;
+  const slotExists = opening.slot !== null;
 
   // canClassify — ADMIN/HR_MANAGER + DRAFT + no placements yet.
   const canClassify = isAdminOrHrManager && isDraft && opening.placementCount === 0;
 
   // canOpen — full 7-precondition set + caller authority.
-  // ADMIN/HR_MANAGER: unconditional when all preconditions met.
-  // HR_STAFF: same preconditions + active assignment already verified above.
-  // DIRECTOR/PM: never (no authority).
+  //   ADMIN/HR_MANAGER: unconditional when all preconditions met.
+  //   HR_STAFF: same preconditions + active assignment already verified above.
+  //   DIRECTOR/PM: never (no authority).
   const allPreconditionsMet =
-    isDraft && hasServiceModel && orderOpenish && deadlineOk && slotValidToOk && slotCapacityOk;
-  const callerHasOpenAuthority = isAdminOrHrManager || (isHrStaff && hrStaffAssigned);
+    isDraft &&
+    hasServiceModel &&
+    orderStrictlyOpen &&
+    slotExists &&
+    deadlineOk &&
+    slotValidToOk &&
+    slotCapacityOk;
+  const callerHasOpenAuthority =
+    isAdminOrHrManager || (isHrStaff /* assignment already verified above */);
   const canOpen = callerHasOpenAuthority && allPreconditionsMet;
 
   // blockedReason — only shown when canOpen === false; explains why.
@@ -140,8 +159,11 @@ export default async function JobOpeningDetailPage(props: { params: Promise<{ id
       blockedReason = `Trạng thái hiện tại là ${opening.status}; chỉ JobOpening ở trạng thái DRAFT mới có thể mở`;
     } else if (!hasServiceModel) {
       blockedReason = 'Cần phân loại ServiceModel trước khi mở';
-    } else if (!orderOpenish) {
-      blockedReason = `StaffingOrder ở trạng thái ${orderStatus}; cần OPEN hoặc CLOSING_SOON`;
+    } else if (!orderStrictlyOpen) {
+      // Pre-audit correction batch 1/1 §D — strict OPEN wording.
+      blockedReason = `StaffingOrder ở trạng thái ${orderStatus}; cần OPEN (CLOSING_SOON không đủ điều kiện mở)`;
+    } else if (!slotExists) {
+      blockedReason = 'JobOpening không liên kết với StaffingOrderSlot — không thể mở';
     } else if (!deadlineOk) {
       blockedReason = `StaffingOrder đã quá hạn nộp (deadlineDate < now)`;
     } else if (!slotValidToOk) {

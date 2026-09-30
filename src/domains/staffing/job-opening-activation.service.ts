@@ -35,9 +35,12 @@
 import { Prisma, ServiceModel, type SystemRole } from '@prisma/client';
 import type { AuthContext } from '@/src/shared/auth/auth-context';
 import { assertClassifiedJobOpening } from '@/src/domains/talent/placement.resolution';
-import { assertActiveRecruiterForOrder } from '@/src/domains/talent/recruiter-assignment.service';
 import {
-  eligibleSlotPredicateSql,
+  assertActiveRecruiterForOrder,
+  RecruiterAssignmentError,
+} from '@/src/domains/talent/recruiter-assignment.service';
+import {
+  openableJobOpeningPredicateSql,
 } from './job-posting-list.service';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -58,7 +61,8 @@ import {
  *   409 INVALID_STATE_TRANSITION — current status != DRAFT (race loser or
  *                                 already-OPEN caller).
  *   409 IDEMPOTENCY_CONFLICT    — same key + different payload.
- *   409 ORDER_NOT_OPEN          — parent StaffingOrder not OPEN/CLOSING_SOON.
+ *   409 ORDER_NOT_OPEN          — parent StaffingOrder.status !== 'OPEN' (strict;
+ *                                 pre-audit correction batch 1/1 §D).
  *   409 SLOT_NOT_ELIGIBLE       — slot / order deadline passed or full.
  *   422 SERVICE_MODEL_REQUIRED  — JobOpening DRAFT but `serviceModel` is NULL.
  */
@@ -138,14 +142,18 @@ export interface ClassifyJobOpeningResult {
  *
  *   - Asserts `ctx.role ∈ {ADMIN, HR_MANAGER}` (RQ-04).
  *   - Asserts JobOpening exists (NOT_FOUND).
- *   - Asserts current status === 'DRAFT' (INVALID_STATE_TRANSITION 409).
- *   - Asserts `placementCount === 0` (defense in depth — placement fail-closed
- *     on NULL via DEC-10; if a Placement exists, classification is too late).
- *   - SELECT ... FOR UPDATE on the row, UPDATE filtered by `status = 'DRAFT'`.
+ *   - Acquires SELECT ... FOR UPDATE on the JobOpening row first (pre-audit
+ *     correction batch 1/1 §E: lock-first, then re-read state under lock
+ *     so the row cannot transition between the read and the UPDATE).
+ *   - Under the lock: re-reads status + placementCount + serviceModel,
+ *     rejects non-DRAFT or placementCount > 0 (INVALID_STATE_TRANSITION 409).
+ *   - UPDATE filtered by `status = 'DRAFT'` so a concurrent winner yields
+ *     0 rows updated → 409 INVALID_STATE_TRANSITION (race-loser semantics).
  *   - If `serviceModel` was already set to the same value → idempotent
  *     replay (200 + same row, no change). v1.1 §C allows reclassify while
- *     DRAFT — the UPDATE filtered by DRAFT will replace the value; distinct
- *     keys racing last-committed-command-wins semantics.
+ *     DRAFT — distinct keys racing serialize via the row lock with
+ *     last-committed-command-wins semantics (NOT "one wins/one 409"
+ *     because the contract still permits reclassify while DRAFT).
  *
  * Returns the updated (or replayed) JobOpening's classification snapshot.
  */
@@ -167,8 +175,37 @@ export async function classifyJobOpening(
     );
   }
 
-  // Existence + current state. placementCount is computed at the same time so
-  // we can fail-closed BEFORE acquiring the row lock.
+  // ── Lock first (§E) ─────────────────────────────────────────────────────
+  // Pre-flight existence check is cheap and avoids acquiring a row lock on
+  // a non-existent id (which would deadlock the FOR UPDATE wait). The
+  // authoritative state observation happens AFTER the lock below.
+  const preflight = await tx.jobOpening.findUnique({
+    where: { id: input.openingId },
+    select: { id: true },
+  });
+  if (!preflight) {
+    throw new JobOpeningActivationError(
+      'NOT_FOUND',
+      404,
+      `JobOpening ${input.openingId} not found`,
+    );
+  }
+
+  // Acquire the row lock BEFORE re-reading state (§E). The FOR UPDATE
+  // serializes any concurrent caller on this row until our COMMIT/ROLLBACK.
+  const locked = await tx.$queryRaw<Array<{ id: string }>>(
+    Prisma.sql`SELECT id FROM job_openings WHERE id = ${input.openingId} FOR UPDATE`,
+  );
+  if (locked.length === 0) {
+    throw new JobOpeningActivationError(
+      'NOT_FOUND',
+      404,
+      `JobOpening ${input.openingId} disappeared during lock acquisition`,
+    );
+  }
+
+  // Re-read state UNDER the lock. Status / serviceModel / placementCount
+  // are now stable until we commit or roll back.
   const opening = await tx.jobOpening.findUnique({
     where: { id: input.openingId },
     select: {
@@ -202,7 +239,8 @@ export async function classifyJobOpening(
     );
   }
 
-  // Idempotent replay — same value already persisted, no UPDATE.
+  // Idempotent replay — same value already persisted, no UPDATE. Safe
+  // 200 no-op per pre-audit §E.
   if (opening.serviceModel === input.serviceModel) {
     return {
       openingId: opening.id,
@@ -211,19 +249,11 @@ export async function classifyJobOpening(
     };
   }
 
-  // Row lock + UPDATE filtered by status = 'DRAFT' so a concurrent winner
-  // can't double-write or race-lose. If 0 rows update → INVALID_STATE_TRANSITION.
-  const locked = await tx.$queryRaw<Array<{ id: string }>>(
-    Prisma.sql`SELECT id FROM job_openings WHERE id = ${input.openingId} FOR UPDATE`,
-  );
-  if (locked.length === 0) {
-    throw new JobOpeningActivationError(
-      'NOT_FOUND',
-      404,
-      `JobOpening ${input.openingId} disappeared during lock acquisition`,
-    );
-  }
-
+  // UPDATE filtered by status = 'DRAFT' so a concurrent winner yields
+  // 0 rows updated → INVALID_STATE_TRANSITION. (We already hold the row
+  // lock from above, so under reasonable concurrency only this transaction
+  // can update this row until we commit; the additional status filter is
+  // belt + suspenders against read-uncommitted edge cases.)
   const updated = await tx.jobOpening.updateMany({
     where: { id: input.openingId, status: 'DRAFT' },
     data: { serviceModel: input.serviceModel },
@@ -296,7 +326,7 @@ async function loadOpeningPreconditionRow(
       s.valid_to AS slot_valid_to,
       s.slots_filled,
       s.slots_needed,
-      (${eligibleSlotPredicateSql(now)}) AS slot_is_eligible
+      (${openableJobOpeningPredicateSql(now)}) AS slot_is_eligible
     FROM job_openings jo
     INNER JOIN staffing_orders so ON so.id = jo.staffing_order_id
     LEFT JOIN staffing_order_slots s ON s.id = jo.staffing_order_slot_id
@@ -319,17 +349,18 @@ async function loadOpeningPreconditionRow(
  * Preconditions (evaluated server-side, fail-closed):
  *   (a) status === 'DRAFT'                                → INVALID_STATE_TRANSITION (409)
  *   (b) serviceModel !== null                              → SERVICE_MODEL_REQUIRED (422)
- *   (c) parent StaffingOrder.status IN (OPEN, CLOSING_SOON) → ORDER_NOT_OPEN (409)
+ *   (c) parent StaffingOrder.status === 'OPEN' (strict — NOT CLOSING_SOON)
+ *       → ORDER_NOT_OPEN (409)
  *   (d) StaffingOrder.deadlineDate null OR >= now          → SLOT_NOT_ELIGIBLE (409)
  *   (e) StaffingOrderSlot.validTo null OR >= now           → SLOT_NOT_ELIGIBLE (409)
  *   (f) slotsFilled < slotsNeeded                          → SLOT_NOT_ELIGIBLE (409)
  *   (g) caller authority (handled by the role gate above)
  *
- * NOTE on (a): for `openJobOpening` we accept OPEN/CLOSING_SOON as the
- * parent order statuses; the parent must be ACTIVE. The atomic
- * JobOpening.status === 'DRAFT' guard is the row-state predicate; the
- * parent's `OPEN`/`CLOSING_SOON` status maps to ORDER_NOT_OPEN (409)
- * otherwise. This matches the SELECT FOR UPDATE raw SQL's pre-aggregation.
+ * NOTE on (c) — pre-audit correction batch 1/1 §D: the contract requires
+ * STRICT `OPEN` for the opening path. `CLOSING_SOON` is a valid status for
+ * the authoring selector (which legitimately accepts `OPEN | CLOSING_SOON`),
+ * but the OPENING-specific predicate NARROWS to `OPEN` only — opening a
+ * DRAFT JobOpening when the parent order is winding down is fail-closed.
  *
  * Atomic + race-safe: row lock acquired in the precondition SELECT; UPDATE
  * filtered by `status = 'DRAFT'` + `opened_at = now()`. If 0 rows updated,
@@ -337,7 +368,10 @@ async function loadOpeningPreconditionRow(
  *
  * Presence of a JobPosting DRAFT MUST NOT fail this call — the opening
  * predicate is the BASE capacity/time/order predicate (no
- * `NOT EXISTS job_postings`). See STEP-11 shared-predicate refactor.
+ * `NOT EXISTS job_postings`). See STEP-11 shared-predicate refactor and
+ * the pre-audit §C correction: this service uses
+ * `openableJobOpeningPredicateSql` (NOT `eligibleSlotPredicateSql` which
+ * carries `NOT EXISTS job_postings`).
  */
 export async function openJobOpening(
   tx: Prisma.TransactionClient,
@@ -413,15 +447,54 @@ export async function openJobOpening(
 
   // HR_STAFF scoped authority check (g, second half) — needs the staffingOrderId
   // we just loaded. For ADMIN/HR_MANAGER this is a no-op bypass inside
-  // assertActiveRecruiterForOrder.
-  await assertActiveRecruiterForOrder(tx, ctx.userId, ctx.role, row.staffing_order_id);
+  // assertActiveRecruiterForOrder. Pre-audit correction batch 1/1 §F:
+  // we wrap the call so a `RecruiterAssignmentError` thrown by the
+  // A0.4 predicate is mapped to a `JobOpeningActivationError` at the
+  // service boundary. The route layer therefore NEVER sees a raw
+  // `RecruiterAssignmentError` (which would currently fall through to a
+  // generic 500 INTERNAL and could leak actor/order identifiers in logs).
+  try {
+    await assertActiveRecruiterForOrder(
+      tx,
+      ctx.userId,
+      ctx.role,
+      row.staffing_order_id,
+    );
+  } catch (err) {
+    if (err instanceof RecruiterAssignmentError) {
+      if (err.code === 'NO_ACTIVE_ORDER_ASSIGNMENT') {
+        throw new JobOpeningActivationError(
+          'NO_ACTIVE_ORDER_ASSIGNMENT',
+          403,
+          `HR_STAFF caller has no ACTIVE StaffingOrderRecruiterAssignment on parent order`,
+        );
+      }
+      if (err.code === 'ROLE_NOT_PERMITTED') {
+        throw new JobOpeningActivationError(
+          'PERMISSION_DENIED',
+          403,
+          `Role ${ctx.role} cannot open JobOpening`,
+        );
+      }
+      // Unknown RecruiterAssignmentError code → fail-closed 403 generic,
+      // do NOT forward actorId/orderId-bearing messages.
+      throw new JobOpeningActivationError(
+        'PERMISSION_DENIED',
+        403,
+        `Authority check failed for opening JobOpening`,
+      );
+    }
+    throw err;
+  }
 
-  // (c) parent StaffingOrder.status ∈ {OPEN, CLOSING_SOON}.
-  if (row.order_status !== 'OPEN' && row.order_status !== 'CLOSING_SOON') {
+  // (c) parent StaffingOrder.status strictly 'OPEN' (pre-audit correction
+  // batch 1/1 §D: contract requires exactly OPEN; CLOSING_SOON → 409
+  // ORDER_NOT_OPEN fail-closed).
+  if (row.order_status !== 'OPEN') {
     throw new JobOpeningActivationError(
       'ORDER_NOT_OPEN',
       409,
-      `StaffingOrder ${row.staffing_order_id} is not OPEN (status=${row.order_status})`,
+      `StaffingOrder ${row.staffing_order_id} is not OPEN (status=${row.order_status}); only OPEN is permitted for /open`,
       { orderStatus: row.order_status },
     );
   }

@@ -47,7 +47,12 @@ interface TxMocks {
 function makeTx(mocks: TxMocks = {}): Prisma.TransactionClient {
   const findUnique = mocks.findUnique ?? vi.fn();
   const updateMany = mocks.updateMany ?? vi.fn();
-  const queryRaw = mocks.queryRaw ?? vi.fn();
+  // Default the FOR UPDATE lock to succeed (returns a single id row).
+  // Pre-audit correction batch 1/1 §E: classifyJobOpening acquires the
+  // row lock BEFORE re-reading state. Tests that want to assert the
+  // lock path specifically should provide their own queryRaw mock.
+  const queryRaw =
+    mocks.queryRaw ?? vi.fn().mockResolvedValue([{ id: 'op-default' }]);
   const findFirst = mocks.findFirst ?? vi.fn();
   return {
     jobOpening: {

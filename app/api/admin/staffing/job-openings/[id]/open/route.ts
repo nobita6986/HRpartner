@@ -108,9 +108,12 @@ export async function POST(
     );
   }
 
-  // ─── (4) Body MUST be empty (v1.1 §D). Reject any unexpected payload.
-  //         `Content-Length: 0` is the canonical empty case; some clients
-  //         send `{}` so we accept both, but any non-empty payload is 400.
+  // ─── (4) Body MUST be empty (pre-audit correction batch 1/1 §H).
+  //         Strict-empty contract: any non-empty body — `{}`, `null`, arrays,
+  //         text, JSON object — is rejected with 400 INVALID_INPUT. The
+  //         only accepted payload is the absence of a body (Content-Length
+  //         absent or 0). v1.1 §D correction: no `expectedOpeningVersion`
+  //         ignored field.
   const rawContentLength = req.headers.get('content-length');
   let rawBodyText = '';
   try {
@@ -119,30 +122,30 @@ export async function POST(
   } catch {
     rawBodyText = '';
   }
-  if (
-    rawBodyText.trim().length > 0 &&
-    rawBodyText.trim() !== '{}' &&
-    rawBodyText.trim() !== 'null'
-  ) {
+  const trimmed = rawBodyText.trim();
+  if (trimmed.length > 0) {
+    // Reject any payload — `{}`, `null`, arrays, JSON objects, plain text.
+    // The opening transition needs nothing from the client; presence of a
+    // body is a contract violation (LOCK-06 + pre-audit §H).
     return NextResponse.json(
       {
         error: 'INVALID_INPUT',
         message:
-          'Body phải rỗng cho /open (KHÔNG kỳ vọng payload; v1.1 §D correction)',
+          'Body phải rỗng cho /open (KHÔNG kỳ vọng payload; pre-audit correction batch 1/1 §H)',
       },
       { status: 400 },
     );
   }
-  // Sanity: content-length header, when present, must be 0 (or absent).
+  // Belt + suspenders: content-length header, when present, must be 0.
   if (
     rawContentLength !== null &&
-    rawContentLength !== '0' &&
-    rawBodyText.trim().length > 0
+    rawContentLength !== '' &&
+    rawContentLength !== '0'
   ) {
     return NextResponse.json(
       {
         error: 'INVALID_INPUT',
-        message: 'Body phải rỗng cho /open',
+        message: 'Body phải rỗng cho /open (Content-Length phải là 0)',
       },
       { status: 400 },
     );

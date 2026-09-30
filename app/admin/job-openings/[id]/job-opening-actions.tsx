@@ -30,9 +30,29 @@
  *
  * DIRECTOR/PM visibility: `flags.canClassify === false && flags.canOpen
  *   === false` → neither control rendered. Page is read-only.
+ *
+ * ────────────────────────────────────────────────────────────────────────
+ * Pre-audit correction batch 1/1 §I — per-tab retry idempotency persistence
+ * ────────────────────────────────────────────────────────────────────────
+ * The idempotency key is scoped by:
+ *   - openingId (URL-derived)
+ *   - command   ('classify' | 'open')
+ *   - canonical payload hash (ServiceModel value for classify; empty for open)
+ *
+ * On submit, the component MINT a fresh UUID-v4 key (browser-native
+ * `crypto.randomUUID()` — no `Math.random` fallback in production).
+ * The key is stored in a per-tab in-memory map keyed by the scope above.
+ *
+ * Retry semantics:
+ *   - Same scope + same payload (same key) → REUSE the stored key on
+ *     network / 4xx / 5xx failures so the server can recognize the retry
+ *     via the existing idempotency record.
+ *   - Terminal success (HTTP 2xx) → CLEAR the key from the map.
+ *   - Changed classification payload → MINT a new key (different scope).
+ *   - Classify and open keys never collide (different command in scope).
  */
 import { useRouter } from 'next/navigation';
-import { useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 
 export type ServiceModel =
   | 'STAFFING_SUPPLY'
@@ -50,11 +70,6 @@ export const SERVICE_MODEL_OPTIONS: ReadonlyArray<{
   { value: 'REFERRAL_SERVICE', label: 'Giới thiệu ứng viên (REFERRAL_SERVICE)' },
 ];
 
-/**
- * Server-derived flags. The page component computes these and passes them
- * to the island as PROPS ONLY. The Client Component never re-derives
- * authority or lifecycle from the `opening` shape alone.
- */
 export interface JobOpeningActionsFlags {
   /** True only when caller is ADMIN/HR_MANAGER + status DRAFT + placementCount 0. */
   canClassify: boolean;
@@ -68,11 +83,6 @@ export interface JobOpeningActionsFlags {
   currentServiceModel: ServiceModel | null;
 }
 
-/**
- * Server-derived opening snapshot. NEVER includes actorId, assigneeId,
- * assignment audit, or any PII. The page server component builds this
- * shape from `JobOpeningDetailDto`.
- */
 export interface JobOpeningActionsOpening {
   id: string;
 }
@@ -83,12 +93,15 @@ export interface JobOpeningActionsProps {
 }
 
 /**
- * Generate a UUID v4 using crypto.getRandomValues (browser-native, no deps).
- * Falls back to a v4-shaped string from Math.random in case crypto is missing
- * (test environment / SSR pre-hydration).
+ * Generate a UUID v4 using browser-native `crypto.randomUUID` ONLY.
+ *
+ * Pre-audit correction batch 1/1 §I: no `Math.random` fallback in
+ * production behavior. The fallback `getRandomValues` path is retained
+ * for SSR pre-hydration test environments where `randomUUID` may be
+ * unavailable, but the test renderer is expected to provide a polyfill.
  */
 function uuidV4(): string {
-  const c = typeof globalThis.crypto !== 'undefined' ? globalThis.crypto : null;
+  const c = globalThis.crypto;
   if (c && typeof c.randomUUID === 'function') {
     return c.randomUUID();
   }
@@ -100,10 +113,65 @@ function uuidV4(): string {
     const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
     return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
   }
-  // Last-resort fallback. RFC4122 v4 shape; not cryptographically strong.
-  const rand = (n: number) =>
-    Array.from({ length: n }, () => Math.floor(Math.random() * 16).toString(16)).join('');
-  return `${rand(8)}-${rand(4)}-4${rand(3)}-${(8 + Math.floor(Math.random() * 4)).toString(16)}${rand(3)}-${rand(12)}`;
+  // If neither API is available we throw — the page cannot mint a safe
+  // UUID v4 without one, and silently using Math.random would corrupt
+  // idempotency semantics across retries (collision probability too high).
+  throw new Error('crypto.randomUUID / getRandomValues unavailable');
+}
+
+/**
+ * Per-tab retry key store (P1-A0.5 §I).
+ *
+ * Module-scope Map; one instance per JS realm (each browser tab gets a
+ * fresh realm on reload, so per-tab scope is enforced naturally). We do
+ * NOT persist to localStorage / sessionStorage because:
+ *   - The contract requires per-tab scope, not cross-tab;
+ *   - localStorage would survive a logout on a shared device.
+ *
+ * Key shape: `${openingId}:${command}:${payloadHash}` → UUID v4 string.
+ */
+const retryKeyStore = new Map<string, string>();
+
+type Command = 'classify' | 'open';
+
+function getRetryKey(
+  openingId: string,
+  command: Command,
+  payloadHash: string,
+): string {
+  return `idempotency:${openingId}:${command}:${payloadHash}`;
+}
+
+function payloadHashFor(command: Command, payload: unknown): string {
+  // Canonical payload hash — JSON.stringify on the canonical, sorted form.
+  // For classify the payload is { serviceModel }, for open the payload is
+  // empty (always hash to a constant).
+  let canonical: string;
+  if (command === 'classify') {
+    canonical = JSON.stringify({ serviceModel: payload });
+  } else {
+    canonical = '';
+  }
+  return canonical;
+}
+
+function obtainKey(
+  openingId: string,
+  command: Command,
+  payload: unknown,
+): string {
+  const hash = payloadHashFor(command, payload);
+  const k = getRetryKey(openingId, command, hash);
+  const existing = retryKeyStore.get(k);
+  if (existing) return existing;
+  const fresh = uuidV4();
+  retryKeyStore.set(k, fresh);
+  return fresh;
+}
+
+function clearKey(openingId: string, command: Command, payload: unknown): void {
+  const hash = payloadHashFor(command, payload);
+  retryKeyStore.delete(getRetryKey(openingId, command, hash));
 }
 
 type InlineStatus =
@@ -118,25 +186,43 @@ export function JobOpeningActions({ opening, flags }: JobOpeningActionsProps) {
   const [selectedServiceModel, setSelectedServiceModel] = useState<ServiceModel | ''>('');
   const [status, setStatus] = useState<InlineStatus>({ kind: 'idle' });
 
+  // Refs survive StrictMode double-render without surprising state resets.
+  const openingIdRef = useRef(opening.id);
+  openingIdRef.current = opening.id;
+
+  // When the user changes the ServiceModel selection, the scope hash
+  // changes too. We do NOT need to clear the old key on selection change
+  // because the previous submission would have already cleared it on
+  // success or failed without persisting a new key (the store keeps the
+  // last-known key for the old hash). Re-selecting then re-submitting
+  // mints a NEW key for the new hash; the old hash key remains in the
+  // map until garbage-collected.
+  useEffect(() => {
+    // Reset inline status when flags.canOpen / canClassify change so a
+    // stale "Đã mở JobOpening" doesn't linger after a navigation.
+    setStatus({ kind: 'idle' });
+  }, [flags.canClassify, flags.canOpen, opening.id]);
+
   const submitClassify = () => {
     if (!flags.canClassify) return;
     if (!selectedServiceModel) {
       setStatus({ kind: 'error', message: 'Vui lòng chọn một ServiceModel' });
       return;
     }
+    const payload = { serviceModel: selectedServiceModel };
     setStatus({ kind: 'submitting', label: 'Đang phân loại...' });
-    const idempotencyKey = uuidV4();
+    const idempotencyKey = obtainKey(openingIdRef.current, 'classify', payload);
     startTransition(async () => {
       try {
         const res = await fetch(
-          `/api/admin/staffing/job-openings/${encodeURIComponent(opening.id)}/classify`,
+          `/api/admin/staffing/job-openings/${encodeURIComponent(openingIdRef.current)}/classify`,
           {
             method: 'POST',
             headers: {
               'content-type': 'application/json',
               'Idempotency-Key': idempotencyKey,
             },
-            body: JSON.stringify({ serviceModel: selectedServiceModel }),
+            body: JSON.stringify(payload),
           },
         );
         if (!res.ok) {
@@ -145,13 +231,17 @@ export function JobOpeningActions({ opening, flags }: JobOpeningActionsProps) {
             typeof body?.message === 'string'
               ? body.message
               : `Phân loại thất bại (HTTP ${res.status})`;
+          // Do NOT clear the key on failure — retry should reuse the same key.
           setStatus({ kind: 'error', message });
           return;
         }
+        // Terminal success → clear the retry key so the next click mints
+        // a new one.
+        clearKey(openingIdRef.current, 'classify', payload);
         setStatus({ kind: 'success', message: 'Đã phân loại ServiceModel' });
-        // Server re-derives everything; client only refreshes the route.
         router.refresh();
       } catch (err) {
+        // Network error → retry should reuse the same key.
         setStatus({
           kind: 'error',
           message: err instanceof Error ? err.message : 'Lỗi mạng',
@@ -163,11 +253,11 @@ export function JobOpeningActions({ opening, flags }: JobOpeningActionsProps) {
   const submitOpen = () => {
     if (!flags.canOpen) return;
     setStatus({ kind: 'submitting', label: 'Đang mở JobOpening...' });
-    const idempotencyKey = uuidV4();
+    const idempotencyKey = obtainKey(openingIdRef.current, 'open', null);
     startTransition(async () => {
       try {
         const res = await fetch(
-          `/api/admin/staffing/job-openings/${encodeURIComponent(opening.id)}/open`,
+          `/api/admin/staffing/job-openings/${encodeURIComponent(openingIdRef.current)}/open`,
           {
             method: 'POST',
             headers: {
@@ -185,6 +275,7 @@ export function JobOpeningActions({ opening, flags }: JobOpeningActionsProps) {
           setStatus({ kind: 'error', message });
           return;
         }
+        clearKey(openingIdRef.current, 'open', null);
         setStatus({ kind: 'success', message: 'Đã mở JobOpening' });
         router.refresh();
       } catch (err) {
