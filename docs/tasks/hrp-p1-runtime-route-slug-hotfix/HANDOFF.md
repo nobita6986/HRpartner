@@ -14,8 +14,9 @@
 | Implementation SHA | `66abd76177bca0438c7a6e236f027f8045dc0182` |
 | Semantic Implementation SHA | `66abd76177bca0438c7a6e236f027f8045dc0182` (single semantic commit; no doc-only forward-only commits; semantic Implementation SHA == Implementation SHA) |
 | Reconciled Implementation SHA | `66abd76177bca0438c7a6e236f027f8045dc0182` (same as Implementation SHA; surfaced per directive) |
-| Frozen delivery | `YES` (freeze SHA `7f2c954feea23e2f8718ada7c180be8c50e6b3a7`) |
+| Frozen delivery | `YES` |
 | Canonical gates | `PASS` |
+| Freeze SHA | `7f2c954feea23e2f8718ada7c180be8c50e6b3a7` (HANDOFF freeze commit after the semantic Implementation SHA `66abd76177bca0438c7a6e236f027f8045dc0182`) |
 | Audit eligibility | `NOT_REQUIRED` |
 | Correction batches used | `0` |
 | Execution round | `1` |
