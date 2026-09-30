@@ -313,6 +313,30 @@ export interface JobPostingSlotSelectorDto {
 }
 
 /**
+ * P1-A0.1 / P1-A0.5 — Canonical base capacity/time/order predicate.
+ *
+ * The base predicate is the SHARED fragment that both authoring and opening
+ * paths must satisfy. Authoring adds `NOT EXISTS job_postings` on top (so a
+ * slot with an existing DRAFT JobPosting is NOT eligible for a NEW authoring).
+ * Opening intentionally drops that extra clause so a slot that ALREADY has
+ * a DRAFT JobPosting can still be opened (`/open` is a separate state
+ * transition; the existing draft proves the canonical JobOpening has a
+ * draft content but does NOT block the opening transition).
+ *
+ * This decomposition is the P1-A0.5 §STEP-11 minimal shared-predicate
+ * refactor. The two consumers (authoring + opening) share the BASE predicate
+ * here; authoring adds the `NOT EXISTS job_postings` clause on top.
+ */
+export function baseJobOpeningCapacityPredicateSql(now: Date): Prisma.Sql {
+  return Prisma.sql`
+    so.status IN ('OPEN', 'CLOSING_SOON')
+    AND (so.deadline_date IS NULL OR so.deadline_date >= ${now})
+    AND (s.valid_to IS NULL OR s.valid_to >= ${now})
+    AND s.slots_filled < s.slots_needed
+  `;
+}
+
+/**
  * Canonical eligibility predicate (hrp-p1-a0-1 C-02 correction batch 1/1).
  *
  * One repo-owned helper consumed by BOTH:
@@ -324,20 +348,39 @@ export interface JobPostingSlotSelectorDto {
  * but the write path semantics require "no canonical JobPosting". C-02 fixes
  * this by sharing one predicate function on the same SQL fragment.
  *
+ * Built on top of `baseJobOpeningCapacityPredicateSql` and adds the
+ * `NOT EXISTS job_postings` clause (authoring-only constraint).
+ *
  * Returns the SQL `Prisma.sql` fragment for direct embedding into a query.
  */
 export function eligibleSlotPredicateSql(now: Date): Prisma.Sql {
   return Prisma.sql`
-    so.status IN ('OPEN', 'CLOSING_SOON')
-    AND (so.deadline_date IS NULL OR so.deadline_date >= ${now})
-    AND (s.valid_to IS NULL OR s.valid_to >= ${now})
-    AND s.slots_filled < s.slots_needed
+    ${baseJobOpeningCapacityPredicateSql(now)}
     AND NOT EXISTS (
       SELECT 1 FROM job_postings jp
       INNER JOIN job_openings jo ON jo.id = jp.job_opening_id
       WHERE jo.staffing_order_slot_id = s.id
     )
   `;
+}
+
+/**
+ * P1-A0.5 — Canonical OPENING-eligibility predicate for an EXISTING
+ * JobOpening (not the slot-selector predicate above).
+ *
+ * Authoring keeps `NOT EXISTS job_postings` — a slot with an existing DRAFT
+ * JobPosting is NOT eligible for a NEW posting. The opening path is a
+ * DIFFERENT state transition (DRAFT → OPEN) on the EXISTING JobOpening;
+ * the existing draft is the expected state for a freshly-authored opening,
+ * NOT a barrier. So the opening predicate uses the BASE predicate and does
+ * NOT add the `NOT EXISTS job_postings` clause.
+ *
+ * Returns the SQL `Prisma.sql` fragment for direct embedding into a query
+ * that joins the same `staffing_order_slots s` / `staffing_orders so` alias
+ * pair.
+ */
+export function openableJobOpeningPredicateSql(now: Date): Prisma.Sql {
+  return baseJobOpeningCapacityPredicateSql(now);
 }
 
 /**

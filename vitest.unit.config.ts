@@ -30,6 +30,7 @@ export default defineConfig({
       'packages/**/*.test.ts',
       'prisma/**/*.test.ts',
       'app/**/*.test.ts',
+      'app/**/*.test.tsx',
     ],
     exclude: [...configDefaults.exclude, ...INTEGRATION_TEST_FILES],
     env: {

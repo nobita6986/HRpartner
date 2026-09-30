@@ -177,4 +177,16 @@ export const INTEGRATION_TEST_FILES: string[] = [
   // Self-skips via describe.skipIf when DATABASE_URL_TEST + DATABASE_URL_ADMIN_TEST
   // are absent (ENV_BLOCKED).
   'tests/db/p1a04-r3-substantive.integration.test.ts',
+  // hrp-p1-a0-5-job-opening-readiness (contract v1.3 STEP-13): synthetic DB
+  // proof for the JobOpening activation lifecycle. Exercises classifyJobOpening
+  // (happy, role-gate, idempotent replay, NULL-write fail-closed, race-loser)
+  // and openJobOpening (happy, NULL serviceModel 422, parent ORDER_NOT_OPEN,
+  // SLOT_NOT_ELIGIBLE matrix [deadline / validTo / full], HR_STAFF scoped
+  // admission [assigned / revoked / unassigned / DIRECTOR-PM deny], and the
+  // STEP-11 contract that an existing DRAFT JobPosting does NOT fail /open).
+  // Three inline exact-ID zero-residue Prisma count assertions at
+  // post-classify+open, post-all-opens+post-DRAFT-posting, and post-cleanup.
+  // Self-skips via describe.skipIf when DATABASE_URL_TEST + DATABASE_URL_ADMIN_TEST
+  // are absent (ENV_BLOCKED).
+  'tests/db/p1a05-job-opening-readiness.integration.test.ts',
 ];
