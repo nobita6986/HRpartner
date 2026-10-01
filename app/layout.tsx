@@ -1,20 +1,6 @@
 import './globals.css';
 import type { Metadata } from 'next';
-import { Be_Vietnam_Pro, Inter } from 'next/font/google';
-
-const beVietnamPro = Be_Vietnam_Pro({
-  subsets: ['latin', 'vietnamese'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-bvp',
-  display: 'swap',
-});
-
-const inter = Inter({
-  subsets: ['latin'],
-  weight: ['400', '500', '600'],
-  variable: '--font-inter',
-  display: 'swap',
-});
+import { beVietnamPro, inter } from './fonts/local-fonts';
 
 export const metadata: Metadata = {
   title: {
@@ -28,7 +14,7 @@ export const metadata: Metadata = {
   other: {
     'mobile-web-app-capable': 'yes',
     'apple-mobile-web-app-capable': 'yes',
-    'apple-mobile-web-app-status-bar-style': 'default',
+    'apple-mobile-web-status-bar-style': 'default',
     'apple-mobile-web-app-title': 'HRPartner Worker',
   },
   manifest: '/manifest.json',
@@ -42,15 +28,9 @@ export default function RootLayout({
   return (
     <html lang="vi" className={`${beVietnamPro.variable} ${inter.variable}`}>
       <head>
-        <link
-          rel="preconnect"
-          href="https://fonts.googleapis.com"
-        />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
+        {/* Material Symbols Outlined icon font is loaded via CSS <link> (NOT next/font/google);
+            it remains a network fetch at runtime and is intentionally NOT a P1 build blocker.
+            See docs/important/.../P3 debt list. */}
         <link
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
           rel="stylesheet"

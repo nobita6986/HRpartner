@@ -6,15 +6,8 @@
  *
  * Tailwind utilities thay vì CSS-in-JS để tránh đụng độ Design System M1 (RISK-01).
  */
-import { Be_Vietnam_Pro } from 'next/font/google';
+import { beVietnamPro } from '@/app/fonts/local-fonts';
 import { getBodSnapshot } from '@/src/lib/services/bod.service';
-
-const beVietnamPro = Be_Vietnam_Pro({
-  subsets: ['latin', 'vietnamese'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-bvp',
-  display: 'swap',
-});
 
 // ── Helpers ─────────────────────────────────────────────────────
 const BADGE_KIND_STYLES: Record<string, string> = {
