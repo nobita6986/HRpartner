@@ -1,0 +1,13 @@
+Command: git status --short
+Date   : 2026-10-01 (pre-docs-freeze expectation)
+
+EXPECTED RESULT (post-docs-freeze): empty (clean working tree).
+DOCS FREEZE commit will pin Font-hotfix Implementation SHA b0d09582…
+and leave the working tree empty after committing TASK.md + HANDOFF.md.
+
+Pre-freeze state (currently): 2 modified docs files
+  M docs/tasks/hrp-p1-final-release-safety-closeout/HANDOFF.md
+  M docs/tasks/hrp-p1-final-release-safety-closeout/TASK.md
+
+After committing the docs/evidence freeze, this command should print
+nothing and exit 0.

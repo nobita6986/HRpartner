@@ -1,23 +1,38 @@
 # TASK — `hrp-p1-final-release-safety-closeout`
 
-> **TIER-1 CONTROL (rev. 4 — T0 pre-audit docs/control integrity correction 2026-10-01)**:
-> This TASK.md is restructured to the canonical V1 section schema that
-> `verify-task.ps1` and `verify-handoff.ps1` still hard-code. The runtime
-> semantic implementation SHA `708e0ce71d258c3a70383330dfb8d5d370dbd974`
-> (T0 §A.1) and the E2E ×3 PASS evidence `EV-RUN-{1,2,3}-*` (T0 §A.2) are
-> carry-forward — this revision does NOT touch `app/`, `src/`, `prisma/`,
-> `tests/`, `scripts/`, `packages/`, `package.json`, or `package-lock.json`
-> (T0 §Stop boundary). `AUDIT.md` is owned by Tier 3 and is **not** authored
-> by T1; the T1-deletion of `docs/tasks/.../AUDIT.md` is finalized and was
-> committed at rev. 4 SHA `218bcbedb65a3f2d9b35cf57bb2f8f4d03151750`.
-> Tier 3 will author a fresh `AUDIT.md` after this rev. 5 terminal
-> control sync flips the TASK.md status to `READY_FOR_AUDIT` (terminal
-> docs-only commit; no semantic delta; runtime ×3 PASS evidence
-> carry-forward).
+> **TIER-1 CONTROL (rev. 6 — PR #73 build-blocker font hotfix 2026-10-01)**:
+> This TASK.md is restructured for the **post-audit release-integrity exception #1**
+> (T0 directive §A–§G, 2026-10-01). PR #73 (audit-adoption SHA `1b60dd40`) had
+> passed Tier 3 LIGHT audit round 1 and was pushed; GitHub CI Quality (`next build`)
+> and Vercel preview both failed with `next/font/google`'s loader throwing
+> `TypeError: Cannot read properties of null (reading '1')` while attempting to
+> fetch font data from `fonts.googleapis.com`. T0 ruled: **self-host fonts**, no
+> retry-to-find-a-pass.
 >
-> Tier 3 light audit (LIGHT mode) is next per `Next gate`. Tier 0 will hand
-> off to Tier 3 only after both gates return exit 0 and `git status --short`
-> is empty.
+> Round 6 is a forward-only exception cycle, not a new audit round. The P1
+> semantic implementation SHA `708e0ce71d258c3a70383330dfb8d5d370dbd974` (T0 §A.1
+> predecessor) and the E2E ×3 PASS evidence `EV-RUN-{1,2,3}-*` (T0 §A.2
+> predecessor) are carry-forward, and **Tier 3 LIGHT audit round 1 PASS verdict
+> (per `AUDIT.md` §0 verdict = `PASS`, AUD-001..AUD-008 all P3 non-blocking)**
+> remains authoritative for the **unchanged P1 surface** (P1 runtime UI/HTTP E2E
+> ×3, hard guard, posture preflight, fixture bootstrap, exact-ID teardown, BLK-02
+> SSR fix, BLK-03 recruiter canonical flow, BLK-04 OS-temp cleanup).
+>
+> The font hotfix is a **strict semantic delta** in:
+> - `app/layout.tsx` — replaces `next/font/google` with shared local-font loader
+> - `app/bod/page.tsx` — drops its own Google-font loader; consumes the shared loader
+> - `app/fonts/` — new directory: 5 TTF files + 2 OFL.txt + 1 provenance registry + 1 loader module
+> - `src/shared/ui/font-google-ban.static.test.ts` — new regression guard
+>
+> No routes, auth, DB, fixtures, runtime E2E scripts, or P1 domain logic are
+> touched. Tier 3 DELTA audit will scope-review only the four surfaces above
+> plus the docs/control delta. Round 6 status flips to `READY_FOR_AUDIT`
+> with Tier 3 DELTA retry accepted (T0 §E.2); Tier 3 does NOT re-open unchanged
+> P1 runtime surface (T0 §F). `T0 post-audit release-integrity exceptions used =
+> 1` (correction budget and batches used incremented; T0 §A).
+
+> Status = READY_FOR_AUDIT, Frozen delivery = YES, Canonical gates = PASS,
+> Audit eligibility = ELIGIBLE, Next gate = TIER3_DELTA_AUDIT.
 
 ## 0. Control
 
@@ -25,32 +40,35 @@
 |---|---|
 | Task slug | `hrp-p1-final-release-safety-closeout` |
 | Delivery protocol | `V2_FAST_FREEZE` |
-| Spec version | `v1.4` (×3 fresh runs + baseline gates captured 2026-10-01; rev. 4 schema correction) |
-| Work type | `CODE` (closeout / evidence freeze) |
+| Spec version | `v1.5` (rev. 6 — PR #73 build-blocker font hotfix; round-1 audit PASS verdict unchanged on original surface) |
+| Work type | `CODE` (font hotfix / build blocker / release-integrity exception) |
 | Build vs adopt | `N/A` |
 | Build vs automate | `N/A` |
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
-| Audit reason | P1 final release-safety closeout is a release-blocking gate. Production-side remediation is owned by T0 (not in scope). |
+| Audit reason | P1 final release-safety closeout is a release-blocking gate. Round-1 LIGHT PASS at audit-adoption SHA `1b60dd40`; PR #73 CI/Vercel failed on `next/font/google` network fetch; round-2 DELTA scoped to font surface only. |
 | Status | `READY_FOR_AUDIT` |
 | Frozen delivery | `YES` |
 | Canonical gates | `PASS` |
 | Audit eligibility | `ELIGIBLE` |
-| Next gate | `TIER3_LIGHT_AUDIT` |
+| Next gate | `TIER3_DELTA_AUDIT` |
 | Planner | `Tier 1` (T1C) |
 | Baseline | `2f77399309c94732e71dd371175ab0ba4af02f57` |
-| Implementation SHA | `708e0ce71d258c3a70383330dfb8d5d370dbd974` |
-| Docs/evidence freeze SHA | `ae56072525a60f5e75e196c28b3d4f486b64b3a0` |
+| Implementation SHA | `708e0ce71d258c3a70383330dfb8d5d370dbd974` (predecessor — round-1 audit target) |
+| Pre-correction audit-adoption SHA | `1b60dd40991e71a20845ab35985ea7454518d080` (Tier 3 round-1 PASS at this SHA; build blocker exposed here) |
+| Font-hotfix Implementation SHA | `b0d095822780201c96715c27acb9d3396a20079e` (round-6 semantic commit; DELTA audit target) |
+| Docs/evidence freeze SHA | `b0d095822780201c96715c27acb9d3396a20079e`+1 (placeholder — pinned by next commit) |
 | Prior docs/update HEAD | `e09a5e2ba99ca27035461cfaf67c6543a11ad481` |
 | Contract gate | `READY_TO_CODE` |
 | Decision state | `CLOSED` |
 | Test environment | `READY` |
 | Correction budget | `1` |
-| Correction batches used | `1` |
-| Current execution round | `3` |
-| Current audit round | `0` (Tier 3 not invoked; T0-owned; this handoff delivers READY_FOR_AUDIT) |
-| In-scope roots | `scripts/runtime/**` (db-host-guard, db-posture-preflight, synthetic-fixture, exact-id-teardown, p1-final-runtime-e2e, run-p1-e2e-pipeline, run-p1-e2e.ps1); `src/domains/job-board/components/landing/featured-job-card.tsx` (BLK-02 SSR fix); `docs/tasks/hrp-p1-final-release-safety-closeout/{TASK.md,HANDOFF.md,evidence/}`. See §0.1 for cluster description. |
-| Required gates | `verify-task.ps1` (exit 0); `verify-handoff.ps1` (exit 0); `npm run typecheck`; `npm run lint`; `npm run build`; `npm run test:unit`; `npx prisma validate`; `git diff --check HEAD`; `node .ai-pipeline/scripts/verify-encoding.mjs`. See §0.2 for full list and per-gate evidence file. |
+| Correction batches used | `2` (round 4 docs/control + round 6 font hotfix) |
+| Current execution round | `6` (release-integrity exception round) |
+| Current audit round | `2` (DELTA — Tier 3 not invoked yet) |
+| T0 post-audit release-integrity exceptions used | `1` (of `1` budgeted by T0 §A) |
+| In-scope roots | `app/layout.tsx`, `app/bod/page.tsx` (font-loader swap, preconnect removal); `app/fonts/` (5 TTF + 2 OFL.txt + `FONTS_PROVENANCE.txt` + `local-fonts.tsx` shared loader); `src/shared/ui/font-google-ban.static.test.ts` (regression guard); `docs/tasks/hrp-p1-final-release-safety-closeout/{TASK.md,HANDOFF.md,evidence/}` (docs/control delta). |
+| Required gates | `verify-task.ps1` (exit 0); `verify-handoff.ps1` (exit 0); `npm run typecheck`; `npm run lint`; `npm run build`; `npm run test:unit`; `npx prisma validate`; `git diff --check HEAD`; `node .ai-pipeline/scripts/verify-encoding.mjs`; `rg "from 'next/font/google'" app src` (zero matches). See §0.2 for full list and per-gate evidence file. |
 
 ### 0.1 In-scope roots
 
@@ -58,9 +76,20 @@
 - **A — INTEGRATION POSTURE PROOF**: `scripts/runtime/db-posture-preflight.mjs`.
 - **B — SAFE FIXTURE/RESET/TEARDOWN**: `scripts/runtime/synthetic-fixture.mjs`, `scripts/runtime/exact-id-teardown.mjs`.
 - **C — CANONICAL P1 RUNTIME UI/HTTP E2E**: `scripts/runtime/p1-final-runtime-e2e.mjs`, `scripts/runtime/run-p1-e2e-pipeline.mjs`, `scripts/runtime/run-p1-e2e.ps1`.
-- **D — INCIDENT CLOSEOUT DOCS**: `docs/tasks/hrp-p1-final-release-safety-closeout/{TASK.md,HANDOFF.md,evidence/}`.
-- **D' — PUBLIC JOB RELEASE FIX (NEW)**: `src/domains/job-board/components/landing/featured-job-card.tsx` (added `'use client'`).
-- **E — DELIVERY**: forward-only commits separating semantic/test from docs/evidence freeze; no push, no PR, no T3, no merge, no deploy.
+- **D — INCIDENT CLOSEOUT DOCS**: `docs/tasks/hrp-p1-final-release-safety-closeout/{TASK.md,HANDOFF.md,AUDIT.md,evidence/}`.
+- **D' — PUBLIC JOB RELEASE FIX**: `src/domains/job-board/components/landing/featured-job-card.tsx` (added `'use client'`).
+- **E — DELIVERY (round 3)**: forward-only commits separating semantic/test from docs/evidence freeze; no push, no PR, no T3, no merge, no deploy.
+- **F — ROUND 6 FONT BUILD HOTFIX (PR #73 build blocker; new in rev. 6)**:
+  - `app/layout.tsx` — replaced `next/font/google` with shared `next/font/local` loader; CSS contracts `--font-bvp` and `--font-inter` preserved; Material Symbols CSS link kept (P3 debt); removed Google-font preconnect `<link>`s.
+  - `app/bod/page.tsx` — dropped its own `next/font/google` loader and inline config; now imports `beVietnamPro` from the shared loader (T0 §B.6); stale UTF-16-LE BOM stripped on legitimate modification (AGENTS.md rule #5); pre-existing U+FFFD in the comment `Hàng đ<U+FFFD>i cần xử lý` preserved verbatim (out-of-scope legacy content).
+  - `app/fonts/` (NEW) — 5 committed self-hosted font assets + 2 OFL license files + provenance registry + shared loader module:
+    - `BeVietnamPro-Regular.ttf` (132948 bytes), `BeVietnamPro-Medium.ttf` (135980 bytes), `BeVietnamPro-SemiBold.ttf` (136736 bytes), `BeVietnamPro-Bold.ttf` (140300 bytes) — 4 statics because google/fonts has no variable font for Be Vietnam Pro yet (open since 2022 — see `google/fonts#4340`).
+    - `Inter[opsz,wght].ttf` (876576 bytes) — single variable font with opsz + wght axes (covers static 400/500/600).
+    - `BeVietnamPro-OFL.txt`, `Inter-OFL.txt` (SIL Open Font License 1.1).
+    - `FONTS_PROVENANCE.txt` (size + sha256 registry + provenance notes; AGENTS.md rule #1 keeps the bootstrap helper script out of the repo).
+    - `local-fonts.tsx` — shared `next/font/local` loader exporting `beVietnamPro` and `inter` (TSX so the existing `design-tokens.static.test.ts`, which scans `.tsx` files for `variable: '--font-bvp'` / `variable: '--font-inter'` regex matches, continues to register the brand tokens).
+  - `src/shared/ui/font-google-ban.static.test.ts` (NEW) — static regression guard: ZERO `from 'next/font/google'` imports under `app/**`; shared loader exists and exports both fonts; layout/bod consume shared loader; `--font-bvp` and `--font-inter` remain discoverable as `variable: '<name>'` strings; negative-fixture test proves the gate fails LOUDLY if a future PR reintroduces `next/font/google`.
+- **F' — DELIVERY (round 6)**: forward-only semantic commit (`b0d09582`) separates font hotfix from docs/evidence freeze; no push to PR #73 until Tier 3 DELTA audit returns; no production DB / migration / deploy / Vercel mutation; no P3 findings outside font/build blocker.
 
 ### 0.2 Required gates
 
@@ -79,6 +108,15 @@
 | `git diff --check` | `git diff --check` | exit 0 | `evidence/EV-13-diff-check.log` |
 | Strict UTF-8/no-BOM scan | `node .ai-pipeline/scripts/verify-encoding.mjs` | exit 0 (12/12 changed files OK) | `evidence/EV-14-encoding-scan.log` |
 | Canonical strict integration gate | `CI_INTEGRATION_STRICT=1 npm run test:integration` | `NOT_REQUIRED` (T0 §B-01 forbids `DATABASE_URL_TEST` env name) | `evidence/EV-15-integration-contract-note.log` |
+| **Round 6 — Font hotfix gates (PR #73 build blocker)** | | | |
+| Targeted font ban regression test | `npx vitest run --config vitest.unit.config.ts src/shared/ui/font-google-ban.static.test.ts src/shared/ui/design-tokens.static.test.ts` | 18/18 PASS (font-ban 6/6, design-tokens 12/12) | `evidence/EV-24-font-ban-test.log` |
+| `next/font/google` production-import scan | `grep -rn "from 'next/font/google'" app src` | ZERO MATCHES | `evidence/EV-25-font-google-ban-scan.log` |
+| Font-hotfix typecheck | `npm run typecheck` (after font hotfix) | exit 0 | `evidence/EV-26-font-hotfix-typecheck.log` |
+| Font-hotfix build (no Google Fonts network fetch) | `npm run build` (after font hotfix) | exit 0 — Next.js compiles `/bod` and all P1 routes with `--font-bvp` + `--font-inter` injected from `app/fonts/local-fonts.tsx`; no `TypeError` from `@next/font/dist/google/loader.js` | `evidence/EV-27-font-hotfix-build.log` |
+| Font-hotfix unit tests | `npm run test:unit` (after font hotfix) | exit 0 — 212/212 files, 3523 tests passed, 9 skipped, 0 failed (font-ban added 6 tests; design-tokens unchanged) | `evidence/EV-28-font-hotfix-unit-tests.log` |
+| Font-hotfix strict UTF-8/no-BOM scan | `node .ai-pipeline/scripts/verify-encoding.mjs` (after font hotfix) | exit 0 — 7/7 changed text files PASS | `evidence/EV-29-font-hotfix-encoding-scan.log` |
+| Font-hotfix clean tree | `git status --short` (after font hotfix) | empty (clean working tree) | `evidence/EV-30-font-hotfix-clean-tree.log` |
+| Font asset provenance audit | `node -e "..."` reading `app/fonts/FONTS_PROVENANCE.txt` | 7/7 assets verified (4 BVP statics + 1 Inter var + 2 OFL.txt); size + sha256 pinned; OFL 1.1 text present in both license files | `evidence/EV-31-font-provenance.log` |
 
 ### 0.3 Forbidden paths
 
@@ -126,6 +164,90 @@ remains authoritative. The correction batch is limited to:
 - Working-tree cleanup of `EV-ATTEMPT-1-*` (failure already captured in
   `TIER1_SELF_REVIEW.md` §C; the canonical ×3 evidence is `EV-RUN-{1,2,3}-*`).
 
+### 1.3.1 Rev. 6 — PR #73 build-blocker font hotfix (post-audit release-integrity exception #1)
+
+T0 §A–§G rule this revision. Round 1 Tier 3 audit PASS evidence is **preserved
+as authoritative for the unchanged P1 runtime surface** (the surface from
+Implementation SHA `708e0ce7…` forward through the audit-adoption SHAs); the
+DELTA audit scope is strictly the font delta and docs (see §F).
+
+**Build blocker root cause (accepted).** `next/font/google` triggers a
+network fetch to `fonts.googleapis.com` / `fonts.gstatic.com` at
+`@next/font/dist/google/loader.js` compile time. GitHub Actions and Vercel
+build sandboxes deny egress → loader throws `TypeError: Cannot read
+properties of null (reading '1')`. Fix-by-retry forbidden by T0 §B; the only
+acceptable remedy is self-hosting.
+
+**Semantic correction (font-hotfix commit `b0d09582…`).**
+
+1. Removed every `next/font/google` import from `app/**` and `src/**`.
+   Production-import scan (`grep -rn "from 'next/font/google'" app src`) now
+   returns zero matches (`EV-25`).
+2. Introduced shared loader `app/fonts/local-fonts.tsx` exporting
+   `beVietnamPro` (`variable: '--font-bvp'`, weights 400/500/600/700) and
+   `inter` (`variable: '--font-inter'`, single variable file). The shared
+   `.tsx` extension is required so the existing
+   `src/shared/ui/design-tokens.static.test.ts` regex (scans `*.tsx` files
+   for `variable: '--font-bvp'`) continues to pass without churn.
+3. Committed font assets to `app/fonts/`:
+   - `BeVietnamPro-{Regular,Medium,SemiBold,Bold}.ttf` (4 static weights;
+     no upstream variable yet — `google/fonts#4340`);
+   - `Inter[opsz,wght].ttf` (single variable file covering optical size
+     14..32 × weight 100..900);
+   - `BeVietnamPro-OFL.txt`, `Inter-OFL.txt` (SIL OFL 1.1 license texts);
+   - `FONTS_PROVENANCE.txt` — registry of file sizes, SHA-256 hashes, and
+     upstream commit provenance.
+4. `app/layout.tsx` imports `beVietnamPro` and `inter` from
+   `./fonts/local-fonts`; Google Fonts `<link rel="preconnect">` tags
+   removed; the Material Symbols runtime CSS link (`fonts.googleapis.com/icon`)
+   is **retained** per T0 §B-7 (P3 debt, out of scope here).
+5. `app/bod/page.tsx` now imports `beVietnamPro` from
+   `@/app/fonts/local-fonts`; the bespoke Google-font loader is gone.
+6. CSS variable contracts preserved exactly: `--font-bvp`, `--font-inter`.
+   No design-token churn. No class-name churn outside the imports.
+7. New static regression guard
+   `src/shared/ui/font-google-ban.static.test.ts` proves (a) zero
+   `next/font/google` imports in `app/**`; (b) `app/layout.tsx` wires
+   `--font-bvp` and `--font-inter` from local-font exports; (c)
+   `app/bod/page.tsx` imports from `@/app/fonts/local-fonts`; (d) the shared
+   loader exports both CSS variables; (e) a negative fixture is rejected.
+
+**Impact proof for unchanged surface.** `git diff --name-only 708e0ce7..b0d09582
+-- app src prisma scripts tests packages package.json package-lock.json` —
+runtime surface diff is empty for everything outside `app/fonts/**`,
+`app/layout.tsx`, `app/bod/page.tsx`, and
+`src/shared/ui/font-google-ban.static.test.ts`. Therefore the ×3 PASS
+runtime E2E evidence (`EV-04`–`EV-06`), Tier 3 round-1 audit PASS evidence,
+and the design-token static test suite all carry forward unchanged.
+
+**State at handoff to T0.**
+
+| Field | Value |
+|---|---|
+| Status | `READY_FOR_AUDIT` |
+| Frozen delivery | `YES` |
+| Canonical gates | `PASS` |
+| Audit eligibility | `ELIGIBLE` |
+| Next gate | `TIER3_DELTA_AUDIT` |
+| Predecessor (P1 implementation) | `708e0ce7…` |
+| Audit-adoption predecessors | `ae560725…`, `e09a5e2b…`, `1b60dd40…` |
+| Font-hotfix Implementation SHA | `b0d09582…` |
+| Docs/evidence freeze SHA | (new docs-only commit, see §F; SHA recorded in §10 once committed) |
+| New audit-target HEAD | font-hotfix commit `b0d09582…` (or `b0d09582…+docs` once docs freeze lands — T0 will be told the exact value) |
+| T0 post-audit release-integrity exceptions used | **1** (this build blocker) |
+
+**Commit/freeze discipline.**
+
+- Forward-only semantic commit `b0d09582…` (`fix(p1-final): self-host fonts
+  via next/font/local (PR #73 build blocker)`).
+- Separate docs/evidence freeze commit to follow (recorded in §10 once
+  committed); it pins SHAs, flips control state, and references this TASK
+  rev. 6.
+- No `git reset --hard` / `git commit --amend` / `git rebase` / `git push
+  --force` (T0 §E.3).
+- No push of new commits to PR #73 before DELTA audit (T0 §E.4).
+- Working tree clean before handoff (`EV-30`).
+
 ### 1.4 Non-goals
 
 - KHÔNG sửa schema, package.json, package-lock.json.
@@ -139,6 +261,11 @@ remains authoritative. The correction batch is limited to:
 - KHÔNG tự ý tuyên bố P1 hoàn tất; chỉ flip `READY_FOR_AUDIT` sau khi toàn bộ T0 §E + §F PASS.
 - KHÔNG gọi Tier 3; KHÔNG push/PR/merge/deploy.
 - KHÔNG re-run E2E/build/unit nếu docs-only correction không tạo semantic delta (T0 §Stop boundary).
+- KHÔNG revert to `next/font/google`; KHÔNG swap to a network-fetching font CDN; font assets phải tự host (T0 §B-1..§B-7).
+- KHÔNG đổi design token class names, `--font-bvp`, hoặc `--font-inter` (T0 §B-3).
+- KHÔNG push font-hotfix hoặc docs-freeze commits lên PR #73 trước DELTA audit (T0 §E.4).
+- KHÔNG merge PR #73 / deploy / promote / touch production DB (T0 §G).
+- KHÔNG sửa Material Symbols CSS link thành self-host trong correction này; ghi nhận là P3 debt (T0 §B-7).
 
 ## 2. Evidence
 
@@ -160,6 +287,15 @@ remains authoritative. The correction batch is limited to:
 | `EV-14` | `evidence/EV-14-encoding-scan.log` — 12/12 changed files UTF-8 without BOM (strict scan). | T0 §E + global-rules §7. |
 | `EV-15` | `evidence/EV-15-integration-contract-note.log` — canonical strict integration gate is `NOT_REQUIRED` per T0 §B-01 (forbids `DATABASE_URL_TEST` env name). | T0 §B-01 + DEC-10. |
 | `EV-16` | `evidence/EV-16-forward-only-commits.log` — forward-only commits separating semantic/test (`708e0ce7…`) from docs/evidence freeze (`ae560725…`). | T0 §Stop boundary. |
+| `EV-24` | `evidence/EV-24-font-ban-test.log` — `src/shared/ui/font-google-ban.static.test.ts` (6/6 PASS) + `src/shared/ui/design-tokens.static.test.ts` (12/12 PASS). | T0 §C font regression guard. |
+| `EV-25` | `evidence/EV-25-font-google-ban-scan.log` — `grep -rn "from 'next/font/google'" app src` → zero matches. | T0 §C "Expected: zero production imports". |
+| `EV-26` | `evidence/EV-26-font-hotfix-typecheck.log` — `npm run typecheck` exit 0 after font hotfix. | T0 §D typecheck gate. |
+| `EV-27` | `evidence/EV-27-font-hotfix-build.log` — `npm run build` exit 0 after font hotfix; no `TypeError` from `@next/font/dist/google/loader.js`; `--font-bvp` + `--font-inter` injected from `app/fonts/local-fonts.tsx`. | T0 §D build PASS without Google Fonts network. |
+| `EV-28` | `evidence/EV-28-font-hotfix-unit-tests.log` — `npm run test:unit` exit 0; 212/212 files, 3523 tests passed, 9 skipped, 0 failed (font-ban added 6 tests; design-tokens unchanged at 12). | T0 §D unit-test gate. |
+| `EV-29` | `evidence/EV-29-font-hotfix-encoding-scan.log` — `node .ai-pipeline/scripts/verify-encoding.mjs` exit 0 after font hotfix; 7/7 changed text files PASS (TTF/woff/woff2 binary files are scoped out by `verify-encoding.mjs`'s text-only filter). | T0 §D + global-rules §7. |
+| `EV-30` | `evidence/EV-30-font-hotfix-clean-tree.log` — `git status --short` empty (untracked `app/fonts/*.ttf` and `app/fonts/*.txt` are committed inside the semantic commit; no pending edits). | T0 §E.5 working-tree cleanliness. |
+| `EV-31` | `evidence/EV-31-font-provenance.log` — `app/fonts/FONTS_PROVENANCE.txt` registry cross-checked: 4 BVP statics + 1 Inter variable + 2 OFL.txt; sizes + sha256s pinned; OFL 1.1 text present in both license files; upstream commit SHAs from `google/fonts` repo recorded. | T0 §B-4 + §F font asset provenance audit. |
+| `EV-32` | `evidence/EV-32-impact-proof.log` — `git diff --name-only 708e0ce7..b0d09582 -- app src prisma scripts tests packages package.json package-lock.json` is empty outside `app/fonts/**`, `app/layout.tsx`, `app/bod/page.tsx`, and `src/shared/ui/font-google-ban.static.test.ts`. | T0 §D carry-forward proof: ×3 PASS E2E + Tier 3 round-1 PASS evidence apply to unchanged P1 surface. |
 
 ## 3. Decisions
 
@@ -180,6 +316,10 @@ remains authoritative. The correction batch is limited to:
 | `DEC-13` | NEW — Runner writes to OS temp dir by default and cleans up in `finally`/`process.on('exit')`. Existing `docs/tasks/.tmp/` residue is purged. | CHOSEN (T0 §D.2..§D.3) |
 | `DEC-14` | NEW — `featured-job-card.tsx` adds `'use client'` directive so event handlers inside the component are serialized cleanly on `/viec-lam/SLUG`. | CHOSEN (T0 §B BLK-02) |
 | `DEC-15` | TIER1_SELF_REVIEW.md replaces AUDIT.md; T3 owns `AUDIT.md` after the delivery is genuinely eligible. | CHOSEN (T0 §A.3) |
+| `DEC-16` | NEW — Self-host fonts via `next/font/local`. `next/font/google` is banned from `app/**` and `src/**` production code (T0 §B-1, §B-2). | CHOSEN (T0 §B build-blocker remedy) |
+| `DEC-17` | NEW — Shared root loader `app/fonts/local-fonts.tsx` exporting `beVietnamPro` (`--font-bvp`, weights 400/500/600/700) and `inter` (`--font-inter`, single variable file). `.tsx` extension is mandatory so the existing `design-tokens.static.test.ts` regex (scans `*.tsx` for `variable: '--font-bvp'`) continues to pass without churn. `app/bod/page.tsx` consumes this shared loader rather than maintaining its own Google-font loader. | CHOSEN (T0 §B-6) |
+| `DEC-18` | NEW — Font asset provenance via `app/fonts/FONTS_PROVENANCE.txt` (registry of file sizes, SHA-256 hashes, and upstream commit provenance from `google/fonts` repository). OFL 1.1 license texts committed alongside (`BeVietnamPro-OFL.txt`, `Inter-OFL.txt`). | CHOSEN (T0 §B-4) |
+| `DEC-19` | NEW — Static regression guard `src/shared/ui/font-google-ban.static.test.ts` proves (a) zero `next/font/google` production imports; (b) `app/layout.tsx` wires `--font-bvp` and `--font-inter` from local-font exports; (c) `app/bod/page.tsx` imports from `@/app/fonts/local-fonts`; (d) shared loader exports both CSS variables; (e) negative fixture is rejected. | CHOSEN (T0 §C) |
 
 ## 4. Contract
 
@@ -280,6 +420,11 @@ for measured results and evidence.
 | `AC-15` | Canonical strict integration gate NOT RUN — DEC-10 contract decision. | `pwsh -NoProfile -Command "Write-Output 'integration gate: NOT_REQUIRED (T0 §B-01 forbids DATABASE_URL_TEST env name); DEC-10'; exit 0"` (log: `evidence/EV-15-integration-contract-note.log`). | `NOT_REQUIRED` — T0 §B-01 forbids `DATABASE_URL_TEST` env name. |
 | `AC-16` | Forward-only commits + stop boundary. | `git log --oneline 2f773993..708e0ce7`; `git log --oneline 708e0ce7..ae560725` (output: `evidence/EV-16-forward-only-commits.log`). | Implementation SHA `708e0ce7…` then docs/evidence freeze `ae560725…`; no amend, no rebase, no force-push. |
 | `AC-17` | TASK.md + HANDOFF.md + `evidence/TIER1_SELF_REVIEW.md` exist; `AUDIT.md` deleted (T3-owned). | `git ls-files docs/tasks/hrp-p1-final-release-safety-closeout/`; `git ls-files docs/tasks/hrp-p1-final-release-safety-closeout/AUDIT.md` (expect absent). | TASK.md + HANDOFF.md + TIER1_SELF_REVIEW.md tracked; AUDIT.md not in tree. |
+| `AC-18` | ZERO `next/font/google` production imports in `app/**` and `src/**`. | `grep -rn "from 'next/font/google'" app src` (output: `evidence/EV-25-font-google-ban-scan.log`); static regression test `src/shared/ui/font-google-ban.static.test.ts` (output: `evidence/EV-24-font-ban-test.log`). | Zero matches; static test asserts `app/layout.tsx`, `app/bod/page.tsx`, and negative fixture all clean. |
+| `AC-19` | `--font-bvp` + `--font-inter` CSS variables preserved and wired from shared local-font loader. | `src/shared/ui/design-tokens.static.test.ts` (output: `evidence/EV-24-font-ban-test.log`); `app/fonts/local-fonts.tsx` source inspection. | 12/12 design-token tests PASS; both `variable: '--font-bvp'` and `variable: '--font-inter'` declared in shared loader. |
+| `AC-20` | `npm run build` PASS without any Google Fonts network fetch. | `npm run build` (output: `evidence/EV-27-font-hotfix-build.log`). | exit 0; no `TypeError` from `@next/font/dist/google/loader.js`; `--font-bvp` + `--font-inter` injected from `app/fonts/local-fonts.tsx`. |
+| `AC-21` | Font asset provenance: 4 BVP statics + 1 Inter variable + 2 OFL.txt committed to `app/fonts/`; sizes + SHA-256 pinned in `app/fonts/FONTS_PROVENANCE.txt`; upstream commit SHAs from `google/fonts` recorded. | Manual SHA-256 verification via `node -e "..."` reading `app/fonts/FONTS_PROVENANCE.txt` and recomputing SHA-256 of each committed font asset (output: `evidence/EV-31-font-provenance.log`); manual grep for "SIL Open Font License" + "Version 1.1" inside both `app/fonts/BeVietnamPro-OFL.txt` and `app/fonts/Inter-OFL.txt` to confirm OFL 1.1 license text is present. | 7/7 assets verified; OFL 1.1 text present in both license files; no `.next/static/media/` hash files referenced. |
+| `AC-22` | Font-hotfix ×3 carry-forward proof: `git diff --name-only 708e0ce7..b0d09582 -- app src prisma scripts tests packages package.json package-lock.json` is empty outside `app/fonts/**`, `app/layout.tsx`, `app/bod/page.tsx`, and `src/shared/ui/font-google-ban.static.test.ts`. | `git diff --name-only 708e0ce7..b0d09582 -- app src prisma scripts tests packages package.json package-lock.json` (output: `evidence/EV-32-impact-proof.log`). | Diff limited to font delta; P1 runtime E2E ×3 evidence (`EV-04`–`EV-06`) + Tier 3 round-1 audit PASS evidence (`audit/AI_AUDIT_TIER3_ROUND1.md`) carry forward unchanged. |
 
 ## 7. Risk
 
@@ -297,6 +442,9 @@ for measured results and evidence.
 | `RISK-10` | Recruiter route 404 NO_ACTIVE_ASSIGNMENT on first run. | DEC-12 — fixture seeds ACTIVE `StaffingOrderRecruiterAssignment` row. |
 | `RISK-11` | E2E runner leaves dirty state on FAIL. | DEC-13 — OS temp + `finally`/`process.on('exit')` cleanup. |
 | `RISK-12` | V1 verifier template section-list rejected V2 schema (V1 carry-forward). | Rev. 4 — TASK.md/HANDOFF.md aligned to the V1 canonical schema headings the verifier scripts hard-code (`## 5. Execution Plan`, `## 6. Acceptance`, `## 7. Risk`, `## 8. Open Questions`, `## 9. Planner Resolution`, `## 10. Revision Log`). |
+| `RISK-13` | `next/font/google` build-time network fetch breaks GitHub CI and Vercel build sandboxes. | DEC-16 — banned via `font-google-ban.static.test.ts` regression guard; `next/font/local` self-hosted assets committed to `app/fonts/`. |
+| `RISK-14` | Drift between shared `local-fonts.tsx` and bespoke Bod-page Google-font loader. | DEC-17 — `app/bod/page.tsx` imports from `@/app/fonts/local-fonts`; static test asserts that import path. |
+| `RISK-15` | Untracked binary font assets orphaned or with broken provenance. | DEC-18 — committed into the semantic commit `b0d09582…`; `FONTS_PROVENANCE.txt` registry cross-checked by `EV-31`. |
 
 ## 8. Open Questions
 
@@ -310,6 +458,8 @@ architecture is the only authority (DEC-01..DEC-15 close all decisions).
 - Round 2 (cold-connect warmup fix) — observed step-1 `INVALID_CREDENTIALS` 401. Fix: `waitForBoot()` requires Prisma 200/404.
 - Round 3 (T0 §F closure) — three P1 release blockers (BLK-02, BLK-03, BLK-04) closed. SSR fix, recruiter canonical flow, OS-temp cleanup. Verified by ×3 fresh runs.
 - Round 4 (T0 pre-audit docs/control integrity correction) — TASK.md / HANDOFF.md aligned to the V1 canonical schema the verifier scripts still hard-code; stale `Final HEAD` pin replaced with the correct SHA trio (Implementation `708e0ce7…` / docs/evidence freeze `ae560725…` / prior docs/update HEAD `e09a5e2b…`); AUDIT.md deletion staged-deletion finalized; `EV-ATTEMPT-1-*` removed from working tree (failure already captured in TIER1_SELF_REVIEW.md). No semantic delta vs `708e0ce7…`.
+- Round 5 (terminal control sync) — TASK.md §0 Status flipped from `READY_FOR_EXECUTION` to `READY_FOR_AUDIT` so HANDOFF.md and TASK.md agree before Tier 3 invocation.
+- Round 6 (PR #73 build-blocker font hotfix — current) — post-audit release-integrity exception #1. `next build` failed in GitHub Actions and Vercel with `TypeError: Cannot read properties of null (reading '1')` from `@next/font/dist/google/loader.js` while trying to fetch font data from `fonts.googleapis.com` / `fonts.gstatic.com`. T0 ruled: self-host fonts, no retry-to-find-a-pass. Removed every `next/font/google` production import; introduced `next/font/local` via shared loader `app/fonts/local-fonts.tsx` (`--font-bvp` + `--font-inter`); committed font assets (4 BVP statics + 1 Inter variable + 2 OFL.txt + 1 provenance registry) to `app/fonts/`; removed Google Fonts preconnect tags; added static regression guard `src/shared/ui/font-google-ban.static.test.ts`; verified by E-24..E-31 gates; preserved Tier 3 round-1 audit PASS evidence as authoritative for the unchanged P1 runtime surface. Control flipped to `READY_FOR_AUDIT` (next gate = `TIER3_DELTA_AUDIT`) for Tier 3 DELTA scope only.
 
 ## 10. Revision Log
 
@@ -322,3 +472,4 @@ architecture is the only authority (DEC-01..DEC-15 close all decisions).
 | `v1.4` | `2026-10-01` | Fresh `EV-RUN-1/2/3-*` ×3 PASS captured (20/20 steps, posture/fixture/e2e/teardown all `0`, residue `users=0/orders=0/slots=0/projects=0/companies=0` per run). Step 15 fail-closed contract confirmed (400 `PLACEMENT_VALIDATION_ERROR` "HRP-managed Placement KHÔNG thể chuyển EFFECTIVE trong N3 — atomic workforce bridge thuộc N4"). Step 17 HTTP 200 + run-scoped marker. Baseline gates PASS: `npx prisma validate`, `tsc --noEmit`, `eslint .`, `next build`, `vitest run --config vitest.unit.config.ts` (211/211 files, 3517 tests), `git diff --check`, `node verify-encoding.mjs` (12/12 files UTF-8 no BOM). Status flipped to `READY_FOR_AUDIT` after ×3 PASS. Implementation SHA pinned. | T0 §E + §F closure: 3 final runs PASS, all blockers + audit calls. |
 | `v1.4` (rev. 5 — terminal control sync) | `2026-10-01 21:57 ICT` | Terminal control sync — TASK.md §0 Status flipped to `READY_FOR_AUDIT` (was `READY_FOR_EXECUTION`); AUDIT.md staged-deletion prose corrected to record that the deletion was committed at rev. 4 SHA `218bcbedb65a3f2d9b35cf57bb2f8f4d03151750`; Tier 3 will author a fresh AUDIT.md after this status flip. Docs-only commit; no semantic delta; runtime ×3 PASS evidence carry-forward from rev. 4. HANDOFF.md, source, tests, scripts, evidence runtime and SHA pins untouched. | T0 terminal control sync directive: TASK.md and HANDOFF.md must both report Status = READY_FOR_AUDIT before Tier 3 is invoked; rev. 5 closes that mismatch without touching HANDOFF.md or runtime evidence. |
 | `v1.4` (rev. 4 — docs/control correction) | `2026-10-01 18:30 ICT` | T0 pre-audit docs/control integrity correction: TASK.md / HANDOFF.md aligned to the V1 canonical schema the verifier scripts hard-code; `## 5. Execution Plan`, `## 6. Acceptance`, `## 7. Risk`, `## 8. Open Questions`, `## 9. Planner Resolution`, `## 10. Revision Log` re-introduced; RQ-01..RQ-12 + RQ → STEP → AC traceability added; `In-scope roots` and `Required gates` rows added to `## 0. Control`; `Contract gate` cell reduced to exact `READY_TO_CODE`; stale `Final HEAD` SHA `ebc2c704…` removed; replaced with `Docs/evidence freeze SHA ae560725…` + `Prior docs/update HEAD e09a5e2b…` rows; `AUDIT.md` deletion finalized; `EV-ATTEMPT-1-*` working-tree artefacts removed. Spec version retained as `v1.4` because no semantic delta was introduced — this revision is docs/control-only per T0 §A.1. | T0 §A..§G corrections. Carry-forward from `v1.4` implementation + freeze is authoritative; verifier scripts still hard-code the V1 canonical schema, so docs/evidence must conform. |
+| `v1.5` (rev. 6 — PR #73 build-blocker font hotfix) | `2026-10-01 22:30 ICT` | T0 post-audit release-integrity exception #1: removed every `next/font/google` production import (T0 §B-1); introduced `next/font/local` via shared loader `app/fonts/local-fonts.tsx` exporting `beVietnamPro` (`--font-bvp`, weights 400/500/600/700) and `inter` (`--font-inter`, single variable file); committed font assets to `app/fonts/` (4 BVP static TTF + 1 Inter variable TTF + 2 OFL license files + 1 provenance registry); removed Google Fonts `<link rel="preconnect">` tags; `app/bod/page.tsx` switched to shared root local-font loader; added static regression guard `src/shared/ui/font-google-ban.static.test.ts`; verified E-24..E-31 (font-ban 18/18, zero `next/font/google` imports, typecheck/lint/build/unit PASS, UTF-8/no-BOM scan 7/7, clean tree, provenance 7/7). Tier 3 round-1 PASS evidence preserved as authoritative for unchanged P1 surface; DELTA audit scope is strictly the font delta + docs. Status flipped to `READY_FOR_AUDIT` (next gate `TIER3_DELTA_AUDIT`); Audit eligibility `ELIGIBLE`; T0 post-audit release-integrity exceptions used = 1. Font-hotfix Implementation SHA `b0d09582…`; docs/evidence freeze SHA recorded in `v1.5` docs freeze row below once committed. | T0 §A–§G post-audit release-integrity exception #1. `next/font/google` blocked CI + Vercel build; self-host fonts. No semantic delta to unchanged P1 runtime surface (`EV-32` impact proof). |

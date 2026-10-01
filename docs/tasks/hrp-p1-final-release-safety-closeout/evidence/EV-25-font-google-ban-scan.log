@@ -1,0 +1,9 @@
+Command: git grep -n "from 'next/font/google'" app src | grep -v 'font-google-ban.static.test.ts'
+Date   : 2026-10-01
+Note   : The single match reported by raw git grep is a NEGATIVE FIXTURE inside
+         the regression-guard test itself (a string literal that proves the
+         detector has teeth). Excluding that file, there are zero production
+         imports.
+
+Output (excluding the negative fixture file):
+[no matches]

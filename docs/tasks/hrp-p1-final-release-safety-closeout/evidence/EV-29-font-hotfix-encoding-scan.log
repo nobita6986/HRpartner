@@ -1,0 +1,12 @@
+Command: node .ai-pipeline/scripts/verify-encoding.mjs
+Date   : 2026-10-01
+
+UTF-8 NO-BOM GATE
+  [OK]   docs/tasks/hrp-p1-final-release-safety-closeout/HANDOFF.md
+  [OK]   docs/tasks/hrp-p1-final-release-safety-closeout/TASK.md
+RESULT: PASS (2 changed text file(s), strict UTF-8 without BOM).
+
+Note: The font-hotfix semantic commit (b0d09582) also added binary
+.ttf/.woff2 assets under app/fonts/ which verify-encoding.mjs scopes
+out (text-only filter). 2 changed text files in this docs/control
+batch.
