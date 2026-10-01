@@ -14,7 +14,7 @@
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
 | Baseline | `origin/main @ 2f77399309c94732e71dd371175ab0ba4af02f57` |
-| Baseline/diff range | `2f77399309c94732e71dd371175ab0ba4af02f57..de5774fd` (forward-only; no amend/reset/rebase/force-push) |
+| Baseline/diff range | `2f77399309c94732e71dd371175ab0ba4af02f57..858f0bb8` (semantic delivery; HEAD carries forward-only docs/evidence freeze at `125c90cd`, `b7ec1999`, `773906fb`, `b89ed2cf`, `de5774fd`, `f617919` — see commit chain below) |
 | Implementation SHA | `858f0bb8207da2611e9e5ce2173badaf53e4cc1d` |
 | Freeze commit SHA | `125c90cd17a106bac49f99be1a859477f4415b84` |
 | EV-16 refresh SHA | `b7ec199972c63f12aff55bb2b9872d165bb8862a` |

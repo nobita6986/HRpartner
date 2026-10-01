@@ -16,7 +16,7 @@
 | Status | `READY_FOR_AUDIT` |
 | Planner | `Tier 1` (T1C) |
 | Baseline | `origin/main @ 2f77399309c94732e71dd371175ab0ba4af02f57` |
-| Baseline/diff range | `2f77399309c94732e71dd371175ab0ba4af02f57..b89ed2cf` (forward-only; no amend/reset/rebase/force-push) |
+| Baseline/diff range | `2f77399309c94732e71dd371175ab0ba4af02f57..858f0bb8` (semantic delivery; HEAD carries forward-only docs/evidence freeze at `125c90cd`, `b7ec1999`, `773906fb`, `b89ed2cf`, `de5774fd`, `f617919` — see commit chain in HANDOFF §0) |
 | Contract gate | `READY_TO_CODE` → `READY_FOR_AUDIT` (guard proof PASS + synthetic posture PASS + E2E ×3 PASS + zero-residue PASS) |
 | Decision state | `CLOSED` (T0 directive §B-01..§B-09 fully locks Đường B; no new Owner decision; canonical main architecture is the only authority) |
 | Test environment | `READY` (synthetic Neon `ep-empty-forest-azlhfyo9.c-3.ap-southeast-1.aws.neon.tech` / `neondb` provisioned by T0; canonical strict gate is intentionally not invoked because T0 §B-01 forbids `DATABASE_URL_TEST` env name — see HANDOFF §3 contract note) |
