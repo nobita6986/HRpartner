@@ -1,0 +1,10 @@
+Command: npm run test:unit
+Date   : 2026-10-01
+
+ Test Files  212 passed (212)
+      Tests  3523 passed | 9 skipped (3532)
+   Start at  23:39:54
+   Duration  58.89s (transform 3.48s, setup 0ms, collect 13.18s, tests 5.11s, environment 35ms, prepare 13.38s)
+
+RESULT: exit 0. 212/212 files, 3523 tests passed, 9 skipped, 0 failed.
+        (font-ban added 6 tests; design-tokens unchanged at 12 tests.)

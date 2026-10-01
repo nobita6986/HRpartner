@@ -1,0 +1,7 @@
+Command: npm run typecheck
+Date   : 2026-10-01
+
+> hrp@0.1.0 typecheck
+> tsc --noEmit
+
+RESULT: exit 0 (no errors)

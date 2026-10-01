@@ -1,0 +1,30 @@
+Command: Get-FileHash -Algorithm SHA256 -LiteralPath app/fonts/BeVietnamPro-Regular.ttf, app/fonts/BeVietnamPro-Medium.ttf, app/fonts/BeVietnamPro-SemiBold.ttf, app/fonts/BeVietnamPro-Bold.ttf, 'app/fonts/Inter[opsz,wght].ttf', app/fonts/BeVietnamPro-OFL.txt, app/fonts/Inter-OFL.txt
+Date   : 2026-10-01
+
+Algorithm Hash                                                             Path
+--------- ----                                                             ----
+SHA256    CD1EF6E9D7DB28AD5CDB88A65CCBE693870E60D340B791F349D248342B4FE4C3  app/fonts/BeVietnamPro-Regular.ttf
+SHA256    B60832BFA0FCD015158112C64D7E3FDAD3B0C6287D1823F85A3103636E845268  app/fonts/BeVietnamPro-Medium.ttf
+SHA256    BD8E27EB02720B9D91E59E4F10A90878643219F25CE6A8D9A4F06A8A88D3BB71  app/fonts/BeVietnamPro-SemiBold.ttf
+SHA256    7F738FE5C43C8872807B20E2D30D42163618DE8A4DAF7F48A939ADAC32C16847  app/fonts/BeVietnamPro-Bold.ttf
+SHA256    29160A80FF49DDCAB2C97711247E08B1FAB27A484A329CE8B813D820DC559031  app/fonts/Inter[opsz,wght].ttf
+SHA256    6B7F8F73609A25EA78C891E34CF37B06F8A676B7EA986E941E43B009110F2A85  app/fonts/BeVietnamPro-OFL.txt
+SHA256    5B9321A4298CFEB6B34354164A1C3AFC3DB114569984C502B9B35D988FD58C57  app/fonts/Inter-OFL.txt
+
+Cross-check against app/fonts/FONTS_PROVENANCE.txt:
+  BeVietnamPro-Regular.ttf       PROV=cd1ef6e9d7db28ad5cdb88a65ccbe693870e60d340b791f349d248342b4fe4c3   ACTUAL=CD1EF6E9D7DB28AD5CDB88A65CCBE693870E60D340B791F349D248342B4FE4C3   MATCH
+  BeVietnamPro-Medium.ttf        PROV=b60832bfa0fcd015158112c64d7e3fdad3b0c6287d1823f85a3103636e845268   ACTUAL=B60832BFA0FCD015158112C64D7E3FDAD3B0C6287D1823F85A3103636E845268   MATCH
+  BeVietnamPro-SemiBold.ttf      PROV=bd8e27eb02720b9d91e59e4f10a90878643219f25ce6a8d9a4f06a8a88d3bb71   ACTUAL=BD8E27EB02720B9D91E59E4F10A90878643219F25CE6A8D9A4F06A8A88D3BB71   MATCH
+  BeVietnamPro-Bold.ttf          PROV=7f738fe5c43c8872807b20e2d30d42163618de8a4daf7f48a939adac32c16847   ACTUAL=7F738FE5C43C8872807B20E2D30D42163618DE8A4DAF7F48A939ADAC32C16847   MATCH
+  Inter[opsz,wght].ttf           PROV=29160a80ff49ddcab2c97711247e08b1fab27a484a329ce8b813d820dc559031   ACTUAL=29160A80FF49DDCAB2C97711247E08B1FAB27A484A329CE8B813D820DC559031   MATCH
+  BeVietnamPro-OFL.txt           PROV=6b7f8f73609a25ea78c891e34cf37b06f8a676b7ea986e941e43b009110f2a85   ACTUAL=6B7F8F73609A25EA78C891E34CF37B06F8A676B7EA986E941E43B009110F2A85   MATCH
+  Inter-OFL.txt                  PROV=5b9321a4298cfeb6b34354164a1c3afc3db114569984c502b9b35d988fd58c57   ACTUAL=5B9321A4298CFEB6B34354164A1C3AFC3DB114569984C502B9B35D988FD58C57   MATCH
+
+OFL 1.1 license-text presence check (Select-String 'SIL Open Font License' + 'Version 1.1'):
+  app/fonts/BeVietnamPro-OFL.txt  : both 'SIL Open Font License' and 'Version 1.1' present  PASS
+  app/fonts/Inter-OFL.txt         : both 'SIL Open Font License' and 'Version 1.1' present  PASS
+
+RESULT: 7/7 assets verified. OFL 1.1 text present in both license files.
+        No .next/static/media/ hash files referenced (commit b0d09582
+        only adds app/fonts/** + app/layout.tsx + app/bod/page.tsx +
+        src/shared/ui/font-google-ban.static.test.ts).

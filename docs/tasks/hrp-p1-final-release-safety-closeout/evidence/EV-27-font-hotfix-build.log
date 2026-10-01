@@ -1,0 +1,21 @@
+Command: npm run build
+Date   : 2026-10-01
+
+> hrp@0.1.0 build
+> next build
+
+   ▲ Next.js 15.5.23
+
+   Creating an optimized production build ...
+   Compiled successfully in 9.3s
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (30/30) ...
+
+Route summary:
+
+
+RESULT: exit 0. No TypeError from @next/font/dist/google/loader.js.
+        next/font/local loader resolved --font-bvp and --font-inter
+        from app/fonts/local-fonts.tsx; build emitted static pages
+        (30/30) without any Google Fonts network fetch.

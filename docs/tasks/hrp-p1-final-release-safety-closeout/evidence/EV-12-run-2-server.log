@@ -1,0 +1,53 @@
+   ▲ Next.js 15.5.23
+   - Local:        http://localhost:13561
+   - Network:      http://192.168.1.11:13561
+
+ ✓ Starting...
+ ✓ Ready in 670ms
+ ⨯ Error: Event handlers cannot be passed to Client Component props.
+  {type: "button", disabled: false, onClick: function, className: ..., aria-label: ..., data-testid: ..., children: ...}
+                                             ^^^^^^^^
+If you need interactivity, consider converting part of this to a Client Component.
+    at stringify (<anonymous>) {
+  digest: '972528983'
+}
+ ⨯ Error: Event handlers cannot be passed to Client Component props.
+  {type: "button", disabled: false, onClick: function, className: ..., aria-label: ..., data-testid: ..., children: ...}
+                                             ^^^^^^^^
+If you need interactivity, consider converting part of this to a Client Component.
+    at stringify (<anonymous>) {
+  digest: '972528983'
+}
+ ⨯ Error: Event handlers cannot be passed to Client Component props.
+  {type: "button", disabled: false, onClick: function, className: ..., aria-label: ..., data-testid: ..., children: ...}
+                                             ^^^^^^^^
+If you need interactivity, consider converting part of this to a Client Component.
+    at stringify (<anonymous>) {
+  digest: '972528983'
+}
+{"schemaVersion":"1.0","timestamp":"2026-10-01T07:15:31.699Z","level":"info","event":"placement.command.success","requestId":"6f121569-df62-4f5c-957c-ab0fc8cc340c","meta":{"route":"POST:/api/admin/placements","method":"POST","status":201,"actorRole":"ADMIN","resourceType":"placement_command","outcome":"success","detail":{"command":"placement.create","replayed":false}}}
+{"schemaVersion":"1.0","timestamp":"2026-10-01T07:15:31.788Z","level":"warn","event":"placement.command.idempotency_missing","requestId":"b7405098-2d49-4913-bd52-8c1cface721f","meta":{"route":"POST:/api/admin/placements/[id]/actions/confirm","method":"POST","actorRole":"ADMIN","resourceType":"placement_command","outcome":"idempotency_missing","errorCode":"[REDACTED]","detail":{"command":"placement.confirm"}}}
+{"schemaVersion":"1.0","timestamp":"2026-10-01T07:15:33.462Z","level":"info","event":"placement.command.success","requestId":"d78497c1-db95-4234-8989-341994b0d687","meta":{"route":"POST:/api/admin/placements/[id]/actions/confirm","method":"POST","status":200,"actorRole":"ADMIN","resourceType":"placement_command","outcome":"success","detail":{"command":"placement.confirm","placementId":"[REDACTED]","replayed":false}}}
+{"schemaVersion":"1.0","timestamp":"2026-10-01T07:15:34.149Z","level":"warn","event":"placement.command.placement_error","requestId":"5d8858ec-ca20-4137-b670-b49efd4bb2f7","meta":{"route":"POST:/api/admin/placements/[id]/actions/effective","method":"POST","status":400,"actorRole":"ADMIN","resourceType":"placement_command","outcome":"placement_error","errorCode":"[REDACTED]","detail":{"command":"placement.effective","placementId":"[REDACTED]"}}}
+{"schemaVersion":"1.0","timestamp":"2026-10-01T07:15:35.331Z","level":"info","event":"placement.command.success","requestId":"e9aae497-695f-4301-b600-49f9d1be47d5","meta":{"route":"POST:/api/admin/placements/[id]/actions/cancel","method":"POST","status":200,"actorRole":"ADMIN","resourceType":"placement_command","outcome":"success","detail":{"command":"placement.cancel","placementId":"[REDACTED]","replayed":false}}}
+ ⨯ Error: Event handlers cannot be passed to Client Component props.
+  {type: "button", disabled: false, onClick: function, className: ..., aria-label: ..., data-testid: ..., children: ...}
+                                             ^^^^^^^^
+If you need interactivity, consider converting part of this to a Client Component.
+    at stringify (<anonymous>) {
+  digest: '972528983'
+}
+ ⨯ Error: Event handlers cannot be passed to Client Component props.
+  {type: "button", disabled: false, onClick: function, className: ..., aria-label: ..., data-testid: ..., children: ...}
+                                             ^^^^^^^^
+If you need interactivity, consider converting part of this to a Client Component.
+    at stringify (<anonymous>) {
+  digest: '972528983'
+}
+ ⨯ Error: Event handlers cannot be passed to Client Component props.
+  {type: "button", disabled: false, onClick: function, className: ..., aria-label: ..., data-testid: ..., children: ...}
+                                             ^^^^^^^^
+If you need interactivity, consider converting part of this to a Client Component.
+    at stringify (<anonymous>) {
+  digest: '972528983'
+}

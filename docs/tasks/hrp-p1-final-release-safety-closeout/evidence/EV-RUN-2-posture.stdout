@@ -1,0 +1,4 @@
+[describe] synthetic-allowlist host-alias=a1cd8463c25a db-alias=693fe5919fc2
+WRITER_POSTURE user=app_user_writer super=false bypassrls=false db=693fe5919fc2
+ADMIN_POSTURE  user=neondb_owner super=false bypassrls=true db=693fe5919fc2
+POSTURE_OK writer_is_writer admin_is_admin same_db=693fe5919fc2 host_alias=a1cd8463c25a

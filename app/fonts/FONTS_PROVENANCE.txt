@@ -1,0 +1,45 @@
+BeVietnamPro-Regular.ttf	size=132948	sha256=cd1ef6e9d7db28ad5cdb88a65ccbe693870e60d340b791f349d248342b4fe4c3	skipped=false
+BeVietnamPro-Medium.ttf	size=135980	sha256=b60832bfa0fcd015158112c64d7e3fdad3b0c6287d1823f85a3103636e845268	skipped=false
+BeVietnamPro-SemiBold.ttf	size=136736	sha256=bd8e27eb02720b9d91e59e4f10a90878643219f25ce6a8d9a4f06a8a88d3bb71	skipped=false
+BeVietnamPro-Bold.ttf	size=140300	sha256=7f738fe5c43c8872807b20e2d30d42163618de8a4daf7f48a939adac32c16847	skipped=false
+Inter[opsz,wght].ttf	size=876576	sha256=29160a80ff49ddcab2c97711247e08b1fab27a484a329ce8b813d820dc559031	skipped=false
+BeVietnamPro-OFL.txt	size=4397	sha256=6b7f8f73609a25ea78c891e34cf37b06f8a676b7ea986e941e43b009110f2a85	skipped=false
+Inter-OFL.txt	size=4377	sha256=5b9321a4298cfeb6b34354164a1c3afc3db114569984c502b9b35d988fd58c57	skipped=false
+
+# =============================================================================
+# Font asset provenance — PR #73 build-blocker correction (T0 → T1C)
+#
+# Source repository: https://github.com/google/fonts  (branch: main)
+# Direct paths:
+#     ofl/bevietnampro/{BeVietnamPro-Regular.ttf,BeVietnamPro-Medium.ttf,
+#                       BeVietnamPro-SemiBold.ttf,BeVietnamPro-Bold.ttf,OFL.txt}
+#     ofl/inter/{Inter[opsz,wght].ttf,OFL.txt}
+# License:          SIL Open Font License 1.1 (see BeVietnamPro-OFL.txt /
+#                   Inter-OFL.txt committed alongside the assets).
+# Upstream OFL refs:
+#   - Be Vietnam Pro : https://github.com/bettergui/BeVietnamPro
+#                      (Copyright 2021 The Be Vietnam Pro Project Authors)
+#   - Inter          : https://github.com/rsms/inter
+#                      (Copyright 2020 The Inter Project Authors)
+#
+# Why no bootstrap script is checked in:
+#   AGENTS.md rule #1 forbids creating temporary Python/Node helpers merely to
+#   read a file, replace text, and delete the script. The font bootstrap was a
+#   one-shot: it ran during the font-hotfix task, populated this folder, and
+#   was deleted before commit. To re-bootstrap if any file is ever lost:
+#       1. curl the seven files above from raw.githubusercontent.com/google/fonts
+#       2. verify byte sizes match the values in the table at the top
+#       3. recompute sha256 and append a new row to this registry
+#   The byte sizes are pinned to the upstream google/fonts `size` field; the
+#   github-API `sha` field is the git blob SHA (over the compressed git object),
+#   NOT a hash of the raw file bytes, so we use size + sha256 instead.
+#
+# Why Be Vietnam Pro uses 4 separate static TTFs instead of a variable font:
+#   google/fonts#4340 (open since 2022): no variable font has shipped yet for
+#   Be Vietnam Pro. The 4 weights match the original next/font/google
+#   configuration in app/layout.tsx (400/500/600/700).
+#
+# Why Inter uses one variable TTF:
+#   Inter[opsz,wght].ttf ships a single variable font covering opsz 14..32 +
+#   wght 100..900 — that covers the layout's static weights 400/500/600.
+# =============================================================================

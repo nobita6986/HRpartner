@@ -1,0 +1,23 @@
+[describe] synthetic-allowlist host-alias=a1cd8463c25a db-alias=693fe5919fc2
+[boot] start next on port=13091 runId=98b17547-ea7b-4273-8669-a6c724e1dd0d
+[step-01] PASS userId=rt-e2e-98b17…
+[step-02] PASS openingId=8663bb4a… postingId=df509b2d… revision=1
+[step-03] PASS serviceModel=STAFFING_SUPPLY
+[step-04] PASS open POST status=200
+[step-05] PASS revision→2 title=Runtime E2E 98b17547
+[step-06] PASS slug=electrician-0-6e0b87b9 status=PUBLISHED
+[step-07] PASS status=200 slug=electrician-0-6e0b87b9 marker=ok
+[step-08] PASS trackingCode=APP-S2X9-QXQN-STM5-ADRC-Y7NW-HJ1A applyPhone=0975…
+[step-09] PASS submissionId=36927f6f… slotId=5c2c2b74…
+[step-10] PASS userId=rt-e2e-98b17…
+[step-11] PASS items=0
+[step-12] PASS handlingAssignmentId=d10491bd…
+[step-13] PASS placementId=ee30c0e1… status=SELECTED
+[step-14] PASS status=200 body.status=CONFIRMED
+[step-15] PASS status=400 body={"error":"PLACEMENT_VALIDATION_ERROR","message":"HRP-managed Placement KHÔNG thể chuyển EFFECTIVE trong N3 — atomic workforce bridge thuộc N4","details":{"place
+[step-16] PASS status=200 body.status=CANCELLED
+[step-17] PASS status=200 marker=ok
+[step-18] PASS items=1
+[step-19] PASS residue={"users":"3","orders":"1","slots":"1","openings":"1","postings":"1","submissions":"1","placements":"1","handlingassignments":"1"}
+[step-20] PASS trackingCode=APP-S2X9-QXQN-STM5-ADRC-Y7NW-HJ1A placementId=ee30c0e1…
+[p1-e2e] OK

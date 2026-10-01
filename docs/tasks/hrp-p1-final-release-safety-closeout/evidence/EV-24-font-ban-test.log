@@ -1,0 +1,14 @@
+Command: npx vitest run --config vitest.unit.config.ts src/shared/ui/font-google-ban.static.test.ts src/shared/ui/design-tokens.static.test.ts
+Date   : 2026-10-01
+
+ RUN  v2.1.9 C:/CodeApp/HrP-t1c-p1-final-release-safety-closeout
+
+ ✓ src/shared/ui/design-tokens.static.test.ts (12 tests) 68ms
+ ✓ src/shared/ui/font-google-ban.static.test.ts (6 tests) 185ms
+
+ Test Files  2 passed (2)
+      Tests  18 passed (18)
+   Start at  23:37:19
+   Duration  872ms (transform 35ms, setup 0ms, collect 144ms, tests 253ms, environment 0ms, prepare 118ms)
+
+RESULT: 18/18 PASS (font-ban 6/6, design-tokens 12/12); exit 0

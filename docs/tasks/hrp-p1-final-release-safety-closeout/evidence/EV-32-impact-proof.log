@@ -1,0 +1,33 @@
+Command: git diff --name-only 708e0ce7..b0d09582 -- app src prisma scripts tests packages package.json package-lock.json
+Date   : 2026-10-01
+
+Output (12 changed files; all font-delta):
+  app/bod/page.tsx
+  app/fonts/BeVietnamPro-Bold.ttf
+  app/fonts/BeVietnamPro-Medium.ttf
+  app/fonts/BeVietnamPro-OFL.txt
+  app/fonts/BeVietnamPro-Regular.ttf
+  app/fonts/BeVietnamPro-SemiBold.ttf
+  app/fonts/FONTS_PROVENANCE.txt
+  app/fonts/Inter-OFL.txt
+  app/fonts/Inter[opsz,wght].ttf
+  app/fonts/local-fonts.tsx
+  app/layout.tsx
+  src/shared/ui/font-google-ban.static.test.ts
+
+RESULT: All 12 changes are inside the font-delta surface
+        (app/fonts/**, app/layout.tsx, app/bod/page.tsx, and the
+        font-google-ban static regression guard). No changes to:
+          - prisma/ schema or migrations
+          - scripts/runtime/ orchestration
+          - tests/ (except new font-ban static test)
+          - packages/
+          - package.json / package-lock.json
+          - app/api/** routes
+          - src/domains/** business logic
+          - src/shared/services/** (auth, DB, recruiter E2E)
+
+Therefore the ×3 PASS runtime E2E evidence (EV-RUN-{1,2,3}-*),
+Tier 3 round-1 audit PASS evidence (audit/AI_AUDIT_TIER3_ROUND1.md),
+and the design-token static test suite (12/12 design-tokens
+tests) all carry forward unchanged for the P1 runtime surface.

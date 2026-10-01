@@ -1,0 +1,13 @@
+=== integration-contract-note (DECLARED — see HANDOFF §4.1 / TASK §0 Required gates / DEC-10) ===
+
+Command:
+  CI_INTEGRATION_STRICT=1 npm run test:integration
+
+Result:
+  RESULT: NOT_REQUIRED
+
+Reason:
+  T0 §B-01 forbids DATABASE_URL_TEST env name. The canonical strict integration lane
+  is reserved for the production-equivalent test DB pair (T0 has not provisioned it
+  for this closeout). P1 final closeout substitutes runtime UI/HTTP x3 + zero-residue x3
+  + baseline-gates x7 as the canonical validation lane per DEC-10.
