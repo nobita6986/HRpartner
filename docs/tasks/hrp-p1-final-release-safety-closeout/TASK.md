@@ -8,8 +8,12 @@
 > carry-forward — this revision does NOT touch `app/`, `src/`, `prisma/`,
 > `tests/`, `scripts/`, `packages/`, `package.json`, or `package-lock.json`
 > (T0 §Stop boundary). `AUDIT.md` is owned by Tier 3 and is **not** authored
-> by T1; the prior T1-deletion of `docs/tasks/.../AUDIT.md` is staged in
-> the working tree (commit pending in this correction batch).
+> by T1; the T1-deletion of `docs/tasks/.../AUDIT.md` is finalized and was
+> committed at rev. 4 SHA `218bcbedb65a3f2d9b35cf57bb2f8f4d03151750`.
+> Tier 3 will author a fresh `AUDIT.md` after this rev. 5 terminal
+> control sync flips the TASK.md status to `READY_FOR_AUDIT` (terminal
+> docs-only commit; no semantic delta; runtime ×3 PASS evidence
+> carry-forward).
 >
 > Tier 3 light audit (LIGHT mode) is next per `Next gate`. Tier 0 will hand
 > off to Tier 3 only after both gates return exit 0 and `git status --short`
@@ -28,7 +32,7 @@
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
 | Audit reason | P1 final release-safety closeout is a release-blocking gate. Production-side remediation is owned by T0 (not in scope). |
-| Status | `READY_FOR_EXECUTION` |
+| Status | `READY_FOR_AUDIT` |
 | Frozen delivery | `YES` |
 | Canonical gates | `PASS` |
 | Audit eligibility | `ELIGIBLE` |
@@ -316,4 +320,5 @@ architecture is the only authority (DEC-01..DEC-15 close all decisions).
 | `v1.2` | `2026-10-01` | Step 15 payload fix: `clientAcknowledgedByUserId` switched from `adminUserId` (fixture ID shape `rt-e2e-TOKEN-ROLE`, not UUID v4) to `randomUUID()`. Server-side `z.string().refine(isUuidV4, …)` at the canonical recruiter effective-action route handler requires UUID v4; service-side `markPlacementEffective` stores it as opaque acknowledgement identifier (no FK to users). After schema pass, HRP_MANAGED still fails closed per DEC-07 → 400 `PLACEMENT_VALIDATION_ERROR`; step 16 cancel unaffected. | T0 §C.5 + Step 15 first-pass failure (see `EV-ATTEMPT-1-e2e.stderr`). |
 | `v1.3` | `2026-10-01` | Stale `EV-RUN-1-*` evidence renamed to `EV-ATTEMPT-1-*` and EXCLUDED from final ×3 evidence. | T0 §B (×3 final runs must be PASS runs, not attempt runs). |
 | `v1.4` | `2026-10-01` | Fresh `EV-RUN-1/2/3-*` ×3 PASS captured (20/20 steps, posture/fixture/e2e/teardown all `0`, residue `users=0/orders=0/slots=0/projects=0/companies=0` per run). Step 15 fail-closed contract confirmed (400 `PLACEMENT_VALIDATION_ERROR` "HRP-managed Placement KHÔNG thể chuyển EFFECTIVE trong N3 — atomic workforce bridge thuộc N4"). Step 17 HTTP 200 + run-scoped marker. Baseline gates PASS: `npx prisma validate`, `tsc --noEmit`, `eslint .`, `next build`, `vitest run --config vitest.unit.config.ts` (211/211 files, 3517 tests), `git diff --check`, `node verify-encoding.mjs` (12/12 files UTF-8 no BOM). Status flipped to `READY_FOR_AUDIT` after ×3 PASS. Implementation SHA pinned. | T0 §E + §F closure: 3 final runs PASS, all blockers + audit calls. |
+| `v1.4` (rev. 5 — terminal control sync) | `2026-10-01 21:57 ICT` | Terminal control sync — TASK.md §0 Status flipped to `READY_FOR_AUDIT` (was `READY_FOR_EXECUTION`); AUDIT.md staged-deletion prose corrected to record that the deletion was committed at rev. 4 SHA `218bcbedb65a3f2d9b35cf57bb2f8f4d03151750`; Tier 3 will author a fresh AUDIT.md after this status flip. Docs-only commit; no semantic delta; runtime ×3 PASS evidence carry-forward from rev. 4. HANDOFF.md, source, tests, scripts, evidence runtime and SHA pins untouched. | T0 terminal control sync directive: TASK.md and HANDOFF.md must both report Status = READY_FOR_AUDIT before Tier 3 is invoked; rev. 5 closes that mismatch without touching HANDOFF.md or runtime evidence. |
 | `v1.4` (rev. 4 — docs/control correction) | `2026-10-01 18:30 ICT` | T0 pre-audit docs/control integrity correction: TASK.md / HANDOFF.md aligned to the V1 canonical schema the verifier scripts hard-code; `## 5. Execution Plan`, `## 6. Acceptance`, `## 7. Risk`, `## 8. Open Questions`, `## 9. Planner Resolution`, `## 10. Revision Log` re-introduced; RQ-01..RQ-12 + RQ → STEP → AC traceability added; `In-scope roots` and `Required gates` rows added to `## 0. Control`; `Contract gate` cell reduced to exact `READY_TO_CODE`; stale `Final HEAD` SHA `ebc2c704…` removed; replaced with `Docs/evidence freeze SHA ae560725…` + `Prior docs/update HEAD e09a5e2b…` rows; `AUDIT.md` deletion finalized; `EV-ATTEMPT-1-*` working-tree artefacts removed. Spec version retained as `v1.4` because no semantic delta was introduced — this revision is docs/control-only per T0 §A.1. | T0 §A..§G corrections. Carry-forward from `v1.4` implementation + freeze is authoritative; verifier scripts still hard-code the V1 canonical schema, so docs/evidence must conform. |
