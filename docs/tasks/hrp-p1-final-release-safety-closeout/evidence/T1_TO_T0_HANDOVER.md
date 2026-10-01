@@ -15,10 +15,10 @@
 | Task slug | `hrp-p1-final-release-safety-closeout` |
 | Delivery protocol | `V2_FAST_FREEZE` |
 | Spec version | `v1.4` |
-| Baseline | `origin/main @ 11ee086529bf2920f687851f21fe4f6c1c60bd42` |
+| Baseline | `origin/main @ 2f77399309c94732e71dd371175ab0ba4af02f57` (per T0 §A.1; `11ee0865…` is the round-3 predecessor and is **not** the baseline) |
 | **Implementation SHA** | `708e0ce71d258c3a70383330dfb8d5d370dbd974` |
 | **Freeze commit SHA** | `ae56072525a60f5e75e196c28b3d4f486b64b3a0` |
-| **Final HEAD (this handoff)** | `ebc2c70400ba5593d59aef7acb8f2f4cedc2ac35` (final handoff source; `2291abc…` is the post-pin docs commit and is intentionally not re-pinned here to avoid an infinite re-pin loop) |
+| **Prior docs/update HEAD** | `e09a5e2ba99ca27035461cfaf67c6543a11ad481` (pre-correction docs/update HEAD; superseded forward-only chain of `ebc2c704…` retired per T0 §E anti-self-reference rule) |
 | Branch | `codex/t1c-p1-final-release-safety-closeout` |
 | Worktree | `C:\CodeApp\HrP-t1c-p1-final-release-safety-closeout` |
 | Status | **`READY_FOR_AUDIT`** |
@@ -65,38 +65,41 @@ Step 15 fail-closed contract verified: `400 PLACEMENT_VALIDATION_ERROR` with bod
 | `npm run test:unit` (`vitest run --config vitest.unit.config.ts`) | exit 0 — 211/211 files, 3517 tests passed, 9 skipped, 0 failed | `evidence/EV-11-unit-tests.log` |
 | `git diff --check` | exit 0 | `evidence/EV-13-diff-check.log` |
 | `node .ai-pipeline/scripts/verify-encoding.mjs` | exit 0 — 12/12 changed text files UTF-8 without BOM | `evidence/EV-14-encoding-scan.log` |
-| `pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath TASK.md` | exit 2 — see §4 carry-forward | `evidence/EV-22-task-contract-gate.log` |
-| `pwsh .ai-pipeline/scripts/verify-handoff.ps1 -TaskPath TASK.md` | exit 2 — see §4 carry-forward; H-16 PASS, H-10 PASS, H-09 PASS, H-01 PASS | `evidence/EV-22-handoff-substance-gate.log` |
+| `pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath TASK.md` | `RESULT: PASS` (rev. 4 docs/control correction; exit 0) | `evidence/EV-22-task-contract-gate.log` |
+| `pwsh .ai-pipeline/scripts/verify-handoff.ps1 -TaskPath TASK.md` | `RESULT: PASS WITH WARNINGS` (rev. 4 docs/control correction; exit 0; H-15 WARN on `Status`/`Spec version` field vs HEAD is the only residual — explained in §5 rev. 4 entry) | `evidence/EV-22-handoff-substance-gate.log` |
 
-## 4. Carry-forward: V1-template gate residuals
+## 4. Carry-forward: V1-template gate residuals — RESOLVED in rev. 4
 
-`verify-task.ps1` and `verify-handoff.ps1` still hard-code the V1
-section list (`## 5. Execution Plan`, `## 6. Acceptance`,
-`## 7. Risk`, `## 8. Open Questions`, `## 9. Planner Resolution`,
-`## 10. Revision Log`). The repo uses `V2_FAST_FREEZE`
-(per `.ai-pipeline/README.md`) with its own schema
-(`## 0. Control`, `## 1. Outcome`, `## 2. Evidence`, …,
-`## 7. Revision Log`). The README states "Historical artifacts remain
-readable without retrofit", so the V1 list is not migratable without
-retroactively changing unrelated historical artifacts.
+The pre-rev-4 `verify-task.ps1` and `verify-handoff.ps1` runs hard-coded the
+V1 section list (`## 5. Execution Plan`, `## 6. Acceptance`, `## 7. Risk`,
+`## 8. Open Questions`, `## 9. Planner Resolution`, `## 10. Revision Log`)
+and rejected the V2_FAST_FREEZE schema. T0 §A inspected the residuals as
+**real FAIL** (exit 2), not "V1 residual warnings". The rev. 4 docs/control
+correction realigns TASK.md / HANDOFF.md with the V1 canonical schema the
+verifier scripts still hard-code; both gates now return exit 0:
 
-The V2-specific branches of both gates return OK:
+- `verify-task.ps1`: `RESULT: PASS` (exit 0).
+- `verify-handoff.ps1`: `RESULT: PASS WITH WARNINGS` (exit 0). The only
+  residual is `H-15` (TASK.md `Status` / `Spec version` fields differ from
+  HEAD) which is intentional for the docs/control correction and is
+  recorded in §9 / §10 of TASK.md (Planner Resolution + Revision Log).
 
-- T-09 V2 (`verify-task.ps1` line 156–247): `V2 draft fields are
-  structurally valid` (T-09 OK).
+The V2-specific branches of both gates continue to return OK:
+
+- T-09 V2 (`verify-task.ps1` line 156–247): `V2 READY_TO_CODE gate is closed`.
 - H-16 V2 (`verify-handoff.ps1` line 156–210): `V2 delivery pins a
-  resolvable frozen SHA with no later semantic delta` (H-16 OK). TASK
-  status `READY_FOR_AUDIT`, Frozen `YES`, Canonical `PASS`, Audit
-  `ELIGIBLE`, `Implementation SHA` is a 40-char hex resolving to a
-  commit; `dirtySemantic` empty; `postFreezeSemantic` empty after
-  `708e0ce…..HEAD`.
+  resolvable frozen SHA with no later semantic delta`. TASK status
+  `READY_FOR_AUDIT`, Frozen `YES`, Canonical `PASS`, Audit `ELIGIBLE`,
+  `Implementation SHA` is a 40-char hex resolving to a commit;
+  `dirtySemantic` empty; `postFreezeSemantic` empty after `708e0ce…..HEAD`.
+
+Updating both:
 - H-10 status consistent PASS.
 - H-09 secret scan PASS.
 
-Tier 1 treats the residual V1-template failures as a known
-**carry-forward** under `tier1.md` §"Correction budget and self-review"
-(documented in `evidence/TIER1_SELF_REVIEW.md` §6.C). Whether to amend
-the gate in a separate task is **not** Tier 1's prerogative.
+Whether to amend the verifier gate to retroactively accept the
+V2_FAST_FREEZE compact layout is **not** Tier 1's prerogative; Tier 3 may
+flag it as a separate task in AUDIT.md.
 
 ## 5. Changed surface (Implementation SHA → freeze → final HEAD)
 
@@ -131,8 +134,14 @@ bc41b3f5e2cd86a8802f1040184286be7980d9a7  docs(p1-final): align Correction batch
 928d8d1427a87e4a6e698eb92b80eaf759434163  docs(p1-final): final T1→T0 handover with exact frozen SHAs and ×3 evidence
 28f538094e70422116fa1f9220506ab4a35edc08  docs(p1-final): pin exact Final HEAD SHA after final handoff commit
 5f6ff723e3b9451530e0e554fd57e6d1d226356e  docs(p1-final): re-pin Final HEAD after forward-only docs commit
-ebc2c70400ba5593d59aef7acb8f2f4cedc2ac35  docs(p1-final): record forward-only docs commit chain in final handoff (this handoff HEAD)
+e09a5e2ba99ca27035461cfaf67c6543a11ad481  docs(p1-final): note Final HEAD chain in final handoff (intentional one-shot)
 ```
+
+The `ebc2c704…` commit referenced in older drafts of this file has been
+retired from the documentation by the rev. 4 docs/control correction
+(T0 §E anti-self-reference rule). The T0-facing pin in this revision is
+the **prior** docs/update HEAD `e09a5e2b…`, not the SHA of the rev. 4
+commit itself.
 
 `git diff <Implementation SHA>..HEAD -- app src prisma tests scripts packages`
 returns empty (no post-freeze semantic delta).
@@ -179,8 +188,8 @@ historical evidence; it is not committed to T1's freeze.
 
 ## 8. What T0 owns next
 
-1. Review the four pinned SHAs (Implementation SHA, Freeze SHA, Final
-   HEAD, Baseline) above.
+1. Review the four pinned SHAs (Implementation SHA, Freeze SHA,
+   Prior docs/update HEAD, Baseline) above.
 2. Decide whether the V2_FAST_FREEZE delivery is sound (the
    `AUDIT.md`-owning audit is the only Tier 3 product — T0 calls Tier 3
    per the stop boundary).
