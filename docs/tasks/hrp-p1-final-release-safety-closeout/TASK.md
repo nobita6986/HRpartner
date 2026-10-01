@@ -32,7 +32,7 @@
 | Decision state | `CLOSED` (T0 directive §B-01..§B-09 fully locks Đường B; no new Owner decision; canonical main architecture is the only authority) |
 | Test environment | `READY` (synthetic Neon `ep-empty-forest-azlhfyo9.c-3.ap-southeast-1.aws.neon.tech` / `neondb` provisioned by T0; canonical strict gate is intentionally not invoked because T0 §B-01 forbids `DATABASE_URL_TEST` env name — see HANDOFF §3 contract note) |
 | Correction budget | `1` |
-| Correction batches used | `1` (round-2: cold-connect warmup fix; **round-3 closed by T0 §F — see §1.3**) |
+| Correction batches used | `1` (round-2 cold-connect; round-3 closed by T0 §F) |
 | Current execution round | `3` |
 | Current audit round | `0` (Tier 3 not invoked; T0-owned; this handoff delivers READY_FOR_AUDIT) |
 

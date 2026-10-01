@@ -31,7 +31,7 @@
 | Canonical gates | **`PASS`** |
 | Audit eligibility | `ELIGIBLE` |
 | Correction budget | `1` |
-| Correction batches used | `1` (round-2 cold-connect warmup fix; round-3 closed by T0 §F) |
+| Correction batches used | `1` |
 | Execution round | `3` |
 | Production migration | `NOT_RUN` (T0 owns production-side remediation per stop boundary) |
 | Production verification | `NOT_IN_SCOPE` (T1C closeout runs only against synthetic Neon per T0 §B-01 contract) |
