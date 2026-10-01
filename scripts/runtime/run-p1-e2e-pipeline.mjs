@@ -4,25 +4,33 @@
  *
  * Orchestrator for ONE P1 final runtime E2E pipeline (T0 §C).
  * Runs: posture preflight → synthetic fixture → canonical E2E → exact-ID teardown.
- * Captures stdout/stderr per stage to utf8-noBOM files in evidenceDir.
+ * Captures stdout/stderr per stage to evidenceDir.
  * Returns non-zero exit if any stage fails.
  *
+ * Hygiene (T0 §D): evidence goes to OS temp unless `evidenceDir` is passed
+ * explicitly. The pipeline never writes to `docs/tasks/.tmp/` — that path
+ * is forbidden under the closeout hygiene contract.
+ *
  * Usage:
- *   node scripts/runtime/run-p1-e2e-pipeline.mjs <runNumber> <evidenceDir>
+ *   node scripts/runtime/run-p1-e2e-pipeline.mjs <runNumber> [evidenceDir]
  */
 
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 
 const [, , runNumberArg, evidenceDirArg] = process.argv;
-if (!runNumberArg || !evidenceDirArg) {
-  console.error('Usage: run-p1-e2e-pipeline.mjs <runNumber> <evidenceDir>');
+if (!runNumberArg) {
+  console.error('Usage: run-p1-e2e-pipeline.mjs <runNumber> [evidenceDir]');
   process.exit(2);
 }
 
 const runNumber = Number(runNumberArg);
-const evidenceDir = evidenceDirArg;
+// T0 §D.2: default to OS temp; explicit path allowed for operator capture.
+const evidenceDir = evidenceDirArg && evidenceDirArg.trim().length > 0
+  ? evidenceDirArg
+  : fs.mkdtempSync(path.join(os.tmpdir(), `hrp-e2e-pipeline-${runNumber}-`));
 const WT = process.cwd();
 
 if (!fs.existsSync(evidenceDir)) {
@@ -51,6 +59,19 @@ function runStage(label, cmd, args, parseFixture = false) {
   const stderrPath = path.join(evidenceDir, `run-${runNumber}-${label}.stderr`);
   fs.writeFileSync(stdoutPath, stdout, 'utf8');
   fs.writeFileSync(stderrPath, stderr, 'utf8');
+  // Mirror to canonical closeout evidence so the OS-temp cleanup does not
+  // erase the run logs. The canonical dir lives under
+  // `docs/tasks/hrp-p1-final-release-safety-closeout/evidence/`.
+  const canonicalDir = path.join(
+    WT,
+    'docs',
+    'tasks',
+    'hrp-p1-final-release-safety-closeout',
+    'evidence',
+  );
+  try { fs.mkdirSync(canonicalDir, { recursive: true }); } catch (_) { /* best-effort */ }
+  try { fs.writeFileSync(path.join(canonicalDir, `EV-RUN-${runNumber}-${label}.stdout`), stdout); } catch (_) { /* best-effort */ }
+  try { fs.writeFileSync(path.join(canonicalDir, `EV-RUN-${runNumber}-${label}.stderr`), stderr); } catch (_) { /* best-effort */ }
   append(`[${label}] exit=${r.status ?? 'null'} stdout=${stdout.length}B stderr=${stderr.length}B`);
   if (stdout) {
     append(`--- ${label} stdout (first 200 lines) ---`);
@@ -82,34 +103,67 @@ function runStage(label, cmd, args, parseFixture = false) {
 }
 
 const results = { posture: 0, fixture: 0, e2e: 0, teardown: 0 };
+let allOk = false;
 
-const postureRes = runStage('posture', 'node', ['scripts/runtime/db-posture-preflight.mjs'], false);
-results.posture = postureRes.exit;
+try {
+  const postureRes = runStage('posture', 'node', ['scripts/runtime/db-posture-preflight.mjs'], false);
+  results.posture = postureRes.exit;
 
-const fixtureRes = runStage('fixture', 'node', ['scripts/runtime/synthetic-fixture.mjs'], true);
-results.fixture = fixtureRes.exit;
-const fixturePath = fixtureRes.fixturePath;
-append(`fixturePath=${fixturePath ?? '(none)'}`);
+  const fixtureRes = runStage('fixture', 'node', ['scripts/runtime/synthetic-fixture.mjs'], true);
+  results.fixture = fixtureRes.exit;
+  const fixturePath = fixtureRes.fixturePath;
+  append(`fixturePath=${fixturePath ?? '(none)'}`);
 
-if (fixturePath) {
-  const e2eRes = runStage('e2e', 'node', ['scripts/runtime/p1-final-runtime-e2e.mjs', fixturePath], false);
-  results.e2e = e2eRes.exit;
-  const tdRes = runStage('teardown', 'node', ['scripts/runtime/exact-id-teardown.mjs', fixturePath], false);
-  results.teardown = tdRes.exit;
-} else {
-  append('[e2e] SKIPPED fixturePath missing');
-  append('[teardown] SKIPPED fixturePath missing');
+  if (fixturePath) {
+    const e2eRes = runStage('e2e', 'node', ['scripts/runtime/p1-final-runtime-e2e.mjs', fixturePath], false);
+    results.e2e = e2eRes.exit;
+    const tdRes = runStage('teardown', 'node', ['scripts/runtime/exact-id-teardown.mjs', fixturePath], false);
+    results.teardown = tdRes.exit;
+  } else {
+    append('[e2e] SKIPPED fixturePath missing');
+    append('[teardown] SKIPPED fixturePath missing');
+  }
+  allOk = results.posture === 0 && results.fixture === 0 && results.e2e === 0 && results.teardown === 0;
+
+  // Persist summary BEFORE the evidence-dir cleanup so PASS and FAIL both
+  // leave a JSON record of the run. We write to TWO locations:
+  //   1. Inside the orchestrator-owned evidenceDir (so it lands on disk
+  //      during the run if the operator passed `evidenceDir` explicitly).
+  //   2. To `docs/tasks/hrp-p1-final-release-safety-closeout/evidence/` —
+  //      the canonical closeout evidence path that survives the OS-temp
+  //      cleanup and lands in the docs/evidence freeze commit.
+  const canonicalEvidenceDir = path.join(
+    WT,
+    'docs',
+    'tasks',
+    'hrp-p1-final-release-safety-closeout',
+    'evidence',
+  );
+  try { fs.mkdirSync(canonicalEvidenceDir, { recursive: true }); } catch (_) { /* best-effort */ }
+  const summaryBody = { ...results, fixturePath: fixtureRes.fixturePath ?? null };
+  fs.writeFileSync(
+    path.join(evidenceDir, `run-${runNumber}-summary.json`),
+    JSON.stringify(summaryBody, null, 2),
+    'utf8',
+  );
+  fs.writeFileSync(
+    path.join(canonicalEvidenceDir, `EV-RUN-${runNumber}-summary.json`),
+    JSON.stringify(summaryBody, null, 2),
+    'utf8',
+  );
+
+  append(allOk ? 'RUN OK' : 'RUN FAIL');
+} finally {
+  // T0 §D.2: when the orchestrator owns the evidence dir (default OS temp
+  // path), remove it AFTER all stages finish — PASS or FAIL — so PASS and
+  // FAIL both leave `git status --short` empty. The cleanup is keyed off
+  // "no explicit `evidenceDir` argument" so operator-supplied dirs are
+  // preserved. The canonical closeout evidence was already mirrored to
+  // `docs/tasks/hrp-p1-final-release-safety-closeout/evidence/` inside the
+  // try-block, so the OS-temp removal does not lose data.
+  if (!evidenceDirArg || evidenceDirArg.trim().length === 0) {
+    try { fs.rmSync(evidenceDir, { recursive: true, force: true }); } catch { /* best-effort */ }
+  }
 }
-const allOk = results.posture === 0 && results.fixture === 0 && results.e2e === 0 && results.teardown === 0;
-fs.writeFileSync(
-  path.join(evidenceDir, `run-${runNumber}-summary.json`),
-  JSON.stringify(results, null, 2),
-  'utf8',
-);
 
-if (!allOk) {
-  append('RUN FAIL');
-  process.exit(1);
-}
-append('RUN OK');
-process.exit(0);
+process.exit(allOk ? 0 : 1);

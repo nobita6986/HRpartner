@@ -224,6 +224,23 @@ async function main() {
       `${orderCode}-FINAL`, orderId,
     ]);
 
+    // hrp-p1-final-release-safety-closeout T0 §C.2: ACTIVE StaffingOrderRecruiterAssignment
+    // binding the synthetic HR_STAFF recruiter to the StaffingOrder so that the canonical
+    // dual-authority predicate (`assertActiveRecruiterForOrder`) passes when the e2e
+    // invokes `POST /api/admin/applications/<submissionId>/claim` with HR_STAFF session.
+    // Source = 'HR_MANAGER_ASSIGN' (matches the canonical `assignRecruiterToOrder` service).
+    const assignment = await admin.query(
+      `INSERT INTO staffing_order_recruiter_assignments
+         (id, staffing_order_id, recruiter_user_id, assigned_by_user_id, source, status,
+          reason, assigned_at, created_at, updated_at)
+       VALUES
+         (gen_random_uuid()::text, $1, $2, $3, 'HR_MANAGER_ASSIGN', 'ACTIVE',
+          'RT-E2E runtime fixture (p1-final closeout T0 §C.2)', now(), now(), now())
+       RETURNING id`,
+      [orderId, staffUserId, managerUserId],
+    );
+    tracked.assignmentIds.push(assignment.rows[0].id);
+
     await admin.query('COMMIT');
   } catch (e) {
     try { await admin.query('ROLLBACK'); } catch (_) { /* best-effort rollback */ }
@@ -254,13 +271,24 @@ async function main() {
     credentials: tracked.credentials,
   };
 
-  // Persist to a sibling file so the launcher can load it (the file holds the
-  // per-run credentials and is deleted at end of run). File path is fixed
-  // per-PID and deleted at teardown.
+  // Persist fixture metadata to the OS temp directory (T0 §D.2: run-scoped, OS-temp,
+  // cleaned in finally). Never write under `docs/tasks/.tmp/` — that path is a
+  // working-tree artefact and is forbidden by the T0 cleanup hygiene rule.
+  // The file holds the per-run credentials (only loaded by the same-process e2e
+  // launcher via stdio pipe; removed on process exit).
   const fs = await import('node:fs');
-  const fixtureFile = `docs/tasks/.tmp/runtime-fixture-${RUN_ID}.json`;
-  fs.writeFileSync(fixtureFile, JSON.stringify(safe, null, 2), { encoding: 'utf8' });
-  // .gitignore'd via existing pattern (`docs/tasks/.tmp/`).
+  const path = await import('node:path');
+  const os = await import('node:os');
+  const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), `hrp-runtime-fixture-${runToken}-`));
+  const fixtureFile = path.join(tmpRoot, `fixture-${RUN_ID}.json`);
+  fs.writeFileSync(fixtureFile, JSON.stringify(safe, null, 2), { encoding: 'utf8', mode: 0o600 });
+
+  // The fixture file path runs in OS-temp (T0 §D.2) so PASS never dirties the
+  // repo's working tree. The teardown step (`exact-id-teardown.mjs`) is the
+  // sole owner of fixture-file deletion: it deletes the file after the
+  // zero-residue DB cleanup via `fs.unlinkSync(fixturePath)`. No `process.on('exit')`
+  // cleanup here — premature removal would race the e2e stage's read of the
+  // same file, producing "fixture file not found" failures.
 
   // Sanitized stdout summary — NEVER echoes credentials.
   console.log(JSON.stringify({

@@ -41,6 +41,8 @@ import { spawn, spawnSync } from 'node:child_process';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { setTimeout as sleep } from 'node:timers/promises';
 import fs from 'node:fs';
+import path from 'node:path';
+import os from 'node:os';
 import {
   assertSyntheticRuntime,
   GuardReject,
@@ -180,7 +182,10 @@ const childEnv = {
   PORT: String(PORT),
 };
 
-const childServerLog = `docs/tasks/.tmp/p1-e2e-evidence/run-${runToken}-server.log`;
+// Server log goes to the OS temp directory (T0 §D.2: run-scoped, cleaned in finally).
+// Never write into `docs/tasks/.tmp/` — the working tree must stay clean.
+const childLogTmpDir = fs.mkdtempSync(path.join(os.tmpdir(), `hrp-e2e-${runToken}-`));
+const childServerLog = path.join(childLogTmpDir, 'server.log');
 const childLogStream = fs.createWriteStream(childServerLog, { encoding: 'utf8' });
 
 const child = spawn('npx', ['next', 'start', '--port', String(PORT)], {
@@ -339,24 +344,25 @@ async function main() {
       logStep(6, 'publish JobPosting', 'PASS', `slug=${postingSlug} status=PUBLISHED`);
     }
 
-    // ── Step 7: public UI job detail GET ─────────────────────────────────
+    // ── Step 7: public UI job detail GET (T0 §B release gate) ───────────
+    // Contract: HTTP 200 + HTML body containing run-scoped marker (the
+    // published job title or slug). Anything less is a release blocker.
     {
       const res = await fetch(`${BASE_URL}/viec-lam/${postingSlug}`);
-      // Accept 200, 404, or 500 (5xx captured as INFRASTRUCTURE_DEFECT
-      // finding — /viec-lam/[slug] is a pre-existing main issue with a
-      // Server Component passing event handlers to Client Component props
-      // and is OUT OF SCOPE for this P1 final release-safety closeout;
-      // T0 §B-08 documents the baseline problem and T1C did not introduce
-      // it. The runtime proof is the API chain steps 1-6 + 8-19, not this
-      // specific SSR page).
-      const acceptable = res.status === 200 || res.status === 404 || res.status === 500;
-      const statusLabel =
-        res.status === 500 ? 'INFRASTRUCTURE_DEFECT' :
-        acceptable ? 'PASS' : 'FAIL';
-      logStep(7, 'public UI detail GET', statusLabel, `status=${res.status}`);
-      if (!acceptable) {
-        throw new Error(`public detail FAIL status=${res.status}`);
+      const html = await res.text().catch(() => '');
+      // Run-scoped marker: the title we just PATCHed into the posting
+      // (Runtime E2E <runToken>) MUST appear in the rendered HTML.
+      const marker = `Runtime E2E ${runToken}`;
+      const hasMarker = html.includes(marker);
+      const hasSlug = html.includes(postingSlug);
+      const statusOk = res.status === 200;
+      if (!statusOk || !hasMarker || !hasSlug) {
+        throw new Error(
+          `public detail FAIL status=${res.status} hasMarker=${hasMarker} hasSlug=${hasSlug} ` +
+          `marker="${marker}" slug="${postingSlug}" bodyLen=${html.length}`,
+        );
       }
+      logStep(7, 'public UI detail GET', 'PASS', `status=200 slug=${postingSlug} marker=ok`);
     }
 
     // ── Step 8: anonymous apply via /api/public/jobs/[slug]/applications ─
@@ -416,127 +422,153 @@ async function main() {
       logStep(11, 'workbench MINE (pre-claim)', 'PASS', `items=${(res.body?.items ?? []).length}`);
     }
 
-    // ── Step 12: HR_STAFF claim submission ────────────────────────────────
-    // The canonical claim path runs via /api/admin/recruiter/submissions-claim;
-    // since we want to avoid scope-creep we directly verify the claim service
-    // produces a LaborProfileHandlingAssignment via PG (writer would be ideal
-    // but for runtime proof the admin connection with bypassrls still proves
-    // the ACTIVE row exists; the public UI flow is exercised via the workbench
-    // re-read in step 18).
+    // ── Step 12: HR_STAFF canonical claim via /api/admin/applications/<id>/claim
+    // T0 §C.1: HR_STAFF session + UUID-v4 Idempotency-Key. NO ADMIN SQL INSERT
+    // of handling assignments. The canonical route runs dual-authority check
+    // (order assignment ACTIVE + submission ACTIVE) inside the same tx; the
+    // fixture already provisioned the active `staffing_order_recruiter_assignments`
+    // row, so this MUST succeed.
     {
-      const { Client: PgClient } = await import('pg');
-      const a = new PgClient({ connectionString: ADMIN_URL });
-      await a.connect();
-      try {
-        const r = await a.query(
-          `INSERT INTO labor_profile_handling_assignments
-             (id, labor_profile_id, assignee_user_id, assigned_by_user_id, source, starts_at, status, updated_at, created_at)
-           VALUES
-             (gen_random_uuid()::text, $1, $2, $3, 'AFF_INITIAL', now(), 'ACTIVE', now(), now())
-           RETURNING id`,
-          [(await a.query('SELECT labor_profile_id FROM candidate_submissions WHERE id = $1', [submissionId])).rows[0].labor_profile_id, staffUserId, managerUserId],
-        );
-        logStep(12, 'claim submission', 'PASS', `handlingAssignmentId=${r.rows[0].id.slice(0,8)}…`);
-      } finally { await a.end(); }
-    }
+      const claimKey = randomUUID();
+      const res = await httpJson('POST', `/api/admin/applications/${submissionId}/claim`, {
+          cookie: staffSession.cookie,
+          idempotencyKey: claimKey,
+          body: {},
+        });
+        if (res.status !== 201) {
+          throw new Error(
+            `claim FAIL status=${res.status} body=${JSON.stringify(res.body).slice(0, 300)}`,
+          );
+        }
+        const handlingAssignmentId = res.body.claim?.handlingAssignmentId ?? res.body.handlingAssignmentId ?? null;
+        if (!handlingAssignmentId) {
+          throw new Error(`claim FAIL no handlingAssignmentId body=${JSON.stringify(res.body).slice(0, 300)}`);
+        }
+        logStep(12, 'claim submission', 'PASS', `handlingAssignmentId=${handlingAssignmentId.slice(0, 8)}…`);
+      }
 
-    // ── Step 13: HR_STAFF placement create (recruiter-scoped route) ──────
+    // ── Step 13: HR_STAFF placement create via canonical recruiter route ─
+    // T0 §C.3: POST /api/admin/recruiter/placements with HR_STAFF session +
+    // UUID-v4 Idempotency-Key. NO fallback to /api/admin/placements. The
+    // fixture provisioned dual authority (order assignment + handling claim
+    // produced by step 12) so this MUST succeed with 201.
     {
       const res = await httpJson('POST', '/api/admin/recruiter/placements', {
         cookie: staffSession.cookie,
         idempotencyKey: randomUUID(),
         body: { sourceCandidateSubmissionId: submissionId },
       });
-      // STAFFING_SUPPLY / HRP_MANAGED may still accept via recruiter route as long as
-      // dual-authority holds. Accept 201 or 409 HRP_EFFECTIVE_FORBIDDEN at body level.
-      if (res.status === 201) {
-        placementId = res.body.placement?.placementId ?? res.body.placementId ?? null;
-        summary.placementId = placementId;
-        logStep(13, 'placement create (HR_STAFF recruiter route)', 'PASS', `placementId=${placementId?.slice(0,8)}… status=${res.body.placement?.status ?? res.body.status}`);
-      } else {
-        logStep(13, 'placement create (HR_STAFF recruiter route)', 'EXPECTED_FAIL', `status=${res.status} code=${res.body?.error}`);
-        // Fall back to ADMIN placement route
-        const fallback = await httpJson('POST', '/api/admin/placements', {
-          cookie: adminSession.cookie,
-          idempotencyKey: randomUUID(),
-          body: { placementCaseId: (await (async () => {
-            const { Client: PgClient } = await import('pg');
-            const a = new PgClient({ connectionString: ADMIN_URL });
-            await a.connect();
-            try { return (await a.query('SELECT placement_case_id FROM candidate_submissions WHERE id = $1', [submissionId])).rows[0].placement_case_id; }
-            finally { await a.end(); }
-          })()), jobOpeningId: openingId, sourceCandidateSubmissionId: submissionId },
-        });
-        assertEq(fallback.status, 201, 'fallback placement create status');
-        placementId = fallback.body.placement?.placementId ?? fallback.body.placementId ?? null;
-        summary.placementId = placementId;
-        logStep(13, 'placement create (ADMIN canonical fallback)', 'PASS', `placementId=${placementId?.slice(0,8)}… status=${fallback.body.placement?.status ?? fallback.body.status}`);
+      if (res.status !== 201) {
+        throw new Error(
+          `placement create FAIL status=${res.status} body=${JSON.stringify(res.body).slice(0, 400)}`,
+        );
       }
+      placementId = res.body.placement?.placementId ?? res.body.placementId ?? null;
+      summary.placementId = placementId;
+      const placementStatus = res.body.placement?.status ?? res.body.status ?? 'unknown';
+      logStep(13, 'placement create (HR_STAFF recruiter route)', 'PASS',
+        `placementId=${placementId?.slice(0, 8)}… status=${placementStatus}`);
     }
 
-    // ── Step 14: confirm placement (SELECTED → CONFIRMED) ─────────────────
+    // ── Step 14: confirm placement via recruiter route (HR_STAFF only) ──
     {
-      const res = await httpJson('POST', `/api/admin/placements/${placementId}/actions/confirm`, {
-        cookie: adminSession.cookie,
-        idempotencyKey: undefined,
-        body: {},
-      });
-      // /confirm requires Idempotency-Key header per route contract — re-issue with key.
-      const res2 = await httpJson('POST', `/api/admin/placements/${placementId}/actions/confirm`, {
-        cookie: adminSession.cookie,
+      const res = await httpJson('POST', `/api/admin/recruiter/placements/${placementId}/actions/confirm`, {
+        cookie: staffSession.cookie,
         idempotencyKey: randomUUID(),
         body: {},
       });
-      logStep(14, 'placement confirm', res2.status === 200 ? 'PASS' : 'FAIL', `status=${res2.status} body.status=${res2.body?.placement?.status ?? res2.body?.status}`);
-      if (res2.status !== 200) {
-        throw new Error(`placement confirm FAIL body=${JSON.stringify(res2.body)}`);
+      if (res.status !== 200) {
+        throw new Error(`placement confirm FAIL status=${res.status} body=${JSON.stringify(res.body).slice(0, 300)}`);
       }
+      const newStatus = res.body.placement?.status ?? res.body.status;
+      logStep(14, 'placement confirm', 'PASS', `status=${res.status} body.status=${newStatus}`);
     }
 
-    // ── Step 15: effective fail-closed (HRP_MANAGED → 400) ────────────────
+    // ── Step 15: effective fail-closed (HRP_MANAGED → 400) via recruiter route ─
+    // T0 §C.5: failure MUST come from the recruiter route, not from a different
+    // ADMIN path. The contract is:
+    //   - Zod EvidenceSchema requires `clientAcknowledgedByUserId` to be UUID v4
+    //     (see app/api/admin/recruiter/placements/[id]/actions/effective/route.ts).
+    //   - Our synthetic fixture users have IDs shaped as `rt-e2e-<token>-admin`,
+    //     which are NOT UUID v4. Therefore we MUST mint a fresh UUID v4 for this
+    //     field; service-side `markPlacementEffective` only treats the value as an
+    //     opaque acknowledgement identifier (no FK to users), so a per-run
+    //     randomUUID() satisfies both the schema and the canonical service.
+    //   - After passing schema validation, the placement is in HRP_MANAGED mode
+    //     (DEC-07), so `runTransition` throws `PlacementValidationError`
+    //     (`HRP_EFFECTIVE_FORBIDDEN` → 400 PLACEMENT_VALIDATION_ERROR). The
+    //     terminal `cancel` in step 16 still succeeds.
     {
-      const res = await httpJson('POST', `/api/admin/placements/${placementId}/actions/effective`, {
-        cookie: adminSession.cookie,
+      const res = await httpJson('POST', `/api/admin/recruiter/placements/${placementId}/actions/effective`, {
+        cookie: staffSession.cookie,
         idempotencyKey: randomUUID(),
-        body: { evidence: { clientAcknowledgedAt: new Date().toISOString(), clientAcknowledgedByUserId: adminUserId, acknowledgementRef: `${runToken}-EFF` } },
+        body: {
+          evidence: {
+            clientAcknowledgedAt: new Date().toISOString(),
+            clientAcknowledgedByUserId: randomUUID(),
+            acknowledgementRef: `${runToken}-EFF`,
+          },
+        },
       });
-      // Expected: 400 PLACEMENT_VALIDATION_ERROR (HRP_EFFECTIVE_FORBIDDEN).
-      const isFailClosed = res.status === 400 && (res.body?.error === 'PLACEMENT_VALIDATION_ERROR' || /hrp/i.test(JSON.stringify(res.body)));
-      logStep(15, 'placement effective (HRP_MANAGED fail-closed)', isFailClosed ? 'PASS' : 'FAIL', `status=${res.status} body=${JSON.stringify(res.body).slice(0,200)}`);
+      // HRP_MANAGED: contract is fail-closed at 400 PLACEMENT_VALIDATION_ERROR
+      // (T0 §C.5). The fallback `/hrp/i` check is defensive in case the service
+      // ever returns a different VALIDATION envelope that still mentions HRP.
+      const isFailClosed =
+        res.status === 400 &&
+        (res.body?.error === 'PLACEMENT_VALIDATION_ERROR' ||
+          /hrp/i.test(JSON.stringify(res.body)));
       if (!isFailClosed) {
-        throw new Error(`effective fail-closed assertion failed status=${res.status} body=${JSON.stringify(res.body)}`);
+        throw new Error(
+          `effective fail-closed assertion failed status=${res.status} body=${JSON.stringify(res.body).slice(0, 400)}`,
+        );
       }
+      logStep(15, 'placement effective (HRP_MANAGED fail-closed)', 'PASS',
+        `status=${res.status} body=${JSON.stringify(res.body).slice(0, 160)}`);
     }
 
-    // ── Step 16: terminal placement cancel ────────────────────────────────
+    // ── Step 16: terminal placement cancel via recruiter route ─────────────
     {
-      const res = await httpJson('POST', `/api/admin/placements/${placementId}/actions/cancel`, {
-        cookie: adminSession.cookie,
+      const res = await httpJson('POST', `/api/admin/recruiter/placements/${placementId}/actions/cancel`, {
+        cookie: staffSession.cookie,
         idempotencyKey: randomUUID(),
         body: {},
       });
-      const okCancel = res.status === 200 && (res.body?.placement?.status === 'CANCELLED' || res.body?.status === 'CANCELLED');
-      logStep(16, 'placement cancel', okCancel ? 'PASS' : 'FAIL', `status=${res.status} body.status=${res.body?.placement?.status ?? res.body?.status}`);
-      if (!okCancel) throw new Error(`placement cancel FAIL body=${JSON.stringify(res.body)}`);
+      const newStatus = res.body.placement?.status ?? res.body.status;
+      if (res.status !== 200 || (newStatus !== 'CANCELLED')) {
+        throw new Error(`placement cancel FAIL status=${res.status} body=${JSON.stringify(res.body).slice(0, 300)}`);
+      }
+      logStep(16, 'placement cancel', 'PASS', `status=${res.status} body.status=${newStatus}`);
     }
 
     // ── Step 17: public UI refresh after state changes ───────────────────
+    // T0 §B: same contract as step 7 — HTTP 200 + run-scoped marker. No
+    // tolerance for 404 or 500 here.
     {
       const res = await fetch(`${BASE_URL}/viec-lam/${postingSlug}`);
-      const acceptable = res.status === 200 || res.status === 404 || res.status === 500;
-      const statusLabel =
-        res.status === 500 ? 'INFRASTRUCTURE_DEFECT' :
-        acceptable ? 'PASS' : 'FAIL';
-      logStep(17, 'public UI detail GET (post-actions)', statusLabel, `status=${res.status}`);
+      const html = await res.text().catch(() => '');
+      const marker = `Runtime E2E ${runToken}`;
+      const hasMarker = html.includes(marker);
+      const hasSlug = html.includes(postingSlug);
+      const statusOk = res.status === 200;
+      if (!statusOk || !hasMarker || !hasSlug) {
+        throw new Error(
+          `public detail (post) FAIL status=${res.status} hasMarker=${hasMarker} hasSlug=${hasSlug} ` +
+          `bodyLen=${html.length}`,
+        );
+      }
+      logStep(17, 'public UI detail GET (post-actions)', 'PASS', `status=200 marker=ok`);
     }
 
-    // ── Step 18: workbench MINE re-read (HR_STAFF) ───────────────────────
+    // ── Step 18: workbench MINE re-read (HR_STAFF) — MUST reflect results ─
     {
       const res = await httpJson('GET', '/api/admin/recruiter-workbench?view=MINE', {
         cookie: staffSession.cookie,
       });
-      assertEq(res.status, 200, 'workbench MINE re-read status', `body=${JSON.stringify(res.body).slice(0,300)}`);
-      logStep(18, 'workbench MINE (post-actions)', 'PASS', `items=${(res.body?.items ?? []).length}`);
+      if (res.status !== 200) {
+        throw new Error(`workbench MINE re-read FAIL status=${res.status} body=${JSON.stringify(res.body).slice(0, 300)}`);
+      }
+      const items = (res.body?.items ?? []).length;
+      logStep(18, 'workbench MINE (post-actions)', 'PASS', `items=${items}`);
     }
 
     // ── Step 19: zero-residue assertion (admin PG) ────────────────────────
@@ -590,9 +622,12 @@ async function main() {
     await stopChild();
   }
 
-  // Write summary to JSON for the closeout evidence collector.
-  const summaryFile = `/workspace/dump/p1-e2e-${runToken}-${Date.now()}.json`.replace('/workspace/dump/', 'docs/tasks/.tmp/');
-  try { fs.writeFileSync(summaryFile, JSON.stringify(summary, null, 2), { encoding: 'utf8' }); } catch (_) { /* best-effort summary */ }
+  // Write summary to OS-temp (T0 §D.2: never write into `docs/tasks/.tmp/`).
+  // Best-effort: the OS-temp dir is removed on process exit regardless.
+  try {
+    const summaryFile = path.join(childLogTmpDir, 'summary.json');
+    fs.writeFileSync(summaryFile, JSON.stringify(summary, null, 2), { encoding: 'utf8' });
+  } catch (_) { /* best-effort */ }
 
   if (summary.failedStep) process.exit(2);
   process.exit(0);
