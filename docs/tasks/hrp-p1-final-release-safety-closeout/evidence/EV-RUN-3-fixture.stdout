@@ -1,0 +1,26 @@
+[describe] synthetic-allowlist host-alias=a1cd8463c25a db-alias=693fe5919fc2
+{
+  "runId": "98b17547-ea7b-4273-8669-a6c724e1dd0d",
+  "runToken": "98b17547",
+  "hostAlias": "a1cd8463c25a",
+  "dbAlias": "693fe5919fc2",
+  "adminUserId": "rt-e2e-98b17547-admin",
+  "managerUserId": "rt-e2e-98b17547-manager",
+  "staffUserId": "rt-e2e-98b17547-hrstaff",
+  "companyIds": [
+    "66086592-1cb4-4984-89fb-da17ba955a1d"
+  ],
+  "projectIds": [
+    "b2d01a31-021b-47ca-966d-53564a2a1e76"
+  ],
+  "orderIds": [
+    "c4a07d1d-4c37-49ac-b6c1-8c2ddf77d6c0"
+  ],
+  "slotIds": [
+    "5c2c2b74-73a5-4c70-b913-5cb664943824"
+  ],
+  "adminPhoneAlias": "0998****21",
+  "managerPhoneAlias": "0998****26",
+  "staffPhoneAlias": "0998****18",
+  "fixtureFile": "C:\\Users\\Admin\\AppData\\Local\\Temp\\hrp-runtime-fixture-98b17547-gSTS4X\\fixture-98b17547-ea7b-4273-8669-a6c724e1dd0d.json"
+}
