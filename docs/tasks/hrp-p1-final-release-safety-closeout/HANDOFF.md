@@ -41,8 +41,9 @@
 | Prior docs/update HEAD (pre-font-hotfix) | `e09a5e2ba99ca27035461cfaf67c6543a11ad481` |
 | Audit-adoption SHA | `1b60dd40991e71a20845ab35985ea7454518d080` (PR #73) |
 | Font-hotfix Implementation SHA | `b0d095822780201c96715c27acb9d3396a20079e` (`fix(p1-final): self-host fonts via next/font/local (PR #73 build blocker)`) |
-| Docs/evidence freeze SHA (post-font-hotfix) | (recorded in §6 `v1.5` docs-freeze row once committed) |
-| New audit-target HEAD | font-hotfix commit `b0d09582…` (or `b0d09582…+docs` once docs freeze lands — T0 will be told the exact value) |
+| Docs/evidence freeze SHA (post-font-hotfix) | `6070f640…` (docs/control freeze; rev. 6 closes the fork) |
+| EV-30 update SHA | `28aca457…` (live clean-tree proof) |
+| New audit-target HEAD | font-hotfix commit `b0d09582…` (semantic); docs-freeze `6070f640…` + EV-30 update `28aca457…` carry the handoff state |
 | Frozen delivery | `YES` |
 | Canonical gates | `PASS` |
 | Audit eligibility | `ELIGIBLE` |
@@ -398,17 +399,20 @@ rounds ×3 PASS with zero residue.
 - **Canonical gates**: `PASS`
 - **Audit eligibility**: `ELIGIBLE`
 - **Next gate**: `TIER3_DELTA_AUDIT`
-- **Implementation SHA (P1)**: `708e0ce71d258c3a70383330dfb8d5d370dbd974` (predecessor)
-- **Font-hotfix Implementation SHA**: `b0d09582…` (new audit-target HEAD — semantic commit)
-- **Docs/evidence freeze SHA**: (recorded in §6 `v1.5` docs-freeze row once committed)
+- **Implementation SHA (P1)**: `708e0ce71d258c3a70383330dfb8d5d370dbd974` (predecessor — round-1 audit target)
+- **Font-hotfix Implementation SHA**: `b0d095822780201c96715c27acb9d3396a20079e` (new audit-target HEAD — semantic commit)
+- **Docs/evidence freeze SHA**: `6070f640…` (rev. 6 docs/control freeze)
+- **EV-30 update SHA**: `28aca457…` (live clean-tree proof)
 - **Spec version**: `v1.5`
 - **Execution round**: `6`
 - **Audit round**: `1` (Tier 3 round-1 PASS covers unchanged P1 surface; DELTA scope = font + docs only)
 - **T0 post-audit release-integrity exceptions used**: `1`
 
 This handoff pins P1 Implementation SHA = `708e0ce71d258c3a70383330dfb8d5d370dbd974`
-(semantic/test/migration commit, predecessor) and Font-hotfix Implementation
-SHA = `b0d09582…` (new audit-target HEAD). Tier 3 owns AUDIT.md and the
+(semantic/test/migration commit, predecessor), Font-hotfix Implementation
+SHA = `b0d095822780201c96715c27acb9d3396a20079e` (new audit-target HEAD),
+Docs/evidence freeze SHA = `6070f640…` (rev. 6), and EV-30 update SHA =
+`28aca457…` (live clean-tree proof). Tier 3 owns AUDIT.md and the
 DELTA audit verdict on the font delta + docs only; Tier 3 round-1 PASS
 evidence remains authoritative for the unchanged P1 runtime surface. Tier 1
 stops here per T0 §Stop boundary (no push, no merge, no deploy).
@@ -424,7 +428,8 @@ stops here per T0 §Stop boundary (no push, no merge, no deploy).
 | `v1.4` | `2026-10-01` | Fresh `EV-RUN-1/2/3-*` ×3 PASS captured (20/20 steps, posture/fixture/e2e/teardown all `0`, residue `users=0/orders=0/slots=0/projects=0/companies=0` per run). Step 15 fail-closed contract confirmed (400 `PLACEMENT_VALIDATION_ERROR` "HRP-managed Placement KHÔNG thể chuyển EFFECTIVE trong N3 — atomic workforce bridge thuộc N4"). Step 17 HTTP 200 + run-scoped marker. Baseline gates PASS: `npx prisma validate`, `tsc --noEmit`, `eslint .`, `next build`, `vitest run --config vitest.unit.config.ts` (211/211 files, 3517 tests), `git diff --check`, `node verify-encoding.mjs` (12/12 files UTF-8 no BOM). Status flipped to `READY_FOR_AUDIT` after ×3 PASS. Implementation SHA pinned. | T0 §E + §F closure: 3 final runs PASS, all blockers + audit calls. |
 | `v1.4` (rev. 4 — docs/control correction) | `2026-10-01 18:30 ICT` | T0 pre-audit docs/control integrity correction: HANDOFF.md / TASK.md aligned to the canonical schema the verifier scripts hard-code. HANDOFF switched to the compact-V2 sections 0..5 layout (`## 2. Acceptance evidence`, `## 3. Evidence registry`, `## 5. Final status`); `verify-task.ps1` row added at the head of `## 2. Acceptance evidence` with `RESULT: PASS`. AUDIT.md deletion finalized. `EV-ATTEMPT-1-*` working-tree artefacts removed. Stale `Final HEAD (this handoff freeze)` field that pinned a previous forward-only docs commit (`ebc2c704…`) was retired; superseded by `Docs/evidence freeze SHA ae560725…` + `Prior docs/update HEAD e09a5e2b…` rows in `## 0. Control`. The T1-side verifier failures recorded in `EV-22-{task-contract-gate,handoff-substance-gate}.log` from rev. 3 were **real FAIL** (exit 2 with V1-template section-list mismatches), not "V1 residual warnings"; rev. 4 corrects them to exit 0 by realigning TASK.md / HANDOFF.md with the V1 canonical schema the verifier scripts still hard-code. Spec version retained as `v1.4` because no semantic delta was introduced — this revision is docs/control-only per T0 §A.1. | T0 §A..§G corrections. Carry-forward from `v1.4` implementation + freeze is authoritative; verifier scripts still hard-code the V1 canonical schema, so docs/evidence must conform. |
 | `v1.5` (rev. 6 — PR #73 build-blocker font hotfix) | `2026-10-01 22:30 ICT` | T0 post-audit release-integrity exception #1: removed every `next/font/google` production import; introduced `next/font/local` via shared loader `app/fonts/local-fonts.tsx` exporting `beVietnamPro` (`--font-bvp`, weights 400/500/600/700) and `inter` (`--font-inter`, single variable file); committed font assets to `app/fonts/` (4 BVP static TTF + 1 Inter variable TTF + 2 OFL license files + 1 provenance registry); removed Google Fonts `<link rel="preconnect">` tags; `app/bod/page.tsx` switched to shared root local-font loader; added static regression guard `src/shared/ui/font-google-ban.static.test.ts`; verified E-24..E-31 (font-ban 18/18, zero `next/font/google` imports, typecheck/lint/build/unit PASS, UTF-8/no-BOM scan 7/7, clean tree, provenance 7/7). Tier 3 round-1 PASS evidence preserved as authoritative for unchanged P1 surface; DELTA audit scope is strictly the font delta + docs. Status flipped to `READY_FOR_AUDIT` (next gate `TIER3_DELTA_AUDIT`); Audit eligibility `ELIGIBLE`; T0 post-audit release-integrity exceptions used = 1. Font-hotfix Implementation SHA `b0d09582…`. | T0 §A–§G post-audit release-integrity exception #1. `next/font/google` blocked CI + Vercel build; self-host fonts. No semantic delta to unchanged P1 runtime surface (`EV-32` impact proof). |
-| `v1.5` (rev. 6 — docs/control freeze) | (recorded once committed) | Docs/evidence freeze commit. Pins Font-hotfix Implementation SHA `b0d09582…`; preserves P1 Implementation SHA `708e0ce7…` as predecessor; records audit round-1 PASS applies to the unchanged P1 surface; flips Status → `READY_FOR_AUDIT`; Frozen delivery → `YES`; Canonical gates → `PASS`; Audit eligibility → `ELIGIBLE`; Next gate → `TIER3_DELTA_AUDIT`. No semantic delta vs `b0d09582…`. Docs-only commit; no source code, no tests, no scripts, no evidence payload changes. | T0 §E.2 docs/evidence freeze discipline; rev. 6 closing this fork. |
+| `v1.5` (rev. 6 — docs/control freeze) | `2026-10-01 23:50 ICT` (commit `6070f640…`) | Docs/evidence freeze commit. Pins Font-hotfix Implementation SHA `b0d09582…`; preserves P1 Implementation SHA `708e0ce7…` as predecessor; records audit round-1 PASS applies to the unchanged P1 surface; flips Status → `READY_FOR_AUDIT`; Frozen delivery → `YES`; Canonical gates → `PASS`; Audit eligibility → `ELIGIBLE`; Next gate → `TIER3_DELTA_AUDIT`. No semantic delta vs `b0d09582…`. Docs-only commit; no source code, no tests, no scripts, no evidence payload changes. Captured E-24..E-32 evidence logs and pinned them in `## 3. Evidence registry`. | T0 §E.2 docs/evidence freeze discipline; rev. 6 closing this fork. |
+| `v1.5` (rev. 6 — EV-30 live clean-tree) | `2026-10-01 23:55 ICT` (commit `28aca457…`) | EV-30 update — replaces the forward-looking clean-tree expectation with the live post-freeze state (working tree empty after `6070f640…`). Docs-only commit; no source code, no tests, no scripts. | EV-30 carries the live `git status --short` proof at handoff time. |
 
 ---
 
