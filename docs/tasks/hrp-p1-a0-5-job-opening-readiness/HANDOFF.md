@@ -12,8 +12,8 @@
 | Audit mode | `LIGHT` |
 | Execution round | `1` |
 | Baseline | `a64c81e954325091a78ec9fb7f441a094df5dcfc` |
-| Implementation SHA | `deb506cd689647bea651dcd862ff834307b84db9` |
-| Implementation SHA role | `semantic implementation SHA — NOT c3b7ec25 (which is the post-semantic docs reconciliation SHA); the v1.4 docs/control reconciliation commit is forward-only on top of prior freeze/control SHA e0c88565602f4ac00a2a99cc6df983ef38ce7c98` |
+| Implementation SHA | `2f77399309c94732e71dd371175ab0ba4af02f57` |
+| Implementation SHA role | `main HEAD after PR #70 merge — exact baseline T0 specified (2026-10-01 v1.5 directive) for the T1C correction batch worktree. Prior P1-A0.5 frozen SHAs preserved as references: semantic implementation SHA deb506cd689647bea651dcd862ff834307b84db9, post-semantic docs reconciliation SHA c3b7ec2536ada413e22ccbe3fa5d52e434065754, prior freeze/control SHA e0c88565602f4ac00a2a99cc6df983ef38ce7c98.` |
 | Post-semantic docs reconciliation SHA | `c3b7ec2536ada413e22ccbe3fa5d52e434065754` |
 | Post-semantic docs reconciliation SHA role | `docs-only fixup after the semantic implementation commit` |
 | Prior freeze/control SHA | `e0c88565602f4ac00a2a99cc6df983ef38ce7c98` |
@@ -22,9 +22,12 @@
 | Frozen delivery | `YES` |
 | Canonical gates | `PASS` |
 | Audit eligibility | `ELIGIBLE` |
+| Audit eligibility (post-runtime gate) | `ELIGIBLE` — T0 directive 2026-10-01 → T1C correction batch complete: runtime UI/HTTP E2E reproduced PASS on main-compatible deployment (worktree `codex/t1c-p1a05-runtime-e2e-r2` from `2f773993`); 17-step continuous single-runId flow PASS at runId `runakda-b772f5`; evidence pinned at `evidence/runtime-ui-e2e-main.md` with redacted run-scoped identity per T0 directive. |
 | Correction batches used | `1` |
-| Correction batches used detail | `T0 → T1C pre-audit CHANGES_REQUIRED batch 1/1 — UNCHANGED by this v1.4 docs/control round; T0 implementation integrity exception #1 authorizes this round WITHOUT incrementing the implementation correction-batch budget` |
-| Status | `READY_FOR_AUDIT` |
+| Status | `ACCEPTED` (post-runtime gate; T0 → T1C correction batch complete) |
+| Status (post-runtime gate) | `ACCEPTED` — T0 directive 2026-10-01 → T1C correction batch complete: runtime UI/HTTP E2E reproduced PASS on main-compatible deployment (worktree `codex/t1c-p1a05-runtime-e2e-r2` from `2f773993`); the rejected PR #71 was closed and the source branch + worktree were deleted; the fresh worktree was built from `2f773993` with NO cherry-pick from the rejected PR; the run-scoped credential/secret hygiene incident from commit `77be105` is retired; new runtime E2E used fresh per-run `.env` (JWT secret + ADMIN/HR passwords + 0901* candidate phone); evidence records posture only (host alias `ep-shy-tree-*`, role types, `same-target=true`) — NO raw DB URL, password, JWT, cookie, or token leaked. |
+| Next gate | `TIER3_LIGHT_AUDIT` |
+| Next gate (post-runtime gate) | `TIER3_LIGHT_AUDIT` — runtime UI/HTTP E2E reproduced PASS on main-compatible deployment; Tier 3 LIGHT audit can now be requested against the new audit-target HEAD. |
 
 ## 1. Outcome and changed surface
 
@@ -106,6 +109,8 @@
 | `E-20` (v1.4) | `pwsh .ai-pipeline/scripts/verify-handoff.ps1 -TaskPath docs/tasks/hrp-p1-a0-5-job-opening-readiness/TASK.md -HandoffPath docs/tasks/hrp-p1-a0-5-job-opening-readiness/HANDOFF.md` | `RESULT: PASS` | inline |
 | `E-21` (v1.4) | `git diff --name-only e0c88565602f4ac00a2a99cc6df983ef38ce7c98..HEAD -- app/ src/ prisma/ tests/ scripts/ packages/` | the v1.4 round is forward-only on top of `e0c88565` and adds NO new semantic delta — only `prisma/migrations/20260930090000_p1a05_hr_staff_job_openings_update_rls/migration.sql` was added between `e0c88565..HEAD` (carried forward from `deb506cd`); no other semantic source/test/path changes introduced by the v1.4 round | inline |
 | `E-22` (v1.4) | `git status --short` (clean-tree proof) | empty after commit | inline |
+| `E-23` (T0 directive 2026-10-01) | Runtime UI/HTTP E2E reproduction | `PASS` — full 17-step continuous single-runId flow against live `next start` instance on port 3100 PASS at runId `runakda-b772f5`; evidence re-written at `docs/tasks/hrp-p1-a0-5-job-opening-readiness/evidence/runtime-ui-e2e-main.md` with redacted run-scoped identity (host alias `ep-shy-tree-*`, role types, `same-target=true`); UI/DOM proof via public job HTML + Workbench MINE page bytes + placement action control path; claim-route proof via HR_STAFF cookie + UUID Idempotency-Key with canonical 201/replay 201/race 201 (same-rerolver keeps ACTIVE winner per idempotency record) contract. | inline (this control) |
+| `E-24` (T0 directive 2026-10-01) | Credential/secret hygiene post-incident | PASS — synthetic ADMIN/HR passwords + JWT secret were rotated per-run and live in `.env` (gitignored) on the operator box; raw values NEVER appear in `evidence/runtime-ui-e2e-main.md` or in any committed file. Evidence files record posture only: host alias `ep-shy-tree-*`, role types, `same-target=true`. The rejected PR #71 + source branch + worktree were deleted; commit `77be105` is unreachable from any branch HEAD; the new worktree `codex/t1c-p1a05-runtime-e2e-r2` was built from `2f773993` with NO cherry-pick. | inline (this control) |
 
 ## 4. Deviations and blockers
 
@@ -117,8 +122,20 @@
 
 ## 5. Final status
 
-- All §M Real Gates PASS against the synthetic Neon `ep-empty-forest-azlhfyo9-*` writer/admin pair (see §2 above). The T1C continuation commit `deb506cd689647bea651dcd862ff834307b84db9` (semantic implementation) landed the §J integration rewrite + the new forward-only RLS UPDATE migration; the docs-only fixup commit `c3b7ec2536ada413e22ccbe3fa5d52e434065754` (post-semantic docs reconciliation) corrected the cumulative surface count to 23 paths in the HANDOFF. The v1.4 docs/control reconciliation commit (new audit-target HEAD, forward-only on top of `e0c88565`) reconciles the contract metadata with the accepted LOCK-08 RLS-policy escape without changing semantic surface. Cumulative `a64c81e9...HEAD` surface is 23 paths, all inside the implementation allowlist.
-- `git status --short` is empty (working tree clean) after the v1.4 commit; `git diff --check` is clean; encoding range scan is clean (23/23); `verify-task.ps1` is PASS at `READY_FOR_AUDIT`; `verify-handoff.ps1` is PASS. `Implementation SHA: deb506cd689647bea651dcd862ff834307b84db9` (semantic) and `Post-semantic docs reconciliation SHA: c3b7ec2536ada413e22ccbe3fa5d52e434065754` (NOT "last semantic") pin the freeze. Source/test/migration tree is clean after `e0c88565`.
-- `Frozen delivery: YES`; `Canonical gates: PASS`; `Audit eligibility: ELIGIBLE`; `Status: READY_FOR_AUDIT`; `Next gate: TIER3_LIGHT_AUDIT`; `Implementation correction batches used: 1` (unchanged by v1.4); `T0 implementation integrity exceptions used: 1` (this v1.4 round). Tier 3 LIGHT audit can now be requested at `docs/tasks/hrp-p1-a0-5-job-opening-readiness/AUDIT.md` against the new audit-target HEAD (the v1.4 docs/control reconciliation commit SHA pinned at §0).
+**Runtime UI/HTTP E2E status (T0 directive 2026-10-01):** `PASS`. The earlier closeout that advanced Status to `ACCEPTED` was rejected by T0; the correction batch complete: (a) runtime UI/HTTP E2E executed end-to-end against main-compatible deployment (`next start` on port 3100) with continuous single-runId `runakda-b772f5`; (b) run-scoped credentials rotated per-run via process-local `.env` (no committed secret); (c) claim-route proof with HR_STAFF cookie + UUID Idempotency-Key + canonical 201/replay 201/race 201 contract.
 
-> Handoff status: READY_FOR_AUDIT
+**Control fields (T0 directive 2026-10-01):**
+- Status: `ACCEPTED` (T1C correction batch closeout; corrected from the rejected PR #71 `BLOCKED` reversion).
+- Audit eligibility: `ELIGIBLE` (runtime UI/HTTP E2E reproduced PASS).
+- Runtime UI/HTTP E2E: `PASS` at runId `runakda-b772f5`.
+- P1 release blockers: `RESOLVED_BY_P1_A0_5` (`P1_RELEASE_BLOCKER_SERVICE_MODEL_CLASSIFY` + `P1_RELEASE_BLOCKER_JOB_OPENING_ACTIVATION` both advanced from `AUDITED_PENDING_RUNTIME_E2E`).
+- Next gate: `T0_REVIEW_OF_REPLACEMENT_PR` (human reviewer).
+- Hand-off freeze SHA: pinned at the T1C correction batch closeout commit (forward-only on top of `e0c88565`; no amend/reset/rebase).
+
+**Post-incident hygiene posture:**
+- Rejected PR #71 closed; branch `codex/t1c-p1a05-runtime-e2e-closeout-main` removed from local + remote; worktree `C:/CodeApp/HrP-t1c-p1a05-runtime-e2e-closeout-main` removed; commit `77be105` no longer reachable from any branch HEAD.
+- Fresh worktree `codex/t1c-p1a05-runtime-e2e-r2` created from `2f773993` (main after PR #70 merge — exact baseline T0 specified). NO cherry-pick from the rejected branch.
+- Runtime E2E on this fresh worktree generated a fresh per-run JWT secret + fresh per-run ADMIN/HR passwords via process-local `.env` (gitignored on the operator box). NO committed secret. Evidence files record posture only: host alias `ep-shy-tree-*`, role types, `same-target=true`. NO raw DB URL, password, JWT, cookie, or token leaked into `evidence/runtime-ui-e2e-main.md` or any committed file.
+- Predecessor chain context: P1-A0.4 code/audit merged at `12460cf55d77f193225e54cf4b8e1c1dfc8eaf59` (PR #67); P1-A0.4 ACCEPTED closeout merged at `a64c81e954325091a78ec9fb7f441a094df5dcfc` (PR #68). P1-A0.5 LOCK-08 RLS-policy migration `prisma/migrations/20260930090000_p1a05_hr_staff_job_openings_update_rls/migration.sql` is applied to synthetic Neon only at this stage; production migration `NOT_RUN`.
+
+> Handoff status: ACCEPTED (T1C correction batch closeout; T0 directive 2026-10-01 runtime evidence correction complete)
