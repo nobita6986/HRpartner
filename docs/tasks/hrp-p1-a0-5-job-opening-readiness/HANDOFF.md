@@ -12,13 +12,13 @@
 | Audit mode | `LIGHT` |
 | Execution round | `1` |
 | Baseline | `a64c81e954325091a78ec9fb7f441a094df5dcfc` |
-| Implementation SHA | `2f77399309c94732e71dd371175ab0ba4af02f57` |
-| Implementation SHA role | `main HEAD after PR #70 merge — exact baseline T0 specified (2026-10-01 v1.5 directive) for the T1C correction batch worktree. Prior P1-A0.5 frozen SHAs preserved as references: semantic implementation SHA deb506cd689647bea651dcd862ff834307b84db9, post-semantic docs reconciliation SHA c3b7ec2536ada413e22ccbe3fa5d52e434065754, prior freeze/control SHA e0c88565602f4ac00a2a99cc6df983ef38ce7c98.` |
+| Implementation SHA | `57f4288b62b107606e2962aa12082e6a8d243a4b` |
+| Implementation SHA role | `T1C correction batch closeout commit on branch codex/t1c-p1a05-runtime-e2e-r2 — docs/evidence/scripts surface for the corrected runtime UI/HTTP E2E PASS at runId runakda-b772f5. Forward-only on top of 2f77399309c94732e71dd371175ab0ba4af02f57 (main after PR #70 merge). Prior P1-A0.5 frozen SHAs preserved as references: semantic implementation SHA deb506cd689647bea651dcd862ff834307b84db9, post-semantic docs reconciliation SHA c3b7ec2536ada413e22ccbe3fa5d52e434065754, prior freeze/control SHA e0c88565602f4ac00a2a99cc6df983ef38ce7c98.` |
 | Post-semantic docs reconciliation SHA | `c3b7ec2536ada413e22ccbe3fa5d52e434065754` |
 | Post-semantic docs reconciliation SHA role | `docs-only fixup after the semantic implementation commit` |
 | Prior freeze/control SHA | `e0c88565602f4ac00a2a99cc6df983ef38ce7c98` |
 | Prior freeze/control SHA role | `pinned prior freeze; v1.4 docs/control reconciliation commit is forward-only on top of this SHA` |
-| New audit-target HEAD | (pinned at v1.4 docs/control reconciliation commit SHA — see `git -C C:/CodeApp/HrP-t1c-p1a05-job-opening-readiness-impl rev-parse HEAD` after commit) |
+| New audit-target HEAD | `57f4288b62b107606e2962aa12082e6a8d243a4b` (T1C correction batch closeout commit on `codex/t1c-p1a05-runtime-e2e-r2` — forward-only on top of `2f77399309c94732e71dd371175ab0ba4af02f57`) |
 | Frozen delivery | `YES` |
 | Canonical gates | `PASS` |
 | Audit eligibility | `ELIGIBLE` |
