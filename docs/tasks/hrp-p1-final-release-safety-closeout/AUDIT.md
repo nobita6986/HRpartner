@@ -19,7 +19,9 @@
 | Worktree | `C:\CodeApp\HrP-t1c-p1-final-release-safety-closeout` |
 | Branch | `codex/t1c-p1-final-release-safety-closeout` |
 | Baseline | `origin/main @ 2f77399309c94732e71dd371175ab0ba4af02f57` |
-| Semantic Implementation SHA | `TBD at semantic freeze commit` (recorded in HANDOFF §0 at release) |
+| Semantic Implementation SHA | `858f0bb8207da2611e9e5ce2173badaf53e4cc1d` (HANDOFF §0 Control §) |
+| Freeze commit SHA | `125c90cd17a106bac49f99be1a859477f4415b84` (HANDOFF §0 Control §) |
+| EV-16 refresh SHA | `b7ec199972c63f12aff55bb2b9872d165bb8862a` (HANDOFF §0 Control §) |
 | Tier 3 verdict | `PENDING_T3_INVOCATION` |
 | Tier 1 self-review verdict | `PASS` (see §6) |
 | Correction batches used | `1` (cold-connect warmup fix) |
