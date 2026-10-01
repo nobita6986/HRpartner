@@ -18,8 +18,23 @@
 > font delta and docs. `AUDIT.md` is owned by Tier 3 and is **not**
 > authored by T1.
 >
-> Status = READY_FOR_AUDIT, Frozen delivery = YES, Canonical gates = PASS,
-> Audit eligibility = ELIGIBLE, Next gate = TIER3_DELTA_AUDIT.
+> **TIER-1 CONTROL (rev. 7 — post-merge formal closeout 2026-10-02)**:
+> PR #73 was merged into `main` at `0179ef8b18045d1340028669871bc1db492da08d`.
+> Post-merge gates on `main`: CI Quality `SUCCESS`, Integration `SUCCESS`,
+> Vercel deployment `SUCCESS — Deployment has completed`. Tier 3 LIGHT audit
+> round 1 PASS verdict (round-1) is preserved as authoritative for the
+> unchanged P1 runtime surface; Tier 3 DELTA audit round 2 PASS verdict
+> (font delta + docs/control) is adopted. Recruiter end-to-end proof ×3 with
+> zero residue (`{users=0, orders=0, slots=0, projects=0, companies=0}` per run).
+> All four P1 release blockers (BLK-01..BLK-04) are CLOSED/RESOLVED. Round 7
+> is a docs-only forward-only commit on top of the merge SHA; no source,
+> test, schema, migration, package, or font asset changes. No production
+> DB access/migration. Production migration/deploy is deferred to the VPS
+> release cutover. **P1 Thin Recruitment Value Slice = COMPLETE**; no
+> P2/P3/P4/P5 work opened.
+>
+> Status = ACCEPTED, Frozen delivery = YES, Canonical gates = PASS,
+> Audit eligibility = ELIGIBLE, Next gate = NONE — MERGED; production migration/deploy deferred to the VPS release cutover.
 
 ## 0. Control
 
@@ -27,10 +42,10 @@
 |---|---|
 | Task slug | `hrp-p1-final-release-safety-closeout` |
 | Delivery protocol | `V2_FAST_FREEZE` |
-| Spec version | `v1.5` (rev. 6 — PR #73 build-blocker font hotfix; round-1 audit PASS verdict unchanged on original surface) |
-| Status | `READY_FOR_AUDIT` |
-| Current audit round | `1` (Tier 3 round-1 PASS covers unchanged P1 surface; DELTA scope = font + docs only) |
-| Next gate | `TIER3_DELTA_AUDIT` |
+| Spec version | `v1.6 (rev. 7 — post-merge formal closeout on main; Tier 3 LIGHT round 1 + DELTA round 2 PASS adopted; PR #73 merged into main at 0179ef8b18045d1340028669871bc1db492da08d)` |
+| Status | `ACCEPTED` (T0 closeout 2026-10-02: Tier 3 LIGHT audit round 1 PASS adopted; Tier 3 DELTA audit round 2 PASS adopted; both post-merge CI jobs Quality + Integration SUCCESS; Vercel deployment SUCCESS; recruiter end-to-end proof ×3 with zero residue; PR #73 merged into `main` at `0179ef8b18045d1340028669871bc1db492da08d`; production migration/deploy deferred to VPS release cutover) |
+| Current audit round | `2` (Tier 3 LIGHT round 1 + DELTA round 2, both PASS adopted) |
+| Next gate | `NONE — MERGED; production migration/deploy deferred to the VPS release cutover` |
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
 | Baseline | `2f77399309c94732e71dd371175ab0ba4af02f57` |
@@ -48,8 +63,19 @@
 | Canonical gates | `PASS` |
 | Audit eligibility | `ELIGIBLE` |
 | T0 post-audit release-integrity exceptions used | `1` |
-| Correction batches used | `1` |
-| Execution round | `6` |
+| Correction batches used | `0` |
+| Execution round | `7` (formal post-merge closeout; docs-only forward-only commit; no semantic delta vs `0179ef8b18045d1340028669871bc1db492da08d`) |
+| Accepted main SHA | `0179ef8b18045d1340028669871bc1db492da08d` (PR #73 merge commit on `main`) |
+| Merged PR | `#73` (merged into `main` at `0179ef8b18045d1340028669871bc1db492da08d`; source branch `codex/t1c-p1-final-release-safety-closeout`) |
+| Post-merge CI Quality | `SUCCESS` |
+| Post-merge Integration | `SUCCESS` |
+| Post-merge Vercel | `SUCCESS — Deployment has completed` |
+| Tier 3 LIGHT round 1 | `PASS` (adopted at AUDIT.md commit; verdict preserved as authoritative for unchanged P1 surface) |
+| Tier 3 DELTA round 2 | `PASS` (adopted at AUDIT.md commit; scope = font delta + docs/control) |
+| Recruiter E2E ×3 + zero residue | `PASS` (recruiter end-to-end proof ×3 with residue `{users=0, orders=0, slots=0, projects=0, companies=0}` per run) |
+| P1 release blockers | `all CLOSED/RESOLVED` (BLK-01..BLK-04 closed; verified by ×3 E2E + Tier 3 LIGHT + DELTA) |
+| P1 Thin Recruitment Value Slice | `COMPLETE` (no P2/P3/P4/P5 work opened) |
+| Production DB / migration | `NOT_RUN` (T0 owns production-side remediation; VPS release cutover deferred) |
 | Production migration | `NOT_RUN` (T0 owns production-side remediation per stop boundary) |
 | Production verification | `NOT_IN_SCOPE` (T1C closeout runs only against synthetic Neon per T0 §B-01 contract) |
 | Branch | `codex/t1c-p1-final-release-safety-closeout` |
@@ -394,19 +420,30 @@ rounds ×3 PASS with zero residue.
 
 ## 5. Final status
 
-- **Status**: `READY_FOR_AUDIT`
+- **Status**: `ACCEPTED`
 - **Frozen delivery**: `YES`
 - **Canonical gates**: `PASS`
 - **Audit eligibility**: `ELIGIBLE`
-- **Next gate**: `TIER3_DELTA_AUDIT`
+- **Next gate**: `NONE — MERGED; production migration/deploy deferred to the VPS release cutover`
+- **Accepted main SHA**: `0179ef8b18045d1340028669871bc1db492da08d` (PR #73 merge commit on `main`)
+- **Merged PR**: `#73` (merged into `main` at `0179ef8b18045d1340028669871bc1db492da08d`; source branch `codex/t1c-p1-final-release-safety-closeout`)
+- **Post-merge CI Quality**: `SUCCESS`
+- **Post-merge Integration**: `SUCCESS`
+- **Post-merge Vercel**: `SUCCESS — Deployment has completed`
+- **Tier 3 LIGHT round 1**: `PASS` (adopted at AUDIT.md commit; verdict preserved as authoritative for unchanged P1 surface)
+- **Tier 3 DELTA round 2**: `PASS` (adopted at AUDIT.md commit; scope = font delta + docs/control)
+- **Recruiter E2E ×3 + zero residue**: `PASS` (recruiter end-to-end proof ×3 with residue `{users=0, orders=0, slots=0, projects=0, companies=0}` per run)
+- **P1 release blockers**: `all CLOSED/RESOLVED` (BLK-01..BLK-04 closed; verified by ×3 E2E + Tier 3 LIGHT + DELTA)
+- **P1 Thin Recruitment Value Slice**: `COMPLETE` (no P2/P3/P4/P5 work opened)
 - **Implementation SHA (P1)**: `708e0ce71d258c3a70383330dfb8d5d370dbd974` (predecessor — round-1 audit target)
-- **Font-hotfix Implementation SHA**: `b0d095822780201c96715c27acb9d3396a20079e` (new audit-target HEAD — semantic commit)
+- **Font-hotfix Implementation SHA**: `b0d095822780201c96715c27acb9d3396a20079e` (predecessor — DELTA audit target, semantic commit)
 - **Docs/evidence freeze SHA**: `6070f640…` (rev. 6 docs/control freeze)
 - **EV-30 update SHA**: `28aca457…` (live clean-tree proof)
-- **Spec version**: `v1.5`
-- **Execution round**: `6`
-- **Audit round**: `1` (Tier 3 round-1 PASS covers unchanged P1 surface; DELTA scope = font + docs only)
+- **Spec version**: `v1.6`
+- **Execution round**: `7` (formal post-merge closeout; docs-only forward-only commit)
+- **Audit round**: `2` (Tier 3 LIGHT round 1 + DELTA round 2, both PASS adopted)
 - **T0 post-audit release-integrity exceptions used**: `1`
+- **Production DB / migration**: `NOT_RUN` (T0 owns production-side remediation; VPS release cutover deferred)
 
 This handoff pins P1 Implementation SHA = `708e0ce71d258c3a70383330dfb8d5d370dbd974`
 (semantic/test/migration commit, predecessor), Font-hotfix Implementation
@@ -430,11 +467,12 @@ stops here per T0 §Stop boundary (no push, no merge, no deploy).
 | `v1.5` (rev. 6 — PR #73 build-blocker font hotfix) | `2026-10-01 22:30 ICT` | T0 post-audit release-integrity exception #1: removed every `next/font/google` production import; introduced `next/font/local` via shared loader `app/fonts/local-fonts.tsx` exporting `beVietnamPro` (`--font-bvp`, weights 400/500/600/700) and `inter` (`--font-inter`, single variable file); committed font assets to `app/fonts/` (4 BVP static TTF + 1 Inter variable TTF + 2 OFL license files + 1 provenance registry); removed Google Fonts `<link rel="preconnect">` tags; `app/bod/page.tsx` switched to shared root local-font loader; added static regression guard `src/shared/ui/font-google-ban.static.test.ts`; verified E-24..E-31 (font-ban 18/18, zero `next/font/google` imports, typecheck/lint/build/unit PASS, UTF-8/no-BOM scan 7/7, clean tree, provenance 7/7). Tier 3 round-1 PASS evidence preserved as authoritative for unchanged P1 surface; DELTA audit scope is strictly the font delta + docs. Status flipped to `READY_FOR_AUDIT` (next gate `TIER3_DELTA_AUDIT`); Audit eligibility `ELIGIBLE`; T0 post-audit release-integrity exceptions used = 1. Font-hotfix Implementation SHA `b0d09582…`. | T0 §A–§G post-audit release-integrity exception #1. `next/font/google` blocked CI + Vercel build; self-host fonts. No semantic delta to unchanged P1 runtime surface (`EV-32` impact proof). |
 | `v1.5` (rev. 6 — docs/control freeze) | `2026-10-01 23:50 ICT` (commit `6070f640…`) | Docs/evidence freeze commit. Pins Font-hotfix Implementation SHA `b0d09582…`; preserves P1 Implementation SHA `708e0ce7…` as predecessor; records audit round-1 PASS applies to the unchanged P1 surface; flips Status → `READY_FOR_AUDIT`; Frozen delivery → `YES`; Canonical gates → `PASS`; Audit eligibility → `ELIGIBLE`; Next gate → `TIER3_DELTA_AUDIT`. No semantic delta vs `b0d09582…`. Docs-only commit; no source code, no tests, no scripts, no evidence payload changes. Captured E-24..E-32 evidence logs and pinned them in `## 3. Evidence registry`. | T0 §E.2 docs/evidence freeze discipline; rev. 6 closing this fork. |
 | `v1.5` (rev. 6 — EV-30 live clean-tree) | `2026-10-01 23:55 ICT` (commit `28aca457…`) | EV-30 update — replaces the forward-looking clean-tree expectation with the live post-freeze state (working tree empty after `6070f640…`). Docs-only commit; no source code, no tests, no scripts. | EV-30 carries the live `git status --short` proof at handoff time. |
+| `v1.6` (rev. 7 — post-merge formal closeout on main) | `2026-10-02` (this commit; on top of merge SHA `0179ef8b18045d1340028669871bc1db492da08d`) | T0 closeout directive 2026-10-02: PR #73 merged into `main` at `0179ef8b18045d1340028669871bc1db492da08d`; post-merge CI Quality `SUCCESS` + Integration `SUCCESS`; Vercel deployment `SUCCESS — Deployment has completed`; Tier 3 LIGHT audit round 1 PASS adopted (round-1 verdict preserved as authoritative for unchanged P1 surface); Tier 3 DELTA audit round 2 PASS adopted (font delta + docs/control); recruiter end-to-end proof ×3 with zero residue; all four P1 release blockers (BLK-01..BLK-04) CLOSED/RESOLVED; Spec version `v1.6`; Status `ACCEPTED`; Frozen `YES`; Canonical `PASS`; Audit eligibility `ELIGIBLE`; Next gate `NONE — MERGED; production migration/deploy deferred to the VPS release cutover`; Current execution round `7`; Current audit round `2`; Production DB / migration `NOT_RUN` (T0 owns production-side remediation). **P1 Thin Recruitment Value Slice = COMPLETE**; no P2/P3/P4/P5 work opened. Docs-only forward-only commit; no source, test, schema, migration, package, or font asset changes; no amend/reset/rebase/force-push; no Tier 3 recall; no production DB access. AUDIT.md not edited (T3-owned). | T0 closeout directive 2026-10-02 — P1 final formal closeout on main. |
 
 ---
 
-**Handoff status: READY_FOR_AUDIT** (per T0 §E.5 control truthfulness)
+**Handoff status: ACCEPTED** (T0 closeout 2026-10-02 — P1 final formal closeout on main).
 
-Frozen: YES; Canonical: PASS; Audit eligibility: ELIGIBLE; Next gate: TIER3_DELTA_AUDIT.
+Canonical: PASS; Audit eligibility: ELIGIBLE (Tier 3 LIGHT + DELTA both PASS adopted); Next gate: `NONE — MERGED; production migration/deploy deferred to the VPS release cutover`. PR #73 merged into `main` at `0179ef8b18045d1340028669871bc1db492da08d`. Recruiter end-to-end proof ×3 with zero residue; all four P1 release blockers (BLK-01..BLK-04) CLOSED/RESOLVED. **P1 Thin Recruitment Value Slice = COMPLETE**. No P2/P3/P4/P5 work opened. Docs-only forward-only commit on top of merge SHA; no source, test, schema, migration, package, or font asset changes; AUDIT.md not edited (T3-owned). Production DB / migration NOT_RUN; T0 owns production deployment at the VPS release cutover.
 
 This handoff pins P1 Implementation SHA = `708e0ce71d258c3a70383330dfb8d5d370dbd974` (predecessor) and Font-hotfix Implementation SHA = `b0d09582…` (new audit-target HEAD). Tier 3 owns `AUDIT.md` and the DELTA audit verdict on the font delta + docs only; Tier 3 round-1 PASS evidence (`audit/AI_AUDIT_TIER3_ROUND1.md`) remains authoritative for the unchanged P1 runtime surface. Tier 1 stops here per T0 §Stop boundary (no push, no merge, no deploy, no production DB access).
