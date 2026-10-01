@@ -18,7 +18,7 @@
 | Baseline | `origin/main @ 11ee086529bf2920f687851f21fe4f6c1c60bd42` |
 | **Implementation SHA** | `708e0ce71d258c3a70383330dfb8d5d370dbd974` |
 | **Freeze commit SHA** | `ae56072525a60f5e75e196c28b3d4f486b64b3a0` |
-| **Final HEAD (this handoff)** | `ebc2c70400ba5593d59aef7acb8f2f4cedc2ac35` |
+| **Final HEAD (this handoff)** | `ebc2c70400ba5593d59aef7acb8f2f4cedc2ac35` (final handoff source; `2291abc…` is the post-pin docs commit and is intentionally not re-pinned here to avoid an infinite re-pin loop) |
 | Branch | `codex/t1c-p1-final-release-safety-closeout` |
 | Worktree | `C:\CodeApp\HrP-t1c-p1-final-release-safety-closeout` |
 | Status | **`READY_FOR_AUDIT`** |
