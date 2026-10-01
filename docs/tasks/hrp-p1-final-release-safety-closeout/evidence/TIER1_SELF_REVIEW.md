@@ -30,7 +30,7 @@
 | Next gate | `TIER3_LIGHT_AUDIT` |
 | Implementation SHA | `708e0ce71d258c3a70383330dfb8d5d370dbd974` |
 | Freeze HEAD | `ae56072525a60f5e75e196c28b3d4f486b64b3a0` |
-| Final HEAD | `28f538094e70422116fa1f9220506ab4a35edc08` (forward-only docs commit pin) |
+| Final HEAD | `ebc2c70400ba5593d59aef7acb8f2f4cedc2ac35` (forward-only docs commit pin) |
 
 ## 0.B Pre-flight verification (2026-10-01)
 

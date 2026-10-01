@@ -27,7 +27,7 @@
 | Baseline | `origin/main @ 2f77399309c94732e71dd371175ab0ba4af02f57` |
 | Implementation SHA | `708e0ce71d258c3a70383330dfb8d5d370dbd974` |
 | Freeze commit SHA | `ae56072525a60f5e75e196c28b3d4f486b64b3a0` |
-| Final HEAD (this handoff freeze) | `28f538094e70422116fa1f9220506ab4a35edc08` |
+| Final HEAD (this handoff freeze) | `ebc2c70400ba5593d59aef7acb8f2f4cedc2ac35` |
 | Frozen delivery | **`YES`** |
 | Canonical gates | **`PASS`** |
 | Audit eligibility | `ELIGIBLE` |
