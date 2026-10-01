@@ -14,11 +14,12 @@
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
 | Baseline | `origin/main @ 2f77399309c94732e71dd371175ab0ba4af02f57` |
-| Baseline/diff range | `2f77399309c94732e71dd371175ab0ba4af02f57..b89ed2cf` (forward-only; no amend/reset/rebase/force-push) |
+| Baseline/diff range | `2f77399309c94732e71dd371175ab0ba4af02f57..de5774fd` (forward-only; no amend/reset/rebase/force-push) |
 | Implementation SHA | `858f0bb8207da2611e9e5ce2173badaf53e4cc1d` |
 | Freeze commit SHA | `125c90cd17a106bac49f99be1a859477f4415b84` |
 | EV-16 refresh SHA | `b7ec199972c63f12aff55bb2b9872d165bb8862a` |
 | AUDIT pin SHA | `b89ed2cf6564639754898c37ba1445e6a38e4c8c` |
+| HEAD pin SHA | `de5774fd4344242882418f99b6bad4a84705b3bf` |
 | Frozen delivery | `YES` |
 | Canonical gates | `NOT_REQUIRED` |
 | Audit eligibility | `ELIGIBLE` |
