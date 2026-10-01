@@ -14,8 +14,10 @@
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
 | Baseline | `origin/main @ 2f77399309c94732e71dd371175ab0ba4af02f57` |
-| Baseline/diff range | `2f77399309c94732e71dd371175ab0ba4af02f57..858f0bb8` (forward-only; no amend/reset/rebase/force-push) |
+| Baseline/diff range | `2f77399309c94732e71dd371175ab0ba4af02f57..b7ec1999` (forward-only; no amend/reset/rebase/force-push) |
 | Implementation SHA | `858f0bb8207da2611e9e5ce2173badaf53e4cc1d` |
+| Freeze commit SHA | `125c90cd17a106bac49f99be1a859477f4415b84` |
+| EV-16 refresh SHA | `b7ec199972c63f12aff55bb2b9872d165bb8862a` |
 | Frozen delivery | `YES` |
 | Canonical gates | `NOT_REQUIRED` |
 | Audit eligibility | `ELIGIBLE` |
@@ -94,7 +96,7 @@ The acceptance table below opens with the contract-gate row (`—`) carrying the
 | `AC-13` | `git diff --check` exits 0 (no whitespace errors in the diff against `origin/main @ 2f77399309c94732e71dd371175ab0ba4af02f57`). | `git diff --check; echo "_EXIT=$?"` | None | evidence/EV-13-diff-check.log | RESULT: PASS (exit 0) |
 | `AC-14` | `node .ai-pipeline/scripts/verify-encoding.mjs scripts/runtime` exits 0 with `RESULT: PASS` confirming strict UTF-8 without BOM across the changed semantic surface. | `node .ai-pipeline/scripts/verify-encoding.mjs scripts/runtime; echo "_EXIT=$?"` | None | evidence/EV-14-encoding-scan.log | RESULT: PASS (8 changed text files, strict UTF-8 without BOM) |
 | `AC-15` | DEC-10 contract note: canonical strict integration lane (`CI_INTEGRATION_STRICT=1 npm run test:integration`) is intentionally NOT RUN because T0 §B-01 forbids the `DATABASE_URL_TEST` env name. This is a documented contract decision, not a gate failure. | `CI_INTEGRATION_STRICT=1 npm run test:integration; echo "_EXIT=$?"` (deliberately not executed; documented in TASK §0 and HANDOFF §4.1) | Not invoked — T0 §B-01 forbids `DATABASE_URL_TEST`. Closeout substitutes runtime UI/HTTP ×3 + zero-residue ×3 + baseline-gates ×7 per contract. | evidence/EV-15-integration-contract-note.log | RESULT: NOT_REQUIRED (DEC-10 contract — recorded, not a gate failure) |
-| `AC-16` | Forward-only commits separate the semantic/test freeze from the docs/evidence freeze; no amend, no reset, no rebase, no force-push, no push, no PR, no T3 call. | `git log --oneline 2f77399309c94732e71dd371175ab0ba4af02f57..HEAD; git rev-parse HEAD; git status --porcelain=v1` | None | evidence/EV-16-forward-only-commits.log | RESULT: PASS (semantic commit SHA pinned as Implementation SHA; docs/evidence commit SHA only modifies `docs/tasks/<slug>/**`; no push; no T3 call) |
+| `AC-16` | Forward-only commits separate the semantic/test freeze from the docs/evidence freeze; no amend, no reset, no rebase, no force-push, no push, no PR, no T3 call. | `git log --oneline 2f77399309c94732e71dd371175ab0ba4af02f57..HEAD; git rev-parse HEAD; git status --porcelain=v1` | None | evidence/EV-16-forward-only-commits.log | RESULT: PASS (semantic commit SHA 858f0bb8 + freeze commit SHA 125c90cd + EV-16 refresh commit SHA b7ec1999; only `docs/tasks/hrp-p1-final-release-safety-closeout/**` and `scripts/runtime/**` changed vs `origin/main`; no push; no T3 call) |
 | `AC-17` | All four closeout doc artifacts exist in `docs/tasks/hrp-p1-final-release-safety-closeout/` and 23 evidence files populate `docs/tasks/hrp-p1-final-release-safety-closeout/evidence/`. | `Test-Path -LiteralPath docs/tasks/hrp-p1-final-release-safety-closeout/TASK.md; Test-Path -LiteralPath docs/tasks/hrp-p1-final-release-safety-closeout/HANDOFF.md; Test-Path -LiteralPath docs/tasks/hrp-p1-final-release-safety-closeout/AUDIT.md; (Get-ChildItem docs/tasks/hrp-p1-final-release-safety-closeout/evidence).Count` | None | docs/tasks/hrp-p1-final-release-safety-closeout/ | RESULT: PASS (TASK.md 43 KB; HANDOFF.md written; AUDIT.md 16 KB; 30 evidence files in evidence/) |
 
 ### 2.1 Synthetic posture proof (REAL — not a fake PASS)
@@ -216,7 +218,7 @@ The table below maps every cited evidence file to its runnable source command an
 | `E-29` | evidence/EV-13-diff-check.log | `git diff --check` | Whitespace error scan across the diff vs `origin/main @ 2f77399309c94732e71dd371175ab0ba4af02f57`. | RESULT: PASS (exit 0) |
 | `E-30` | evidence/EV-14-encoding-scan.log | `node .ai-pipeline/scripts/verify-encoding.mjs scripts/runtime` | Strict UTF-8 without BOM scan of `scripts/runtime/**`. | RESULT: PASS (8 changed text files; strict UTF-8 without BOM) |
 | `E-31` | evidence/EV-15-integration-contract-note.log | (DECLARED — see HANDOFF §4.1 / TASK §0 Required gates / DEC-10) | Canonical strict integration gate (`CI_INTEGRATION_STRICT=1 npm run test:integration`) is intentional `NOT_REQUIRED` because T0 §B-01 forbids `DATABASE_URL_TEST`. | RESULT: NOT_REQUIRED (DEC-10 — contract note, not a gate failure) |
-| `E-32` | evidence/EV-16-forward-only-commits.log | `git log --oneline 2f77399309c94732e71dd371175ab0ba4af02f57..HEAD; git status --porcelain=v1` | Forward-only commit history (semantic freeze then docs/evidence freeze) + clean tree. | RESULT: PASS (semantic Implementation SHA pinned; docs/evidence freeze commit only touches `docs/tasks/<slug>/**`; no dirty state) |
+| `E-32` | evidence/EV-16-forward-only-commits.log | `git log --oneline 2f77399309c94732e71dd371175ab0ba4af02f57..HEAD; git status --porcelain=v1` | Forward-only commit history (semantic freeze then docs/evidence freeze then EV-16 refresh) + clean tree. | RESULT: PASS (semantic Implementation SHA 858f0bb8 pinned; freeze SHA 125c90cd + EV-16 refresh SHA b7ec1999 only touch `docs/tasks/<slug>/**` and `scripts/runtime/**`; no dirty state in semantic surface) |
 
 ## 4. Deviations and blockers
 
