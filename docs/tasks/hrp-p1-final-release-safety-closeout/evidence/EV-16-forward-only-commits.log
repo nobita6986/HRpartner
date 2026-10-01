@@ -2,8 +2,9 @@
 
 $ git log --oneline 2f77399309c94732e71dd371175ab0ba4af02f57..HEAD
 
-858f0bb8207da2611e9e5ce2173badaf53e4cc1d feat(runtime/p1-final): production-host hard guard + synthetic posture + zero-residue E2E
+125c90cd docs(p1-final): freeze closeout artifacts (TASK, HANDOFF, AUDIT, evidence/)
+858f0bb8 feat(runtime/p1-final): production-host hard guard + synthetic posture + zero-residue E2E
 
 $ git status --porcelain=v1
 
-(only pre-existing files at repo root; semantic changes are committed at 858f0bb8207da2611e9e5ce2173badaf53e4cc1d; docs/evidence untracked pending the freeze commit.)
+Only pre-existing dirty paths under docs/tasks/.tmp/ remain (debug leftover; not in changed surface).
