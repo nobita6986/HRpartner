@@ -1,0 +1,4 @@
+=== typecheck ===
+$ npm run --silent typecheck
+
+_exit=0

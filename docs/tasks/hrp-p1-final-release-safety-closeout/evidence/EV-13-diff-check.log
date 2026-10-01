@@ -1,0 +1,4 @@
+=== diff --check ===
+$ git diff --check
+
+_exit=0

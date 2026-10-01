@@ -1,0 +1,123 @@
+
+=== stage: posture ===
+[posture] exit=0 stdout=321B stderr=639B
+--- posture stdout (first 200 lines) ---
+[describe] synthetic-allowlist host-alias=a1cd8463c25a db-alias=693fe5919fc2
+WRITER_POSTURE user=app_user_writer super=false bypassrls=false db=693fe5919fc2
+ADMIN_POSTURE  user=neondb_owner super=false bypassrls=true db=693fe5919fc2
+POSTURE_OK writer_is_writer admin_is_admin same_db=693fe5919fc2 host_alias=a1cd8463c25a
+
+--- posture stderr (first 100 lines) ---
+(node:33824) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+=== stage: fixture ===
+[fixture] exit=0 stdout=809B stderr=638B
+--- fixture stdout (first 200 lines) ---
+[describe] synthetic-allowlist host-alias=a1cd8463c25a db-alias=693fe5919fc2
+{
+  "runId": "adba8a95-f21f-46ba-b363-1284295491ee",
+  "runToken": "adba8a95",
+  "hostAlias": "a1cd8463c25a",
+  "dbAlias": "693fe5919fc2",
+  "adminUserId": "rt-e2e-adba8a95-admin",
+  "managerUserId": "rt-e2e-adba8a95-manager",
+  "staffUserId": "rt-e2e-adba8a95-hrstaff",
+  "companyIds": [
+    "671086b6-738d-4ea3-af57-6a67c08d94d3"
+  ],
+  "projectIds": [
+    "f7225e7b-28d2-49ae-b208-49c41b55506b"
+  ],
+  "orderIds": [
+    "013379fe-1f52-4da9-aacb-c52f9b7b7468"
+  ],
+  "slotIds": [
+    "0334a7bc-d934-4874-9752-6ff27d5efc8e"
+  ],
+  "adminPhoneAlias": "0941****21",
+  "managerPhoneAlias": "0941****26",
+  "staffPhoneAlias": "0941****18",
+  "fixtureFile": "docs/tasks/.tmp/runtime-fixture-adba8a95-f21f-46ba-b363-1284295491ee.json"
+}
+
+--- fixture stderr (first 100 lines) ---
+(node:3900) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+fixturePath=docs/tasks/.tmp/runtime-fixture-adba8a95-f21f-46ba-b363-1284295491ee.json
+
+=== stage: e2e ===
+[e2e] exit=0 stdout=1486B stderr=831B
+--- e2e stdout (first 200 lines) ---
+[describe] synthetic-allowlist host-alias=a1cd8463c25a db-alias=693fe5919fc2
+[boot] start next on port=13324 runId=adba8a95-f21f-46ba-b363-1284295491ee
+[step-01] PASS userId=rt-e2e-adba8…
+[step-02] PASS openingId=cfedca5f… postingId=a6da1069… revision=1
+[step-03] PASS serviceModel=STAFFING_SUPPLY
+[step-04] PASS open POST status=200
+[step-05] PASS revision→2 title=Runtime E2E adba8a95
+[step-06] PASS slug=electrician-0-c2ca5b8e status=PUBLISHED
+[step-07] INFRASTRUCTURE_DEFECT status=500
+[step-08] PASS trackingCode=APP-EJ3K-BR9C-JS7D-FVCZ-PGYD-Q6M4 applyPhone=098a…
+[step-09] PASS submissionId=98222552… slotId=0334a7bc…
+[step-10] PASS userId=rt-e2e-adba8…
+[step-11] PASS items=0
+[step-12] PASS handlingAssignmentId=a29210ad…
+[step-13] EXPECTED_FAIL status=404 code=NO_ACTIVE_ASSIGNMENT
+[step-13] PASS placementId=69f50adf… status=SELECTED
+[step-14] PASS status=200 body.status=CONFIRMED
+[step-15] PASS status=400 body={"error":"PLACEMENT_VALIDATION_ERROR","message":"HRP-managed Placement KHÔNG thể chuyển EFFECTIVE trong N3 — atomic workforce bridge thuộc N4","details":{"placementId":"69f50adf-0dda-4c3e-8ed2-50c8ca8
+[step-16] PASS status=200 body.status=CANCELLED
+[step-17] INFRASTRUCTURE_DEFECT status=500
+[step-18] PASS items=1
+[step-19] PASS residue={"users":"3","orders":"1","slots":"1","openings":"1","postings":"1","submissions":"1","placements":"1","handlingassignments":"1"}
+[step-20] PASS trackingCode=APP-EJ3K-BR9C-JS7D-FVCZ-PGYD-Q6M4 placementId=69f50adf…
+[p1-e2e] OK
+
+--- e2e stderr (first 100 lines) ---
+(node:18968) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:18968) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+
+
+=== stage: teardown ===
+[teardown] exit=0 stdout=221B stderr=639B
+--- teardown stdout (first 200 lines) ---
+[describe] synthetic-allowlist host-alias=a1cd8463c25a db-alias=693fe5919fc2
+[exact-id-teardown] OK runId=adba8a95-f21f-46ba-b363-1284295491ee residue={"users":"0","orders":"0","slots":"0","projects":"0","companies":"0"}
+
+--- teardown stderr (first 100 lines) ---
+(node:20044) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+RUN OK

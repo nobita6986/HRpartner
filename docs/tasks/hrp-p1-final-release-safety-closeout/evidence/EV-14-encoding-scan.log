@@ -1,0 +1,57 @@
+=== encoding ===
+$ node .ai-pipeline/scripts/verify-encoding.mjs scripts/runtime
+UTF-8 NO-BOM GATE
+  [OK]   _capture-batch-output.mjs
+  [OK]   docs/tasks/.tmp/p1-e2e-0a0803d6-1790833931399.json
+  [OK]   docs/tasks/.tmp/p1-e2e-0ab00bbe-1790833761405.json
+  [OK]   docs/tasks/.tmp/p1-e2e-0ce98f7c-1790834495924.json
+  [OK]   docs/tasks/.tmp/p1-e2e-3273a0c3-1790834975593.json
+  [OK]   docs/tasks/.tmp/p1-e2e-53a99ddc-1790838301166.json
+  [OK]   docs/tasks/.tmp/p1-e2e-5ebe3fe1-1790834722439.json
+  [OK]   docs/tasks/.tmp/p1-e2e-68c17432-1790834580931.json
+  [OK]   docs/tasks/.tmp/p1-e2e-9f1ed201-1790839006532.json
+  [OK]   docs/tasks/.tmp/p1-e2e-a57b0407-1790834840144.json
+  [OK]   docs/tasks/.tmp/p1-e2e-acdad9f6-1790834654088.json
+  [OK]   docs/tasks/.tmp/p1-e2e-adba8a95-1790838875823.json
+  [OK]   docs/tasks/.tmp/p1-e2e-bf1b382b-1790838941804.json
+  [OK]   docs/tasks/.tmp/p1-e2e-c02d9aaf-1790838259907.json
+  [OK]   docs/tasks/.tmp/p1-e2e-cc63a2e9-1790838340565.json
+  [OK]   docs/tasks/.tmp/p1-e2e-e752cb3f-1790833872919.json
+  [OK]   docs/tasks/.tmp/p1-e2e-e94a64fd-1790834923251.json
+  [OK]   docs/tasks/.tmp/p1-e2e-ecef0c9d-1790834132488.json
+  [OK]   docs/tasks/.tmp/p1-e2e-ef62b114-1790835025897.json
+  [OK]   docs/tasks/.tmp/p1-e2e-evidence/run-1-summary.json
+  [OK]   docs/tasks/.tmp/p1-e2e-evidence/run-2-summary.json
+  [OK]   docs/tasks/.tmp/p1-e2e-evidence/run-3-summary.json
+  [OK]   docs/tasks/.tmp/p1-e2e-f1444b41-1790834336625.json
+  [OK]   docs/tasks/.tmp/runtime-fixture-07071bcc-a612-4227-8af6-ee0f8ea2c598.json
+  [OK]   docs/tasks/.tmp/runtime-fixture-0bc61902-ad2f-4c9b-984a-6dc4ceed3b9c.json
+  [OK]   docs/tasks/.tmp/runtime-fixture-5ebe3fe1-0790-444e-915c-2cd6764edbfe.json
+  [OK]   docs/tasks/.tmp/runtime-fixture-68c17432-3714-4232-ae08-cf7b553ef6cd.json
+  [OK]   docs/tasks/.tmp/runtime-fixture-6a792649-e0f6-4cc3-b442-d8e0d4ce07da.json
+  [OK]   docs/tasks/.tmp/runtime-fixture-768dfd07-0c96-49de-92c3-94de0b89a9ae.json
+  [OK]   docs/tasks/.tmp/runtime-fixture-7fcfef48-01a5-4438-b4af-5e47d30d46c9.json
+  [OK]   docs/tasks/.tmp/runtime-fixture-86259652-1075-4ee1-a9b7-d4fac511bad5.json
+  [OK]   docs/tasks/.tmp/runtime-fixture-a1908824-423b-4634-9943-cc7b1f5509e9.json
+  [OK]   docs/tasks/.tmp/runtime-fixture-a57b0407-15ed-4d87-9cfd-b3187c497d99.json
+  [OK]   docs/tasks/.tmp/runtime-fixture-b59614f5-e3f7-4fdd-8412-a6ae9558ddf8.json
+  [OK]   docs/tasks/.tmp/runtime-fixture-bb13c99d-66db-440b-987d-f2ba1f570760.json
+  [OK]   docs/tasks/.tmp/runtime-fixture-c8e16442-9906-4b90-a1bf-8952442a9596.json
+  [OK]   docs/tasks/.tmp/runtime-fixture-d9de39e3-cbac-4205-af7e-82e8684a741f.json
+  [OK]   docs/tasks/hrp-p1-final-release-safety-closeout/AUDIT.md
+  [OK]   docs/tasks/hrp-p1-final-release-safety-closeout/HANDOFF.md
+  [OK]   docs/tasks/hrp-p1-final-release-safety-closeout/TASK.md
+  [OK]   docs/tasks/hrp-p1-final-release-safety-closeout/evidence/EV-14-run-1-summary.json
+  [OK]   docs/tasks/hrp-p1-final-release-safety-closeout/evidence/EV-14-run-2-summary.json
+  [OK]   docs/tasks/hrp-p1-final-release-safety-closeout/evidence/EV-14-run-3-summary.json
+  [OK]   scripts/runtime/db-host-guard.mjs
+  [OK]   scripts/runtime/db-host-guard.test.mjs
+  [OK]   scripts/runtime/db-posture-preflight.mjs
+  [OK]   scripts/runtime/exact-id-teardown.mjs
+  [OK]   scripts/runtime/p1-final-runtime-e2e.mjs
+  [OK]   scripts/runtime/run-p1-e2e-pipeline.mjs
+  [OK]   scripts/runtime/run-p1-e2e.ps1
+  [OK]   scripts/runtime/synthetic-fixture.mjs
+RESULT: PASS (51 changed text file(s), strict UTF-8 without BOM).
+
+_exit=0

@@ -1,0 +1,26 @@
+[describe] synthetic-allowlist host-alias=a1cd8463c25a db-alias=693fe5919fc2
+{
+  "runId": "adba8a95-f21f-46ba-b363-1284295491ee",
+  "runToken": "adba8a95",
+  "hostAlias": "a1cd8463c25a",
+  "dbAlias": "693fe5919fc2",
+  "adminUserId": "rt-e2e-adba8a95-admin",
+  "managerUserId": "rt-e2e-adba8a95-manager",
+  "staffUserId": "rt-e2e-adba8a95-hrstaff",
+  "companyIds": [
+    "671086b6-738d-4ea3-af57-6a67c08d94d3"
+  ],
+  "projectIds": [
+    "f7225e7b-28d2-49ae-b208-49c41b55506b"
+  ],
+  "orderIds": [
+    "013379fe-1f52-4da9-aacb-c52f9b7b7468"
+  ],
+  "slotIds": [
+    "0334a7bc-d934-4874-9752-6ff27d5efc8e"
+  ],
+  "adminPhoneAlias": "0941****21",
+  "managerPhoneAlias": "0941****26",
+  "staffPhoneAlias": "0941****18",
+  "fixtureFile": "docs/tasks/.tmp/runtime-fixture-adba8a95-f21f-46ba-b363-1284295491ee.json"
+}

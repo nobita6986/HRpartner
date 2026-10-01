@@ -1,0 +1,25 @@
+=== TASK contract gate ===
+
+$ pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-p1-final-release-safety-closeout/TASK.md
+
+TASK CONTRACT GATE
+  subject: docs/tasks/hrp-p1-final-release-safety-closeout/TASK.md
+
+  [OK]   A-01 all 11 required sections present.
+  [OK]   A-02 control fields present (status: READY_FOR_AUDIT).
+  [OK]   A-02 assurance lane: CRITICAL.
+  [WARN] A-02 lane-aware contract is missing control field 'In-scope roots'.
+  [OK]   A-02 audit mode: LIGHT.
+  [OK]   A-02 audit selection has a recorded reason.
+  [WARN] T-09 V2 Contract gate 'READY_TO_CODE → READY_FOR_AUDIT (GUARD PROOF PASS + SYNTHETIC POSTURE PASS + E2E x3 PASS + ZERO-RESIDUE PASS)' must be DRAFT or READY_TO_CODE.
+  [WARN] T-10 V2 Build vs adopt 'N/A (P1 FINAL RELEASE-SAFETY HARDENING; REUSES CANONICAL MAIN ARCHITECTURE; NO NEW DEPENDENCY, NO NEW FRAMEWORK)' must be N/A, ADOPT or CUSTOM.
+  [WARN] T-11 V2 Build vs automate 'N/A (NO CONNECTOR, NO MULTI-SYSTEM ORCHESTRATION; CANONICAL ROUTES USED END-TO-END)' must be N/A, ORCHESTRATE or CUSTOM.
+  [OK]   T-09 V2 draft fields are structurally valid.
+  [WARN] A-04 status is 'READY_FOR_AUDIT' - placeholder and dry-run checks are non-blocking.
+  [OK]   A-05 12 requirement(s) traceable to STEP and AC.
+  [OK]   T-01 5 referenced npm script(s) all exist.
+  [OK]   T-02 2 file:line reference(s) resolve.
+  [OK]   T-03 no AC proves scope with a bare 'git diff'.
+  [OK]   T-06 no plaintext secret in TASK.md.
+
+RESULT: DRAFT-VALID (5 warning(s)).
