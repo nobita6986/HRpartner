@@ -18,7 +18,7 @@
 | Baseline | `origin/main @ 11ee086529bf2920f687851f21fe4f6c1c60bd42` |
 | **Implementation SHA** | `708e0ce71d258c3a70383330dfb8d5d370dbd974` |
 | **Freeze commit SHA** | `ae56072525a60f5e75e196c28b3d4f486b64b3a0` |
-| **Final HEAD (this handoff)** | `761595b51858bc3f0b9de281357f3e879ce39030` |
+| **Final HEAD (this handoff)** | `5f6ff723e3b9451530e0e554fd57e6d1d226356e` |
 | Branch | `codex/t1c-p1-final-release-safety-closeout` |
 | Worktree | `C:\CodeApp\HrP-t1c-p1-final-release-safety-closeout` |
 | Status | **`READY_FOR_AUDIT`** |
@@ -128,6 +128,9 @@ Forward-only docs commits after freeze (no semantic delta):
 2f04b32bd3f5a396c99d545637f99e0eab8ba6e1  docs(p1-final): pin exact Freeze HEAD SHA in HANDOFF.md control
 bc41b3f5e2cd86a8802f1040184286be7980d9a7  docs(p1-final): align Correction batches used with H-16 regex + sync TIER1_SELF_REVIEW control
 761595b51858bc3f0b9de281357f3e879ce39030  docs(p1-final): pin exact Final HEAD SHA in HANDOFF.md control
+928d8d1427a87e4a6e698eb92b80eaf759434163  docs(p1-final): final T1→T0 handover with exact frozen SHAs and ×3 evidence
+28f538094e70422116fa1f9220506ab4a35edc08  docs(p1-final): pin exact Final HEAD SHA after final handoff commit
+5f6ff723e3b9451530e0e554fd57e6d1d226356e  docs(p1-final): re-pin Final HEAD after forward-only docs commit (this handoff HEAD)
 ```
 
 `git diff <Implementation SHA>..HEAD -- app src prisma tests scripts packages`
