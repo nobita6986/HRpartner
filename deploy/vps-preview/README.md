@@ -6,7 +6,8 @@ the production cutover described in `docs/important/HRP_CRM_INFRASTRUCTURE_AND_D
 ## Safety boundary
 
 - The application port is published only as `127.0.0.1:3001` on the VPS.
-- Access is through an SSH tunnel; ports 80 and 443 remain closed.
+- The owner can use either an SSH tunnel or the HTTPS review domain. The HTTPS
+  endpoint is protected by Nginx Basic Auth while it serves synthetic data.
 - The preview uses the synthetic Neon writer role. The application container
   must not receive an admin or `BYPASSRLS` database URL.
 - Production migrations, production DNS, real CCCD data, and production object
@@ -50,12 +51,18 @@ ssh -L 13001:127.0.0.1:3001 root@<VPS_IP>
 
 Then open `http://127.0.0.1:13001/login`.
 
+For domain-based review, open `https://vieclammienbac.com.vn`. Nginx terminates
+TLS and forwards to the same loopback-only application port. Keep the Basic
+Auth credential outside the repository.
+
 ## Operations
 
 ```bash
 docker compose -f /opt/hrp/compose.yaml ps
 docker compose -f /opt/hrp/compose.yaml logs --tail 100 app
 curl -fsS http://127.0.0.1:3001/login >/dev/null
+nginx -t
+certbot renew --dry-run
 ```
 
 Stop without deleting the image or evidence directory:
