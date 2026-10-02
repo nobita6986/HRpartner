@@ -30,8 +30,14 @@ docker run --rm \
   sh -ceu 'pg_dump "$DATABASE_URL_ADMIN" --format=custom --file="/backup/$BACKUP_NAME"; pg_restore --list "/backup/$BACKUP_NAME" >/dev/null'
 
 chmod 600 "$BACKUP_DIR/$backup_name"
-docker run --rm --env-file "$MIGRATION_ENV" "$image" npx prisma migrate deploy
-docker run --rm --env-file "$MIGRATION_ENV" "$image" npx prisma migrate status
+# Prisma needs DATABASE_URL; map DATABASE_URL_ADMIN.
+ADMIN_URL=$(awk -F= '/^DATABASE_URL_ADMIN=/{sub(/^[^=]*=/, ""); print}' "$MIGRATION_ENV")
+if [[ -z "$ADMIN_URL" ]]; then
+  echo "DATABASE_URL_ADMIN missing from $MIGRATION_ENV" >&2
+  exit 66
+fi
+docker run --rm --env-file "$MIGRATION_ENV" -e "DATABASE_URL=$ADMIN_URL" "$image" npx prisma migrate deploy
+docker run --rm --env-file "$MIGRATION_ENV" -e "DATABASE_URL=$ADMIN_URL" "$image" npx prisma migrate status
 
 find "$BACKUP_DIR" -maxdepth 1 -type f -name 'hrp-before-migrate-*.dump' -mtime +30 -delete
 echo "migration completed; verified backup: $BACKUP_DIR/$backup_name"
