@@ -94,6 +94,9 @@ jobs:
           set -euo pipefail
           image="$IMAGE_REPOSITORY:$RELEASE_SHA"
           # The GHCR package is public. No VPS-side `docker login` is needed.
-          # VPS user (hrpdeploy) is locked down to two NOPASSWD sudo wrappers
-          # and must not write a Docker credential store under $HOME=/opt/hrp.
-          ssh "$VPS_USER@$VPS_HOST" "docker pull '$image' && sudo /usr/local/sbin/hrp-check-migrations '$image' && /opt/hrp/deploy-production.sh '$image'"
+          # VPS user (hrpdeploy) is locked down to three NOPASSWD sudo
+          # wrappers and must not write a Docker credential store under
+          # $HOME=/opt/hrp. /opt/hrp is root-owned; deploy-production.sh is
+          # invoked via `sudo -n` with a narrow NOPASSWD entry for that
+          # exact path only (see /etc/sudoers.d/hrpdeploy-deploy).
+          ssh "$VPS_USER@$VPS_HOST" "docker pull '$image' && sudo -n /usr/local/sbin/hrp-check-migrations '$image' && sudo -n /opt/hrp/deploy-production.sh '$image'"

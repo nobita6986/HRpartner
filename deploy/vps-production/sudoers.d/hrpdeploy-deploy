@@ -1,0 +1,16 @@
+# Fragment: hrpdeploy-deploy
+# Purpose: allow the deploy user (hrpdeploy) to invoke the production
+#          deploy script as root, without a password.
+# Scope:    exactly /opt/hrp/deploy-production.sh
+#           No general sudo, no other commands.
+# Hardening:
+#   - The script is owned root:root, mode 0755 (set by VPS provisioning).
+#   - The script accepts a single arg, matched against
+#     ^ghcr\.io/nobita6986/hrpartner:[0-9a-f]{40}$
+#     and rejects anything else (non-immutable, other registries).
+#   - The script writes only the lock file and the release env under
+#     /opt/hrp (root-managed), not anywhere hrpdeploy can later mutate.
+#   - This file is itself mode 0440, owned root:root, and validated by
+#     visudo before activation.
+hrpdeploy ALL=(root) NOPASSWD: /opt/hrp/deploy-production.sh
+Defaults!/opt/hrp/deploy-production.sh !requiretty
