@@ -87,13 +87,13 @@ jobs:
       - name: Pull, migration-check, deploy and smoke-test
         shell: bash
         env:
-          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_SHA: ${{ steps.release.outputs.sha }}
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
         run: |
           set -euo pipefail
           image="$IMAGE_REPOSITORY:$RELEASE_SHA"
-          printf '%s' "$GHCR_TOKEN" | ssh "$VPS_USER@$VPS_HOST" "docker login ghcr.io -u '$GITHUB_ACTOR' --password-stdin"
+          # The GHCR package is public. No VPS-side `docker login` is needed.
+          # VPS user (hrpdeploy) is locked down to two NOPASSWD sudo wrappers
+          # and must not write a Docker credential store under $HOME=/opt/hrp.
           ssh "$VPS_USER@$VPS_HOST" "docker pull '$image' && sudo /usr/local/sbin/hrp-check-migrations '$image' && /opt/hrp/deploy-production.sh '$image'"
-          ssh "$VPS_USER@$VPS_HOST" 'docker logout ghcr.io >/dev/null 2>&1 || true'
