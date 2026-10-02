@@ -107,6 +107,33 @@ describe('DEC-02 — config resolution fail-closed', () => {
     expect(reasonOf(() => resolveRateLimitConfig(env))).toBe('CONFIG_INVALID');
   });
 
+  it('VPS private HTTP chỉ mở cho đúng service rate-limit và explicit opt-in', () => {
+    const base = {
+      NODE_ENV: 'production',
+      UPSTASH_REDIS_REST_TOKEN: FAKE_TOKEN,
+      RATE_LIMIT_HASH_SECRET: FAKE_SECRET,
+      RATE_LIMIT_ALLOW_PRIVATE_HTTP: 'true',
+    };
+    expect(resolveRateLimitConfig({ ...base, UPSTASH_REDIS_REST_URL: 'http://rate-limit' }).restUrl).toBe(
+      'http://rate-limit',
+    );
+    expect(reasonOf(() => resolveRateLimitConfig({ ...base, UPSTASH_REDIS_REST_URL: 'http://rate-limit.evil.invalid' }))).toBe(
+      'CONFIG_INVALID',
+    );
+    expect(reasonOf(() => resolveRateLimitConfig({ ...base, UPSTASH_REDIS_REST_URL: 'http://rate-limit/path' }))).toBe(
+      'CONFIG_INVALID',
+    );
+    expect(
+      reasonOf(() =>
+        resolveRateLimitConfig({
+          ...base,
+          RATE_LIMIT_ALLOW_PRIVATE_HTTP: 'false',
+          UPSTASH_REDIS_REST_URL: 'http://rate-limit',
+        }),
+      ),
+    ).toBe('CONFIG_INVALID');
+  });
+
   it('secret ngắn hơn 32 ký tự ⇒ CONFIG_INVALID ở MỌI môi trường', () => {
     expect(reasonOf(() => resolveHashSecret({ RATE_LIMIT_HASH_SECRET: 'too-short' }))).toBe('CONFIG_INVALID');
     expect(reasonOf(() => resolveHashSecret({ VERCEL_ENV: 'production', RATE_LIMIT_HASH_SECRET: 'x'.repeat(31) }))).toBe(

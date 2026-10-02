@@ -1,0 +1,91 @@
+name: hrp-production
+
+services:
+  redis:
+    image: redis@sha256:858f009f9709ce576febc734aa78b8f6d624b82571f9ddb6bda4377c833b3499
+    container_name: hrp-redis
+    user: "999:999"
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --appendfsync
+      - everysec
+      - --save
+      - "60"
+      - "1000"
+    volumes:
+      - /srv/hrp/redis:/data
+    restart: unless-stopped
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    networks:
+      - backend
+
+  rate-limit:
+    image: hiett/serverless-redis-http@sha256:65128347949bca511e448fd7238780d624573d74c22b79155a7563db19e9b678
+    container_name: hrp-rate-limit
+    env_file:
+      - /etc/hrp/secrets/rate-limit.env
+    environment:
+      SRH_MODE: env
+      SRH_CONNECTION_STRING: redis://redis:6379
+      SRH_MAX_CONNECTIONS: "8"
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 128
+    mem_limit: 256m
+    cpus: 0.50
+    networks:
+      - backend
+
+  app:
+    image: ${HRP_IMAGE:?HRP_IMAGE must be an immutable GHCR image reference}
+    container_name: hrp-app
+    env_file:
+      - /etc/hrp/secrets/production.env
+    ports:
+      - "127.0.0.1:3001:3000"
+    volumes:
+      - /srv/hrp/evidence:/data/hrp/evidence
+    depends_on:
+      redis:
+        condition: service_healthy
+      rate-limit:
+        condition: service_started
+    restart: unless-stopped
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 256
+    mem_limit: 3g
+    cpus: 3.0
+    tmpfs:
+      - /tmp:size=256m,mode=1777
+    networks:
+      - backend
+      - egress
+
+networks:
+  backend:
+    name: hrp-production-backend
+    internal: true
+  egress:
+    name: hrp-production-egress

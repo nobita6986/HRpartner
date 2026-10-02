@@ -26,6 +26,8 @@ RUN node scripts/copy-static.mjs \
 
 FROM node:22-bookworm-slim AS runner
 
+ARG SOURCE_REVISION=unknown
+
 RUN apt-get update \
   && apt-get install -y --no-install-recommends ca-certificates openssl \
   && rm -rf /var/lib/apt/lists/* \
@@ -40,7 +42,8 @@ ENV NODE_ENV=production \
     PORT=3000
 
 LABEL org.opencontainers.image.source="https://github.com/nobita6986/HRpartner" \
-      org.opencontainers.image.title="HRpartner private VPS preview"
+      org.opencontainers.image.title="HRpartner" \
+      org.opencontainers.image.revision="${SOURCE_REVISION}"
 
 COPY --from=builder --chown=hrp:hrp /app/package.json /app/package-lock.json ./
 COPY --from=builder --chown=hrp:hrp /app/node_modules ./node_modules

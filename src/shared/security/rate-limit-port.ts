@@ -132,6 +132,31 @@ export interface RateLimitConfig {
   readonly keyPrefixBase: string;
 }
 
+/**
+ * VPS production runs the Upstash-compatible REST bridge on the private Docker
+ * network. Plain HTTP is acceptable only for that exact, non-routable service
+ * name and only after an explicit deployment opt-in. This keeps the default
+ * HTTPS-only contract for Vercel and every other environment.
+ */
+function isExplicitPrivateRateLimitUrl(restUrl: string, env: EnvLike): boolean {
+  if (env.RATE_LIMIT_ALLOW_PRIVATE_HTTP !== 'true') return false;
+  try {
+    const parsed = new URL(restUrl);
+    return (
+      parsed.protocol === 'http:' &&
+      parsed.hostname === 'rate-limit' &&
+      (parsed.port === '' || parsed.port === '80') &&
+      parsed.username === '' &&
+      parsed.password === '' &&
+      parsed.pathname === '/' &&
+      parsed.search === '' &&
+      parsed.hash === ''
+    );
+  } catch {
+    return false;
+  }
+}
+
 /** HMAC pepper. Production: bắt buộc `RATE_LIMIT_HASH_SECRET` ≥32 chars. */
 export function resolveHashSecret(env: EnvLike): string {
   const raw = env.RATE_LIMIT_HASH_SECRET?.trim() ?? '';
@@ -148,7 +173,9 @@ export function resolveRateLimitConfig(env: EnvLike): RateLimitConfig {
   const restUrl = env.UPSTASH_REDIS_REST_URL?.trim() ?? '';
   const restToken = env.UPSTASH_REDIS_REST_TOKEN?.trim() ?? '';
   if (restUrl.length === 0 || restToken.length === 0) throw new RateLimitUnavailableError('CONFIG_MISSING');
-  if (!restUrl.startsWith('https://')) throw new RateLimitUnavailableError('CONFIG_INVALID');
+  if (!restUrl.startsWith('https://') && !isExplicitPrivateRateLimitUrl(restUrl, env)) {
+    throw new RateLimitUnavailableError('CONFIG_INVALID');
+  }
   return {
     restUrl,
     restToken,
