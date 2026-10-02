@@ -61,3 +61,38 @@ describe('RoleGuardLayout — P1-NAV-01 wiring proof', () => {
     expect(source).toContain("href: '/admin/jobs/job-postings'");
   });
 });
+
+describe('RoleGuardLayout — Commission deferral (Đang phát triển)', () => {
+  const source = readFileSync(LAYOUT_PATH, 'utf8');
+
+  it('moves the two commission items out of the finance section', () => {
+    // The finance block must no longer reference the commission hrefs — they
+    // now live in the development section so the "Tài chính" header collapses
+    // when nothing else is left.
+    expect(source).not.toMatch(
+      /href:\s*'\/admin\/commission\/(policies|ledger)'[^}]*section:\s*'finance'/,
+    );
+  });
+
+  it('marks the two commission items with disabled: true and section: development', () => {
+    expect(source).toMatch(
+      /href:\s*'\/admin\/commission\/policies'[\s\S]{0,200}section:\s*'development'[\s\S]{0,80}disabled:\s*true/,
+    );
+    expect(source).toMatch(
+      /href:\s*'\/admin\/commission\/ledger'[\s\S]{0,200}section:\s*'development'[\s\S]{0,80}disabled:\s*true/,
+    );
+  });
+
+  it('declares a `disabled` flag on the NavItem type', () => {
+    expect(source).toMatch(/disabled\?:\s*boolean/);
+  });
+
+  it('renders disabled items as a non-Link div with aria-disabled and a Sắp ra mắt badge', () => {
+    expect(source).toContain('renderDisabledNavItem');
+    expect(source).toMatch(/aria-disabled="true"/);
+    expect(source).toContain('Sắp ra mắt');
+    // The disabled row is a <div>, not a <Link>, so there is no href to
+    // navigate to and Next.js will not prefetch it.
+    expect(source).toMatch(/role="link"[\s\S]{0,200}aria-disabled="true"/);
+  });
+});
