@@ -120,13 +120,12 @@ of the bug — it is a hardening requirement only.
 | File | Change |
 |---|---|
 | `src/shared/ui/editor/JobPostingRichTextEditor.tsx` | Static imports; `StarterKit`-owned Document/Paragraph/Text; `APPROVED_EXTENSIONS` assembled at module load; exported `getApprovedExtensions()` for the regression test; removed async `loadApprovedExtensions()` state; preserved safe-default content and `immediatelyRender: false`. |
-| `src/shared/ui/editor/JobPostingRichTextEditor.test.tsx` | NEW. 11 regression assertions covering the contract above. |
-| `docs/tasks/hrp-t1a-jobposting-editor-schema-hotfix/TASK.md` | Task contract (already present at baseline). |
-| `docs/tasks/hrp-t1a-jobposting-editor-schema-hotfix/HANDOFF.md` | THIS FILE. |
-| `pnpm-lock.yaml` | Re-resolved by `npm install` in this fresh worktree (no dependency added; canonical lockfile drift only). |
-
-No public API change. No contract change. No new dependency. No DB /
-migration / production config touched.
+| `src/shared/ui/editor/JobPostingRichTextEditor.test.tsx` | NEW (round 1). 11 schema-level assertions covering the approved extension list, ProseMirror `Schema` construction, the structural trio, the allowed node/mark surface, safe-default / DRAFT / `null` / empty content shapes, and a negative-control that proves stripping `document/paragraph/text` reproduces the original ProseMirror error verbatim. |
+| `src/shared/ui/editor/JobPostingRichTextEditor.mount.test.tsx` | NEW (round 2 — C-01). 5 component-mount assertions using `react-dom/client.createRoot` + `React.act` in a `// @vitest-environment jsdom` file. Mounts the real `JobPostingRichTextEditor` component on first render with: (a) valid empty doc, (b) full DRAFT doc (heading + paragraph + lists + bold + link), (c) `null` initialContent, (d) `undefined` initialContent, (e) toolbar click that exercises the schema chain. **No dependency on `getApprovedExtensions` or any other post-fix-only export.** |
+| `package.json` | Adds `jsdom@^26.0.0` to `devDependencies` (C-01 — required for the component-mount regression test, authorized by the T0 owner per the C-01 acceptance response). |
+| `package-lock.json` | npm-resolved lockfile reflecting the new `jsdom` devDep and its transitive deps. Canonical lockfile for the repo (the repo uses `npm ci` in CI; the `pnpm-lock.yaml` previously referenced in this file was a worktree-local artifact and is NOT part of the PR). |
+| `docs/tasks/hrp-t1a-jobposting-editor-schema-hotfix/TASK.md` | Task contract. |
+| `docs/tasks/hrp-t1a-jobposting-editor-schema-hotfix/HANDOFF.md` | THIS FILE (this revision documents the C-01..C-03 correction). |
 
 ## Verification gates
 
@@ -194,9 +193,6 @@ cleanly through `Node.fromJSON(schema, ...)`.
 - Did not merge to `main`.
 - Did not deploy.
 - Did not write / migrate production DB.
-- Did not add dev dependencies (jsdom / happy-dom); the regression test
-  uses ProseMirror's `Schema` + `Node` APIs already shipped transitively
-  via `@tiptap/pm`.
 - Did not modify `page.tsx`, `editor-shell.tsx`, or `RichFieldCard` — the
   fix is local to the editor component.
 
@@ -215,3 +211,71 @@ gates inherited from `main`. No CI workflow file is modified.
 
 Recorded in the final report. Implementation SHA + PR URL appear in the
 agent's chat reply at the close of this handoff.
+
+## C-01..C-03 — Correction round
+
+T0 reviewed the round-1 evidence and accepted the root cause and fix direction,
+but required a stronger regression test. The original `JobPostingRichTextEditor.test.tsx`
+asserts the schema via `getSchema(getApprovedExtensions())`, which is a
+`getApprovedExtensions`-helper-only path that doesn't actually mount the
+component. C-01 demanded a test that mounts the real `JobPostingRichTextEditor`
+component, fails against the pre-fix source with the exact production error
+(`Schema is missing its top node type ('doc')`), and passes against the
+post-fix source — without depending on any post-fix-only export.
+
+### C-01 — Component-mount regression test (real DOM)
+
+Tiptap's `useEditor` constructs the `Editor` instance inside a `useEffect`
+(post-mount), so a faithful reproduction of the production error requires
+a real DOM environment. The owner authorized adding `jsdom@^26.0.0` as a
+devDependency for this test. The new test file is:
+
+- `src/shared/ui/editor/JobPostingRichTextEditor.mount.test.tsx`
+  - `// @vitest-environment jsdom` pragma keeps the DOM env scoped to this
+    one file (other 213 unit tests stay on the pure-Node lane).
+  - Uses `react-dom/client.createRoot` + `React.act` to mount the real
+    `JobPostingRichTextEditor` component, then asserts on the rendered DOM.
+  - Covers: valid empty doc, full DRAFT doc, `null` initialContent,
+    `undefined` initialContent, and a toolbar-click round-trip through the
+    schema chain.
+  - Imports only the public `JobPostingRichTextEditor` export — no
+    `getApprovedExtensions`, no post-fix-only symbol.
+
+### C-01 — Failure-mode proof (FAIL before, PASS after)
+
+The same test file was run twice in the same worktree: once against the
+pre-fix source (`git show 1f863656:src/shared/ui/editor/JobPostingRichTextEditor.tsx`)
+and once against the post-fix source. Captured output:
+
+| State | Result | Captured error |
+|---|---|---|
+| Pre-fix source restored | 5/5 **FAILED** | `RangeError: Schema is missing its top node type ('doc')` thrown from `node_modules/prosemirror-model/dist/index.js:2285:19` (NodeType.compile) — full stack trace shows `new Editor → createExtensionManager → new ExtensionManager → getSchemaByResolvedExtensions → new Schema → NodeType.compile → RangeError`. This is the **verbatim production error**. |
+| Post-fix source restored | 5/5 **PASSED** | Test Files 1 passed (1) / Tests 5 passed (5). No errors. Editor mounts, structural DOM rendered, DRAFT content present, `null`/`undefined` fall back to a single paragraph. |
+
+The pre-fix run is a faithful reproduction: the only difference between
+the two states is the source of `JobPostingRichTextEditor.tsx`; everything
+else (test file, jsdom env, vitest config, dependencies) is identical.
+This is the FAIL-before / PASS-after evidence the brief requires.
+
+### C-02 — Clean working tree
+
+`pnpm-lock.yaml` was a worktree-local artifact from the original worktree
+setup; it is **not** part of this PR. It is deleted. After committing the
+correction commit, `git status --short` is empty (no untracked, no modified).
+
+### C-03 — Re-run canonical gates (exit codes)
+
+| Gate | Result |
+|---|---|
+| `npx vitest run --config vitest.unit.config.ts src/shared/ui/editor/` | exit 0 — 16/16 tests (11 schema + 5 mount). |
+| `npx vitest run --config vitest.unit.config.ts` (full lane) | exit 0 — 214 files, 3540 tests, 9 skipped. |
+| `npm run typecheck` | exit 0 |
+| `npm run lint` | exit 0 (0 errors, 912 pre-existing warnings; no new warnings introduced) |
+| `npm run build` | exit 0 |
+| `git diff --check` | exit 0 (no whitespace/line-ending issues) |
+| `node .ai-pipeline/scripts/verify-encoding.mjs` (changed surface) | PASS (3 text files, 0 BOM, strict UTF-8) |
+| `node .ai-pipeline/scripts/verify-encoding-range.mjs 1f863656 HEAD` | PASS (4/4 text files, 0 BOM, 0 NUL, 0 U+FFFD, 0 CRLF, 0 mojibake) |
+
+Correction commit is a **forward-only** addition (no `--amend`, no
+`--force-push`, no rebase) on `codex/t1a-jobposting-editor-schema-hotfix`,
+pushed to the same PR #81.
