@@ -61,3 +61,67 @@ describe('RoleGuardLayout — P1-NAV-01 wiring proof', () => {
     expect(source).toContain("href: '/admin/jobs/job-postings'");
   });
 });
+
+describe('RoleGuardLayout — T1C Con người IA realignment', () => {
+  const source = readFileSync(LAYOUT_PATH, 'utf8');
+
+  it("declares 'partners' as a valid section value", () => {
+    // The T1C realignment introduces a new `partners` group; the type union
+    // on NavItem.section must accept it so the new items type-check.
+    expect(source).toMatch(/section\?:\s*'development'\s*\|\s*'recruitment'\s*\|\s*'people'\s*\|\s*'finance'\s*\|\s*'system'\s*\|\s*'partners'/);
+  });
+
+  it('moves /admin/staffing out of the people section into recruitment', () => {
+    // Staffing belongs to the recruitment flow (input of StaffingOrder),
+    // not to the workforce / Con người bucket. The old assignment must
+    // be gone; the new recruitment assignment must exist.
+    expect(source).not.toMatch(
+      /href:\s*'\/admin\/staffing'[\s\S]{0,200}section:\s*'people'/,
+    );
+    expect(source).toMatch(
+      /href:\s*'\/admin\/staffing'[\s\S]{0,200}section:\s*'recruitment'/,
+    );
+  });
+
+  it('moves /admin/users out of the people section into system', () => {
+    // User/role administration is a system concern, not workforce.
+    expect(source).not.toMatch(
+      /href:\s*'\/admin\/users'[\s\S]{0,200}section:\s*'people'/,
+    );
+    expect(source).toMatch(
+      /href:\s*'\/admin\/users'[\s\S]{0,200}section:\s*'system'/,
+    );
+  });
+
+  it('moves /admin/clients and /admin/vendors into the new partners section', () => {
+    expect(source).toMatch(
+      /href:\s*'\/admin\/clients'[\s\S]{0,200}section:\s*'partners'/,
+    );
+    expect(source).toMatch(
+      /href:\s*'\/admin\/vendors'[\s\S]{0,200}section:\s*'partners'/,
+    );
+  });
+
+  it('keeps /admin/workers in the (now renamed) people section', () => {
+    expect(source).toMatch(
+      /href:\s*'\/admin\/workers'[\s\S]{0,200}section:\s*'people'/,
+    );
+  });
+
+  it('renders the people group header as "Nhân sự" (not "Con người")', () => {
+    // The header text is rendered inside the JSX of the peopleNav block.
+    // We assert the new label is present and the old one is not.
+    expect(source).toMatch(/>Nhân sự</);
+    expect(source).not.toMatch(/>Con người</);
+  });
+
+  it('renders a new "Đối tác" header for the partners group', () => {
+    expect(source).toMatch(/>Đối tác</);
+  });
+
+  it('filters the partners group via partnersNav memo', () => {
+    expect(source).toMatch(
+      /const partnersNav\s*=\s*React\.useMemo\(\s*\(\)\s*=>\s*visibleNav\.filter\(item\s*=>\s*item\.section\s*===\s*'partners'\)/,
+    );
+  });
+});
