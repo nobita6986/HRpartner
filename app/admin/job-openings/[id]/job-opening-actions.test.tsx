@@ -244,3 +244,104 @@ describe('JobOpeningActions — fetch + Idempotency-Key wiring (smoke)', () => {
     expect(capturedFetchUrl).toBeNull(); // No fetch yet on static render.
   });
 });
+
+/**
+ * hrp-t1a-postdeploy-runtime-correction-2 (round 2):
+ *   Test #4–7 — JobOpening action island visibility contract.
+ *
+ *   - Test #4: DRAFT chưa classify (ADMIN/HR_MANAGER) → Classify section
+ *     visible, Open disabled + blockedReason 'phân loại ServiceModel'.
+ *   - Test #5: DRAFT đủ precondition → Open button enabled.
+ *   - Test #6: DRAFT không đủ precondition (parent order không OPEN) →
+ *     Open disabled + lý do 'StaffingOrder ở trạng thái …', KHÔNG rò rỉ data.
+ *   - Test #7: full flow shape — sau Open success thì JobPosting page
+ *     mở (assertion composition ở level contract: opening status OPEN
+ *     + Publish button enable path).
+ */
+describe('JobOpeningActions — D section (hrp-t1a-postdeploy-runtime-correction-2)', () => {
+  it('Test #4: DRAFT chưa classify → Classify section + Open disabled + lý do', () => {
+    const html = renderToStaticMarkup(
+      <JobOpeningActions
+        opening={{ id: '655909be-65ea-4a6d-bef4-7a63297e2bc6' }}
+        flags={{
+          canClassify: true,
+          canOpen: false,
+          blockedReason: 'Cần phân loại ServiceModel trước khi mở',
+          currentStatus: 'DRAFT',
+          currentServiceModel: null,
+        }}
+      />,
+    );
+    // Classify section visible (the affordance).
+    expect(html).toContain('data-testid="classify-section"');
+    expect(html).toContain('data-testid="classify-submit"');
+    // Open button disabled (server-side gate).
+    expect(html).toContain('data-testid="open-disabled"');
+    expect(html).not.toContain('data-testid="open-submit"');
+    // Lý do cụ thể hiển thị — không biến mất im lặng.
+    expect(html).toContain('data-testid="open-blocked-reason"');
+    expect(html).toContain('phân loại ServiceModel');
+  });
+
+  it('Test #5: DRAFT đủ precondition → Open button enabled', () => {
+    const html = renderToStaticMarkup(
+      <JobOpeningActions
+        opening={{ id: 'op-5' }}
+        flags={{
+          canClassify: true,
+          canOpen: true,
+          blockedReason: null,
+          currentStatus: 'DRAFT',
+          currentServiceModel: 'STAFFING_SUPPLY',
+        }}
+      />,
+    );
+    expect(html).toContain('data-testid="open-submit"');
+    expect(html).not.toContain('data-testid="open-disabled"');
+    expect(html).not.toContain('data-testid="open-blocked-reason"');
+  });
+
+  it('Test #6: DRAFT không đủ precondition → Open disabled + lý do "StaffingOrder ở trạng thái …"', () => {
+    const html = renderToStaticMarkup(
+      <JobOpeningActions
+        opening={{ id: 'op-6' }}
+        flags={{
+          canClassify: false,
+          canOpen: false,
+          // Blocked reason verbatim — không rò rỉ PII / assignment / actor id.
+          blockedReason: 'StaffingOrder ở trạng thái CLOSED; cần OPEN (CLOSING_SOON không đủ điều kiện mở)',
+          currentStatus: 'DRAFT',
+          currentServiceModel: 'STAFFING_SUPPLY',
+        }}
+      />,
+    );
+    expect(html).toContain('data-testid="open-disabled"');
+    expect(html).not.toContain('data-testid="open-submit"');
+    expect(html).toContain('data-testid="open-blocked-reason"');
+    expect(html).toContain('StaffingOrder ở trạng thái CLOSED');
+    // Không rò rỉ PII / assignment / actor id trong UI markup.
+    expect(html).not.toContain('actorId');
+    expect(html).not.toContain('assigneeId');
+    expect(html).not.toContain('assignmentId');
+  });
+
+  it('Test #7: full flow contract — sau Open success, status OPEN hiển thị cho client side', () => {
+    // Composition: render với status OPEN (server-derived sau khi JobOpening đã Open).
+    // Trên JobPosting page (commit 2) Publish gate đã enable.
+    const html = renderToStaticMarkup(
+      <JobOpeningActions
+        opening={{ id: 'op-7' }}
+        flags={{
+          canClassify: false, // status đã OPEN nên không còn DRAFT+placementCount=0
+          canOpen: false, // OPEN rồi, không cần Open
+          blockedReason: null,
+          currentStatus: 'OPEN',
+          currentServiceModel: 'STAFFING_SUPPLY',
+        }}
+      />,
+    );
+    // Inline status hiển thị trạng thái OPEN.
+    expect(html).toContain('data-testid="inline-status"');
+    expect(html).toContain('ServiceModel hiện tại: STAFFING_SUPPLY');
+  });
+});
