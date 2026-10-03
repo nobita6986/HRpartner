@@ -3,7 +3,7 @@
 **Date:** 2026-10-03 23:00 ICT (Sat)
 **Reconciliation owner:** T0 (Tier 0)
 **T0 disposition:** 2026-10-03 22:44 ICT — `CHANGES_REQUIRED / T0_RUNTIME_REPRODUCE` accepted, AC-02 contract clarified to canonical zero-row fail-closed
-**Final audit-target HEAD:** `a7962aac7ee9eeebdb8f7ba274059f01a50736da` (HANDOFF docs/evidence freeze SHA, final commit before handback to T0)
+**Final audit-target HEAD:** `067b35eb0580790c4d4e5cf6f3c68163f9dbc56a` (HANDOFF docs/evidence freeze SHA, final commit before handback to T0)
 **Worktree:** `C:\CodeApp\HrP-worktrees\t1a-f9b-jobposting-write-boundary-hardening`
 **Branch:** `codex/t1a-f9b-jobposting-write-boundary-hardening`
 **Prisma CLI (canonical, --no-install):** `prisma 5.22.0`
