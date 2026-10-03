@@ -13,7 +13,7 @@
 | Audit mode | `LIGHT` |
 | Audit reason | F9-B round-1 closed B-01/B-02/B-03 against F9 X4/X5 with PASS at combined final semantic SHA `e68ea4a3`. CI on PR #88 then surfaced a regression surfaced by fresh-DB-only test coverage: F9-B's corrective migration dropped the canonical `hrp_staffing_order_slot_scope` FOR ALL policy and replaced it with `hrp_f9b_slots_manager_select` (admin/HR_MANAGER only). This stripped legitimate read authority from MKT, PM/sub-PM, DIRECTOR, SALE, WORKER, VENDOR_*, CTV on slots anchored to projects those roles should see — including public JobPosting (MKT) and Demand Tree (PM/sub-PM). T0 disposition 2026-10-03 23:30 ICT: `CHANGES_REQUIRED_RUNTIME / NOT_READY_TO_MERGE`, T1A correction batch 1/1 authorized. This is RLS regression, not a benign CI runner difference. |
 | Spec version | `v1.0` |
-| Status | `READY_FOR_EXECUTION` |
+| Status | `READY_FOR_AUDIT` |
 | Planner | `Tier 1` (T1A) |
 | Baseline | `e68ea4a3e4521eeb794e7c051a7bea0c33ec70f5` |
 | Predecessor F9-B docs/evidence freeze | `a4dfcded74c7fea425ee4e265b94ad85eaef951c` |
@@ -235,3 +235,4 @@ Not applicable — contract gate `READY_TO_CODE`, Decision state `CLOSED`. No op
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-10-04 | Tier 1 (T1A) | v1.0 — Initial F9-B round-2 contract authored from T0 disposition (`CHANGES_REQUIRED_RUNTIME / NOT_READY_TO_MERGE` on F9-B round-1). Predecessor chain `6015361b → 5bd1a3ea → ab8845f7 → 590fd35c → 0d38042f → 1b9bbd9f → e018dd0a → cd316966 → 867f8882 → 2f1b75aa → e68ea4a3 → ... → d777cf71` pinned. F9-B round-1 correction budget 1/1 exhausted; F9-B round-2 budget = 1. Status `READY_FOR_EXECUTION`. |
+| 2026-10-04 | Tier 1 (T1A) | v1.0 — **Terminal control sync** (T0 verdict 2026-10-04 02:35 ICT): Status `READY_FOR_EXECUTION` → `READY_FOR_AUDIT` (matches HANDOFF §0 Status field; verify-task A-02 / verify-handoff H-10 expect `READY_FOR_AUDIT` once implementation lands — at this point, R2 forward-only commit `c3fa409a` is frozen by `1c90860c`, docs/control correction `3f8b42cf` is on the branch, and T0 has accepted the aff03 AC-06 `PRE_EXISTING_NON_REGRESSION` cross-check evidence). Docs-only forward-only correction: no Implementation SHA change (`c3fa409a` preserved), no `AUDIT.md` author/creation (T1A-authored one already deleted in `3f8b42cf`), no runtime evidence edit, no source/test/migration edit, no Handoff status line change (already `READY_FOR_AUDIT`). Exact audit-target HEAD is the new HEAD after this commit; reported in chat handback to T0/Tier 3, NOT pinned inside the commit. F9-B R2 budget 1/1 still exhausted; R2 docs/control sync is docs/control only, not a new semantic implementation round. |
