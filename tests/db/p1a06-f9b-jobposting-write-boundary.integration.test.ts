@@ -6,6 +6,23 @@
  * Lane: integration (DATABASE_URL_ADMIN_TEST + DATABASE_URL_TEST).
  * Self-skips when those envs are missing.
  *
+ * Canonical AC-02 contract (T0 disposition 2026-10-03 22:44 ICT):
+ *   - Writer connection = `app_user_writer` (non-super, non-bypassrls).
+ *   - GUC `app.user_id` / `app.role` set in-tx; re-read via
+ *     `current_setting(...)` to prove context (avoids false PASS on
+ *     unset context).
+ *   - Forbidden UPDATE may return zero rows (RLS USING not matched)
+ *     OR throw (RLS rejection). Both are acceptable fail-closed.
+ *   - The assertion is the post-attempt admin snapshot is byte/value-
+ *     equivalent to the pre-attempt value for every protected column.
+ *   - A `count = 0` is NOT a success unless the test additionally
+ *     proves target existence, context correctness, and zero side
+ *     effects (no audit/outbox/history; no orphan JobOpening/JobPosting;
+ *     no cross-order/cross-slot mutation; no slot binding).
+ *   - Positive control: assigned HR_STAFF primitive happy path; rebind /
+ *     cross-slot / cross-order via primitive rejected; same-ID replay
+ *     idempotent.
+ *
  * This file closes B-01, B-02, B-03 from the F9 pre-audit rejection:
  *
  *   B-01: `hrp_f9_slots_staff_update` policy was row-scoped but column-
@@ -98,6 +115,18 @@ async function withContext<T>(
     await tx.$executeRawUnsafe("SELECT set_config('app.role', $1, true)", role);
     await tx.$executeRawUnsafe("SELECT set_config('app.vendor_id', $1, true)", '');
     await tx.$executeRawUnsafe("SELECT set_config('app.worker_id', $1, true)", '');
+    // Re-read the GUC to prove the context is set inside this transaction
+    // (canonical AC-02 contract point 2 — avoids a false PASS when the
+    // context was never bound and RLS USING happens to match nothing).
+    const ctxRows = await tx.$queryRawUnsafe<Array<{ user_id: string | null; role: string | null }>>(
+      "SELECT current_setting('app.user_id', true) AS user_id, current_setting('app.role', true) AS role",
+    );
+    const ctx = ctxRows[0] ?? { user_id: null, role: null };
+    if (ctx.user_id !== userId || ctx.role !== role) {
+      throw new Error(
+        `withContext: GUC re-read mismatch. expected user_id=${userId} role=${role}; got user_id=${ctx.user_id} role=${ctx.role}`,
+      );
+    }
     return callback(tx);
   });
 }
@@ -432,6 +461,22 @@ describe.skipIf(!HAS_TEST_DB).sequential('F9-B JobPosting Write-Boundary Hardeni
   // post-attempt value via the admin (bypasses RLS) connection.
   // ─────────────────────────────────────────────────────────────────────
   describe('AC-02 direct DB negative proof', () => {
+    // AC-02 contract point 3: with the assigned case, the HR_STAFF
+    // writer MUST be able to SELECT the target slot via RLS — otherwise
+    // a 0-row UPDATE could be a false PASS caused by an unbound context
+    // that simply doesn't see the row. This precondition runs once for
+    // the whole AC-02 group; if it fails, the suite stops the group.
+    it('AC-02 precondition: assigned HR_STAFF can SELECT target slot', async () => {
+      const visible = await withContext(writer, aliceId, 'HR_STAFF', async (tx) => {
+        const rows = await tx.$queryRawUnsafe<Array<{ id: string }>>(
+          'SELECT id FROM staffing_order_slots WHERE id = $1',
+          slotAId,
+        );
+        return rows.length;
+      });
+      expect(visible, 'precondition: writer must see slotA via RLS').toBe(1);
+    });
+
     it('AC-02.a HR_STAFF cannot UPDATE position_title', async () => {
       // The UPDATE may succeed at the SQL level (returns 0) or may throw
       // depending on RLS posture; both are acceptable fail-closed.
