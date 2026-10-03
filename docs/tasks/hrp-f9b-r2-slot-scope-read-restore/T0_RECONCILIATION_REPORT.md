@@ -10,7 +10,7 @@
 | T0 disposition | `CHANGES_REQUIRED_RUNTIME` (initial) → `READY_FOR_AUDIT` (after R2 forward-only commit) |
 | Initial disposition date | 2026-10-03 23:30 ICT |
 | R2 runtime reproduction PASS date | 2026-10-04 ICT |
-| Audit-target HEAD | `c3fa409a` |
+| Audit-target HEAD | **reported in post-commit handback** (this T0_RECONCILIATION_REPORT is committed before the docs/control correction SHA is finalized; the exact 40-character audit-target HEAD is reported by T1A in the chat handback to T0/Tier 3). **Semantic SHA** = `c3fa409a` (R2 forward-only corrective; R1 final semantic SHA = `e68ea4a3`). The docs/control correction in this round is forward-only with **zero semantic delta** against `c3fa409a`. |
 | Predecessor F9-B R1 final semantic SHA | `e68ea4a3` |
 | Predecessor F9-B R1 Tier-3 LIGHT PASS | SHA `d777cf71` (R1 adopted) |
 | Predecessor F9 X4 / X5 | `0d38042f` / `1b9bbd9f` |
@@ -59,7 +59,7 @@ The R2 commit does NOT touch:
 - The RESTRICTIVE no-DELETE policy `hrp_staffing_order_slots_no_delete`.
 - The SORA read policies.
 
-## 4. Runtime Reproduction at HEAD `c3fa409a`
+## 4. Runtime Reproduction at semantic SHA `c3fa409a`
 
 See `RUN_TIME_REPRODUCTION.md` for the full reproduction trace. Summary:
 
@@ -75,20 +75,31 @@ See `RUN_TIME_REPRODUCTION.md` for the full reproduction trace. Summary:
 | Unit / typecheck / lint / build / Prisma / static / encoding | PASS |
 | Zero-residue | PASS |
 
+## 4a. Cross-Check: aff03 AC-06 on R1 baseline SHA `e68ea4a3`
+
+To rule out an R2-introduced regression behind the single `aff03-public-intake.integration.test.ts > AC-06 (backfill R1)` failure observed in the full integration lane, T1A executed the **same** vitest invocation in isolation against the R1 baseline SHA `e68ea4a3` (sibling detached worktree with `node_modules` copied from R2 and `prisma generate` re-run; identical synthetic Neon pair `ep-empty-forest-azlhfyo9-*` writer/admin; identical test invocation):
+
+| Variant | Worktree HEAD | Exit | Failure signature |
+| --- | --- | --- | --- |
+| R2 (semantic) | `c3fa409a` | `1` | `AssertionError: expected 1 to be +0 // Object.is equality` at `tests/db/aff03-public-intake.integration.test.ts:2598:33` |
+| R1 baseline | `e68ea4a3` | `1` | **byte-identical** (`AssertionError: expected 1 to be +0 // Object.is equality` at `tests/db/aff03-public-intake.integration.test.ts:2598:33`) |
+
+Both runs produced identical expected/received numbers (`Expected: 0, Received: 1`), identical failure message (`AssertionError: expected 1 to be +0 // Object.is equality`), identical assertion location (`tests/db/aff03-public-intake.integration.test.ts:2598:33`), and identical `1 failed | 1 passed | 24 skipped (26)` test-file roll-up. **SHA / command / exit / failure signature identical → `PRE_EXISTING_NON_REGRESSION`** — accepted only for F9-B R2 delta scope. R2 surface (R2 SELECT policy on `public.staffing_order_slots`) has zero mechanism to alter the AC-06 path (which queries `labor_profile_handling_assignments` via Prisma model). Fix is out of scope for F9-B R2. Logs at `C:\Users\Admin\AppData\Local\Temp\rhp-r2-intg-ac06.log` (R2) and `C:\Users\Admin\AppData\Local\Temp\rhp-r2-baseline-ac06.log` (R1 baseline).
+
 ## 5. R2 Disposition
 
-T1A R2 forward-only commit satisfies the T0 R2 contract. Runtime reproduction PASS at exact audit-target HEAD `c3fa409a`. R2 disposition: `READY_FOR_AUDIT`.
+T1A R2 forward-only commit satisfies the T0 R2 contract. Runtime reproduction PASS at semantic SHA `c3fa409a`. R2 disposition: `READY_FOR_AUDIT`. The R2 audit target is the exact audit-target HEAD reported in the post-commit handback; the docs/control correction in this round is forward-only with zero semantic delta.
 
 R2 budget exhausted (`1/1`).
 
 ## 6. Next Gate
 
-**TIER3_LIGHT_DELTA_AUDIT** on the exact committed audit-target HEAD `c3fa409a`. The Tier 3 audit must DELTA-verify the R2 surface against the R1 final semantic SHA `e68ea4a3` per `AUDIT.md` §1.
+**TIER3_LIGHT_DELTA_AUDIT** on the exact audit-target HEAD reported in the post-commit handback (semantic SHA = `c3fa409a`; the docs/control correction in this round is forward-only with zero semantic delta against `c3fa409a`). The Tier 3 audit must DELTA-verify the R2 surface against the R1 final semantic SHA `e68ea4a3` per the new authoritative R2 `AUDIT.md` (to be authored by Tier 3 after this commit lands; T1A-authored R2 `AUDIT.md` was deleted in the docs/control correction round per T0 decision that Tier 1 may not author AUDIT.md).
 
-On DELTA PASS, adopt `AUDIT.md` byte-exact, push the docs-freeze + R2 surface together to PR #88, and wait for CI 4/4.
+On DELTA PASS, push the docs-freeze + R2 surface together to PR #88, and wait for CI 4/4.
 
 On DELTA FAIL, open a round-3 budget (would require T0 re-authorization). Do not push. Do not merge.
 
 ---
 
-*T0_RECONCILIATION_REPORT authored 2026-10-04 ICT by Tier 1A (T1A). The R1 T0_RECONCILIATION_REPORT is preserved byte-equivalent at `docs/tasks/hrp-f9b-jobposting-write-boundary-hardening/T0_RECONCILIATION_REPORT.md`.*
+*T0_RECONCILIATION_REPORT authored 2026-10-04 ICT by Tier 1A (T1A). The R1 T0_RECONCILIATION_REPORT is preserved byte-equivalent at `docs/tasks/hrp-f9b-jobposting-write-boundary-hardening/T0_RECONCILIATION_REPORT.md`. This revision reflects the T0 docs/control correction decision: Implementation SHA remains `c3fa409a`; the R2 audit-target HEAD is reported in the post-commit handback; the T1A-authored R2 `AUDIT.md` was deleted in this round; Tier 3 authors the new authoritative R2 `AUDIT.md`.*
