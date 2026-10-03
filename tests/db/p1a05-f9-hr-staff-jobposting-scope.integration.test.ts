@@ -86,6 +86,8 @@ import {
 import { listEligibleSlotsForNewJobPosting } from '@/src/domains/staffing/job-posting-list.service';
 import { createStaffingOrder } from '@/src/domains/staffing/order.service';
 
+import { runRevokeBeforeCreateTwoConnectionRace } from './p1a06-f9b-race-helper';
+
 const adminUrl = process.env.DATABASE_URL_ADMIN_TEST ?? '';
 const writerUrl = process.env.DATABASE_URL_TEST ?? '';
 const HAS_TEST_DB =
@@ -460,43 +462,55 @@ describe.skipIf(!HAS_TEST_DB).sequential('F9 HR_STAFF JobPosting Scope — Synth
     expect([403, 404]).toContain(caught!.httpStatus);
   });
 
-  // AC-07: revoke-before-create race (single-writer, deterministic: revoke
-  // first, then Alice's create fails closed).
-  it('AC-07 Revoke-before-create race → Alice fail-closed on Order A after revoke', async () => {
-    // Revoke Alice's Order A assignment first.
-    await withContext(admin, managerUserId, 'HR_MANAGER', (tx) =>
-      revokeRecruiterFromOrder(tx, {
-        staffingOrderId: orderAId,
-        assignmentId: assignmentAliceAId,
-        actorRole: 'HR_MANAGER',
-        actorId: managerUserId,
-        reason: 'F9 — revoke Alice from A for race test',
-      }),
-    );
-    // Now Alice's create chain fails closed even though slotAId still has
-    // an existing JobOpening from AC-04 — the re-check inside the
-    // transaction observes REVOKED status.
-    let caught: AuthoringError | null = null;
-    try {
-      await withContext(writer, aliceId, 'HR_STAFF', (tx) =>
-        createOrReuseJobOpeningForSlot(
-          tx,
-          { userId: aliceId, role: 'HR_STAFF' },
-          { slotId: slotAId },
-        ),
-      );
-    } catch (e) {
-      if (e instanceof AuthoringError) caught = e;
-    }
-    expect(caught).not.toBeNull();
-    // AC-07 allowed mapping per DEC-05-b. The order-scoped advisory
-    // lock (`acquireOrderAdvisoryLock`) serializes the create with the
-    // prior revoke; the post-lock guard re-read sees REVOKED status.
-    // Canonical code NO_ACTIVE_ORDER_ASSIGNMENT; NOT_FOUND is also
-    // acceptable.
-    expect(['NO_ACTIVE_ORDER_ASSIGNMENT', 'NOT_FOUND']).toContain(caught!.code);
-    expect([403, 404]).toContain(caught!.httpStatus);
-  });
+  // AC-07: true two-connection revoke-before-create race (F9-B boundary,
+  // DEC-05-b / B-02 closure). The order-scoped advisory lock serializes
+  // the create with the revoke. The create path acquires the canonical
+  // `p1a04:order:<id>` lock and BLOCKS while the revoke holds it; after
+  // the revoke commits and the lock is released, the create resumes and
+  // the post-lock guard re-read sees REVOKED status → fail closed with
+  // NO_ACTIVE_ORDER_ASSIGNMENT (403). NOT_FOUND is NOT accepted (lock
+  // serialization makes the assignment-loss path deterministic). The
+  // round-1 sequential form was rejected at pre-audit review.
+  it('AC-07 True two-connection revoke-before-create race → Alice fail-closed on Order A', async () => {
+    // AC-04 above created a JobOpening + JobPosting for slotAId. Clear
+    // them so the race tests a fresh slot (no pre-existing opening).
+    await admin.jobPosting.deleteMany({
+      where: { jobOpening: { staffingOrderSlotId: slotAId } },
+    });
+    await admin.jobOpening.deleteMany({ where: { staffingOrderSlotId: slotAId } });
+    await admin.staffingOrderSlot.update({
+      where: { id: slotAId },
+      data: { jobOpeningId: null },
+    });
+    // Restore the assignment to ACTIVE for the race (AC-05 may have
+    // revoked it via Order D, but for AC-07 we test Order A which is
+    // still ACTIVE unless something else touched it).
+    const result = await runRevokeBeforeCreateTwoConnectionRace({
+      writerUrl,
+      adminUrl,
+      actorId: aliceId,
+      slotId: slotAId,
+      orderId: orderAId,
+      assignmentId: assignmentAliceAId,
+      managerActorId: managerUserId,
+    });
+    // Overlap proof: pg_locks shows the create blocked on the canonical
+    // advisory key while the revoker held it (preferred) OR wall-clock
+    // overlap observed (acceptable if pg_locks probe is blocked).
+    expect(
+      result.evidence.revokeBlockedOnLockWhileRevokeHeld || result.evidence.overlapObserved,
+      'race evidence: blocking on canonical lock OR wall-clock overlap',
+    ).toBe(true);
+    // Fail-closed canonical code: NO_ACTIVE_ORDER_ASSIGNMENT (403).
+    expect(result.evidence.errorCode).toBe('NO_ACTIVE_ORDER_ASSIGNMENT');
+    expect(result.evidence.httpStatus).toBe(403);
+    // Zero side effects.
+    expect(result.evidence.rowCounts.openingsForSlot).toBe(0);
+    expect(result.evidence.rowCounts.postingsForSlot).toBe(0);
+    expect(result.evidence.rowCounts.slotBoundToOpening).toBe(false);
+    // Assignment ended REVOKED.
+    expect(result.evidence.rowCounts.assignmentStatus).toBe('REVOKED');
+  }, 60_000);
 
   // AC-08: ADMIN bypass — create works on any order.
   it('AC-08 ADMIN direct POST on Bob Order B → 200', async () => {

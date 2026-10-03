@@ -201,4 +201,23 @@ export const INTEGRATION_TEST_FILES: string[] = [
   // authorization of the `ep-empty-forest-azlhfyo9-*` Neon writer/admin
   // pair).
   'tests/db/p1a05-f9-hr-staff-jobposting-scope.integration.test.ts',
+  // hrp-f9b-jobposting-write-boundary-hardening: forward-only corrective
+  // migration replaces the broad `hrp_f9_slots_staff_update` policy with a
+  // narrow SECURITY DEFINER primitive `hrp_f9b_bind_slot_to_opening`.
+  // Synthetic DB proof covers B-01/B-02/B-03 closure:
+  //   - Happy path + idempotent replay.
+  //   - Direct DB negative proof (HR_STAFF cannot mutate arbitrary
+  //     `staffing_order_slots` columns; cannot rebind/cross-slot/cross-order;
+  //     PUBLIC cannot EXECUTE the primitive).
+  //   - True two-connection revoke-before-create race using the shared
+  //     `tests/db/p1a06-f9b-race-helper.ts` (overlap observed via pg_locks;
+  //     post-lock re-check throws NO_ACTIVE_ORDER_ASSIGNMENT (403)).
+  //   - Policy/function live posture (function exists, fixed search_path,
+  //     PUBLIC no EXECUTE, intended writer grants only, broad UPDATE policy
+  //     dropped).
+  //   - Hardened `hrp_f9_openings_staff_insert` (cross-slot insert fails).
+  //   - Zero residue + FK-safe teardown.
+  // Self-skips via describe.skipIf when DATABASE_URL_TEST +
+  // DATABASE_URL_ADMIN_TEST are absent (ENV_BLOCKED).
+  'tests/db/p1a06-f9b-jobposting-write-boundary.integration.test.ts',
 ];

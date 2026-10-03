@@ -108,11 +108,11 @@ const EXPECTED_HITS = [
   // selects are RLS-covered (read-only; `withDbContext` sets the GUC
   // session role; JobOpening is not a recruiter-gated table on its own).
   // Net +4 entries: 32 → 36 src hits.
-  'src/domains/staffing/job-posting-authoring.service.ts:851 jobOpening',
-  'src/domains/staffing/job-posting-authoring.service.ts:955 jobOpening',
-  'src/domains/staffing/job-posting-authoring.service.ts:1082 jobOpening',
-  'src/domains/staffing/job-posting-authoring.service.ts:1151 jobOpening',
-  'src/domains/staffing/job-posting-authoring.service.ts:1224 jobOpening',
+  'src/domains/staffing/job-posting-authoring.service.ts:984 jobOpening',
+  'src/domains/staffing/job-posting-authoring.service.ts:1088 jobOpening',
+  'src/domains/staffing/job-posting-authoring.service.ts:1215 jobOpening',
+  'src/domains/staffing/job-posting-authoring.service.ts:1284 jobOpening',
+  'src/domains/staffing/job-posting-authoring.service.ts:1357 jobOpening',
   // P1-A0 STEP-03: line numbers in job-posting-list.service.ts shifted because
   // the DTOs grew (added title, salaryDisplay, *Json, contentSchemaVersion,
   // hasContent). The four select-clauses themselves are unchanged.

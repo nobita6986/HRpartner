@@ -18,6 +18,7 @@ import {
   stableShortSuffix,
   assertMutationRole,
   assertHrStaffRecruiterScope,
+  bindSlotToOpeningJobPostingTx,
   AuthoringError,
   ALLOWED_MUTATION_ROLES,
 } from '@/src/domains/staffing/job-posting-authoring.service';
@@ -253,5 +254,177 @@ describe('job-posting-authoring/assertHrStaffRecruiterScope (F9)', () => {
         'order-A',
       ),
     ).rejects.toBe(err);
+  });
+});
+
+/**
+ * F9-B slot↔opening binding primitive wrapper.
+ *
+ * The wrapper does NOT bypass the assignment scope: it re-validates via
+ * `assertHrStaffRecruiterScope` BEFORE invoking the SECURITY DEFINER
+ * primitive, and maps the canonical SQLSTATE P0001 to
+ * `NO_ACTIVE_ORDER_ASSIGNMENT`.
+ */
+describe('job-posting-authoring/bindSlotToOpeningJobPostingTx (F9-B)', () => {
+  function makeTx(opts: {
+    slotRow?: { staffing_order_id: string } | null;
+    assignment?: { id: string } | null;
+    primitive?: { ok: boolean; errorCode?: string };
+  }): {
+    $queryRaw: ReturnType<typeof vi.fn>;
+    $executeRaw: ReturnType<typeof vi.fn>;
+    staffingOrderRecruiterAssignment: { findFirst: ReturnType<typeof vi.fn> };
+  } {
+    // Use explicit sentinel: if 'slotRow' key is provided (even as null),
+    // honor it; only fall back to default when key is absent.
+    const hasSlotRow = Object.prototype.hasOwnProperty.call(opts, 'slotRow');
+    const hasAssignment = Object.prototype.hasOwnProperty.call(opts, 'assignment');
+    const slotRow = hasSlotRow ? opts.slotRow : { staffing_order_id: 'order-A' };
+    const assignment = hasAssignment ? opts.assignment : { id: 'assignment-active' };
+    const primitive = opts.primitive ?? { ok: true };
+    return {
+      $queryRaw: vi.fn(async () => (slotRow ? [slotRow] : [])),
+      $executeRaw: vi.fn(async () => {
+        if (!primitive.ok) {
+          // Surface a stable PrismaClientKnownRequestError with code 'P0001'.
+          // We bypass constructing a full Prisma instance; the wrapper
+          // also accepts a plain Error with a `.code` property.
+          const e = new Error('SLOT_BINDING_DENIED');
+          (e as Error & { code?: string }).code = primitive.errorCode ?? 'P0001';
+          throw e;
+        }
+        return 1;
+      }),
+      staffingOrderRecruiterAssignment: {
+        findFirst: vi.fn(async () => assignment),
+      },
+    };
+  }
+
+  it('happy path: HR_STAFF ACTIVE assignment → primitive invoked exactly once', async () => {
+    const tx = makeTx({
+      slotRow: { staffing_order_id: 'order-A' },
+      assignment: { id: 'assignment-active' },
+    });
+    await expect(
+      bindSlotToOpeningJobPostingTx(
+        tx as never,
+        { userId: 'alice', role: 'HR_STAFF' },
+        'slot-1',
+        'opening-1',
+      ),
+    ).resolves.toBeUndefined();
+    expect(tx.$executeRaw).toHaveBeenCalledTimes(1);
+    expect(tx.staffingOrderRecruiterAssignment.findFirst).toHaveBeenCalledWith({
+      where: {
+        staffingOrderId: 'order-A',
+        recruiterUserId: 'alice',
+        status: RECRUITER_ASSIGNMENT_STATUS.ACTIVE,
+      },
+      select: { id: true },
+    });
+  });
+
+  it('empty slotId → INVALID_INPUT (400), no DB call', async () => {
+    const tx = makeTx({});
+    try {
+      await bindSlotToOpeningJobPostingTx(
+        tx as never,
+        { userId: 'alice', role: 'HR_STAFF' },
+        '',
+        'opening-1',
+      );
+      throw new Error('expected to throw');
+    } catch (e) {
+      expect(e).toBeInstanceOf(AuthoringError);
+      expect((e as AuthoringError).code).toBe('INVALID_INPUT');
+      expect((e as AuthoringError).httpStatus).toBe(400);
+    }
+    expect(tx.$executeRaw).not.toHaveBeenCalled();
+    expect(tx.$queryRaw).not.toHaveBeenCalled();
+  });
+
+  it('empty openingId → INVALID_INPUT (400), no DB call', async () => {
+    const tx = makeTx({});
+    try {
+      await bindSlotToOpeningJobPostingTx(
+        tx as never,
+        { userId: 'alice', role: 'HR_STAFF' },
+        'slot-1',
+        '',
+      );
+      throw new Error('expected to throw');
+    } catch (e) {
+      expect(e).toBeInstanceOf(AuthoringError);
+      expect((e as AuthoringError).code).toBe('INVALID_INPUT');
+      expect((e as AuthoringError).httpStatus).toBe(400);
+    }
+    expect(tx.$executeRaw).not.toHaveBeenCalled();
+  });
+
+  it('slot not visible / missing → NOT_FOUND (404), primitive NOT invoked', async () => {
+    const tx = makeTx({ slotRow: null });
+    await expect(
+      bindSlotToOpeningJobPostingTx(
+        tx as never,
+        { userId: 'alice', role: 'HR_STAFF' },
+        'ghost-slot',
+        'opening-1',
+      ),
+    ).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+      httpStatus: 404,
+    });
+    expect(tx.staffingOrderRecruiterAssignment.findFirst).not.toHaveBeenCalled();
+    expect(tx.$executeRaw).not.toHaveBeenCalled();
+  });
+
+  it('revoked recruiter → NO_ACTIVE_ORDER_ASSIGNMENT (403), primitive NOT invoked', async () => {
+    const tx = makeTx({ assignment: null });
+    await expect(
+      bindSlotToOpeningJobPostingTx(
+        tx as never,
+        { userId: 'alice', role: 'HR_STAFF' },
+        'slot-1',
+        'opening-1',
+      ),
+    ).rejects.toMatchObject({
+      code: 'NO_ACTIVE_ORDER_ASSIGNMENT',
+      httpStatus: 403,
+    });
+    expect(tx.$executeRaw).not.toHaveBeenCalled();
+  });
+
+  it('primitive P0001 (cross-slot/cross-order) → mapped to NO_ACTIVE_ORDER_ASSIGNMENT (403)', async () => {
+    const tx = makeTx({
+      primitive: { ok: false, errorCode: 'P0001' },
+    });
+    try {
+      await bindSlotToOpeningJobPostingTx(
+        tx as never,
+        { userId: 'alice', role: 'HR_STAFF' },
+        'slot-1',
+        'opening-other-slot',
+      );
+      throw new Error('expected to throw');
+    } catch (e) {
+      expect(e).toBeInstanceOf(AuthoringError);
+      expect((e as AuthoringError).code).toBe('NO_ACTIVE_ORDER_ASSIGNMENT');
+      expect((e as AuthoringError).httpStatus).toBe(403);
+    }
+  });
+
+  it('non-P0001 SQL error → re-thrown as-is (not swallowed)', async () => {
+    const tx = makeTx({
+      primitive: { ok: false, errorCode: '42P01' }, // undefined_table
+    });
+    await expect(
+      bindSlotToOpeningJobPostingTx(
+        tx as never,
+        { userId: 'alice', role: 'HR_STAFF' },
+        'slot-1',
+        'opening-1',
+      ),
+    ).rejects.toMatchObject({ code: '42P01' });
   });
 });
