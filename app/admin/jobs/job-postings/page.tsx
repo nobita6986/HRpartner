@@ -149,8 +149,15 @@ export default async function AdminJobPostingsListPage({ searchParams }: PagePro
   let slotLoadError: { code: string; message: string } | null = null;
   if (CREATE_ROLES.has(session.role)) {
     try {
+      // hrp-f9-hr-staff-jobposting-scope STEP-07/STEP-08 (DEC-07, DEC-13):
+      // HR_STAFF callers pass `actorId` so the selector composes the
+      // scoped-recruiter predicate (`EXISTS ... staffing_order_recruiter_assignments`
+      // with `status='ACTIVE'`). Other roles keep the pre-F9 selector
+      // surface (no recruiter predicate → no false negatives for
+      // ADMIN/HR_MANAGER/PM/SALE/DIRECTOR).
+      const actorId = session.role === 'HR_STAFF' ? session.userId : undefined;
       const rawSlots: JobPostingSlotSelectorDto[] = await withDbContext(prisma, ctx, async (tx) =>
-        listEligibleSlotsForNewJobPosting(tx, { limit: 100 }),
+        listEligibleSlotsForNewJobPosting(tx, { limit: 100, ...(actorId ? { actorId } : {}) }),
       );
       eligibleSlots = rawSlots.map((slot) => ({
         slotId: slot.id,
@@ -240,6 +247,29 @@ export default async function AdminJobPostingsListPage({ searchParams }: PagePro
             </Link>
           )}
         </form>
+
+        {/* hrp-f9-hr-staff-jobposting-scope STEP-08 (DEC-13): role-conditional UI
+            banner so HR_STAFF callers understand that the selector and
+            write-path are scoped to their ACTIVE
+            `StaffingOrderRecruiterAssignment`. Generic copy: no order code,
+            no assignee name, no staffing order id — RISK-06. Other roles
+            do NOT see the banner. The empty-state message inside
+            `CreateJobPostingForm` remains generic. */}
+        {CREATE_ROLES.has(session.role) && session.role === 'HR_STAFF' ? (
+          <div
+            role="note"
+            aria-label="Phạm vi quyền của HR_STAFF trên trang JobPosting"
+            data-testid="hr-staff-recruiter-scope-banner"
+            className="mb-4 rounded-lg border p-3 text-sm"
+            style={{
+              borderColor: 'var(--primary)',
+              backgroundColor: 'var(--color-primary-soft)',
+              color: 'var(--on-surface)',
+            }}
+          >
+            Bạn chỉ thấy các slot thuộc StaffingOrder bạn được phân công làm recruiter.
+          </div>
+        ) : null}
 
         {/* hrp-p1-a0-1 (DEC-01..04): form tạo JobPosting mới — chỉ hiển thị cho
             CREATE_ROLES (ADMIN/HR_MANAGER/HR_STAFF), dùng POST endpoint hiện hữu,

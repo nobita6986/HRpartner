@@ -60,6 +60,11 @@ import {
   type RichTextErrorCode,
 } from '@/src/shared/content/job-posting-rich-text';
 import type { AuthContext } from '@/src/shared/auth/auth-context';
+import {
+  assertActiveRecruiterForOrder,
+  acquireOrderAdvisoryLock,
+  RecruiterAssignmentError,
+} from '@/src/domains/talent/recruiter-assignment.service';
 import { eligibleSlotPredicateSql } from './job-posting-list.service';
 // ─────────────────────────────────────────────────────────────────────────────
 // Errors
@@ -73,7 +78,12 @@ export type AuthoringErrorCode =
   | 'INVALID_STATE_TRANSITION'
   | 'JOB_OPENING_NOT_OPEN'
   | 'VALIDATION_FAILED'
-  | 'SLUG_COLLISION';
+  | 'SLUG_COLLISION'
+  // hrp-f9-hr-staff-jobposting-scope: scoped-recruiter authority. Mirrors
+  // P1-A0.4 `RecruiterAssignmentError('NO_ACTIVE_ORDER_ASSIGNMENT', 403)`
+  // surfaced at the JobPosting authoring surface. Stable code; route maps
+  // it to HTTP 403 via the existing `AuthoringError` catch block.
+  | 'NO_ACTIVE_ORDER_ASSIGNMENT';
 
 export class AuthoringError extends Error {
   constructor(
@@ -209,6 +219,53 @@ export function assertMutationRole(ctx: AuthContext): void {
       `Role ${ctx.role} không có quyền mutate JobPosting.`,
       403,
     );
+  }
+}
+
+/**
+ * hrp-f9-hr-staff-jobposting-scope (DEC-03, DEC-05, DEC-08) — scoped-recruiter
+ * authority for the JobPosting authoring surface.
+ *
+ *   - HR_STAFF caller MUST hold an ACTIVE `StaffingOrderRecruiterAssignment`
+ *     on the target `StaffingOrder`. Revoked / unassigned / other-recruiter
+ *     fail-closed with `AuthoringError('NO_ACTIVE_ORDER_ASSIGNMENT', 403)`.
+ *   - ADMIN / HR_MANAGER bypass (matches the canonical P1-A0.4
+ *     `assertActiveRecruiterForOrder` bypass — no other role reaches here
+ *     because `assertMutationRole` already narrows the caller to
+ *     `ALLOWED_MUTATION_ROLES = {ADMIN, HR_MANAGER, HR_STAFF}`).
+ *
+ * Wraps `assertActiveRecruiterForOrder` (read-only consumption) and translates
+ * `RecruiterAssignmentError('NO_ACTIVE_ORDER_ASSIGNMENT', 403)` into the
+ * authoring-side typed error so the route's existing `AuthoringError` catch
+ * block surfaces a stable `error.code` and `error.httpStatus`.
+ *
+ * The error envelope carries NO slot id, NO staffing order id, NO project id,
+ * NO assignee id, NO actor id. The canonical helper's `details` are dropped
+ * intentionally — the helper's default message includes `actorId` and
+ * `staffingOrderId`, which would leak the existence of the foreign order to
+ * the caller.
+ *
+ * Runs INSIDE the same `$transaction` as the mutation so the re-check closes
+ * a revoke race: a revoke that committed between the slot read and the
+ * mutation is observed on the assignment row read here.
+ */
+export async function assertHrStaffRecruiterScope(
+  tx: PrismaTypes.TransactionClient,
+  ctx: AuthContext,
+  staffingOrderId: string,
+): Promise<void> {
+  if (ctx.role !== 'HR_STAFF') return; // bypass for ADMIN/HR_MANAGER
+  try {
+    await assertActiveRecruiterForOrder(tx, ctx.userId, ctx.role, staffingOrderId);
+  } catch (err) {
+    if (err instanceof RecruiterAssignmentError && err.code === 'NO_ACTIVE_ORDER_ASSIGNMENT') {
+      throw new AuthoringError(
+        'NO_ACTIVE_ORDER_ASSIGNMENT',
+        'Bạn không có quyền truy cập StaffingOrder này. Vui lòng liên hệ HR_MANAGER.',
+        403,
+      );
+    }
+    throw err;
   }
 }
 
@@ -370,6 +427,7 @@ function ensureUniqueSlug(
 export async function assertSlotEligibleForNewJobPosting(
   tx: PrismaTypes.TransactionClient,
   slotId: string,
+  ctx: AuthContext,
   now: Date = new Date(),
 ): Promise<SlotRevalidationContext> {
   if (typeof slotId !== 'string' || slotId.length === 0) {
@@ -391,6 +449,65 @@ export async function assertSlotEligibleForNewJobPosting(
     is_eligible: boolean;
   };
 
+  // hrp-f9b-jobposting-write-boundary-hardening — re-ordered flow:
+  //
+  //   Step 1: SELECT (no FOR UPDATE) to discover the parent order's id.
+  //     If RLS hides the row because the caller was never assigned, the
+  //     row is RLS-filtered and the SELECT returns 0 rows → stable
+  //     NOT_FOUND 404 (no existence oracle). This is the canonical
+  //     fail-closed envelope for the never-assigned case (DEC-05-b).
+  //     The message carries NO id — no slotId, no staffingOrderId — per
+  //     the no-existence-oracle contract (AC-10 PII-leak protection).
+  //
+  //   Step 2: Acquire the canonical order-scoped advisory lock
+  //     (`acquireOrderAdvisoryLock`). Held for the rest of the
+  //     transaction. Re-entrant for nested calls within the same
+  //     transaction.
+  //
+  //   Step 3: Guard re-read under the lock via `assertHrStaffRecruiter
+  //     Scope`. For HR_STAFF callers without an ACTIVE recruiter
+  //     assignment on this order, the helper throws
+  //     `NO_ACTIVE_ORDER_ASSIGNMENT` 403 (assigned-then-lost case).
+  //     For ADMIN / HR_MANAGER, the guard bypasses.
+  //
+  //   Step 4: SELECT (NO FOR UPDATE — the broad column-agnostic UPDATE
+  //     policy `hrp_f9_slots_staff_update` was revoked in the F9-B
+  //     corrective migration `20261003100000_f9b_slot_opening_binding_
+  //     primitive`; the F9-B binding primitive takes the row lock when
+  //     it is invoked). Re-reads the slot state for predicate
+  //     validation.
+  //
+  //   Step 5: Defense-in-depth guard re-read.
+  const initial = await tx.$queryRaw<
+    Array<{ id: string; staffing_order_id: string }>
+  >(Prisma.sql`
+    SELECT s.id, s.staffing_order_id
+      FROM staffing_order_slots s
+     WHERE s.id = ${slotId}
+  `);
+  const initialSlot = initial[0];
+  if (!initialSlot) {
+    throw new AuthoringError('NOT_FOUND', 'StaffingOrderSlot không tồn tại hoặc bạn không có quyền truy cập.', 404);
+  }
+
+  // Step 2: Acquire the canonical order-scoped advisory lock. Held for the
+  // rest of the transaction. Re-entrant for nested calls within the same
+  // transaction (advisory locks are session-scoped; second acquisition
+  // with the same key is a no-op in PG).
+  await acquireOrderAdvisoryLock(tx, initialSlot.staffing_order_id);
+
+  // Step 3: Guard re-read under the lock. For HR_STAFF callers without an
+  // ACTIVE recruiter assignment on this order, the helper throws
+  // `NO_ACTIVE_ORDER_ASSIGNMENT` 403. For ADMIN / HR_MANAGER, the guard
+  // bypasses. This is the canonical fail-closed envelope for the
+  // assigned-then-lost case (DEC-05-b).
+  await assertHrStaffRecruiterScope(tx, ctx, initialSlot.staffing_order_id);
+
+  // Step 4: Re-read the slot row (NO FOR UPDATE). The F9-B binding
+  // primitive takes its own row lock when `bindSlotToOpeningJobPostingTx`
+  // is invoked; we do not need a `SELECT ... FOR UPDATE` here because
+  // HR_STAFF has no UPDATE authority on `staffing_order_slots` (the
+  // broad policy was revoked in the F9-B corrective migration).
   const rows = await tx.$queryRaw<SlotRow[]>(Prisma.sql`
     SELECT
       s.id,
@@ -413,12 +530,19 @@ export async function assertSlotEligibleForNewJobPosting(
     FROM staffing_order_slots s
     INNER JOIN staffing_orders so ON so.id = s.staffing_order_id
     WHERE s.id = ${slotId}
-    FOR UPDATE OF s
   `);
   const slot = rows[0];
   if (!slot) {
+    // RLS or row state changed between step 1 and step 4 (e.g. concurrent
+    // delete, or revoke-then-orphan). Stable NOT_FOUND 404.
     throw new AuthoringError('NOT_FOUND', `StaffingOrderSlot ${slotId} không tồn tại.`, 404);
   }
+
+  // Step 5: Defense-in-depth guard re-read. A revoke that committed
+  // between step 1's read and step 2's lock acquisition is now observed
+  // (the assignment's status is REVOKED). Throws NO_ACTIVE_ORDER_ASSIGNMENT
+  // for HR_STAFF who lost authority during the serialized operation.
+  await assertHrStaffRecruiterScope(tx, ctx, slot.staffing_order_id);
 
   if (slot.order_status !== 'OPEN' && slot.order_status !== 'CLOSING_SOON') {
     throw new AuthoringError(
@@ -484,6 +608,97 @@ export async function assertSlotEligibleForNewJobPosting(
  *      then UPDATE the slot to bind the new opening.
  *   4. Return the JobOpening.
  *
+ /**
+ * hrp-f9b-jobposting-write-boundary-hardening — bind a JobOpening to a slot
+ * via the tightly bounded SECURITY DEFINER primitive
+ * `public.hrp_f9b_bind_slot_to_opening(p_slot_id uuid, p_opening_id uuid)`.
+ *
+ * This is the ONLY path that mutates `staffing_order_slots.job_opening_id`
+ * for HR_STAFF writers in the F9-B corrected posture (DEC-03, DEC-04).
+ *
+ * The primitive takes its own row lock on the slot, re-validates
+ * assignment visibility for HR_STAFF via the canonical
+ * `hrp_staffing_order_visible_for(staffing_order_id::text)` predicate,
+ * validates that the opening is on the same slot AND same order, and
+ * mutates only `staffing_order_slots.job_opening_id`. It accepts
+ * NULL→expected or idempotent same-ID replay; rejects rebind / cross-slot
+ * / cross-order / missing identity / revoked / other / unassigned.
+ *
+ * Errors raised by the primitive carry SQLSTATE `P0001` with stable
+ * canonical error codes (`HRP_F9B_BINDING_DENIED_*`). This wrapper
+ * catches the P0001 class and re-throws as the canonical application
+ * envelope `AuthoringError('NO_ACTIVE_ORDER_ASSIGNMENT', 403)` so the
+ * route's existing `AuthoringError` catch block propagates a stable,
+ * leak-free error envelope (no IDs, no PII).
+ *
+ * Pre-conditions (caller responsibility):
+ *   - `acquireOrderAdvisoryLock(tx, slot.staffing_order_id)` has been
+ *     invoked BEFORE this call (the canonical primitive participates in
+ *     the same namespace as `assignRecruiterToOrder` /
+ *     `revokeRecruiterFromOrder` / `claimCandidateSubmission`).
+ *   - The slot row has been SELECTed (no FOR UPDATE) and is visible to
+ *     the writer under RLS.
+ *   - The JobOpening row has been created/reused via the narrow INSERT
+ *     policy `hrp_f9_openings_staff_insert` (F9 round 1) BEFORE this
+ *     call.
+ *   - `ctx` carries the writer identity that the primitive re-validates
+ *     via `hrp_session_role()` / `hrp_session_user_id()`.
+ */
+export async function bindSlotToOpeningJobPostingTx(
+  tx: PrismaTypes.TransactionClient,
+  ctx: AuthContext,
+  slotId: string,
+  openingId: string,
+): Promise<void> {
+  if (typeof slotId !== 'string' || slotId.length === 0) {
+    throw new AuthoringError('INVALID_INPUT', 'slotId là bắt buộc.', 400);
+  }
+  if (typeof openingId !== 'string' || openingId.length === 0) {
+    throw new AuthoringError('INVALID_INPUT', 'openingId là bắt buộc.', 400);
+  }
+
+  // Defense in depth (application layer): the canonical
+  // `assertHrStaffRecruiterScope` already validates assignment visibility
+  // under the advisory lock. Calling it here closes the race window
+  // between the SELECT and the primitive invocation.
+  const slotRows = await tx.$queryRaw<Array<{ staffing_order_id: string }>>(
+    Prisma.sql`SELECT s.staffing_order_id FROM staffing_order_slots s WHERE s.id = ${slotId}`,
+  );
+  const slotRow = slotRows[0];
+  if (!slotRow) {
+    throw new AuthoringError('NOT_FOUND', 'StaffingOrderSlot không tồn tại hoặc bạn không có quyền truy cập.', 404);
+  }
+  await assertHrStaffRecruiterScope(tx, ctx, slotRow.staffing_order_id);
+
+  try {
+    await tx.$executeRaw(
+      Prisma.sql`SELECT public.hrp_f9b_bind_slot_to_opening(${slotId}::text, ${openingId}::text)`,
+    );
+  } catch (err: unknown) {
+    // Map the canonical SQLSTATE P0001 + stable code to the application
+    // envelope. The error code labels are stable; the message is generic
+    // (no IDs, no PII). Preserve the original Prisma error message in the
+    // AuthoringError message so callers (and the F9-B race catch in
+    // `createOrReuseJobOpeningForSlot`) can distinguish the canonical
+    // revoke-then-create denial (HRP_F9B_BINDING_DENIED_AFTER_REVOKE)
+    // from the rebind / cross-slot / cross-order binding collision.
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P0001') {
+      const originalMsg =
+        (err.meta && typeof err.meta === 'object' && 'message' in err.meta
+          ? String((err.meta as Record<string, unknown>).message)
+          : err.message) || 'Recruiter authorization denied.';
+      throw new AuthoringError('NO_ACTIVE_ORDER_ASSIGNMENT', originalMsg, 403);
+    }
+    if (err instanceof Error && 'code' in err && (err as Error & { code?: string }).code === 'P0001') {
+      throw new AuthoringError('NO_ACTIVE_ORDER_ASSIGNMENT', err.message, 403);
+    }
+    throw err;
+  }
+}
+
+/**
+ * Create or reuse exactly one DRAFT JobOpening bound to the given slot.
+ *
  * Race: two concurrent callers both see `slot.jobOpeningId = null`. They each
  * create a JobOpening, but only one UPDATE on the slot succeeds — the second
  * UPDATE finds `jobOpeningId IS NOT NULL` and re-reads the canonical binding
@@ -506,16 +721,34 @@ export async function createOrReuseJobOpeningForSlot(
   // must fail closed with zero mutation. `assertSlotEligibleForNewJobPosting`
   // shares the predicate with `listEligibleSlotsForNewJobPosting` so the two
   // paths cannot drift.
-  await assertSlotEligibleForNewJobPosting(tx, input.slotId);
+  await assertSlotEligibleForNewJobPosting(tx, input.slotId, ctx);
 
-  // 1. Lock the slot row.
+  // 1. Discover the slot row (no FOR UPDATE — F9-B drops the broad
+  //    column-agnostic UPDATE policy `hrp_f9_slots_staff_update`; the F9-B
+  //    binding primitive takes its own row lock when it is invoked).
   const slotRows = await tx.$queryRaw<
     Array<{ id: string; staffing_order_id: string; job_opening_id: string | null }>
-  >(Prisma.sql`SELECT id, staffing_order_id, job_opening_id FROM staffing_order_slots WHERE id = ${input.slotId} FOR UPDATE`);
+  >(Prisma.sql`SELECT id, staffing_order_id, job_opening_id FROM staffing_order_slots WHERE id = ${input.slotId}`);
   const slot = slotRows[0];
   if (!slot) {
     throw new AuthoringError('NOT_FOUND', `StaffingOrderSlot ${input.slotId} không tồn tại.`, 404);
   }
+
+  // hrp-f9-hr-staff-jobposting-scope correction batch 1/1 §F: participate
+  // in the canonical order-scoped advisory lock. The inner
+  // `assertSlotEligibleForNewJobPosting` call already acquired the lock,
+  // so this is a re-entrant no-op within the same transaction. Listed
+  // explicitly so the lock participation is visible at every call site.
+  await acquireOrderAdvisoryLock(tx, slot.staffing_order_id);
+
+  // hrp-f9-hr-staff-jobposting-scope STEP-03: defense-in-depth re-check of
+  // the scoped-recruiter authority AFTER the slot lock. Closes a revoke
+  // race that may have committed between the read inside
+  // `assertSlotEligibleForNewJobPosting` and the actual INSERT/UPDATE
+  // here. The canonical helper reads `staffing_order_recruiter_assignments`
+  // again under the same transaction; a revoke that committed in a parallel
+  // transaction is observed and HR_STAFF fails closed.
+  await assertHrStaffRecruiterScope(tx, ctx, slot.staffing_order_id);
 
   // 2. Reuse if already bound.
   if (slot.job_opening_id) {
@@ -529,6 +762,15 @@ export async function createOrReuseJobOpeningForSlot(
         500,
       );
     }
+    // F9-B: idempotent replay — the slot is already bound to this
+    // opening. The primitive validates that the requested opening ID
+    // matches the current binding (idempotent same-ID replay) and is a
+    // no-op when they match. No mutation; no error.
+    if (slot.job_opening_id !== reused.id) {
+      // The slot row was rebound by a concurrent caller between the
+      // SELECT and now. Return the current canonical binding.
+      return toJobOpeningDto(reused);
+    }
     return toJobOpeningDto(reused);
   }
 
@@ -541,25 +783,48 @@ export async function createOrReuseJobOpeningForSlot(
     },
   });
 
-  // 4. Bind the new opening to the slot — only update if still unbound.
-  const updateResult = await tx.$executeRaw(
-    Prisma.sql`UPDATE staffing_order_slots
-                SET job_opening_id = ${created.id}
-                WHERE id = ${slot.id} AND job_opening_id IS NULL`,
-  );
-  if (updateResult === 0) {
-    // Another concurrent caller bound the slot first. Reuse theirs.
+  // 4. Bind the new opening to the slot via the F9-B primitive. The
+  //    primitive takes its own row lock on the slot and re-validates
+  //    assignment visibility. If a concurrent caller bound the slot
+  //    first, the primitive rejects with HRP_F9B_BINDING_DENIED_REBIND
+  //    (the slot is no longer NULL → expected), which we catch and
+  //    recover by re-reading the canonical binding.
+  try {
+    await bindSlotToOpeningJobPostingTx(tx, ctx, slot.id, created.id);
+    return toJobOpeningDto(created);
+  } catch (err: unknown) {
+    // Distinguish the canonical revoke-then-create race from a binding
+    // collision by inspecting the preserved Prisma error message:
+    //   - `HRP_F9B_BINDING_DENIED_AFTER_REVOKE` ⇒ assignment was revoked
+    //     between the in-step check and the primitive's re-validation.
+    //     Clean up the orphan opening and propagate the canonical
+    //     NO_ACTIVE_ORDER_ASSIGNMENT 403.
+    //   - any other primitive denial ⇒ treat as a binding collision:
+    //     re-read the canonical binding and return it if it exists.
+    const msg =
+      err instanceof Error
+        ? err.message
+        : typeof err === 'object' && err !== null && 'message' in err
+          ? String((err as { message: unknown }).message)
+          : '';
+    const isRevokedAfterInsert =
+      err instanceof AuthoringError &&
+      err.code === 'NO_ACTIVE_ORDER_ASSIGNMENT' &&
+      msg.includes('HRP_F9B_BINDING_DENIED_AFTER_REVOKE');
+    if (isRevokedAfterInsert) {
+      await tx.jobOpening.delete({ where: { id: created.id } }).catch(() => undefined);
+      throw err;
+    }
+    // Detect the "concurrent caller bound the slot first" case.
     const rebound = await tx.staffingOrderSlot.findUnique({
       where: { id: slot.id },
       select: { jobOpeningId: true },
     });
     const winnerId = rebound?.jobOpeningId;
     if (!winnerId || winnerId === created.id) {
-      throw new AuthoringError(
-        'NOT_FOUND',
-        `Slot ${slot.id} không thể bind JobOpening sau race — trạng thái không nhất quán.`,
-        500,
-      );
+      // Cleanup orphan opening on unexpected failures.
+      await tx.jobOpening.delete({ where: { id: created.id } }).catch(() => undefined);
+      throw err;
     }
     // Remove the orphan we just created so the test lane stays clean.
     await tx.jobOpening.delete({ where: { id: created.id } }).catch(() => undefined);
@@ -567,14 +832,12 @@ export async function createOrReuseJobOpeningForSlot(
     if (!winner) {
       throw new AuthoringError(
         'NOT_FOUND',
-        `Slot ${slot.id} đã bind JobOpening ${winnerId} nhưng JobOpening không tồn tại.`,
+        `Slot ${slot.id} đã bind JobOpening ${winnerId} nhưng không tồn tại.`,
         500,
       );
     }
     return toJobOpeningDto(winner);
   }
-
-  return toJobOpeningDto(created);
 }
 
 /**
@@ -599,6 +862,22 @@ export async function createOrReuseJobPostingDraftForOpening(
   if (!opening) {
     throw new AuthoringError('NOT_FOUND', `JobOpening ${input.jobOpeningId} không tồn tại.`, 404);
   }
+
+  // hrp-f9-hr-staff-jobposting-scope correction batch 1/1 §F: acquire the
+  // canonical order-scoped advisory lock BEFORE the guard. Held for the
+  // rest of the transaction. A parallel `revokeRecruiterFromOrder` on
+  // this order will block until this transaction commits, so the
+  // post-guard re-read observes a consistent assignment state.
+  await acquireOrderAdvisoryLock(tx, opening.staffingOrderId);
+
+  // hrp-f9-hr-staff-jobposting-scope STEP-04: scoped-recruiter authority for
+  // the create-or-reuse chain that runs WITHOUT first calling
+  // `assertSlotEligibleForNewJobPosting`. The opening is the parent of the
+  // posting, so the order anchor derives from `opening.staffingOrderId`.
+  // HR_STAFF callers without an ACTIVE assignment on this order are denied
+  // before any INSERT. Runs under the advisory lock so a concurrent revoke
+  // is serialized.
+  await assertHrStaffRecruiterScope(tx, ctx, opening.staffingOrderId);
 
   if (opening.posting) {
     return toJobPostingDto(opening.posting);
@@ -697,6 +976,12 @@ export async function updateDraftContent(
       publishedAt: true,
       isHot: true,
       isUrgent: true,
+      // hrp-f9-hr-staff-jobposting-scope STEP-05: derive the order anchor
+      // for the scoped-recruiter re-check. F9 guard re-reads the assignment
+      // table inside the same transaction; the include is required because
+      // `JobPosting.jobOpeningId` alone is not enough — we need
+      // `JobOpening.staffingOrderId` to call `assertHrStaffRecruiterScope`.
+      jobOpening: { select: { id: true, staffingOrderId: true } },
     },
   });
   if (!current) {
@@ -705,6 +990,21 @@ export async function updateDraftContent(
       `JobPosting ${input.jobPostingId} không tồn tại.`,
       404,
     );
+  }
+  // hrp-f9-hr-staff-jobposting-scope STEP-05: scoped-recruiter re-check on
+  // `updateDraftContent`. Runs AFTER NOT_FOUND (so the caller learns nothing
+  // about a non-existent posting) and BEFORE the state/revision guards (so
+  // an HR_STAFF probing a posting of an unassigned order never sees an
+  // INVALID_STATE_TRANSITION or INVALID_REVISION error that would leak the
+  // posting's lifecycle state). Orphan postings (no `jobOpening`) are
+  // impossible here — the draft is created by
+  // `createOrReuseJobPostingDraftForOpening` which always binds an opening.
+  if (current.jobOpening) {
+    // hrp-f9-hr-staff-jobposting-scope correction batch 1/1 §F: acquire
+    // the canonical order-scoped advisory lock BEFORE the guard so a
+    // parallel revoke is serialized with the update path.
+    await acquireOrderAdvisoryLock(tx, current.jobOpening.staffingOrderId);
+    await assertHrStaffRecruiterScope(tx, ctx, current.jobOpening.staffingOrderId);
   }
   if (current.status !== 'DRAFT') {
     throw new AuthoringError(
@@ -784,7 +1084,17 @@ export async function publishJobPosting(
 
   const current = await tx.jobPosting.findUnique({
     where: { id: input.jobPostingId },
-    include: { jobOpening: { select: { id: true, status: true } } },
+    include: {
+      jobOpening: {
+        select: {
+          id: true,
+          status: true,
+          // hrp-f9-hr-staff-jobposting-scope STEP-05: extend include to
+          // carry the order anchor for the scoped-recruiter re-check.
+          staffingOrderId: true,
+        },
+      },
+    },
   });
   if (!current) {
     throw new AuthoringError(
@@ -816,6 +1126,19 @@ export async function publishJobPosting(
       500,
     );
   }
+  // hrp-f9-hr-staff-jobposting-scope STEP-05: scoped-recruiter re-check on
+  // `publishJobPosting`. Runs AFTER NOT_FOUND + INVALID_STATE_TRANSITION +
+  // INVALID_REVISION (so callers do not learn the order's authority state
+  // from a 409/404 leak) and BEFORE the JOB_OPENING_NOT_OPEN check (so an
+  // unassigned HR_STAFF never sees the linked JobOpening's status — which
+  // would be a foreign-entity metadata leak). `current.jobOpening` is
+  // non-null here per the guard above.
+  // hrp-f9-hr-staff-jobposting-scope correction batch 1/1 §F: advisory
+  // lock participation (canonical primitive, no second namespace). Lock is
+  // acquired before the guard re-read so a concurrent revoke is serialized
+  // with the publish path.
+  await acquireOrderAdvisoryLock(tx, current.jobOpening.staffingOrderId);
+  await assertHrStaffRecruiterScope(tx, ctx, current.jobOpening.staffingOrderId);
   if (current.jobOpening.status !== 'OPEN') {
     throw new AuthoringError(
       'JOB_OPENING_NOT_OPEN',
@@ -882,13 +1205,31 @@ export async function unpublishJobPosting(
 ): Promise<JobPostingDto> {
   assertMutationRole(ctx);
 
-  const current = await tx.jobPosting.findUnique({ where: { id: input.jobPostingId } });
+  // hrp-f9-hr-staff-jobposting-scope STEP-05: extend the read to include
+  // the linked JobOpening so the scoped-recruiter re-check can derive the
+  // order anchor. Without this include, `unpublishJobPosting` could not
+  // enforce HR_STAFF scope at the order level.
+  const current = await tx.jobPosting.findUnique({
+    where: { id: input.jobPostingId },
+    include: {
+      jobOpening: { select: { id: true, staffingOrderId: true } },
+    },
+  });
   if (!current) {
     throw new AuthoringError(
       'NOT_FOUND',
       `JobPosting ${input.jobPostingId} không tồn tại.`,
       404,
     );
+  }
+  // F9 guard: AFTER NOT_FOUND, BEFORE state/revision guards. See
+  // `updateDraftContent` for the rationale (no foreign-entity metadata
+  // leak through 409/404/INVALID_REVISION envelopes).
+  if (current.jobOpening) {
+    // hrp-f9-hr-staff-jobposting-scope correction batch 1/1 §F: advisory
+    // lock participation (canonical primitive, no second namespace).
+    await acquireOrderAdvisoryLock(tx, current.jobOpening.staffingOrderId);
+    await assertHrStaffRecruiterScope(tx, ctx, current.jobOpening.staffingOrderId);
   }
   if (current.status !== 'PUBLISHED') {
     throw new AuthoringError(
@@ -934,13 +1275,29 @@ export async function archiveJobPosting(
 ): Promise<JobPostingDto> {
   assertMutationRole(ctx);
 
-  const current = await tx.jobPosting.findUnique({ where: { id: input.jobPostingId } });
+  // hrp-f9-hr-staff-jobposting-scope STEP-05: same extend-include pattern
+  // as `unpublishJobPosting`. The scoped-recruiter re-check derives the
+  // order anchor from `jobOpening.staffingOrderId` and fails closed.
+  const current = await tx.jobPosting.findUnique({
+    where: { id: input.jobPostingId },
+    include: {
+      jobOpening: { select: { id: true, staffingOrderId: true } },
+    },
+  });
   if (!current) {
     throw new AuthoringError(
       'NOT_FOUND',
       `JobPosting ${input.jobPostingId} không tồn tại.`,
       404,
     );
+  }
+  // F9 guard: AFTER NOT_FOUND, BEFORE state/revision guards. See
+  // `updateDraftContent` for the rationale.
+  if (current.jobOpening) {
+    // hrp-f9-hr-staff-jobposting-scope correction batch 1/1 §F: advisory
+    // lock participation (canonical primitive, no second namespace).
+    await acquireOrderAdvisoryLock(tx, current.jobOpening.staffingOrderId);
+    await assertHrStaffRecruiterScope(tx, ctx, current.jobOpening.staffingOrderId);
   }
   if (current.status === 'ARCHIVED') {
     throw new AuthoringError(
@@ -975,13 +1332,45 @@ export async function archiveJobPosting(
 // Read helpers (for service-layer tests + admin API)
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * hrp-f9-hr-staff-jobposting-scope STEP-06: scoped-recruiter read helper.
+ *
+ * For HR_STAFF callers, derive the order anchor from the linked
+ * JobOpening and re-check the scoped-recruiter authority. On miss, return
+ * `null` (no existence oracle — the row IS in the database, but the caller
+ * is not authorized to see it). ADMIN / HR_MANAGER bypass.
+ *
+ * The caller is responsible for opening the transaction with the right
+ * `app.role` GUC via `withDbContext`. RLS still filters at the row level as
+ * a backstop; the application-level guard is additive (defense in depth,
+ * contract explicitness).
+ */
 export async function getJobPostingForAuthoring(
   tx: PrismaTypes.TransactionClient,
+  ctx: AuthContext,
   id: string,
 ): Promise<JobPostingDto | null> {
   if (!id || typeof id !== 'string') return null;
-  const row = await tx.jobPosting.findUnique({ where: { id } });
+  const row = await tx.jobPosting.findUnique({
+    where: { id },
+    include: {
+      jobOpening: { select: { id: true, staffingOrderId: true } },
+    },
+  });
   if (!row) return null;
+  if (row.jobOpening) {
+    // F9 guard. For unassigned HR_STAFF on an active row, returns null
+    // silently — no existence oracle. For ADMIN/HR_MANAGER, the helper
+    // bypasses and the row is returned as before.
+    try {
+      await assertHrStaffRecruiterScope(tx, ctx, row.jobOpening.staffingOrderId);
+    } catch (err) {
+      if (err instanceof AuthoringError && err.code === 'NO_ACTIVE_ORDER_ASSIGNMENT') {
+        return null;
+      }
+      throw err;
+    }
+  }
   return toJobPostingDto(row);
 }
 

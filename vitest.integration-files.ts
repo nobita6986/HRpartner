@@ -189,4 +189,52 @@ export const INTEGRATION_TEST_FILES: string[] = [
   // Self-skips via describe.skipIf when DATABASE_URL_TEST + DATABASE_URL_ADMIN_TEST
   // are absent (ENV_BLOCKED).
   'tests/db/p1a05-job-opening-readiness.integration.test.ts',
+  // hrp-f9-hr-staff-jobposting-scope: synthetic DB proof for the
+  // dual-boundary guard on the JobPosting authoring surface. Covers
+  // AC-01..AC-10, AC-12, AC-13, AC-17 of the F9 V2 contract v1.0
+  // (selector narrowing for HR_STAFF, server-write-boundary
+  // `assertHrStaffRecruiterScope` in `assertSlotEligibleForNewJobPosting`
+  // and the four write/read paths, revoke race, cross-order
+  // ADMIN/HR_MANAGER bypass, canonical-safe error envelope, zero-residue
+  // teardown). Self-skips via describe.skipIf when DATABASE_URL_TEST +
+  // DATABASE_URL_ADMIN_TEST are absent (ENV_BLOCKED — awaits T0
+  // authorization of the `ep-empty-forest-azlhfyo9-*` Neon writer/admin
+  // pair).
+  'tests/db/p1a05-f9-hr-staff-jobposting-scope.integration.test.ts',
+  // hrp-f9b-jobposting-write-boundary-hardening: forward-only corrective
+  // migration replaces the broad `hrp_f9_slots_staff_update` policy with a
+  // narrow SECURITY DEFINER primitive `hrp_f9b_bind_slot_to_opening`.
+  // Synthetic DB proof covers B-01/B-02/B-03 closure:
+  //   - Happy path + idempotent replay.
+  //   - Direct DB negative proof (HR_STAFF cannot mutate arbitrary
+  //     `staffing_order_slots` columns; cannot rebind/cross-slot/cross-order;
+  //     PUBLIC cannot EXECUTE the primitive).
+  //   - True two-connection revoke-before-create race using the shared
+  //     `tests/db/p1a06-f9b-race-helper.ts` (overlap observed via pg_locks;
+  //     post-lock re-check throws NO_ACTIVE_ORDER_ASSIGNMENT (403)).
+  //   - Policy/function live posture (function exists, fixed search_path,
+  //     PUBLIC no EXECUTE, intended writer grants only, broad UPDATE policy
+  //     dropped).
+  //   - Hardened `hrp_f9_openings_staff_insert` (cross-slot insert fails).
+  //   - Zero residue + FK-safe teardown.
+  // Self-skips via describe.skipIf when DATABASE_URL_TEST +
+  // DATABASE_URL_ADMIN_TEST are absent (ENV_BLOCKED).
+  'tests/db/p1a06-f9b-jobposting-write-boundary.integration.test.ts',
+  // hrp-f9b-r2-slot-scope-read-restore (F9-B correction batch 1/1):
+  // restore canonical SELECT scope for `staffing_order_slots` after
+  // the F9-B round-1 migration's narrow manager-only SELECT policy
+  // (hrp_f9b_slots_manager_select) broke every non-manager role
+  // that legitimately needs to read slot rows through
+  // `hrp_project_visible_for(so.project_id)`. R2 introduces
+  // `hrp_f9b_slots_project_select` (project-visible SELECT) while
+  // retaining `hrp_sora_order_slots_staff_select` (assigned HR_STAFF)
+  // and the manager INSERT/UPDATE policies + the SECURITY DEFINER
+  // `hrp_f9b_bind_slot_to_opening` primitive. Covers role-matrix
+  // visibility (MKT, PM, sub-PM, ADMIN, HR_MANAGER, DIRECTOR, SALE,
+  // WORKER, VENDOR_*, CTV), assigned/unassigned/revoked HR_STAFF,
+  // HR_STAFF direct UPDATE/INSERT/DELETE fail-closed posture, and
+  // PUBLIC cannot EXECUTE the primitive. Self-skips via
+  // describe.skipIf when DATABASE_URL_TEST + DATABASE_URL_ADMIN_TEST
+  // are absent (ENV_BLOCKED).
+  'tests/db/p1a07-f9b-r2-role-scope.integration.test.ts',
 ];

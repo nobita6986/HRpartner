@@ -101,8 +101,13 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
   const { id } = await ctx.params;
   try {
     const prisma = getPrisma();
+    // hrp-f9-hr-staff-jobposting-scope STEP-06 (DEC-09): pass the
+    // AuthContext so the read helper can enforce the scoped-recruiter
+    // authority. For an unassigned HR_STAFF caller, the helper returns
+    // `null` (no existence oracle) → 404 NOT_FOUND. The route's existing
+    // 404 mapping is preserved.
     const posting = await withDbContext(prisma, authCtx, async (tx) =>
-      getJobPostingForAuthoring(tx, id),
+      getJobPostingForAuthoring(tx, authCtx, id),
     );
     if (!posting) {
       return NextResponse.json({ error: 'NOT_FOUND', message: `JobPosting ${id} không tồn tại.` }, { status: 404 });
