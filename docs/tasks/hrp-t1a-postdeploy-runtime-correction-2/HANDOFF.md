@@ -1,7 +1,8 @@
 # HANDOFF — T1A Post-Deploy Runtime Correction Round 2
 
 > Status: **FROZEN**, awaiting Owner review.
-> Frozen SHA: **`90781a370752aea92a16f13aed25294dea9a05a2`**
+> Frozen SHA: **`566f42b6fd63d5b7be6de8b02b0bda85d138a409`** (includes HANDOFF)
+> Implementation frozen SHA: **`90781a370752aea92a16f13aed25294dea9a05a2`** (commit 2)
 > Worktree: `C:\CodeApp\HrP-worktrees\t1a-postdeploy-runtime-correction-2`
 > Branch: `codex/t1a-postdeploy-runtime-correction-2`
 > Baseline: `14712f15a5bc58d406fac784adb174c76d823d33`
