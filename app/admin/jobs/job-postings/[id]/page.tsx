@@ -144,12 +144,32 @@ export default async function AdminJobPostingDetailPage({ params }: PageProps) {
             <RelatedObjects
               title="Job Opening"
               items={posting.opening ? [{
-                id: posting.opening.staffingOrderCode,
-                title: <span className="font-mono">{posting.opening.staffingOrderCode}</span>,
+                // hrp-t1a-postdeploy-runtime-correction-2 (round 2):
+                // wire JobOpening UUID as the React key + add href so the
+                // card deep-links into /admin/job-openings/[id] (was missing).
+                id: posting.opening.id,
+                title: <span className="flex flex-wrap items-center gap-2"><span className="font-mono">{posting.opening.staffingOrderCode}</span><span className="text-xs" style={{ color: 'var(--on-surface-variant)' }} data-testid="opening-subtitle">{posting.opening.status === 'OPEN' ? 'Đã mở — sẵn sàng publish' : posting.opening.status === 'DRAFT' ? 'DRAFT — cần mở trước khi publish' : `Trạng thái: ${posting.opening.status}`}</span></span>,
                 statusLabel: posting.opening.status,
+                href: `/admin/job-openings/${posting.opening.id}`,
               }] : []}
               emptyState="Chưa được gắn với JobOpening nào (orphan)."
             />
+
+            {/* hrp-t1a-postdeploy-runtime-correction-2 (round 2):
+                Server publish route is fail-closed — POST /publish returns
+                409 JOB_OPENING_NOT_OPEN until linked JobOpening reaches OPEN.
+                Show a one-line hint on the JobPosting page so admin sees
+                the next-step bridge before clicking Publish (which is
+                disabled with a reason on the editor shell itself). */}
+            {posting.opening && posting.opening.status !== 'OPEN' && (
+              <p
+                className="mt-2 text-xs italic"
+                style={{ color: 'var(--on-surface-variant)' }}
+                data-testid="opening-cta-hint"
+              >
+                Nút Publish ở trên sẽ bật sau khi JobOpening ở trạng thái OPEN. Mở JobOpening qua liên kết ở trên để chuẩn bị.
+              </p>
+            )}
           </div>
 
           <div className="mt-5 flex flex-wrap items-center gap-2">
