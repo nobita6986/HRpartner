@@ -601,6 +601,37 @@ Therefore:
 - “Universal AFF complete” may be claimed only when the Definition of Done in `docs/V6/aff_plan.md` passes, including the remaining AFF-04 through AFF-07 work where still applicable. P3 may ship with AFF actions hidden and therefore does not by itself prove AFF completion.
 - Deferred work must retain an owner, reopen trigger and evidence reference. Silence or an old unchecked checklist is not a disposition.
 
+### 15.3. P2 execution split — owner reconciliation (2026-10-03)
+
+Owner/Tier 0 has split P2 — Early V8 Experience into two execution envelopes. The split is binding on execution sequencing and on what may be claimed as complete. The historical design under §32–§35 remains in place; this addendum only reconciles the execution order and the completion vocabulary.
+
+| Legacy plan scope | New execution envelope |
+| --- | --- |
+| `P2-A V8.0 Workspace Shell` (§33) | `P2.2-A Workspace Shell` |
+| `P2-B V8.2 Recruiter Microsite` — referral / profile landing minimum (§34, when AFF unavailable) | `P2.1 Recruiter Referral Profile & Attribution V1` |
+| `P2-B V8.2 Recruiter Microsite` — profile management and microsite completion | `P2.2-B Recruiter Microsite Completion` |
+| `AFF-01` → `AFF-04` (`docs/V6/aff_plan.md` §14) | Existing dependencies consumed by `P2.1`; not new tasks |
+| `P3-A` / `P3-B` / `P3-D` (§37, §38, §40) | Stay in `P3`; not pulled into `P2.1` |
+
+Binding addenda:
+
+1. `P2.1` has its own release gate but does NOT close the entire P2 envelope. The formal P2 closeout runs only after `P2.2` completes.
+2. `P2.1` does NOT rebuild AFF from scratch, does NOT create a duplicate schema/model/route/RPC, and does NOT reopen `AFF-01` → `AFF-04`. Their HANDOFF/CLOSEOUT are pinned and authoritative.
+3. `P2.1` may NOT claim `UNIVERSAL_AFF_COMPLETE`. Allowed claims: `P2.1 Recruiter Referral Profile & Attribution V1 = COMPLETE`; `AFF attribution / distribution capability = USER_FACING_AND_PRODUCTION_VERIFIED`.
+4. `P2.2` must NOT pull in `P3` Appearance Lite, full Verified Profile, Featured Jobs curation, the full Share Kit, or any `V9` work.
+5. The pre-P2 execution order is owned by `docs/important/HRPARTNER_OPERATIONAL_WORKFLOW_DEBT_EXECUTION_DECISION.md` §D (Mốc 0 → 3). `P2.1` planning or `READY_TO_CODE` contracts do NOT open before Mốc 3 records a disposition.
+
+Full binding text — scope, AFF carry-forward matrix, release gate, predecessor regression requirements, production posture, completion vocabulary, boundaries and cross-document consistency: [`docs/important/HRPARTNER_P2_EXECUTION_SPLIT_DECISION.md`](important/HRPARTNER_P2_EXECUTION_SPLIT_DECISION.md).
+
+Historical design (this section is preserved as reference, not reopened):
+
+- §32 — P2 unlock rule (`P2` does NOT require "all V7 complete").
+- §33 — `P2-A` V8.0 Workspace Shell (now `P2.2-A`).
+- §34 — `P2-B` V8.2 Recruiter Microsite (split into `P2.1` and `P2.2-B`).
+- §35 — P2 release gate "Milestone M2" remains the formal P2 closeout; it is reached only after both `P2.1` and `P2.2` close.
+- §36 → §42 — P3 unchanged.
+- §43 → §45 — P4 / P5 unchanged.
+
 ---
 
 # 16. P0 — PRODUCTION SAFETY & INTEGRATION FOUNDATIONS
