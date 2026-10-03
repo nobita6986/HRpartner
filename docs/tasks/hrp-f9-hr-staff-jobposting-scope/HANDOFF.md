@@ -8,7 +8,7 @@
 | --- | --- |
 | Task slug | `hrp-f9-hr-staff-jobposting-scope` |
 | Spec version | `v1.1` (correction batch 1/1 contract delta per T0) |
-| Status | `READY_FOR_AUDIT` (correction batch 1/1 PASS, F9 integration ×3 fresh processes 12/12 each, predecessor regressions 43/43, all canonical gates PASS) |
+| Status | `BLOCKED` (F9 correction batch 1/1 exhausted; X4/X5 retained as predecessor evidence; F9-B write-boundary hardening required to close B-01/B-02/B-03 raised by T0 pre-audit review; see `docs/tasks/hrp-f9b-jobposting-write-boundary-hardening/HANDOFF.md` for resolution) |
 | Worktree | `C:\CodeApp\HrP-worktrees\t1a-f9-hr-staff-jobposting-scope` |
 | Branch | `codex/t1a-f9-hr-staff-jobposting-scope` |
 | Baseline | `6015361bb986b920bad6a90f8f9986165a4a99d5` |
@@ -17,9 +17,9 @@
 | Predecessor implementation SHA | `5bd1a3ea1bb2e8b973f89325fe69cd131ffbb00a` (X1 — failed round-1 implementation; preserved as evidence per T0 disposition) |
 | Docs/evidence freeze SHA | `X5` (this commit) |
 | Delivery protocol | `V2_FAST_FREEZE` |
-| Frozen delivery | `YES` |
-| Canonical gates | `PASS` |
-| Audit eligibility | `ELIGIBLE` |
+| Frozen delivery | `NO` (X4 semantic SHA was frozen at X4; the docs/evidence freeze SHA X5 is the LAST frozen commit in this chain. The corrected delivery is **deferred** to F9-B. No F9 implementation push occurred. The X4/X5 chain is preserved as predecessor evidence for F9-B.) |
+| Canonical gates | `FAIL / WRITE_BOUNDARY_HARDENING_REQUIRED` (T0 pre-audit review found B-01 = `hrp_f9_slots_staff_update` is column-agnostic UPDATE authority on `staffing_order_slots`, B-02 = AC-07 is sequential revoke-then-create not a true two-connection race, B-03 = static migration-text checks do not prove direct DB denial. Resolution: F9-B opens `hrp-f9b-jobposting-write-boundary-hardening` to remove the broad slot policy and ship a tightly bounded SECURITY DEFINER binding primitive.) |
+| Audit eligibility | `NOT_ELIGIBLE` (F9-B must PASS first; F9 controls are no longer the audit target) |
 | Audit mode | `LIGHT` |
 | Assurance lane | `CRITICAL` |
 | Execution round | `2` (round 1 = `5bd1a3ea` BLOCKED at 7/12; round 2 = `0d38042f` PASS at 12/12 ×3) |
@@ -30,7 +30,7 @@
 | Synthetic DB preflight | `POSTURE_OK writer_is_writer admin_is_admin same_target` (writer `rolsuper=false, rolbypassrls=false`; admin `bypassrls=true`; `ep-empty-forest-azlhfyo9-*` host prefix; `neondb` database; production `ep-shy-tree-*` URLs in source file were **counted-and-ignored**, never selected — `ignored_production_lines=2`) |
 | Synthetic migration deploy | `OK` — `prisma migrate deploy` against `ep-empty-forest-azlhfyo9-*` applied `20261003000000_f9_hr_staff_posting_write_rls` and `20261003000001_f9_hr_staff_posting_insert_rls`; all four narrow policies (`hrp_f9_slots_staff_update`, `hrp_f9_postings_staff_update`, `hrp_f9_openings_staff_insert`, `hrp_f9_postings_staff_insert`) verified live in `pg_policies`. |
 | Production DB/migration | `NOT_RUN` (production `ep-shy-tree-*` host prefix never dialed) |
-| Next gate | `TIER3_LIGHT_AUDIT` on exact frozen Implementation SHA `0d38042f7ccc41fafd12cb11de8e0d1fd3ee5c26`. Pipeline = `/audit hrp-f9-hr-staff-jobposting-scope` → one consolidated correction batch if any → closeout. **Not** `T0_RUNTIME_REPRODUCE`. |
+| Next gate | `F9B_WRITE_BOUNDARY_HARDENING` — T0 disposition (`CHANGES_REQUIRED / NOT_READY_FOR_AUDIT`) on X4/X5. The new bounded CRITICAL follow-up is `hrp-f9b-jobposting-write-boundary-hardening` (this repo, same worktree lineage; baseline = `1b9bbd9f809e2251b501c288bd3d63179fcb4ee7` = F9 X5). Once F9-B is implemented + frozen + canonical-gated + docs/evidence-freeze committed, Tier 3 reviews the combined final semantic SHA (X4 + F9-B). **NOT** `TIER3_LIGHT_AUDIT` on this F9 chain alone. |
 
 ## 1. Outcome and changed surface
 
@@ -188,6 +188,22 @@ The new guard runs INSIDE the `withIdempotency` body. A replay of the same `Idem
 - Mốc 2 / Mốc 3 not opened; no merge to `main` performed by Tier 1; no production DB or production migration touched; `ep-shy-tree-*` host prefix never dialed.
 - Tier 3 LIGHT audit NOT called per T0 directive boundary ("STOP after handback to T0").
 
-— Tier 1 (T1A), 2026-10-03
+## 6. F9 → F9-B disposition
 
-Handoff status: READY_FOR_AUDIT (correction batch 1/1 PASS; awaiting TIER3_LIGHT_AUDIT)
+| Field | Value |
+| --- | --- |
+| T0 verdict on X4/X5 | `CHANGES_REQUIRED / NOT_READY_FOR_AUDIT` (T0 → T1A, 2026-10-03) |
+| F9 correction budget | `1/1` exhausted (immutable; no further correction batch on this chain) |
+| Resolution task | `hrp-f9b-jobposting-write-boundary-hardening` (bounded CRITICAL follow-up at the same Priority 1 / Mốc 1) |
+| F9-B baseline | `1b9bbd9f809e2251b501c288bd3d63179fcb4ee7` (this F9 X5 docs/evidence freeze SHA) |
+| F9-B branch | `codex/t1a-f9b-jobposting-write-boundary-hardening` |
+| F9-B contract gate | `READY_TO_CODE` (`docs/tasks/hrp-f9b-jobposting-write-boundary-hardening/TASK.md` v1.0) |
+| F9-B audit target | combined final semantic SHA = X4 + F9-B; Tier 3 reviews both |
+| Blockers F9-B closes | B-01 (broad `hrp_f9_slots_staff_update`); B-02 (sequential revoke-then-create race); B-03 (static-text-only proof) |
+| Original F9 status | `BLOCKED` |
+| Original F9 frozen delivery | `NO` |
+| Original F9 canonical gates | `FAIL / WRITE_BOUNDARY_HARDENING_REQUIRED` |
+| Original F9 audit eligibility | `NOT_ELIGIBLE` |
+| Original F9 next gate | `F9B_WRITE_BOUNDARY_HARDENING` |
+
+— Tier 1 (T1A), 2026-10-03 (F9 correction batch 1/1 handback BLOCKED at pre-audit review; F9-B contract authored).
