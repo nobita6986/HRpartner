@@ -12,7 +12,7 @@
 | Worktree | `C:\CodeApp\HrP-worktrees\t1a-f9b-jobposting-write-boundary-hardening` |
 | Branch | `codex/t1a-f9b-jobposting-write-boundary-hardening` |
 | Baseline | `1b9bbd9f809e2251b501c288bd3d63179fcb4ee7` |
-| Implementation SHA | see `git log --no-decorate --oneline 1b9bbd9f..HEAD` (the commit that freezes this implementation) |
+| Implementation SHA | `cd31696601ac9c6ce37c86b2594e9c53dd34791c` |
 | Docs / evidence freeze SHA | see HEAD |
 | Predecessor implementation SHA (F9 X4) | `0d38042f7ccc41fafd12cb11de8e0d1fd3ee5c26` |
 | Predecessor docs / evidence freeze SHA (F9 X5) | `1b9bbd9f809e2251b501c288bd3d63179fcb4ee7` |
@@ -111,23 +111,26 @@ No `prisma/schema.prisma` edit; no `package.json` / `pnpm-lock.yaml` / `pnpm-wor
 
 ## 3. Acceptance Evidence
 
+> Contract gate: `pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-f9b-jobposting-write-boundary-hardening/TASK.md` → **RESULT: PASS** (`READY_FOR_EXECUTION` + `READY_TO_CODE`).
+
 | AC | Description | Evidence | Result |
 | --- | --- | --- | --- |
-| AC-01 | Happy path: assigned HR_STAFF creates + binds + JobPosting DRAFT; primitive-level idempotent replay returns same canonical rows; zero residue. | `p1a06-f9b-jobposting-write-boundary.integration.test.ts > AC-01` | PASS |
-| AC-02 | Direct DB negative proof as writer + HR_STAFF GUC (denied: position_title, position_code, work_location, slots_needed, slots_filled, valid_to, staffing_order_id, job_opening_id; cross-slot; cross-order; other-recruiter; unassigned; revoked; PUBLIC cannot EXECUTE; zero side effects). | `p1a06-f9b-jobposting-write-boundary.integration.test.ts > AC-02.a..h` | PASS |
-| AC-03 | True two-connection revoke-before-create race → fail closed with one exact canonical code (NO_ACTIVE_ORDER_ASSIGNMENT 403), zero JobOpening, zero JobPosting, zero slot binding. | `p1a06-f9b-jobposting-write-boundary.integration.test.ts > AC-03` | PASS |
-| AC-04 | Policy / function live posture: `hrp_f9_slots_staff_update` does not exist; new primitive exists; fixed search_path; PUBLIC no EXECUTE; writer grants only; no HR_STAFF DELETE; no broad StaffingOrder write relaxation; final exact-ID residue = 0. | `p1a06-f9b-jobposting-write-boundary.integration.test.ts > AC-04.a..e` | PASS |
-| AC-05 | Hardened `hrp_f9_openings_staff_insert`: HR_STAFF cannot insert foreign slot; cannot insert assigned order + foreign slot. | `p1a06-f9b-jobposting-write-boundary.integration.test.ts > AC-05.a, b` | PASS |
-| AC-06 | F9 regression gate — `p1a05-f9-hr-staff-jobposting-scope.integration.test.ts` 12/12 ×3 fresh processes. | `p1a05-f9-hr-staff-jobposting-scope.integration.test.ts` | PASS |
-| AC-07 | Predecessor DB regressions: `job-posting-authoring` (13/13), `p1a04-scoped-recruiter-authority` (19/19), `p1a04-canonical-flow` (11/11), `p1a04-r3-substantive` (7/7), `p1a05-job-opening-readiness` (28/28). | integration suite | PASS |
-| AC-08 | Required-relation sweep → 11/11 PASS. | `required-relation-sweep.static.test.ts` | PASS |
-| AC-09 | F9-B primitive static guard → 10/10 PASS. | `f9b-slot-opening-binding-primitive.static.test.ts` | PASS |
-| AC-10 | Authoring unit tests → 33/33 PASS. | `job-posting-authoring.service.test.ts` | PASS |
-| AC-11 | Full unit suite → 3611 / 9 skipped / 0 failed. | `npx vitest run -c vitest.unit.config.ts` | PASS |
-| AC-12 | `npx prisma validate` → PASS. | shell | PASS |
-| AC-13 | `npx tsc --noEmit` → PASS (zero diagnostics). | shell | PASS |
-| AC-14 | `npm run lint` → PASS (warnings only, pre-existing). | shell | PASS |
-| AC-15 | `npm run build` → PASS (production build). | shell | PASS |
+| — | Contract gate (`verify-task.ps1 -TaskPath .../TASK.md`) | `pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-f9b-jobposting-write-boundary-hardening/TASK.md` | RESULT: PASS |
+| AC-01 | Happy path: assigned HR_STAFF creates + binds + JobPosting DRAFT; primitive-level idempotent replay returns same canonical rows; zero residue. | EV-04 — `npx vitest run -c vitest.integration.config.ts tests/db/p1a06-f9b-jobposting-write-boundary.integration.test.ts` (> AC-01) (17/17) | PASS |
+| AC-02 | Direct DB negative proof as writer + HR_STAFF GUC (denied: position_title, position_code, work_location, slots_needed, slots_filled, valid_to, staffing_order_id, job_opening_id; cross-slot; cross-order; other-recruiter; unassigned; revoked; PUBLIC cannot EXECUTE; zero side effects). | EV-04 — `npx vitest run -c vitest.integration.config.ts tests/db/p1a06-f9b-jobposting-write-boundary.integration.test.ts` (> AC-02.a..h) (8/8 cases) | PASS |
+| AC-03 | True two-connection revoke-before-create race → fail closed with one exact canonical code (NO_ACTIVE_ORDER_ASSIGNMENT 403), zero JobOpening, zero JobPosting, zero slot binding. | EV-04 — `npx vitest run -c vitest.integration.config.ts tests/db/p1a06-f9b-jobposting-write-boundary.integration.test.ts` (> AC-03) (1/1) | PASS |
+| AC-04 | Policy / function live posture: `hrp_f9_slots_staff_update` does not exist; new primitive exists; fixed search_path; PUBLIC no EXECUTE; writer grants only; no HR_STAFF DELETE; no broad StaffingOrder write relaxation; final exact-ID residue = 0. | EV-04 — `npx vitest run -c vitest.integration.config.ts tests/db/p1a06-f9b-jobposting-write-boundary.integration.test.ts` (> AC-04.a..e) (5/5 cases) | PASS |
+| AC-05 | Hardened `hrp_f9_openings_staff_insert`: HR_STAFF cannot insert foreign slot; cannot insert assigned order + foreign slot. | EV-04 — `npx vitest run -c vitest.integration.config.ts tests/db/p1a06-f9b-jobposting-write-boundary.integration.test.ts` (> AC-05.a, b) (2/2) | PASS |
+| AC-06 | F9 regression gate — `p1a05-f9-hr-staff-jobposting-scope.integration.test.ts` 12/12 ×3 fresh processes. | EV-05 — `npx vitest run -c vitest.integration.config.ts tests/db/p1a05-f9-hr-staff-jobposting-scope.integration.test.ts` (12/12 ×3) | PASS |
+| AC-07 | Predecessor DB regressions: `job-posting-authoring` (13/13), `p1a04-scoped-recruiter-authority` (19/19), `p1a04-canonical-flow` (11/11), `p1a04-r3-substantive` (7/7), `p1a05-job-opening-readiness` (28/28). | EV-06 — `npx vitest run -c vitest.integration.config.ts tests/db/job-posting-authoring.integration.test.ts tests/db/p1a04-scoped-recruiter-authority.integration.test.ts tests/db/p1a04-canonical-flow.integration.test.ts tests/db/p1a04-r3-substantive.integration.test.ts tests/db/p1a05-job-opening-readiness.integration.test.ts` (78/78) | PASS |
+| AC-08 | Required-relation sweep → 11/11 PASS. | EV-07 — `npx vitest run src/shared/security/required-relation-sweep.static.test.ts` (11/11) | PASS |
+| AC-09 | F9-B primitive static guard → 10/10 PASS. | EV-08 — `npx vitest run src/shared/security/f9b-slot-opening-binding-primitive.static.test.ts` (10/10) | PASS |
+| AC-10 | Authoring unit tests → 33/33 PASS. | EV-09 — `npx vitest run src/domains/staffing/job-posting-authoring.service.test.ts` (33/33) | PASS |
+| AC-11 | Full unit suite → 3611 / 9 skipped / 0 failed. | EV-10 — `npx vitest run -c vitest.unit.config.ts` (219/219 files, 3611 passed, 9 skipped, 0 failed) | PASS |
+| AC-12 | `npx prisma validate` → PASS. | EV-11 — `npx prisma validate` exit code 0 | PASS |
+| AC-13 | `npx tsc --noEmit` → PASS (zero diagnostics). | EV-11 — `npx tsc --noEmit` exit code 0 | PASS |
+| AC-14 | `npm run lint` → PASS (warnings only, pre-existing at F9 X5 SHA `1b9bbd9f`; reproduction: `git checkout 1b9bbd9f -- . && npm run lint` produces the same warnings; baseline commit `c0f4dc69` (UTF-8 helpers + lint baseline) pre-dates F9-B). | EV-11 — `npm run lint` exit code 0 | PASS |
+| AC-15 | `npm run build` → PASS (production build). | EV-11 — `npm run build` exit code 0 | PASS |
 
 ## 4. Changed Deliverables
 
@@ -185,7 +188,6 @@ The only material deviation from the TASK's `DEC-04` was the discovery that the 
 
 | Round | Status | Notes |
 | --- | --- | --- |
-| 0 | READY_FOR_EXECUTION | Control + handbook frozen. |
 | 1 | READY_FOR_AUDIT | Implementation complete; canonical gates PASS; docs/evidence freeze committed. |
 
 No correction batch has been used. F9-B budget = 1.
