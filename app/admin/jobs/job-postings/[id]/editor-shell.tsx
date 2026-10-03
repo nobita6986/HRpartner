@@ -294,13 +294,44 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
   );
 
   const canPublish = useMemo(() => {
-    return (
-      canMutate &&
-      status === 'DRAFT' &&
-      title.trim().length > 0 &&
-      descriptionJson !== null
-    );
-  }, [canMutate, status, title, descriptionJson]);
+    if (!canMutate) return false;
+    if (status !== 'DRAFT') return false;
+    if (title.trim().length === 0) return false;
+    if (descriptionJson === null) return false;
+    // hrp-t1a-postdeploy-runtime-correction-2 (round 2): the server
+    // contract `JOB_OPENING_NOT_OPEN` (409) is preserved as-is — we
+    // only gate the click on the client side so admin sees the bridge
+    // (link + reason) instead of hitting a useless 409. Source of truth
+    // for the OPENED state is `initial.opening?.status`; the server
+    // still re-validates on every call.
+    if (initial.opening === null) return false;
+    if (initial.opening.status !== 'OPEN') return false;
+    return true;
+  }, [canMutate, status, title, descriptionJson, initial.opening]);
+
+  // hrp-t1a-postdeploy-runtime-correction-2 (round 2): explain WHY
+  // Publish is disabled so admin has an actionable next step.
+  const publishBlockedReason = useMemo<string | null>(() => {
+    if (!canMutate) {
+      return 'Role hiện tại không có quyền publish JobPosting.';
+    }
+    if (status !== 'DRAFT') {
+      return `JobPosting đang ở trạng thái ${status}; chỉ JobPosting DRAFT mới publish được.`;
+    }
+    if (title.trim().length === 0) {
+      return 'Tiêu đề JobPosting là bắt buộc trước khi publish.';
+    }
+    if (descriptionJson === null) {
+      return 'Mô tả công việc (description) là bắt buộc trước khi publish.';
+    }
+    if (initial.opening === null) {
+      return 'JobPosting chưa gắn với JobOpening nào — không thể publish.';
+    }
+    if (initial.opening.status !== 'OPEN') {
+      return `Linked JobOpening ${initial.opening.id.substring(0, 8)}… đang ở trạng thái ${initial.opening.status}; cần OPEN để publish.`;
+    }
+    return null;
+  }, [canMutate, status, title, descriptionJson, initial.opening]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -343,6 +374,7 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
             onClick={() => runStateMutation('publish')}
             label="Publish"
             primary
+            dataTestid="publish-button"
           />
           <ActionButton
             disabled={!canMutate || isSaving || status !== 'PUBLISHED'}
@@ -357,6 +389,45 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
           />
         </div>
       </section>
+
+      {/* hrp-t1a-postdeploy-runtime-correction-2 (round 2):
+          Publish-gating UX. The server contract `JOB_OPENING_NOT_OPEN` (409)
+          is preserved. We expose the disabled reason + a deep-link into the
+          JobOpening so admin has an actionable next step instead of a dead
+          end (was the bug Owner captured: nút Publish bật nhưng server 409
+          fail-closed mà không có bridge). */}
+      {!canPublish && publishBlockedReason && status === 'DRAFT' && (
+        <section
+          className="rounded border p-3 text-sm"
+          style={{
+            borderColor: 'var(--outline-variant)',
+            backgroundColor: 'var(--color-surface-container)',
+            color: 'var(--on-surface-variant)',
+          }}
+          data-testid="publish-blocked-banner"
+          role="status"
+          aria-live="polite"
+        >
+          <div className="font-medium" style={{ color: 'var(--on-surface)' }}>
+            Publish chưa sẵn sàng
+          </div>
+          <p className="mt-1" data-testid="publish-blocked-reason">
+            {publishBlockedReason}
+          </p>
+          {initial.opening !== null && initial.opening.status !== 'OPEN' && (
+            <p className="mt-1">
+              <a
+                href={`/admin/job-openings/${initial.opening.id}`}
+                className="text-sm font-medium underline"
+                style={{ color: 'var(--color-primary-dark)' }}
+                data-testid="publish-blocked-link"
+              >
+                Mở JobOpening {initial.opening.id.substring(0, 8)}… để chuẩn bị
+              </a>
+            </p>
+          )}
+        </section>
+      )}
 
       {errorMessage && (
         <div
@@ -532,12 +603,17 @@ function ActionButton({
   disabled,
   primary,
   danger,
+  dataTestid,
 }: {
   label: string;
   onClick: () => void;
   disabled: boolean;
   primary?: boolean;
   danger?: boolean;
+  // hrp-t1a-postdeploy-runtime-correction-2 (round 2): optional test hook
+  // for the Publish button. Other ActionButton call sites can keep their
+  // existing rendered markup.
+  dataTestid?: string;
 }) {
   const bg = primary
     ? 'var(--color-primary-soft)'
@@ -550,6 +626,7 @@ function ActionButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
+      data-testid={dataTestid}
       className="rounded border px-3 py-1 text-sm font-medium"
       style={{
         borderColor: primary ? 'var(--color-primary)' : danger ? '#f5b5b5' : 'var(--outline)',
