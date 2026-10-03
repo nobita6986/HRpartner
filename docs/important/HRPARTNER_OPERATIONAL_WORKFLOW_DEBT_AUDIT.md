@@ -123,6 +123,7 @@ A finding without these is either rejected or downgraded to a P3 note.
 | Audit worktree | `C:/CodeApp/HrP-worktrees/t1c-operational-workflow-debt-audit` |
 | Audit author | T1C (docs-only) |
 | Production cutover status | P1 was ACCEPTED on 2026-10-02 (per `docs/important/HRP_PRODUCTION_GO_LIVE_HANDOFF_2026-10-02.md`); this audit runs against the post-cutover main at `14712f15` |
+| Post-baseline resolution note | See `§19` for findings whose resolution state changed after PR #86 (`f6100c39`) merged into main. The audit baseline is preserved as `14712f15` for provenance; post-baseline changes are recorded in `§19` without rewriting §5–§18 ledger entries. |
 
 Method: two-direction walk per workflow domain (UI ↔ backend), pattern checklist, role matrix, evidence rules per `Section 3`.
 
@@ -778,3 +779,43 @@ F9 remains **suspected**. The audit did NOT run a synthetic HR_STAFF session in 
 9. **PR #85 CI state**: 4/4 green (Quality / Integration / Vercel preview deploy / Vercel Preview Comments).
 
 **Stop before merge. Do not modify source. Do not assign work. Do not deploy.**
+
+## 19. Post-baseline resolution note (post-PR-#86 reconcile, 2026-10-03)
+
+This section records resolution state changes observed after PR #86 (`f6100c39`) merged into `main`. The audit baseline `14712f15` is preserved for provenance; this note does NOT rewrite `§5`–`§18`. The forward-only merge commit that brought PR #86 into this audit branch is recorded in `§17.4`.
+
+### 19.1 Findings resolved by PR #86 (effective main `f6100c39`)
+
+- **F1 (P1, CONFIRMED)**: **RESOLVED**. PR #86 (`codex/t1a-postdeploy-runtime-correction-2`) added `editor-shell.tsx:296-310` `canPublish` gate that consults `initial.opening.status !== 'OPEN'` and disables the Publish action accordingly; `editor-shell.tsx:312-336` `publishBlockedReason` returns a server-derived, locale-correct reason; `editor-shell.tsx:415-426` renders a recovery `<a href="/admin/job-openings/{id}">` CTA when `initial.opening.status !== 'OPEN'`. The server `JOB_OPENING_NOT_OPEN` precondition remains as defence-in-depth.
+- **F5 (P2, MISSING_CONTEXT)**: **RESOLVED**. PR #86 added the publish-blocked banner with `data-testid="publish-blocked-reason"` (renders `publishBlockedReason`) and `data-testid="publish-blocked-link"` (CTA to `/admin/job-openings/[id]`). No raw 409 message echo remains for the linked-JobOpening-DRAFT case.
+- Resolution classification: `RESOLVED` (full). No partial markers. Implementation source verified at PR #86 SHA range `e61d87c4`…`162453e2` (4 commits: CTA hint, gate + Outcome B+C, HANDOFF, frozen SHA pin).
+
+### 19.2 Findings NOT resolved by PR #86 (open against `f6100c39`)
+
+- **F7 (P3, BROKEN_LINKAGE)**: **OPEN**. `app/admin/jobs/job-postings/page.tsx:307-315` still renders `<span className="font-mono">{item.openingStaffingOrderCode}</span>` with the inline `(JobOpening: {item.openingStatus})` suffix, no `<Link>` wrapper, no `jobOpeningId` link. Re-baseline confirmed.
+- **F8 (P3, MISSING_CONTEXT + OBSERVABILITY_GAP)**: **OPEN**. `app/admin/jobs/job-postings/[id]/editor-shell.tsx:84-91` `readErrorMessage` still returns `body?.message ?? body?.error ?? HTTP ${res.status}`. No code-to-Vietnamese-message mapper exists for `JOB_OPENING_NOT_OPEN` / `INVALID_STATE_TRANSITION` / `INVALID_REVISION` / `IDEMPOTENCY_CONFLICT`. The 409 path is now avoided for the publish case (F5) but remains for other server surfaces. Re-baseline confirmed.
+
+### 19.3 Findings that remain unchanged
+
+- **F2 (P2)** — LaborProfile sidebar missing. PR #86 did not touch `ADMIN_NAV_PHASE4` or `app/admin/labor-profiles/*`. Open.
+- **F3 (subfinding of F2)** — covered by F2 fix when it lands.
+- **F4 / F13** — Defered per T0/Owner directive C. PR #86 did not touch "Đang phát triển" section or the four pages.
+- **F6 (P2)** — Placement action cell context copy. PR #86 did not touch `src/domains/talent/recruiter-workbench.read-service.ts` or the action cell. Open.
+- **F9 (P2 / P1-risk candidate, suspected)** — HR_STAFF JobPosting create-form scoping. PR #86 did not touch the selector predicate or the create write path. Suspected; reproduction pending.
+- **F10a / F10b / FILLED / CANCELLED / ARCHIVED / EFFECTIVE** — terminal-state analysis unchanged.
+- **F11 (P3)** — Project publish vs JobPosting publish terminology. PR #86 did not rename buttons. Open.
+- **F12** — moved to `§14` (no issue found). Unchanged.
+- **F14 (P3)** — Recruiter Workbench case deep-link. PR #86 did not touch `PrimaryActions.tsx`. Open.
+
+### 19.4 Updated confirmed / open / resolved counts after PR #86
+
+| Status | Count | Findings |
+| --- | --- | --- |
+| RESOLVED by PR #86 | 2 | F1, F5 |
+| OPEN (still valid against `f6100c39`) | 7 | F2, F3 (subfinding of F2), F6, F7, F8, F9 (suspected), F11, F14 (the count is 7 unique findings; F3 is subfinding of F2 and not counted independently per `§18.2` rules) |
+| DEFERRED | 4 | F4, F13 (merged), F10a (roadmap), F10b (non-blocking P3) |
+| CLOSED NO ISSUE | 1 | F12 |
+
+### 19.5 Cross-document consistency
+
+- The execution decision document (`docs/important/HRPARTNER_OPERATIONAL_WORKFLOW_DEBT_EXECUTION_DECISION.md`) MUST reference `RESOLVED = {F1, F5}` against `f6100c39` and `OPEN = {F2, F3, F6, F7, F8, F9, F11, F14}` to remain consistent with this `§19`. F4/F13/F10/F12 disposition matches `§18.3`.
