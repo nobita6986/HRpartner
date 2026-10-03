@@ -1,8 +1,9 @@
 # HRPartner — Maintainability Reference (T1C)
 
 > Document status: NON-AUTHORITATIVE REFERENCE
-> Measured against main SHA: cdde6cef
+> Measured against main SHA: ce18f8af
 > Measurement date: 2026-10-03
+> Reconciliation note: header SHA was cdde6cef at first authoring; re-pinned to ce18f8af after forward-only merge of origin/main (PR #83, 02:57 +0700).
 > Owner: T0/Owner
 > Supersedes: none
 > Conflict rule: authority documents win
@@ -95,13 +96,20 @@ One-line index (link above for full rule):
 
 ## 7. Evidence-backed current repository observations
 
-Measured against `cdde6cef` on 2026-10-03.
+Measured against `ce18f8af` on 2026-10-03.
+
+### 7.0 Reconciliation history
+
+| Header SHA at commit | When | Why |
+| --- | --- | --- |
+| `cdde6cef` | 2026-10-03 11:50 (commit `b531140a`) | First authoring; main HEAD was `cdde6cef` (PR #78 go-live handoff). |
+| `ce18f8af` | 2026-10-03 ~12:00 (commit `<this>`) | After forward-only merge of `origin/main` (PR #83 admin sidebar realignment). Evidence was re-measured; size landscape and capability list are unchanged. |
 
 ### 7.1 File-size landscape
 
-Total production TS/TSX files (`src/`, `app/`, `lib/`): **529**.
-Files >500 lines: **39** (`>500` = review-required per `AI_CODING_GUARDRAILS.md` §2.2).
-Files >700 lines: **19** (`>700` = architecture smell by default).
+Total production TS/TSX files (`src/`, `app/`, `lib/`): **531** (was 529 on `cdde6cef`; +2 = PR #82 UnderDevelopment.tsx + test).
+Files >500 lines: **39** (`>500` = review-required per `AI_CODING_GUARDRAILS.md` §2.2; 19 in the 500–700 band + 20 over 700).
+Files >700 lines: **20** (`>700` = architecture smell by default; +1 from `cdde6cef` due to PR #82/83 net additions).
 
 Top hotspots (>700 lines, sorted desc):
 
@@ -123,7 +131,7 @@ These are review-required. They are NOT automatic refactor targets — only `BLO
 
 ### 7.2 `process.env` usage
 
-`process.env.*` referenced in **32 files** under `src/` (132 hits) plus **109 hits in tests**. There is no `src/shared/config/env.server.ts` or equivalent. Env reading is currently scattered through `src/shared/auth/jwt.ts`, `src/shared/auth/cron-auth.ts`, `src/shared/auth/internal-webhook-auth.ts`, `src/shared/feature-flags.ts`, `src/db/engine-client.ts`, `src/domains/referrals/redirect-token.ts`, etc. This is real debt; it is not blocking current work unless a task touches env shape.
+`process.env.*` referenced in **40 files** under `src/` (was 32 on `cdde6cef`; +8 from PR #82/83 admin role-guard + commission page reduction). There is no `src/shared/config/env.server.ts` or equivalent. Env reading is currently scattered through `src/shared/auth/jwt.ts`, `src/shared/auth/cron-auth.ts`, `src/shared/auth/internal-webhook-auth.ts`, `src/shared/feature-flags.ts`, `src/db/engine-client.ts`, `src/domains/referrals/redirect-token.ts`, etc. This is real debt; it is not blocking current work unless a task touches env shape.
 
 ### 7.3 Maintainability capabilities already present
 
