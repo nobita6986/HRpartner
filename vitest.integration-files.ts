@@ -189,4 +189,16 @@ export const INTEGRATION_TEST_FILES: string[] = [
   // Self-skips via describe.skipIf when DATABASE_URL_TEST + DATABASE_URL_ADMIN_TEST
   // are absent (ENV_BLOCKED).
   'tests/db/p1a05-job-opening-readiness.integration.test.ts',
+  // hrp-f9-hr-staff-jobposting-scope: synthetic DB proof for the
+  // dual-boundary guard on the JobPosting authoring surface. Covers
+  // AC-01..AC-10, AC-12, AC-13, AC-17 of the F9 V2 contract v1.0
+  // (selector narrowing for HR_STAFF, server-write-boundary
+  // `assertHrStaffRecruiterScope` in `assertSlotEligibleForNewJobPosting`
+  // and the four write/read paths, revoke race, cross-order
+  // ADMIN/HR_MANAGER bypass, canonical-safe error envelope, zero-residue
+  // teardown). Self-skips via describe.skipIf when DATABASE_URL_TEST +
+  // DATABASE_URL_ADMIN_TEST are absent (ENV_BLOCKED — awaits T0
+  // authorization of the `ep-empty-forest-azlhfyo9-*` Neon writer/admin
+  // pair).
+  'tests/db/p1a05-f9-hr-staff-jobposting-scope.integration.test.ts',
 ];

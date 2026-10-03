@@ -384,6 +384,42 @@ export function openableJobOpeningPredicateSql(now: Date): Prisma.Sql {
 }
 
 /**
+ * hrp-f9-hr-staff-jobposting-scope STEP-07 (DEC-07): scoped-recruiter
+ * selector predicate for HR_STAFF callers.
+ *
+ * Adds an `EXISTS (SELECT 1 FROM staffing_order_recruiter_assignments ...)`
+ * clause that requires the calling HR_STAFF to hold an ACTIVE
+ * `StaffingOrderRecruiterAssignment` for the slot's parent `StaffingOrder`.
+ * Mirrors the canonical P1-A0.4 RLS helper
+ * `hrp_staffing_order_visible_for` (see
+ * `prisma/migrations/20260928220000_p1a04_scoped_recruiter_authority/migration.sql`).
+ *
+ * The caller composes this with the BASE capacity/time/order predicate
+ * via SQL `AND`. The composed SQL runs INSIDE the same transaction as
+ * `assertSlotEligibleForNewJobPosting` (which re-reads the assignment
+ * row in `assertActiveRecruiterForOrder`), so selector and write-path
+ * observe the same authority posture.
+ *
+ * Returns the SQL `Prisma.sql` fragment for direct embedding into a query
+ * that joins the same `staffing_order_slots s` / `staffing_orders so` alias
+ * pair. `actorId` is interpolated via Prisma's parameterised query — no
+ * string concatenation, no SQL-injection surface.
+ */
+export function eligibleSlotForRecruiterPredicateSql(
+  _now: Date,
+  actorId: string,
+): Prisma.Sql {
+  return Prisma.sql`
+    AND EXISTS (
+      SELECT 1 FROM staffing_order_recruiter_assignments sora
+      WHERE sora.staffing_order_id = s.staffing_order_id
+        AND sora.recruiter_user_id = ${actorId}
+        AND sora.status = 'ACTIVE'
+    )
+  `;
+}
+
+/**
  * Đọc danh sách StaffingOrderSlot đủ điều kiện tạo JobPosting mới.
  *
  * Predicate dịch sang SQL qua `prisma.$queryRaw` — Prisma findMany không có
@@ -405,10 +441,17 @@ export function openableJobOpeningPredicateSql(now: Date): Prisma.Sql {
  */
 export async function listEligibleSlotsForNewJobPosting(
   tx: Prisma.TransactionClient,
-  options: { now?: Date; limit?: number } = {},
+  options: { now?: Date; limit?: number; actorId?: string } = {},
 ): Promise<JobPostingSlotSelectorDto[]> {
   const now = options.now ?? new Date();
   const limit = options.limit && options.limit > 0 ? Math.min(options.limit, 500) : 100;
+  // hrp-f9-hr-staff-jobposting-scope STEP-07 (DEC-07): compose the
+  // scoped-recruiter predicate ONLY when `actorId` is provided. Callers
+  // outside the page (e.g. test fixtures, non-HR_STAFF admin surfaces)
+  // pass `actorId: undefined` and observe the pre-F9 selector behavior.
+  const recruiterPredicate = options.actorId
+    ? eligibleSlotForRecruiterPredicateSql(now, options.actorId)
+    : Prisma.sql``;
 
   type EligibleRow = {
     id: string;
@@ -438,6 +481,7 @@ export async function listEligibleSlotsForNewJobPosting(
     FROM staffing_order_slots s
     INNER JOIN staffing_orders so ON so.id = s.staffing_order_id
     WHERE ${eligibleSlotPredicateSql(now)}
+      ${recruiterPredicate}
     ORDER BY so.code ASC, s.position_code ASC
     LIMIT ${limit}
   `);

@@ -60,6 +60,10 @@ import {
   type RichTextErrorCode,
 } from '@/src/shared/content/job-posting-rich-text';
 import type { AuthContext } from '@/src/shared/auth/auth-context';
+import {
+  assertActiveRecruiterForOrder,
+  RecruiterAssignmentError,
+} from '@/src/domains/talent/recruiter-assignment.service';
 import { eligibleSlotPredicateSql } from './job-posting-list.service';
 // ─────────────────────────────────────────────────────────────────────────────
 // Errors
@@ -73,7 +77,12 @@ export type AuthoringErrorCode =
   | 'INVALID_STATE_TRANSITION'
   | 'JOB_OPENING_NOT_OPEN'
   | 'VALIDATION_FAILED'
-  | 'SLUG_COLLISION';
+  | 'SLUG_COLLISION'
+  // hrp-f9-hr-staff-jobposting-scope: scoped-recruiter authority. Mirrors
+  // P1-A0.4 `RecruiterAssignmentError('NO_ACTIVE_ORDER_ASSIGNMENT', 403)`
+  // surfaced at the JobPosting authoring surface. Stable code; route maps
+  // it to HTTP 403 via the existing `AuthoringError` catch block.
+  | 'NO_ACTIVE_ORDER_ASSIGNMENT';
 
 export class AuthoringError extends Error {
   constructor(
@@ -209,6 +218,53 @@ export function assertMutationRole(ctx: AuthContext): void {
       `Role ${ctx.role} không có quyền mutate JobPosting.`,
       403,
     );
+  }
+}
+
+/**
+ * hrp-f9-hr-staff-jobposting-scope (DEC-03, DEC-05, DEC-08) — scoped-recruiter
+ * authority for the JobPosting authoring surface.
+ *
+ *   - HR_STAFF caller MUST hold an ACTIVE `StaffingOrderRecruiterAssignment`
+ *     on the target `StaffingOrder`. Revoked / unassigned / other-recruiter
+ *     fail-closed with `AuthoringError('NO_ACTIVE_ORDER_ASSIGNMENT', 403)`.
+ *   - ADMIN / HR_MANAGER bypass (matches the canonical P1-A0.4
+ *     `assertActiveRecruiterForOrder` bypass — no other role reaches here
+ *     because `assertMutationRole` already narrows the caller to
+ *     `ALLOWED_MUTATION_ROLES = {ADMIN, HR_MANAGER, HR_STAFF}`).
+ *
+ * Wraps `assertActiveRecruiterForOrder` (read-only consumption) and translates
+ * `RecruiterAssignmentError('NO_ACTIVE_ORDER_ASSIGNMENT', 403)` into the
+ * authoring-side typed error so the route's existing `AuthoringError` catch
+ * block surfaces a stable `error.code` and `error.httpStatus`.
+ *
+ * The error envelope carries NO slot id, NO staffing order id, NO project id,
+ * NO assignee id, NO actor id. The canonical helper's `details` are dropped
+ * intentionally — the helper's default message includes `actorId` and
+ * `staffingOrderId`, which would leak the existence of the foreign order to
+ * the caller.
+ *
+ * Runs INSIDE the same `$transaction` as the mutation so the re-check closes
+ * a revoke race: a revoke that committed between the slot read and the
+ * mutation is observed on the assignment row read here.
+ */
+export async function assertHrStaffRecruiterScope(
+  tx: PrismaTypes.TransactionClient,
+  ctx: AuthContext,
+  staffingOrderId: string,
+): Promise<void> {
+  if (ctx.role !== 'HR_STAFF') return; // bypass for ADMIN/HR_MANAGER
+  try {
+    await assertActiveRecruiterForOrder(tx, ctx.userId, ctx.role, staffingOrderId);
+  } catch (err) {
+    if (err instanceof RecruiterAssignmentError && err.code === 'NO_ACTIVE_ORDER_ASSIGNMENT') {
+      throw new AuthoringError(
+        'NO_ACTIVE_ORDER_ASSIGNMENT',
+        'Bạn không có quyền truy cập StaffingOrder này. Vui lòng liên hệ HR_MANAGER.',
+        403,
+      );
+    }
+    throw err;
   }
 }
 
@@ -370,6 +426,7 @@ function ensureUniqueSlug(
 export async function assertSlotEligibleForNewJobPosting(
   tx: PrismaTypes.TransactionClient,
   slotId: string,
+  ctx: AuthContext,
   now: Date = new Date(),
 ): Promise<SlotRevalidationContext> {
   if (typeof slotId !== 'string' || slotId.length === 0) {
@@ -419,6 +476,16 @@ export async function assertSlotEligibleForNewJobPosting(
   if (!slot) {
     throw new AuthoringError('NOT_FOUND', `StaffingOrderSlot ${slotId} không tồn tại.`, 404);
   }
+
+  // hrp-f9-hr-staff-jobposting-scope STEP-02: server-write-boundary guard.
+  // Runs AFTER `SELECT FOR UPDATE` of the slot row (so a concurrent
+  // `assignRecruiterToOrder` is serialized) and BEFORE predicate validation
+  // (so an unassigned HR_STAFF never sees a 400 INVALID_INPUT leaking the
+  // order's eligibility state). The bypass for ADMIN/HR_MANAGER matches
+  // the canonical P1-A0.4 helper and `ALLOWED_MUTATION_ROLES`. The
+  // `assertHrStaffRecruiterScope` re-reads `staffing_order_recruiter_assignments`
+  // inside the same transaction, closing the revoke race.
+  await assertHrStaffRecruiterScope(tx, ctx, slot.staffing_order_id);
 
   if (slot.order_status !== 'OPEN' && slot.order_status !== 'CLOSING_SOON') {
     throw new AuthoringError(
@@ -506,7 +573,7 @@ export async function createOrReuseJobOpeningForSlot(
   // must fail closed with zero mutation. `assertSlotEligibleForNewJobPosting`
   // shares the predicate with `listEligibleSlotsForNewJobPosting` so the two
   // paths cannot drift.
-  await assertSlotEligibleForNewJobPosting(tx, input.slotId);
+  await assertSlotEligibleForNewJobPosting(tx, input.slotId, ctx);
 
   // 1. Lock the slot row.
   const slotRows = await tx.$queryRaw<
@@ -516,6 +583,15 @@ export async function createOrReuseJobOpeningForSlot(
   if (!slot) {
     throw new AuthoringError('NOT_FOUND', `StaffingOrderSlot ${input.slotId} không tồn tại.`, 404);
   }
+
+  // hrp-f9-hr-staff-jobposting-scope STEP-03: defense-in-depth re-check of
+  // the scoped-recruiter authority AFTER the slot lock. Closes a revoke
+  // race that may have committed between the read inside
+  // `assertSlotEligibleForNewJobPosting` and the actual INSERT/UPDATE
+  // here. The canonical helper reads `staffing_order_recruiter_assignments`
+  // again under the same transaction; a revoke that committed in a parallel
+  // transaction is observed and HR_STAFF fails closed.
+  await assertHrStaffRecruiterScope(tx, ctx, slot.staffing_order_id);
 
   // 2. Reuse if already bound.
   if (slot.job_opening_id) {
@@ -599,6 +675,14 @@ export async function createOrReuseJobPostingDraftForOpening(
   if (!opening) {
     throw new AuthoringError('NOT_FOUND', `JobOpening ${input.jobOpeningId} không tồn tại.`, 404);
   }
+
+  // hrp-f9-hr-staff-jobposting-scope STEP-04: scoped-recruiter authority for
+  // the create-or-reuse chain that runs WITHOUT first calling
+  // `assertSlotEligibleForNewJobPosting`. The opening is the parent of the
+  // posting, so the order anchor derives from `opening.staffingOrderId`.
+  // HR_STAFF callers without an ACTIVE assignment on this order are denied
+  // before any INSERT.
+  await assertHrStaffRecruiterScope(tx, ctx, opening.staffingOrderId);
 
   if (opening.posting) {
     return toJobPostingDto(opening.posting);
@@ -697,6 +781,12 @@ export async function updateDraftContent(
       publishedAt: true,
       isHot: true,
       isUrgent: true,
+      // hrp-f9-hr-staff-jobposting-scope STEP-05: derive the order anchor
+      // for the scoped-recruiter re-check. F9 guard re-reads the assignment
+      // table inside the same transaction; the include is required because
+      // `JobPosting.jobOpeningId` alone is not enough — we need
+      // `JobOpening.staffingOrderId` to call `assertHrStaffRecruiterScope`.
+      jobOpening: { select: { id: true, staffingOrderId: true } },
     },
   });
   if (!current) {
@@ -705,6 +795,17 @@ export async function updateDraftContent(
       `JobPosting ${input.jobPostingId} không tồn tại.`,
       404,
     );
+  }
+  // hrp-f9-hr-staff-jobposting-scope STEP-05: scoped-recruiter re-check on
+  // `updateDraftContent`. Runs AFTER NOT_FOUND (so the caller learns nothing
+  // about a non-existent posting) and BEFORE the state/revision guards (so
+  // an HR_STAFF probing a posting of an unassigned order never sees an
+  // INVALID_STATE_TRANSITION or INVALID_REVISION error that would leak the
+  // posting's lifecycle state). Orphan postings (no `jobOpening`) are
+  // impossible here — the draft is created by
+  // `createOrReuseJobPostingDraftForOpening` which always binds an opening.
+  if (current.jobOpening) {
+    await assertHrStaffRecruiterScope(tx, ctx, current.jobOpening.staffingOrderId);
   }
   if (current.status !== 'DRAFT') {
     throw new AuthoringError(
@@ -784,7 +885,17 @@ export async function publishJobPosting(
 
   const current = await tx.jobPosting.findUnique({
     where: { id: input.jobPostingId },
-    include: { jobOpening: { select: { id: true, status: true } } },
+    include: {
+      jobOpening: {
+        select: {
+          id: true,
+          status: true,
+          // hrp-f9-hr-staff-jobposting-scope STEP-05: extend include to
+          // carry the order anchor for the scoped-recruiter re-check.
+          staffingOrderId: true,
+        },
+      },
+    },
   });
   if (!current) {
     throw new AuthoringError(
@@ -816,6 +927,14 @@ export async function publishJobPosting(
       500,
     );
   }
+  // hrp-f9-hr-staff-jobposting-scope STEP-05: scoped-recruiter re-check on
+  // `publishJobPosting`. Runs AFTER NOT_FOUND + INVALID_STATE_TRANSITION +
+  // INVALID_REVISION (so callers do not learn the order's authority state
+  // from a 409/404 leak) and BEFORE the JOB_OPENING_NOT_OPEN check (so an
+  // unassigned HR_STAFF never sees the linked JobOpening's status — which
+  // would be a foreign-entity metadata leak). `current.jobOpening` is
+  // non-null here per the guard above.
+  await assertHrStaffRecruiterScope(tx, ctx, current.jobOpening.staffingOrderId);
   if (current.jobOpening.status !== 'OPEN') {
     throw new AuthoringError(
       'JOB_OPENING_NOT_OPEN',
@@ -882,13 +1001,28 @@ export async function unpublishJobPosting(
 ): Promise<JobPostingDto> {
   assertMutationRole(ctx);
 
-  const current = await tx.jobPosting.findUnique({ where: { id: input.jobPostingId } });
+  // hrp-f9-hr-staff-jobposting-scope STEP-05: extend the read to include
+  // the linked JobOpening so the scoped-recruiter re-check can derive the
+  // order anchor. Without this include, `unpublishJobPosting` could not
+  // enforce HR_STAFF scope at the order level.
+  const current = await tx.jobPosting.findUnique({
+    where: { id: input.jobPostingId },
+    include: {
+      jobOpening: { select: { id: true, staffingOrderId: true } },
+    },
+  });
   if (!current) {
     throw new AuthoringError(
       'NOT_FOUND',
       `JobPosting ${input.jobPostingId} không tồn tại.`,
       404,
     );
+  }
+  // F9 guard: AFTER NOT_FOUND, BEFORE state/revision guards. See
+  // `updateDraftContent` for the rationale (no foreign-entity metadata
+  // leak through 409/404/INVALID_REVISION envelopes).
+  if (current.jobOpening) {
+    await assertHrStaffRecruiterScope(tx, ctx, current.jobOpening.staffingOrderId);
   }
   if (current.status !== 'PUBLISHED') {
     throw new AuthoringError(
@@ -934,13 +1068,26 @@ export async function archiveJobPosting(
 ): Promise<JobPostingDto> {
   assertMutationRole(ctx);
 
-  const current = await tx.jobPosting.findUnique({ where: { id: input.jobPostingId } });
+  // hrp-f9-hr-staff-jobposting-scope STEP-05: same extend-include pattern
+  // as `unpublishJobPosting`. The scoped-recruiter re-check derives the
+  // order anchor from `jobOpening.staffingOrderId` and fails closed.
+  const current = await tx.jobPosting.findUnique({
+    where: { id: input.jobPostingId },
+    include: {
+      jobOpening: { select: { id: true, staffingOrderId: true } },
+    },
+  });
   if (!current) {
     throw new AuthoringError(
       'NOT_FOUND',
       `JobPosting ${input.jobPostingId} không tồn tại.`,
       404,
     );
+  }
+  // F9 guard: AFTER NOT_FOUND, BEFORE state/revision guards. See
+  // `updateDraftContent` for the rationale.
+  if (current.jobOpening) {
+    await assertHrStaffRecruiterScope(tx, ctx, current.jobOpening.staffingOrderId);
   }
   if (current.status === 'ARCHIVED') {
     throw new AuthoringError(
@@ -975,13 +1122,45 @@ export async function archiveJobPosting(
 // Read helpers (for service-layer tests + admin API)
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * hrp-f9-hr-staff-jobposting-scope STEP-06: scoped-recruiter read helper.
+ *
+ * For HR_STAFF callers, derive the order anchor from the linked
+ * JobOpening and re-check the scoped-recruiter authority. On miss, return
+ * `null` (no existence oracle — the row IS in the database, but the caller
+ * is not authorized to see it). ADMIN / HR_MANAGER bypass.
+ *
+ * The caller is responsible for opening the transaction with the right
+ * `app.role` GUC via `withDbContext`. RLS still filters at the row level as
+ * a backstop; the application-level guard is additive (defense in depth,
+ * contract explicitness).
+ */
 export async function getJobPostingForAuthoring(
   tx: PrismaTypes.TransactionClient,
+  ctx: AuthContext,
   id: string,
 ): Promise<JobPostingDto | null> {
   if (!id || typeof id !== 'string') return null;
-  const row = await tx.jobPosting.findUnique({ where: { id } });
+  const row = await tx.jobPosting.findUnique({
+    where: { id },
+    include: {
+      jobOpening: { select: { id: true, staffingOrderId: true } },
+    },
+  });
   if (!row) return null;
+  if (row.jobOpening) {
+    // F9 guard. For unassigned HR_STAFF on an active row, returns null
+    // silently — no existence oracle. For ADMIN/HR_MANAGER, the helper
+    // bypasses and the row is returned as before.
+    try {
+      await assertHrStaffRecruiterScope(tx, ctx, row.jobOpening.staffingOrderId);
+    } catch (err) {
+      if (err instanceof AuthoringError && err.code === 'NO_ACTIVE_ORDER_ASSIGNMENT') {
+        return null;
+      }
+      throw err;
+    }
+  }
   return toJobPostingDto(row);
 }
 

@@ -96,7 +96,21 @@ const EXPECTED_HITS = [
   // hrp-p1-a0-1 (2026-09-26): line number shifted to 787 because updateDraftContent
   // added `isHot`/`isUrgent` branches, eligibility guard was added, and DTO mapper
   // extended.
-  'src/domains/staffing/job-posting-authoring.service.ts:787 jobOpening',
+  // hrp-f9-hr-staff-jobposting-scope (2026-10-03): F9 STEP-05 extends the
+  // `include: { jobOpening: { select: { id, staffingOrderId } } }` shape on
+  // FOUR write/read paths so the scoped-recruiter re-check can derive the
+  // order anchor. The existing `publishJobPosting` entry (now at 889 after
+  // the F9 line shift) is preserved; four new entries are added (789 for
+  // `updateDraftContent`, 1011 for `unpublishJobPosting`, 1077 for
+  // `archiveJobPosting`, 1147 for `getJobPostingForAuthoring`). All five
+  // selects are RLS-covered (read-only; `withDbContext` sets the GUC
+  // session role; JobOpening is not a recruiter-gated table on its own).
+  // Net +4 entries: 32 → 36 src hits.
+  'src/domains/staffing/job-posting-authoring.service.ts:789 jobOpening',
+  'src/domains/staffing/job-posting-authoring.service.ts:889 jobOpening',
+  'src/domains/staffing/job-posting-authoring.service.ts:1011 jobOpening',
+  'src/domains/staffing/job-posting-authoring.service.ts:1077 jobOpening',
+  'src/domains/staffing/job-posting-authoring.service.ts:1147 jobOpening',
   // P1-A0 STEP-03: line numbers in job-posting-list.service.ts shifted because
   // the DTOs grew (added title, salaryDisplay, *Json, contentSchemaVersion,
   // hasContent). The four select-clauses themselves are unchanged.
@@ -410,7 +424,18 @@ describe('quan hệ BẮT BUỘC trên bảng bị RLS che: tập vị trí sele
     // Sau P1-A04 B-08 (2026-09-29): recruiter-placement.adapter.ts derivePlacementAnchors
     // chọn `placement.jobOpening.staffingOrderId` để compute canonical order advisory lock.
     // +1 dòng ở src/. Tổng src = 31 + 1 = 32, tổng all = 34 + 1 = 35.
-    expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(32);
+    // Sau hrp-f9-hr-staff-jobposting-scope STEP-05/STEP-06 (2026-10-03): F9
+    // STEP-05 extends the `include: { jobOpening: { select: { id,
+    // staffingOrderId } } }` shape on FOUR additional paths in
+    // `job-posting-authoring.service.ts` (updateDraftContent +
+    // unpublishJobPosting + archiveJobPosting + getJobPostingForAuthoring)
+    // so the scoped-recruiter re-check can derive the order anchor. The
+    // pre-existing `publishJobPosting` entry shifts 787 → 889 (F9 added
+    // ~100 lines of new code above it). Net +4 entries: 32 → 36 src hits.
+    // All five selects are RLS-covered (read-only; `withDbContext` sets
+    // the GUC session role; JobOpening is not a recruiter-gated table on
+    // its own — the scope is the order, not the opening).
+    expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(36);
   });
 });
 

@@ -94,10 +94,20 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     // idempotent create-or-reuse chain. If eligibility fails, `assertSlotEligible...`
     // throws BEFORE any mutation → 400 + zero side effects. The selector dropdown
     // is informational only.
+    //
+    // hrp-f9-hr-staff-jobposting-scope STEP-09 (DEC-08, DEC-09): the F9 guard
+    // runs INSIDE this transaction via `assertHrStaffRecruiterScope` (called
+    // by `assertSlotEligibleForNewJobPosting` and the re-call in
+    // `createOrReuseJobOpeningForSlot`). The existing `AuthoringError` catch
+    // block already surfaces `error.code` + `error.httpStatus`; the new
+    // `NO_ACTIVE_ORDER_ASSIGNMENT` code (HTTP 403) propagates unchanged.
+    // The error envelope is canonical-safe (no slotId / staffingOrderId /
+    // projectId / assigneeUserId / JobPosting.id).
     const outcome = await withDbContext(getPrisma(), ctx, async (tx) => {
       const slotRevalidation: SlotRevalidationContext = await assertSlotEligibleForNewJobPosting(
         tx,
         slotId,
+        ctx,
       );
       return withIdempotency({
         prisma: tx,
