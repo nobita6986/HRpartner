@@ -63,7 +63,13 @@ export interface NavItem {
   /** Roles được phép thấy item này */
   roles: Role[];
   /** Nhóm điều hướng thứ cấp. Không khai báo = menu cấp 1. */
-  section?: 'development' | 'recruitment' | 'people' | 'finance' | 'system';
+  section?: 'development' | 'recruitment' | 'people' | 'finance' | 'system' | 'partners';
+  /**
+   * Mục hiển thị trạng thái "Sắp ra mắt" — không render link điều hướng, không
+   * thể click, không highlight active. Dùng cho tính năng đã đẩy khỏi giai
+   * đoạn vận hành hiện tại (vd. Chính sách hoa hồng, Sổ cái hoa hồng).
+   */
+  disabled?: boolean;
 }
 
 export interface RoleGuardLayoutProps {
@@ -97,42 +103,64 @@ export const VENDOR_NAV: NavItem[] = [
 /**
  * Nav của portal điều hành (/admin).
  *
- * - /admin — Tổng quan
- * - /admin/staffing — Đơn tuyển dụng & điều phối nhân sự
- * - /admin/attendance — Chấm công
- * - /admin/reconciliation — Đối soát
- * - /admin/jobs — Tin tuyển dụng công khai
- * - /admin/applications — Hàng chờ đơn ứng tuyển
- * - /admin/workers, /admin/projects, /admin/clients — Dữ liệu nền
- * - /admin/tickets — Phản ánh / Tạm ứng
- * - /admin/payroll — Tính lương
- * - /admin/settings — Cài đặt
+ * IA (P1-NAV-01, realigned T1C):
+ * - Tổng quan                 → /admin
+ * - Nhu cầu & Tuyển           → projects / jobs / job-postings / applications / staffing
+ * - Nhân sự                   → workers
+ * - Đối tác                   → clients / vendors
+ * - Hệ thống                  → settings / media / users
+ * - Đang phát triển           → tickets / attendance / reconciliation / payroll / commission/*
+ *
+ * Ghi chú T1C: Nhóm "Con người" cũ gom lẫn workforce (workers), quản trị tài
+ * khoản (users), và đối tác bên ngoài (clients / vendors). Đã tách thành 3
+ * nhóm theo domain: "Nhân sự" (chỉ workers), "Đối tác" (clients / vendors)
+ * và đẩy "Tài khoản" về "Hệ thống". Staffing cũng được chuyển về "Nhu cầu
+ * & Tuyển" vì đây là đầu vào của quy trình tuyển dụng. Role matrix giữ
+ * nguyên — chỉ di chuyển item giữa các nhóm hiển thị.
  */
 export const ADMIN_NAV_PHASE4: NavItem[] = [
   { href: '/admin', label: 'Tổng quan', icon: LayoutDashboard, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'PM', 'ACCOUNTANT', 'SALE', 'DIRECTOR'] },
-  
-  // Nhu cầu & Tuyển (recruitment)
+
+  // Nhu cầu & Tuyển (recruitment) — T1C: Staffing moved here from "Con người"
+  // because StaffingOrder is the input of the recruitment flow, not workforce.
   { href: '/admin/projects', label: 'Dự án', icon: Briefcase, roles: ['ADMIN', 'PM', 'HR_MANAGER'], section: 'recruitment' },
   { href: '/admin/jobs', label: 'Danh sách nhu cầu', icon: Briefcase, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'SALE'], section: 'recruitment' },
   { href: '/admin/jobs/job-postings', label: 'Tin tuyển dụng', icon: FileText, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'SALE'], section: 'recruitment' },
   { href: '/admin/applications', label: 'Đơn ứng tuyển', icon: UserRoundCheck, roles: ['ADMIN', 'HR_MANAGER', 'SALE', 'DIRECTOR'], section: 'recruitment' },
-  
-  // Con người (people)
-  { href: '/admin/staffing', label: 'Staffing', icon: ClipboardList, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'PM'], section: 'people' },
+  { href: '/admin/staffing', label: 'Staffing', icon: ClipboardList, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'PM'], section: 'recruitment' },
+
+  // Nhân sự (people) — T1C: chỉ còn Nhân sự (workers). Tài khoản đã chuyển
+  // sang Hệ thống, Khách hàng / Nhà cung cấp sang nhóm Đối tác. Header đổi
+  // từ "Con người" → "Nhân sự" để phản ánh đúng domain.
   { href: '/admin/workers', label: 'Nhân sự', icon: Users, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER'], section: 'people' },
-  { href: '/admin/users', label: 'Tài khoản', icon: Users, roles: ['ADMIN'], section: 'people' },
-  { href: '/admin/clients', label: 'Khách hàng', icon: Building2, roles: ['ADMIN', 'PM'], section: 'people' },
-  { href: '/admin/vendors', label: 'Nhà cung cấp', icon: Building2, roles: ['ADMIN', 'PM'], section: 'people' },
-  { href: '/admin/tickets', label: 'Phản ánh / Tạm ứng', icon: ClipboardList, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'ACCOUNTANT'], section: 'development' }, // Keep as development
-  { href: '/admin/attendance', label: 'Chấm công', icon: FileText, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'PM', 'ACCOUNTANT'], section: 'development' }, // Keep as development
 
-  // Tài chính (finance)
-  { href: '/admin/commission/policies', label: 'Chính sách hoa hồng', icon: FileText, roles: ['ADMIN', 'HR_MANAGER', 'ACCOUNTANT'], section: 'finance' },
-  { href: '/admin/commission/ledger', label: 'Sổ cái hoa hồng', icon: Wallet, roles: ['ADMIN', 'HR_MANAGER', 'ACCOUNTANT'], section: 'finance' },
-  { href: '/admin/reconciliation', label: 'Đối soát', icon: Wallet, roles: ['ADMIN', 'HR_MANAGER', 'ACCOUNTANT'], section: 'development' }, // Keep as development
-  { href: '/admin/payroll', label: 'Tính lương', icon: Wallet, roles: ['ADMIN', 'HR_MANAGER', 'ACCOUNTANT'], section: 'development' }, // Keep as development
+  // Đối tác (partners) — T1C: nhóm mới. Khách hàng / Nhà cung cấp là dữ
+  // liệu đối tác bên ngoài, không thuộc workforce nội bộ.
+  { href: '/admin/clients', label: 'Khách hàng', icon: Building2, roles: ['ADMIN', 'PM'], section: 'partners' },
+  { href: '/admin/vendors', label: 'Nhà cung cấp', icon: Building2, roles: ['ADMIN', 'PM'], section: 'partners' },
 
-  // Hệ thống (system)
+  // Tài chính (finance) — currently empty after the Chợ việc làm operating
+  // window deferred commission features. Header is hidden when this list is
+  // empty (see `financeNav.length > 0` check below). Add new finance items
+  // here if/when the operating scope re-introduces them.
+  // (intentionally empty)
+
+  // Đang phát triển (development) — items deferred from the current operating
+  // window. The two commission items below are intentionally kept visible so
+  // operators know the capability exists but is not yet routable. The
+  // `disabled: true` flag prevents navigation and active-highlight; the
+  // matching page renders an "Under Development" placeholder so direct URL
+  // access never exposes the operational UI.
+  { href: '/admin/tickets', label: 'Phản ánh / Tạm ứng', icon: ClipboardList, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'ACCOUNTANT'], section: 'development' },
+  { href: '/admin/attendance', label: 'Chấm công', icon: FileText, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'PM', 'ACCOUNTANT'], section: 'development' },
+  { href: '/admin/reconciliation', label: 'Đối soát', icon: Wallet, roles: ['ADMIN', 'HR_MANAGER', 'ACCOUNTANT'], section: 'development' },
+  { href: '/admin/payroll', label: 'Tính lương', icon: Wallet, roles: ['ADMIN', 'HR_MANAGER', 'ACCOUNTANT'], section: 'development' },
+  { href: '/admin/commission/policies', label: 'Chính sách hoa hồng', icon: FileText, roles: ['ADMIN', 'HR_MANAGER', 'ACCOUNTANT'], section: 'development', disabled: true },
+  { href: '/admin/commission/ledger', label: 'Sổ cái hoa hồng', icon: Wallet, roles: ['ADMIN', 'HR_MANAGER', 'ACCOUNTANT'], section: 'development', disabled: true },
+
+  // Hệ thống (system) — T1C: Tài khoản moved here from "Con người" because
+  // user/role administration is a system-level concern, not a workforce one.
+  { href: '/admin/users', label: 'Tài khoản', icon: Users, roles: ['ADMIN'], section: 'system' },
   { href: '/admin/settings', label: 'Cài đặt', icon: Settings, roles: ['ADMIN'], section: 'system' },
   { href: '/admin/media', label: 'Thư viện Media', icon: Image, roles: ['ADMIN', 'HR_MANAGER', 'HR_STAFF'], section: 'system' },
 ];
@@ -164,6 +192,7 @@ export function RoleGuardLayout({
   );
   const recruitmentNav = React.useMemo(() => visibleNav.filter(item => item.section === 'recruitment'), [visibleNav]);
   const peopleNav = React.useMemo(() => visibleNav.filter(item => item.section === 'people'), [visibleNav]);
+  const partnersNav = React.useMemo(() => visibleNav.filter(item => item.section === 'partners'), [visibleNav]);
   const financeNav = React.useMemo(() => visibleNav.filter(item => item.section === 'finance'), [visibleNav]);
   const systemNav = React.useMemo(() => visibleNav.filter(item => item.section === 'system'), [visibleNav]);
 
@@ -201,6 +230,9 @@ export function RoleGuardLayout({
   }, [developmentRouteActive]);
 
   const renderNavItem = (item: NavItem, nested = false) => {
+    if (item.disabled) {
+      return renderDisabledNavItem(item, nested);
+    }
     const active = isNavItemActive(item.href);
     return (
       <Link
@@ -226,6 +258,38 @@ export function RoleGuardLayout({
         />
         <span className="flex-1 truncate">{item.label}</span>
       </Link>
+    );
+  };
+
+  /**
+   * Render a non-navigable nav row for items that are visible but not yet
+   * available in the current operating window. Per directive the row is a
+   * `<div>` (no `Link` → no href, no `next/link` prefetch, no routing), it
+   * carries `aria-disabled="true"` so assistive tech flags it as inactive,
+   * and it is never given the active-highlight treatment — even when its
+   * href matches the current pathname (the matching page renders a
+   * placeholder, not the operational UI).
+   */
+  const renderDisabledNavItem = (item: NavItem, nested: boolean) => {
+    return (
+      <div
+        key={item.href}
+        role="link"
+        aria-disabled="true"
+        aria-label={`${item.label} — Sắp ra mắt`}
+        data-disabled-nav="true"
+        className={cn(
+          'flex min-h-10 cursor-not-allowed items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium',
+          'text-slate-400 select-none',
+          nested && 'pl-6 text-[13px]',
+        )}
+      >
+        <item.icon className="h-4 w-4 text-slate-400" aria-hidden="true" />
+        <span className="flex-1 truncate">{item.label}</span>
+        <span className="rounded-full bg-slate-200 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-600">
+          Sắp ra mắt
+        </span>
+      </div>
     );
   };
 
@@ -258,11 +322,18 @@ export function RoleGuardLayout({
             
             {portal === 'admin' && peopleNav.length > 0 && (
               <>
-                <div className="mt-4 mb-1 px-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Con người</div>
+                <div className="mt-4 mb-1 px-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Nhân sự</div>
                 {peopleNav.map(item => renderNavItem(item))}
               </>
             )}
-            
+
+            {portal === 'admin' && partnersNav.length > 0 && (
+              <>
+                <div className="mt-4 mb-1 px-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Đối tác</div>
+                {partnersNav.map(item => renderNavItem(item))}
+              </>
+            )}
+
             {portal === 'admin' && financeNav.length > 0 && (
               <>
                 <div className="mt-4 mb-1 px-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Tài chính</div>
