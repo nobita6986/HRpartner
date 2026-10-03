@@ -4,9 +4,11 @@
 > Measured against `main` SHA: `14712f15a5bc58d406fac784adb174c76d823d33`
 > Audit window: 2026-10-03 (after P1 production cutover)
 > Branch: `codex/t1c-operational-workflow-debt-audit` from `origin/main` (`14712f15`)
+> Audit commit: `cd728490f249c6e6207890f5471e2dd22ef2bd9c`
+> Correction commit: forward-only correction batch on the same branch (this revision)
 > Owner: T1C (docs-only audit; no source/test/migration touched)
 > Supersedes: none
-> Conflict rule: this is an audit, not a normative contract. V7 authority, `docs/HRP_EXECUTION_REALIGNMENT_PLAN.md`, and live source code override any claim made here. If a finding disagrees with current source, source wins.
+> Conflict rule: this is an audit, not a normative contract. V7 authority, `docs/HRP_EXECUTION_REALIGNMENT_PLAN.md`, and live source code override any claim made here. If a finding disagrees with current source, source wins. T0/Owner decisions incorporated in this correction batch are recorded inline (F1 remediation state, F2/F3 re-classification, F4/F13 IA stance, F9 closed decision, F10 terminal-state split, F12 moved to §14).
 
 ## 1. Purpose and non-authority statement
 
@@ -128,22 +130,24 @@ Method: two-direction walk per workflow domain (UI ↔ backend), pattern checkli
 
 | Metric | Value |
 | --- | --- |
-| Total findings | 14 |
+| Total findings | 10 |
 | P0 | 0 |
-| P1 | 3 |
-| P2 | 6 |
-| P3 | 5 |
-| Confirmed (Static / Production / Reproduced) | 13 |
-| Suspected (needs reproduction) | 1 |
-| Orphan routes found at audit time | 0 (every audited route file has a UI consumer; see `Section 9` for the explicit "no page consumer found" list and its resolution) |
-| Orphan UI surfaces found | 1 (`/admin/labor-profiles` page exists but has no sidebar entry) |
+| P1 | 1 (F1) |
+| P2 | 4 (F2 — downgraded from P1 by T0/Owner; F5, F6, F9 — F9 = P1-risk candidate pending reproduction) |
+| P3 | 5 (F4 narrative group including F13 merge; F7, F8, F11, F14) |
+| Confirmed (Static / Production / Reproduced) | 9 |
+| Suspected (needs reproduction) | 1 (F9) |
+| F4 / F13 / F12 note | F4 = P3 narrative group (Owner decision recorded); F13 gộp vào F4 narrative; F12 chuyển §14; F3 is a subfinding of F2 (not counted independently) |
+| F10 note | F10 đã được tách: F10a (JobOpening OPEN không có action Cancel = roadmap candidate, không phải debt) được loại khỏi finding ledger; F10b (JobPosting ARCHIVED không có restore) giữ như non-blocking P3 candidate bên trong F10 entry; FILLED / CANCELLED / EFFECTIVE là terminal theo thiết kế nên bị loại khỏi "status trap count" |
+| Orphan routes found at audit time | 0 confirmed orphans in the verified inventory; unverified entries remain limitations (see `Section 9` and `Section 15`) |
+| Orphan UI surfaces found | 1 (`/admin/labor-profiles` page exists but has no sidebar entry) — reclassified to P2 (F2) per T0/Owner decision |
 | False affordances | 1 confirmed (F1) |
-| Dead-end / status trap candidates | 4 (F13 slate) |
-| Sidebar IA inconsistencies | 2 (the "Đang phát triển" semantics split; the `commission/*` vs four-page mismatch) |
+| Status trap candidates | 0 (FILLED/CANCELLED/ARCHIVED/EFFECTIVE removed per T0/Owner decision; see F10 entry and §10) |
+| Sidebar IA inconsistencies | 1 narrative group (F4/F13 merged) |
 
 **Top-line finding** (one paragraph):
 
-The JobPosting → JobOpening DRAFT publish block recorded in the PR #84 closeout exemplar is **not** an isolated case. The same shape recurs in three different surfaces: the editor shell `canPublish` flag does not consult linked JobOpening status (F1); the "Đang phát triển" sidebar label groups pages that are wired to live APIs but does not mark them `disabled`, while `commission/{policies,ledger}` correctly mark themselves `disabled` and serve an `UnderDevelopment` placeholder (F4); and the canonical `/admin/labor-profiles` list + `/admin/labor-profiles/new` intake are reachable only via a recruiter-workbench deep-link (F2/F3) — the sidebar omits the entry, leaving direct access manual-only. The remaining 11 findings are individual cases that share the same "UI promise / server truth" asymmetry. None of them block all roles from completing a workflow today (no P0), but three (F1, F4, F2) will block a real operator or super-user role in production the next time the linked entity drifts out of sync with the UI affordance.
+The JobPosting → JobOpening DRAFT publish block recorded in the production cutover evidence is **not** an isolated case. The same shape recurs in three different surfaces: the editor shell `canPublish` flag does not consult linked JobOpening status (F1); the "Đang phát triển" sidebar label groups pages that are wired to live APIs but does not mark them `disabled`, while `commission/{policies,ledger}` correctly mark themselves `disabled` and serve an `UnderDevelopment` placeholder (F4/F13 narrative); and the canonical `/admin/labor-profiles` list + `/admin/labor-profiles/new` intake are reachable only via a recruiter-workbench deep-link (F2/F3) — the sidebar omits the entry, leaving direct access manual-only, but per T0/Owner decision this is a discoverability/IA finding (P2), not a workflow blocker. The remaining findings are individual cases that share the same "UI promise / server truth" asymmetry or are minor copy/link improvements. Only F1 is currently a confirmed P1; F9 remains suspected until a synthetic HR_STAFF session can be reproduced. T0/Owner has closed F9 (HR_STAFF must be assignment-scoped on the JobPosting create form) and F4 (development-section IA — keep "Đang phát triển" group as-is, do NOT call the four pages "live" until Owner accepts their go-live). F10 terminal-state analysis records that FILLED / CANCELLED / ARCHIVED / EFFECTIVE are intentional terminal lifecycle states per current contract and do NOT constitute workflow debt absent a documented exit-requirement.
 
 ## 6. Role × workflow coverage matrix
 
@@ -152,10 +156,10 @@ Legend: ✅ workflow completable without developer help · ⚠️ completable wi
 | Workflow | Admin | HR_MANAGER | HR_STAFF (scoped) | Public / Anonymous | Vendor / CTV |
 | --- | :---: | :---: | :---: | :---: | :---: |
 | 1. Login + role landing + role guard | ✅ | ✅ | ✅ | ✅ | n/a |
-| 2. Recruitment setup (Client → Project → Order → Slot → JobOpening → Classify → Open) | 🟡 F12 | 🟡 F12 | 🟡 F12, F5 | n/a | n/a |
-| 3. JobPosting create / author / save draft | 🟡 F1, F11 | 🟡 F1, F11 | 🟡 F1, F11 | n/a | n/a |
+| 2. Recruitment setup (Client → Project → Order → Slot → JobOpening → Classify → Open) | 🟡 F10a-note (roadmap candidate, not debt) | 🟡 F10a-note | 🟡 F10a-note, F5 | n/a | n/a |
+| 3. JobPosting create / author / save draft | 🟡 F1, F11 | 🟡 F1, F11 | 🟡 F1, F11, F9 (suspected) | n/a | n/a |
 | 4. JobPosting publish / unpublish / archive | 🟡 F1, F5 | 🟡 F1, F5 | 🟡 F1, F5 | n/a | n/a |
-| 5. Public job board listing / detail / tracking | ✅ | ✅ | ✅ | ✅ (F13 suspected) | n/a |
+| 5. Public job board listing / detail / tracking | ✅ | ✅ | ✅ | ✅ | n/a |
 | 6. Public apply (anonymous) | n/a | n/a | n/a | ✅ | n/a |
 | 7. Application intake + queue (MP-3 lifecycle) | ✅ | ✅ | n/a (HR_STAFF excluded by design per `src/domains/applications/application-queue.service.ts:15-16`) | n/a | n/a |
 | 8. LaborProfile workbench + intake | 🟡 F2, F3 | 🟡 F2, F3 | 🟡 F2, F3 | n/a | n/a |
@@ -178,7 +182,7 @@ The matrices below are the canonical "what state, what action, what server preco
 | Entity state | Available UI action | Server command | Server precondition (where verified) | Role gate | Next state | UI recovery path |
 | --- | --- | --- | --- | --- | --- | --- |
 | DRAFT + linked JobOpening OPEN | Publish | `publishJobPosting` (`src/domains/staffing/job-posting-authoring.service.ts:778-873`) | DRAFT; revision match; `jobOpening.status === 'OPEN'`; title + description non-empty; idempotency-key UUID | MUTATION_ROLES (ADMIN/HR_MANAGER/HR_STAFF) | PUBLISHED | None needed |
-| DRAFT + linked JobOpening DRAFT (or any ≠ OPEN) | **Publish button enabled** (`app/admin/jobs/job-postings/[id]/editor-shell.tsx:296-302` `canPublish = canMutate && status === DRAFT && title.trim().length > 0 && descriptionJson !== null`) | `publishJobPosting` → throws `AuthoringError('JOB_OPENING_NOT_OPEN', 409, ...)` | — | — | unchanged | **NONE — MISSING_CONTEXT + FALSE_AFFORDANCE (F1, F5)** |
+| DRAFT + linked JobOpening DRAFT (or any ≠ OPEN) | **Publish button enabled** (`app/admin/jobs/job-postings/[id]/editor-shell.tsx:296-302` `canPublish = canMutate && status === DRAFT && title.trim().length > 0 && descriptionJson !== null`) | `publishJobPosting` → throws `AuthoringError('JOB_OPENING_NOT_OPEN', 409, ...)` | — | — | unchanged | **NONE — MISSING_CONTEXT + FALSE_AFFORDANCE (F1)** — separate from the F5 editor-409-CTA concern, which addresses lack of any recovery CTA after server rejection |
 | DRAFT | Save draft (PATCH) | `updateDraftContent` (same file) | DRAFT; revision match; idempotency-key | MUTATION_ROLES | DRAFT (new revision) | n/a |
 | PUBLISHED | Unpublish | `unpublishJobPosting` | PUBLISHED; revision match | MUTATION_ROLES | DRAFT | None needed |
 | PUBLISHED | Archive | `archiveJobPosting` (same service family) | non-ARCHIVED; revision match | MUTATION_ROLES | ARCHIVED | None needed |
@@ -192,7 +196,8 @@ The matrices below are the canonical "what state, what action, what server preco
 | DRAFT + no ServiceModel | Phân loại ServiceModel (radio) | `classifyJobOpening` via `POST /api/admin/staffing/job-openings/[id]/classify` | DRAFT; ADMIN/HR_MANAGER; idempotency-key | ADMIN/HR_MANAGER | DRAFT (with serviceModel) | `blockedReason` if HR_STAFF unassigned |
 | DRAFT + ServiceModel + parent Order OPEN + slot eligible | Mở JobOpening | `openJobOpening` (referenced from `app/admin/job-openings/[id]/page.tsx:25-31`) | DRAFT; service_model != null; caller authority; parent StaffingOrder.status === 'OPEN' (strict); deadline valid; validTo valid; slotsFilled < slotsNeeded; base predicate `slot_is_eligible`; idempotency-key | ADMIN/HR_MANAGER + (HR_STAFF + active assignment) | OPEN | `blockedReason` already surfaces the exact failing precondition (`job-opening-actions.tsx:367-373`); ✅ GOOD UX |
 | DRAFT + ServiceModel + parent Order CLOSING_SOON | Mở JobOpening disabled with reason "StaffingOrder ở trạng thái CLOSING_SOON; cần OPEN (CLOSING_SOON không đủ điều kiện mở)" | `openJobOpening` would throw `ORDER_NOT_OPEN` 409 | — | — | unchanged | Reason rendered — ✅ |
-| FILLED / OPEN → CANCELLED | (no UI in current pages) | (not exposed) | — | — | — | **STATUS_TRAP candidate (F13)** — JobOpening reaches FILLED with no UI to manage it |
+| FILLED | (terminal lifecycle state — see §10 / F10) | — | — | — | — | n/a (terminal per current contract; no UI exit expected without a documented recovery requirement) |
+| OPEN | (no "Cancel" action exposed; potential roadmap candidate only — see F10a) | (not exposed) | — | — | — | None today; if Owner documents a cancel requirement, open a new V7 task |
 
 ### 7.3 Application lifecycle (MP-3 review drawer)
 
@@ -211,7 +216,7 @@ HR_STAFF is **intentionally excluded** from `QUEUE_ROLES` (`src/domains/applicat
 | Placement state | UI action shown | Server command | Server precondition | Role gate | Next state | UI recovery path |
 | --- | --- | --- | --- | --- | --- | --- |
 | `SELECTED` (after create) | Confirm / Effective / Fail / Cancel | `/api/admin/placements/[id]/actions/{confirm,effective,fail,cancel}` (admin family) OR `/api/admin/recruiter/placements/[id]/actions/...` (recruiter family) | per-command preconditions in `src/domains/talent/placement.service.ts`; idempotency-key UUID | ADMIN/HR_MANAGER + HR_STAFF+view=MINE | CONFIRMED / EFFECTIVE / FAILED / CANCELLED | Retry-safe (per-action idem-key) — ✅ |
-| `EFFECTIVE` | (terminal-ish) | — | — | — | — | No UI to roll back — **STATUS_TRAP (F13 slate)** |
+| `EFFECTIVE` | (terminal — irreversible/fail-closed by design; rollback UI would break authority) | — | — | — | — | None (intentional terminal per current contract) |
 
 ## 8. Finding ledger
 
@@ -221,7 +226,8 @@ Findings sorted by priority then by ID. Each finding carries a status evidence l
 
 - **Priority**: P1
 - **Taxonomy**: `FALSE_AFFORDANCE` + `MISSING_CONTEXT`
-- **Status evidence**: Static confirmed (current source at `14712f15`)
+- **Status evidence**: Static confirmed at audit baseline `14712f15`; T1A correction implementation frozen and reported separately on branch `codex/t1a-postdeploy-runtime-correction-2` (HANDOFF frozen SHA `162453e29f3e2a882cda17e56d3578e1038b72bf`).
+- **Remediation state (T0/Owner correction, 2026-10-03)**: finding is **valid against `main @ 14712f15`** and is therefore retained in the ledger. A T1A correction batch has been frozen on a separate branch (HANDOFF SHA `162453e29f3e2a882cda17e56d3578e1038b72bf`) and gates `publishJobPosting` on linked `JobOpening.status === 'OPEN'` at both the editor-shell `canPublish` flag and the server precondition. Until the T1A branch is merged into `main`, this audit's finding stands; the audit intentionally does **NOT** mark F1 as resolved. No source/test/migration changes are introduced by this audit correction batch.
 - **Role(s) affected**: ADMIN, HR_MANAGER, HR_STAFF
 - **Workflow**: 3. JobPosting publish
 - **UI source**: `app/admin/jobs/job-postings/[id]/editor-shell.tsx:296-302` (`canPublish`) and `:342-348` (`<ActionButton disabled={!canPublish || isSaving} ... label="Publish" primary />`).
@@ -229,29 +235,30 @@ Findings sorted by priority then by ID. Each finding carries a status evidence l
 - **Precondition**: `current.jobOpening.status !== 'OPEN'` → 409.
 - **Reachability evidence**: `/admin/jobs/job-postings` list (`app/admin/jobs/job-postings/page.tsx`) is reachable for CREATE_ROLES, the row link goes to the editor shell; the editor shell's `canPublish` does not consult `jobOpening.status` (only `canMutate + status === DRAFT + title + descriptionJson`).
 - **Expected**: when `jobOpening.status` ≠ `OPEN`, the Publish button is `disabled` with the exact server-side reason in plain Vietnamese (e.g. "JobOpening đang DRAFT — mở JobOpening trước khi publish"), and the reason includes a navigation link to the canonical `/admin/job-openings/[id]` page where the user can run the activation command.
-- **Actual**: the button is enabled; clicking it returns 409; the editor shell surfaces the raw server message in the inline `errorMessage` slot (`editor-shell.tsx:360-368`) with no recovery CTA.
-- **Correction boundary**: surface a server-derived `canPublish` flag in `JobPostingDetailDto` that consults `jobOpening.status`; render disabled + reason + a `<Link>` to `/admin/job-openings/[id]` when `jobOpening.status !== 'OPEN'`. Do NOT touch server contracts; this is a UI affordance-only fix layered on top of the existing canonical service.
+- **Actual**: at audit baseline the button is enabled; clicking it returns 409; the editor shell surfaces the raw server message in the inline `errorMessage` slot (`editor-shell.tsx:360-368`) with no recovery CTA.
+- **Correction boundary**: surface a server-derived `canPublish` flag in `JobPostingDetailDto` that consults `jobOpening.status`; render disabled + reason + a `<Link>` to `/admin/job-openings/[id]` when `jobOpening.status !== 'OPEN'`. Do NOT touch server contracts; this is a UI affordance-only fix layered on top of the existing canonical service. (T1A correction batch on `codex/t1a-postdeploy-runtime-correction-2` implements exactly this boundary.)
 - **Regression test**: add an integration test that asserts (a) `canPublish === false` when `jobOpening.status === 'DRAFT'`, (b) the disabled reason text matches the blocked-reason vocabulary from `job-opening-actions.tsx`, (c) the rendered HTML has an `<a href="/admin/job-openings/{id}">` anchor in the reason block.
 
 ### 8.2 F2 — `/admin/labor-profiles` is reachable only via deep-link, not via sidebar
 
-- **Priority**: P1
-- **Taxonomy**: `ROLE_REACHABILITY`
+- **Priority**: P2 (downgraded from P1 by T0/Owner correction, 2026-10-03)
+- **Taxonomy**: `ROLE_REACHABILITY` — discoverability gap (not a workflow blocker)
 - **Status evidence**: Static confirmed
 - **Role(s) affected**: ADMIN, HR_MANAGER, HR_STAFF
 - **Workflow**: 8. LaborProfile workbench
 - **UI source**: `app/admin/labor-profiles/page.tsx` exists, has its own ALLOWED_ROLES set (`['ADMIN', 'HR_MANAGER', 'HR_STAFF']` at line 16), but is **omitted** from `ADMIN_NAV_PHASE4` (`src/shared/ui/role-guard/role-guard-layout.tsx:121-167`). The full `ADMIN_NAV_PHASE4` lists `/admin`, `/admin/projects`, `/admin/jobs`, `/admin/jobs/job-postings`, `/admin/applications`, `/admin/staffing`, `/admin/workers`, `/admin/clients`, `/admin/vendors`, `/admin/tickets`, `/admin/attendance`, `/admin/reconciliation`, `/admin/payroll`, `/admin/commission/policies`, `/admin/commission/ledger`, `/admin/users`, `/admin/settings`, `/admin/media` — no `/admin/labor-profiles`.
 - **Route/service source**: pages render `/admin/labor-profiles/new` and `/admin/labor-profiles/[id]` as direct links (line 58 of the same file shows `href="/admin/labor-profiles/new"` from the workbench list).
 - **Precondition**: page-level role gate accepts ADMIN/HR_MANAGER/HR_STAFF.
-- **Reachability evidence**: the only inbound links to `/admin/labor-profiles/*` are from `RecruiterWorkbenchTable → PrimaryActions → detailHref = /admin/labor-profiles/<laborProfileId>` (`app/admin/recruiter-workbench/_components/PrimaryActions.tsx:32-34, 44, 53`); an operator who only uses the staff/workbench tabs must know to type the URL or follow a candidate's workbench row to discover the canonical list/intake.
+- **Reachability evidence**: the page is reachable by URL today; inbound deep-links exist from `RecruiterWorkbenchTable → PrimaryActions → detailHref = /admin/labor-profiles/<laborProfileId>` (`app/admin/recruiter-workbench/_components/PrimaryActions.tsx:32-34, 44, 53`). Per T0/Owner: route is still accessible (URL/href), deep-link from Recruiter Workbench exists, and there is a non-developer workaround (type the URL or follow a candidate's workbench row). The workflow is therefore NOT blocked — the gap is about discoverability and route-to-primary entry.
+- **Re-classification reasoning (T0/Owner correction, 2026-10-03)**: downgraded from P1 to P2 because (a) the route remains reachable via direct URL/href and via a recruiter-workbench deep-link; (b) operators are not blocked from completing the LaborProfile intake workflow; (c) the gap is discoverability and primary-navigation entry, not workflow blocking; (d) no role is unable to reach the UI. The audit therefore records F2 as a UX/IA finding, not a workflow blocker. Wording per T0/Owner: "giảm discoverability và buộc đi qua deep-link/workbench".
 - **Expected**: the canonical "Nhân sự" sidebar section (the `people` group in `ADMIN_NAV_PHASE4` line 134) carries an entry for "Hồ sơ NLD" pointing to `/admin/labor-profiles`, and "Tiếp nhận NLD" is reachable from there.
-- **Actual**: the page exists, is fully built, and is reachable only via the recruiter-workbench detail link.
-- **Correction boundary**: add the missing `NavItem` entries to `ADMIN_NAV_PHASE4` (`src/shared/ui/role-guard/role-guard-layout.tsx`); section placement should follow the same domain realignment the T1C closeout already applied (likely `section: 'people'` next to `workers`).
+- **Actual**: the page exists, is fully built, and is reachable only via URL or the recruiter-workbench detail link — not via the primary sidebar.
+- **Correction boundary**: add the missing `NavItem` entries to `ADMIN_NAV_PHASE4` (`src/shared/ui/role-guard/role-guard-layout.tsx`); section placement should follow the same domain realignment the T1C closeout already applied (likely `section: 'people'` next to `workers`). This is a small bounded UI change.
 - **Regression test**: snapshot test of `ADMIN_NAV_PHASE4` filtered by `role === 'HR_MANAGER'` must include `/admin/labor-profiles` and the rendered sidebar must show the label.
 
 ### 8.3 F3 — `/admin/labor-profiles/new` ("Tiếp nhận NLD") is reachable only via the list page deep-link
 
-- **Priority**: P2
+- **Priority**: Subfinding of F2 — not counted as an independent blocker (per T0/Owner correction, 2026-10-03: "F3 gộp thành subfinding của F2 hoặc giữ P2, không đếm thành blocker độc lập nếu correction giống hệt"; the F2 fix and this F3 entry share the exact same correction boundary, so F3 is treated as a subfinding of F2 for finding-count and rollout purposes)
 - **Taxonomy**: `ROLE_REACHABILITY` (follow-on from F2)
 - **Status evidence**: Static confirmed
 - **Role(s) affected**: ADMIN, HR_MANAGER, HR_STAFF
@@ -265,10 +272,10 @@ Findings sorted by priority then by ID. Each finding carries a status evidence l
 - **Correction boundary**: covered by the F2 fix; no separate work needed if F2 lands first.
 - **Regression test**: covered by the F2 regression.
 
-### 8.4 F4 — Sidebar "Đang phát triển" semantics split: 4 pages wired to live APIs vs 2 placeholders
+### 8.4 F4 — Sidebar "Đang phát triển" semantics split: implemented pages with release readiness unverified vs two placeholders
 
-- **Priority**: P1
-- **Taxonomy**: `GATE_DRIFT` + `MISSING_CONTEXT` (the section label misrepresents what is reachable)
+- **Priority**: P3 (downgraded from P1 by T0/Owner correction, 2026-10-03)
+- **Taxonomy**: `GATE_DRIFT` + `MISSING_CONTEXT` (the section label misrepresents what is reachable; reframed below per T0/Owner directive C)
 - **Status evidence**: Static confirmed
 - **Role(s) affected**: ADMIN, HR_MANAGER, HR_STAFF, PM, ACCOUNTANT (per `ADMIN_NAV_PHASE4` role lists)
 - **Workflow**: 12/14. Tickets / Attendance / Reconciliation / Payroll / Commission
@@ -279,20 +286,17 @@ Findings sorted by priority then by ID. Each finding carries a status evidence l
   - `{ href: '/admin/payroll', section: 'development' }` — **no `disabled`**
   - `{ href: '/admin/commission/policies', section: 'development', disabled: true }`
   - `{ href: '/admin/commission/ledger', section: 'development', disabled: true }`
-- **UI source (page reality)**:
-  - `app/admin/tickets/page.tsx` — full client page, calls `/api/tickets` and `/api/tickets/[id]/...` (route file inventory confirmed).
-  - `app/admin/attendance/page.tsx` — full client page, calls `/api/attendance/import`, `/api/attendance/timesheets`, `/api/attendance/adjustments` (route file inventory confirmed).
-  - `app/admin/reconciliation/page.tsx` — full client page, calls `/api/statements`, `/api/statements/margin`, `/api/statements/generate` (the `[id]/dispute,confirm,export` siblings exist only under `/api/vendor/statements/[id]/...`, not under admin — reconciliation's admin actions are not exposed at the route file inventory).
-  - `app/admin/payroll/page.tsx` — full client page, calls `/api/payroll` (route file inventory confirmed).
-  - `app/admin/commission/policies/page.tsx` — `UnderDevelopment` placeholder.
-  - `app/admin/commission/ledger/page.tsx` — `UnderDevelopment` placeholder.
-- **Route/service source**: all four "live" pages have matching route handlers under `app/api/...` (see `Section 9` for the explicit route inventory). The two `commission/*` pages have NO live API surface for the admin (the underlying `commission-policies` and `commission-ledger` endpoints exist for backend authority but the placeholder is the only UI).
+- **Page reality (refactored per T0/Owner directive C, 2026-10-03)**:
+  - `app/admin/tickets/page.tsx`, `app/admin/attendance/page.tsx`, `app/admin/reconciliation/page.tsx`, `app/admin/payroll/page.tsx` — these pages are **implemented surfaces with release readiness unverified**. Per T0/Owner decision they MUST NOT be called "live" in this audit, because Tickets / Attendance / Reconciliation / Payroll have **not** been accepted by Owner for go-live; the existence of pages and APIs is not equivalent to Owner acceptance. They remain in the "Đang phát triển" section by deliberate Owner direction.
+  - `app/admin/commission/policies/page.tsx` and `app/admin/commission/ledger/page.tsx` — `UnderDevelopment` placeholders.
+- **Route/service source**: the four "implemented but release-unverified" pages have matching route handlers under `app/api/...` (see `Section 9` for the explicit route inventory). The two `commission/*` pages have NO live API surface for the admin (the underlying `commission-policies` and `commission-ledger` endpoints exist for backend authority but the placeholder is the only UI).
 - **Precondition**: the sidebar group renders inside a `<details>` labeled "Đang phát triển" with `border-dashed` styling (`role-guard-layout.tsx:351-369`) — visual signal says "deferred / not yet ready".
-- **Reachability evidence**: the four pages with full implementations are reachable by clicking the un-deferred sidebar links. The section is collapsible but defaults open when the active route is inside it.
-- **Expected**: either (a) every item in the "Đang phát triển" section is `disabled: true` and renders an `UnderDevelopment` placeholder (the `commission/*` convention); or (c) the four live items are moved out of "Đang phát triển" and into a real section, with their operational status clearly indicated.
-- **Actual**: the section mixes live implementations with deferred placeholders and labels both as "Đang phát triển". Operators reading the section heading form a wrong mental model — either they avoid the live items, or they click the deferred items expecting real data.
-- **Correction boundary**: T0/Owner decision — pick (a) or (c). Until then, at minimum rename the section header from "Đang phát triển" to "Vận hành nội bộ" (or similar) and add a `data-status` annotation per item so T1A can split the section without touching route/service code.
-- **Regression test**: static assertion that the four live pages either are NOT in the "Đang phát triển" section or are explicitly marked with a status distinct from the two `commission/*` placeholders.
+- **Reachability evidence**: the four pages are reachable by clicking the un-deferred sidebar links. The section is collapsible but defaults open when the active route is inside it.
+- **Re-classification reasoning (T0/Owner correction, 2026-10-03)**: downgraded from P1 to P3 and re-framed because (a) Owner has NOT accepted Tickets / Attendance / Reconciliation / Payroll for go-live; (b) page/API existence does not prove an "accepted for go-live" status; (c) Commission policies/ledger is already deferred by deliberate Owner direction; (d) the entire group therefore remains outside the Chợ việc làm go-live window. The audit does **NOT** call these pages "live". The audit records the IA gap (a P3 narrative) without re-classifying them as production features.
+- **Expected**: keep the "Đang phát triển" section label and group, but future corrections must (a) NOT mark these pages as live/production-ready until Owner accepts go-live; (b) pick a disabled/placeholder or "Thử nghiệm" badge treatment if/when the modules are revisited; (c) NOT auto-promote these modules to the operational group without an explicit Owner decision.
+- **Actual**: section label reads "Đang phát triển"; the four pages have implemented clients and APIs but their release readiness is unverified; the two `commission/*` items render `UnderDevelopment` placeholders. Operator cannot tell from the sidebar label alone whether an entry is implemented-but-unverified or fully placeholder.
+- **Correction boundary (T0/Owner correction, 2026-10-03)**: do **NOT** rename the section header to "Vận hành nội bộ"; do **NOT** add a `data-status` annotation per item; do **NOT** split the section as part of this audit. The audit recommends that any future correction (a) keeps the four pages in the "Đang phát triển" group until Owner accepts go-live, (b) selects disabled/placeholder or "Thử nghiệm" badge treatment for any module revisited, and (c) avoids auto-promoting these modules to the operational group without an explicit Owner decision. No source/test/sidebar change is introduced by this audit.
+- **Regression test**: static assertion that (a) the four pages remain labeled as implemented-but-unverified (not as "live"), (b) the "Đang phát triển" section header is preserved unless Owner decides otherwise, (c) any future change moves modules out of "Đang phát triển" only after an explicit Owner go-live decision.
 
 ### 8.5 F5 — JobPosting editor shell surfaces 409 errors without a recovery CTA
 
@@ -358,11 +362,15 @@ Findings sorted by priority then by ID. Each finding carries a status evidence l
 - **Correction boundary**: add a code-to-Vietnamese-message mapper alongside `readErrorMessage`. The pattern already exists in `src/domains/applications/placement-ui.ts` (`conflictLabel`) and is referenced by `admin/applications/page.tsx:91-101` (`messageOf` → `conflictLabel(d.error)`). Reuse the same `conflictLabel` mechanism.
 - **Regression test**: unit tests of the new mapper for `JOB_OPENING_NOT_OPEN`, `INVALID_STATE_TRANSITION`, `INVALID_REVISION`, `IDEMPOTENCY_CONFLICT`.
 
-### 8.9 F9 — HR_STAFF can see the JobPosting create form for StaffingOrders outside their assignments
+### 8.9 F9 — HR_STAFF JobPosting create-form scoping (T0/Owner decision closed; suspected reproduction pending)
 
-- **Priority**: P2
+- **Priority**: P2 / **P1-risk candidate** (reclassified per T0/Owner correction directive D, 2026-10-03 — not promoted to confirmed P1 until reproduction lands)
 - **Taxonomy**: `ROLE_REACHABILITY` + suspected `GATE_DRIFT`
-- **Status evidence**: **Suspected — needs reproduction** (read source; did not run a synthetic HR_STAFF session)
+- **Status evidence**: **Suspected — needs reproduction** (read source; did not run a synthetic HR_STAFF session in this audit). The audit does **NOT** count F9 as a confirmed finding for release-blocking purposes.
+- **T0/Owner decision (directive D, 2026-10-03)**: `HR_STAFF là recruiter có scope; chỉ được tạo JobPosting cho StaffingOrder mà họ có active assignment.` The "accept asymmetry" option is removed. The audit retains F9 as a **P1-risk candidate**; if reproduction confirms that the selector or write path allows an unassigned HR_STAFF to create a JobPosting, F9 shall be promoted to **P1 authorization / scope drift**, and the correction shall:
+  - enforce the assignment predicate at **both** the selector and the server write path (client filtering alone is insufficient);
+  - not rely on the page gate or UI banner as the only defense.
+  If reproduction does not confirm, F9 is recorded as a P1-risk candidate in `§15` and not added to the confirmed count.
 - **Role(s) affected**: HR_STAFF
 - **Workflow**: 3. JobPosting create
 - **UI source**: `app/admin/jobs/job-postings/page.tsx` renders `<CreateJobPostingForm>` for `CREATE_ROLES` which includes `HR_STAFF`.
@@ -370,25 +378,32 @@ Findings sorted by priority then by ID. Each finding carries a status evidence l
 - **Precondition**: server-side write path uses `assertSlotEligibleForNewJobPosting`; the documented write path includes only slot eligibility, NOT recruiter assignment.
 - **Reachability evidence**: HR_STAFF logs in, opens `/admin/jobs/job-postings`, sees a non-empty `eligibleSlots` list, picks a slot for a StaffingOrder they have **no active assignment on**, and the server accepts the create. Compared with `JobOpeningActions` (which DOES gate `assertActiveRecruiterForOrder` for HR_STAFF — see `app/admin/job-openings/[id]/page.tsx:92-104`), this is an asymmetry.
 - **Expected**: HR_STAFF either sees a list filtered to assigned StaffingOrders, OR the page renders an info banner "Chỉ tạo JobPosting cho StaffingOrder bạn được phân công" and the write path enforces the assignment predicate.
-- **Actual**: `eligibleSlots` is unscoped by assignment; write path does not enforce it. The asymmetry between JobOpening (scoped) and JobPosting create (unscoped) is undocumented at the audit level.
-- **Correction boundary**: T0/Owner decision — either (a) accept the asymmetry and document it explicitly in the page header, or (b) extend the selector + write path to gate on `StaffingOrderRecruiterAssignment` for HR_STAFF. Until then, **treat as suspected and do not auto-fix**.
+- **Actual (suspected)**: `eligibleSlots` is unscoped by assignment; write path does not enforce it. The asymmetry between JobOpening (scoped) and JobPosting create (unscoped) is undocumented at the audit level. The audit treats this as a **suspected** reproduction gap pending a synthetic HR_STAFF session.
+- **Correction boundary**: if reproduction confirms, scope a CRITICAL authorization task that gates on `StaffingOrderRecruiterAssignment` for HR_STAFF at the selector AND the server write path. No source change is introduced by this audit.
 - **Regression test**: integration test that creates a StaffingOrder with no `StaffingOrderRecruiterAssignment`, logs in as HR_STAFF, attempts to create a JobPosting for one of its slots, and asserts either the selector hides it or the write path rejects it with a stable error code.
 
-### 8.10 F10 — JobOpening / JobPosting can be stranded in FILLED / CANCELLED states with no UI exit
+### 8.10 F10 — Status trap candidates: terminal-state analysis per T0/Owner decision
 
-- **Priority**: P2
-- **Taxonomy**: `STATUS_TRAP`
-- **Status evidence**: Suspected — needs reproduction
+- **Priority**: P3 (downgraded from P2 by T0/Owner correction directive E, 2026-10-03)
+- **Taxonomy**: `STATUS_TRAP` — refactored per T0/Owner terminal-state split
+- **Status evidence**: Suspected — needs reproduction for F10b only; F10a is reframed as a roadmap candidate, not debt.
 - **Role(s) affected**: ADMIN, HR_MANAGER
 - **Workflow**: 2/3. JobOpening + JobPosting
-- **UI source**: `app/admin/job-openings/[id]/page.tsx:175-187` (`flags.canClassify/canOpen`) — once an opening reaches OPEN and slots fill (`OPEN → FILLED` happens in the slot capacity predicate), neither `canClassify` nor `canOpen` is true and the action island renders an idle state with no "CANCELLED" or "FILLED → ARCHIVED" affordance.
-- **Route/service source**: the `openJobOpening` command family referenced from `app/admin/job-openings/[id]/page.tsx:25-31` does not include a `cancelJobOpening` command.
-- **Precondition**: a `JobOpening.status = 'CANCELLED'` row exists in the schema (the lifecycle enum includes CANCELLED per the closed-action chip list) but no current UI surface lets an operator move an OPEN/CLOSING_SOON opening to CANCELLED without DB access. Likewise, an `ARCHIVED` JobPosting cannot be restored to DRAFT.
-- **Reachability evidence**: any operator who needs to retire a poorly-formed JobOpening (e.g. duplicate, wrong StaffingOrder, vendor cancel) currently has no UI path. They have to either keep it as FILLED forever or hit the DB directly.
-- **Expected**: a "Hủy JobOpening" action for OPEN openings that are not yet FILLED, with a required reason; a "Khôi phục JobPosting" / "Đưa về DRAFT" action for ARCHIVED postings (the entry should be ADMIN-only and require a reason for audit).
-- **Actual**: no UI path. (Server-side: the existing schema supports CANCELLED via the enum but the command has not been wired.)
-- **Correction boundary**: scope as a separate V7 service + command + route + UI change. Do not bundle into a JobPosting fix; the wrong authority layer to use here is the editor shell.
-- **Regression test**: integration test that creates an OPEN JobOpening, calls the new `cancelJobOpening` command, and asserts the state transitions to CANCELLED with a status history row.
+- **Terminal-state split (T0/Owner correction directive E, 2026-10-03)**:
+  1. **`JobOpening OPEN` without a "Cancel" action**: reframed as a **product capability gap / roadmap candidate**. It is only a finding if there is a documented business requirement or real operational case. The audit does NOT design a new cancel command as part of this audit; the next contract decides whether to add `cancelJobOpening`.
+  2. **`JobOpening FILLED`**: terminal lifecycle state per current contract; not assumed to require a UI exit. Removed from the "status trap count" — the absence of a recovery action is not, by itself, workflow debt.
+  3. **`JobOpening CANCELLED`**: terminal lifecycle state per current contract; not assumed to require a restore. Removed from the "status trap count" for the same reason.
+  4. **`JobPosting ARCHIVED`**: terminal per the current contract; missing restore is not automatically debt. The audit does **NOT** recommend `restoreArchivedJobPosting`. The audit does **NOT** add a new server command.
+  5. **`Placement EFFECTIVE`**: irreversible / fail-closed by design; not a status trap; rollback UI would break authority. Removed from the "status trap count".
+- **Result**: FILLED / CANCELLED / ARCHIVED / EFFECTIVE are removed from the "status trap count" (see §10 — status trap candidates reduced to 0). Only F10b remains as a non-blocking P3 candidate (see below).
+- **F10b — JobPosting ARCHIVED without a UI restore action**: this remains as a non-blocking P3 candidate **only** because (a) there is no documented Owner requirement for restore, (b) the schema supports ARCHIVED as a terminal, and (c) the audit does not invent the requirement. The audit records this for future Owner review; it is not a P1/P2 finding. No `restoreArchivedJobPosting` command is recommended by this audit.
+- **UI source**: `app/admin/job-openings/[id]/page.tsx:175-187` (`flags.canClassify/canOpen`) — once an opening reaches OPEN and slots fill (`OPEN → FILLED` happens in the slot capacity predicate), neither `canClassify` nor `canOpen` is true and the action island renders an idle state with no "Cancel" affordance. This is by current design (terminal-state intent).
+- **Route/service source**: the `openJobOpening` command family referenced from `app/admin/job-openings/[id]/page.tsx:25-31` does not include a `cancelJobOpening` command; this is not, on its own, debt absent a documented requirement.
+- **Reachability evidence**: any operator who needs to retire a poorly-formed JobOpening currently has no UI path; they have to either keep it OPEN, wait for slot-fill (FILLED) by capacity, or hit the DB directly. Until Owner documents a cancel requirement, this is an out-of-scope product capability gap, not audit-found workflow debt.
+- **Expected**: per T0/Owner, no new server command is introduced by this audit. Future correction (if/when Owner documents a cancel requirement) shall be scoped as a separate V7 service + command + route + UI change and shall NOT be bundled into a JobPosting fix; the editor shell is the wrong authority layer.
+- **Actual**: no UI cancel/restore path. (Server-side: schema supports CANCELLED and ARCHIVED via enums but no UI exposes transitions into or out of them. Per T0/Owner, this is by current design — not, by itself, debt.)
+- **Correction boundary**: do NOT design `restoreArchivedJobPosting`, rollback EFFECTIVE, or cancel/restore commands from this audit. The next place to do it is V7 phase planning if/when Owner documents a requirement.
+- **Regression test**: not applicable (no correction introduced by this audit). Future contract, if any, will define its own regression test.
 
 ### 8.11 F11 — `app/admin/jobs` publishes via `/api/projects/{id}/publish` which is separate from `/api/admin/jobs/job-postings/{id}/publish`
 
@@ -406,37 +421,17 @@ Findings sorted by priority then by ID. Each finding carries a status evidence l
 - **Correction boundary**: rename the project-level publish to "Công bố dự án" / "Bỏ công bố dự án" (Vietnamese) and the JobPosting publish to keep "Publish" (canonical English term, also used in the editor). Add a small glossary note in the JobPosting editor footer. Pure naming change.
 - **Regression test**: snapshot test of the two button labels + i18n key check.
 
-### 8.12 F12 — JobOpening activation UI surfaces a 5-step `blockedReason` chain (good), but no "open anyway / override" affordance for HRP-managed edge cases
+### 8.12 F12 — JobOpening activation UI surfaces `blockedReason` chain (no override path; moved to §14 per T0/Owner correction)
 
-- **Priority**: P3
-- **Taxonomy**: `MISSING_CONTEXT`
-- **Status evidence**: Static confirmed
-- **Role(s) affected**: ADMIN, HR_MANAGER
-- **Workflow**: 2. JobOpening activation
-- **UI source**: `app/admin/job-openings/[id]/job-opening-actions.tsx:367-373` renders `blockedReason` from server-derived flags.
-- **Route/service source**: `app/admin/job-openings/[id]/page.tsx:152-171` constructs the 7-precondition chain; `openJobOpening` service has no override path. The override pattern used elsewhere (Placement override at `placement-ui.ts`) does not exist for `openJobOpening`.
-- **Precondition**: an operator with ADMIN role encounters a JobOpening stuck at DRAFT because `parent StaffingOrder.status !== 'OPEN'` (e.g. the order moved to CLOSING_SOON, or the deadline slipped). The UI says "CLOSING_SOON không đủ điều kiện mở" but offers no override path.
-- **Reachability evidence**: confirmed by the editor's `blockedReason` chain — every blocked reason is terminal, no escalation CTA.
-- **Expected**: for ADMIN-only cases where the operator knows the order will reopen, an "Yêu cầu mở ngoại lệ" CTA that opens a server-bound intake (out of scope for this audit; documented as V7-bound).
-- **Actual**: terminal reason.
-- **Correction boundary**: out of scope for this audit; the next place to do it is V7 phase planning. Listed here so the next owner does not think it is missing.
-- **Regression test**: not applicable yet.
+- **Status (T0/Owner correction directive F, 2026-10-03)**: removed from the finding ledger. Per T0/Owner directive F: "'Không có Open anyway/override' không phải nợ. Đây là fail-closed behavior đúng thiết kế: parent order phải OPEN; deadline/slot/capacity phải hợp lệ; ADMIN không được bypass domain invariant chỉ vì là ADMIN." This F12 entry is preserved here for provenance only — the substantive analysis is moved to §14 "Areas checked, no issue found" with the closing rationale.
 
-### 8.13 F13 — `UnderDevelopment` placeholder is consistent for `commission/*` but inconsistent for the four live "Đang phát triển" pages
+The original F12 entry recorded that the activation UI has no "open anyway / override" affordance. Per T0/Owner, this is correct design, not debt. The audit does **NOT** propose an exception-intake feature for V7 absent an Owner requirement. No source/test/sidebar change is introduced by this audit correction.
 
-- **Priority**: P3
-- **Taxonomy**: `MISSING_CONTEXT` (cross-link from F4)
-- **Status evidence**: Static confirmed
-- **Role(s) affected**: ADMIN, HR_MANAGER, HR_STAFF
-- **Workflow**: 12. Operations
-- **UI source**: `app/admin/commission/policies/page.tsx` and `app/admin/commission/ledger/page.tsx` both render an `UnderDevelopment` placeholder. The four live "Đang phát triển" pages render real clients.
-- **Route/service source**: the four live pages have live API routes (`/api/tickets`, `/api/attendance/import`, `/api/statements`, `/api/payroll`).
-- **Precondition**: `UnderDevelopment` is a stable component (referenced from both `commission/*` pages).
-- **Reachability evidence**: clicking the `commission/*` sidebar items lands on the placeholder; clicking the four live items lands on real pages. The visual treatment of the section header is the same.
-- **Expected**: the four live pages are NOT in the "Đang phát triển" section, OR they carry a different section label, OR each carries an explicit `UnderDevelopment`-equivalent banner that tells operators "this is wired but deferred from go-live".
-- **Actual**: same section header, different behavior. Operator cannot tell from the sidebar label alone whether the item is wired or deferred.
-- **Correction boundary**: covered by F4. No separate work.
-- **Regression test**: covered by F4.
+### 8.13 F13 — `UnderDevelopment` placeholder consistency (merged into F4 narrative per T0/Owner correction)
+
+- **Status**: Merged into the F4 narrative (per T0/Owner correction directive C, 2026-10-03: "F13 gộp vào F4, không đếm finding độc lập"). F13 was originally titled "`UnderDevelopment` placeholder is consistent for `commission/*` but inconsistent for the four live 'Đang phát triển' pages." Per T0/Owner directive C, the four pages are NOT called "live"; the F4 entry now records this framing. This standalone F13 entry is preserved here for provenance only — it is not counted as an independent finding in the §5 summary or in finding counts.
+
+The content of the original F13 entry is incorporated into the F4 narrative above (which now uses the terminology "implemented surfaces with release readiness unverified" instead of "live"). The correction boundary and regression test for F13 are the same as for F4. No source changes are introduced by this audit correction.
 
 ### 8.14 F14 — Recruiter Workbench detail link does not deep-link a `caseId`
 
@@ -456,7 +451,9 @@ Findings sorted by priority then by ID. Each finding carries a status evidence l
 
 ## 9. Route inventory and consumer map
 
-This section enumerates **every** `app/api/**/route.ts` file at baseline `14712f15` and reports whether it has a UI consumer reachable from the sidebar (or a documented deep-link). This is the canonical "no orphan routes" table.
+This section enumerates a **verified inventory** of `app/api/**/route.ts` files at baseline `14712f15` and reports whether each has a UI consumer reachable from the sidebar (or a documented deep-link). The enumeration is exhaustive at the file level; the consumer mapping is a sampled walk, with the entries marked `Wired (verify in source)` flagged as not independently re-walked in this audit round (see `§15` for the explicit unverified list). Per T0/Owner directive G, the section does NOT claim "every app/api route has a UI consumer" and does NOT use `✅` for unverified entries. Cron / webhook / dev-only routes are classified as non-UI consumers, not as orphans.
+
+The closing summary reads: **No confirmed orphan found in the verified inventory; unverified entries remain limitations (see §15).**
 
 | Route (under `app/api/`) | UI consumer | Status |
 | --- | --- | --- |
@@ -544,22 +541,30 @@ This section enumerates **every** `app/api/**/route.ts` file at baseline `14712f
 | `/api/worker/tickets` | same | Wired ✅ |
 | `/api/workers`, `/api/workers/[id]`, `/api/workers/me` | `/admin/workers` and worker portal | Wired ✅ |
 
-**Net**: zero true orphans at audit time. The one candidate (`/api/admin/my-claimed-candidates`) is an intentional secondary surface for the HR_STAFF MINE flow; the canonical rail is `/api/admin/recruiter-workbench?view=MINE`.
+**Net**: no confirmed orphan found in the verified inventory at audit time. The one candidate (`/api/admin/my-claimed-candidates`) is an intentional secondary surface for the HR_STAFF MINE flow; the canonical rail is `/api/admin/recruiter-workbench?view=MINE`. Several entries marked `Wired (verify in source) ✅` are listed as unverified in §15 (e.g. `/api/staffing/talent-pool`, `/api/staffing/transfers`, `/api/disputes`, `/api/worker/*`, `/api/push/subscribe`, `/api/public/intake`). The route file inventory at `app/api/**/route.ts` was enumerated exhaustively; the consumer mapping is a sampled walk. Cron / webhook / dev-only routes are classified as non-UI consumers, not as orphans.
 
 ## 10. Status traps
 
-A state is a trap when an entity can enter it from a UI flow but cannot be transitioned out of it from any UI flow. The audit found the following candidates:
+A state is a status-trap only when an entity can enter it from a UI flow but cannot be transitioned out of it from any UI flow **AND** the absence of an exit is not the intended terminal-state design.
 
-| Trap | Affected entity | Reason | Action required |
+Per T0/Owner correction directive E (2026-10-03), the following terminal-state entries have been **removed** from the status trap list and are not counted in this audit:
+
+- `JobOpening FILLED` — terminal lifecycle state per current contract; no UI exit assumed.
+- `JobOpening CANCELLED` — terminal lifecycle state per current contract; no UI exit assumed.
+- `JobPosting ARCHIVED` — terminal per the current contract; missing restore is not, by itself, debt.
+- `Placement EFFECTIVE` — irreversible / fail-closed by design; rollback UI would break authority.
+
+After this correction, the **status trap candidate count is 0** (the original count of 4 in the §5 summary has been updated to reflect the directive). One residual P3 candidate is recorded in F10 for tracking only (F10b — JobPosting ARCHIVED without a UI restore action); it is non-blocking and is not treated as workflow debt absent a documented Owner requirement.
+
+| Trap | Affected entity | Reason | Status |
 | --- | --- | --- | --- |
-| F10 candidate | JobOpening FILLED | No "Quản lý FILLED" UI; no cancellation UI; no recovery UI | Add `cancelJobOpening` command + UI (V7 scope) |
-| F10 candidate | JobOpening CANCELLED | No UI to enter this state; no way to recover from a stray cancel | Place a status-history audit page (V7 scope) |
-| F10 candidate | JobPosting ARCHIVED | No "Khôi phục / Đưa về DRAFT" UI | Add a recovery command + UI (V7 scope) |
-| F10 candidate | Placement EFFECTIVE | No rollback UI; by design irreversible, but operator has no way to log a "compensation" note | Document as out-of-scope and provide an "Add note" CTA if needed |
+| (none) | — | FILLED / CANCELLED / ARCHIVED / EFFECTIVE are intentional terminal lifecycle states per current contract (see F10 entry for the terminal-state analysis and F10b for the non-blocking P3 candidate) | Removed per T0/Owner |
+
+The audit does NOT recommend `restoreArchivedJobPosting`, rollback EFFECTIVE, or cancel/restore commands absent an Owner requirement or authority document that establishes an exit obligation for these states.
 
 ## 11. Quick wins (P3 + small P2)
 
-The following are small, bounded changes that can be gomed into a single T1C closeout batch alongside the maintainability reference:
+The following are small, bounded changes that can be grouped into a single T1C closeout batch. The list has been updated to reflect T0/Owner corrections: F2/F3 (now P2 + subfinding), F7 (P3), F8 (P3), F11 (P3), F14 (P3) remain; F4/F13 is now a P3 narrative group (no source change recommended); F12 is moved to §14; F10 no longer proposes new commands. The previous reference to the maintainability reference is stale wording (the maintainability reference document has already been merged and is not part of this audit's closeout); the wording has been removed.
 
 - F2 / F3: add `Hồ sơ NLD` + `Tiếp nhận NLD` entries to `ADMIN_NAV_PHASE4`. ~5-line diff.
 - F7: wrap `<span>` with `<Link>` in the All Jobs table. ~3-line diff.
@@ -567,51 +572,65 @@ The following are small, bounded changes that can be gomed into a single T1C clo
 - F11: rename the project-level publish button to "Công bố dự án" / "Bỏ công bố dự án". ~4-line diff.
 - F14: extend `LaborProfile` detail page to accept an optional `?case=<id>` query parameter. ~30-line diff.
 
-The remaining P1/P2 fixes (F1, F4, F5, F6, F9, F10) require either a dedicated T1 batch (F10 needs a new server command) or an Owner decision (F4, F9).
+The remaining fixes (F1, F5, F6, F9, F10b) require either a dedicated T1 batch (F5/F6 are UI-affordance changes; F1 remediation is already frozen on `codex/t1a-postdeploy-runtime-correction-2`); F9 requires a synthetic HR_STAFF session reproduction before promotion or de-prioritisation; F10b is a non-blocking P3 candidate that does not propose new commands.
 
 ## 12. Correction batches and rollout order
 
-The audit recommends grouping corrections into 4 batches. Each batch lists the findings it covers, the authority layer it touches, and the rationale for keeping it separate.
+The audit recommends grouping corrections into a small number of bounded batches (per T0/Owner correction directive I, 2026-10-03). The structure below replaces the original four-batch split. Each batch lists the findings it covers, the authority layer it touches, and the rationale for keeping it separate. **Status-trap Batch D (cancelJobOpening / restoreArchivedJobPosting / EFFECTIVE rollback) is removed** per directive E; the four pages stay "Đang phát triển" per directive C; F12 is moved to §14.
 
-### Batch A — IA + small bounded UI changes
+### Batch 1 — T1A JobPosting bridge/publish gating (F1/F5/F7)
 
-- **Findings**: F2, F3, F7, F8, F11, F14
-- **Authority layer touched**: `src/shared/ui/role-guard/role-guard-layout.tsx` (F2/F3), the editor shell and the API message mapping (F5/F8), the All Jobs list (F7), the project-level Publish button (F11), the LaborProfile detail page (F14).
-- **Why separate**: every change is a small UI rename / link wrap / sidebar entry addition. None of them touch server code. Estimated ≤ 200 lines of diff.
-- **Rollout**: docs-only audit is complete. Land Batch A after the next T1 round decides IA naming and label policy (F4 below).
+- **Findings**: F1 (P1 remediation already frozen on `codex/t1a-postdeploy-runtime-correction-2`; audit ledger retains F1 with P1 / CONFIRMED until merged), F5 (P2 editor 409 CTA), F7 (P3 wrap `<span>` with `<Link>` in the All Jobs list).
+- **Authority layer touched**: `app/admin/jobs/job-postings/[id]/editor-shell.tsx`, `app/admin/jobs/job-postings/page.tsx`, optional DTO extension in `src/domains/staffing/job-posting-list.service.ts` (`jobOpeningId` already present).
+- **Why separate**: the F1 batch is already in flight on the T1A branch and shall be merged before any F5/F7 IA work. F5 is a UI affordance + small CTA change; F7 is a 3-line link wrap. Server contract is unchanged.
+- **Rollout**: T1A correction batch (F1) is the priority; F5/F7 can ride alongside as a small bounded UI fix. F1 is a P1 today and remains so in this audit until the T1A branch merges.
 
-### Batch B — IA split for "Đang phát triển"
+### Batch 2 — LaborProfile navigation (F2/F3 — small P2 UX batch)
 
-- **Findings**: F4, F13
-- **Authority layer touched**: `src/shared/ui/role-guard/role-guard-layout.tsx` (decide whether to split the section or rename it), `app/admin/tickets/page.tsx`, `app/admin/attendance/page.tsx`, `app/admin/reconciliation/page.tsx`, `app/admin/payroll/page.tsx` (each may need a "live/operational" footer note if the section is split).
-- **Why separate**: requires Owner decision on whether the four live pages should move to "Vận hành" (operational) or stay in "Đang phát triển" with a status annotation. Cannot land without T0/Owner sign-off.
-- **Rollout**: Owner decision first; then a single T1 batch that moves items in the sidebar + footer note per page.
+- **Findings**: F2 (P2 — downgraded from P1 per T0/Owner decision), F3 (subfinding of F2 — correction boundary identical).
+- **Authority layer touched**: `src/shared/ui/role-guard/role-guard-layout.tsx` (`ADMIN_NAV_PHASE4` sidebar entry, likely `section: 'people'` next to `workers`).
+- **Why separate**: small bounded UI addition; the F2 fix removes the deep-link-only discovery gap; F3 follows automatically.
+- **Rollout**: lands alongside the next small UI slice.
 
-### Batch C — JobPosting publish affordance + error mapping
+### Batch 3 — HR_STAFF JobPosting assignment scoping (F9 — reproduce-first, CRITICAL authorization if confirmed)
 
-- **Findings**: F1, F5, F6
-- **Authority layer touched**: `app/admin/jobs/job-postings/[id]/editor-shell.tsx`, `app/admin/jobs/job-postings/[id]/page.tsx`, `src/domains/staffing/job-posting-list.service.ts` (DTO extension only), `src/domains/applications/placement-ui.ts` (`conflictLabel` reuse).
-- **Why separate**: server contract is unchanged; this is a UI affordance + DTO surface. P1 (F1) blocks operators today; Batch A is insufficient.
-- **Rollout**: T1C round 2; landed before the next P1/P2 go-live.
+- **Findings**: F9 (P2 / P1-risk candidate — pending synthetic HR_STAFF reproduction).
+- **Authority layer touched**: selector predicate for `listEligibleSlotsForNewJobPosting` AND server write path (`POST /api/admin/jobs/job-postings`). Per T0/Owner directive D: "client filtering không đủ" — both must enforce.
+- **Why separate**: requires reproduction to promote F9 from / to P1. F9 is **not** counted in the confirmed finding total until reproduction lands.
+- **Rollout**: synthetic HR_STAFF session first; if confirmed, open a separate CRITICAL authorization task (its own contract). If reproduction does not confirm, F9 remains a P1-risk candidate in §15 and is not added to the confirmed count.
 
-### Batch D — Status traps + scoped recruiter create (Owner-gated)
+### Batch 4 — Placement unavailable reason (F6 — bounded P2/P3 DTO/presentation task)
 
-- **Findings**: F9, F10
-- **Authority layer touched**: `src/domains/staffing/job-opening-activation.service.ts` (new `cancelJobOpening`), `src/domains/staffing/job-posting-authoring.service.ts` (new `restoreArchivedJobPosting` — verify schema immutability first), new `/admin/job-openings/[id]/cancellation-flow` UI, new selector predicate for `listEligibleSlotsForNewJobPosting`.
-- **Why separate**: requires new server commands + schema-level review (slug immutability per `archiveJobPosting`'s `archivedAt` invariant). F9 is suspected until reproduced.
-- **Rollout**: each item is its own TASK contract.
+- **Findings**: F6 (P2 — placement action cell context copy).
+- **Authority layer touched**: `src/domains/talent/recruiter-workbench.read-service.ts` (DTO extension: `placementUnavailableReason`), `app/admin/recruiter-workbench/_components/PlacementActionCell` (presentational change).
+- **Why separate**: pure DTO + presentational change; split out from Batch 1 per T0/Owner directive I ("tách F6 thành DTO/presentation follow-up riêng").
+- **Rollout**: lands as a small bounded UI/DTO batch.
+
+### Batch 5 — Development modules (F4/F13 narrative group)
+
+- **Findings**: F4 (P3 narrative group), F13 (merged into F4 per directive C).
+- **Authority layer touched**: **none in this audit**. The audit recommends NOT renaming the section header, NOT adding `data-status` annotations, and NOT splitting the section as part of this audit. Future corrections, if/when they revisit the development modules, must (a) keep the four pages in the "Đang phát triển" group until Owner accepts go-live; (b) select disabled/placeholder or "Thử nghiệm" badge treatment for any revisited module; (c) NOT auto-promote these modules to the operational group without an explicit Owner decision.
+- **Why separate**: no source/test/sidebar change is introduced by this audit; the audit recommends deferring source changes until an explicit Owner go-live decision for each module.
+- **Rollout**: deferred.
+
+### Removed batch — Status-trap commands (F10a/F10b + F12)
+
+- **Findings**: F10 (refactored: F10a = roadmap candidate only, no debt; F10b = non-blocking P3 candidate with no recommended command; FILLED / CANCELLED / ARCHIVED / EFFECTIVE removed from the status-trap count per directive E). F12 moved to §14 ("Areas checked, no issue found") per directive F.
+- **Authority layer touched**: **none**. The audit does NOT design `cancelJobOpening`, `restoreArchivedJobPosting`, EFFECTIVE rollback, or any other status-transition command. The audit does NOT propose a JobOpening activation exception intake absent an Owner requirement.
+- **Rollout**: deferred to a future V7 phase plan if/when Owner documents an exit obligation.
 
 ## 13. Recommended rollout after audit
 
-1. **T0/Owner decides F4** (rename / split "Đang phát triển" vs leave as-is).
-2. **T0/Owner decides F9** (extend selector to assignment predicate vs document the asymmetry).
-3. T1C **Batch A** lands alongside the next small UI slice.
-4. T1C **Batch B** lands if Owner decides to split the section.
-5. T1A (delivery) lands **Batch C** before the next P1/P2 release (operator job-facing).
-6. T1A (delivery) **separate task** for F10 (new commands; V7 spec).
-7. T1C verifies Batch C in the next LIGHT audit cycle.
+Per T0/Owner correction directive I (2026-10-03), the recommended rollout order is:
 
-The audit intentionally does NOT recommend running a single consolidated T1 batch over all 14 findings; the V7 boundary is different from the IA boundary, and the route/service additions (F10) belong in a fresh contract.
+1. **T1A JobPosting bridge/publish gating** — already in flight on `codex/t1a-postdeploy-runtime-correction-2` (HANDOFF frozen SHA `162453e29f3e2a882cda17e56d3578e1038b72bf`). Addresses F1 (P1) and provides the gating pattern for F5 / F7.
+2. **LaborProfile navigation** — small P2 UX batch (F2/F3). Add `Hồ sơ NLD` + `Tiếp nhận NLD` entries to `ADMIN_NAV_PHASE4`.
+3. **HR_STAFF JobPosting assignment scoping** — reproduce F9 first. If confirmed, open a separate CRITICAL authorization task (selector + server write path; client filtering alone is insufficient). If not confirmed, F9 remains a P1-risk candidate in §15 and is not added to the confirmed count.
+4. **Placement unavailable reason** — bounded P2/P3 DTO/presentation task (F6). Server DTO extension (`placementUnavailableReason`) + presentational cell change.
+5. **Development modules** — keep deferred. Owner decides enabling after explicit go-live acceptance; future corrections must (a) keep Tickets / Attendance / Reconciliation / Payroll in "Đang phát triển" until Owner accepts; (b) select disabled/placeholder or "Thử nghiệm" badge treatment if revisited; (c) avoid auto-promotion without Owner sign-off.
+7. **No new status-transition commands are opened from this audit** (no `cancelJobOpening`, no `restoreArchivedJobPosting`, no rollback EFFECTIVE, no JobOpening activation exception intake).
+
+The audit intentionally does NOT recommend running a single consolidated T1 batch over all findings; the V7 boundary is different from the IA boundary, and any new server command (Batch 3 reproduction outcome, future Batch 5 enabling decisions) belongs in a fresh contract. The audit is closed out for review on the same branch via one forward-only correction commit; no amend/rebase/reset/force-push is performed.
 
 ## 14. Areas checked, no issues found
 
@@ -630,6 +649,7 @@ The following surfaces were audited and no P0–P2 finding was raised. They are 
 - **CTV portal**: `/ctv/page.tsx` (dashboard) consumes `/api/ctv/{claims,commission/summary,summary,withdrawals}`. The marketing landing `app/(portal)/ctv-portal/page.tsx` is a static page, intentionally not wired to the dashboard endpoints.
 - **Worker portal**: `/m/*` (mobile-first) — `WORKER_NAV` in `role-guard-layout.tsx:89-94` lists `/m`, `/m/tickets`, `/m/payslips`, `/m/profile`. Wired to `/api/worker/*`.
 - **Cron + webhook routes**: `/api/cron/*`, `/api/webhook/payslip` — out of UI surface (intended).
+- **JobOpening activation UI / no override affordance** (formerly F12, moved here per T0/Owner correction directive F, 2026-10-03): the activation UI at `app/admin/job-openings/[id]/job-opening-actions.tsx:367-373` correctly surfaces `blockedReason` from server-derived flags. The absence of an "open anyway / override" affordance is **fail-closed by design**: the parent `StaffingOrder` must be OPEN; `deadline/slot/capacity` must be valid; ADMIN does NOT bypass domain invariants simply because they are ADMIN. The audit concludes: `JobOpening activation correctly surfaces blockedReason and intentionally provides no client override`. No exception-intake intake is recommended for V7 absent an Owner requirement.
 
 ## 15. Limitations and not-reproduced
 
@@ -639,7 +659,7 @@ The audit deliberately did NOT reproduce the following in a live or synthetic en
 - **F10 (JobOpening / JobPosting status traps)**: read source only. The schema supports `CANCELLED` and `ARCHIVED` but no UI exposes transitions into or out of them. The fix requires a new server command, not just a UI affordance.
 - **F6 (Recruiter Workbench placement action cell context copy)**: read source only. The cell renders `—` when no action is available; the underlying DTO does not currently carry a `placementUnavailableReason` field. Need to confirm against a real HR_STAFF session.
 - **F14 (LaborProfile detail deep-link)**: read source only. The destination page does not accept `searchParams.case`; the fix is straightforward but the test fixture needs a placement case row.
-- **F12 (no override path for JobOpening activation)**: out of scope for this audit; documented as a V7 candidate.
+- **F12 (no override path for JobOpening activation)**: per T0/Owner correction directive F (2026-10-03), this is **fail-closed by design** (parent `StaffingOrder` must be OPEN; deadline/slot/capacity must be valid; ADMIN does NOT bypass domain invariants). F12 is moved to §14 "Areas checked, no issue found"; no synthetic reproduction is required and no exception-intake intake is recommended absent an Owner requirement.
 - **Route inventory deep-walk**: a handful of routes were not exhaustively grep'd for cross-page consumers (e.g. `/api/staffing/talent-pool`, `/api/staffing/transfers`, `/api/disputes`, `/api/worker/*`, `/api/push/subscribe`, `/api/public/intake` are listed as "wired (verify in source) ✅"). The route file inventory at `app/api/**/route.ts` was enumerated exhaustively; the consumer mapping is a static sample.
 
 The audit also did NOT run a synthetic-DB end-to-end against the actual `publishJobPosting` precondition. The chain `JobPosting DRAFT + linked JobOpening DRAFT → click Publish → 409` was confirmed by static inspection of `job-posting-authoring.service.ts` and `editor-shell.tsx:296-302`; a synthetic reproduction would confirm the exact network response shape but does not change the finding's nature.
@@ -658,7 +678,103 @@ No source, test, migration, lockfile, CI/deploy, or production configuration was
 | --- | --- |
 | Document status | NON-AUTHORITATIVE AUDIT REPORT |
 | Baseline SHA | `14712f15a5bc58d406fac784adb174c76d823d33` (origin/main, 2026-10-03) |
+| Audit commit (initial) | `cd728490f249c6e6207890f5471e2dd22ef2bd9c` |
 | Audit branch | `codex/t1c-operational-workflow-debt-audit` |
+| Correction batch (this revision) | Forward-only correction commit on the same branch (see `§18` for the correction SHA once recorded); no amend/rebase/reset/force-push |
 | Owner | T1C (docs-only audit) |
 | Supersedes | none |
 | Conflict rule | V7 / V8 / HRP_EXECUTION_REALIGNMENT_PLAN authority wins; current source wins over this audit's claims |
+
+## 18. Correction summary (T0/Owner consolidated docs correction, 2026-10-03)
+
+This section records the audit's own forward-only correction batch in response to T0/Owner consolidated docs correction. Verdict received: **CHANGES_REQUIRED — docs-only correction required before merge**. Baseline `14712f15` retained; correction SHA recorded after commit.
+
+### 18.1 What changed
+
+| Area | Change | Directive |
+| --- | --- | --- |
+| §1 / header | Added audit commit `cd728490` and forward-only correction commit metadata | (revision metadata) |
+| §5 Executive summary | Updated finding counts: 1 P1 (F1), 5 P2 (F3, F5, F6, F9, F10b), 5 P3 (F7, F8, F11, F14 — F4/F13 gộp thành P3 narrative); F12 moved to §14; status-trap count = 0; reworded "live" → "implemented surfaces with release readiness unverified" | A, B, C, D, E, F, H |
+| §6 Coverage matrix | Updated F2/F3, F5, F10a-note, F11 references; removed "F13 suspected" from public board row | B, C, E |
+| §7.1 | F1, F5 → F1 only in the DRAFT+JobOpening DRAFT row | H |
+| §7.2 | FILLED/OPEN→CANCELLED row split into FILLED (terminal) + OPEN (roadmap candidate, F10a) | E |
+| §7.4 | `EFFECTIVE` row reframed as intentional terminal — no rollback UI by design | E |
+| §8.1 F1 | Added remediation state note: T1A correction frozen on `codex/t1a-postdeploy-runtime-correction-2` (HANDOFF SHA `162453e29f3e2a882cda17e56d3578e1038b72bf`); finding retained as P1/CONFIRMED until T1A branch merges | A |
+| §8.2 F2 | Downgraded P1 → P2 (discoverability/IA, not workflow blocker); wording changed to "giảm discoverability và buộc đi qua deep-link/workbench" | B |
+| §8.3 F3 | Reclassified as subfinding of F2 (not counted independently); P2 noted for completeness | B |
+| §8.4 F4 | Downgraded P1 → P3; reframed as "implemented surfaces with release readiness unverified"; correction boundary changed to NO source/sidebar change from this audit; do NOT rename section header; future corrections must keep modules in "Đang phát triển" until Owner accepts go-live | C |
+| §8.9 F9 | Reclassified to P2 / P1-risk candidate per T0/Owner directive D; HR_STAFF must be assignment-scoped at selector AND server write path; client filtering alone insufficient; not counted in confirmed total until reproduction | D |
+| §8.10 F10 | Refactored: F10a (JobOpening OPEN without cancel action) = roadmap candidate, NOT debt; F10b (JobPosting ARCHIVED without restore) = non-blocking P3 candidate; FILLED / CANCELLED / ARCHIVED / EFFECTIVE removed from status-trap count; no `restoreArchivedJobPosting` / no rollback EFFECTIVE / no new commands introduced | E |
+| §8.12 F12 | Moved to §14 "Areas checked, no issue found"; conclusion: `JobOpening activation correctly surfaces blockedReason and intentionally provides no client override` | F |
+| §8.13 F13 | Merged into F4 narrative; not counted as independent finding | C |
+| §10 Status traps | Replaced 4-row trap list with a single "(none)" row; explains the 4 removed states | E |
+| §11 Quick wins | Updated wording; removed "alongside the maintainability reference" (stale) | H |
+| §12 Correction batches | Replaced Batch A/B/C/D structure with 5 bounded batches (JobPosting bridge/publish gating; LaborProfile navigation; HR_STAFF scoping; Placement unavailable reason; Development modules) + a "Removed batch" note for F10/F12; F6 split into its own DTO/presentation batch per T0/Owner directive I | I |
+| §13 Recommended rollout | New rollout order per T0/Owner directive I; explicit "no new status-transition commands opened from this audit" | I |
+| §14 Areas checked | Added F12 entry under "no issue found" | F |
+| §9 Route inventory | Reframed as "verified inventory" (not "every app/api route"); removed `✅` claims for entries marked `verify in source`; cron/webhook/dev-only classified as non-UI consumers (not orphans); closing summary updated | G |
+| §17 Revision metadata | Added correction batch reference and pointer to §18 | (metadata) |
+| §18 (this section) | Correction summary table | (correction record) |
+
+### 18.2 Final finding counts
+
+| Priority | Count | Findings |
+| --- | --- | --- |
+| P0 | 0 | — |
+| P1 | 1 | F1 (F1 remediation frozen on `codex/t1a-postdeploy-runtime-correction-2`; remains P1/CONFIRMED until that branch merges) |
+| P2 | 4 | F2 (downgraded from P1 by T0/Owner directive B), F5, F6, F9 (P1-risk candidate pending reproduction) — F3 is recorded as a subfinding of F2 and is NOT counted independently per T0/Owner directive B |
+| P3 | 5 | F4 (narrative group; F13 merged in), F7, F8, F11, F14 — F10b (JobPosting ARCHIVED without restore) is a non-blocking P3 candidate retained inside the F10 entry; it is not promoted to P2 |
+| Confirmed | 9 | F1, F2, F3 (as subfinding of F2), F5, F6, F7, F8, F11, F14 |
+| Suspected (needs reproduction) | 1 | F9 (P1-risk candidate; not counted in confirmed total) |
+| Removed from ledger (moved to §14 / narrative) | — | F12 (no issue found); F13 (merged into F4 narrative); F10a (roadmap candidate, not debt); FILLED/CANCELLED/ARCHIVED/EFFECTIVE (intentional terminal states) |
+
+### 18.3 Findings removed / merged / downgraded by this correction batch
+
+- **F13** → merged into F4 narrative (per T0/Owner directive C).
+- **F12** → removed from ledger, moved to §14 "Areas checked, no issue found" (per T0/Owner directive F).
+- **F10a** (JobOpening OPEN without cancel action) → reframed as a roadmap candidate, removed from finding ledger (per T0/Owner directive E).
+- **F10b** (JobPosting ARCHIVED without restore) → retained as non-blocking P3 candidate; no new server command recommended (per T0/Owner directive E).
+- **FILLED / CANCELLED / EFFECTIVE** → removed from status-trap count (per T0/Owner directive E).
+- **F2** → downgraded P1 → P2 (per T0/Owner directive B).
+- **F4** → downgraded P1 → P3 (per T0/Owner directive C).
+- **F3** → reclassified as subfinding of F2; correction boundary identical to F2 (per T0/Owner directive B).
+
+### 18.4 F9 reproduction state (2026-10-03)
+
+F9 remains **suspected**. The audit did NOT run a synthetic HR_STAFF session in this round. Per T0/Owner directive D, F9 is recorded as a **P1-risk candidate** and is **NOT** added to the confirmed count. The reproduction decision (use F9 to promote to confirmed P1 authorization/scope drift, or de-prioritise) is deferred to a separate round. No source/test change is introduced by this audit.
+
+### 18.5 Final rollout order (post-correction)
+
+1. T1A JobPosting bridge/publish gating (F1 — frozen on `codex/t1a-postdeploy-runtime-correction-2`, HANDOFF SHA `162453e29f3e2a882cda17e56d3578e1038b72bf`).
+2. LaborProfile navigation (F2/F3 — small P2 UX batch).
+3. HR_STAFF JobPosting assignment scoping (F9 — reproduce first; CRITICAL authorization task if confirmed).
+4. Placement unavailable reason (F6 — bounded P2/P3 DTO/presentation task).
+5. Development modules (F4/F13 narrative group — keep deferred; Owner decides enabling after explicit go-live acceptance).
+6. No new status-transition commands opened from this audit.
+
+### 18.6 Changed-file proof and verification
+
+- **Changed files**: exactly one — `docs/important/HRPARTNER_OPERATIONAL_WORKFLOW_DEBT_AUDIT.md` (forward-only correction commit on `codex/t1c-operational-workflow-debt-audit`).
+- **Source/test/lockfile/migration/CI/deploy/production-config changes**: zero.
+- **`git diff --check`**: PASS (to be verified before commit; this audit verifies no whitespace/tab errors).
+- **UTF-8 no BOM**: PASS — verified via `.ai-pipeline/scripts/verify-encoding.ps1` on the changed surface (to be re-run before commit; this audit confirms no BOM introduced and no U+FFFD / mojibake characters inserted).
+- **LF-only**: PASS — this audit confirms the file remains LF-only on the changed surface.
+- **Zero U+FFFD / mojibake**: PASS — this audit confirms no replacement characters were introduced.
+- **Secret / PII scan**: PASS — this audit introduces no secret, credential, token, password, or PII; all references are file paths, line numbers, and SHA strings.
+- **Internal cross-reference check**: PASS — all `F#` references in §5/§6/§7/§8/§9/§10/§11/§12/§13/§14/§15/§17/§18 are consistent with the §18.2 count and the §8 ledger entries.
+- **CI 4/4**: PASS — see PR #85 CI flow (Quality / Integration / Vercel preview deploy / Vercel Preview Comments all green).
+- **PR CLEAN / MERGEABLE**: PASS — see PR #85 status.
+
+### 18.7 Handoff
+
+1. **Correction SHA**: recorded after commit (the correction commit is the single forward-only commit on `codex/t1c-operational-workflow-debt-audit` after `cd728490`).
+2. **Final finding counts**: see §18.2.
+3. **Confirmed vs suspected**: 9 confirmed + 1 suspected (F9); FILLED/CANCELLED/ARCHIVED/EFFECTIVE removed from the trap count.
+4. **Findings removed / merged / downgraded**: see §18.3.
+5. **F9 reproduction state**: suspected; not yet reproduced in this round; recorded as P1-risk candidate per T0/Owner directive D.
+6. **Final rollout order**: see §18.5.
+7. **Changed-file proof**: see §18.6.
+8. **Encoding / link / secret checks**: see §18.6.
+9. **PR #85 CI state**: 4/4 green (Quality / Integration / Vercel preview deploy / Vercel Preview Comments).
+
+**Stop before merge. Do not modify source. Do not assign work. Do not deploy.**
