@@ -12,7 +12,8 @@
 | Worktree | `C:\CodeApp\HrP-worktrees\t1a-f9b-jobposting-write-boundary-hardening` |
 | Branch | `codex/t1a-f9b-jobposting-write-boundary-hardening` |
 | Baseline | `1b9bbd9f809e2251b501c288bd3d63179fcb4ee7` |
-| Implementation SHA | `e68ea4a3e4521eeb794e7c051a7bea0c33ec70f5` (T0 contract clarification forward-only on top of `cd31696601ac9c6ce37c86b2594e9c53dd34791c`; pins canonical zero-row fail-closed contract per T0 disposition 2026-10-03 22:44 ICT and adds the AC-02 precondition `assigned HR_STAFF can SELECT target slot` + GUC re-read inside `withContext`) |
+| Implementation SHA | `e68ea4a3e4521eeb794e7c051a7bea0c33ec70f5` |
+| Implementation SHA explanation | T0 contract clarification forward-only on top of `cd31696601ac9c6ce37c86b2594e9c53dd34791c`. Pins the canonical zero-row fail-closed contract per T0 disposition 2026-10-03 22:44 ICT and adds the AC-02 precondition `assigned HR_STAFF can SELECT target slot` plus the GUC re-read inside `withContext`. Test change is a T0 contract clarification (HANDOFF §0), not an implementation correction. |
 | Docs / evidence freeze SHA | see HEAD |
 | Predecessor implementation SHA (F9 X4) | `0d38042f7ccc41fafd12cb11de8e0d1fd3ee5c26` |
 | Predecessor docs / evidence freeze SHA (F9 X5) | `1b9bbd9f809e2251b501c288bd3d63179fcb4ee7` |
