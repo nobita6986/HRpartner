@@ -14,7 +14,7 @@
 | Baseline | `1b9bbd9f809e2251b501c288bd3d63179fcb4ee7` |
 | Implementation SHA | `e68ea4a3e4521eeb794e7c051a7bea0c33ec70f5` |
 | Implementation SHA explanation | T0 contract clarification forward-only on top of `cd31696601ac9c6ce37c86b2594e9c53dd34791c`. Pins the canonical zero-row fail-closed contract per T0 disposition 2026-10-03 22:44 ICT and adds the AC-02 precondition `assigned HR_STAFF can SELECT target slot` plus the GUC re-read inside `withContext`. Test change is a T0 contract clarification (HANDOFF §0), not an implementation correction. |
-| Docs / evidence freeze SHA | see HEAD |
+| Docs / evidence freeze SHA | `81ebde96be28b06b28b4c2c2e73c161ae3325677` |
 | Predecessor implementation SHA (F9 X4) | `0d38042f7ccc41fafd12cb11de8e0d1fd3ee5c26` |
 | Predecessor docs / evidence freeze SHA (F9 X5) | `1b9bbd9f809e2251b501c288bd3d63179fcb4ee7` |
 | Predecessor failed round-1 SHA | `6015361bb986b920bad6a90f8f9986165a4a99d5` |
@@ -117,7 +117,7 @@ No `prisma/schema.prisma` edit; no `package.json` / `pnpm-lock.yaml` / `pnpm-wor
 | AC | Description | Evidence | Result |
 | --- | --- | --- | --- |
 | — | Contract gate (`verify-task.ps1 -TaskPath .../TASK.md`) | `pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-f9b-jobposting-write-boundary-hardening/TASK.md` | RESULT: PASS |
-| AC-01 | Happy path: assigned HR_STAFF creates + binds + JobPosting DRAFT; primitive-level idempotent replay returns same canonical rows; zero residue. | EV-04 — `npx vitest run -c vitest.integration.config.ts tests/db/p1a06-f9b-jobposting-write-boundary.integration.test.ts` (> AC-01) (17/17) | PASS |
+| AC-01 | Happy path: assigned HR_STAFF creates + binds + JobPosting DRAFT; primitive-level idempotent replay returns same canonical rows; zero residue. | EV-04 — `npx vitest run -c vitest.integration.config.ts tests/db/p1a06-f9b-jobposting-write-boundary.integration.test.ts` (> AC-01) (18/18 ×3 fresh processes; precondition `assigned HR_STAFF can SELECT target slot` added per T0 contract clarification 2026-10-03 22:44 ICT) | PASS |
 | AC-02 | Direct DB negative proof as writer + HR_STAFF GUC, canonical zero-row fail-closed contract (T0 disposition 2026-10-03 22:44 ICT). Writer is `app_user_writer` non-super non-bypassrls; GUC `app.user_id` / `app.role` set and re-read via `current_setting`; target row exists in admin snapshot and is visible to the writer via RLS where required. Forbidden UPDATE on `position_title`, `position_code`, `work_location`, `slots_needed`, `slots_filled`, `valid_to`, `staffing_order_id`, arbitrary `job_opening_id`; cross-slot; cross-order; other-recruiter; unassigned; revoked; PUBLIC cannot EXECUTE; zero side effects (no audit/outbox/history; no orphan JobOpening/JobPosting; no cross-order/cross-slot mutation; no slot binding). Implementation MAY return zero rows OR throw; the assertion is the post-attempt admin snapshot is byte/value-equivalent for every protected column. Positive control: assigned HR_STAFF primitive happy path; rebind/cross-slot/cross-order via primitive rejected; same-ID replay idempotent. | EV-04 — `npx vitest run -c vitest.integration.config.ts tests/db/p1a06-f9b-jobposting-write-boundary.integration.test.ts` (> AC-02.a..h) (8/8 cases) | PASS |
 | AC-03 | True two-connection revoke-before-create race → fail closed with one exact canonical code (NO_ACTIVE_ORDER_ASSIGNMENT 403), zero JobOpening, zero JobPosting, zero slot binding. | EV-04 — `npx vitest run -c vitest.integration.config.ts tests/db/p1a06-f9b-jobposting-write-boundary.integration.test.ts` (> AC-03) (1/1) | PASS |
 | AC-04 | Policy / function live posture: `hrp_f9_slots_staff_update` does not exist; new primitive exists; fixed search_path; PUBLIC no EXECUTE; writer grants only; no HR_STAFF DELETE; no broad StaffingOrder write relaxation; final exact-ID residue = 0. | EV-04 — `npx vitest run -c vitest.integration.config.ts tests/db/p1a06-f9b-jobposting-write-boundary.integration.test.ts` (> AC-04.a..e) (5/5 cases) | PASS |
@@ -190,6 +190,34 @@ The only material deviation from the TASK's `DEC-04` was the discovery that the 
 | Round | Status | Notes |
 | --- | --- | --- |
 | 1 | READY_FOR_AUDIT | Implementation complete; canonical gates PASS; docs/evidence freeze committed. |
+| 0 (pre-round ledger) | SUPERSEDED_PRE_FIX | T0 background-task ledger rows 670359–670372 (handoff into the T0 → T1A reconciliation). 670359–670365 ran in the sibling worktree `t1a-f9-hr-staff-jobposting-scope` (predecessor F9 X4 evidence — not F9-B); 670366 misrouted `npx prisma validate` (auto-installed `prisma@8.0.0-rc.19` → `CLI.UNKNOWN_COMMAND`); 670369–670370 were full unit suite at the impl SHA `cd316966` (3611/9/0 PASS); 670371–670372 ran F9-B synthetic at the pre-impl SHA `e018dd0a` (test file did not exist). Full classification in `T0_RECONCILIATION_REPORT.md` §C. |
+| 0.5 (T0 contract clarification) | T0 contract clarification | T0 disposition 2026-10-03 22:44 ICT pinned AC-02 contract to canonical zero-row fail-closed (RLS may return zero rows OR throw; the assertion is post-attempt admin snapshot byte/value-equivalent + GUC re-read + RLS visibility precondition). Forward-only commit `e68ea4a3e4521eeb794e7c051a7bea0c33ec70f5` re-pinned Implementation SHA. Test change is T0 contract clarification, not an implementation correction; F9-B budget = 1 unchanged. |
+| 1 (runtime reproduction) | READY_FOR_AUDIT | 16-gate fresh-process run at exact audit-target HEAD (pinned at HEAD-of-HANDOFF freeze). All 16 gates PASS. See `RUN_TIME_REPRODUCTION.md` for the full evidence ledger. |
+
+## 8. Runtime Reproduction — 16-gate fresh-process evidence
+
+Reproduction at exact audit-target HEAD `81ebde96be28b06b28b4c2c2e73c161ae3325677` (this HANDOFF's docs/evidence freeze SHA). All 16 gates PASS; full SHA, exit code, counts, run ID, evidence path in `docs/tasks/hrp-f9b-jobposting-write-boundary-hardening/RUN_TIME_REPRODUCTION.md`.
+
+Gate summary:
+
+| # | Gate | Run IDs | Counts | Result |
+| --- | --- | --- | --- | --- |
+| 1 | Synthetic DB posture | `node scripts/ci/assert-test-db-posture.mjs` | `POSTURE_OK writer_is_writer admin_is_admin same_target` | PASS |
+| 2 | F9-B synthetic ×3 fresh processes | F9B-run-1, F9B-run-2, F9B-run-3 | 18/18 each, 0 failed, 0 skipped | PASS |
+| 3 | F9 original ×3 fresh processes | F9-run-1, F9-run-2, F9-run-3 | 12/12 each, 0 failed, 0 skipped | PASS |
+| 4 | Predecessor DB regressions (5 files) at F9-B worktree | Predecessor-1 | 78/78 (5 files), 0 failed, 0 skipped | PASS |
+| 5 | Required-relation sweep | Sweep-1 | 11/11, 0 failed, 0 skipped | PASS |
+| 6 | F9-B primitive static guard | F9BStatic-1 | 10/10, 0 failed, 0 skipped | PASS |
+| 7 | Authoring unit tests | Authoring-1 | 33/33, 0 failed, 0 skipped | PASS |
+| 8 | Full unit suite | Unit-1 | 219/219 files, 3611/9/0, 0 failed | PASS |
+| 9 | `npx tsc --noEmit` | Tsc-1 | exit 0, 0 diagnostics | PASS |
+| 10 | `npm run lint` | Lint-1 | exit 0, 0 errors, 918 warnings (pre-existing) | PASS |
+| 11 | `npm run build` | Build-1 | exit 0, production build | PASS |
+| 12 | `npx --no-install prisma validate` (+ `-v`) | Prisma-1 | exit 0, prisma 5.22.0 | PASS |
+| 13 | `git diff --check 1b9bbd9f..HEAD` + `git diff --check HEAD` | Diff-1 | no whitespace/line-ending issues | PASS |
+| 14 | `verify-encoding-range.mjs 1b9bbd9f HEAD` + `verify-encoding.ps1` | Encoding-1 | 15/15 text files; 0 BOM, 0 NUL, 0 U+FFFD, 0 CRLF, 0 mojibake | PASS |
+| 15 | `verify-task.ps1` | VerifyTask-1 | RESULT: PASS | PASS |
+| 16 | `verify-handoff.ps1` | VerifyHandoff-1 | RESULT: PASS WITH WARNINGS (1 H-15 warning, expected: T0 contract clarification round modifies TASK control fields; recorded in §7 round 0.5) | PASS |
 
 No correction batch has been used. F9-B budget = 1.
 
