@@ -680,7 +680,7 @@ No source, test, migration, lockfile, CI/deploy, or production configuration was
 | Baseline SHA | `14712f15a5bc58d406fac784adb174c76d823d33` (origin/main, 2026-10-03) |
 | Audit commit (initial) | `cd728490f249c6e6207890f5471e2dd22ef2bd9c` |
 | Audit branch | `codex/t1c-operational-workflow-debt-audit` |
-| Correction batch (this revision) | Forward-only correction commit on the same branch (see `§18` for the correction SHA once recorded); no amend/rebase/reset/force-push |
+| Correction batch (this revision) | Forward-only correction commit on the same branch; SHA recorded below in §18; no amend/rebase/reset/force-push |
 | Owner | T1C (docs-only audit) |
 | Supersedes | none |
 | Conflict rule | V7 / V8 / HRP_EXECUTION_REALIGNMENT_PLAN authority wins; current source wins over this audit's claims |
@@ -767,7 +767,7 @@ F9 remains **suspected**. The audit did NOT run a synthetic HR_STAFF session in 
 
 ### 18.7 Handoff
 
-1. **Correction SHA**: recorded after commit (the correction commit is the single forward-only commit on `codex/t1c-operational-workflow-debt-audit` after `cd728490`).
+1. **Correction SHA**: `cd18049d` (forward-only correction commit on `codex/t1c-operational-workflow-debt-audit`, parent `cd728490`).
 2. **Final finding counts**: see §18.2.
 3. **Confirmed vs suspected**: 9 confirmed + 1 suspected (F9); FILLED/CANCELLED/ARCHIVED/EFFECTIVE removed from the trap count.
 4. **Findings removed / merged / downgraded**: see §18.3.
