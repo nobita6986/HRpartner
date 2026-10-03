@@ -14,7 +14,6 @@
 | Baseline | `1b9bbd9f809e2251b501c288bd3d63179fcb4ee7` |
 | Implementation SHA | `e68ea4a3e4521eeb794e7c051a7bea0c33ec70f5` |
 | Implementation SHA explanation | T0 contract clarification forward-only on top of `cd31696601ac9c6ce37c86b2594e9c53dd34791c`. Pins the canonical zero-row fail-closed contract per T0 disposition 2026-10-03 22:44 ICT and adds the AC-02 precondition `assigned HR_STAFF can SELECT target slot` plus the GUC re-read inside `withContext`. Test change is a T0 contract clarification (HANDOFF §0), not an implementation correction. |
-| Docs / evidence freeze SHA | `067b35eb0580790c4d4e5cf6f3c68163f9dbc56a` |
 | Predecessor implementation SHA (F9 X4) | `0d38042f7ccc41fafd12cb11de8e0d1fd3ee5c26` |
 | Predecessor docs / evidence freeze SHA (F9 X5) | `1b9bbd9f809e2251b501c288bd3d63179fcb4ee7` |
 | Predecessor failed round-1 SHA | `6015361bb986b920bad6a90f8f9986165a4a99d5` |
@@ -27,7 +26,7 @@
 | Execution round | `1` |
 | Current audit round | `0` |
 | Correction batches used | `0` |
-| Predecessor chain preserved | F9 X5 `1b9bbd9f` → F9-B Implementation SHA → F9-B Docs / evidence freeze SHA = HEAD. No amend / reset / rebase / force-push on `1b9bbd9f..HEAD`. |
+| Predecessor chain preserved | F9 X5 `1b9bbd9f` → F9-B Implementation SHA `e68ea4a3e4521eeb794e7c051a7bea0c33ec70f5`. The Implementation SHA is the **final semantic SHA** for F9-B; every commit strictly after `e68ea4a3` on the branch is docs-only (HANDOFF / RUN_TIME_REPRODUCTION) with no semantic delta in source, tests, prisma schema, or runtime gates. No amend / reset / rebase / force-push on `1b9bbd9f..HEAD`. |
 | Test environment | `READY` (synthetic Neon `ep-empty-forest-azlhfyo9-*` writer / admin pair — T0 authorized `C:\cre_hrp.txt` ingestion via process wrapper. Wrapper loads URLs by host + username + database, never echoes URL / password / query string, never writes to repo.) |
 | Synthetic DB preflight | `POSTURE_OK writer_is_writer admin_is_admin same_target` (writer `rolsuper=false, rolbypassrls=false`; admin `bypassrls=true`; `ep-empty-forest-azlhfyo9-*` host prefix; `neondb` database; production `ep-shy-tree-*` URLs counted-and-ignored — `ignored_production_lines=2`) |
 | Synthetic migration deploy | `OK` — `npx prisma migrate deploy` applied `20261003100000_f9b_slot_opening_binding_primitive`; corrective posture verified live (`pg_policies` no longer contains `hrp_f9_slots_staff_update`; `pg_proc` has `hrp_f9b_bind_slot_to_opening` with `prosecdef=true`, `proconfig=search_path`; `routine_privileges` PUBLIC EXECUTE count = 0; writer grants = 2). |
@@ -192,11 +191,11 @@ The only material deviation from the TASK's `DEC-04` was the discovery that the 
 | 1 | READY_FOR_AUDIT | Implementation complete; canonical gates PASS; docs/evidence freeze committed. |
 | 0 (pre-round ledger) | SUPERSEDED_PRE_FIX | T0 background-task ledger rows 670359–670372 (handoff into the T0 → T1A reconciliation). 670359–670365 ran in the sibling worktree `t1a-f9-hr-staff-jobposting-scope` (predecessor F9 X4 evidence — not F9-B); 670366 misrouted `npx prisma validate` (auto-installed `prisma@8.0.0-rc.19` → `CLI.UNKNOWN_COMMAND`); 670369–670370 were full unit suite at the impl SHA `cd316966` (3611/9/0 PASS); 670371–670372 ran F9-B synthetic at the pre-impl SHA `e018dd0a` (test file did not exist). Full classification in `T0_RECONCILIATION_REPORT.md` §C. |
 | 0.5 (T0 contract clarification) | T0 contract clarification | T0 disposition 2026-10-03 22:44 ICT pinned AC-02 contract to canonical zero-row fail-closed (RLS may return zero rows OR throw; the assertion is post-attempt admin snapshot byte/value-equivalent + GUC re-read + RLS visibility precondition). Forward-only commit `e68ea4a3e4521eeb794e7c051a7bea0c33ec70f5` re-pinned Implementation SHA. Test change is T0 contract clarification, not an implementation correction; F9-B budget = 1 unchanged. |
-| 1 (runtime reproduction) | READY_FOR_AUDIT | 16-gate fresh-process run at exact audit-target HEAD (pinned at HEAD-of-HANDOFF freeze). All 16 gates PASS. See `RUN_TIME_REPRODUCTION.md` for the full evidence ledger. |
+| 1 (runtime reproduction) | READY_FOR_AUDIT | Runtime / semantic gates (Gates 1–15) PASS at Implementation SHA `e68ea4a3e4521eeb794e7c051a7bea0c33ec70f5`; Gate 16 (`verify-handoff`) PASS at `bdd3446db2433d394587bc61777334e29d14142b`. `git diff e68ea4a3..HEAD` proves zero semantic delta (only HANDOFF.md and RUN_TIME_REPRODUCTION.md changed in the docs-only correction batches). The final audit-target HEAD is recorded in the chat handback after this commit and is not pinned inside the doc itself. See `RUN_TIME_REPRODUCTION.md` for the per-gate SHA-at-run mapping. |
 
 ## 8. Runtime Reproduction — 16-gate fresh-process evidence
 
-Reproduction at exact audit-target HEAD `067b35eb0580790c4d4e5cf6f3c68163f9dbc56a` (this HANDOFF's docs/evidence freeze SHA). All 16 gates PASS; full SHA, exit code, counts, run ID, evidence path in `docs/tasks/hrp-f9b-jobposting-write-boundary-hardening/RUN_TIME_REPRODUCTION.md`.
+Runtime / semantic gates (Gates 1–15) PASS at the F9-B Implementation SHA `e68ea4a3e4521eeb794e7c051a7bea0c33ec70f5`; Gate 16 (`verify-handoff`) PASS at `bdd3446db2433d394587bc61777334e29d14142b` (the SHA that was HEAD at the time verify-handoff was executed). `git diff e68ea4a3..HEAD` is empty for everything except `docs/tasks/hrp-f9b-jobposting-write-boundary-hardening/HANDOFF.md` and `docs/tasks/hrp-f9b-jobposting-write-boundary-hardening/RUN_TIME_REPRODUCTION.md` — i.e. no semantic delta from Implementation SHA to the current audit-target HEAD. The final audit-target HEAD is recorded in the post-commit chat handback and is intentionally **not pinned** inside this document. Full SHA-at-run mapping per gate in `docs/tasks/hrp-f9b-jobposting-write-boundary-hardening/RUN_TIME_REPRODUCTION.md`.
 
 Gate summary:
 
@@ -222,3 +221,10 @@ Gate summary:
 No correction batch has been used. F9-B budget = 1.
 
 Handoff status: READY_FOR_AUDIT
+
+## 9. Revision Log
+
+| Date (ICT) | Round | Change | Trigger / Evidence |
+| --- | --- | --- | --- |
+| 2026-10-03 | 0.5 | T0 contract clarification: Implementation SHA `e68ea4a3...` re-pinned; AC-02 pinned to canonical zero-row fail-closed contract (RLS may return zero rows OR throw; assertion is post-attempt admin snapshot byte/value-equivalent + GUC re-read + RLS visibility precondition). | T0 disposition 2026-10-03 22:44 ICT (T0_RECONCILIATION_REPORT.md); commit `e68ea4a3`; `ea485746` re-pin of Implementation SHA in HANDOFF. |
+| 2026-10-03 | 0.6 | Evidence-identity correction (this commit): (i) HANDOFF.md drops the `Docs / evidence freeze SHA` field and `Final audit-target HEAD` reference; the audit-target HEAD is intentionally not pinned inside the doc itself and is recorded only in the post-commit chat handback. (ii) §8 sentence rewritten to: "Runtime / semantic gates PASS at Implementation SHA `e68ea4a3...`; verify-handoff PASS at `bdd3446d...`; no semantic delta exists from `e68ea4a3` to the final audit-target HEAD." (iii) §7 round 1 row updated to drop the "at exact audit-target HEAD" wording. (iv) Predecessor chain row rewrites "F9-B Implementation SHA → F9-B Docs / evidence freeze SHA = HEAD" to "F9 X5 → F9-B Implementation SHA = `e68ea4a3...`; every commit strictly after `e68ea4a3` on the branch is docs-only with no semantic delta". (v) RUN_TIME_REPRODUCTION §SHA identity rewrites the predecessor chain to the full chronological order verified by T0: `6015361b → 5bd1a3ea → ab8845f7 → 590fd35c → 0d38042f → 1b9bbd9f → e018dd0a → cd316966 → 867f8882 → 2f1b75aa → e68ea4a3 → ea485746 → bdd3446d → a4dfcded → a7962aac → 067b35eb → 9ff3f1d2`. (vi) Each gate row in RUN_TIME §Gates keeps `HEAD at run = e68ea4a3...` (Gates 1–15) and `HEAD at run = bdd3446d...` (Gate 16 verify-handoff). | T0 disposition 2026-10-03 23:00 ICT: `CHANGES_REQUIRED_DOCS_ONLY`; `RUNTIME_SEMANTICS: PASS`; `AUDIT_ELIGIBILITY: PENDING_IDENTITY_CORRECTION`. Pre-condition satisfied: `git diff e68ea4a3..HEAD` returns zero non-doc entries (`app/`, `src/`, `prisma/`, `tests/`, `scripts/`, `packages/`, configs all empty). F9-B correction budget = 1 still unused for code; this round is docs-only and does not consume the implementation correction budget. |

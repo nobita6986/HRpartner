@@ -3,7 +3,9 @@
 **Date:** 2026-10-03 23:00 ICT (Sat)
 **Reconciliation owner:** T0 (Tier 0)
 **T0 disposition:** 2026-10-03 22:44 ICT — `CHANGES_REQUIRED / T0_RUNTIME_REPRODUCE` accepted, AC-02 contract clarified to canonical zero-row fail-closed
-**Final audit-target HEAD:** `067b35eb0580790c4d4e5cf6f3c68163f9dbc56a` (HANDOFF docs/evidence freeze SHA, final commit before handback to T0)
+**Audit-target HEAD (current, not pinned in this doc):** the final commit on this branch at the moment Tier 3 reads this evidence ledger. Per T0 disposition 2026-10-03 23:00 ICT, the audit-target HEAD is recorded in the post-commit chat handback, **not** inside this document.
+**Implementation SHA (final semantic SHA for F9-B, Gates 1–15):** `e68ea4a3e4521eeb794e7c051a7bea0c33ec70f5` — every runtime / semantic gate in this ledger ran at exactly this SHA on a fresh process.
+**Verify-handoff SHA (the HEAD at Gate 16):** `bdd3446db2433d394587bc61777334e29d14142b` — Gate 16 is the one gate that ran after further docs correction commits, so its HEAD is recorded separately.
 **Worktree:** `C:\CodeApp\HrP-worktrees\t1a-f9b-jobposting-write-boundary-hardening`
 **Branch:** `codex/t1a-f9b-jobposting-write-boundary-hardening`
 **Prisma CLI (canonical, --no-install):** `prisma 5.22.0`
@@ -14,18 +16,32 @@
 
 ## SHA identity (full 40-char)
 
-| Pin | Value |
-| --- | --- |
-| Final audit-target HEAD | (this freeze commit) |
-| T0 contract clarification commit (re-pinned Implementation SHA) | `e68ea4a3e4521eeb794e7c051a7bea0c33ec70f5` |
-| Original Implementation SHA (pre-clarification) | `cd31696601ac9c6ce37c86b2594e9c53dd34791c` |
-| T0 reconciliation commit | `2f1b75aab5eb8a09e48ab4d166271c370ecc8150` |
-| T0 prior docs/evidence freeze | `867f8882ead9d892e65c90ae1daf34d8bb8a090c` |
-| F9-B planning/control delta | `e018dd0a0b2df53168f3821b682478c7bb56b432` |
-| F9 X5 docs/evidence freeze (baseline) | `1b9bbd9f809e2251b501c288bd3d63179fcb4ee7` |
-| F9 X4 (predecessor impl) | `0d38042f7ccc41fafd12cb11de8e0d1fd3ee5c26` |
+| Pin | Value | HEAD-at-run? |
+| --- | --- | --- |
+| Implementation SHA (final semantic SHA, Gates 1–15) | `e68ea4a3e4521eeb794e7c051a7bea0c33ec70f5` | YES (Gates 1–15) |
+| T0 contract clarification commit (re-pinned Implementation SHA, round 0.5) | `e68ea4a3e4521eeb794e7c051a7bea0c33ec70f5` | no (round 0.5 re-pin) |
+| Original Implementation SHA (pre-clarification) | `cd31696601ac9c6ce37c86b2594e9c53dd34791c` | no |
+| T0 reconciliation commit | `2f1b75aab5eb8a09e48ab4d166271c370ecc8150` | no |
+| T0 prior docs/evidence freeze (predecessor 2x) | `867f8882ead9d892e65c90ae1daf34d8bb8a090c` | no |
+| T0 re-pin (round 0.5) | `ea4857460e42ea1bddbc3f9817f51b0908f20666` | no |
+| Verify-handoff SHA (Gate 16) | `bdd3446db2433d394587bc61777334e29d14142b` | YES (Gate 16 only) |
+| Subsequent docs-only pin (committed after Gate 16 ran) | `a4dfcded74c7fea425ee4e265b94ad85eaef951c` | no |
+| Subsequent docs-only pin | `a7962aac7ee9eeebdb8f7ba274059f01a50736da` | no |
+| Subsequent docs-only pin | `067b35eb0580790c4d4e5cf6f3c68163f9dbc56a` | no |
+| Audit-target HEAD (current, recorded in chat handback) | (chat-only, not pinned in this doc) | no |
+| F9 X5 docs/evidence freeze (baseline) | `1b9bbd9f809e2251b501c288bd3d63179fcb4ee7` | no |
+| F9 X4 (predecessor impl) | `0d38042f7ccc41fafd12cb11de8e0d1fd3ee5c26` | no |
+| F9-B planning/control delta | `e018dd0a0b2df53168f3821b682478c7bb56b432` | no |
 
-Predecessor chain: `6015361b → 5bd1a3ea → ab8845f7 → 590fd35c → 0d38042f → 1b9bbd9f → e018dd0a → cd316966 → e68ea4a3 → 2f1b75aa → bdd3446d → (this freeze)`. No amend / reset / rebase / force-push on `1b9bbd9f..HEAD`.
+Full chronological predecessor chain (T0-verified 2026-10-03 23:00 ICT):
+
+```
+6015361b → 5bd1a3ea → ab8845f7 → 590fd35c → 0d38042f → 1b9bbd9f → e018dd0a
+  → cd316966 → 867f8882 → 2f1b75aa → e68ea4a3 → ea485746 → bdd3446d
+  → a4dfcded → a7962aac → 067b35eb → 9ff3f1d2 (current audit-target HEAD, chat-only)
+```
+
+No amend / reset / rebase / force-push on `1b9bbd9f..HEAD`. Semantic surface (source, tests, prisma schema, package/lockfile, configs) between `e68ea4a3` and the current audit-target HEAD is **zero-delta** — `git diff e68ea4a3..HEAD -- app/ src/ prisma/ tests/ scripts/ packages/ 'package.json' 'pnpm-lock.yaml' 'pnpm-workspace.yaml' 'tsconfig*.json' 'vitest*.config.ts'` returns empty.
 
 ---
 
@@ -68,7 +84,7 @@ Executed `scripts/probe/f9b-posture-probe.mjs` (one-shot, then removed before fr
 | Field | Value |
 | --- | --- |
 | Run ID | POSTURE-1 |
-| HEAD | `e68ea4a3e4521eeb794e7c051a7bea0c33ec70f5` (then re-run at audit-target HEAD) |
+| HEAD | `e68ea4a3e4521eeb794e7c051a7bea0c33ec70f5` (Gate 1 itself ran here; Gate 16 ran at `bdd3446db2433d394587bc61777334e29d14142b`) |
 | Worktree | `C:\CodeApp\HrP-worktrees\t1a-f9b-jobposting-write-boundary-hardening` |
 | Command | `node scripts/ci/assert-test-db-posture.mjs` |
 | Exit | 0 |
@@ -146,7 +162,7 @@ Zero residue confirmed at end of each run via `afterAll` FK-safe reverse teardow
 | Evidence | `terminals/670378.txt` |
 | Classification | CANONICAL_FINAL |
 
-Note: predecessors ran **in F9-B worktree** at exact audit-target HEAD, not in the sibling worktree where the original 670361/670364 evidence was collected. This closes the EV-06 mismatch flagged in `T0_RECONCILIATION_REPORT.md` §B.
+Note: predecessors ran **in F9-B worktree** at Implementation SHA `e68ea4a3...`, not in the sibling worktree where the original 670361/670364 evidence was collected. This closes the EV-06 mismatch flagged in `T0_RECONCILIATION_REPORT.md` §B.
 
 ---
 
@@ -330,7 +346,7 @@ Each F9-B integration run runs `afterAll` FK-safe reverse teardown (deferred FKs
 | --- | --- | --- | --- |
 | 0 (T0 reconciliation) | docs reconciliation | not counted | `T0_RECONCILIATION_REPORT.md` only |
 | 0.5 (T0 contract clarification) | T0 contract clarification / test correction | 0 of 1 (counted as T0 contract clarification, not F9-B implementation correction) | AC-02 contract pin to canonical zero-row fail-closed; GUC re-read + RLS visibility precondition |
-| 1 (runtime reproduction) | n/a (no code change) | 0 of 1 | All 16 gates PASS at exact audit-target HEAD |
+| 1 (runtime reproduction) | n/a (no code change) | 0 of 1 | Runtime / semantic gates 1–15 PASS at Implementation SHA `e68ea4a3e4521eeb794e7c051a7bea0c33ec70f5`; Gate 16 PASS at `bdd3446db2433d394587bc61777334e29d14142b`; no semantic delta exists from `e68ea4a3` to the final audit-target HEAD |
 
 F9-B correction budget = 1 unused (T0 contract clarification is recorded as a clarification per T0 instruction, not an implementation correction). F9 correction budget = 1 remains exhausted (immutable, predecessor).
 
@@ -346,7 +362,7 @@ F9-B correction budget = 1 unused (T0 contract clarification is recorded as a cl
 | Audit eligibility | `ELIGIBLE` |
 | Audit mode | `LIGHT` |
 | Assurance lane | `CRITICAL` |
-| Audit target | combined final semantic SHA (X4 + F9-B); Tier 3 reviews the F9-B freeze SHA = audit-target HEAD |
+| Audit target | Implementation SHA `e68ea4a3e4521eeb794e7c051a7bea0c33ec70f5` (the final semantic SHA for F9-B; the current audit-target HEAD is recorded in the post-commit chat handback and is not pinned inside this document). Tier 3 reviews the combined final semantic SHA (X4 + F9-B) at the Implementation SHA above. |
 | Next gate | `TIER3_LIGHT_AUDIT` |
 
 ---
