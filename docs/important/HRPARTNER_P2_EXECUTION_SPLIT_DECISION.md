@@ -166,13 +166,16 @@ Binding rules:
 **Allowed completion claims** after the corresponding contract lands and is verified:
 
 - `P2.1 Recruiter Referral Profile & Attribution V1 = COMPLETE`.
-- `AFF attribution / distribution capability = USER_FACING_AND_PRODUCTION_VERIFIED`.
+- `P2.1 Recruiter Referral Profile & Attribution V1 = READY_FOR_PRODUCTION_GATE` (interim claim when synthetic / preview tier has passed but T0 production closeout is still pending; see §K.2).
+- `AFF attribution / distribution capability = USER_FACING_AND_PRODUCTION_VERIFIED` (gated by §K.2 — requires T0 production closeout on the configured production origin; synthetic / preview PASS is NOT sufficient).
 
 **Forbidden completion claim** under this decision:
 
 - `UNIVERSAL_AFF_COMPLETE`.
 
 `UNIVERSAL_AFF_COMPLETE` requires the Definition of Done at `docs/V6/aff_plan.md` §23, which depends on residual `AFF-05A` Company Pool/dispute, `AFF-05B` universal commission beneficiary, `AFF-06` analytics/dashboard and `AFF-07` rollout/cleanup. None of those is P2.1.
+
+A claim of `READY_FOR_PRODUCTION_GATE` followed by failure on the T0 production gate is NOT a regression that reverts prior gates — the implementation SHA stays valid; only the production-claim step is reopened.
 
 ## I. P2.1 release gate
 
@@ -200,7 +203,25 @@ Negative gates:
   - Direct / non-AFF application still succeeds end-to-end.
 ```
 
-Failure on any single line above is a blocker. Owner may move lines to "measured / accepted" only with a written waiver that records residual risk.
+Failure on any single line above is a blocker. Waiver is permitted ONLY under §I.1, and ONLY on the lines explicitly classified as waivable there. Security-class negative gates are non-waivable.
+
+### I.1. Waiver policy (binding)
+
+The §I gate has two classes of line:
+
+**Non-waivable (release blockers).** If any of the following fails, P2.1 is `BLOCKED` and no HANDOFF may move the slice to `READY_FOR_PRODUCTION_GATE`. Owner / Tier 0 may NOT clear these by waiver, written or otherwise; the only way to relax them is a forward-only revision of this binding decision (adding a new revision-log row, opening a fresh PR, and re-running CI). The non-waivable list is:
+
+- **No public PII** is exposed (negative gate).
+- **No candidate-visibility expansion** beyond the existing assignment authority (negative gate).
+- **No client-supplied `referrerUserId` override** takes effect (negative gate).
+- **No cross-user / cross-recruiter overwrite** of attribution (negative gate, captured by "another recruiter's link does NOT overwrite").
+- **No duplicate attribution** is created (negative gate).
+- **Revoked / inactive recruiter does NOT create new attribution** (positive + negative, paired).
+- **Direct / non-AFF Apply still succeeds end-to-end** (negative gate — no regression of the canonical thin slice).
+
+**Waivable under written Owner risk acceptance.** All other lines in §I are waivable with a written waiver recorded in the implementation HANDOFF, naming the residual risk and the Owner who signed the waiver. Waivers do NOT lift the §J predecessor regression requirement.
+
+A future revision that wishes to weaken, replace, or remove a non-waivable line MUST land as a forward-only revision of this binding decision (new version row in §N, new PR, new CI), never as a waiver inside a TASK / HANDOFF.
 
 ## J. P2.1 predecessor regression requirements
 
@@ -222,8 +243,35 @@ The P2.1 contract pins these as required regressions and not as optional evidenc
 `docs/important/HRPARTNER_OPERATIONAL_WORKFLOW_DEBT_EXECUTION_DECISION.md` §1 forbids production DB writes during reproduction. P2.1 follows the same posture for its own contract:
 
 - Reproduction and CI use ephemeral synthetic databases only.
-- Public production-equivalent verification (e.g. on `https://www.hrpartner.vn`) is permitted as **read-only** smoke with Owner authorization and a synthetic marker recorded in evidence.
+- Vercel previews are permitted as a **secondary** read-only verification surface with Owner authorization and a synthetic marker recorded in evidence. Vercel is **not** the production authority.
+- The configured production public origin (currently `https://vieclammienbac.com.vn`) is the authority for any claim that includes the word `PRODUCTION_VERIFIED`. Earlier `https://www.hrpartner.vn` references in legacy evidence are historical and must NOT be re-pinned as the production origin by any later slice.
 - A production migration, deploy or production DB write is NOT opened from P2.1; if required, it is a separate Owner-gated step.
+
+## K.1. Test / verification posture by tier (binding)
+
+The Tier 1 implementation lane, the Tier 3 audit lane, and the final T0 production gate are three separate events with separate rights. They must NOT be collapsed.
+
+- **Tier 1 coding / CI** uses ephemeral synthetic databases only. No production DB access, no production credential read, no production data fixture.
+- **Tier 3 audit** audits the exact frozen implementation SHA. Tier 3 does NOT perform production writes and does NOT extend its scope to a production smoke.
+- **T0 / Owner** is the sole party authorized to schedule a deploy, apply a production migration, or run a controlled production E2E. Production E2E follows a separate Owner-authored runbook; P2.1 may reference but must NOT inline or duplicate that runbook.
+- **Final production acceptance** requires T0 production closeout evidence (controlled Apply / E2E on the configured production origin). Until that closeout is recorded, P2.1 may only claim what its current evidence supports (see K.2).
+
+## K.2. Completion-claim gates (binding)
+
+The two allowed completion claims in §H are gated by the evidence tier:
+
+| Claim | Minimum evidence required |
+|---|---|
+| `P2.1 Recruiter Referral Profile & Attribution V1 = COMPLETE` | All §I positive gates PASS + all §I security negative gates PASS (no waiver permitted per §I.1) + all §J predecessor regressions PASS + Tier 3 LIGHT audit PASS on the frozen implementation SHA. |
+| `AFF attribution / distribution capability = USER_FACING_AND_PRODUCTION_VERIFIED` | T0 production closeout evidence on the configured production origin (currently `https://vieclammienbac.com.vn`) — controlled Apply / E2E per Owner runbook. Synthetic-DB PASS or Vercel-preview PASS are **not sufficient** for this claim. |
+
+If only the synthetic / preview tier has passed, the maximum claim permitted is:
+
+```text
+P2.1 Recruiter Referral Profile & Attribution V1 = READY_FOR_PRODUCTION_GATE
+```
+
+`READY_FOR_PRODUCTION_GATE` is not a `COMPLETE` claim. It means: Tier 1 self-review PASS, Tier 3 LIGHT audit PASS on the frozen implementation SHA, all §I / §J gates PASS in synthetic CI, and T0 production gate is the only remaining step.
 
 ## L. Boundaries
 
@@ -258,3 +306,4 @@ Owner / Tier 0 may, after `PRE_P2_CLOSEOUT`, open P2.1 contracts under `docs/HRP
 | Version | Date | Change |
 | --- | --- | --- |
 | `v1.0` | 2026-10-03 | Materialize the Owner/Tier 0 split of P2 into P2.1 (`Recruiter Referral Profile & Attribution V1`) and P2.2 (`Early V8 Workspace & Microsite Completion`); lock the AFF carry-forward matrix; lock the P2.1 release gate and predecessor regression requirements; introduce `OP-M0..OP-M3` to disambiguate operational milestones from product `M0..M5`; add companion `§15.3` addendum to `docs/HRP_EXECUTION_REALIGNMENT_PLAN.md`. Docs-only. |
+| `v1.1` | 2026-10-03 | T0 verdict `ACCEPTED_WITH_DOC_CORRECTIONS / PENDING_CI` — three docs-only corrections applied. **(C-01)** §K: replace the `https://www.hrpartner.vn` example with the configured production public origin (currently `https://vieclammienbac.com.vn`); Vercel is repositioned as a secondary preview surface, not a production authority. **(C-02)** New §K.1 separates Tier 1 / Tier 3 / T0 production gate, and new §K.2 binds the `USER_FACING_AND_PRODUCTION_VERIFIED` claim to T0 production closeout on the configured origin; introduces `READY_FOR_PRODUCTION_GATE` as the maximum claim supported by synthetic / preview PASS alone. §H updated to list the interim claim and to point to §K.2. **(C-03)** New §I.1 splits the §I gate into **non-waivable security negative gates** (public PII, candidate-visibility expansion, client-supplied referrer override, cross-user overwrite, duplicate attribution, revoked/inactive creating new attribution, direct/non-AFF Apply regression) and waivable operational lines under written Owner risk acceptance; non-waivable lines may only be relaxed by a forward-only revision of this binding decision, never by a HANDOFF waiver. Docs-only; no source / test / migration / lockfile change. |
