@@ -14,7 +14,7 @@
 | Baseline | `1b9bbd9f809e2251b501c288bd3d63179fcb4ee7` |
 | Implementation SHA | `e68ea4a3e4521eeb794e7c051a7bea0c33ec70f5` |
 | Implementation SHA explanation | T0 contract clarification forward-only on top of `cd31696601ac9c6ce37c86b2594e9c53dd34791c`. Pins the canonical zero-row fail-closed contract per T0 disposition 2026-10-03 22:44 ICT and adds the AC-02 precondition `assigned HR_STAFF can SELECT target slot` plus the GUC re-read inside `withContext`. Test change is a T0 contract clarification (HANDOFF §0), not an implementation correction. |
-| Docs / evidence freeze SHA | `81ebde96be28b06b28b4c2c2e73c161ae3325677` |
+| Docs / evidence freeze SHA | `a4dfcded74c7fea425ee4e265b94ad85eaef951c` |
 | Predecessor implementation SHA (F9 X4) | `0d38042f7ccc41fafd12cb11de8e0d1fd3ee5c26` |
 | Predecessor docs / evidence freeze SHA (F9 X5) | `1b9bbd9f809e2251b501c288bd3d63179fcb4ee7` |
 | Predecessor failed round-1 SHA | `6015361bb986b920bad6a90f8f9986165a4a99d5` |
@@ -196,7 +196,7 @@ The only material deviation from the TASK's `DEC-04` was the discovery that the 
 
 ## 8. Runtime Reproduction — 16-gate fresh-process evidence
 
-Reproduction at exact audit-target HEAD `81ebde96be28b06b28b4c2c2e73c161ae3325677` (this HANDOFF's docs/evidence freeze SHA). All 16 gates PASS; full SHA, exit code, counts, run ID, evidence path in `docs/tasks/hrp-f9b-jobposting-write-boundary-hardening/RUN_TIME_REPRODUCTION.md`.
+Reproduction at exact audit-target HEAD `a4dfcded74c7fea425ee4e265b94ad85eaef951c` (this HANDOFF's docs/evidence freeze SHA). All 16 gates PASS; full SHA, exit code, counts, run ID, evidence path in `docs/tasks/hrp-f9b-jobposting-write-boundary-hardening/RUN_TIME_REPRODUCTION.md`.
 
 Gate summary:
 
