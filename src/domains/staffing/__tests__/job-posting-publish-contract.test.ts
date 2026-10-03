@@ -88,6 +88,11 @@ function makeTxMock(args: MakePostingArgs) {
     },
     $queryRaw: vi.fn(),
     $executeRaw: vi.fn(),
+    // hrp-f9-hr-staff-jobposting-scope correction batch 1/1: the order-scoped
+    // advisory lock primitive (`acquireOrderAdvisoryLock`) is acquired BEFORE
+    // the JOB_OPENING_NOT_OPEN guard. The mock must accept the call so the
+    // test reaches the guard assertion.
+    $executeRawUnsafe: vi.fn().mockResolvedValue(undefined),
   } as unknown as Parameters<typeof publishJobPosting>[0];
 }
 

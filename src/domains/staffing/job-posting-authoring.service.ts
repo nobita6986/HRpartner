@@ -62,6 +62,7 @@ import {
 import type { AuthContext } from '@/src/shared/auth/auth-context';
 import {
   assertActiveRecruiterForOrder,
+  acquireOrderAdvisoryLock,
   RecruiterAssignmentError,
 } from '@/src/domains/talent/recruiter-assignment.service';
 import { eligibleSlotPredicateSql } from './job-posting-list.service';
@@ -448,6 +449,54 @@ export async function assertSlotEligibleForNewJobPosting(
     is_eligible: boolean;
   };
 
+  // hrp-f9-hr-staff-jobposting-scope correction batch 1/1 §F: re-ordered
+  // to acquire the canonical order-scoped advisory lock + run the guard
+  // BEFORE the FOR UPDATE. The narrow `hrp_f9_slots_staff_update` policy
+  // (migration `20261003000000_f9_hr_staff_posting_write_rls`) admits the
+  // writer connection's `SELECT ... FOR UPDATE` when the writer has an
+  // ACTIVE recruiter assignment on the parent order. The advisory lock
+  // (re-exported from `recruiter-assignment.service.ts`) is the same
+  // canonical primitive used by `assignRecruiterToOrder` /
+  // `revokeRecruiterFromOrder` / `claimCandidateSubmission`, so a parallel
+  // revoke and a parallel create cannot interleave.
+  //
+  // Step 1: SELECT (no FOR UPDATE) to discover the parent order's id. If
+  // RLS hides the row because the caller was never assigned, the row is
+  // RLS-filtered and the SELECT returns 0 rows → stable NOT_FOUND 404
+  // (no existence oracle). This is the canonical fail-closed envelope
+  // for the never-assigned case (DEC-05-b). The message carries NO id
+  // — no slotId, no staffingOrderId — per the no-existence-oracle
+  // contract (AC-10 PII-leak protection).
+  const initial = await tx.$queryRaw<
+    Array<{ id: string; staffing_order_id: string }>
+  >(Prisma.sql`
+    SELECT s.id, s.staffing_order_id
+      FROM staffing_order_slots s
+     WHERE s.id = ${slotId}
+  `);
+  const initialSlot = initial[0];
+  if (!initialSlot) {
+    throw new AuthoringError('NOT_FOUND', 'StaffingOrderSlot không tồn tại hoặc bạn không có quyền truy cập.', 404);
+  }
+
+  // Step 2: Acquire the canonical order-scoped advisory lock. Held for the
+  // rest of the transaction. Re-entrant for nested calls within the same
+  // transaction (advisory locks are session-scoped; second acquisition
+  // with the same key is a no-op in PG).
+  await acquireOrderAdvisoryLock(tx, initialSlot.staffing_order_id);
+
+  // Step 3: Guard re-read under the lock. For HR_STAFF callers without an
+  // ACTIVE recruiter assignment on this order, the helper throws
+  // `NO_ACTIVE_ORDER_ASSIGNMENT` 403. For ADMIN / HR_MANAGER, the guard
+  // bypasses. This is the canonical fail-closed envelope for the
+  // assigned-then-lost case (DEC-05-b).
+  await assertHrStaffRecruiterScope(tx, ctx, initialSlot.staffing_order_id);
+
+  // Step 4: SELECT FOR UPDATE under the lock + with the new narrow
+  // HR_STAFF UPDATE policy in place. The row is now admitted by both the
+  // pre-existing `hrp_sora_order_slots_staff_select` (read) and the new
+  // `hrp_f9_slots_staff_update` (write/FOR UPDATE). Re-reads the slot
+  // state under the row lock for predicate validation.
   const rows = await tx.$queryRaw<SlotRow[]>(Prisma.sql`
     SELECT
       s.id,
@@ -474,17 +523,15 @@ export async function assertSlotEligibleForNewJobPosting(
   `);
   const slot = rows[0];
   if (!slot) {
+    // RLS or row state changed between step 1 and step 4 (e.g. concurrent
+    // delete, or revoke-then-orphan). Stable NOT_FOUND 404.
     throw new AuthoringError('NOT_FOUND', `StaffingOrderSlot ${slotId} không tồn tại.`, 404);
   }
 
-  // hrp-f9-hr-staff-jobposting-scope STEP-02: server-write-boundary guard.
-  // Runs AFTER `SELECT FOR UPDATE` of the slot row (so a concurrent
-  // `assignRecruiterToOrder` is serialized) and BEFORE predicate validation
-  // (so an unassigned HR_STAFF never sees a 400 INVALID_INPUT leaking the
-  // order's eligibility state). The bypass for ADMIN/HR_MANAGER matches
-  // the canonical P1-A0.4 helper and `ALLOWED_MUTATION_ROLES`. The
-  // `assertHrStaffRecruiterScope` re-reads `staffing_order_recruiter_assignments`
-  // inside the same transaction, closing the revoke race.
+  // Step 5: Defense-in-depth guard re-read. A revoke that committed
+  // between step 1's read and step 2's lock acquisition is now observed
+  // (the assignment's status is REVOKED). Throws NO_ACTIVE_ORDER_ASSIGNMENT
+  // for HR_STAFF who lost authority during the serialized operation.
   await assertHrStaffRecruiterScope(tx, ctx, slot.staffing_order_id);
 
   if (slot.order_status !== 'OPEN' && slot.order_status !== 'CLOSING_SOON') {
@@ -584,6 +631,13 @@ export async function createOrReuseJobOpeningForSlot(
     throw new AuthoringError('NOT_FOUND', `StaffingOrderSlot ${input.slotId} không tồn tại.`, 404);
   }
 
+  // hrp-f9-hr-staff-jobposting-scope correction batch 1/1 §F: participate
+  // in the canonical order-scoped advisory lock. The inner
+  // `assertSlotEligibleForNewJobPosting` call already acquired the lock,
+  // so this is a re-entrant no-op within the same transaction. Listed
+  // explicitly so the lock participation is visible at every call site.
+  await acquireOrderAdvisoryLock(tx, slot.staffing_order_id);
+
   // hrp-f9-hr-staff-jobposting-scope STEP-03: defense-in-depth re-check of
   // the scoped-recruiter authority AFTER the slot lock. Closes a revoke
   // race that may have committed between the read inside
@@ -676,12 +730,20 @@ export async function createOrReuseJobPostingDraftForOpening(
     throw new AuthoringError('NOT_FOUND', `JobOpening ${input.jobOpeningId} không tồn tại.`, 404);
   }
 
+  // hrp-f9-hr-staff-jobposting-scope correction batch 1/1 §F: acquire the
+  // canonical order-scoped advisory lock BEFORE the guard. Held for the
+  // rest of the transaction. A parallel `revokeRecruiterFromOrder` on
+  // this order will block until this transaction commits, so the
+  // post-guard re-read observes a consistent assignment state.
+  await acquireOrderAdvisoryLock(tx, opening.staffingOrderId);
+
   // hrp-f9-hr-staff-jobposting-scope STEP-04: scoped-recruiter authority for
   // the create-or-reuse chain that runs WITHOUT first calling
   // `assertSlotEligibleForNewJobPosting`. The opening is the parent of the
   // posting, so the order anchor derives from `opening.staffingOrderId`.
   // HR_STAFF callers without an ACTIVE assignment on this order are denied
-  // before any INSERT.
+  // before any INSERT. Runs under the advisory lock so a concurrent revoke
+  // is serialized.
   await assertHrStaffRecruiterScope(tx, ctx, opening.staffingOrderId);
 
   if (opening.posting) {
@@ -805,6 +867,10 @@ export async function updateDraftContent(
   // impossible here — the draft is created by
   // `createOrReuseJobPostingDraftForOpening` which always binds an opening.
   if (current.jobOpening) {
+    // hrp-f9-hr-staff-jobposting-scope correction batch 1/1 §F: acquire
+    // the canonical order-scoped advisory lock BEFORE the guard so a
+    // parallel revoke is serialized with the update path.
+    await acquireOrderAdvisoryLock(tx, current.jobOpening.staffingOrderId);
     await assertHrStaffRecruiterScope(tx, ctx, current.jobOpening.staffingOrderId);
   }
   if (current.status !== 'DRAFT') {
@@ -934,6 +1000,11 @@ export async function publishJobPosting(
   // unassigned HR_STAFF never sees the linked JobOpening's status — which
   // would be a foreign-entity metadata leak). `current.jobOpening` is
   // non-null here per the guard above.
+  // hrp-f9-hr-staff-jobposting-scope correction batch 1/1 §F: advisory
+  // lock participation (canonical primitive, no second namespace). Lock is
+  // acquired before the guard re-read so a concurrent revoke is serialized
+  // with the publish path.
+  await acquireOrderAdvisoryLock(tx, current.jobOpening.staffingOrderId);
   await assertHrStaffRecruiterScope(tx, ctx, current.jobOpening.staffingOrderId);
   if (current.jobOpening.status !== 'OPEN') {
     throw new AuthoringError(
@@ -1022,6 +1093,9 @@ export async function unpublishJobPosting(
   // `updateDraftContent` for the rationale (no foreign-entity metadata
   // leak through 409/404/INVALID_REVISION envelopes).
   if (current.jobOpening) {
+    // hrp-f9-hr-staff-jobposting-scope correction batch 1/1 §F: advisory
+    // lock participation (canonical primitive, no second namespace).
+    await acquireOrderAdvisoryLock(tx, current.jobOpening.staffingOrderId);
     await assertHrStaffRecruiterScope(tx, ctx, current.jobOpening.staffingOrderId);
   }
   if (current.status !== 'PUBLISHED') {
@@ -1087,6 +1161,9 @@ export async function archiveJobPosting(
   // F9 guard: AFTER NOT_FOUND, BEFORE state/revision guards. See
   // `updateDraftContent` for the rationale.
   if (current.jobOpening) {
+    // hrp-f9-hr-staff-jobposting-scope correction batch 1/1 §F: advisory
+    // lock participation (canonical primitive, no second namespace).
+    await acquireOrderAdvisoryLock(tx, current.jobOpening.staffingOrderId);
     await assertHrStaffRecruiterScope(tx, ctx, current.jobOpening.staffingOrderId);
   }
   if (current.status === 'ARCHIVED') {

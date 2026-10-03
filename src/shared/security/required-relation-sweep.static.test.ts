@@ -99,18 +99,20 @@ const EXPECTED_HITS = [
   // hrp-f9-hr-staff-jobposting-scope (2026-10-03): F9 STEP-05 extends the
   // `include: { jobOpening: { select: { id, staffingOrderId } } }` shape on
   // FOUR write/read paths so the scoped-recruiter re-check can derive the
-  // order anchor. The existing `publishJobPosting` entry (now at 889 after
-  // the F9 line shift) is preserved; four new entries are added (789 for
-  // `updateDraftContent`, 1011 for `unpublishJobPosting`, 1077 for
-  // `archiveJobPosting`, 1147 for `getJobPostingForAuthoring`). All five
+  // order anchor. F9 correction batch 1/1 (2026-10-03): four of these
+  // paths now also call `acquireOrderAdvisoryLock` BEFORE the guard. The
+  // existing `publishJobPosting` entry (now at 955 after the F9 line
+  // shift) is preserved; four new entries are added (851 for
+  // `updateDraftContent`, 1082 for `unpublishJobPosting`, 1151 for
+  // `archiveJobPosting`, 1224 for `getJobPostingForAuthoring`). All five
   // selects are RLS-covered (read-only; `withDbContext` sets the GUC
   // session role; JobOpening is not a recruiter-gated table on its own).
   // Net +4 entries: 32 → 36 src hits.
-  'src/domains/staffing/job-posting-authoring.service.ts:789 jobOpening',
-  'src/domains/staffing/job-posting-authoring.service.ts:889 jobOpening',
-  'src/domains/staffing/job-posting-authoring.service.ts:1011 jobOpening',
-  'src/domains/staffing/job-posting-authoring.service.ts:1077 jobOpening',
-  'src/domains/staffing/job-posting-authoring.service.ts:1147 jobOpening',
+  'src/domains/staffing/job-posting-authoring.service.ts:851 jobOpening',
+  'src/domains/staffing/job-posting-authoring.service.ts:955 jobOpening',
+  'src/domains/staffing/job-posting-authoring.service.ts:1082 jobOpening',
+  'src/domains/staffing/job-posting-authoring.service.ts:1151 jobOpening',
+  'src/domains/staffing/job-posting-authoring.service.ts:1224 jobOpening',
   // P1-A0 STEP-03: line numbers in job-posting-list.service.ts shifted because
   // the DTOs grew (added title, salaryDisplay, *Json, contentSchemaVersion,
   // hasContent). The four select-clauses themselves are unchanged.
@@ -430,11 +432,16 @@ describe('quan hệ BẮT BUỘC trên bảng bị RLS che: tập vị trí sele
     // `job-posting-authoring.service.ts` (updateDraftContent +
     // unpublishJobPosting + archiveJobPosting + getJobPostingForAuthoring)
     // so the scoped-recruiter re-check can derive the order anchor. The
-    // pre-existing `publishJobPosting` entry shifts 787 → 889 (F9 added
-    // ~100 lines of new code above it). Net +4 entries: 32 → 36 src hits.
-    // All five selects are RLS-covered (read-only; `withDbContext` sets
-    // the GUC session role; JobOpening is not a recruiter-gated table on
-    // its own — the scope is the order, not the opening).
+    // pre-existing `publishJobPosting` entry shifts 787 → 955 (F9 added
+    // ~168 lines of new code above it: guard re-ordering, advisory lock,
+    // INSERT policies migration, NOT_FOUND envelope fix). Net +4
+    // entries: 32 → 36 src hits. F9 correction batch 1/1 (2026-10-03)
+    // also adds `acquireOrderAdvisoryLock` BEFORE the guard on each
+    // path; the lock is re-entrant within the same transaction and does
+    // not add a new lock namespace. All five selects are RLS-covered
+    // (read-only; `withDbContext` sets the GUC session role; JobOpening
+    // is not a recruiter-gated table on its own — the scope is the
+    // order, not the opening).
     expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(36);
   });
 });

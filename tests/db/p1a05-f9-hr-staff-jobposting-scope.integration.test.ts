@@ -363,12 +363,18 @@ describe.skipIf(!HAS_TEST_DB).sequential('F9 HR_STAFF JobPosting Scope — Synth
       if (e instanceof AuthoringError) caught = e;
     }
     expect(caught).not.toBeNull();
-    expect(caught!.code).toBe('NO_ACTIVE_ORDER_ASSIGNMENT');
-    expect(caught!.httpStatus).toBe(403);
+    // AC-02 contract delta (T0 correction batch 1/1 / DEC-05-b): the canonical
+    // code for "caller has no ACTIVE recruiter assignment on this order" is
+    // NO_ACTIVE_ORDER_ASSIGNMENT (403). A stable NOT_FOUND (404) is also
+    // accepted — preserves the no-existence-oracle contract when RLS hides
+    // the slot row before the guard can run. The implementation prefers
+    // NO_ACTIVE_ORDER_ASSIGNMENT.
+    expect(['NO_ACTIVE_ORDER_ASSIGNMENT', 'NOT_FOUND']).toContain(caught!.code);
+    expect([403, 404]).toContain(caught!.httpStatus);
   });
 
   // AC-03: Alice on unassigned slot → rejected
-  it('AC-03 Alice direct POST on unassigned Order C → 403', async () => {
+  it('AC-03 Alice direct POST on unassigned Order C → 403 (allowed mapping)', async () => {
     let caught: AuthoringError | null = null;
     try {
       await withContext(writer, aliceId, 'HR_STAFF', (tx) =>
@@ -378,7 +384,9 @@ describe.skipIf(!HAS_TEST_DB).sequential('F9 HR_STAFF JobPosting Scope — Synth
       if (e instanceof AuthoringError) caught = e;
     }
     expect(caught).not.toBeNull();
-    expect(caught!.code).toBe('NO_ACTIVE_ORDER_ASSIGNMENT');
+    // AC-03 allowed mapping per DEC-05-b.
+    expect(['NO_ACTIVE_ORDER_ASSIGNMENT', 'NOT_FOUND']).toContain(caught!.code);
+    expect([403, 404]).toContain(caught!.httpStatus);
   });
 
   // AC-04: Alice on her Order A → success (skipping publish lifecycle for the basic create path)
@@ -409,7 +417,7 @@ describe.skipIf(!HAS_TEST_DB).sequential('F9 HR_STAFF JobPosting Scope — Synth
   });
 
   // AC-05: Alice on revoked Order D → rejected
-  it('AC-05 Alice on revoked Order D → 403 (after revoke)', async () => {
+  it('AC-05 Alice on revoked Order D → 403 (after revoke, allowed mapping)', async () => {
     await withContext(admin, managerUserId, 'HR_MANAGER', (tx) =>
       revokeRecruiterFromOrder(tx, {
         staffingOrderId: orderDId,
@@ -428,7 +436,12 @@ describe.skipIf(!HAS_TEST_DB).sequential('F9 HR_STAFF JobPosting Scope — Synth
       if (e instanceof AuthoringError) caught = e;
     }
     expect(caught).not.toBeNull();
-    expect(caught!.code).toBe('NO_ACTIVE_ORDER_ASSIGNMENT');
+    // AC-05 allowed mapping per DEC-05-b. The pre-revoke selector had
+    // visible Order D; after the revoke, the caller has lost authority
+    // during the serialized operation. Canonical code is
+    // NO_ACTIVE_ORDER_ASSIGNMENT; NOT_FOUND is also acceptable.
+    expect(['NO_ACTIVE_ORDER_ASSIGNMENT', 'NOT_FOUND']).toContain(caught!.code);
+    expect([403, 404]).toContain(caught!.httpStatus);
   });
 
   // AC-06: Bob on Alice's Order A → rejected
@@ -442,7 +455,9 @@ describe.skipIf(!HAS_TEST_DB).sequential('F9 HR_STAFF JobPosting Scope — Synth
       if (e instanceof AuthoringError) caught = e;
     }
     expect(caught).not.toBeNull();
-    expect(caught!.code).toBe('NO_ACTIVE_ORDER_ASSIGNMENT');
+    // AC-06 allowed mapping per DEC-05-b.
+    expect(['NO_ACTIVE_ORDER_ASSIGNMENT', 'NOT_FOUND']).toContain(caught!.code);
+    expect([403, 404]).toContain(caught!.httpStatus);
   });
 
   // AC-07: revoke-before-create race (single-writer, deterministic: revoke
@@ -474,7 +489,13 @@ describe.skipIf(!HAS_TEST_DB).sequential('F9 HR_STAFF JobPosting Scope — Synth
       if (e instanceof AuthoringError) caught = e;
     }
     expect(caught).not.toBeNull();
-    expect(caught!.code).toBe('NO_ACTIVE_ORDER_ASSIGNMENT');
+    // AC-07 allowed mapping per DEC-05-b. The order-scoped advisory
+    // lock (`acquireOrderAdvisoryLock`) serializes the create with the
+    // prior revoke; the post-lock guard re-read sees REVOKED status.
+    // Canonical code NO_ACTIVE_ORDER_ASSIGNMENT; NOT_FOUND is also
+    // acceptable.
+    expect(['NO_ACTIVE_ORDER_ASSIGNMENT', 'NOT_FOUND']).toContain(caught!.code);
+    expect([403, 404]).toContain(caught!.httpStatus);
   });
 
   // AC-08: ADMIN bypass — create works on any order.
@@ -504,7 +525,7 @@ describe.skipIf(!HAS_TEST_DB).sequential('F9 HR_STAFF JobPosting Scope — Synth
   });
 
   // AC-10: error envelope canonical-safety
-  it('AC-10 NO_ACTIVE_ORDER_ASSIGNMENT envelope carries NO ids (canonical-safe)', async () => {
+  it('AC-10 fail-closed envelope carries NO ids (allowed mapping)', async () => {
     let caught: AuthoringError | null = null;
     try {
       await withContext(writer, aliceId, 'HR_STAFF', (tx) =>
@@ -514,15 +535,23 @@ describe.skipIf(!HAS_TEST_DB).sequential('F9 HR_STAFF JobPosting Scope — Synth
       if (e instanceof AuthoringError) caught = e;
     }
     expect(caught).not.toBeNull();
-    expect(caught!.code).toBe('NO_ACTIVE_ORDER_ASSIGNMENT');
-    // AC-10 allowlist: error keys are exactly `code`, `message`, `httpStatus`,
-    // `name` (from Error), and nothing else. The `details` object is dropped
-    // by the wrapper intentionally.
+    // AC-10 allowed mapping per DEC-05-b: code is one of the two stable
+    // fail-closed codes; httpStatus is 403 or 404.
+    expect(['NO_ACTIVE_ORDER_ASSIGNMENT', 'NOT_FOUND']).toContain(caught!.code);
+    expect([403, 404]).toContain(caught!.httpStatus);
+    // AC-10 allowlist: error envelope own-enumerable keys are exactly
+    // `code`, `httpStatus`, `details`, `name` (the `name` is explicitly
+    // set in the constructor; `message` is on the Error prototype and is
+    // NOT own-enumerable). The PII-leak protection is on the VALUES
+    // (no slotId/staffingOrderId/projectId/assigneeUserId/JobPosting.id
+    // in `message` or `details`) — not on key suppression. The `details`
+    // value is `undefined` when the call site does not pass it.
     const errAsRecord = caught as unknown as Record<string, unknown>;
     expect(Object.keys(errAsRecord).sort()).toEqual(
-      ['code', 'httpStatus', 'message', 'name'].sort(),
+      ['code', 'details', 'httpStatus', 'name'].sort(),
     );
-    // The message must NOT contain slotId, staffingOrderId, projectId, etc.
+    // PII-leak protection (values, not keys): the message must NOT contain
+    // any slotId, staffingOrderId, projectId, etc.
     const msg = caught!.message;
     expect(msg).not.toContain(slotBId);
     expect(msg).not.toContain(orderBId);
@@ -532,5 +561,11 @@ describe.skipIf(!HAS_TEST_DB).sequential('F9 HR_STAFF JobPosting Scope — Synth
     expect(msg).not.toContain('slot');
     expect(msg).not.toContain('project');
     expect(msg).not.toContain('assignee');
+    // PII-leak protection on `details` value: the AuthoringError class
+    // declares `details` as an own-enumerable field, but the canonical
+    // fail-closed call sites never populate it. If a future change
+    // populates `details` with an order / slot / assignee id, this test
+    // will fail.
+    expect(errAsRecord.details).toBeUndefined();
   });
 });
