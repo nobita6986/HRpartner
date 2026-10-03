@@ -220,4 +220,21 @@ export const INTEGRATION_TEST_FILES: string[] = [
   // Self-skips via describe.skipIf when DATABASE_URL_TEST +
   // DATABASE_URL_ADMIN_TEST are absent (ENV_BLOCKED).
   'tests/db/p1a06-f9b-jobposting-write-boundary.integration.test.ts',
+  // hrp-f9b-r2-slot-scope-read-restore (F9-B correction batch 1/1):
+  // restore canonical SELECT scope for `staffing_order_slots` after
+  // the F9-B round-1 migration's narrow manager-only SELECT policy
+  // (hrp_f9b_slots_manager_select) broke every non-manager role
+  // that legitimately needs to read slot rows through
+  // `hrp_project_visible_for(so.project_id)`. R2 introduces
+  // `hrp_f9b_slots_project_select` (project-visible SELECT) while
+  // retaining `hrp_sora_order_slots_staff_select` (assigned HR_STAFF)
+  // and the manager INSERT/UPDATE policies + the SECURITY DEFINER
+  // `hrp_f9b_bind_slot_to_opening` primitive. Covers role-matrix
+  // visibility (MKT, PM, sub-PM, ADMIN, HR_MANAGER, DIRECTOR, SALE,
+  // WORKER, VENDOR_*, CTV), assigned/unassigned/revoked HR_STAFF,
+  // HR_STAFF direct UPDATE/INSERT/DELETE fail-closed posture, and
+  // PUBLIC cannot EXECUTE the primitive. Self-skips via
+  // describe.skipIf when DATABASE_URL_TEST + DATABASE_URL_ADMIN_TEST
+  // are absent (ENV_BLOCKED).
+  'tests/db/p1a07-f9b-r2-role-scope.integration.test.ts',
 ];
