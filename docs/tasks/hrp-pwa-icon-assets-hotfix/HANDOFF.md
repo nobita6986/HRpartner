@@ -11,7 +11,7 @@
 | Audit mode | `NONE` |
 | Execution round | `0` |
 | Baseline | `f570db06a8451b7f7a9be4ad98a3a66dbfa7c2f1` |
-| Implementation SHA | `f570db06a8451b7f7a9be4ad98a3a66dbfa7c2f1` (pinned post-commit) |
+| Implementation SHA | `6df991ad55d5c9c86e073e223eb0c367a8049a53` |
 | Frozen delivery | `YES` |
 | Canonical gates | `NOT_REQUIRED` |
 | Audit eligibility | `NOT_REQUIRED` |
@@ -98,7 +98,7 @@ multiple AC share the same evidence row.
 | `AC-09` | `E-07` | Full unit suite: `node node_modules/vitest/vitest.mjs run --config vitest.unit.config.ts` exits 0; `Test Files 225 passed (225) · Tests 3723 passed | 9 skipped (3732) · Duration 75.93s`. | `None` |
 | `AC-10` | `E-08` | `git diff --check --cached` exits 0 with no output; `git diff --check HEAD` exits 0 with no output. | `None` |
 | `AC-11` | `E-09` | `node .ai-pipeline/scripts/verify-encoding.mjs` → `RESULT: PASS (5 changed text file(s), strict UTF-8 without BOM).` | `None` |
-| `AC-12` | `E-10` | `git diff <baseline>..HEAD -- public/logo.png public/hrp-logo.webp` outputs nothing (both files byte-identical to baseline). | `None` |
+| `AC-12` | `E-10` | `git diff f570db06a8451b7f7a9be4ad98a3a66dbfa7c2f1..6df991ad55d5c9c86e073e223eb0c367a8049a53 -- public/logo.png public/hrp-logo.webp` outputs nothing (both files byte-identical to baseline). | `None` |
 | `AC-13` | `E-11` | `git status --porcelain -- package.json` outputs nothing. The pre-existing untracked `pnpm-lock.yaml` and `pnpm-workspace.yaml` are untracked in the baseline commit `f570db06a8451b7f7a9be4ad98a3a66dbfa7c2f1` too (reproduced with `git ls-tree f570db06 -- pnpm-lock.yaml pnpm-workspace.yaml` which returns empty, and `git status --porcelain` from a clean checkout at `f570db06` which reports them as untracked). The pre-existing untracked state is the baseline; this commit does not introduce it. | `None` |
 | `AC-14` | `E-12` | `git status --porcelain -- prisma/schema.prisma 'prisma/migrations/**'` outputs nothing. | `None` |
 | `AC-15` | `E-13` | `git status --porcelain` over the TASK forbidden paths is empty for all of them. `git log --format=%s HEAD` shows no `deploy` / `migrate` / `prisma` / `db push` token. No shell commands against production were issued. | `None` |
@@ -122,7 +122,7 @@ Short logs are inline; long output, live transcripts or images go in
 | `E-07` | `node node_modules/vitest/vitest.mjs run --config vitest.unit.config.ts` (full unit suite) | `Test Files 225 passed (225) · Tests 3723 passed | 9 skipped (3732) · Duration 75.93s` | inline |
 | `E-08` | `git diff --check --cached` ; `git diff --check HEAD` | both exit 0 with no output | inline |
 | `E-09` | `node .ai-pipeline/scripts/verify-encoding.mjs` | `RESULT: PASS (5 changed text file(s), strict UTF-8 without BOM).` | inline |
-| `E-10` | `git diff f570db06a8451b7f7a9be4ad98a3a66dbfa7c2f1..HEAD -- public/logo.png public/hrp-logo.webp` (where `f570db06a8451b7f7a9be4ad98a3a66dbfa7c2f1` is the recorded baseline SHA) | empty output | inline |
+| `E-10` | `git diff f570db06a8451b7f7a9be4ad98a3a66dbfa7c2f1..6df991ad55d5c9c86e073e223eb0c367a8049a53 -- public/logo.png public/hrp-logo.webp` (where `f570db06a8451b7f7a9be4ad98a3a66dbfa7c2f1` is the recorded baseline SHA and `6df991ad55d5c9c86e073e223eb0c367a8049a53` is the implementation SHA) | empty output | inline |
 | `E-11` | `git status --porcelain -- package.json` | empty; `pnpm-lock.yaml` and `pnpm-workspace.yaml` are pre-existing untracked artifacts in the baseline commit `f570db06a8451b7f7a9be4ad98a3a66dbfa7c2f1` (reproduced with `git ls-tree f570db06 -- pnpm-lock.yaml pnpm-workspace.yaml` returning empty, and `git status --porcelain` from a clean checkout at `f570db06` reporting them as untracked). | inline |
 | `E-12` | `git status --porcelain -- prisma/schema.prisma 'prisma/migrations/**'` | empty | inline |
 | `E-13` | `git status --porcelain` over the TASK forbidden paths (`prisma/**`, `app/**`, `src/domains/**`, `src/shared/auth/**`, `src/lib/**`, `next.config.*`, `public/hrp-logo.webp`, `public/logo.png`, `public/mockup/**`, `scripts/**`, `.github/**`) | all empty | inline |
