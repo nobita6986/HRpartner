@@ -217,3 +217,4 @@ Tier 1 appends after review/audit. Audit `NONE` resolves directly from HANDOFF;
 | Spec version | Date | Change | Reason |
 |---|---|---|---|
 | `v1.0` | `2026-10-04` | Initial contract | Initial |
+| `v1.2` | `2026-10-04` | T0 → T1C correction batch 1/1: C-01 maskable safe zone (re-render icons with logo mark only, centered in inner 60% safe zone), C-02 evidence (new `c01-maskable-safe-zone.json` + 4 safe-zone composition tests in `pwa-icons.test.ts`), C-03 worktree hygiene (removed untracked `pnpm-lock.yaml` / `pnpm-workspace.yaml`), C-04 SHA identity (forward-only correction commit `df87e7fdf8cda4e3d2ebcbb9df0034aa34370dbf` as Corrected Implementation SHA; round-1 SHA `6df991ad...` pinned as superseded). HANDOFF.md updated with §0 SHA split, §11 identity summary, revised evidence registry, revised AC-01..AC-04 byte sizes. No manifest/sw.js/contract/UI change. | T0 directive 2026-10-04 §A/B/C/D correction batch. |
