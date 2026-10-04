@@ -9,7 +9,7 @@
 | Baseline | `796e13c69996756d1298bc1a7ec9b50bab935c9f` |
 | Spec version | `v1.1` |
 | Assurance lane | `CRITICAL` |
-| Audit mode | `LIGHT` |
+| Audit mode | `NONE` |
 | Execution round | `3` (Phase A: 1, Phase B: 1, post-audit correction: 1) |
 | Phase A baseline | `6ea2e267b72120de5f67d5954d1074101efccff1` |
 | Phase A checkpoint SHA | `53696afb3f644a3df06d4cf772828446f16f30d6` |
@@ -27,9 +27,9 @@
 | Docs/hygiene correction (pre-merge) | `5120c86ce080c40c9d0ab9fddd0f9cca36aa847c` (documentation-only; superseded by the merge) |
 | Frozen delivery | `YES` |
 | Canonical gates | `PASS` |
-| Audit eligibility | `ELIGIBLE` |
-| Status | `READY_FOR_AUDIT` |
-| Next gate | `TIER3_LIGHT_DELTA_AUDIT` |
+| Audit eligibility | `NOT_REQUIRED` |
+| Status | `READY_FOR_REVIEW` |
+| Next gate | `T0_PUSH_PR_MERGE` |
 | Production migration | `NOT_RUN` |
 | Correction budget | `1` |
 | Correction batches used | `1` |
@@ -263,6 +263,7 @@ The first row is `verify-task`. Each command registers once via `E-xx`; multiple
 | `UI2-R1-01` | `RESOLVED` | The admin form previously serialized all settings. `buildHomepageSettingsPatch` now emits only dirty top-level fields and a complete sticky object only when a sticky field changes. Six helper tests cover the contract. | None — corrected at `f085a326…`. |
 | `UI2-R1-02` | `RESOLVED` | Missing AC-27..AC-30 route proof is now present in dedicated admin/public route tests: 4/4 PASS. | None — corrected at `f085a326…`. |
 | `UI2-R1-03` | `RESOLVED` | HANDOFF AC evidence was mapped to stale outcomes. AC-27..AC-42 now map to the actual TASK contract and measured correction gates. | None — corrected in this docs freeze. |
+| `REV-01` | `PASS` | T0 lightweight review on 2026-10-05 found no blocking issue in the dirty-only payload helper, admin/public route validation, cache revalidation, or associated regression tests. Historical Tier 3 material is retained but no further audit is required. | None — ready for push/PR/merge. |
 
 Correction budget: `1/1` used by Tier 1 for the contract-required integration
 test and documentation repair. After Tier 3 round 1 returned FAIL, the owner
@@ -294,15 +295,15 @@ The repo-wide lint config is unchanged.
 
 ## 5. Final status
 
-`READY_FOR_AUDIT / TIER3_LIGHT_DELTA_AUDIT` — Phase A and Phase B are
-both delivered and frozen; latest-main reconciliation complete.
+`READY_FOR_REVIEW / T0_PUSH_PR_MERGE` — Phase A and Phase B are
+delivered, frozen, and T0 lightweight review is PASS; latest-main reconciliation complete.
 `UI2 Phase B semantic SHA: 190983f1…` (UI2-owned anchor, preserved).
 `Correction SHA / final combined Implementation SHA (re-audit anchor):
 f085a326…`. Tier 3 round-1 FAIL was adopted at `5f122beb…`.
 `Latest-main reconciliation: a6396ac3…`;
 `Latest-main merged: 937133c2…`
 (origin/main at reconciliation time). `Frozen delivery: YES`.
-`Canonical gates: PASS`. `Audit eligibility: ELIGIBLE`. `Production
+`Canonical gates: PASS`. `Audit eligibility: NOT_REQUIRED`. `Production
 migration: NOT_RUN`. `Correction budget: 1/1`; the post-audit repair is T0-owned.
 
 - **Latest-main reconciliation (historical integration point):**
@@ -374,4 +375,4 @@ migration: NOT_RUN`. `Correction budget: 1/1`; the post-audit repair is T0-owned
   reconciliation merge commit is on `main` and the application is
   rolled forward.
 
-> Handoff status: `READY_FOR_AUDIT`
+> Handoff status: `READY_FOR_REVIEW`

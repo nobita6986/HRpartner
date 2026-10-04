@@ -10,10 +10,10 @@
 | Build vs adopt | `N/A` |
 | Build vs automate | `N/A` |
 | Assurance lane | `CRITICAL` |
-| Audit mode | `LIGHT` |
-| Audit reason | `Final audit happens after Phase B and covers the whole UI2 surface (Phase A module + Phase B mount + schema/migration + admin form). Phase A is delivered as a CHECKPOINT, not as a frozen final delivery; therefore Phase A is not independently audited.` |
+| Audit mode | `NONE` |
+| Audit reason | `Owner directive 2026-10-05: Tier 3 audit is retired; T0 performs a lightweight review before promotion. The historical round-1 FAIL remains preserved as evidence.` |
 | Spec version | `v1.1` |
-| Status | `READY_FOR_AUDIT` (Tier 3 round 1 FAIL adopted; T0-authorized terminal correction frozen at `f085a326…`; awaiting Tier 3 light delta re-audit) |
+| Status | `READY_FOR_REVIEW` (T0 lightweight review PASS on terminal correction `f085a326…`; ready to push and promote) |
 | Planner | `Tier 1` |
 | Baseline | `796e13c69996756d1298bc1a7ec9b50bab935c9f` |
 | Phase A checkpoint | `53696afb3f644a3df06d4cf772828446f16f30d6` |
@@ -24,13 +24,13 @@
 | Correction budget used | `1` |
 | Frozen delivery | `YES` (final semantic correction `f085a3267390385c180f487b0ca0f6f9649e326e`) |
 | Canonical gates | `PASS` (route/dirty-patch tests, focused UI2 lane, full unit, typecheck, lint, build, Prisma validate, encoding and diff checks) |
-| Audit eligibility | `ELIGIBLE` (Phase B final delivery) |
+| Audit eligibility | `NOT_REQUIRED` (owner replaced audit with T0 lightweight review) |
 | In-scope roots | `src/domains/job-board/public-content-controls/**`; `docs/tasks/hrp-ui2-public-content-controls-sticky/**`. Phase B additionally opens: `prisma/schema.prisma` (additive only); `prisma/migrations/20261004230000_ui2_public_content_controls/**` (new, single forward-only migration); `app/(portal)/layout.tsx`; `app/components/GlobalNavbar.tsx` (Tin tức entry row only); `app/admin/settings/admin-settings-form.tsx`; `app/admin/settings/page.tsx`; `app/api/admin/homepage-settings/route.ts`; `src/domains/job-board/public-settings.service.ts` (additive); `src/domains/job-board/public-types.ts` (additive DTO fields only). |
 | Forbidden paths | Phase A: `prisma/schema.prisma`; `prisma/migrations/**`; `app/(portal)/page.tsx`; `app/(jobs)/**`; `app/admin/**`; `app/api/admin/homepage-settings/**`; `app/api/public/homepage-settings/**`; `app/components/GlobalNavbar.tsx`; `app/components/GlobalFooter.tsx`; `app/components/FloatingChatActions.tsx`; `src/domains/job-board/public-types.ts`; `src/domains/job-board/public-settings.service.ts`; `src/domains/job-board/chat-links.ts`; `src/domains/job-board/components/landing/news-section.tsx`; `src/domains/job-board/components/landing/news-preview-modal.tsx`; `src/domains/job-board/fixtures/demo-content.ts`; `src/domains/job-board/components/landing/__tests__/sections-policy.test.ts`; `src/shared/auth/permission-catalog.ts`. Phase B retains all of the above EXCEPT those explicitly opened in `In-scope roots`, and adds: `app/components/ContactForm.tsx`; `prisma/migrations/<OTHER_TS>/**`; `src/domains/job-board/components/landing/__tests__/sections-policy.test.ts`. |
 | Required gates | `pwsh .ai-pipeline/scripts/verify-pipeline.ps1`; `node .ai-pipeline/scripts/verify-encoding.mjs`; `npm run typecheck`; `npm run lint -- src/domains/job-board/public-content-controls docs/tasks/hrp-ui2-public-content-controls-sticky`; `npm run test:unit -- src/domains/job-board/public-content-controls` |
 | Current execution round | `3` (Phase A: 1, Phase B: 1, post-audit correction: 1) |
 | Current audit round | `1` (FAIL adopted at `5f122beb…`; findings corrected at `f085a326…`) |
-| Next gate | `TIER3_LIGHT_DELTA_AUDIT` |
+| Next gate | `T0_PUSH_PR_MERGE` |
 
 > CRITICAL + LIGHT: Phase A is delivered as a CHECKPOINT (no schema/migration/mount yet).
 > The final audit happens AFTER Phase B, against the post-Phase-B implementation SHA,
@@ -418,3 +418,4 @@ Tier 1 appends after review/audit. Audit `NONE` resolves directly from HANDOFF; 
 | `v1.1` | `2026-10-04` | Phase B section §4.4 added. Spec version bumped. `Baseline` set to `796e13c69996756d1298bc1a7ec9b50bab935c9f` (`origin/main` after PR #94 + PR #95). `Current execution round: 2`. `Next gate: PHASE_B_T1C_EXECUTION`. Phase A in-scope roots retained. Phase B in-scope roots / forbidden paths split. Phase B requirements `RQ-13` … `RQ-28`, acceptance `AC-19` … `AC-44`, execution plan `STEP-11` … `STEP-27`, and risks `RISK-06` … `RISK-10` added. T0 disposition `RESUME UI2 PHASE B NOW` (2026-10-04 16:21 ICT) with both prerequisite gates (PR #94 + PR #95) confirmed PASS. Forward-merge `origin/main` into `codex/t1c-ui2-public-content-controls` is the first Phase B step. | T0 disposition to RESUME UI2 Phase B with gates confirmed (PR #94 + PR #95 merged, `origin/main = 796e13c6…`, main CI run 37191624366 PASS). |
 | `v1.1.1` | `2026-10-04` | T0 pre-audit correction 1/1: added and registered the AC-44 synthetic PostgreSQL integration test, repaired TASK UTF-8/mojibake and STEP-22 path, and reconciled correction-budget usage. No UI2 runtime contract or scope changed. | T0 verdict `CHANGES_REQUIRED_TEST_AND_DOCS / NOT_READY_FOR_AUDIT`. |
 | `v1.1.2` | `2026-10-04` | Adopted Tier 3 round-1 FAIL, then used a T0-authorized terminal exception to implement dirty-only admin settings payloads and route-level proof for AC-27..AC-30. Final semantic correction SHA: `f085a3267390385c180f487b0ca0f6f9649e326e`. No schema, migration, auth, RLS, dependency, or production change. | Tier 3 findings `UI2-R1-01`, `UI2-R1-02`, and `UI2-R1-03` corrected; re-audit required. |
+| `v1.1.3` | `2026-10-05` | Owner retired Tier 3 audit. T0 lightweight review of `f085a326…` found no blocking issue: dirty-only payload behavior, fail-closed route validation, cache revalidation, and focused regression evidence are acceptable. Historical AUDIT.md is retained unchanged. | `REVIEW_PASS`; next gate is push/PR/merge, not another audit. |
