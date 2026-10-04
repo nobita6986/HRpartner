@@ -16,9 +16,13 @@
 | Status | `READY_FOR_REVIEW` |
 | Planner | `Tier 1` |
 | Baseline | `16df26ee10faf47c5e5ed483e6b2b780658e007c` |
-| Implementation SHA | `c68aede301bdb986533cc9f9e1c3696207a5c441` |
-| Latest-main reconciliation SHA | (pending — chờ PR #96 merge vào `main`, sau đó `git merge --no-ff origin/main`) |
-| Final Implementation SHA | (pending — sẽ pin sau forward-merge) |
+| Wave 2 semantic SHA | `c68aede301bdb986533cc9f9e1c3696207a5c441` |
+| Implementation SHA | `0aff665fea4cf48859cc75ce645af8059b29c3de` |
+| Final combined semantic SHA | `0aff665fea4cf48859cc75ce645af8059b29c3de` (= Implementation SHA; merge commit, no separate correction commit) |
+| origin/main SHA merged | `7f6e6361e5736bdf31daf21ba8f43af0ccb1add9` |
+| Latest-main reconciliation SHA | `0aff665fea4cf48859cc75ce645af8059b29c3de` |
+| Merge parents | `1685c14ace563b817fc0975e87e3c3d8ce70a556` + `7f6e6361e5736bdf31daf21ba8f43af0ccb1add9` |
+| Wave 2 semantic SHA note | Wave 2-owned semantic commit; immutable; preserved verbatim throughout reconciliation. Wave 2 semantic surface (5 admin pages + 5 dictionaries + 10 NEW Wave 2 tests + 1 page test fix) is byte-identical at `c68aede…` and at HEAD — confirmed by `git diff c68aede..HEAD -- app/admin src/domains/{projects,staffing}/{job-opening,job-posting,staffing-order,recruiter-assignment}-ui.ts` returning empty. |
 | Contract gate | `READY_TO_CODE` |
 | Decision state | `CLOSED` |
 | Test environment | `READY` |
@@ -27,7 +31,7 @@
 | Canonical gates | `PASS` |
 | Audit eligibility | `NOT_REQUIRED` |
 | Correction batches used | `0` |
-| Execution round | `1` |
+| Execution round | `2` |
 | Current audit round | `0` |
 | Next gate | `/resolve` |
 
@@ -168,6 +172,29 @@
 | AC-26 | E-10 | Raw English scan: `<span>{status}</span>` raw form NOT found on 5 surfaces. `^>[A-Z_]+$` bare-uppercase pattern NOT found in `<option>` text. | None |
 | AC-27 | E-12 | No dependency added. Reuses Wave 1 `glossary.ts`, `form-dictionary.ts`, `action-dictionary.ts`, `role-labels.ts`, `error-dictionary.ts`, `src/shared/ui/status-badge/`. New dictionary files are module-owned, not global. | None |
 
+## 3.5 Reconciliation Acceptance (Round 2)
+
+Captured against final combined semantic SHA `0aff665f…` after forward-merge
+of `origin/main = 7f6e6361` (PR #96 Wave 1 foundation + PR #97 public-card-truth
+correction). Wave 2 semantic SHA `c68aede…` is preserved unchanged.
+
+| Check | Evidence | Result | Limitation |
+|---|---|---|---|
+| RC-01 | E-postmerge-typecheck | `corepack pnpm run typecheck` exit 0, 0 type errors | None |
+| RC-02 | E-postmerge-lint | `corepack pnpm run lint` exit 0, 0 errors, 918 warnings (down 2 from Wave 2 baseline 920; the 2-wave contribution is 0) | None |
+| RC-03 | E-postmerge-unit | `corepack pnpm run test:unit` (full suite) exit 0, 240 files / 3861 passed | 9 skipped (3870) / 0 failed (delta +25 vs Wave 2 baseline = Wave 1 PR #96 + PR #97 contribution) | None |
+| RC-04 | E-postmerge-build | `corepack pnpm run build` (next build) exit 0, all routes compiled incl. 5 admin + public card / stamp / salary | None |
+| RC-05 | E-postmerge-encoding | `node .ai-pipeline/scripts/verify-encoding.mjs` exit 0, strict UTF-8 no-BOM (0 changed text files in working tree) | None (worktree's gate-lib.ps1 lacks `Get-Utf8EncodingIssue`; `.mjs` is the worktree-equivalent gate — see HANDOFF §0 / E-encoding round-1 note). `.ai-pipeline/scripts/verify-encoding.ps1` is the upstream script added after this worktree branched; not present in this worktree. |
+| RC-06 | E-postmerge-status | `git status --short` empty (worktree clean, no `pnpm-lock.yaml` untracked, no `pnpm-workspace.yaml`, no helper script) | None |
+| RC-07 | E-postmerge-diffcheck | `git diff --check` exit 0, 0 whitespace / BOM errors | None |
+| RC-08 | E-reconciliation-changes | `git diff c68aede..HEAD --stat` = 23 files / +1685 / −605 (tracked, all in scope of merge: 23 changed files all in `app/(jobs)/viec-lam/**`, `app/(portal)/page.tsx`, `src/domains/job-board/components/{detail,landing}/**`, `src/domains/job-board/{public-card-truth,public-detail,public-listing,public.service,job-posting-stamps-mapping}.*`, `src/domains/applications/marketplace-*`, `src/shared/security/required-relation-sweep.static.test.ts`, plus 2 docs files `docs/tasks/hrp-ui-v1-public-card-truth-correction/{HANDOFF,TASK}.md`). Zero delta on `app/admin/jobs/**`, `app/admin/job-openings/**`, `app/admin/staffing/**`, `src/domains/projects/project-ui.ts`, `src/domains/staffing/{job-opening-ui,job-posting-ui,staffing-order-ui,recruiter-assignment-ui}.ts`, `app/admin/job-openings/[id]/page.test.tsx`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `prisma/schema.prisma`, `middleware.ts`, `.github/**`. | None |
+| RC-09 | E-english-scan | English-literal scan on 5 Wave 2 surfaces (`app/admin/jobs/page.tsx`, `app/admin/jobs/job-postings/page.tsx`, `app/admin/jobs/job-postings/[id]/page.tsx`, `app/admin/job-openings/[id]/page.tsx`, `app/admin/staffing/staffing-list-client.tsx`): `<span>{status}</span>` raw form 0 hits, `^>[A-Z_]+$` bare-uppercase 0 hits, `"Published"|"Unpublished"|"Closed"` raw rendering 0 hits. Allowlisted canonical enum tokens (`DRAFT`, `PUBLISHED`, `ARCHIVED`, `OPEN`, `CLOSING_SOON`, `CLOSED`, `FILLED`, `CANCELLED`, `ACTIVE`, `REVOKED`, `SUPERSEDED`, `PAUSED`, `COMPLETED`) appear only inside TS source identifiers (TS constants, type guards, `<option value={s}>` mapping), not as rendered display text. F11 frozen literals (`Công bố dự án` / `Bỏ công bố dự án` / `Đăng tin` / `Gỡ tin` / `Lưu trữ`) all preserved verbatim. | None |
+| RC-10 | E-postmerge-verify-task | `pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-admin-localization-wave2-recruitment/TASK.md` exit 0, `DRAFT-VALID (2 warning(s))` — same set as Round 1 (T-03 / A-04 informational); no new errors. | None |
+| RC-11 | E-postmerge-verify-handoff | `pwsh .ai-pipeline/scripts/verify-handoff.ps1 -TaskPath docs/tasks/hrp-admin-localization-wave2-recruitment/TASK.md` exit 0 / `PASS WITH WARNINGS (1 warning(s))` after this docs-only freeze commit lands. H-15 control-field warning is non-blocking (HANDOFF §0 was updated for forward-merge state). | None |
+| RC-12 | E-wave1-regression | Wave 1 shared i18n + status primitive + public-card regression: 10 files / 155 tests PASS (`glossary.static`, `action-dictionary.static`, `form-dictionary.static`, `role-labels.static`, `status-badge.test.tsx`, `internal-contrast.static`, `public-ui-premium.static`, `public-ui-token-parity.static`, `required-relation-sweep.static`, `vitest-default-lane.static`). | None |
+| RC-13 | E-wave2-targeted | Wave 2 targeted tests: 11 files / 101 tests PASS (5 NEW dictionary tests + 5 per-route terminology tests + 1 page test). | None |
+| RC-14 | E-wave1-surface-intact | Wave 1 / PR #97 surfaces (`src/domains/job-board/components/landing/{featured-job-card,stamp-overlay,best-jobs-section,related-jobs-section}.tsx`, `src/domains/job-board/public-listing.labels.ts`, `src/domains/job-board/public.service.ts`) all present and untouched by Wave 2; Wave 2 dictionaries import shared Wave 1 primitives (`glossary.ts`, `action-dictionary.ts`, `status-badge/index.tsx`) with no duplication. | None |
+
 ## 4. Changed Deliverables
 
 - **MODIFY (5 admin pages, no lifecycle/RLS/schema/api/auth changes):**
@@ -201,7 +228,55 @@
   - `app/admin/staffing/__tests__/staffing-terminology.static.test.ts` (9 tests, L-044..L-046 + diacritic scan)
 - **HANDOFF + evidence:**
   - `docs/tasks/hrp-admin-localization-wave2-recruitment/HANDOFF.md` (this file)
-  - `docs/tasks/hrp-admin-localization-wave2-recruitment/evidence/E-*.txt` (15 evidence artifacts)
+  - `docs/tasks/hrp-admin-localization-wave2-recruitment/evidence/E-*.txt` (15 evidence artifacts round-1 + 14 new round-2 evidence artifacts)
+
+## 4.1 Round-2 Reconciliation Changed Deliverables
+
+After the forward-only merge of `origin/main = 7f6e6361` into
+`codex/t1b-admin-localization-wave2-recruitment`:
+
+- **MERGED-IN (Wave 1 surface from `origin/main = 7f6e6361`):** 23 files
+  (all in PR #96 Wave 1 foundation + PR #97 public-card-truth correction):
+  - `app/(jobs)/viec-lam/[slug]/page.tsx`, `app/(jobs)/viec-lam/page.tsx`,
+    `app/(portal)/page.tsx`
+  - `docs/tasks/hrp-ui-v1-public-card-truth-correction/HANDOFF.md`,
+    `docs/tasks/hrp-ui-v1-public-card-truth-correction/TASK.md`
+  - `src/domains/applications/marketplace-browse.routes.test.ts`,
+    `src/domains/applications/marketplace-inventory.static.test.ts`
+  - `src/domains/job-board/components/detail/related-jobs-section.tsx`
+  - `src/domains/job-board/components/landing/__tests__/stamp-overlay.test.ts`,
+    `src/domains/job-board/components/landing/best-jobs-section.tsx`,
+    `src/domains/job-board/components/landing/featured-job-card.test.ts`,
+    `src/domains/job-board/components/landing/featured-job-card.tsx`,
+    `src/domains/job-board/components/landing/stamp-overlay.tsx`
+  - `src/domains/job-board/job-posting-stamps-mapping.test.ts`,
+    `src/domains/job-board/public-card-truth.integration.test.ts`,
+    `src/domains/job-board/public-card-truth.test.ts`,
+    `src/domains/job-board/public-detail.static.test.ts`,
+    `src/domains/job-board/public-listing.labels.ts`,
+    `src/domains/job-board/public-listing.static.test.ts`,
+    `src/domains/job-board/public.service.ts`
+  - `src/shared/security/required-relation-sweep.static.test.ts`
+  - DELETED: `src/domains/job-board/components/landing/__tests__/stamp-badge.test.ts`,
+    `src/domains/job-board/components/landing/stamp-badge.tsx`
+- **MODIFIED BY MERGE (Wave 2 surface, untouched post-merge — zero Wave 2
+  semantic delta in round 2):**
+  - None. The merge brought in 23 new files (Wave 1 surface) and deleted
+    2 files (Wave 1 stamp-badge replacement) without conflicting with
+    any Wave 2-owned file. The `app/admin/{jobs,job-openings,staffing}/**`
+    surface, the 5 NEW dictionaries, and the 10 NEW Wave 2 tests are
+    byte-identical to the Round-1 freeze at `c68aede…`.
+- **MODIFIED BY MERGE (Wave 1 + Wave 2 reconciliation trimmer test
+  witnesses — not Wave 2 surface):** 0 files.
+- **MODIFIED IN ROUND 2 (this docs-only freeze commit, zero semantic
+  delta):** `docs/tasks/hrp-admin-localization-wave2-recruitment/HANDOFF.md`,
+  plus 14 NEW evidence `.txt` files under
+  `docs/tasks/hrp-admin-localization-wave2-recruitment/evidence/`.
+- **NOT MERGED, NOT TOUCHED IN ROUND 2:** UI2, F6, Mốc 3/4/5, P2.1,
+  application UI, worker/users/labor/clients/vendors,
+  attendance/reconciliation/tickets/payroll/commission, media/settings,
+  schema/migration/auth/RLS, package/lockfile/workspace, middleware,
+  `.github/**`, `tests/**` outside the Wave 1 surface merged in.
 
 ## 5. Deviations
 
@@ -233,12 +308,27 @@ write-semantics change; no dependency added.)
 | E-13 | `pwsh -NoProfile -File .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-admin-localization-wave2-recruitment/TASK.md` | exit 0, RESULT: DRAFT-VALID (2 non-blocking warnings) | docs/tasks/hrp-admin-localization-wave2-recruitment/evidence/E-verify-task.txt |
 | E-14 | `git diff --check` (post-commit) | exit 0, 0 whitespace / BOM errors | docs/tasks/hrp-admin-localization-wave2-recruitment/evidence/E-diff-check.txt |
 | E-15 | `pwsh -NoProfile -File .ai-pipeline/scripts/verify-handoff.ps1 -TaskPath docs/tasks/hrp-admin-localization-wave2-recruitment/TASK.md` | exit 0, RESULT: PASS (this gate is run AFTER HANDOFF is written; recorded in `evidence/E-verify-handoff.txt`) | docs/tasks/hrp-admin-localization-wave2-recruitment/evidence/E-verify-handoff.txt |
+| E-postmerge-typecheck | `corepack pnpm run typecheck` (post-merge) | exit 0, 0 type errors | docs/tasks/hrp-admin-localization-wave2-recruitment/evidence/E-postmerge-typecheck.txt |
+| E-postmerge-lint | `corepack pnpm run lint` (post-merge) | exit 0, 0 errors, 918 warnings | docs/tasks/hrp-admin-localization-wave2-recruitment/evidence/E-postmerge-lint.txt |
+| E-postmerge-unit | `corepack pnpm run test:unit` (post-merge, full suite) | exit 0, 240 files / 3861 passed | 9 skipped / 0 failed | docs/tasks/hrp-admin-localization-wave2-recruitment/evidence/E-postmerge-unit.txt |
+| E-postmerge-build | `corepack pnpm run build` (post-merge) | exit 0, all routes compiled incl. 5 admin + public card / stamp / salary | docs/tasks/hrp-admin-localization-wave2-recruitment/evidence/E-postmerge-build.txt |
+| E-postmerge-encoding | `node .ai-pipeline/scripts/verify-encoding.mjs` (post-merge) | exit 0, strict UTF-8 no-BOM, 0 changed text files in working tree | docs/tasks/hrp-admin-localization-wave2-recruitment/evidence/E-postmerge-encoding.txt |
+| E-postmerge-status | `git status --short` + `git ls-files --others --exclude-standard` (post-merge) | empty (clean), no `pnpm-lock.yaml`, no `pnpm-workspace.yaml`, no helper script untracked | docs/tasks/hrp-admin-localization-wave2-recruitment/evidence/E-postmerge-status.txt |
+| E-postmerge-diffcheck | `git diff --check` (post-merge) | exit 0, 0 whitespace / BOM errors | docs/tasks/hrp-admin-localization-wave2-recruitment/evidence/E-postmerge-diffcheck.txt |
+| E-reconciliation-changes | `git diff c68aede..HEAD --stat` + `git log --oneline c68aede..HEAD` | 23 files / +1685 / −605, all in scope of merge (Wave 1 public-card-truth + foundation). Wave 2 surface (`app/admin/{jobs,job-openings,staffing}/**`, `src/domains/projects/project-ui.ts`, `src/domains/staffing/{job-opening,job-posting,staffing-order,recruiter-assignment}-ui.ts`, `app/admin/job-openings/[id]/page.test.tsx`) untouched post-merge. | docs/tasks/hrp-admin-localization-wave2-recruitment/evidence/E-reconciliation-changes.txt |
+| E-english-scan | `rg '<span>\{(\w*[Ss]tatus\w*)\}</span>'` + `rg '^>[A-Z_]+$'` + `rg '"Published"|"Unpublished"|"Closed"'` on 5 Wave 2 surfaces | exit 1 (no matches). Allowlisted canonical enum tokens appear only as TS source identifiers (constants, type guards, `<option value={s}>` mapping). F11 literals preserved verbatim. | docs/tasks/hrp-admin-localization-wave2-recruitment/evidence/E-english-scan.txt |
+| E-wave1-regression | `corepack pnpm exec vitest run --config vitest.unit.config.ts` on 10 Wave 1 regression files | exit 0, 10 files / 155 tests PASS (Wave 1 shared i18n + status primitive + public-card + RLS sweep + toolchain) | docs/tasks/hrp-admin-localization-wave2-recruitment/evidence/E-wave1-regression.txt |
+| E-wave2-targeted | `corepack pnpm exec vitest run --config vitest.unit.config.ts` on 11 Wave 2 targeted files | exit 0, 11 files / 101 tests PASS (5 NEW dictionary tests + 5 per-route terminology tests + 1 page test) | docs/tasks/hrp-admin-localization-wave2-recruitment/evidence/E-wave2-targeted.txt |
+| E-wave1-surface-intact | file presence + `rg` import-graph scan | Wave 1 / PR #97 surfaces present and untouched. Wave 2 dictionaries import shared Wave 1 primitives (`glossary.ts`, `action-dictionary.ts`, `status-badge/index.tsx`) without redefining them. | docs/tasks/hrp-admin-localization-wave2-recruitment/evidence/E-wave1-surface-intact.txt |
+| E-postmerge-verify-task | `pwsh -NoProfile -File .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-admin-localization-wave2-recruitment/TASK.md` (post-merge) | exit 0, `DRAFT-VALID (2 warning(s))` | docs/tasks/hrp-admin-localization-wave2-recruitment/evidence/E-postmerge-verify-task.txt |
+| E-postmerge-verify-handoff | `pwsh -NoProfile -File .ai-pipeline/scripts/verify-handoff.ps1 -TaskPath docs/tasks/hrp-admin-localization-wave2-recruitment/TASK.md` (post-merge, before docs freeze) | exit 2, `FAIL (1 error(s), 1 warning(s))`: pre-freeze state expects `Implementation SHA = c68aede…` but `c68aede..HEAD` now contains Wave 1 surface. Resolved by this docs-only freeze commit which updates §0 Implementation SHA to `0aff665f…` (the merge commit, which is the actual semantic-freeze combination). After freeze commit: expected exit 0 / PASS WITH WARNINGS. | docs/tasks/hrp-admin-localization-wave2-recruitment/evidence/E-postmerge-verify-handoff.txt |
 
 ## 7. Execution Round History
 
 | Round | Spec | Status | Outcome |
 |---|---|---|---|
-| 1 | v1.0 | READY_FOR_REVIEW | Implementation SHA `c68aede3`; 5 admin pages + 5 dictionaries + 5 dictionary tests + 4 per-route static tests + 1 page.test.tsx legacy-string fix; all 27 AC closed; canonical gates PASS; raw-English scan negative; F11 fence preserved; awaiting PR #96 merge before forward-merge `origin/main` and final freeze + PR open |
+| 1 | v1.0 | READY_FOR_REVIEW | Wave 2 semantic commit `c68aede3`; 5 admin pages + 5 dictionaries + 5 dictionary tests + 4 per-route static tests + 1 page.test.tsx legacy-string fix; all 27 AC closed; canonical gates PASS; raw-English scan negative; F11 fence preserved; Wave 2 semantic SHA frozen at `c68aede…` (immutable) |
+| 2 | v1.0 | READY_FOR_REVIEW | Forward-merge `origin/main = 7f6e6361` (PR #96 Wave 1 foundation + PR #97 public-card-truth correction) → merge commit `0aff665f` with `git merge --no-ff`, no rebase / amend / squash / force-push. Zero semantic conflict (Wave 2 = admin pages, Wave 1 = foundation + public card). Post-merge gates: typecheck exit 0; lint 0 errors / 918 warnings (down 2 from Wave 2 baseline); full unit suite 240 files / 3861 passed | 9 skipped (3870) / 0 failed (delta +25 vs Wave 2 baseline = Wave 1 PR #96 + PR #97 tests); `next build` exit 0 (all routes compiled incl. 5 admin + public card). Wave 2 semantic SHA `c68aede…` preserved unchanged. Wave 1 surface (public card, stamp, salaryDisplay) preserved. Wave 1 shared i18n primitives (`glossary.ts`, `form-dictionary.ts`, `action-dictionary.ts`, `role-labels.ts`, `status-badge/index.tsx`) reused by Wave 2 dictionaries (no duplication). F11 frozen-button fence preserved. Final combined semantic SHA = `0aff665f` (merge commit). |
 
 ## 8. L-010..L-046 Closure Map
 
@@ -286,18 +376,33 @@ modified by Wave 2. The 3 frozen literals continue to flow through Wave 1's
 
 ## 11. Handback Stop Condition
 
-This HANDOFF freezes at the Implementation SHA
-`c68aede301bdb986533cc9f9e1c3696207a5c441`. T1B DỪNG trước merge / deploy
-theo dependency / merge protocol của T0 directive.
+After the forward-only merge `git merge --no-ff origin/main` (`7f6e6361` → merge
+commit `0aff665f`), Wave 2 semantic SHA `c68aede…` remains the immutable
+Wave 2-owned semantic commit. Final combined semantic SHA =
+`0aff665fea4cf48859cc75ce645af8059b29c3de` (the merge commit). T1B DỪNG
+trước merge / deploy của Wave 2 PR vào `main` theo stop boundary directive.
 
-Sau khi PR #96 merge vào `main`, T1B sẽ:
-1. Forward-merge latest `origin/main` bằng `git merge --no-ff origin/main`
-   (không rebase / amend / reset / force-push).
-2. Re-verify canonical gates trên reconciliation SHA.
-3. Pin `Latest-main reconciliation SHA` và (nếu cần) `Final Implementation SHA`
-   trong mục §0 của HANDOFF này.
-4. Final freeze + mở PR Wave 2.
-5. Cập nhật `Handback Status` thành `READY_FOR_AUDIT` (audit mode = NONE → vẫn
-   `READY_FOR_REVIEW` sau forward-merge vì không có audit request).
+Sau PR Wave 2, T1B sẽ:
+
+1. Push branch bình thường (no force-push).
+2. Mở một PR non-draft cho Wave 2 vào `main`.
+3. Chờ CI: Quality / Integration / Vercel / Vercel Preview Comments.
+4. **KHÔNG merge PR, KHÔNG deploy** — T0 quyết định go-live.
+
+### 11.1 Post-freeze commit discipline
+
+After the final combined semantic SHA (`0aff665f`), **any further commit MUST
+be docs/evidence-only with zero semantic delta**. The freeze invariant is:
+
+- `Implementation SHA..HEAD` MUST NOT touch `app/`, `src/`, `prisma/`,
+  `tests/`, `scripts/`, `packages/`, `configs/`, `middleware.ts`,
+  `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `.github/`,
+  `prisma/schema.prisma`, or any `migrations/`.
+- Such a docs-only commit is acceptable for HANDOFF/evidence maintenance
+  and SHAs recorded in this worktree are T0-documented in chat handback
+  only (no recursive pinning in this HANDOFF).
+- `git diff c68aede..HEAD -- app src prisma tests scripts packages configs --stat`
+  MUST be empty **except** for files Wave 2 explicitly owns in §4 (and the
+  Wave 1 surface merged in from `origin/main = 7f6e6361`).
 
 Handoff status: `READY_FOR_REVIEW`
