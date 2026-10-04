@@ -1,0 +1,524 @@
+corepack : [33mThe CJS build of Vite's Node API is deprecated. See 
+https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+At C:\Users\Admin\AppData\Local\Temp\ps-script-54d66cdc-4fe5-4f3e-827f-02d41fde66c1.ps1:84 char:73
++ ... cruitment"; corepack pnpm exec vitest run --config vitest.unit.config ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([33mThe CJS bu...e details.[39m:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+ RUN  v2.1.9 C:/CodeApp/HrP-worktrees/t1b-admin-localization-wave2-recruitment
+
+(node:28548) Warning: Closing file descriptor 4 on garbage collection
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:28548) [DEP0137] DeprecationWarning: Closing a FileHandle object on garbage collection is deprecated. Please 
+close FileHandle objects explicitly using FileHandle.prototype.close(). In the future, an error will be thrown if a 
+file descriptor is closed during garbage collection.
+(node:28548) Warning: Closing file descriptor 5 on garbage collection
+ Γ£ô src/domains/evidence/local-vps-evidence-storage.adapter.test.ts (62 tests | 9 skipped) 165ms
+ Γ£ô src/domains/talent/recruiter-workbench.read-service.test.ts (73 tests) 22ms
+ Γ£ô src/domains/job-board/public-ui-premium.static.test.ts (68 tests) 26ms
+ Γ£ô src/domains/applications/marketplace-inventory.static.test.ts (47 tests) 97ms
+ Γ£ô src/domains/talent/recruiter-workbench.placement-actions.fetch.test.ts (50 tests) 24ms
+ Γ£ô src/domains/talent/placement.service.test.ts (23 tests) 12ms
+ Γ£ô src/domains/talent/placement.route-helpers.test.ts (26 tests) 30ms
+ Γ£ô src/domains/job-board/public-card-truth.test.ts (23 tests) 20ms
+ Γ£ô src/domains/talent/recruiter-workbench.placement-actions.test.tsx (52 tests) 37ms
+ Γ£ô src/domains/staffing/assignment-placement.service.test.ts (73 tests) 38ms
+ Γ£ô src/shared/security/required-relation-sweep.static.test.ts (11 tests) 967ms
+   Γ£ô quan hß╗ç Bß║«T BUß╗ÿC tr├¬n bß║úng bß╗ï RLS che: tß║¡p vß╗ï tr├¡ select l├á mß╗Öt tß║¡p ─É├ôNG > mß╗çnh ─æß╗ü BA: tß║¡p vß╗ï tr├¡ select KHß╗ÜP CH├ìNH X├üC t├ím d├▓ng c├▓n lß║íi sau STEP-06 (EV-03, AC-04) 468ms
+   Γ£ô quan hß╗ç Bß║«T BUß╗ÿC tr├¬n bß║úng bß╗ï RLS che: tß║¡p vß╗ï tr├¡ select l├á mß╗Öt tß║¡p ─É├ôNG > ph├⌐p qu├⌐t phß╗º cß║ú app/, chß╗⌐ng minh bß║▒ng ch├¡nh ba d├▓ng app/api trong kß║┐t quß║ú (AC-04) 463ms
+ Γ£ô src/shared/ui/internal-contrast.static.test.ts (21 tests) 12ms
+ Γ£ô src/domains/applications/marketplace-apply.routes.test.ts (36 tests) 47ms
+ Γ£ô src/domains/talent/recruiter-workbench.derive.test.ts (50 tests) 13ms
+ Γ£ô src/domains/job-board/components/landing/featured-job-card.test.ts (98 tests) 21ms
+ Γ£ô src/domains/talent/recruiter-assignment.routes.test.ts (22 tests) 25ms
+ Γ£ô src/domains/talent/recruiter-assignment.manager.component.test.tsx (33 tests) 28ms
+ Γ£ô src/domains/talent/recruiter-workbench.placement-actions.states.test.ts (59 tests) 16ms
+ Γ£ô src/shared/auth/vendor-object-scope.m1-08.route.test.ts (36 tests) 31ms
+ Γ£ô src/domains/commission/golden.test.ts (10 tests) 14ms
+ Γ£ô app/api/admin/jobs/job-postings/[id]/route.test.ts (42 tests) 33ms
+ Γ£ô src/shared/toolchain/vitest-default-lane.static.test.ts (15 tests) 10ms
+ Γ£ô src/domains/reconciliation/reconciliation-unit.test.ts (16 tests) 16ms
+ Γ£ô app/admin/recruiter-workbench/page.test.ts (28 tests) 158ms
+ Γ£ô src/domains/staffing/job-opening-activation.service.test.ts (24 tests) 16ms
+ Γ£ô src/domains/job-board/public-board-architecture.test.ts (17 tests) 19ms
+stderr | src/domains/staffing/assignment-placement.routes.test.ts > POST /api/admin/assignments/preview ΓÇö HR_STAFF 
+fail-closed (B-02) > HR_STAFF + missing order assignment ΓåÆ fails closed, previewPlacement NOT called
+[api/admin/assignments/preview] error: TypeError: tx.$executeRawUnsafe is not a function
+    at acquireOrderAdvisoryLock (C:\CodeApp\HrP-worktrees\t1b-admin-localization-wave2-recruitment\src\domains\talent\r
+ecruiter-assignment.service.ts:138:12)
+    at Module.assertRecruiterAndHandlingDualAuthorityForPlacement (C:\CodeApp\HrP-worktrees\t1b-admin-localization-wave
+2-recruitment\src\domains\talent\recruiter-assignment.service.ts:1018:9)
+    at 
+C:\CodeApp\HrP-worktrees\t1b-admin-localization-wave2-recruitment\app\api\admin\assignments\preview\route.ts:115:15
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+
+ Γ£ô src/domains/staffing/assignment-placement.routes.test.ts (45 tests) 43ms
+ Γ£ô src/domains/attendance/ticket.service.test.ts (16 tests) 19ms
+ Γ£ô src/shared/auth/api-boundary.static.test.ts (27 tests) 21ms
+ Γ£ô src/domains/talent/placement.commands.test.ts (15 tests) 11ms
+stdout | src/shared/observability/logger.test.ts > Schema ΓÇö AC-03 > sink can be reset to default without throwing
+{"schemaVersion":"1.0","timestamp":"2026-10-04T11:28:05.391Z","level":"info","event":"after_reset","requestId":"req","meta":{}}
+
+ Γ£ô src/shared/observability/logger.test.ts (73 tests) 18ms
+ Γ£ô src/domains/staffing/submission.service.test.ts (15 tests) 14ms
+ Γ£ô src/domains/staffing/transfer.service.test.ts (14 tests) 12ms
+ Γ£ô src/domains/applications/marketplace-browse.routes.test.ts (13 tests) 23ms
+ Γ£ô src/domains/job-board/public-ui-token-parity.static.test.ts (15 tests) 7ms
+ Γ£ô app/api/admin/staffing/job-openings/[id]/open/route.test.ts (20 tests) 19ms
+ Γ£ô app/api/admin/staffing/job-openings/[id]/classify/route.test.ts (16 tests) 18ms
+ Γ£ô src/domains/job-board/client-company-projection.test.ts (11 tests) 9ms
+ Γ£ô src/domains/referrals/attribution-redirect.service.test.ts (22 tests) 17ms
+ Γ£ô src/domains/talent/handling-assignment.service.test.ts (18 tests) 14ms
+ Γ£ô src/domains/applications/conversion.service.test.ts (18 tests) 18ms
+ Γ£ô src/domains/staffing/e2e-staffing-narrative.integration.test.ts (5 tests) 10ms
+ Γ£ô src/domains/job-board/public-settings.test.ts (30 tests) 14ms
+ Γ£ô src/domains/staffing/job-posting-authoring.service.test.ts (33 tests) 14ms
+ Γ£ô src/domains/applications/placement-panel.test.ts (26 tests) 29ms
+ Γ£ô src/shared/observability/middleware.test.ts (24 tests) 20ms
+stdout | src/domains/talent/recruiter-placement.routes-transitions.test.ts > POST /api/admin/recruiter/placements/[id]/actions/{confirm,effective,fail,cancel} > happy path ΓÇö active handler (B-08 success contract) > confirm: HR_STAFF ΓåÆ 200 CONFIRMED, adapter invoked with derived placementId + actorId
+{"schemaVersion":"1.0","timestamp":"2026-10-04T11:28:10.819Z","level":"info","event":"recruiter_placement.command.success","requestId":"f24e2031-f61b-4178-b2df-6df0d7220550","meta":{"route":"POST:/api/admin/recruiter/placements/[id]/actions/confirm","method":"POST","status":200,"actorRole":"HR_STAFF","resourceType":"[REDACTED]","outcome":"success","detail":{"command":"[REDACTED]","placementId":"[REDACTED]","replayed":false}}}
+
+stdout | src/domains/talent/recruiter-placement.routes-transitions.test.ts > POST /api/admin/recruiter/placements/[id]/actions/{confirm,effective,fail,cancel} > happy path ΓÇö active handler (B-08 success contract) > fail: HR_STAFF ΓåÆ 200 FAILED
+{"schemaVersion":"1.0","timestamp":"2026-10-04T11:28:10.823Z","level":"info","event":"recruiter_placement.command.success","requestId":"04188f8b-7626-4944-ab2f-b97b9da8b61d","meta":{"route":"POST:/api/admin/recruiter/placements/[id]/actions/fail","method":"POST","status":200,"actorRole":"HR_STAFF","resourceType":"[REDACTED]","outcome":"success","detail":{"command":"[REDACTED]","placementId":"[REDACTED]","replayed":false}}}
+
+stdout | src/domains/talent/recruiter-placement.routes-transitions.test.ts > POST /api/admin/recruiter/placements/[id]/actions/{confirm,effective,fail,cancel} > happy path ΓÇö active handler (B-08 success contract) > cancel: HR_STAFF ΓåÆ 200 CANCELLED
+{"schemaVersion":"1.0","timestamp":"2026-10-04T11:28:10.824Z","level":"info","event":"recruiter_placement.command.success","requestId":"b453e390-2141-43c0-aac4-4a52fb8c1d12","meta":{"route":"POST:/api/admin/recruiter/placements/[id]/actions/cancel","method":"POST","status":200,"actorRole":"HR_STAFF","resourceType":"[REDACTED]","outcome":"success","detail":{"command":"[REDACTED]","placementId":"[REDACTED]","replayed":false}}}
+
+stdout | src/domains/talent/recruiter-placement.routes-transitions.test.ts > POST /api/admin/recruiter/placements/[id]/actions/{confirm,effective,fail,cancel} > happy path ΓÇö active handler (B-08 success contract) > effective: HR_STAFF + valid evidence ΓåÆ 200 EFFECTIVE
+{"schemaVersion":"1.0","timestamp":"2026-10-04T11:28:10.827Z","level":"info","event":"recruiter_placement.command.success","requestId":"6566c95b-6bb3-4c7f-b1b8-0676b93dd1e2","meta":{"route":"POST:/api/admin/recruiter/placements/[id]/actions/effective","method":"POST","status":200,"actorRole":"HR_STAFF","resourceType":"[REDACTED]","outcome":"success","detail":{"command":"[REDACTED]","placementId":"[REDACTED]","replayed":false}}}
+
+stderr | src/domains/talent/recruiter-placement.routes-transitions.test.ts > POST 
+/api/admin/recruiter/placements/[id]/actions/{confirm,effective,fail,cancel} > dual-authority fail-closed (B-08 
+revoked / non-handler contract) > confirm ΓÇö revoked recruiter: adapter throws NO_ACTIVE_ORDER_ASSIGNMENT ΓåÆ 403 + 
+canonical envelope, no canonical service call
+{"schemaVersion":"1.0","timestamp":"2026-10-04T11:28:10.828Z","level":"warn","event":"recruiter_placement.command.recru
+iter_error","requestId":"f66a69ba-a7ad-4fc0-8f9f-c975204a1021","meta":{"route":"POST:/api/admin/recruiter/placements/[i
+d]/actions/confirm","method":"POST","status":403,"actorRole":"HR_STAFF","resourceType":"[REDACTED]","outcome":"recruite
+r_error","errorCode":"[REDACTED]","detail":{"command":"[REDACTED]","placementId":"[REDACTED]"}}}
+
+stderr | src/domains/talent/recruiter-placement.routes-transitions.test.ts > POST 
+/api/admin/recruiter/placements/[id]/actions/{confirm,effective,fail,cancel} > dual-authority fail-closed (B-08 
+revoked / non-handler contract) > fail ΓÇö revoked recruiter: adapter throws NO_ACTIVE_ORDER_ASSIGNMENT ΓåÆ 403 + 
+canonical envelope, no canonical service call
+{"schemaVersion":"1.0","timestamp":"2026-10-04T11:28:10.829Z","level":"warn","event":"recruiter_placement.command.recru
+iter_error","requestId":"00e00c59-8316-44a1-857d-2482c0047421","meta":{"route":"POST:/api/admin/recruiter/placements/[i
+d]/actions/fail","method":"POST","status":403,"actorRole":"HR_STAFF","resourceType":"[REDACTED]","outcome":"recruiter_e
+rror","errorCode":"[REDACTED]","detail":{"command":"[REDACTED]","placementId":"[REDACTED]"}}}
+
+stderr | src/domains/talent/recruiter-placement.routes-transitions.test.ts > POST 
+/api/admin/recruiter/placements/[id]/actions/{confirm,effective,fail,cancel} > dual-authority fail-closed (B-08 
+revoked / non-handler contract) > cancel ΓÇö revoked recruiter: adapter throws NO_ACTIVE_ORDER_ASSIGNMENT ΓåÆ 403 + 
+canonical envelope, no canonical service call
+{"schemaVersion":"1.0","timestamp":"2026-10-04T11:28:10.830Z","level":"warn","event":"recruiter_placement.command.recru
+iter_error","requestId":"fd89e6ae-1d4e-469a-98b0-3fddd6137734","meta":{"route":"POST:/api/admin/recruiter/placements/[i
+d]/actions/cancel","method":"POST","status":403,"actorRole":"HR_STAFF","resourceType":"[REDACTED]","outcome":"recruiter
+_error","errorCode":"[REDACTED]","detail":{"command":"[REDACTED]","placementId":"[REDACTED]"}}}
+
+stderr | src/domains/talent/recruiter-placement.routes-transitions.test.ts > POST 
+/api/admin/recruiter/placements/[id]/actions/{confirm,effective,fail,cancel} > dual-authority fail-closed (B-08 
+revoked / non-handler contract) > confirm ΓÇö handling claim revoked: NO_ACTIVE_ASSIGNMENT ΓåÆ 403
+{"schemaVersion":"1.0","timestamp":"2026-10-04T11:28:10.831Z","level":"warn","event":"recruiter_placement.command.recru
+iter_error","requestId":"5d541267-06e1-40ef-ad7a-da8b66a788de","meta":{"route":"POST:/api/admin/recruiter/placements/[i
+d]/actions/confirm","method":"POST","status":403,"actorRole":"HR_STAFF","resourceType":"[REDACTED]","outcome":"recruite
+r_error","errorCode":"[REDACTED]","detail":{"command":"[REDACTED]","placementId":"[REDACTED]"}}}
+
+stderr | src/domains/talent/recruiter-placement.routes-transitions.test.ts > POST 
+/api/admin/recruiter/placements/[id]/actions/{confirm,effective,fail,cancel} > dual-authority fail-closed (B-08 
+revoked / non-handler contract) > effective ΓÇö missing evidence ΓåÆ 400 VALIDATION from body parser (no canonical 
+service)
+{"schemaVersion":"1.0","timestamp":"2026-10-04T11:28:10.832Z","level":"warn","event":"recruiter_placement.command.valid
+ation_failed","requestId":"acc05fdf-b0b1-4870-94d3-91327ea2a522","meta":{"route":"POST:/api/admin/recruiter/placements/
+[id]/actions/effective","method":"POST","actorRole":"HR_STAFF","resourceType":"[REDACTED]","outcome":"validation_failed
+","errorCode":"VALIDATION","detail":{"command":"[REDACTED]"}}}
+
+stderr | src/domains/talent/recruiter-placement.routes-transitions.test.ts > POST 
+/api/admin/recruiter/placements/[id]/actions/{confirm,effective,fail,cancel} > role gate (HR_STAFF only) > confirm ΓÇö 
+role ADMIN ΓåÆ 403 ROLE_NOT_PERMITTED, adapter never invoked
+{"schemaVersion":"1.0","timestamp":"2026-10-04T11:28:10.832Z","level":"warn","event":"recruiter_placement.command.forbi
+dden","requestId":"14f2abbd-787b-4930-ac41-99cc874db582","meta":{"route":"POST:/api/admin/recruiter/placements/[id]/act
+ions/confirm","method":"POST","actorRole":"ADMIN","resourceType":"[REDACTED]","outcome":"forbidden","errorCode":"ROLE_N
+OT_PERMITTED","detail":{"command":"[REDACTED]"}}}
+
+stderr | src/domains/talent/recruiter-placement.routes-transitions.test.ts > POST 
+/api/admin/recruiter/placements/[id]/actions/{confirm,effective,fail,cancel} > role gate (HR_STAFF only) > confirm ΓÇö 
+role HR_MANAGER ΓåÆ 403 ROLE_NOT_PERMITTED, adapter never invoked
+{"schemaVersion":"1.0","timestamp":"2026-10-04T11:28:10.833Z","level":"warn","event":"recruiter_placement.command.forbi
+dden","requestId":"ad3a8290-9b07-4569-8863-604f35a18eab","meta":{"route":"POST:/api/admin/recruiter/placements/[id]/act
+ions/confirm","method":"POST","actorRole":"HR_MANAGER","resourceType":"[REDACTED]","outcome":"forbidden","errorCode":"R
+OLE_NOT_PERMITTED","detail":{"command":"[REDACTED]"}}}
+
+stderr | src/domains/talent/recruiter-placement.routes-transitions.test.ts > POST 
+/api/admin/recruiter/placements/[id]/actions/{confirm,effective,fail,cancel} > role gate (HR_STAFF only) > confirm ΓÇö 
+role DIRECTOR ΓåÆ 403 ROLE_NOT_PERMITTED, adapter never invoked
+{"schemaVersion":"1.0","timestamp":"2026-10-04T11:28:10.834Z","level":"warn","event":"recruiter_placement.command.forbi
+dden","requestId":"ad6a08d6-11a0-42bf-a2eb-f7a992a14e5c","meta":{"route":"POST:/api/admin/recruiter/placements/[id]/act
+ions/confirm","method":"POST","actorRole":"DIRECTOR","resourceType":"[REDACTED]","outcome":"forbidden","errorCode":"ROL
+E_NOT_PERMITTED","detail":{"command":"[REDACTED]"}}}
+
+stderr | src/domains/talent/recruiter-placement.routes-transitions.test.ts > POST 
+/api/admin/recruiter/placements/[id]/actions/{confirm,effective,fail,cancel} > role gate (HR_STAFF only) > confirm ΓÇö 
+role PM ΓåÆ 403 ROLE_NOT_PERMITTED, adapter never invoked
+{"schemaVersion":"1.0","timestamp":"2026-10-04T11:28:10.834Z","level":"warn","event":"recruiter_placement.command.forbi
+dden","requestId":"3dc50abf-051e-4da7-87a8-8db48ea42de7","meta":{"route":"POST:/api/admin/recruiter/placements/[id]/act
+ions/confirm","method":"POST","actorRole":"PM","resourceType":"[REDACTED]","outcome":"forbidden","errorCode":"ROLE_NOT_
+PERMITTED","detail":{"command":"[REDACTED]"}}}
+
+stderr | src/domains/talent/recruiter-placement.routes-transitions.test.ts > POST 
+/api/admin/recruiter/placements/[id]/actions/{confirm,effective,fail,cancel} > role gate (HR_STAFF only) > confirm ΓÇö 
+role SALE ΓåÆ 403 ROLE_NOT_PERMITTED, adapter never invoked
+{"schemaVersion":"1.0","timestamp":"2026-10-04T11:28:10.834Z","level":"warn","event":"recruiter_placement.command.forbi
+dden","requestId":"a3e9a9d7-6245-459a-a9e3-dc74e1ef2a53","meta":{"route":"POST:/api/admin/recruiter/placements/[id]/act
+ions/confirm","method":"POST","actorRole":"SALE","resourceType":"[REDACTED]","outcome":"forbidden","errorCode":"ROLE_NO
+T_PERMITTED","detail":{"command":"[REDACTED]"}}}
+
+stderr | src/domains/talent/recruiter-placement.routes-transitions.test.ts > POST 
+/api/admin/recruiter/placements/[id]/actions/{confirm,effective,fail,cancel} > role gate (HR_STAFF only) > confirm ΓÇö 
+role VENDOR_ADMIN ΓåÆ 403 ROLE_NOT_PERMITTED, adapter never invoked
+{"schemaVersion":"1.0","timestamp":"2026-10-04T11:28:10.835Z","level":"warn","event":"recruiter_placement.command.forbi
+dden","requestId":"365fd1fd-5930-4d05-b924-3827bc196fda","meta":{"route":"POST:/api/admin/recruiter/placements/[id]/act
+ions/confirm","method":"POST","actorRole":"VENDOR_ADMIN","resourceType":"[REDACTED]","outcome":"forbidden","errorCode":
+"ROLE_NOT_PERMITTED","detail":{"command":"[REDACTED]"}}}
+
+stderr | src/domains/talent/recruiter-placement.routes-transitions.test.ts > POST 
+/api/admin/recruiter/placements/[id]/actions/{confirm,effective,fail,cancel} > role gate (HR_STAFF only) > confirm ΓÇö 
+role CTV ΓåÆ 403 ROLE_NOT_PERMITTED, adapter never invoked
+{"schemaVersion":"1.0","timestamp":"2026-10-04T11:28:10.835Z","level":"warn","event":"recruiter_placement.command.forbi
+dden","requestId":"c93d4646-e1a2-440d-9d07-1af9532d6539","meta":{"route":"POST:/api/admin/recruiter/placements/[id]/act
+ions/confirm","method":"POST","actorRole":"CTV","resourceType":"[REDACTED]","outcome":"forbidden","errorCode":"ROLE_NOT
+_PERMITTED","detail":{"command":"[REDACTED]"}}}
+
+stderr | src/domains/talent/recruiter-placement.routes-transitions.test.ts > POST 
+/api/admin/recruiter/placements/[id]/actions/{confirm,effective,fail,cancel} > role gate (HR_STAFF only) > confirm ΓÇö 
+role WORKER ΓåÆ 403 ROLE_NOT_PERMITTED, adapter never invoked
+{"schemaVersion":"1.0","timestamp":"2026-10-04T11:28:10.836Z","level":"warn","event":"recruiter_placement.command.forbi
+dden","requestId":"0bfdda6e-7901-4592-a9e7-4c82006be091","meta":{"route":"POST:/api/admin/recruiter/placements/[id]/act
+ions/confirm","method":"POST","actorRole":"WORKER","resourceType":"[REDACTED]","outcome":"forbidden","errorCode":"ROLE_
+NOT_PERMITTED","detail":{"command":"[REDACTED]"}}}
+
+stderr | src/domains/talent/recruiter-placement.routes-transitions.test.ts > POST 
+/api/admin/recruiter/placements/[id]/actions/{confirm,effective,fail,cancel} > auth + idempotency + validation > 
+confirm ΓÇö 401 returned before any DB or adapter call
+{"schemaVersion":"1.0","timestamp":"2026-10-04T11:28:10.836Z","level":"warn","event":"recruiter_placement.command.auth_
+failed","requestId":"3a4e03dc-0546-4e55-acdf-f2403eb291a9","meta":{"route":"POST:/api/admin/recruiter/placements/[id]/a
+ctions/confirm","method":"POST","resourceType":"[REDACTED]","outcome":"auth_failed","errorCode":"NO_TOKEN","detail":{"c
+ommand":"[REDACTED]"}}}
+
+stderr | src/domains/talent/recruiter-placement.routes-transitions.test.ts > POST 
+/api/admin/recruiter/placements/[id]/actions/{confirm,effective,fail,cancel} > auth + idempotency + validation > 
+confirm ΓÇö missing Idempotency-Key ΓåÆ 400 IDEMPOTENCY_REQUIRED
+{"schemaVersion":"1.0","timestamp":"2026-10-04T11:28:10.837Z","level":"warn","event":"recruiter_placement.command.idemp
+otency_missing","requestId":"1ea8eff4-8095-42d0-80cf-dbf5b50d44c8","meta":{"route":"POST:/api/admin/recruiter/placement
+s/[id]/actions/confirm","method":"POST","actorRole":"HR_STAFF","resourceType":"[REDACTED]","outcome":"idempotency_missi
+ng","errorCode":"[REDACTED]","detail":{"command":"[REDACTED]"}}}
+
+stderr | src/domains/talent/recruiter-placement.routes-transitions.test.ts > POST 
+/api/admin/recruiter/placements/[id]/actions/{confirm,effective,fail,cancel} > auth + idempotency + validation > 
+confirm ΓÇö non-UUID v4 placementId ΓåÆ 400 VALIDATION
+{"schemaVersion":"1.0","timestamp":"2026-10-04T11:28:10.837Z","level":"warn","event":"recruiter_placement.command.valid
+ation_failed","requestId":"29b46d77-e320-4812-a595-118ac03cf2fa","meta":{"route":"POST:/api/admin/recruiter/placements/
+[id]/actions/confirm","method":"POST","actorRole":"HR_STAFF","resourceType":"[REDACTED]","outcome":"validation_failed",
+"errorCode":"VALIDATION","detail":{"command":"[REDACTED]"}}}
+
+stderr | src/domains/talent/recruiter-placement.routes-transitions.test.ts > POST 
+/api/admin/recruiter/placements/[id]/actions/{confirm,effective,fail,cancel} > auth + idempotency + validation > 
+confirm ΓÇö non-empty body ΓåÆ 400 VALIDATION (strict allowlist)
+{"schemaVersion":"1.0","timestamp":"2026-10-04T11:28:10.837Z","level":"warn","event":"recruiter_placement.command.valid
+ation_failed","requestId":"e79c330d-fd5c-40dc-8ec6-c11baeba692d","meta":{"route":"POST:/api/admin/recruiter/placements/
+[id]/actions/confirm","method":"POST","actorRole":"HR_STAFF","resourceType":"[REDACTED]","outcome":"validation_failed",
+"errorCode":"VALIDATION","detail":{"command":"[REDACTED]"}}}
+
+stderr | src/domains/talent/recruiter-placement.routes-transitions.test.ts > POST 
+/api/admin/recruiter/placements/[id]/actions/{confirm,effective,fail,cancel} > auth + idempotency + validation > 
+effective ΓÇö missing evidence ΓåÆ 400 VALIDATION, adapter never invoked
+{"schemaVersion":"1.0","timestamp":"2026-10-04T11:28:10.838Z","level":"warn","event":"recruiter_placement.command.valid
+ation_failed","requestId":"3c3872c0-c566-4cde-9e9f-a9062ee39a56","meta":{"route":"POST:/api/admin/recruiter/placements/
+[id]/actions/effective","method":"POST","actorRole":"HR_STAFF","resourceType":"[REDACTED]","outcome":"validation_failed
+","errorCode":"VALIDATION","detail":{"command":"[REDACTED]"}}}
+
+stderr | src/domains/talent/recruiter-placement.routes-transitions.test.ts > POST 
+/api/admin/recruiter/placements/[id]/actions/{confirm,effective,fail,cancel} > auth + idempotency + validation > 
+effective ΓÇö bad ISO-8601 evidence.clientAcknowledgedAt ΓåÆ 400 VALIDATION
+{"schemaVersion":"1.0","timestamp":"2026-10-04T11:28:10.839Z","level":"warn","event":"recruiter_placement.command.valid
+ation_failed","requestId":"b14ec72d-2621-494b-92bc-611e32728c89","meta":{"route":"POST:/api/admin/recruiter/placements/
+[id]/actions/effective","method":"POST","actorRole":"HR_STAFF","resourceType":"[REDACTED]","outcome":"validation_failed
+","errorCode":"VALIDATION","detail":{"command":"[REDACTED]"}}}
+
+ Γ£ô src/domains/talent/recruiter-placement.routes-transitions.test.ts (23 tests) 29ms
+ Γ£ô src/shared/auth/permission-resolver.test.ts (82 tests) 15ms
+ Γ£ô src/domains/applications/aff03-public-intake.service.test.ts (20 tests) 9ms
+ Γ£ô src/pwa/pwa-icons.test.ts (13 tests) 24ms
+ Γ£ô app/api/admin/recruiter-workbench/route.test.ts (19 tests) 18ms
+ Γ£ô src/domains/talent/recruiter-placement.adapter.test.ts (10 tests) 8ms
+ Γ£ô app/admin/job-openings/[id]/job-opening-actions.test.tsx (17 tests) 20ms
+stderr | src/domains/security/single-domain-consolidation.test.ts > C) login POST ΓÇö same-origin landing + host-only 
+cookie > bad credentials / locked / malformed ΓåÆ 401 INVALID_CREDENTIALS and NO cookie
+{"schemaVersion":"1.0","timestamp":"2026-10-04T11:28:12.915Z","level":"warn","event":"auth.login.denied","requestId":nu
+ll,"meta":{"route":"/api/auth/login","outcome":"user_not_found"}}
+{"schemaVersion":"1.0","timestamp":"2026-10-04T11:28:12.917Z","level":"warn","event":"auth.login.denied","requestId":nu
+ll,"meta":{"route":"/api/auth/login","outcome":"password_mismatch"}}
+
+ Γ£ô src/domains/security/single-domain-consolidation.test.ts (17 tests) 24ms
+ Γ£ô src/shared/toolchain/tsc-program-boundary.static.test.ts (12 tests) 5ms
+ Γ£ô src/domains/job-board/public-listing.params.test.ts (23 tests) 7ms
+ Γ£ô src/domains/media/__tests__/media.service.test.ts (33 tests) 21ms
+ Γ£ô src/shared/security/rate-limit-config.test.ts (24 tests) 11ms
+ Γ£ô src/domains/staffing/transfer.routes.test.ts (31 tests) 30ms
+ Γ£ô app/admin/jobs/job-postings/__tests__/job-postings-ui-truth.static.test.ts (21 tests) 6ms
+ Γ£ô src/domains/job-board/public-listing.static.test.ts (29 tests) 8ms
+ Γ£ô src/shared/security/rate-limit-guard.test.ts (13 tests) 16ms
+ Γ£ô src/domains/job-board/public-detail.static.test.ts (23 tests) 10ms
+ Γ£ô src/domains/talent/placement.commands.routes.test.ts (54 tests) 19ms
+ Γ£ô src/domains/staffing/job-posting-list.service.test.ts (32 tests) 18ms
+ Γ£ô src/domains/staffing/4role-jobboard.integration.test.ts (9 tests) 10ms
+ Γ£ô src/domains/evidence/evidence-storage.port.test.ts (17 tests) 9ms
+ Γ£ô app/admin/job-openings/[id]/page.test.tsx (15 tests) 42ms
+ Γ£ô src/domains/job-board/components/landing/__tests__/sections-policy.test.ts (28 tests) 8ms
+ Γ£ô src/domains/job-board/components/detail/__tests__/detail-sections-policy.test.ts (34 tests) 8ms
+ Γ£ô src/shared/ui/role-guard/role-guard-layout.test.ts (28 tests) 7ms
+ Γ£ô src/domains/attendance/4role-attendance.integration.test.ts (12 tests) 6ms
+ Γ£ô src/shared/auth/with-auth-scope.test.ts (39 tests) 9ms
+ Γ£ô src/domains/staffing/referral-guard.canonical.test.ts (23 tests) 14ms
+ Γ£ô src/domains/talent/recruiter-assignment.ui.test.ts (7 tests) 54ms
+ Γ£ô src/domains/admin/overview-metrics.service.test.ts (34 tests) 12ms
+stderr | app/api/admin/jobs/job-postings/route.test.ts > POST /api/admin/jobs/job-postings ΓÇö route contract > 
+returns 500 INTERNAL when an unmapped error type escapes ΓÇö never swallows silently
+[api/admin/jobs/job-postings POST] error: Error: boom-unknown
+    at 
+C:\CodeApp\HrP-worktrees\t1b-admin-localization-wave2-recruitment\app\api\admin\jobs\job-postings\route.test.ts:269:64
+    at file:///C:/CodeApp/HrP-worktrees/t1b-admin-localization-wave2-recruitment/node_modules/.pnpm/@vitest+runner@2.1.
+9/node_modules/@vitest/runner/dist/index.js:146:14
+    at file:///C:/CodeApp/HrP-worktrees/t1b-admin-localization-wave2-recruitment/node_modules/.pnpm/@vitest+runner@2.1.
+9/node_modules/@vitest/runner/dist/index.js:533:11
+    at runWithTimeout (file:///C:/CodeApp/HrP-worktrees/t1b-admin-localization-wave2-recruitment/node_modules/.pnpm/@vi
+test+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:39:7)
+    at runTest (file:///C:/CodeApp/HrP-worktrees/t1b-admin-localization-wave2-recruitment/node_modules/.pnpm/@vitest+ru
+nner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:17)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at runSuite (file:///C:/CodeApp/HrP-worktrees/t1b-admin-localization-wave2-recruitment/node_modules/.pnpm/@vitest+r
+unner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runSuite (file:///C:/CodeApp/HrP-worktrees/t1b-admin-localization-wave2-recruitment/node_modules/.pnpm/@vitest+r
+unner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runFiles (file:///C:/CodeApp/HrP-worktrees/t1b-admin-localization-wave2-recruitment/node_modules/.pnpm/@vitest+r
+unner@2.1.9/node_modules/@vitest/runner/dist/index.js:1262:5)
+    at startTests (file:///C:/CodeApp/HrP-worktrees/t1b-admin-localization-wave2-recruitment/node_modules/.pnpm/@vitest
++runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1271:3)
+
+ Γ£ô app/api/admin/jobs/job-postings/route.test.ts (9 tests) 33ms
+ Γ£ô src/shared/ui/design-tokens.static.test.ts (12 tests) 30ms
+ Γ£ô src/domains/staffing/job-posting-error-map.test.ts (40 tests) 8ms
+ Γ£ô src/domains/applications/application-queue.service.test.ts (22 tests) 14ms
+ Γ£ô src/shared/auth/projects-master.route.test.ts (27 tests) 22ms
+ Γ£ô src/domains/talent/recruiter-placement.routes.test.ts (21 tests) 23ms
+ Γ£ô src/domains/talent/labor-profile.service.test.ts (17 tests) 10ms
+ Γ£ô src/domains/job-board/components/landing/__tests__/stamp-badge.test.ts (21 tests) 12ms
+ Γ£ô app/admin/recruiter-workbench/_components/RecruiterWorkbenchTable.test.ts (15 tests) 65ms
+stdout | src/domains/applications/aff03-public-intake.route.test.ts > POST /api/public/intake (route layer) > returns 201 with standard DTO on success path (no cookie)
+{"schemaVersion":"1.0","timestamp":"2026-10-04T11:28:22.574Z","level":"info","event":"talent.intake.public.create","requestId":"97595e15-87bc-482a-b092-05da9cffa94a","meta":{"route":"POST:/api/public/intake","outcome":"NEW_PROFILE","detail":{"attributionBound":false}}}
+
+stdout | src/domains/applications/aff03-public-intake.route.test.ts > POST /api/public/intake (route layer) > returns 201 with valid cookie (attribution resolved to ACTIVE row)
+{"schemaVersion":"1.0","timestamp":"2026-10-04T11:28:22.578Z","level":"info","event":"talent.intake.public.create","requestId":"83c3dc5e-389f-41df-b3f6-fb39fa941aad","meta":{"route":"POST:/api/public/intake","outcome":"NEW_PROFILE","detail":{"attributionBound":true}}}
+
+stdout | src/domains/applications/aff03-public-intake.route.test.ts > POST /api/public/intake (route layer) > returns 400 on consent missing
+{"schemaVersion":"1.0","timestamp":"2026-10-04T11:28:22.582Z","level":"info","event":"talent.intake.public.create","requestId":"59f76333-602e-49ef-a76c-dbf0d8c65e7e","meta":{"route":"POST:/api/public/intake","outcome":"NEW_PROFILE","detail":{"attributionBound":false}}}
+
+stderr | src/domains/applications/aff03-public-intake.route.test.ts > POST /api/public/intake (route layer) > returns 
+500 on unclassified error
+{"schemaVersion":"1.0","timestamp":"2026-10-04T11:28:22.586Z","level":"warn","event":"talent.intake.public.error","requ
+estId":"a9bf458d-ede8-4ba0-9e23-01a48341dd96","meta":{"route":"POST:/api/public/intake","outcome":"unhandled","errorCod
+e":"UNCLASSIFIED"}}
+
+ Γ£ô src/domains/applications/aff03-public-intake.route.test.ts (12 tests) 28ms
+ Γ£ô src/domains/attendance/e2e-attendance-narrative.integration.test.ts (7 tests) 6ms
+ Γ£ô src/domains/job-board/mp1.contract.test.ts (6 tests) 11ms
+ Γ£ô src/shared/security/public-surface-limiter.static.test.ts (9 tests) 8ms
+ Γ£ô src/shared/observability/error-reporter.test.ts (14 tests) 9ms
+ Γ£ô src/domains/applications/security-boundary.aff03b.test.ts (13 tests) 8ms
+ Γ£ô app/admin/jobs/job-postings/[id]/__tests__/publish-gating.test.tsx (7 tests) 42ms
+ Γ£ô src/shared/ui/editor/JobPostingRichTextEditor.test.tsx (11 tests) 18ms
+ Γ£ô src/shared/auth/vendor-submissions.route.test.ts (11 tests) 18ms
+ Γ£ô src/domains/staffing/order.service.test.ts (11 tests) 12ms
+ Γ£ô src/shared/content/job-posting-rich-text/__tests__/validator.test.ts (29 tests) 8ms
+ Γ£ô src/domains/job-board/public-board-route-json.test.ts (5 tests) 16ms
+ Γ£ô src/domains/referrals/attribution-redirect.route.test.ts (8 tests) 16ms
+ Γ£ô app/admin/jobs/job-postings/[id]/__tests__/editor-shell.f8.test.ts (12 tests) 10ms
+ Γ£ô src/domains/applications/tracking-pii-containment.static.test.ts (11 tests) 6ms
+ Γ£ô src/shared/observability/correlation-id.test.ts (28 tests) 8ms
+ Γ£ô src/domains/security/statements-list.projection.route.test.ts (17 tests) 22ms
+ Γ£ô prisma/__tests__/placement-case-invariant.test.ts (17 tests) 6ms
+ Γ£ô src/shared/security/request-body.test.ts (13 tests) 21ms
+ Γ£ô src/domains/staffing/job-posting-stamps-eligibility.test.ts (6 tests) 5ms
+ Γ£ô src/shared/security/rate-limit-adapters.test.ts (9 tests) 7ms
+ Γ£ô src/shared/ui/role-guard/__tests__/admin-nav-phase4-people-section.static.test.ts (14 tests) 6ms
+ Γ£ô src/shared/integrity/idempotency.test.ts (6 tests) 41ms
+stdout | src/domains/talent/admin.intake.staff.route.test.ts > POST /api/admin/intake/staff ΓÇö N1 intake writer round 2 > POST: role=ADMIN ΓåÆ 201 vß╗¢i ctx.userId l├ám actorId
+{"schemaVersion":"1.0","timestamp":"2026-10-04T11:28:29.784Z","level":"info","event":"talent.intake.create","requestId":null,"meta":{"route":"POST:/api/admin/intake/staff","actorRole":"ADMIN","resourceType":"[REDACTED]","outcome":"NEW_PROFILE"}}
+
+stdout | src/domains/talent/admin.intake.staff.route.test.ts > POST /api/admin/intake/staff ΓÇö N1 intake writer round 2 > POST: role=HR_MANAGER ΓåÆ 201 vß╗¢i ctx.userId l├ám actorId
+{"schemaVersion":"1.0","timestamp":"2026-10-04T11:28:29.786Z","level":"info","event":"talent.intake.create","requestId":null,"meta":{"route":"POST:/api/admin/intake/staff","actorRole":"HR_MANAGER","resourceType":"[REDACTED]","outcome":"NEW_PROFILE"}}
+
+stdout | src/domains/talent/admin.intake.staff.route.test.ts > POST /api/admin/intake/staff ΓÇö N1 intake writer round 2 > POST: role=HR_STAFF ΓåÆ 201 vß╗¢i ctx.userId l├ám actorId
+{"schemaVersion":"1.0","timestamp":"2026-10-04T11:28:29.787Z","level":"info","event":"talent.intake.create","requestId":null,"meta":{"route":"POST:/api/admin/intake/staff","actorRole":"HR_STAFF","resourceType":"[REDACTED]","outcome":"NEW_PROFILE"}}
+
+ Γ£ô src/domains/talent/admin.intake.staff.route.test.ts (17 tests) 21ms
+ Γ£ô src/domains/staffing/job-opening-read.service.test.ts (9 tests) 6ms
+ Γ£ô app/api/admin/labor-profiles/[id]/handling-assignments/route.test.ts (15 tests) 14ms
+ Γ£ô src/domains/job-board/public-detail.service.test.ts (5 tests) 9ms
+ Γ£ô src/domains/security/response-projection.static.test.ts (20 tests) 7ms
+ Γ£ô app/__tests__/app-router.dynamic-segment-collision.test.ts (3 tests) 57ms
+ Γ£ô src/shared/security/f9-hr-staff-posting-write-rls.static.test.ts (5 tests) 11ms
+ Γ£ô src/domains/staffing/__tests__/job-posting-publish-contract.test.ts (6 tests) 6ms
+ Γ£ô src/domains/talent/intake-writer.service.test.ts (5 tests) 6ms
+ Γ£ô src/domains/security/portal-domains.integration.test.ts (49 tests) 9ms
+ Γ£ô src/shared/security/f9b-slot-opening-binding-primitive.static.test.ts (21 tests) 22ms
+ Γ£ô src/shared/auth/clients-master.route.test.ts (18 tests) 17ms
+ Γ£ô prisma/seed-portal-demo-password.static.test.ts (5 tests) 7ms
+ Γ£ô src/shared/integrity/outbox.test.ts (7 tests) 6ms
+ Γ£ô src/domains/payroll/calculateVietnameseTaxes.test.ts (16 tests) 5ms
+ Γ£ô src/shared/auth/worker-projection.test.ts (15 tests) 6ms
+ Γ£ô src/shared/projection/manifest.test.ts (8 tests) 6ms
+ Γ£ô app/admin/jobs/__tests__/admin-jobs-terminology.static.test.ts (9 tests) 5ms
+ Γ£ô src/shared/auth/with-authorized-db.test.ts (4 tests) 6ms
+ Γ£ô prisma/referral-attribution-aff03-writer-policy.static.test.ts (11 tests) 13ms
+ Γ£ô src/shared/auth/webhook-payslip.route.test.ts (21 tests) 18ms
+ Γ£ô src/domains/talent/labor-profile.read-service.test.ts (8 tests) 10ms
+ Γ£ô src/domains/talent/placement.lifecycle.test.ts (23 tests) 7ms
+ Γ£ô src/domains/applications/application.service.test.ts (9 tests) 12ms
+ Γ£ô app/admin/jobs/job-postings/__tests__/job-postings-list-linkage.static.test.ts (7 tests) 4ms
+ Γ£ô app/admin/jobs/job-postings/__tests__/job-postings-terminology.static.test.ts (13 tests) 5ms
+ Γ£ô src/shared/auth/attendance-adjustments.route.test.ts (25 tests) 19ms
+ Γ£ô src/domains/applications/tracking-mask.routes.test.ts (4 tests) 14ms
+ Γ£ô prisma/migrations-permission-hygiene.static.test.ts (4 tests) 6ms
+ Γ£ô app/admin/recruiter-workbench/_components/FilterChips.test.ts (11 tests) 31ms
+ Γ£ô src/domains/security/statements-generate.projection.route.test.ts (16 tests) 16ms
+ Γ£ô src/shared/ui/role-guard/active-nav-helper.test.ts (14 tests) 3ms
+ Γ£ô src/shared/ui/font-google-ban.static.test.ts (6 tests) 36ms
+ Γ£ô src/shared/privacy/mask.test.ts (12 tests) 5ms
+ Γ£ô src/domains/security/security-matrix-portals.test.ts (18 tests) 4ms
+ Γ£ô src/shared/auth/worker-portal.route.test.ts (7 tests) 15ms
+ Γ£ô src/domains/job-board/public-select.static.test.ts (3 tests) 3ms
+ Γ£ô src/domains/applications/application-detail-mp3.test.ts (16 tests) 8ms
+ Γ£ô src/domains/talent/placement.resolution.test.ts (10 tests) 5ms
+ Γ£ô src/domains/security/workers-me.projection.route.test.ts (17 tests) 15ms
+ Γ£ô src/shared/auth/disputes.route.test.ts (7 tests) 12ms
+stdout | src/domains/security/ctv-withdrawals.projection.route.test.ts > POST /api/ctv/withdrawals ΓÇö self DTO omit ctvId (AC-08) > CTV ΓåÆ 201, DTO omit ctvId; owner = session (KH├öNG nhß║¡n ctvId tß╗½ body)
+[withdrawals] created wd-1
+
+ Γ£ô src/domains/security/ctv-withdrawals.projection.route.test.ts (27 tests) 18ms
+ Γ£ô src/domains/applications/screening.service.test.ts (9 tests) 10ms
+ Γ£ô src/domains/applications/apply-helpers.test.ts (12 tests) 55ms
+ Γ£ô src/shared/integrity/state-machine.test.ts (6 tests) 6ms
+ Γ£ô app/admin/recruiter-workbench/_components/PaginationControls.test.ts (11 tests) 20ms
+ Γ£ô app/admin/recruiter-workbench/_lib/parse-filter.test.ts (16 tests) 8ms
+ Γ£ô src/shared/auth/with-public-db.test.ts (7 tests) 6ms
+ Γ£ô app/admin/recruiter-workbench/_components/NextActionBadge.test.ts (12 tests) 14ms
+ Γ£ô src/shared/ui/admin-detail-foundation.test.ts (4 tests) 6ms
+ Γ£ô src/shared/auth/statements-margin.route.test.ts (17 tests) 15ms
+ Γ£ô app/admin/recruiter-workbench/_components/SortDropdown.test.ts (8 tests) 16ms
+ Γ£ô src/domains/referrals/redirect-token.test.ts (11 tests) 7ms
+ Γ£ô src/shared/http/pagination.test.ts (26 tests) 5ms
+ Γ£ô src/domains/media/__tests__/safe-render.test.ts (16 tests) 11ms
+ Γ£ô app/admin/staffing/__tests__/staffing-terminology.static.test.ts (9 tests) 4ms
+ Γ£ô src/domains/projects/__tests__/project-ui.test.ts (9 tests) 5ms
+ Γ£ô src/domains/attendance/taxonomy-unit.test.ts (14 tests) 8ms
+ Γ£ô src/domains/security/workers-projection.contract.test.ts (4 tests) 10ms
+ Γ£ô app/admin/recruiter-workbench/_components/PrimaryActions.test.ts (8 tests) 17ms
+ Γ£ô src/shared/auth/auth-context.test.ts (8 tests) 6ms
+ Γ£ô src/domains/talent/placement-case.service.test.ts (3 tests) 4ms
+ Γ£ô src/shared/auth/cron-routes.route.test.ts (5 tests) 11ms
+ Γ£ô src/shared/auth/vendors-master.route.test.ts (12 tests) 14ms
+ Γ£ô src/domains/staffing/__tests__/job-opening-ui.test.ts (10 tests) 4ms
+ Γ£ô src/shared/auth/projects-clients-master.route.test.ts (27 tests) 14ms
+ Γ£ô src/shared/integrity/audit.test.ts (3 tests) 4ms
+ Γ£ô src/domains/staffing/talent-pool.repo.test.ts (4 tests) 6ms
+ Γ£ô app/admin/jobs/__tests__/jobs-terminology.static.test.ts (6 tests) 4ms
+ Γ£ô src/shared/auth/push-subscribe.route.test.ts (4 tests) 12ms
+ Γ£ô src/domains/admin/workers-route.test.ts (4 tests) 12ms
+ Γ£ô src/shared/ui/floating-chat-actions.test.ts (7 tests) 4ms
+ Γ£ô src/shared/observability/integration-preflight.env-readiness.static.test.ts (7 tests) 8ms
+ Γ£ô src/domains/staffing/__tests__/job-posting-ui.test.ts (8 tests) 4ms
+ Γ£ô src/shared/content/job-posting-rich-text/__tests__/renderer.test.tsx (6 tests) 12ms
+ Γ£ô app/admin/job-openings/__tests__/job-openings-terminology.static.test.ts (10 tests) 4ms
+ Γ£ô src/domains/applications/conversion.routes.test.ts (4 tests) 10ms
+ Γ£ô src/shared/auth/scopes/ctv-account-scope.test.ts (13 tests) 6ms
+ Γ£ô src/domains/applications/screening.routes.test.ts (4 tests) 12ms
+ Γ£ô src/domains/applications/security-boundary.aff03c.test.ts (5 tests) 4ms
+ Γ£ô src/domains/commission/ctv-summary.route.test.ts (4 tests) 9ms
+stderr | src/shared/auth/require-permission.test.ts > requirePermission (RQ-05, DEC-05) > WORKER thiß║┐u 
+CAN_APPROVE_PAYROLL ΓåÆ throw AuthError PERMISSION_DENIED
+{"evt":"permission_denied","userId":"u-w-1","role":"WORKER","requiredCode":"CAN_APPROVE_PAYROLL"}
+{"evt":"permission_denied","userId":"u-w-1","role":"WORKER","requiredCode":"CAN_APPROVE_PAYROLL"}
+
+stderr | src/shared/auth/require-permission.test.ts > requireAnyPermission > kh├┤ng code n├áo pass ΓåÆ throw 
+PERMISSION_DENIED
+{"evt":"permission_denied_any","userId":"u-w-1","role":"WORKER","requiredCodes":["CAN_APPROVE_PAYROLL","CAN_EDIT_CONTRA
+CT"]}
+
+ Γ£ô src/shared/auth/require-permission.test.ts (6 tests) 6ms
+ Γ£ô src/domains/talent/admin.labor-profiles.route.test.ts (2 tests) 11ms
+stderr | app/admin/recruiter-workbench/_components/AgeCell.test.ts > AgeCell > handles negative or NaN ageHours 
+defensively
+Received NaN for the `data-age-hours` attribute. If this is expected, cast the value to a string.
+
+ Γ£ô app/admin/recruiter-workbench/_components/AgeCell.test.ts (9 tests) 11ms
+ Γ£ô src/domains/commission/ledger.service.test.ts (4 tests) 6ms
+ Γ£ô src/domains/staffing/job-opening-status.test.ts (5 tests) 5ms
+ Γ£ô prisma/referral-attribution-migration.static.test.ts (9 tests) 9ms
+ Γ£ô src/domains/crm/client-read.service.test.ts (4 tests) 4ms
+ Γ£ô src/shared/auth/public-read-guc.static.test.ts (5 tests) 4ms
+ Γ£ô src/shared/utils/date-boundary.test.ts (12 tests) 20ms
+ Γ£ô src/shared/auth/finance-scope.test.ts (27 tests) 6ms
+ Γ£ô src/shared/i18n/__tests__/glossary.static.test.ts (8 tests) 5ms
+ Γ£ô src/shared/auth/payroll.route.test.ts (15 tests) 13ms
+ Γ£ô src/shared/ui/status-badge/status-badge.test.tsx (5 tests) 10ms
+ Γ£ô src/domains/job-board/job-posting-stamps.static.test.ts (3 tests) 3ms
+stderr | src/shared/ui/sheet/slide-out-drawer.test.tsx > SlideOutDrawer (shared primitive) > SD-A02: close button 
+aria-label is "─É├│ng" without U+FFFD
+Received `true` for a non-boolean attribute `jsx`.
+
+If you want to write it to the DOM, pass a string instead: jsx="true" or jsx={value.toString()}.
+
+ Γ£ô src/shared/ui/sheet/slide-out-drawer.test.tsx (4 tests) 12ms
+ Γ£ô src/domains/applications/status-machine.test.ts (7 tests) 4ms
+ Γ£ô src/domains/staffing/__tests__/staffing-order-ui.test.ts (6 tests) 4ms
+ Γ£ô src/shared/auth/jwt.test.ts (7 tests) 11ms
+ Γ£ô src/domains/staffing/__tests__/recruiter-assignment-ui.test.ts (6 tests) 3ms
+ Γ£ô src/shared/auth/cron-auth.test.ts (6 tests) 4ms
+ Γ£ô src/shared/auth/scopes/project.scope.test.ts (8 tests) 4ms
+ Γ£ô src/shared/auth/preauth-db.test.ts (2 tests) 4ms
+ Γ£ô src/shared/auth/permission-catalog.test.ts (8 tests) 5ms
+ Γ£ô src/shared/auth/internal-webhook-auth.test.ts (6 tests) 8ms
+ Γ£ô src/shared/auth/session-adapter.test.ts (30 tests) 7ms
+ Γ£ô src/shared/content/job-posting-rich-text/__tests__/profile.test.ts (5 tests) 4ms
+ Γ£ô app/admin/recruiter-workbench/_components/HandlerChip.test.ts (4 tests) 8ms
+ Γ£ô src/shared/auth/debug.route.test.ts (4 tests) 11ms
+ Γ£ô src/domains/staffing/job-opening-status-card.test.ts (2 tests) 13ms
+ Γ£ô src/shared/i18n/__tests__/action-dictionary.static.test.ts (4 tests) 4ms
+ Γ£ô src/shared/i18n/__tests__/role-labels.static.test.ts (5 tests) 4ms
+ Γ£ô app/admin/_components/UnderDevelopment.test.tsx (3 tests) 10ms
+ Γ£ô src/domains/staffing/referral-guard.service.test.ts (4 tests) 5ms
+ Γ£ô src/domains/talent/handling-assignment.security.test.ts (3 tests) 3ms
+ Γ£ô src/domains/talent/normalize.test.ts (11 tests) 3ms
+ Γ£ô src/domains/security/debug-route.contract.test.ts (4 tests) 10ms
+ Γ£ô src/domains/talent/jobs.apply.route.test.ts (3 tests) 6ms
+ Γ£ô src/domains/crm/project-read.service.test.ts (2 tests) 4ms
+ Γ£ô src/domains/talent/__tests__/identity-verification-ui.test.ts (4 tests) 3ms
+ Γ£ô src/shared/auth/me.route.test.ts (2 tests) 7ms
+ Γ£ô src/shared/i18n/__tests__/form-dictionary.static.test.ts (3 tests) 4ms
+ Γ£ô src/db/engine-set-config.static.test.ts (1 test) 25ms
+ Γ£ô src/domains/job-board/job-posting-stamps-mapping.test.ts (2 tests) 2ms
+ Γ£ô src/shared/auth/user.test.ts (5 tests) 6ms
+ Γ£ô src/domains/job-board/homepage-chat-links-migration.test.ts (2 tests) 3ms
+ Γ£ô src/db/engine-client.test.ts (2 tests) 18ms
+ Γ£ô src/lib/db.test.ts (1 test) 2ms
+ Γ£ô src/shared/utils/money.test.ts (4 tests) 3ms
+ Γ£ô src/domains/job-board/homepage-phone-link-migration.test.ts (2 tests) 2ms
+ Γ£ô src/shared/auth/password.test.ts (2 tests) 281ms
+ Γ£ô src/shared/ui/editor/JobPostingRichTextEditor.mount.test.tsx (5 tests) 128ms
+
+ Test Files  240 passed (240)
+      Tests  3836 passed | 9 skipped (3845)
+   Start at  18:27:52
+   Duration  75.43s (transform 3.73s, setup 0ms, collect 14.83s, tests 4.91s, environment 497ms, prepare 20.60s)
+

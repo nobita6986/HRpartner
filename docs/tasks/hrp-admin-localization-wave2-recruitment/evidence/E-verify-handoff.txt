@@ -1,0 +1,20 @@
+HANDOFF SUBSTANCE GATE
+  subject: docs\tasks\hrp-admin-localization-wave2-recruitment\HANDOFF.md (against docs/tasks/hrp-admin-localization-wave2-recruitment/TASK.md)
+
+  [OK]   H-01 HANDOFF.md size 26777 bytes.
+  [WARN] H-01 HANDOFF.md is neither tracked nor staged - an editor save-over would lose it unrecoverably. Stage it now.
+  [OK]   H-02 all 8 required sections present (legacy).
+  [OK]   H-03 spec version v1.0 matches TASK.
+  [OK]   H-03 assurance lane STANDARD matches TASK.
+  [OK]   H-16 V2 delivery pins a resolvable frozen SHA with no later semantic delta.
+  [OK]   H-04 section 3 opens with verify-task.ps1 RESULT: PASS.
+  [OK]   H-05 all 27 AC have an evidence row.
+  [OK]   H-06 every AC row carries a command/result directly or through a runnable E-xx registry entry.
+  [OK]   H-07 1 referenced evidence file(s) exist.
+  [OK]   H-09 no plaintext secret in HANDOFF.md.
+  [OK]   H-10 status READY_FOR_REVIEW is consistent between section 0 and the closing line.
+  [OK]   H-12 all 13 STEP appear in the execution trace.
+  [OK]   H-14 section 7 records round 1.
+
+RESULT: PASS WITH WARNINGS (1 warning(s)).
+HANDOFF.md is re-runnable; Tier 3 may open an audit round on it.
