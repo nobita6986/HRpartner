@@ -1,0 +1,72 @@
+{
+  "timestamp": "2026-10-04T15:10:00Z",
+  "correction": "1/1 — C-01 Maskable safe zone correction",
+  "branch": "codex/t1c-pwa-icon-assets-hotfix",
+  "previousImplementationSha": "6df991ad55d5c9c86e073e223eb0c367a8049a53",
+  "currentFinalHead": null,
+  "baseline": "f570db06a8451b7f7a9be4ad98a3a66dbfa7c2f1",
+  "c01": {
+    "finding": "Manual visual review confirmed both PNGs are valid but artwork is not safe for purpose: any maskable. The tagline VIỆC LÀM MIỀN BẮC sits at the bottom edge; the HRP star ★ is close to the top/right edge. Android circle/squircle mask may clip brand content.",
+    "resolution": "Re-rendered both icons with the HRP LOGO MARK ONLY (no tagline) centered in the inner 60% maskable safe zone. Background kept as #ffffff (matching manifest.background_color). Approved HRP artwork was NOT redrawn, not distorted, not recolored — the original logo mark is downscaled proportionally to fit the inner safe zone.",
+    "assetSource": {
+      "file": "public/logo.png",
+      "size": "85892 bytes",
+      "width": 2300,
+      "height": 2291,
+      "colorType": 3,
+      "bitDepth": 8
+    },
+    "cropBounds": {
+      "contentBbox": {
+        "x": "115..2205",
+        "y": "110..2185",
+        "width": 2091,
+        "height": 2076
+      },
+      "logoMarkCrop": {
+        "x": "115..2205",
+        "y": "110..1729",
+        "height": 1619
+      },
+      "taglineExcluded": "y=1729..2185 (bottom 22% of content area)"
+    },
+    "paddingRule": "Inner safe zone = 60% of canvas. Padding = (canvas - innerSize)/2 on each side. For 192×192: inner=115px, pad=38px each side. For 512×512: inner=307px, pad=102px each side.",
+    "compositionRule": "Source logo mark scaled with min(scaleX, scaleY) so aspect ratio is preserved. Centered within inner safe zone. Background pure white (#ffffff)."
+  },
+  "icon192": {
+    "size": 1462,
+    "width": 192,
+    "height": 192,
+    "bitDepth": 8,
+    "colorType": 6,
+    "sha256": "c47c1837711b218f3ba317457226a8f677554d1645006edb12bf0e292038fb44",
+    "manifest": {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  },
+  "icon512": {
+    "size": 6100,
+    "width": 512,
+    "height": 512,
+    "bitDepth": 8,
+    "colorType": 6,
+    "sha256": "030c8929917008234345885945b9217012cb73890137f7bd0c08ac6877c35223",
+    "manifest": {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  },
+  "contractPreserved": {
+    "manifest": "public/manifest.json — UNCHANGED. Both icons still declare sizes/type/purpose=any maskable.",
+    "serviceWorker": "public/sw.js — UNCHANGED. Still references /icons/icon-192.png for both icon and badge.",
+    "brandSource": "public/logo.png — UNCHANGED (read-only asset source).",
+    "hrpLogoWebp": "public/hrp-logo.webp — UNCHANGED.",
+    "packageJson": "UNCHANGED"
+  },
+  "boundary": "No manifest/service-worker contract change. No favicon/metadata change. No source UI change. No schema/migration. No dependency/lockfile change. No UI2 work. No Admin localization work."
+}
