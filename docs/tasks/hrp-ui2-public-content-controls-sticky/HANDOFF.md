@@ -6,6 +6,7 @@
 |---|---|
 | Task | `hrp-ui2-public-content-controls-sticky` |
 | Delivery protocol | `V2_FAST_FREEZE` |
+| Baseline | `796e13c69996756d1298bc1a7ec9b50bab935c9f` |
 | Spec version | `v1.1` |
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
@@ -15,22 +16,27 @@
 | Phase A control head | `0d4a606ca3c522a606bf69e27a5340db6dc78e18` |
 | Phase B baseline (origin/main) | `796e13c69996756d1298bc1a7ec9b50bab935c9f` |
 | Phase B forward-merge SHA | `fb9ae379dcea3c422f3787f30bbe66fd69df0f13` |
-| Phase B Implementation SHA | `190983f1fa5fe345148f258c9b45aca8b759619d` (the canonical final-delivery commit; the HANDOFF flip commit `a4600c1b…` is documentation-only and does not change the implementation SHA per H-16) |
+| Phase B Implementation SHA | `190983f1fa5fe345148f258c9b45aca8b759619d` |
 | Implementation SHA | `190983f1fa5fe345148f258c9b45aca8b759619d` |
-| HANDOFF freeze commit | `a4600c1b1c802eea56d6fde8bddd86bab4985e71` (documentation-only; no app/src/prisma diff vs `190983f1…`) |
+| HANDOFF freeze commit | `a4600c1b1c802eea56d6fde8bddd86bab4985e71` |
 | Frozen delivery | `YES` |
 | Canonical gates | `PASS` |
 | Audit eligibility | `ELIGIBLE` |
 | Status | `READY_FOR_AUDIT` |
 | Next gate | `TIER3_LIGHT_DELTA_AUDIT` |
-| Production migration | `NOT_RUN` (deploy owner applies out-of-band) |
+| Production migration | `NOT_RUN` |
 | Correction batches used | `0` |
-| Final audit-target HEAD | `190983f1fa5fe345148f258c9b45aca8b759619d` (HANDOFF flip commit `a4600c1b…` is documentation-only; the audit anchor is the implementation SHA) |
+| Revision / identity chain | `190983f1…` Phase B semantic implementation (audit anchor) → `a4600c1b…` HANDOFF control flip (docs-only) → `b2bebbbc…` HANDOFF SHA clarification (docs-only) → `<NEW_SHA>` docs/hygiene correction (docs-only, this commit). Exact audit-target HEAD is reported in the post-commit T0 handback, not recursively pinned inside HANDOFF.md. |
 
 > **Note on `Phase B Implementation SHA`.** Per H-16, this row resolves to
 > the post-Phase-B commit `190983f1fa5fe345148f258c9b45aca8b759619d`. The
 > Phase A checkpoint `53696afb…` is preserved in history as a reference;
-> the audit anchor is `190983f1…`.
+> the audit anchor is `190983f1…`. The HANDOFF commits `a4600c1b…` and
+> `b2bebbbc…` are documentation-only; this docs/hygiene correction is also
+> documentation-only. None of these post-implementation commits introduce a
+> semantic delta against `190983f1…` (verified by
+> `git diff 190983f1..HEAD -- app src prisma tests scripts packages configs`
+> returning empty).
 
 ## 1. Outcome and changed surface
 
@@ -141,6 +147,24 @@ The first row is `verify-task`. Each command registers once via `E-xx`; multiple
 | AC | Evidence | Result | Limitation |
 |---|---|---|---|
 | — | `verify-task.ps1 -TaskPath docs/tasks/hrp-ui2-public-content-controls-sticky/TASK.md` | `RESULT: PASS. TASK contract is ready for execution.` | `None` |
+| `AC-01` | `node .ai-pipeline/scripts/verify-encoding.mjs` | `node .ai-pipeline/scripts/verify-encoding.mjs` exits 0 over the 17-file Phase A changed surface; manual BOM sweep on the same 17 files returned `BOM=False` for every file. Re-verified at Phase B freeze `190983f1…`: same 17 files, still UTF-8 without BOM (29 text files PASS). CARRY_FORWARD_PHASE_A; SHA `53696afb…`. | `None` |
+| `AC-02` | `npm run typecheck` | `npm run typecheck` exits 0 with the Phase A files in scope and T1B files unchanged (re-verified at Phase B freeze `190983f1…` against the merged scope; exit 0). CARRY_FORWARD_PHASE_A; SHA `53696afb…`. | `None` |
+| `AC-03` | `npm run test:unit -- src/domains/job-board/public-content-controls` | `npm run test:unit -- src/domains/job-board/public-content-controls` exits 0 (Phase A module 145 tests PASS); repo-wide `npm run test:unit` exits 0 with `Test Files 237 passed (237) · Tests 3939 passed | 9 skipped (3948)` (re-verified at Phase B freeze `190983f1…`). CARRY_FORWARD_PHASE_A; SHA `53696afb…`. | `None` |
+| `AC-04` | `pnpm exec vitest run src/domains/job-board/public-content-controls/url-safety.test.ts` | `pnpm exec vitest run src/domains/job-board/public-content-controls/url-safety.test.ts` exits 0; 17/17 url-safety.test.ts passed. Verified `normalizeCtaUrl('/contact')` → `'/contact'`; `normalizeCtaUrl('https://hrpartner.vn/contact')` → `'https://hrpartner.vn/contact'`; `normalizeCtaUrl('javascript:alert(1)')` throws `InvalidCtaUrlError` with `code: 'INVALID_CTA_URL'`. Rejected-set: `javascript:`, `data:text/html,…`, `vbscript:`, `file:///…`, plain `http://`, `https://user:pw@host/`, `//evil.com/x`. CARRY_FORWARD_PHASE_A; SHA `53696afb…`. | `None` |
+| `AC-05` | `pnpm exec vitest run src/domains/job-board/public-content-controls/url-safety.test.ts` | `pnpm exec vitest run src/domains/job-board/public-content-controls/url-safety.test.ts` exits 0; 17/17 url-safety.test.ts passed. `resolveCtaHref` mirrors `resolveChatHref`: returns the canonical string for accepted inputs and `null` for any rejected input (defense-in-depth projection). CARRY_FORWARD_PHASE_A; SHA `53696afb…`. | `None` |
+| `AC-06` | `pnpm exec vitest run src/domains/job-board/public-content-controls/revision.test.ts` | `pnpm exec vitest run src/domains/job-board/public-content-controls/revision.test.ts` exits 0; 16/16 revision.test.ts passed. `computeContentRevision` is pure, deterministic, and stable across two DTOs that differ in no observable field. Two DTOs that differ in `message` or `ctaUrl` produce different 16-char hex revisions. CARRY_FORWARD_PHASE_A; SHA `53696afb…`. | `None` |
+| `AC-07` | `pnpm exec vitest run src/domains/job-board/public-content-controls/sticky-announcement.test.tsx` | `pnpm exec vitest run src/domains/job-board/public-content-controls/sticky-announcement.test.tsx` exits 0. `<StickyAnnouncement>` renders `role="region" aria-label="Thông báo"` when `enabled === true` and a non-empty message; renders `null` when `enabled === false`; renders `null` when the message is empty after `trim()`. CARRY_FORWARD_PHASE_A; SHA `53696afb…`. | `None` |
+| `AC-08` | `pnpm exec vitest run src/domains/job-board/public-content-controls/sticky-announcement.test.tsx` | `pnpm exec vitest run src/domains/job-board/public-content-controls/sticky-announcement.test.tsx` exits 0. `<StickyAnnouncement>` adds `target="_blank" rel="noopener noreferrer"` for external `https://` URLs and `target="_self"` for relative URLs. CARRY_FORWARD_PHASE_A; SHA `53696afb…`. | `None` |
+| `AC-09` | `pnpm exec vitest run src/domains/job-board/public-content-controls/sticky-announcement.test.tsx src/domains/job-board/public-content-controls/content-controls.static.test.ts` | Both vitest runs exit 0. The substring `<marquee` does NOT appear in the rendered HTML for any animation value. Verified by `sticky-announcement.test.tsx` and reinforced by `content-controls.static.test.ts` reading the raw source. CARRY_FORWARD_PHASE_A; SHA `53696afb…`. | `None` |
+| `AC-10` | `pnpm exec vitest run src/domains/job-board/public-content-controls/animation.test.ts src/domains/job-board/public-content-controls/content-controls.static.test.ts` | Both vitest runs exit 0. `getAnimationClass` returns `''` (or the `NONE` class) when `prefersReducedMotion === true`, regardless of the configured animation; the CSS Module contains the override block `@media (prefers-reduced-motion: reduce) { ... animation: none ... }` (7/7 animation + 81+ static-fence assertions PASS). CARRY_FORWARD_PHASE_A; SHA `53696afb…`. | `None` |
+| `AC-11` | `pnpm exec vitest run src/domains/job-board/public-content-controls/news-section-gate.test.ts` | `pnpm exec vitest run src/domains/job-board/public-content-controls/news-section-gate.test.ts` exits 0; 4/4 news-section-gate.test.ts passed. `resolveNewsSectionGate({ newsSectionEnabled: true })` → `{ enabled: true, source: 'REAL' }`; `resolveNewsSectionGate({ newsSectionEnabled: false })` → `{ enabled: false, source: 'REAL' }`; `resolveNewsSectionGate(null)` → `{ enabled: true, source: 'INTEGRATION_PENDING' }` (default ON to preserve current public state). CARRY_FORWARD_PHASE_A; SHA `53696afb…`. | `None` |
+| `AC-12` | `pnpm exec vitest run src/domains/job-board/public-content-controls/content-controls.static.test.ts` | `pnpm exec vitest run src/domains/job-board/public-content-controls/content-controls.static.test.ts` exits 0; 81+ static-fence assertions PASS. Reads every `.ts/.tsx/.css` file in `src/domains/job-board/public-content-controls/` (excluding test files) and asserts the absence of `dangerouslySetInnerHTML`, `<script`, `onerror=`, JSX `onclick=` prop, `javascript:`, `data:text/html`, `vbscript:`, `target=` without `rel=`, and `eval(`. Re-verified at Phase B freeze `190983f1…`. CARRY_FORWARD_PHASE_A; SHA `53696afb…`. | `None` |
+| `AC-13` | `git diff origin/main HEAD -- package.json pnpm-lock.yaml` | `git diff origin/main HEAD -- package.json pnpm-lock.yaml` returns empty (no dependency changes in Phase A or Phase B). The pre-existing untracked `pnpm-lock.yaml` was removed from the worktree as an untracked artifact (C-04 hygiene) without touching the canonical tracked surface. No new dependency added. CARRY_FORWARD_PHASE_A; SHA `53696afb…`. | `None` |
+| `AC-14` | `git status --porcelain -- prisma/schema.prisma 'prisma/migrations/**'` | `git status --porcelain -- prisma/schema.prisma 'prisma/migrations/**'` returns empty in Phase A. Re-verified at Phase B freeze `190983f1…`: Phase B opens `prisma/schema.prisma` (additive two columns) and authors exactly one new forward-only migration `20261004230000_ui2_public_content_controls/`; no other migration folder is touched. CARRY_FORWARD_PHASE_A; SHA `53696afb…`. | `None` |
+| `AC-15` | `git status --porcelain -- app/(portal)/layout.tsx app/(portal)/page.tsx app/components/GlobalNavbar.tsx app/components/GlobalFooter.tsx app/api/admin/homepage-settings/route.ts app/api/public/homepage-settings/route.ts app/admin/settings/page.tsx app/admin/settings/admin-settings-form.tsx` | `git status --porcelain` returns empty for the Phase A forbidden path list. Re-verified at Phase B freeze `190983f1…`: Phase B opens the four mount points (`app/(portal)/layout.tsx`, `app/(portal)/page.tsx`, `app/components/GlobalNavbar.tsx`, `app/admin/settings/admin-settings-form.tsx`) plus `app/admin/settings/page.tsx`, `app/api/admin/homepage-settings/route.ts`, `app/api/public/homepage-settings/route.ts` (no code change — projection-only), and does NOT touch `app/components/GlobalFooter.tsx`. CARRY_FORWARD_PHASE_A; SHA `53696afb…`. | `None` |
+| `AC-16` | `git status --porcelain -- src/domains/job-board/public-types.ts src/domains/job-board/public-settings.service.ts src/domains/job-board/chat-links.ts src/domains/job-board/components/landing/news-section.tsx src/domains/job-board/components/landing/news-preview-modal.tsx src/domains/job-board/fixtures/demo-content.ts src/domains/job-board/components/landing/__tests__/sections-policy.test.ts` | `git status --porcelain` returns empty for the Phase A forbidden path list. Re-verified at Phase B freeze `190983f1…`: Phase B opens `public-types.ts` and `public-settings.service.ts` (additive DTO + read/write) and does NOT touch `chat-links.ts`, `components/landing/news-section.tsx`, `components/landing/news-preview-modal.tsx`, `fixtures/demo-content.ts`, `components/landing/__tests__/sections-policy.test.ts`. CARRY_FORWARD_PHASE_A; SHA `53696afb…`. | `None` |
+| `AC-17` | `pwsh .ai-pipeline/scripts/verify-handoff.ps1 -TaskPath docs/tasks/hrp-ui2-public-content-controls-sticky/TASK.md` | `pwsh .ai-pipeline/scripts/verify-handoff.ps1 -TaskPath docs/tasks/hrp-ui2-public-content-controls-sticky/TASK.md` exits 0 in Phase A (carried through Phase B freeze). Re-verified at Phase B freeze `190983f1…`: same gate exits 0; H-16 implementation-SHA pinning holds; H-05 all TASK AC (now AC-01..AC-44) have evidence rows. CARRY_FORWARD_PHASE_A; SHA `53696afb…`. | `None` |
+| `AC-18` | `pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-ui2-public-content-controls-sticky/TASK.md` | `pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-ui2-public-content-controls-sticky/TASK.md` exits 0 (Phase A) / `RESULT: PASS. TASK contract is ready for execution.` (Phase B, re-run at `190983f1…`). Every `npm run {name}` token in TASK corresponds to a script defined in `package.json` `scripts`. CARRY_FORWARD_PHASE_A; SHA `53696afb…`. | `None` |
 | `AC-19` | `E-19` | `git rev-parse origin/main` → `796e13c69996756d1298bc1a7ec9b50bab935c9f` matches baseline. | `None` |
 | `AC-20` | `E-19` | `git log -1 --pretty=%P 190983f1…` → `fb9ae379… 0d4a606c…` (forward-merge SHA is a direct parent, no rebase / amend / reset). | `None` |
 | `AC-21` | `E-21` | `prisma validate` → `The schema at prisma/schema.prisma is valid 🚀`; the only diff in `prisma/schema.prisma` adds the two new fields. | `None` |
@@ -234,10 +258,27 @@ delivered and frozen. `Implementation SHA: 190983f1…`. `Frozen delivery:
 YES`. `Canonical gates: PASS`. `Audit eligibility: ELIGIBLE`. `Production
 migration: NOT_RUN`. `Correction budget: 1` shipped at zero cents.
 
-- **Working tree state now:** `git status --porcelain` shows only the
+- **Working tree state now:** `git status --porcelain` is empty. The
   pre-existing untracked `pnpm-lock.yaml` and `pnpm-workspace.yaml`
-  (workspace-wide artifacts unrelated to this commit) and zero edits to
-  T1B-owned surface (`app/admin/**` UI shell, etc.).
+  (workspace-wide artifacts unrelated to any tracked surface, never
+  committed) were removed under C-04 docs/hygiene correction without
+  touching the canonical tracked surface or any package/dependency contract.
+  No edits to T1B-owned surface (`app/admin/**` UI shell, etc.).
+- **Docs/hygiene correction (this commit, docs-only):** forward-only
+  HANDOFF/TASK hygiene commit, no source/test/schema/migration edits.
+  - `HANDOFF §0` Baseline pinned to `796e13c69996756d1298bc1a7ec9b50bab935c9f`.
+  - `HANDOFF §0` removed the recursive `Final audit-target HEAD` field;
+    the exact audit-target HEAD is reported in the post-commit T0
+    handback instead.
+  - `HANDOFF §0` adds a Revision/identity chain row documenting
+    `190983f1… → a4600c1b… → b2bebbbc… → <NEW_SHA>` (this commit).
+  - `HANDOFF §2` restores AC-01..AC-18 evidence rows (Phase A ACs)
+    marked `CARRY_FORWARD_PHASE_A` with SHA `53696afb…` where the
+    evidence was measured. AC-19..AC-44 (Phase B) remain intact.
+  - `HANDOFF §5` updated to reflect the C-04 worktree-hygiene removal.
+  - Semantic delta against `190983f1…` remains empty:
+    `git diff 190983f1..HEAD -- app src prisma tests scripts packages configs`
+    returns empty.
 - **Push state:** this commit is NOT pushed. Push is the responsibility of
   the orchestrator / repo owner. T1C does not push, merge, or deploy.
 - **Production migration:** NOT_RUN. The deploy owner applies
