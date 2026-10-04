@@ -539,10 +539,12 @@ describe('AC-01/AC-03, DEC-10/RISK-01/RISK-07 — DTO đúng allow-list, JSON an
   // nên đây vẫn là phép so tập khóa CHÍNH XÁC: một khóa thứ 19 lọt vào mapper là FAIL, và bốn tên này
   // là bốn tên duy nhất được thêm. Tên cột nội bộ `hourlyRateVnd` KHÔNG có mặt và vẫn bị cấm ở vòng
   // dưới — thứ được công bố là con số, không phải cột.
+  // hrp-ui-v1-job-card-stamps-brand (T1B / RQ-13): thêm 2 author-selected flag canonical
+  // — `isHighReward` + `isExpiringSoon`. Cùng convention với `isHot`/`isUrgent`.
   const PUBLIC_KEYS = [
-    'availableSlots', 'companyName', 'deadline', 'id', 'isHot', 'isUrgent',
-    'jobType', 'location', 'locations', 'position', 'positionTitles', 'postedAt',
-    'salaryMaxVnd', 'salaryMinVnd', 'shift', 'shiftType', 'shifts', 'slug',
+    'availableSlots', 'companyName', 'deadline', 'id', 'isExpiringSoon', 'isHighReward',
+    'isHot', 'isUrgent', 'jobType', 'location', 'locations', 'position', 'positionTitles',
+    'postedAt', 'salaryMaxVnd', 'salaryMinVnd', 'shift', 'shiftType', 'shifts', 'slug',
     'statusLabel', 'title', 'urgency',
   ];
 

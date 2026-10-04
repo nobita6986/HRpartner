@@ -61,6 +61,16 @@ export interface PublicJobDto {
   isHot: boolean;
   /** hrp-p1-a0-1 (DEC-05): stamp flag "Tuyển gấp" — canonical boolean từ `JobPosting.isUrgent`. */
   isUrgent: boolean;
+  /**
+   * hrp-ui-v1-job-card-stamps-brand (T1B / RQ-13): stamp flag "Thưởng cao" — canonical
+   * boolean từ `JobPosting.isHighReward`. Author-selected, KHÔNG heuristic.
+   */
+  isHighReward: boolean;
+  /**
+   * hrp-ui-v1-job-card-stamps-brand (T1B / RQ-13): stamp flag "Sắp hết hạn" — canonical
+   * boolean từ `JobPosting.isExpiringSoon`. Author-selected, KHÔNG heuristic.
+   */
+  isExpiringSoon: boolean;
   /** go-live-09 / RQ-02 — ISO của `createdAt` ĐƠN còn hiệu lực mới nhất; trục sắp của `overview.newest`. */
   postedAt: string | null;
   /**
@@ -294,6 +304,12 @@ type PublicProjectRow = {
    */
   isHot: boolean;
   isUrgent: boolean;
+  /**
+   * hrp-ui-v1-job-card-stamps-brand (T1B / RQ-13): 2 author-selected flag canonical mới —
+   * cùng semantics với isHot/isUrgent (mapper `toDto` / `toDetailDto` copy vào output).
+   */
+  isHighReward: boolean;
+  isExpiringSoon: boolean;
 };
 
 /**
@@ -320,6 +336,9 @@ type PublicJobPostingSelectPayload = {
   // hrp-p1-a0-1: canonical stamp flags từ JobPosting row (DEC-05 / DEC-06).
   isHot: boolean;
   isUrgent: boolean;
+  // hrp-ui-v1-job-card-stamps-brand (T1B / RQ-13): 2 flag mới từ JobPosting row.
+  isHighReward: boolean;
+  isExpiringSoon: boolean;
   jobOpening: {
     staffingOrder: PublicOrderRowRaw & {
       project: { code: string; siteAddress: string | null; clientCompanyName: string | null };
@@ -562,6 +581,9 @@ function toDto(project: PublicProjectRow, now: Date): PublicJobDto | null {
     // hrp-p1-a0-1 (DEC-05): stamp flags từ JobPosting canonical row.
     isHot: project.isHot,
     isUrgent: project.isUrgent,
+    // hrp-ui-v1-job-card-stamps-brand (T1B / RQ-13): 2 author-selected flag mới.
+    isHighReward: project.isHighReward,
+    isExpiringSoon: project.isExpiringSoon,
   };
 }
 
@@ -655,6 +677,9 @@ function toDetailDto(
     // để đảm bảo cùng nguồn `project.isHot` / `project.isUrgent` cho cả card và detail).
     isHot: project.isHot,
     isUrgent: project.isUrgent,
+    // hrp-ui-v1-job-card-stamps-brand (T1B / RQ-13): 2 flag mới — cùng convention.
+    isHighReward: project.isHighReward,
+    isExpiringSoon: project.isExpiringSoon,
   };
 }
 
@@ -691,12 +716,16 @@ const publicSelect = Prisma.validator<Prisma.JobPostingSelect>()({
   benefitsJson: true,
   applicationInstructionsJson: true,
   contentSchemaVersion: true,
-  // hrp-p1-a0-1 (DEC-05 / DEC-06 / T0 §2): canonical stamp flags. Public projection
+  // hrp-p1-a0-1 (DEC-05): canonical stamp flags từ JobPosting row. Public projection
   // chỉ đọc boolean — KHÔNG suy từ Project legacy, urgency, salary, postedAt hay hash.
   // Static test fence ở `public-select.static.test.ts` allowlist top-level keys;
   // thêm field ở đây phải cập nhật allowlist MỘT CÁCH CÓ Ý THỨC.
   isHot: true,
   isUrgent: true,
+  // hrp-ui-v1-job-card-stamps-brand (T1B / RQ-13): 2 author-selected flag mới.
+  // Cùng semantics — additive, default false, KHÔNG heuristic.
+  isHighReward: true,
+  isExpiringSoon: true,
   jobOpening: {
     select: {
       staffingOrder: {
@@ -773,6 +802,9 @@ function projectRowFromPosting(posting: PublicJobPostingSelectPayload): PublicPr
     // postedAt / hash. Default false cho row pre-P1-A0.1 (migration backfilled via DEFAULT).
     isHot: posting.isHot,
     isUrgent: posting.isUrgent,
+    // hrp-ui-v1-job-card-stamps-brand (T1B / RQ-13): 2 flag mới — cùng convention.
+    isHighReward: posting.isHighReward,
+    isExpiringSoon: posting.isExpiringSoon,
   };
 }
 

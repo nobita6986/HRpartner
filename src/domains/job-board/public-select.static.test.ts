@@ -71,6 +71,8 @@ describe('public job projection — không select quan hệ bắt buộc bị RL
       'contentSchemaVersion',
       'descriptionJson',
       'id',
+      'isExpiringSoon',
+      'isHighReward',
       'isHot',
       'isUrgent',
       'jobOpening',

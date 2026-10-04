@@ -4,10 +4,10 @@ import { beVietnamPro, inter } from './fonts/local-fonts';
 
 export const metadata: Metadata = {
   title: {
-    default: 'HRPartner',
-    template: '%s · HRPartner',
+    default: 'Việc làm miền Bắc - Kết nối để thành công - HRP',
+    template: '%s · HRP',
   },
-  description: 'Nền tảng kết nối và quản lý nhân sự thuê ngoài HRPartner',
+  description: 'Việc làm miền Bắc - Kết nối để thành công - HRP - nền tảng kết nối và quản lý nhân sự thuê ngoài',
   icons: {
     icon: '/favicon.ico',
   },
@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     'mobile-web-app-capable': 'yes',
     'apple-mobile-web-app-capable': 'yes',
     'apple-mobile-web-status-bar-style': 'default',
-    'apple-mobile-web-app-title': 'HRPartner Worker',
+    'apple-mobile-web-app-title': 'HRP Việc làm miền Bắc',
   },
   manifest: '/manifest.json',
 };

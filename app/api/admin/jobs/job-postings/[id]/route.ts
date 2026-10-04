@@ -56,6 +56,11 @@ interface PatchBody {
   // phát hiện payload khác cho cùng key.
   isHot?: unknown;
   isUrgent?: unknown;
+  // hrp-ui-v1-job-card-stamps-brand (T1B / RQ-10): 2 author-selected flag canonical mới
+  // — cùng semantics ("undefined" = bỏ qua, non-boolean = 400). Cả hai field đều được
+  // include vào `requestBody` array để idempotency hash phát hiện payload khác.
+  isHighReward?: unknown;
+  isExpiringSoon?: unknown;
 }
 
 const PATCH_BODY_ALLOWED_KEYS = new Set<string>([
@@ -69,6 +74,9 @@ const PATCH_BODY_ALLOWED_KEYS = new Set<string>([
   'contentSchemaVersion',
   'isHot',
   'isUrgent',
+  // hrp-ui-v1-job-card-stamps-brand (T1B / RQ-10): 2 flag mới.
+  'isHighReward',
+  'isExpiringSoon',
 ]);
 
 function badRequest(message: string, code = 'INVALID_INPUT'): NextResponse {
@@ -189,6 +197,13 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
   if (!assertStrictBoolean(body.isUrgent)) {
     return badRequest('isUrgent phải là boolean (true/false) hoặc bị bỏ qua.');
   }
+  // hrp-ui-v1-job-card-stamps-brand (T1B / RQ-10): 2 flag mới — cùng semantic.
+  if (!assertStrictBoolean(body.isHighReward)) {
+    return badRequest('isHighReward phải là boolean (true/false) hoặc bị bỏ qua.');
+  }
+  if (!assertStrictBoolean(body.isExpiringSoon)) {
+    return badRequest('isExpiringSoon phải là boolean (true/false) hoặc bị bỏ qua.');
+  }
 
   const input: UpdateDraftContentInput = {
     jobPostingId: id,
@@ -208,6 +223,9 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     // C-01: pass boolean flags through; service keeps `undefined` semantics via assertBoolean.
     isHot: body.isHot as boolean | undefined,
     isUrgent: body.isUrgent as boolean | undefined,
+    // hrp-ui-v1-job-card-stamps-brand (T1B / RQ-10): 2 flag mới.
+    isHighReward: body.isHighReward as boolean | undefined,
+    isExpiringSoon: body.isExpiringSoon as boolean | undefined,
   };
 
   // C-01: idempotency hash MUST include both stamp booleans — otherwise client could send
@@ -226,6 +244,11 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     input.contentSchemaVersion,
     input.isHot ?? null,
     input.isUrgent ?? null,
+    // hrp-ui-v1-job-card-stamps-brand (T1B / RQ-10): 2 slot mở rộng cho 2 flag mới,
+    // đưa tổng array length lên 13. Cùng key-order convention (cũ → mới) để
+    // idempotency hash stable.
+    input.isHighReward ?? null,
+    input.isExpiringSoon ?? null,
   ];
 
   try {
