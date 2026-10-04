@@ -132,7 +132,18 @@ export const ADMIN_NAV_PHASE4: NavItem[] = [
   // Nhân sự (people) — T1C: chỉ còn Nhân sự (workers). Tài khoản đã chuyển
   // sang Hệ thống, Khách hàng / Nhà cung cấp sang nhóm Đối tác. Header đổi
   // từ "Con người" → "Nhân sự" để phản ánh đúng domain.
+  //
+  // hrp-m2a-operational-ux-debt / F2+F3 — LaborProfile navigation & intake
+  // discoverability (audit §8.2 + §8.3, execution decision §D Priority 2):
+  // add the two canonical pages that already exist at
+  // `app/admin/labor-profiles/page.tsx` (ALLOWED_ROLES = ADMIN/HR_MANAGER/HR_STAFF)
+  // and `app/admin/labor-profiles/new/page.tsx` to the people group so the
+  // list and the `+ Tiếp nhận NLD` CTA are reachable in one click from the
+  // sidebar instead of via the recruiter-workbench deep-link only. Roles
+  // byte-mirror `app/admin/labor-profiles/page.tsx:16` — no widening.
   { href: '/admin/workers', label: 'Nhân sự', icon: Users, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER'], section: 'people' },
+  { href: '/admin/labor-profiles', label: 'Hồ sơ NLD', icon: UserRoundCheck, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER'], section: 'people' },
+  { href: '/admin/labor-profiles/new', label: 'Tiếp nhận NLD', icon: UserRoundCheck, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER'], section: 'people' },
 
   // Đối tác (partners) — T1C: nhóm mới. Khách hàng / Nhà cung cấp là dữ
   // liệu đối tác bên ngoài, không thuộc workforce nội bộ.
