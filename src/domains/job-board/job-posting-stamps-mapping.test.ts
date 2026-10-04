@@ -18,13 +18,13 @@ describe('hrp-p1-a0-1 — STAMP_RANK ordering (multi-stamp layout, DEC-06)', () 
     expect(STAMP_RANK['tuyen-gap']).toBeLessThan(STAMP_RANK['hot']);
   });
 
-  it('4 stamp keys đều có rank hợp lệ (số nguyên >= 0, unique)', () => {
+  it('5 stamp keys đều có rank hợp lệ (số nguyên >= 0, unique)', () => {
     const ranks = Object.values(STAMP_RANK);
-    expect(ranks.length).toBe(4);
+    expect(ranks.length).toBe(5);
     for (const r of ranks) {
       expect(Number.isInteger(r)).toBe(true);
       expect(r).toBeGreaterThanOrEqual(0);
     }
-    expect(new Set(ranks).size).toBe(4); // unique
+    expect(new Set(ranks).size).toBe(5); // unique
   });
 });

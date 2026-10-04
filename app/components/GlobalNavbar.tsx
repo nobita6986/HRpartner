@@ -20,7 +20,8 @@ async function logout() {
 const navLinks: Array<{ href: string; label: string; type: 'route' | 'disabled' }> = [
   { href: '/', label: 'Việc làm', type: 'route' },
   { href: '#', label: 'Công ty', type: 'disabled' },
-  { href: '/ve-chung-toi', label: 'Về HRP Việt Nam', type: 'route' },
+  // hrp-ui-v1-job-card-stamps-brand (T1B / D4): nav link "Về HRP Việt Nam" đã xoá.
+  // Route `app/(portal)/ve-chung-toi/page.tsx` cũng bị xoá — Next.js App Router trả 404 tự động.
   { href: '#', label: 'Tin tức', type: 'disabled' },
   { href: '/ctv-portal', label: 'Cộng tác viên', type: 'route' },
 ];
@@ -117,7 +118,7 @@ export function GlobalNavbar() {
             {/* Logo */}
             <div className="flex-shrink-0">
               <Link href="/" className="flex items-center gap-2">
-                <img src="/logo.png" alt="HRP Logo" style={{ height: '40px', width: 'auto' }} />
+                <img src="/hrp-logo.webp" alt="HRP — Việc làm miền Bắc" style={{ height: '40px', width: 'auto' }} />
               </Link>
             </div>
 

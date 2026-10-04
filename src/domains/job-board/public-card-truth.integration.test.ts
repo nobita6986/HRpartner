@@ -460,12 +460,17 @@ describe.skipIf(!enabled)(
       // go-live-09 / RQ-02, RQ-22: 14 lên 18 — thêm ĐÚNG bốn tên của `RQ-02`, `toEqual` giữ nguyên nên
       // phép so vẫn là so tập khóa CHÍNH XÁC trên DB THẬT.
       // hrp-p1-a0-1: thêm `isHot` + `isUrgent` (canonical boolean cho "Hot" + "Tuyển gấp" stamps).
+      // hrp-ui-v1-job-card-stamps-brand (T1B): thêm `isHighReward` + `isExpiringSoon`
+      // (canonical boolean cho "Thưởng cao" + "Sắp hết hạn" author-selected stamps).
+      // 20 lên 22 — vẫn là phép so tập khóa CHÍNH XÁC trên DB THẬT, không nới sang partial.
       expect(Object.keys(job).sort()).toEqual(
         [
           "availableSlots",
           "companyName",
           "deadline",
           "id",
+          "isExpiringSoon",
+          "isHighReward",
           "isHot",
           "isUrgent",
           "jobType",
@@ -485,6 +490,20 @@ describe.skipIf(!enabled)(
           "urgency",
         ].sort(),
       );
+      // hrp-ui-v1-job-card-stamps-brand (T1B): hai flag mới trả về BOOLEAN canonical, giá trị
+      // fixture = false (seed `seedProject` không bật tay ⇒ NOT NULL DEFAULT false của
+      // `20261004120000_ui_v1_jobposting_stamp_flags` giữ nguyên).
+      expect(typeof job.isHighReward).toBe("boolean");
+      expect(job.isHighReward).toBe(false);
+      expect(typeof job.isExpiringSoon).toBe("boolean");
+      expect(job.isExpiringSoon).toBe(false);
+      // Canonical cũ vẫn được giữ — isHot/isUrgent cũng là boolean default false trong
+      // fixture `seedProject`, và sự hiện diện của chúng trong DTO là một phần của
+      // exact-key comparison ở trên.
+      expect(typeof job.isHot).toBe("boolean");
+      expect(job.isHot).toBe(false);
+      expect(typeof job.isUrgent).toBe("boolean");
+      expect(job.isUrgent).toBe(false);
       expect(job).not.toHaveProperty("industry");
       /**
        * go-live-09 / DEC-19 — hai chuỗi `'45000'` và `'salary'` RA KHỎI vòng cấm, và ĐÚNG LƯỢT NÀY hai

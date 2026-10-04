@@ -157,6 +157,13 @@ export interface UpdateDraftContentInput {
    */
   isHot?: boolean;
   isUrgent?: boolean;
+  /**
+   * hrp-ui-v1-job-card-stamps-brand (T1B / RQ-08 / DEC-07): 2 author-selected flag
+   * canonical mới — "Thưởng cao" + "Sắp hết hạn". Cùng semantics: `undefined` = giữ,
+   * `true`/`false` = cập nhật, non-boolean = reject 400.
+   */
+  isHighReward?: boolean;
+  isExpiringSoon?: boolean;
   contentSchemaVersion: number;
 }
 
@@ -191,6 +198,12 @@ export interface JobPostingDto {
   /** P1-A0.1 stamp flags — canonical source of truth for public "Hot" + "Tuyển gấp" stamps. */
   isHot: boolean;
   isUrgent: boolean;
+  /**
+   * hrp-ui-v1-job-card-stamps-brand (T1B / RQ-09): 2 author-selected flag canonical
+   * mới cho public stamp "Thưởng cao" + "Sắp hết hạn".
+   */
+  isHighReward: boolean;
+  isExpiringSoon: boolean;
   publishedAt: string | null;
   archivedAt: string | null;
   createdAt: string;
@@ -375,8 +388,14 @@ function assertSalaryDisplay(salaryDisplay: string | null | undefined): void {
  * P1-A0.1 stamp flag validator. `undefined` = field bị bỏ qua (giữ giá trị hiện tại).
  * Mọi giá trị khác phải là boolean thật; string/number/null/object/array bị reject.
  * Cho phép `true`/`false`; KHÔNG ép truthy của string 'true' → bắt buộc JSON boolean.
+ *
+ * hrp-ui-v1-job-card-stamps-brand (T1B / RQ-08): union label mở rộng sang 4 flag
+ * canonical. Cùng semantics cho `isHighReward` + `isExpiringSoon`.
  */
-function assertBoolean(label: 'isHot' | 'isUrgent', value: unknown): void {
+function assertBoolean(
+  label: 'isHot' | 'isUrgent' | 'isHighReward' | 'isExpiringSoon',
+  value: unknown,
+): void {
   if (value === undefined) return;
   if (typeof value !== 'boolean') {
     throw new AuthoringError(
@@ -946,6 +965,8 @@ export async function updateDraftContent(
   assertSalaryDisplay(input.salaryDisplay);
   assertBoolean('isHot', input.isHot);
   assertBoolean('isUrgent', input.isUrgent);
+  assertBoolean('isHighReward', input.isHighReward);
+  assertBoolean('isExpiringSoon', input.isExpiringSoon);
 
   validateRichContentField('descriptionJson', input.descriptionJson, input.contentSchemaVersion);
   if (input.requirementsJson !== null && input.requirementsJson !== undefined) {
@@ -976,6 +997,8 @@ export async function updateDraftContent(
       publishedAt: true,
       isHot: true,
       isUrgent: true,
+      isHighReward: true,
+      isExpiringSoon: true,
       // hrp-f9-hr-staff-jobposting-scope STEP-05: derive the order anchor
       // for the scoped-recruiter re-check. F9 guard re-reads the assignment
       // table inside the same transaction; the include is required because
@@ -1032,6 +1055,11 @@ export async function updateDraftContent(
   // Client không truyền field = không đổi row. Field truyền true/false = cập nhật.
   const nextIsHot = input.isHot !== undefined ? input.isHot : current.isHot;
   const nextIsUrgent = input.isUrgent !== undefined ? input.isUrgent : current.isUrgent;
+  // hrp-ui-v1-job-card-stamps-brand (T1B / RQ-08): cùng semantics cho 2 flag mới.
+  const nextIsHighReward =
+    input.isHighReward !== undefined ? input.isHighReward : current.isHighReward;
+  const nextIsExpiringSoon =
+    input.isExpiringSoon !== undefined ? input.isExpiringSoon : current.isExpiringSoon;
 
   const updated = await tx.jobPosting.update({
     where: {
@@ -1058,6 +1086,9 @@ export async function updateDraftContent(
       contentSchemaVersion: input.contentSchemaVersion,
       isHot: nextIsHot,
       isUrgent: nextIsUrgent,
+      // hrp-ui-v1-job-card-stamps-brand (T1B): 2 stamp flag mới — additive, NOT NULL DEFAULT false.
+      isHighReward: nextIsHighReward,
+      isExpiringSoon: nextIsExpiringSoon,
       revision: nextRevision,
     },
   });
@@ -1394,6 +1425,9 @@ interface JobPostingModelRow {
   // P1-A0.1 stamp flags — readonly; Prisma returns `boolean` for non-nullable columns.
   isHot: boolean;
   isUrgent: boolean;
+  // hrp-ui-v1-job-card-stamps-brand (T1B): 2 author-selected stamp flag canonical mới.
+  isHighReward: boolean;
+  isExpiringSoon: boolean;
   publishedAt: Date | null;
   archivedAt: Date | null;
   createdAt: Date;
@@ -1427,6 +1461,9 @@ function toJobPostingDto(row: JobPostingModelRow): JobPostingDto {
     contentSchemaVersion: row.contentSchemaVersion,
     isHot: row.isHot,
     isUrgent: row.isUrgent,
+    // hrp-ui-v1-job-card-stamps-brand (T1B): 2 flag mới copy nguyên xi từ row.
+    isHighReward: row.isHighReward,
+    isExpiringSoon: row.isExpiringSoon,
     publishedAt: row.publishedAt ? row.publishedAt.toISOString() : null,
     archivedAt: row.archivedAt ? row.archivedAt.toISOString() : null,
     createdAt: row.createdAt.toISOString(),

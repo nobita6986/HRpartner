@@ -576,6 +576,12 @@ model JobPosting {
   // KHÔNG heuristic backfill từ Project.isPublic / urgency / salary / postedAt / hash.
   isHot                       Boolean   @default(false) @map("is_hot")
   isUrgent                    Boolean   @default(false) @map("is_urgent")
+  // hrp-ui-v1-job-card-stamps-brand (T1B): 2 stamp flag canonical mới do author JobPosting
+  // tự chọn — KHÔNG heuristic từ salary / deadlineDate / postedAt / hash.
+  // Stamp "Thưởng cao" + "Sắp hết hạn" lưu cùng draft update authority (PATCH
+  // /api/admin/jobs/job-postings/[id]); default false cho mọi row hiện hữu.
+  isHighReward                Boolean   @default(false) @map("is_high_reward")
+  isExpiringSoon              Boolean   @default(false) @map("is_expiring_soon")
   createdAt                   DateTime  @default(now()) @map("created_at")
   updatedAt                   DateTime  @updatedAt @map("updated_at")
 

@@ -51,13 +51,15 @@ jobs:
       - name: Backup, migrate and verify
         shell: bash
         env:
-          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_SHA: ${{ inputs.commit_sha }}
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
         run: |
           set -euo pipefail
           image="ghcr.io/nobita6986/hrpartner:$RELEASE_SHA"
-          printf '%s' "$GHCR_TOKEN" | ssh "$VPS_USER@$VPS_HOST" "docker login ghcr.io -u '$GITHUB_ACTOR' --password-stdin"
-          ssh "$VPS_USER@$VPS_HOST" "docker pull '$image' && sudo /usr/local/sbin/hrp-migrate-production '$image'"
-          ssh "$VPS_USER@$VPS_HOST" 'docker logout ghcr.io >/dev/null 2>&1 || true'
+          # The GHCR package is public. Avoid VPS-side `docker login`: the
+          # locked-down deploy user has HOME=/opt/hrp, which is root-owned and
+          # intentionally not writable for a Docker credential store. This
+          # matches deploy-vps.yml and keeps migration authority inside the
+          # narrow NOPASSWD production wrapper.
+          ssh "$VPS_USER@$VPS_HOST" "docker pull '$image' && sudo -n /usr/local/sbin/hrp-migrate-production '$image'"

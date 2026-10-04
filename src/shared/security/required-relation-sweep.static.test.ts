@@ -108,20 +108,20 @@ const EXPECTED_HITS = [
   // selects are RLS-covered (read-only; `withDbContext` sets the GUC
   // session role; JobOpening is not a recruiter-gated table on its own).
   // Net +4 entries: 32 → 36 src hits.
-  'src/domains/staffing/job-posting-authoring.service.ts:984 jobOpening',
-  'src/domains/staffing/job-posting-authoring.service.ts:1088 jobOpening',
-  'src/domains/staffing/job-posting-authoring.service.ts:1215 jobOpening',
-  'src/domains/staffing/job-posting-authoring.service.ts:1284 jobOpening',
-  'src/domains/staffing/job-posting-authoring.service.ts:1357 jobOpening',
+  'src/domains/staffing/job-posting-authoring.service.ts:1007 jobOpening',
+  'src/domains/staffing/job-posting-authoring.service.ts:1119 jobOpening',
+  'src/domains/staffing/job-posting-authoring.service.ts:1246 jobOpening',
+  'src/domains/staffing/job-posting-authoring.service.ts:1315 jobOpening',
+  'src/domains/staffing/job-posting-authoring.service.ts:1388 jobOpening',
   // P1-A0 STEP-03: line numbers in job-posting-list.service.ts shifted because
   // the DTOs grew (added title, salaryDisplay, *Json, contentSchemaVersion,
   // hasContent). The four select-clauses themselves are unchanged.
   // hrp-p1-a0-1 (2026-09-26): line numbers shifted again because DTOs grew
   // (`isHot`, `isUrgent`) and eligibility selector was added.
-  'src/domains/staffing/job-posting-list.service.ts:143 jobOpening',
-  'src/domains/staffing/job-posting-list.service.ts:146 staffingOrder',
-  'src/domains/staffing/job-posting-list.service.ts:230 jobOpening',
-  'src/domains/staffing/job-posting-list.service.ts:238 staffingOrder',
+  'src/domains/staffing/job-posting-list.service.ts:149 jobOpening',
+  'src/domains/staffing/job-posting-list.service.ts:152 staffingOrder',
+  'src/domains/staffing/job-posting-list.service.ts:245 jobOpening',
+  'src/domains/staffing/job-posting-list.service.ts:253 staffingOrder',
   'src/domains/staffing/order.service.ts:153 project',
   'src/domains/staffing/order.service.ts:179 project',
   'src/domains/staffing/submission.service.ts:204 project',
@@ -134,8 +134,8 @@ const EXPECTED_HITS = [
   // `staffingOrder.slots`. Cả hai là BẮT BUỘC trong schema (không optional, không list) — sweep phải
   // đếm. An toàn vì đã chặn trước bằng `status: 'PUBLISHED'` (JobPosting) + RLS `hrp_project_visible_for`
   // mà MKT thoả khi `Project.is_public=true` (migration s1_rls_project 2026-08-16).
-  'src/domains/job-board/public.service.ts:702 staffingOrder',
-  'src/domains/job-board/public.service.ts:709 project',
+  'src/domains/job-board/public.service.ts:731 staffingOrder',
+  'src/domains/job-board/public.service.ts:738 project',
   // hrp-p1-e0 (2026-09-26): Recruiter Workbench read-model cần `fullName`/`phone`/`cccdNumber`/
   // `identityVerification`/`completeness` để build `RecruiterWorkbenchRow.candidate` (§4.3 RQ-02).
   // `LaborProfile` là quan hệ BẮT BUỘC trong schema `placement_case` (không optional, không list) — sweep

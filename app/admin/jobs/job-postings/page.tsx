@@ -335,14 +335,41 @@ export default async function AdminJobPostingsListPage({ searchParams }: PagePro
                     </td>
                     <td className="px-4 py-3 text-sm" style={{ color: 'var(--on-surface-variant)' }}>
                       {item.openingStaffingOrderCode ? (
-                        <>
-                          <span className="font-mono">{item.openingStaffingOrderCode}</span>
-                          {item.openingStatus && (
-                            <span className="ml-2 text-xs">
-                              (JobOpening: {item.openingStatus})
-                            </span>
-                          )}
-                        </>
+                        // hrp-m2a-operational-ux-debt / F7 — JobPosting list
+                        // linkage (audit §8.7, execution decision §D Priority 2).
+                        // When the canonical `JobOpening` ID is available
+                        // (`jobOpeningId` is already on the row DTO at
+                        // `src/domains/staffing/job-posting-list.service.ts:71`
+                        // and `:158`), the staffing-order code and the
+                        // `(JobOpening: <status>)` suffix become a single
+                        // navigation link to `/admin/job-openings/<id>` so an
+                        // operator can recover the canonical activation page
+                        // in one click. When the JobOpening is missing
+                        // (orphan), the row keeps the existing plain-text
+                        // sentinel — never fabricate a link.
+                        item.jobOpeningId ? (
+                          <Link
+                            href={`/admin/job-openings/${item.jobOpeningId}`}
+                            className="font-mono underline-offset-2 hover:underline"
+                            data-testid="job-opening-link"
+                          >
+                            <span className="font-mono">{item.openingStaffingOrderCode}</span>
+                            {item.openingStatus && (
+                              <span className="ml-2 text-xs">
+                                (JobOpening: {item.openingStatus})
+                              </span>
+                            )}
+                          </Link>
+                        ) : (
+                          <>
+                            <span className="font-mono">{item.openingStaffingOrderCode}</span>
+                            {item.openingStatus && (
+                              <span className="ml-2 text-xs">
+                                (JobOpening: {item.openingStatus})
+                              </span>
+                            )}
+                          </>
+                        )
                       ) : (
                         <span className="text-xs italic">(orphan — JobOpening đã xoá)</span>
                       )}

@@ -79,6 +79,12 @@ export interface JobPostingListItemDto {
   /** P1-A0.1 stamp flags — được dùng cho chip "Hot" + "Tuyển gấp" trên admin list row. */
   isHot: boolean;
   isUrgent: boolean;
+  /**
+   * hrp-ui-v1-job-card-stamps-brand (T1B / RQ-12): 2 author-selected flag canonical
+   * mới cho stamp "Thưởng cao" + "Sắp hết hạn".
+   */
+  isHighReward: boolean;
+  isExpiringSoon: boolean;
 }
 
 export interface JobPostingListPage {
@@ -174,6 +180,9 @@ export async function listJobPostingsForAdmin(
     contentSchemaVersion: row.contentSchemaVersion,
     isHot: row.isHot,
     isUrgent: row.isUrgent,
+    // hrp-ui-v1-job-card-stamps-brand (T1B / RQ-12): 2 flag mới copy nguyên xi từ row.
+    isHighReward: row.isHighReward,
+    isExpiringSoon: row.isExpiringSoon,
   }));
 
   return { items, total, take, skip };
@@ -208,6 +217,12 @@ export interface JobPostingDetailDto {
   /** P1-A0.1 stamp flags — đồng bộ với `JobPostingDto.isHot` / `isUrgent`. */
   isHot: boolean;
   isUrgent: boolean;
+  /**
+   * hrp-ui-v1-job-card-stamps-brand (T1B / RQ-12): 2 author-selected flag canonical
+   * mới cho stamp "Thưởng cao" + "Sắp hết hạn".
+   */
+  isHighReward: boolean;
+  isExpiringSoon: boolean;
   opening: {
     id: string;
     status: string;
@@ -260,6 +275,9 @@ export async function getJobPostingForAdmin(
     contentSchemaVersion: row.contentSchemaVersion,
     isHot: row.isHot,
     isUrgent: row.isUrgent,
+    // hrp-ui-v1-job-card-stamps-brand (T1B / RQ-12): 2 flag mới copy nguyên xi từ row.
+    isHighReward: row.isHighReward,
+    isExpiringSoon: row.isExpiringSoon,
     opening: row.jobOpening
       ? {
           id: row.jobOpening.id,
