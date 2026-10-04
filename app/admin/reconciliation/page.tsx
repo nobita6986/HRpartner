@@ -15,6 +15,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import {
+  RECONCILIATION_LABELS,
+  reconciliationStatementKindLabel,
+  reconciliationStatementStatusLabel,
+} from '@/src/shared/i18n/reconciliation-labels';
 
 type Tab = 'list' | 'generate' | 'margin';
 type StatementStatus = 'DRAFT' | 'SENT' | 'DISPUTED' | 'CONFIRMED' | 'LOCKED' | 'PAID';
@@ -35,7 +40,7 @@ interface Statement {
   sentAt: string | null;
 }
 
-function StatusBadge({ status }: { status: StatementStatus }) {
+function StatusBadge({ status, label }: { status: StatementStatus; label: string }) {
   const colors: Record<string, string> = {
     DRAFT: '#9e9e9e',
     SENT: '#2196f3',
@@ -46,7 +51,7 @@ function StatusBadge({ status }: { status: StatementStatus }) {
   };
   return (
     <span className="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium" style={{ background: colors[status] + '20', color: colors[status] }}>
-      {status}
+      {label}
     </span>
   );
 }
@@ -82,9 +87,9 @@ export default function ReconciliationPage() {
       .then((r) => r.json())
       .then((d) => {
         if (d.statements) setStatements(d.statements);
-        else setStatementsError('Khong the tai danh sach');
+        else setStatementsError(RECONCILIATION_LABELS.cannotLoadStatements);
       })
-      .catch((e) => setStatementsError(String(e)))
+      .catch(() => setStatementsError(RECONCILIATION_LABELS.cannotLoadStatements))
       .finally(() => setStatementsLoading(false));
   };
 
@@ -103,7 +108,7 @@ export default function ReconciliationPage() {
 
   const handleGenerate = async () => {
     // Prompt for period ID — simplified
-    const periodId = window.prompt('Nhap TimesheetPeriod ID (tu tab Chấm công):');
+    const periodId = window.prompt(RECONCILIATION_LABELS.periodPrompt);
     if (!periodId) return;
     setGenerateLoading(true);
     try {
@@ -113,14 +118,14 @@ export default function ReconciliationPage() {
         body: JSON.stringify({ timesheetPeriodId: periodId }),
       });
       const d = await res.json();
-      if (!res.ok) alert(`Loi: ${d.message ?? d.error}`);
+      if (!res.ok) alert(`Lỗi: ${d.message ?? d.error}`);
       else {
-        alert('Da tao statement thanh cong');
+        alert(RECONCILIATION_LABELS.generatedSuccessfully);
         loadStatements();
         setTab('list');
       }
     } catch {
-      alert('Loi mang');
+      alert(RECONCILIATION_LABELS.networkError);
     } finally {
       setGenerateLoading(false);
     }
@@ -130,10 +135,10 @@ export default function ReconciliationPage() {
     <div className="px-6 py-8 lg:px-8" style={{ background: 'var(--surface)' }}>
       <header className="mb-6">
         <h1 className="text-2xl font-semibold" style={{ color: 'var(--on-surface)' }}>
-          Doi soat (Reconciliation)
+          {RECONCILIATION_LABELS.heading}
         </h1>
         <p className="mt-1 text-sm" style={{ color: 'var(--on-surface-variant)' }}>
-          Module M4 + M8 -- slice 4C · F00A moment 09:30-13:00 · Statement 2 luong + Margin + Dispute
+          {RECONCILIATION_LABELS.summary}
         </p>
       </header>
 
@@ -150,7 +155,7 @@ export default function ReconciliationPage() {
               marginBottom: '-1px',
             }}
           >
-            {t === 'list' ? 'Statements' : t === 'generate' ? 'Generate' : 'Margin'}
+            {t === 'list' ? RECONCILIATION_LABELS.statement : t === 'generate' ? RECONCILIATION_LABELS.generateFromTimesheet : RECONCILIATION_LABELS.margin}
           </button>
         ))}
       </div>
@@ -159,13 +164,13 @@ export default function ReconciliationPage() {
       {tab === 'list' && (
         <div>
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-medium" style={{ color: 'var(--on-surface)' }}>Statements</h2>
+            <h2 className="text-lg font-medium" style={{ color: 'var(--on-surface)' }}>{RECONCILIATION_LABELS.statement}</h2>
             <button
               onClick={() => setTab('generate')}
               className="rounded px-4 py-2 text-sm font-medium text-white"
               style={{ background: 'var(--primary-dark)' }}
             >
-              + Generate tu Timesheet
+              + {RECONCILIATION_LABELS.generateFromTimesheet}
             </button>
           </div>
           {statementsLoading ? (
@@ -173,14 +178,14 @@ export default function ReconciliationPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr style={{ background: 'var(--surface-container)' }}>
-                    <th className="px-4 py-3 text-left font-medium">Kind</th>
-                    <th className="px-4 py-3 text-left font-medium">Party</th>
-                    <th className="px-4 py-3 text-left font-medium">Period</th>
-                    <th className="px-4 py-3 text-right font-medium">Amount (VND)</th>
-                    <th className="px-4 py-3 text-left font-medium">Status</th>
-                    <th className="px-4 py-3 text-left font-medium">Dispute</th>
-                    <th className="px-4 py-3 text-left font-medium">SLA Deadline</th>
-                    <th className="px-4 py-3 text-left font-medium">Actions</th>
+                    <th className="px-4 py-3 text-left font-medium">{RECONCILIATION_LABELS.kind}</th>
+                    <th className="px-4 py-3 text-left font-medium">{RECONCILIATION_LABELS.party}</th>
+                    <th className="px-4 py-3 text-left font-medium">{RECONCILIATION_LABELS.period}</th>
+                    <th className="px-4 py-3 text-right font-medium">{RECONCILIATION_LABELS.amountVnd}</th>
+                    <th className="px-4 py-3 text-left font-medium">{RECONCILIATION_LABELS.status}</th>
+                    <th className="px-4 py-3 text-left font-medium">{RECONCILIATION_LABELS.dispute}</th>
+                    <th className="px-4 py-3 text-left font-medium">{RECONCILIATION_LABELS.slaDeadline}</th>
+                    <th className="px-4 py-3 text-left font-medium">{RECONCILIATION_LABELS.actions}</th>
                   </tr>
                 </thead>
                 <tbody><LoadingRow cols={8} /></tbody>
@@ -190,31 +195,31 @@ export default function ReconciliationPage() {
             <p className="text-sm text-red-500">{statementsError}</p>
           ) : statements.length === 0 ? (
             <div className="rounded-lg border p-8 text-center" style={{ borderColor: 'var(--outline-variant)' }}>
-              <p className="text-sm" style={{ color: 'var(--on-surface-variant)' }}>Chua co statement nao. Generate tu tab Generate.</p>
+              <p className="text-sm" style={{ color: 'var(--on-surface-variant)' }}>{RECONCILIATION_LABELS.emptyStatements}</p>
             </div>
           ) : (
             <div className="overflow-hidden rounded-lg border" style={{ borderColor: 'var(--outline-variant)' }}>
               <table className="w-full text-sm">
                 <thead>
                   <tr style={{ background: 'var(--surface-container)' }}>
-                    <th className="px-4 py-3 text-left font-medium">Kind</th>
-                    <th className="px-4 py-3 text-left font-medium">Party</th>
-                    <th className="px-4 py-3 text-left font-medium">Period</th>
-                    <th className="px-4 py-3 text-right font-medium">Amount (VND)</th>
-                    <th className="px-4 py-3 text-left font-medium">Status</th>
-                    <th className="px-4 py-3 text-left font-medium">Dispute</th>
-                    <th className="px-4 py-3 text-left font-medium">SLA Deadline</th>
-                    <th className="px-4 py-3 text-left font-medium">Actions</th>
+                    <th className="px-4 py-3 text-left font-medium">{RECONCILIATION_LABELS.kind}</th>
+                    <th className="px-4 py-3 text-left font-medium">{RECONCILIATION_LABELS.party}</th>
+                    <th className="px-4 py-3 text-left font-medium">{RECONCILIATION_LABELS.period}</th>
+                    <th className="px-4 py-3 text-right font-medium">{RECONCILIATION_LABELS.amountVnd}</th>
+                    <th className="px-4 py-3 text-left font-medium">{RECONCILIATION_LABELS.status}</th>
+                    <th className="px-4 py-3 text-left font-medium">{RECONCILIATION_LABELS.dispute}</th>
+                    <th className="px-4 py-3 text-left font-medium">{RECONCILIATION_LABELS.slaDeadline}</th>
+                    <th className="px-4 py-3 text-left font-medium">{RECONCILIATION_LABELS.actions}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {statements.map(s => (
                     <tr key={s.id} className="border-t" style={{ borderColor: 'var(--outline-variant)' }}>
-                      <td className="px-4 py-3">{s.kind}</td>
+                      <td className="px-4 py-3">{reconciliationStatementKindLabel(s.kind)}</td>
                       <td className="px-4 py-3">{s.partyName}</td>
                       <td className="px-4 py-3">{String(s.periodMonth).padStart(2, '0')}/{s.periodYear}</td>
                       <td className="px-4 py-3 text-right">{Number(s.totalAmount).toLocaleString('vi-VN')}</td>
-                      <td className="px-4 py-3"><StatusBadge status={s.status} /></td>
+                      <td className="px-4 py-3"><StatusBadge status={s.status} label={reconciliationStatementStatusLabel(s.status)} /></td>
                       <td className="px-4 py-3">{s.disputeCount}</td>
                       <td className="px-4 py-3 text-xs">{s.confirmDeadlineAt ? new Date(s.confirmDeadlineAt).toLocaleDateString('vi-VN') : '-'}</td>
                       <td className="px-4 py-3">
@@ -224,7 +229,7 @@ export default function ReconciliationPage() {
                             className="text-xs underline"
                             style={{ color: 'var(--primary-dark)' }}
                           >
-                            Dispute
+                            {RECONCILIATION_LABELS.dispute}
                           </button>
                         )}
                       </td>
@@ -240,10 +245,10 @@ export default function ReconciliationPage() {
       {/* Generate Tab */}
       {tab === 'generate' && (
         <div>
-          <h2 className="mb-4 text-lg font-medium">Generate tu Timesheet LOCKED</h2>
+          <h2 className="mb-4 text-lg font-medium">{RECONCILIATION_LABELS.generateLockedHeading}</h2>
           <div className="rounded-lg border p-6" style={{ borderColor: 'var(--outline-variant)' }}>
             <p className="mb-4 text-sm" style={{ color: 'var(--on-surface-variant)' }}>
-              Tao VendorStatement + ClientStatement tu TimesheetPeriod da LOCKED.
+              {RECONCILIATION_LABELS.generateLockedDescription}
             </p>
             <button
               onClick={handleGenerate}
@@ -251,7 +256,7 @@ export default function ReconciliationPage() {
               className="rounded px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
               style={{ background: 'var(--primary-dark)' }}
             >
-              {generateLoading ? 'Dang generate...' : 'Generate Vendor + Client'}
+              {generateLoading ? RECONCILIATION_LABELS.generating : RECONCILIATION_LABELS.generateStatements}
             </button>
           </div>
         </div>
@@ -260,7 +265,7 @@ export default function ReconciliationPage() {
       {/* Margin Tab */}
       {tab === 'margin' && (
         <div>
-          <h2 className="mb-4 text-lg font-medium">Margin Breakdown</h2>
+          <h2 className="mb-4 text-lg font-medium">{RECONCILIATION_LABELS.marginBreakdown}</h2>
           <div className="mb-4 flex gap-3">
             <input
               type="number"
@@ -282,24 +287,24 @@ export default function ReconciliationPage() {
               className="rounded px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
               style={{ background: 'var(--primary-dark)' }}
             >
-              {marginLoading ? 'Dang tai...' : 'Xem margin'}
+              {marginLoading ? RECONCILIATION_LABELS.loading : RECONCILIATION_LABELS.viewMargin}
             </button>
           </div>
           {margin && (
             <div className="rounded-lg border p-6" style={{ borderColor: 'var(--outline-variant)' }}>
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <p className="text-xs">Vendor payable</p>
+                  <p className="text-xs">{RECONCILIATION_LABELS.vendorPayable}</p>
                   <p className="text-2xl font-semibold">{Number(margin.totalVendor).toLocaleString('vi-VN')}</p>
                 </div>
                 <div>
-                  <p className="text-xs">Client receivable</p>
+                  <p className="text-xs">{RECONCILIATION_LABELS.clientReceivable}</p>
                   <p className="text-2xl font-semibold" style={{ color: 'var(--success)' }}>
                     {Number(margin.totalClient).toLocaleString('vi-VN')}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs">Margin</p>
+                  <p className="text-xs">{RECONCILIATION_LABELS.margin}</p>
                   <p className="text-2xl font-semibold" style={{ color: Number(margin.margin) >= 0 ? 'var(--success)' : 'var(--error)' }}>
                     {Number(margin.margin).toLocaleString('vi-VN')}
                   </p>
@@ -314,17 +319,17 @@ export default function ReconciliationPage() {
       {showDispute && (
         <div className="fixed inset-0 z-50 flex justify-end" style={{ background: 'rgba(0,0,0,0.4)' }} onClick={() => setShowDispute(null)}>
           <div className="h-full w-full max-w-md p-6 shadow-xl" style={{ background: 'var(--surface)' }} onClick={e => e.stopPropagation()}>
-            <h3 className="mb-4 text-lg font-semibold">Dispute Statement {showDispute.id}</h3>
-            <p className="mb-2 text-sm">Party: {showDispute.partyName}</p>
-            <p className="mb-4 text-xs">Dispute count hien tai: {showDispute.disputeCount}/2</p>
-            <label className="mb-2 block text-sm font-medium">Ly do (required)</label>
-            <textarea rows={3} className="mb-4 w-full rounded border px-3 py-2 text-sm" placeholder="Vi du: So gio khong khop voi check-in thuc te" />
-            <label className="mb-2 block text-sm font-medium">Attachment URL (optional)</label>
+            <h3 className="mb-4 text-lg font-semibold">{RECONCILIATION_LABELS.disputeStatement} {showDispute.id}</h3>
+            <p className="mb-2 text-sm">{RECONCILIATION_LABELS.party}: {showDispute.partyName}</p>
+            <p className="mb-4 text-xs">{RECONCILIATION_LABELS.disputeCount}: {showDispute.disputeCount}/2</p>
+            <label className="mb-2 block text-sm font-medium">{RECONCILIATION_LABELS.reasonRequired}</label>
+            <textarea rows={3} className="mb-4 w-full rounded border px-3 py-2 text-sm" placeholder={RECONCILIATION_LABELS.disputePlaceholder} />
+            <label className="mb-2 block text-sm font-medium">{RECONCILIATION_LABELS.attachmentUrl}</label>
             <input type="text" className="mb-4 w-full rounded border px-3 py-2 text-sm" placeholder="https://..." />
             <div className="flex justify-end gap-3">
-              <button onClick={() => setShowDispute(null)} className="rounded border px-4 py-2 text-sm">Huy</button>
+              <button onClick={() => setShowDispute(null)} className="rounded border px-4 py-2 text-sm">{RECONCILIATION_LABELS.cancel}</button>
               <button className="rounded px-4 py-2 text-sm font-medium text-white" style={{ background: 'var(--primary-dark)' }}>
-                Submit dispute
+                {RECONCILIATION_LABELS.submitDispute}
               </button>
             </div>
           </div>

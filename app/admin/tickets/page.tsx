@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { useState, useEffect, useCallback } from 'react';
+import { formLabel } from '@/src/shared/i18n/form-dictionary';
 
 type TicketStatus = 'PENDING' | 'IN_PROGRESS' | 'RESOLVED' | 'REJECTED' | 'CANCELLED';
 type TicketType = 'TIMESHEET_DISPUTE' | 'LEAVE_REQUEST' | 'ADVANCE_REQUEST' | 'OTHER';
@@ -50,7 +51,7 @@ const PRIORITY_CONFIG: Record<TicketPriority, { label: string; color: string; bg
 };
 
 function StatusBadge({ status }: { status: TicketStatus }) {
-  const cfg = STATUS_CONFIG[status] ?? { label: status, color: '#37474f', bg: '#eceff1' };
+  const cfg = STATUS_CONFIG[status] ?? { label: 'Trạng thái khác', color: '#37474f', bg: '#eceff1' };
   return (
     <span style={{ background: cfg.bg, color: cfg.color }} className="rounded-full px-2 py-0.5 text-xs font-semibold">
       {cfg.label}
@@ -61,13 +62,13 @@ function StatusBadge({ status }: { status: TicketStatus }) {
 function TypeBadge({ type }: { type: TicketType }) {
   return (
     <span style={{ background: '#f3e5f5', color: '#6a1b9a' }} className="rounded px-1.5 py-0.5 text-xs font-medium">
-      {TYPE_LABELS[type] ?? type}
+      {TYPE_LABELS[type] ?? 'Loại khác'}
     </span>
   );
 }
 
 function PriorityBadge({ priority }: { priority: TicketPriority }) {
-  const cfg = PRIORITY_CONFIG[priority] ?? { label: priority, color: '#37474f', bg: '#eceff1' };
+  const cfg = PRIORITY_CONFIG[priority] ?? { label: 'Ưu tiên khác', color: '#37474f', bg: '#eceff1' };
   return (
     <span style={{ background: cfg.bg, color: cfg.color }} className="rounded px-1.5 py-0.5 text-xs font-medium">
       {cfg.label}
@@ -113,7 +114,7 @@ export default function TicketsPage() {
       <div className="mb-6">
         <h1 style={{ color: 'var(--on-surface)' }} className="text-2xl font-semibold">Phản ánh / Khiếu nại</h1>
         <p style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-sm">
-          Module M6 — Quản lý tickets từ người dùng
+          Phân hệ M6 — Quản lý phiếu phản ánh từ người dùng
         </p>
       </div>
 
@@ -130,7 +131,7 @@ export default function TicketsPage() {
               }}
               className="rounded-full border px-3 py-1 text-xs font-medium transition-colors"
             >
-              {s === '' ? 'Tất cả' : STATUS_CONFIG[s as TicketStatus]?.label ?? s}
+              {s === '' ? 'Tất cả' : STATUS_CONFIG[s as TicketStatus]?.label ?? 'Trạng thái khác'}
             </button>
           ))}
         </div>
@@ -169,7 +170,7 @@ export default function TicketsPage() {
           <table className="w-full text-sm">
             <thead>
               <tr style={{ background: 'var(--surface-container)', borderBottom: '1px solid var(--outline-variant)' }}>
-                {['ID', 'Loại', 'Nhân viên', 'Trạng thái', 'Ưu tiên', 'Ngày làm việc', 'Chênh lệch', 'Ngày tạo'].map(h => (
+                {[formLabel('code'), 'Loại', 'Nhân viên', formLabel('status'), 'Ưu tiên', 'Ngày làm việc', 'Chênh lệch', formLabel('created')].map(h => (
                   <th key={h} style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-left font-semibold">{h}</th>
                 ))}
               </tr>
@@ -192,7 +193,7 @@ export default function TicketsPage() {
                     {t.workDate ? new Date(t.workDate).toLocaleDateString('vi-VN') : '—'}
                   </td>
                   <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs font-mono">
-                    {t.deltaHours !== null ? `${t.deltaHours}h` : '—'}
+                    {t.deltaHours !== null ? `${t.deltaHours} giờ` : '—'}
                   </td>
                   <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">
                     {new Date(t.createdAt).toLocaleDateString('vi-VN')}
@@ -202,7 +203,7 @@ export default function TicketsPage() {
             </tbody>
           </table>
           <div style={{ borderColor: 'var(--outline-variant)', color: 'var(--on-surface-variant)' }} className="border-t px-4 py-2 text-xs">
-            Tổng: {total} tickets
+            Tổng: {total} phiếu
           </div>
         </div>
       )}

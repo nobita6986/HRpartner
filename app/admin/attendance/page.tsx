@@ -13,6 +13,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import {
+  ATTENDANCE_LABELS,
+  attendanceBatchStatusLabel,
+  attendanceOwnerLabel,
+  attendancePeriodStatusLabel,
+  attendanceSourceLabel,
+} from '@/src/shared/i18n/attendance-labels';
 
 type Tab = 'batches' | 'periods' | 'exceptions';
 type BatchStatus = 'PENDING' | 'PREVIEWED' | 'COMMITTED' | 'FAILED';
@@ -48,7 +55,7 @@ interface UnmatchedRow {
   rawType: string;
 }
 
-function StatusBadge({ status }: { status: BatchStatus | PeriodStatus }) {
+function StatusBadge({ status, label }: { status: BatchStatus | PeriodStatus; label: string }) {
   const colors: Record<string, string> = {
     PENDING: 'var(--warning)',
     PREVIEWED: 'var(--info)',
@@ -63,7 +70,7 @@ function StatusBadge({ status }: { status: BatchStatus | PeriodStatus }) {
       className="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium"
       style={{ background: colors[status] + '20', color: colors[status] ?? 'var(--on-surface-variant)' }}
     >
-      {status}
+      {label}
     </span>
   );
 }
@@ -96,7 +103,7 @@ function ResolveDrawer({
   if (!row) return null;
 
   const submit = async () => {
-    if (!workerCode.trim()) { setError('Nhap ma nhan vien'); return; }
+    if (!workerCode.trim()) { setError(ATTENDANCE_LABELS.missingEmployeeCode); return; }
     setSubmitting(true);
     setError('');
     try {
@@ -107,22 +114,22 @@ function ResolveDrawer({
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        setError(j.message ?? 'Resolve that bai');
+        setError(j.message ?? ATTENDANCE_LABELS.resolveFailed);
         return;
       }
       onResolved(row.id, workerCode.trim());
       onClose();
-    } catch { setError('Network error'); }
+    } catch { setError(ATTENDANCE_LABELS.networkError); }
     finally { setSubmitting(false); }
   };
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end" style={{ background: 'rgba(0,0,0,0.4)' }} onClick={onClose}>
       <div className="h-full w-full max-w-md p-6 shadow-xl" style={{ background: 'var(--surface)' }} onClick={e => e.stopPropagation()}>
-        <h3 className="mb-4 text-lg font-semibold" style={{ color: 'var(--on-surface)' }}>Resolve unmatched row</h3>
-        <p className="mb-2 text-sm" style={{ color: 'var(--on-surface-variant)' }}>Ma nhan vien (raw): <strong>{row.rawEmployeeCode}</strong></p>
-        <p className="mb-4 text-xs" style={{ color: 'var(--on-surface-variant)' }}>Row #{row.rowNumber} -- {row.rawDate} {row.rawTime} {row.rawType}</p>
-        <label className="mb-2 block text-sm font-medium" style={{ color: 'var(--on-surface)' }}>Worker ID (matched)</label>
+        <h3 className="mb-4 text-lg font-semibold" style={{ color: 'var(--on-surface)' }}>{ATTENDANCE_LABELS.unmatchedRow}</h3>
+        <p className="mb-2 text-sm" style={{ color: 'var(--on-surface-variant)' }}>{ATTENDANCE_LABELS.rawEmployeeCode}: <strong>{row.rawEmployeeCode}</strong></p>
+        <p className="mb-4 text-xs" style={{ color: 'var(--on-surface-variant)' }}>{ATTENDANCE_LABELS.lineNumber} #{row.rowNumber} — {row.rawDate} {row.rawTime} {row.rawType}</p>
+        <label className="mb-2 block text-sm font-medium" style={{ color: 'var(--on-surface)' }}>{ATTENDANCE_LABELS.matchedWorkerId}</label>
         <input
           type="text"
           value={workerCode}
@@ -133,9 +140,9 @@ function ResolveDrawer({
         />
         {error && <p className="mb-4 text-sm" style={{ color: 'var(--error)' }}>{error}</p>}
         <div className="flex justify-end gap-3">
-          <button onClick={onClose} className="rounded border px-4 py-2 text-sm" style={{ borderColor: 'var(--outline)', color: 'var(--on-surface)' }}>Huy</button>
+          <button onClick={onClose} className="rounded border px-4 py-2 text-sm" style={{ borderColor: 'var(--outline)', color: 'var(--on-surface)' }}>{ATTENDANCE_LABELS.cancel}</button>
           <button onClick={submit} disabled={submitting} className="rounded px-4 py-2 text-sm font-medium text-white" style={{ background: 'var(--primary-dark)' }}>
-            {submitting ? 'Dang luu...' : 'Resolve'}
+            {submitting ? 'Đang lưu…' : ATTENDANCE_LABELS.resolve}
           </button>
         </div>
       </div>
@@ -161,8 +168,8 @@ function AdjustmentDrawer({
   if (!period) return null;
 
   const submit = async () => {
-    if (!workerId.trim()) { setError('Nhap worker ID'); return; }
-    if (!reason.trim()) { setError('Nhap ly do (required)'); return; }
+    if (!workerId.trim()) { setError(ATTENDANCE_LABELS.missingEmployeeCode); return; }
+    if (!reason.trim()) { setError(ATTENDANCE_LABELS.missingReason); return; }
     setSubmitting(true);
     setError('');
     try {
@@ -173,12 +180,12 @@ function AdjustmentDrawer({
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        setError(j.message ?? 'Tao adjustment that bai');
+        setError(j.message ?? ATTENDANCE_LABELS.adjustmentFailed);
         return;
       }
       onCreated();
       onClose();
-    } catch { setError('Network error'); }
+    } catch { setError(ATTENDANCE_LABELS.networkError); }
     finally { setSubmitting(false); }
   };
 
@@ -186,22 +193,22 @@ function AdjustmentDrawer({
     <div className="fixed inset-0 z-50 flex justify-end" style={{ background: 'rgba(0,0,0,0.4)' }} onClick={onClose}>
       <div className="h-full w-full max-w-md p-6 shadow-xl" style={{ background: 'var(--surface)' }} onClick={e => e.stopPropagation()}>
         <h3 className="mb-4 text-lg font-semibold" style={{ color: 'var(--on-surface)' }}>
-          Tao adjustment -- Thang {period.month}/{period.year} v{period.version}
+          {ATTENDANCE_LABELS.createAdjustment} — {ATTENDANCE_LABELS.month.toLowerCase()} {period.month}/{period.year} v{period.version}
         </h3>
         <p className="mb-4 text-xs" style={{ color: 'var(--on-surface-variant)' }}>
-          Status: {period.status}. ADR-013: LOCKED bat bien -- can REOPEN truoc.
+          {ATTENDANCE_LABELS.statusPrefix}: {attendancePeriodStatusLabel(period.status)}. ADR-013: {ATTENDANCE_LABELS.lockedPeriodNote}
         </p>
-        <label className="mb-2 block text-sm font-medium" style={{ color: 'var(--on-surface)' }}>Worker ID</label>
+        <label className="mb-2 block text-sm font-medium" style={{ color: 'var(--on-surface)' }}>{ATTENDANCE_LABELS.workerId}</label>
         <input type="text" value={workerId} onChange={e => setWorkerId(e.target.value)} className="mb-3 w-full rounded border px-3 py-2 text-sm" style={{ borderColor: 'var(--outline)' }} />
-        <label className="mb-2 block text-sm font-medium" style={{ color: 'var(--on-surface)' }}>Delta hours (positive = +, negative = -)</label>
+        <label className="mb-2 block text-sm font-medium" style={{ color: 'var(--on-surface)' }}>{ATTENDANCE_LABELS.deltaHours}</label>
         <input type="number" step="0.5" value={deltaHours} onChange={e => setDeltaHours(e.target.value)} className="mb-3 w-full rounded border px-3 py-2 text-sm" style={{ borderColor: 'var(--outline)' }} />
-        <label className="mb-2 block text-sm font-medium" style={{ color: 'var(--on-surface)' }}>Reason (required)</label>
-        <textarea value={reason} onChange={e => setReason(e.target.value)} rows={3} className="mb-4 w-full rounded border px-3 py-2 text-sm" style={{ borderColor: 'var(--outline)' }} placeholder="Vi du: di muon 30 phut do tac duong" />
+        <label className="mb-2 block text-sm font-medium" style={{ color: 'var(--on-surface)' }}>{ATTENDANCE_LABELS.reasonRequired}</label>
+        <textarea value={reason} onChange={e => setReason(e.target.value)} rows={3} className="mb-4 w-full rounded border px-3 py-2 text-sm" style={{ borderColor: 'var(--outline)' }} placeholder={ATTENDANCE_LABELS.adjustmentExample} />
         {error && <p className="mb-4 text-sm" style={{ color: 'var(--error)' }}>{error}</p>}
         <div className="flex justify-end gap-3">
-          <button onClick={onClose} className="rounded border px-4 py-2 text-sm" style={{ borderColor: 'var(--outline)', color: 'var(--on-surface)' }}>Huy</button>
+          <button onClick={onClose} className="rounded border px-4 py-2 text-sm" style={{ borderColor: 'var(--outline)', color: 'var(--on-surface)' }}>{ATTENDANCE_LABELS.cancel}</button>
           <button onClick={submit} disabled={submitting} className="rounded px-4 py-2 text-sm font-medium text-white" style={{ background: 'var(--primary-dark)' }}>
-            {submitting ? 'Dang luu...' : 'Tao adjustment'}
+            {submitting ? 'Đang lưu…' : ATTENDANCE_LABELS.createAdjustment}
           </button>
         </div>
       </div>
@@ -260,7 +267,7 @@ export default function AttendancePage() {
           })));
         }
       })
-      .catch(e => setBatchesError(String(e)))
+      .catch(() => setBatchesError(ATTENDANCE_LABELS.loadBatchesFailed))
       .finally(() => setBatchesLoading(false));
   };
 
@@ -281,7 +288,7 @@ export default function AttendancePage() {
           })));
         }
       })
-      .catch(e => setPeriodsError(String(e)))
+      .catch(() => setPeriodsError(ATTENDANCE_LABELS.loadPeriodsFailed))
       .finally(() => setPeriodsLoading(false));
   };
 
@@ -309,7 +316,7 @@ export default function AttendancePage() {
           }
         }
       })
-      .catch(e => setExceptionsError(String(e)))
+      .catch(() => setExceptionsError(ATTENDANCE_LABELS.loadExceptionsFailed))
       .finally(() => setExceptionsLoading(false));
   };
 
@@ -326,9 +333,9 @@ export default function AttendancePage() {
   return (
     <div className="px-6 py-8 lg:px-8" style={{ background: 'var(--surface)' }}>
       <header className="mb-6">
-        <h1 className="text-2xl font-semibold" style={{ color: 'var(--on-surface)' }}>Chấm công</h1>
+        <h1 className="text-2xl font-semibold" style={{ color: 'var(--on-surface)' }}>{ATTENDANCE_LABELS.heading}</h1>
         <p className="mt-1 text-sm" style={{ color: 'var(--on-surface-variant)' }}>
-          Module M7 — slice 4B · F00A moment 06:20–08:30 · Import → taxonomy → Lock
+          {ATTENDANCE_LABELS.summary}
         </p>
       </header>
 
@@ -345,7 +352,7 @@ export default function AttendancePage() {
               marginBottom: '-1px',
             }}
           >
-            {t === 'batches' ? 'Import batch' : t === 'periods' ? 'Kỳ công' : 'Ngoại lệ'}
+            {t === 'batches' ? ATTENDANCE_LABELS.importBatch : t === 'periods' ? ATTENDANCE_LABELS.periods : ATTENDANCE_LABELS.exceptions}
           </button>
         ))}
       </div>
@@ -354,21 +361,21 @@ export default function AttendancePage() {
       {tab === 'batches' && (
         <div>
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-medium" style={{ color: 'var(--on-surface)' }}>Import batch</h2>
+            <h2 className="text-lg font-medium" style={{ color: 'var(--on-surface)' }}>{ATTENDANCE_LABELS.importBatch}</h2>
             <button onClick={() => setShowUploadModal(true)} className="rounded px-4 py-2 text-sm font-medium transition-colors" style={{ background: 'var(--primary-dark)', color: '#fff' }}>
-              + Upload CSV
+              {ATTENDANCE_LABELS.uploadCsv}
             </button>
           </div>
           {batchesLoading ? (
             <div className="overflow-hidden rounded-lg border" style={{ borderColor: 'var(--outline-variant)' }}>
               <table className="w-full text-sm">
                 <thead><tr style={{ background: 'var(--surface-container)' }}>
-                  <th className="px-4 py-3 text-left font-medium">Source</th>
-                  <th className="px-4 py-3 text-left font-medium">Rows</th>
-                  <th className="px-4 py-3 text-left font-medium">Matched</th>
-                  <th className="px-4 py-3 text-left font-medium">Unmatched</th>
-                  <th className="px-4 py-3 text-left font-medium">Anomaly</th>
-                  <th className="px-4 py-3 text-left font-medium">Status</th>
+                  <th className="px-4 py-3 text-left font-medium">{ATTENDANCE_LABELS.source}</th>
+                  <th className="px-4 py-3 text-left font-medium">{ATTENDANCE_LABELS.rows}</th>
+                  <th className="px-4 py-3 text-left font-medium">{ATTENDANCE_LABELS.matched}</th>
+                  <th className="px-4 py-3 text-left font-medium">{ATTENDANCE_LABELS.unmatched}</th>
+                  <th className="px-4 py-3 text-left font-medium">{ATTENDANCE_LABELS.anomaly}</th>
+                  <th className="px-4 py-3 text-left font-medium">{ATTENDANCE_LABELS.status}</th>
                 </tr></thead>
                 <tbody><LoadingRow cols={6} /></tbody>
               </table>
@@ -377,30 +384,30 @@ export default function AttendancePage() {
             <p className="text-sm text-red-500">{batchesError}</p>
           ) : batches.length === 0 ? (
             <div className="rounded-lg border p-8 text-center" style={{ borderColor: 'var(--outline-variant)' }}>
-              <p className="text-sm" style={{ color: 'var(--on-surface-variant)' }}>Chưa có batch nào. Upload file CSV/XLSX để bắt đầu.</p>
+              <p className="text-sm" style={{ color: 'var(--on-surface-variant)' }}>{ATTENDANCE_LABELS.batchEmpty}</p>
             </div>
           ) : (
             <div className="overflow-hidden rounded-lg border" style={{ borderColor: 'var(--outline-variant)' }}>
               <table className="w-full text-sm">
                 <thead><tr style={{ background: 'var(--surface-container)' }}>
-                  <th className="px-4 py-3 text-left font-medium">Source</th>
-                  <th className="px-4 py-3 text-left font-medium">Rows</th>
-                  <th className="px-4 py-3 text-left font-medium">Matched</th>
-                  <th className="px-4 py-3 text-left font-medium">Unmatched</th>
-                  <th className="px-4 py-3 text-left font-medium">Anomaly</th>
-                  <th className="px-4 py-3 text-left font-medium">Status</th>
+                  <th className="px-4 py-3 text-left font-medium">{ATTENDANCE_LABELS.source}</th>
+                  <th className="px-4 py-3 text-left font-medium">{ATTENDANCE_LABELS.rows}</th>
+                  <th className="px-4 py-3 text-left font-medium">{ATTENDANCE_LABELS.matched}</th>
+                  <th className="px-4 py-3 text-left font-medium">{ATTENDANCE_LABELS.unmatched}</th>
+                  <th className="px-4 py-3 text-left font-medium">{ATTENDANCE_LABELS.anomaly}</th>
+                  <th className="px-4 py-3 text-left font-medium">{ATTENDANCE_LABELS.status}</th>
                 </tr></thead>
                 <tbody>
                   {batches.map(b => (
                     <tr key={b.id} className="border-t" style={{ borderColor: 'var(--outline-variant)' }}>
-                      <td className="px-4 py-3">{b.source}</td>
+                      <td className="px-4 py-3">{attendanceSourceLabel(b.source)}</td>
                       <td className="px-4 py-3">{b.totalRows.toLocaleString()}</td>
                       <td className="px-4 py-3" style={{ color: 'var(--success)' }}>{b.matchedRows.toLocaleString()}</td>
                       <td className="px-4 py-3" style={{ color: b.unmatchedRows > 0 ? 'var(--warning)' : 'var(--on-surface)' }}>
                         {b.unmatchedRows}<AnomalyBadge count={b.unmatchedRows} />
                       </td>
                       <td className="px-4 py-3" style={{ color: b.anomalyRows > 0 ? 'var(--warning)' : 'var(--on-surface)' }}>{b.anomalyRows}</td>
-                      <td className="px-4 py-3"><StatusBadge status={b.status} /></td>
+                      <td className="px-4 py-3"><StatusBadge status={b.status} label={attendanceBatchStatusLabel(b.status)} /></td>
                     </tr>
                   ))}
                 </tbody>
@@ -414,7 +421,7 @@ export default function AttendancePage() {
       {tab === 'periods' && (
         <div>
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-medium" style={{ color: 'var(--on-surface)' }}>Kỳ công</h2>
+            <h2 className="text-lg font-medium" style={{ color: 'var(--on-surface)' }}>{ATTENDANCE_LABELS.periods}</h2>
           </div>
           {periodsLoading ? (
             <div className="space-y-3">{[1, 2].map(i => <LoadingRow key={i} cols={4} />)}</div>
@@ -422,7 +429,7 @@ export default function AttendancePage() {
             <p className="text-sm text-red-500">{periodsError}</p>
           ) : periods.length === 0 ? (
             <div className="rounded-lg border p-8 text-center" style={{ borderColor: 'var(--outline-variant)' }}>
-              <p className="text-sm" style={{ color: 'var(--on-surface-variant)' }}>Chưa có kỳ công nào.</p>
+              <p className="text-sm" style={{ color: 'var(--on-surface-variant)' }}>{ATTENDANCE_LABELS.periodEmpty}</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -436,12 +443,12 @@ export default function AttendancePage() {
                       <span className="ml-2 text-xs" style={{ color: 'var(--on-surface-variant)' }}>v{p.version}</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <StatusBadge status={p.status} />
+                      <StatusBadge status={p.status} label={attendancePeriodStatusLabel(p.status)} />
                       {p.status !== 'LOCKED' && (
-                        <button onClick={() => setShowAdjustmentDrawer(p)} className="rounded border px-3 py-1 text-xs font-medium" style={{ borderColor: 'var(--primary-dark)', color: 'var(--primary-dark)' }}>+ Adjustment</button>
+                        <button onClick={() => setShowAdjustmentDrawer(p)} className="rounded border px-3 py-1 text-xs font-medium" style={{ borderColor: 'var(--primary-dark)', color: 'var(--primary-dark)' }}>{ATTENDANCE_LABELS.addAdjustment}</button>
                       )}
                       {p.status === 'REVIEWED' && (
-                        <button className="rounded border px-3 py-1 text-xs font-medium" style={{ borderColor: 'var(--success)', color: 'var(--success)' }}>Approve</button>
+                        <button className="rounded border px-3 py-1 text-xs font-medium" style={{ borderColor: 'var(--success)', color: 'var(--success)' }}>{ATTENDANCE_LABELS.approve}</button>
                       )}
                       {p.status === 'APPROVED' && (
                         <button className="rounded px-3 py-1 text-xs font-semibold text-white" style={{ background: 'var(--primary-dark)' }}>Khóa kỳ</button>
@@ -462,13 +469,13 @@ export default function AttendancePage() {
       {tab === 'exceptions' && (
         <div>
           <div className="mb-4">
-            <h2 className="text-lg font-medium" style={{ color: 'var(--on-surface)' }}>Ngoại lệ công</h2>
-            <p className="mt-1 text-sm" style={{ color: 'var(--on-surface-variant)' }}>Taxonomy G29: 3 loại lỗi → 3 chủ xử lý (KT / HR / PM)</p>
+            <h2 className="text-lg font-medium" style={{ color: 'var(--on-surface)' }}>{ATTENDANCE_LABELS.exceptions}</h2>
+            <p className="mt-1 text-sm" style={{ color: 'var(--on-surface-variant)' }}>{ATTENDANCE_LABELS.exceptionSummary}</p>
           </div>
           <div className="mb-4 flex gap-3">
             {(['ALL', 'KT', 'HR', 'PM'] as const).map(owner => (
               <button key={owner} className="rounded border px-3 py-1 text-xs font-medium" style={{ borderColor: 'var(--outline)', color: owner === 'ALL' ? 'var(--primary-dark)' : 'var(--on-surface-variant)', background: 'transparent' }}>
-                {owner === 'ALL' ? 'Tất cả' : owner}
+                {attendanceOwnerLabel(owner)}
               </button>
             ))}
           </div>
@@ -480,17 +487,17 @@ export default function AttendancePage() {
             <p className="text-sm text-red-500">{exceptionsError}</p>
           ) : exceptions.length === 0 ? (
             <div className="rounded-lg border p-8 text-center" style={{ borderColor: 'var(--outline-variant)' }}>
-              <p className="text-sm" style={{ color: 'var(--on-surface-variant)' }}>Khong co ngoai le nao.</p>
+              <p className="text-sm" style={{ color: 'var(--on-surface-variant)' }}>{ATTENDANCE_LABELS.exceptionEmpty}</p>
             </div>
           ) : (
             <div className="overflow-hidden rounded-lg border" style={{ borderColor: 'var(--outline-variant)' }}>
               <table className="w-full text-sm">
                 <thead><tr style={{ background: 'var(--surface-container)' }}>
-                  <th className="px-4 py-3 text-left font-medium">ID</th>
-                  <th className="px-4 py-3 text-left font-medium">Employee code</th>
-                  <th className="px-4 py-3 text-left font-medium">Date</th>
-                  <th className="px-4 py-3 text-left font-medium">Time</th>
-                  <th className="px-4 py-3 text-left font-medium">Action</th>
+                  <th className="px-4 py-3 text-left font-medium">{ATTENDANCE_LABELS.id}</th>
+                  <th className="px-4 py-3 text-left font-medium">{ATTENDANCE_LABELS.employeeCode}</th>
+                  <th className="px-4 py-3 text-left font-medium">{ATTENDANCE_LABELS.date}</th>
+                  <th className="px-4 py-3 text-left font-medium">{ATTENDANCE_LABELS.time}</th>
+                  <th className="px-4 py-3 text-left font-medium">{ATTENDANCE_LABELS.action}</th>
                 </tr></thead>
                 <tbody>
                   {exceptions.map(row => (
@@ -500,7 +507,7 @@ export default function AttendancePage() {
                       <td className="px-4 py-3">{row.rawDate}</td>
                       <td className="px-4 py-3">{row.rawTime}</td>
                       <td className="px-4 py-3">
-                        <button onClick={() => setShowResolveDrawer(row)} className="rounded border px-3 py-1 text-xs font-medium" style={{ borderColor: 'var(--primary-dark)', color: 'var(--primary-dark)' }}>Resolve</button>
+                        <button onClick={() => setShowResolveDrawer(row)} className="rounded border px-3 py-1 text-xs font-medium" style={{ borderColor: 'var(--primary-dark)', color: 'var(--primary-dark)' }}>{ATTENDANCE_LABELS.resolve}</button>
                       </td>
                     </tr>
                   ))}
@@ -515,8 +522,8 @@ export default function AttendancePage() {
       {showUploadModal && (
         <div className="fixed inset-0 flex items-center justify-center z-50" style={{ background: 'rgba(0,0,0,0.4)' }} onClick={() => setShowUploadModal(false)}>
           <div className="w-full max-w-md rounded-xl p-6 shadow-xl" style={{ background: 'var(--surface)' }} onClick={e => e.stopPropagation()}>
-            <h3 className="mb-4 text-lg font-semibold" style={{ color: 'var(--on-surface)' }}>Upload file chấm công</h3>
-            <p className="text-sm text-gray-500 mb-4">Chuc nang upload CSV/XLSX — xem lai API route /api/attendance/import POST</p>
+            <h3 className="mb-4 text-lg font-semibold" style={{ color: 'var(--on-surface)' }}>{ATTENDANCE_LABELS.uploadTitle}</h3>
+            <p className="text-sm text-gray-500 mb-4">{ATTENDANCE_LABELS.uploadDescription}</p>
             <div className="flex justify-end gap-3">
               <button onClick={() => setShowUploadModal(false)} className="rounded border px-4 py-2 text-sm" style={{ borderColor: 'var(--outline)', color: 'var(--on-surface)' }}>Hủy</button>
             </div>
