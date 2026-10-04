@@ -83,6 +83,15 @@ type Row = {
   id: string;
   slug: string;
   title: string | null;
+  /** hrp-ui-v1-public-card-truth-correction (T1A / RQ-10): author-entered salaryDisplay
+   * text. Mapper đọc từ JobPosting row. */
+  salaryDisplay?: string | null;
+  /** hrp-p1-a0-1 / hrp-ui-v1-job-card-stamps-brand (T1B) / hrp-ui-v1-public-card-truth-correction
+   * (T1A): 4 canonical boolean ở JobPosting top-level. */
+  isHot?: boolean;
+  isUrgent?: boolean;
+  isHighReward?: boolean;
+  isExpiringSoon?: boolean;
   /** hrp-p1-a1: các field cấm cho phép dirty row đặt thêm để chứng minh mapper KHÔNG lộ. */
   clientCompanyId?: string;
   internalNotes?: string;
@@ -541,11 +550,14 @@ describe('AC-01/AC-03, DEC-10/RISK-01/RISK-07 — DTO đúng allow-list, JSON an
   // dưới — thứ được công bố là con số, không phải cột.
   // hrp-ui-v1-job-card-stamps-brand (T1B / RQ-13): thêm 2 author-selected flag canonical
   // — `isHighReward` + `isExpiringSoon`. Cùng convention với `isHot`/`isUrgent`.
+  // hrp-ui-v1-public-card-truth-correction (T1A / RQ-09, RQ-10): thêm `salaryDisplay` (verbatim
+  // author-entered text, `null` khi tác giả không nhập) — card render theo `formatPublicSalary`
+  // precedence 1→2→3.
   const PUBLIC_KEYS = [
     'availableSlots', 'companyName', 'deadline', 'id', 'isExpiringSoon', 'isHighReward',
     'isHot', 'isUrgent', 'jobType', 'location', 'locations', 'position', 'positionTitles',
-    'postedAt', 'salaryMaxVnd', 'salaryMinVnd', 'shift', 'shiftType', 'shifts', 'slug',
-    'statusLabel', 'title', 'urgency',
+    'postedAt', 'salaryDisplay', 'salaryMaxVnd', 'salaryMinVnd', 'shift', 'shiftType',
+    'shifts', 'slug', 'statusLabel', 'title', 'urgency',
   ];
 
   it('card DTO có ĐÚNG tập khóa công khai, không thừa một khóa nào', async () => {
@@ -623,5 +635,117 @@ describe('AC-01/AC-03, DEC-10/RISK-01/RISK-07 — DTO đúng allow-list, JSON an
     const job = await onlyJob([row()]);
 
     expect(job.statusLabel).toBe('Đang tuyển');
+  });
+});
+
+/**
+ * hrp-ui-v1-public-card-truth-correction (T1A / RQ-09, RQ-10, RQ-12) — Production-repro fixtures
+ * chứng minh bốn defect T0 §4 đã được sửa ở projection: 4 boolean + `salaryDisplay` round-trip
+ * tới DTO công khai, không suy từ `hourlyRateVnd` hay heuristic.
+ */
+describe('T1A/RQ-09..RQ-12 — Production-repro: 4 flag + salaryDisplay round-trip trên DTO', () => {
+  it('"Nhân viên kho" reproduction: highReward + expiring round-trip; salaryDisplay "20 triệu" không bị overwrite bởi hourly 26000', async () => {
+    // T0 §4 production payload:
+    //   isHot=false, isUrgent=false, isHighReward=true, isExpiringSoon=true
+    //   hourlyRateVnd = 26000 (suy salaryMinVnd/MaxVnd)
+    //   salaryDisplay = "20 triệu" (verbatim author)
+    // Expected: DTO mang salaryDisplay="20 triệu" (verbatim) + 4 flag round-trip.
+    // Card render: 2 stamp (Sắp hết hạn + Thưởng cao theo rank) + "20 triệu" (không "26.000 đ/giờ").
+    const dirty = row({
+      slug: 'nhan-vien-kho-0-77a4f7e0',
+      title: 'Nhân viên kho',
+      staffingOrders: [
+        order(slot({
+          positionCode: 'WH-01',
+          hourlyRateVnd: 26000n,
+        }), {
+          // Pass salaryDisplay xuống dòng thô (mapper copy sang DTO).
+          // Stub: buildRow không hỗ trợ trực tiếp, dùng cơ chế sau:
+          // StaffingOrderSlot không có field salaryDisplay — mapper đọc từ JobPosting (cấp cha).
+          // Stub fixture mang dưới key tạm để test xác nhận mapper copy xuống DTO.
+        }),
+      ],
+    });
+    // Inject salaryDisplay + 4 flag vào row thô (JobPosting-level, mapper đọc từ đây).
+    const job = await onlyJob([
+      {
+        ...dirty,
+        isHot: false,
+        isUrgent: false,
+        isHighReward: true,
+        isExpiringSoon: true,
+        salaryDisplay: '20 triệu',
+      } as unknown as Row,
+    ]);
+
+    // 4 flag round-trip.
+    expect(job.isHot).toBe(false);
+    expect(job.isUrgent).toBe(false);
+    expect(job.isHighReward).toBe(true);
+    expect(job.isExpiringSoon).toBe(true);
+    // salaryDisplay verbatim round-trip — mapper KHÔNG suy từ hourlyRateVnd.
+    expect(job.salaryDisplay).toBe('20 triệu');
+    // salaryMinVnd/MaxVnd vẫn mang theo (cho fallback path), nhưng card KHÔNG dùng khi salaryDisplay
+    // non-empty (precedence 1 trong formatPublicSalary).
+    expect(job.salaryMinVnd).toBe(26_000);
+    expect(job.salaryMaxVnd).toBe(26_000);
+  });
+
+  it('"Thợ điện" reproduction: urgent + null hourly; salaryDisplay "20 triệu" round-trip (không suy "Lương thương lượng")', async () => {
+    // T0 §4 production payload:
+    //   isUrgent=true, còn lại false; salaryMinVnd=null, salaryMaxVnd=null
+    //   salaryDisplay = "20 triệu" (verbatim author)
+    // Expected: DTO mang salaryDisplay="20 triệu" + isUrgent=true + 3 flag còn lại=false.
+    const dirty = row({
+      slug: 'tho-dien-0-08d57fb2',
+      title: 'Thợ điện',
+      staffingOrders: [
+        order(slot({
+          positionCode: 'ELEC-01',
+          hourlyRateVnd: null, // ⇒ salaryMinVnd/MaxVnd = null
+        })),
+      ],
+    });
+    const job = await onlyJob([
+      {
+        ...dirty,
+        isHot: false,
+        isUrgent: true,
+        isHighReward: false,
+        isExpiringSoon: false,
+        salaryDisplay: '20 triệu',
+      } as unknown as Row,
+    ]);
+
+    expect(job.isUrgent).toBe(true);
+    expect(job.isHighReward).toBe(false);
+    expect(job.isExpiringSoon).toBe(false);
+    expect(job.salaryDisplay).toBe('20 triệu');
+    // null hourly round-trip — fallback path vẫn chạy được.
+    expect(job.salaryMinVnd).toBeNull();
+    expect(job.salaryMaxVnd).toBeNull();
+  });
+
+  it('salaryDisplay rỗng + hourly 26000 round-trip (fallback path active)', async () => {
+    const dirty = row({
+      staffingOrders: [order(slot({ hourlyRateVnd: 26000n }))],
+    });
+    const job = await onlyJob([{ ...dirty, salaryDisplay: '' } as unknown as Row]);
+
+    expect(job.salaryDisplay).toBe('');
+    expect(job.salaryMinVnd).toBe(26_000);
+    // formatPublicSalary sẽ fallback: salaryLabel(26000, 26000) = "26.000 đ/giờ".
+    // (Đo lường trực tiếp fallback ở unit test formatPublicSalary; ở đây chỉ khẳng định DTO round-trip.)
+  });
+
+  it('salaryDisplay rỗng + hourly null round-trip (cả hai đều null ⇒ "Lương thương lượng")', async () => {
+    const dirty = row({
+      staffingOrders: [order(slot({ hourlyRateVnd: null }))],
+    });
+    const job = await onlyJob([{ ...dirty, salaryDisplay: null } as unknown as Row]);
+
+    expect(job.salaryDisplay).toBeNull();
+    expect(job.salaryMinVnd).toBeNull();
+    expect(job.salaryMaxVnd).toBeNull();
   });
 });

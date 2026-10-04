@@ -120,21 +120,38 @@ describe('AC-07: URGENT tab Quick Apply mo ApplyModal cho job that', () => {
 });
 
 describe('Y10.6/UI04j r2: Rubber stamp redesign — không viền đen, ink texture grunge, 3D shadow', () => {
-  it('stamp blinks between 70% and 100% opacity with reduced-motion fallback', () => {
+  it('stamp blinks between 70% and 100% opacity with reduced-motion fallback — đã giao cho JobStampOverlay', () => {
+    // hrp-ui-v1-public-card-truth-correction (T1A): shared visual đã move vào
+    // `<JobStampOverlay>` (`stamp-overlay.tsx`). featured-job-card KHÔNG mang class hook trực
+    // tiếp; check ở JobStampOverlay + globals.css.
+    const overlay = readFileSync(
+      join(process.cwd(), 'src/domains/job-board/components/landing/stamp-overlay.tsx'),
+      'utf8',
+    ).replace(/\r\n/g, '\n');
     const globals = readFileSync(join(process.cwd(), 'app/globals.css'), 'utf8').replace(/\r\n/g, '\n');
-    expect(CARD).toContain('job-stamp-attention');
-    expect(CARD).toContain('motion-reduce:animate-none');
-    expect(CARD).toContain('motion-reduce:opacity-100');
+    expect(overlay).toContain('job-stamp-attention');
+    expect(overlay).toContain('motion-reduce:animate-none');
+    expect(overlay).toContain('motion-reduce:opacity-100');
     expect(globals).toContain('@keyframes job-stamp-blink');
     expect(globals).toContain('opacity: 0.7');
     expect(globals).toContain('opacity: 1');
   });
 
-  it('RubberStamp renders với rounded-full + shadow-2xl (không border đen)', () => {
-    // Y10.6/UI04j r2: stamp tròn, KHÔNG có viền đen dashed
-    expect(CARD).toContain('rounded-full');
-    expect(CARD).toContain('shadow-2xl');
-    expect(CARD).toContain('RubberStamp');
+  it('RubberStamp/JobStampOverlay renders với rounded-full + shadow-2xl (không border đen)', () => {
+    // Y10.6/UI04j r2 + hrp-ui-v1-public-card-truth-correction (T1A): visual 3D tilted giờ
+    // ở `<JobStampOverlay>` (`stamp-overlay.tsx`) — featured-job-card KHÔNG chứa local
+    // `function RubberStamp`. Stamp body (rounded-full, shadow-2xl, radial-gradient, boxShadow,
+    // inset-1.5) đã được move sang component shared.
+    expect(CARD).not.toMatch(/function\s+RubberStamp\s*\(/);
+    // featured-job-card KHÔNG mang visual ink inline; check ở shared stamp-overlay:
+    const overlay = readFileSync(
+      join(process.cwd(), 'src/domains/job-board/components/landing/stamp-overlay.tsx'),
+      'utf8',
+    ).replace(/\r\n/g, '\n');
+    expect(overlay).toContain('rounded-full');
+    expect(overlay).toContain('shadow-2xl');
+    expect(overlay).toContain('radial-gradient');
+    expect(overlay).toContain('boxShadow');
   });
 
   it('stamp KHÔNG còn border-dashed (bỏ viền đen)', () => {
@@ -142,45 +159,81 @@ describe('Y10.6/UI04j r2: Rubber stamp redesign — không viền đen, ink text
     expect(CARD).not.toContain('border-dashed');
   });
 
-  it('stamp uses bgClass cho background (ink fill)', () => {
-    // Y10.6/UI04j r2: bgClass là mực (orange-500, red-500, amber-500, orange-400)
-    expect(CARD).toContain('def.bgClass');
+  it('stamp uses bgClass cho background (ink fill) — đã giao cho JobStampOverlay', () => {
+    // Y10.6/UI04j r2 + T1A: visual ink giờ ở `<JobStampOverlay>` (shared). featured-job-card
+    // KHÔNG mang `def.bgClass` inline.
+    const overlay = readFileSync(
+      join(process.cwd(), 'src/domains/job-board/components/landing/stamp-overlay.tsx'),
+      'utf8',
+    ).replace(/\r\n/g, '\n');
+    expect(overlay).toContain('def.bgClass');
+    expect(CARD).not.toContain('def.bgClass');
   });
 
-  it('stamp text uppercase với tracking-widest', () => {
-    // Y10.6/UI04j r2: label uppercase + tracking-widest (bold stamp feel)
-    expect(CARD).toContain('uppercase');
-    expect(CARD).toContain('tracking-widest');
+  it('stamp text uppercase với tracking-widest — đã giao cho JobStampOverlay', () => {
+    // Y10.6/UI04j r2 + T1A: visual giờ ở `<JobStampOverlay>` (shared). featured-job-card KHÔNG
+    // mang `uppercase` / `tracking-widest` inline cho stamp label.
+    const overlay = readFileSync(
+      join(process.cwd(), 'src/domains/job-board/components/landing/stamp-overlay.tsx'),
+      'utf8',
+    ).replace(/\r\n/g, '\n');
+    expect(overlay).toContain('uppercase');
+    expect(overlay).toContain('tracking-widest');
   });
 
-  it('stamp tilted theo rotateDeg từ stamp-defs', () => {
-    // Y10.6/UI04j r2: rotation động theo def.rotateDeg
-    expect(CARD).toContain('rotate(');
-    expect(CARD).toContain('def.rotateDeg');
+  it('stamp tilted theo rotateDeg từ stamp-defs — đã giao cho JobStampOverlay', () => {
+    // Y10.6/UI04j r2 + T1A: rotation động theo def.rotateDeg, đã move sang `<JobStampOverlay>`.
+    const overlay = readFileSync(
+      join(process.cwd(), 'src/domains/job-board/components/landing/stamp-overlay.tsx'),
+      'utf8',
+    ).replace(/\r\n/g, '\n');
+    expect(overlay).toContain('rotate(');
+    expect(overlay).toContain('def.rotateDeg');
   });
 
-  it('stamp có grunge ink texture bằng radial-gradient', () => {
-    // Y10.6/UI04j r2: ink texture grunge (nhiều radial gradient lốm đốm)
-    expect(CARD).toContain('radial-gradient');
+  it('stamp grunge ink + 3D depth + inner ring đã giao cho JobStampOverlay', () => {
+    // Y10.6/UI04j r2 + hrp-ui-v1-public-card-truth-correction (T1A): visual ink/grunge/3D
+    // đã chuyển vào `<JobStampOverlay>` (single source of truth). featured-job-card KHÔNG
+    // mang visual inline.
+    const overlay = readFileSync(
+      join(process.cwd(), 'src/domains/job-board/components/landing/stamp-overlay.tsx'),
+      'utf8',
+    ).replace(/\r\n/g, '\n');
+    expect(overlay).toContain('radial-gradient');
+    expect(overlay).toContain('boxShadow');
+    expect(overlay).toContain('inset-1.5');
   });
 
-  it('stamp có boxShadow cho 3D depth', () => {
-    // Y10.6/UI04j r2: shadow có màu theo stamp (amber/orange/red)
-    expect(CARD).toContain('boxShadow');
+  it('stamp 3D boxShadow đã giao cho JobStampOverlay', () => {
+    // Y10.6/UI04j r2 + T1A: shadow có màu theo stamp (amber/orange/red), đã move sang
+    // `<JobStampOverlay>`.
+    const overlay = readFileSync(
+      join(process.cwd(), 'src/domains/job-board/components/landing/stamp-overlay.tsx'),
+      'utf8',
+    ).replace(/\r\n/g, '\n');
+    expect(overlay).toContain('boxShadow');
   });
 
-  it('stamp có inner ring (vòng tròn mực bên trong)', () => {
-    // Y10.6/UI04j r2: inner ring line kiểu con dấu
-    expect(CARD).toContain('inset-1.5');
-    expect(CARD).toContain('rounded-full');
-    expect(CARD).toContain('border-2');
+  it('stamp inner ring (vòng tròn mực bên trong) đã giao cho JobStampOverlay', () => {
+    // Y10.6/UI04j r2 + T1A: inner ring line kiểu con dấu, đã move sang `<JobStampOverlay>`.
+    const overlay = readFileSync(
+      join(process.cwd(), 'src/domains/job-board/components/landing/stamp-overlay.tsx'),
+      'utf8',
+    ).replace(/\r\n/g, '\n');
+    expect(overlay).toContain('inset-1.5');
+    expect(overlay).toContain('rounded-full');
+    expect(overlay).toContain('border-2');
   });
 
-  it('stamp tràn vừa phải ra ngoài card (negative top/left, 8px)', () => {
-    // Y10.8+: stamp tràn -top-2 -left-2 (8px) — đủ nổi bật, không quá sâu.
-    expect(CARD).toContain('-top-2');
-    expect(CARD).toContain('-left-2');
-    expect(CARD).not.toContain('-right-2');
+  it('stamp offset -8px tràn qua viền đã giao cho JobStampOverlay', () => {
+    // Y10.8 + T1A: stamp tràn -top-2 -left-2 (8px) — đủ nổi bật, không quá sâu. Visual này đã
+    // move sang `<JobStampOverlay>`.
+    const overlay = readFileSync(
+      join(process.cwd(), 'src/domains/job-board/components/landing/stamp-overlay.tsx'),
+      'utf8',
+    ).replace(/\r\n/g, '\n');
+    expect(overlay).toContain('-8 + offsetY');
+    expect(overlay).toContain('-8 + offsetX');
   });
 
   it('card KHÔNG còn overflow-hidden (để stamp tràn ra được)', () => {
@@ -190,22 +243,28 @@ describe('Y10.6/UI04j r2: Rubber stamp redesign — không viền đen, ink text
     expect(cardClassLine![0]).not.toContain('overflow-hidden');
   });
 
-  it('render nhiều stamp — mỗi stamp có wrapper riêng có data-testid="job-stamp"', () => {
-    // hrp-p1-a0-1 (DEC-06, T0 §1.4): multi-stamp layout — wrapper TỪNG stamp có class
-    // `.job-stamp-attention` riêng để chỉ stamp animate (KHÔNG animate toàn card).
-    // `stamps.map(...)` render tất cả stamp đã sort theo STAMP_RANK.
-    expect(CARD).toMatch(/stamps\.map\(/);
-    expect(CARD).toContain('data-testid="job-stamp"');
-    // Mỗi stamp có wrapper riêng có `data-stamp-key` và `data-stamp-index` để test có thể verify
-    // multi-stamp ordering. Index dùng để lệch vị trí các stamp.
-    expect(CARD).toContain('data-stamp-key={stampKey}');
-    expect(CARD).toContain('data-stamp-index={idx}');
+  it('multi-stamp wrapper (data-testid="job-stamp") + offset — đã giao cho JobStampOverlay', () => {
+    // hrp-p1-a0-1 (DEC-06, T0 §1.4) + T1A: multi-stamp layout — wrapper TỪNG stamp có class
+    // `.job-stamp-attention` riêng để chỉ stamp animate (KHÔNG animate toàn card). Wrapper
+    // đã chuyển vào `<JobStampOverlay>`; featured-job-card KHÔNG mang inline stamp wrapper.
+    const overlay = readFileSync(
+      join(process.cwd(), 'src/domains/job-board/components/landing/stamp-overlay.tsx'),
+      'utf8',
+    ).replace(/\r\n/g, '\n');
+    expect(overlay).toMatch(/keys\.map\(/);
+    expect(overlay).toContain('data-testid="job-stamp"');
+    expect(overlay).toContain('data-stamp-key={stampKey}');
+    expect(overlay).toContain('data-stamp-index={idx}');
+    expect(CARD).not.toContain('data-testid="job-stamp"');
   });
 
-  it('stamp có pointer-events-none trên wrapper', () => {
-    // Y10.6/UI04j r2: wrapper có pointer-events-none
-    const pointerIdx = CARD.indexOf('pointer-events-none');
-    expect(pointerIdx).toBeGreaterThanOrEqual(0);
+  it('stamp pointer-events-none đã giao cho JobStampOverlay', () => {
+    // Y10.6/UI04j r2 + T1A: wrapper có pointer-events-none, đã move sang `<JobStampOverlay>`.
+    const overlay = readFileSync(
+      join(process.cwd(), 'src/domains/job-board/components/landing/stamp-overlay.tsx'),
+      'utf8',
+    ).replace(/\r\n/g, '\n');
+    expect(overlay).toContain('pointer-events-none');
   });
 
   it('stamp-defs có 4 stamp keys', () => {
@@ -316,8 +375,15 @@ describe('AC-16: Lucide icons — MapPin, Clock3, Banknote', () => {
   });
 
   it('stamp registry import Flame tu lucide-react (Y10.4/UI04g)', () => {
-    // Y10.4/UI04g: Flame moved to stamp-defs.ts; CARD import STAMPS từ stamp-defs.
-    expect(CARD).toContain("from './stamp-defs'");
+    // Y10.4/UI04g + hrp-ui-v1-public-card-truth-correction (T1A): Flame moved to stamp-defs.ts;
+    // featured-job-card KHÔNG import trực tiếp stamp-defs nữa — nó import `<JobStampOverlay>`
+    // từ `./stamp-overlay` (shared). Registry giờ ở stamp-defs; check ở đó.
+    const overlay = readFileSync(
+      join(process.cwd(), 'src/domains/job-board/components/landing/stamp-overlay.tsx'),
+      'utf8',
+    ).replace(/\r\n/g, '\n');
+    expect(STAMPS).toContain('Flame');
+    expect(overlay).toContain("from './stamp-defs'");
   });
 
   it('decorative icons co aria-hidden="true"', () => {
@@ -352,9 +418,16 @@ describe('AC-17: Salary pill — bg-emerald-50 text-emerald-700, KHONG full-widt
     expect(salaryBlock).toContain('Banknote');
   });
 
-  it('"Luong thuong luong" fallback khi salaryMinVnd null', () => {
+  it('"Luong thuong luong" fallback khi salaryMinVnd null — đã giao cho shared resolver', () => {
+    // hrp-ui-v1-public-card-truth-correction (T1A / RC-03): card không tự build fallback string
+    // nữa — `formatPublicSalary` ở `public-listing.labels.ts` là single source. Static test
+    // xác nhận resolver có branch "Lương thương lượng" + call chain đúng (min === null).
     expect(CARD).toContain('Lương thương lượng');
-    expect(CARD).toContain("min === null");
+    const labels = readFileSync(
+      join(process.cwd(), 'src/domains/job-board/public-listing.labels.ts'),
+      'utf8',
+    ).replace(/\r\n/g, '\n');
+    expect(labels).toContain("min === null");
   });
 
   // 04c2 Owner #3: Salary pill co them border-emerald-100
@@ -656,5 +729,76 @@ describe('Additional: Service filter urgency before pagination (DEC-02)', () => 
     const filterIdx = svc.indexOf('opts.urgency || job.urgency');
     const filterBlock = svc.slice(filterIdx, filterIdx + 300);
     expect(filterBlock).toContain('URGENT');
+  });
+});
+
+describe('hrp-ui-v1-public-card-truth-correction (T1A / RQ-06..RQ-08) — 4 flag + salary precedence', () => {
+  it('featured-job-card nhận đủ 4 flag canonical + salaryDisplay', () => {
+    // 4 boolean + salaryDisplay prop đã được declare ở `FeaturedJobCardProps['job']`.
+    // T1A note: `isHot` và `isUrgent` đến từ `EnrichedJob` (page.tsx), không phải prop trực tiếp —
+    // nhưng `isHighReward`, `isExpiringSoon`, `salaryDisplay` phải có mặt.
+    expect(CARD).toContain('isHighReward?:');
+    expect(CARD).toContain('isExpiringSoon?:');
+    expect(CARD).toContain('salaryDisplay?:');
+  });
+
+  it('JobStampOverlay element truyền đủ 4 boolean cho shared renderer', () => {
+    // T1A / RC-02 fix — featured-job-card element `<JobStampOverlay` phải truyền đủ 4 flag.
+    // `<JobStampOverlay` xuất hiện trong docblock/comment trước — indexOf lần đầu trỏ vào
+    // comment; ta tìm từ sau comment `*/` để lấy element JSX thật.
+    const overlayIdx = CARD.indexOf('<JobStampOverlay');
+    expect(overlayIdx).toBeGreaterThan(0);
+    // Phần tử JSX thật nằm sau comment — tìm qua pattern `<JobStampOverlay\n` (newline sau
+    // tên element) để tránh match trong comment.
+    const realIdx = CARD.indexOf('<JobStampOverlay\n', overlayIdx);
+    expect(realIdx, 'phải có <JobStampOverlay\\n element').toBeGreaterThan(overlayIdx);
+    const overlayBlock = CARD.slice(realIdx, realIdx + 600);
+    expect(overlayBlock).toMatch(/isHot=/);
+    expect(overlayBlock).toMatch(/isUrgent=/);
+    expect(overlayBlock).toMatch(/isHighReward=/);
+    expect(overlayBlock).toMatch(/isExpiringSoon=/);
+    // KHÔNG có `stamps=` prop — đó là RC-02.
+    expect(overlayBlock).not.toMatch(/stamps=/);
+  });
+
+  it('featured-job-card import `formatPublicSalary` từ `public-listing.labels`', () => {
+    // RC-03: card KHÔNG tự build salary string — phải dùng shared resolver.
+    expect(CARD).toMatch(
+      /import\s*\{[^}]*formatPublicSalary[^}]*\}\s*from\s*['"]@?\/src\/domains\/job-board\/public-listing\.labels['"]/,
+    );
+  });
+
+  it('card KHÔNG tự build salary string inline cũ (RC-03: drift)', () => {
+    // Sau hotfix, salary render đi qua `formatPublicSalary({...})` — KHÔNG phải call inline cũ.
+    expect(CARD).not.toMatch(/salaryLabel\(\s*job\.salaryMinVnd\s*,\s*job\.salaryMaxVnd\s*\)/);
+  });
+
+  it('salary precedence (trong `formatPublicSalary`): trim salaryDisplay → fallback hourly → fallback "Lương thương lượng"', () => {
+    const labels = readFileSync(
+      join(process.cwd(), 'src/domains/job-board/public-listing.labels.ts'),
+      'utf8',
+    ).replace(/\r\n/g, '\n');
+    expect(labels).toContain('export function formatPublicSalary');
+    expect(labels).toContain('salaryDisplay?.trim()');
+    expect(labels).toContain('return salaryLabel(input.salaryMinVnd, input.salaryMaxVnd)');
+  });
+
+  it('salary render KHÔNG thêm `đ/giờ` vào salaryDisplay verbatim', () => {
+    // T0 §6.C.1: author verbatim KHÔNG thêm đ/giờ. Đo trên shared resolver.
+    const labels = readFileSync(
+      join(process.cwd(), 'src/domains/job-board/public-listing.labels.ts'),
+      'utf8',
+    ).replace(/\r\n/g, '\n');
+    expect(labels).not.toMatch(/trimmed[\s\S]{0,200}\+\s*['"`]\s*đ\/giờ\s*['"`]/);
+  });
+
+  it('Production-repro "Nhân viên kho" — salaryDisplay "20 triệu" thắng hourly 26000', () => {
+    // Static test đo resolver với input đúng production payload.
+    const labels = readFileSync(
+      join(process.cwd(), 'src/domains/job-board/public-listing.labels.ts'),
+      'utf8',
+    ).replace(/\r\n/g, '\n');
+    // Source phải có branch precedence 1 (`salaryDisplay.trim() !== ''`).
+    expect(labels).toMatch(/trimmed[\s\S]{0,200}return\s+trimmed/);
   });
 });

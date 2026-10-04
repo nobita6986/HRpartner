@@ -72,15 +72,15 @@ import {
   publicJobMetaText,
 } from '@/src/domains/job-board/public-detail.meta';
 import { GallerySection } from '@/src/domains/job-board/components/detail/gallery-section';
-import { ContentSection, CtvInfoSection } from '@/src/domains/job-board/components/detail/content-section';
+import { CtvInfoSection } from '@/src/domains/job-board/components/detail/content-section';
 import { EmployerSidebar } from '@/src/domains/job-board/components/detail/employer-sidebar';
 import { RelatedJobsSection } from '@/src/domains/job-board/components/detail/related-jobs-section';
 import { renderJobPostingRichText } from '@/src/shared/content/job-posting-rich-text';
 import { CtvInfoSectionContent, EmployerSidebarContent, GallerySectionContent } from '@/src/domains/job-board/public-types';
 import {
-  deriveStampsFromFlags,
-} from '@/src/domains/job-board/components/landing/stamp-defs';
-import { JobStampBadge } from '@/src/domains/job-board/components/landing/stamp-badge';
+  JobStampOverlay,
+} from '@/src/domains/job-board/components/landing/stamp-overlay';
+import { formatPublicSalary } from '@/src/domains/job-board/public-listing.labels';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -357,23 +357,16 @@ export default async function PublicJobDetailPage({ params }: PageProps) {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--color-on-surface)' }}>{job.title}</h1>
-            {/* hrp-p1-a0-1 (DEC-05, C-05): detail page render stamps từ canonical boolean
-                `JobPosting.isHot`/`isUrgent` qua shared `<JobStampBadge>` — single source
-                với listing + homepage FeaturedJobCard. 0.7↔1.0 animation per stamp qua class
-                `.job-stamp-attention`; reduced-motion tắt animation.
-                hrp-ui-v1-job-card-stamps-brand (T1B / RQ-06 / RQ-12): 4 flag canonical —
-                bổ sung isHighReward + isExpiringSoon. */}
-            <JobStampBadge
+            {/* hrp-ui-v1-public-card-truth-correction (T1A / DEC-07 / RC-01+RC-02): detail page
+                dùng CÙNG shared `<JobStampOverlay>` (3D tilted rubber stamp, tràn viền) với
+                homepage FeaturedJobCard + `/viec-lam` listing — một visual duy nhất. Component
+                tự derive từ 4 boolean; KHÔNG pre-compute `stamps: StampKey[]` để tránh partial
+                override (RC-02). */}
+            <JobStampOverlay
               isHot={job.isHot}
               isUrgent={job.isUrgent}
               isHighReward={job.isHighReward}
               isExpiringSoon={job.isExpiringSoon}
-              stamps={deriveStampsFromFlags(
-                job.isHot,
-                job.isUrgent,
-                job.isHighReward,
-                job.isExpiringSoon,
-              )}
               size="md"
             />
           </div>
@@ -399,6 +392,19 @@ export default async function PublicJobDetailPage({ params }: PageProps) {
         </div>
 
         <dl className="mt-5 grid gap-3 sm:grid-cols-3">
+          {/* hrp-ui-v1-public-card-truth-correction (T1A / DEC-09 / RQ-11 / RC-03):
+              public detail PHẢI hiển thị salaryDisplay trong fact/chip — không chỉ mang field
+              trong DTO rồi bỏ không (ghi chú RC-03). Dùng `formatPublicSalary` để cùng
+              precedence (1 author-verbatim → 2 hourly/range → 3 "Lương thương lượng") với
+              homepage + listing. */}
+          <Fact
+            label="Mức lương"
+            value={formatPublicSalary({
+              salaryDisplay: job.salaryDisplay,
+              salaryMinVnd: job.salaryMinVnd,
+              salaryMaxVnd: job.salaryMaxVnd,
+            })}
+          />
           <Fact
             label="Chỗ trống"
             value={isFull ? job.statusLabel : `Còn ${job.availableSlots} chỗ trống`}
