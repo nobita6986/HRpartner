@@ -22,7 +22,7 @@
 | Forward-merge parents | `a49aa078a46499e8caa03512581c147c7bbe067c` + `8382bbc70b74f2fc21471c532b98bd20ab8a1fac` |
 | Forward-merge other head (`origin/main`) | `8382bbc70b74f2fc21471c532b98bd20ab8a1fac` (verified) |
 | F8 integration SHA | `50e07bcf462af8a5b2b3871e42618ca83039cf44` |
-| Final audit-target HEAD | `01e4ab79742629eb8b482708426efd8fa23822bb` (round-2 HANDOFF freeze; semantic implementation HEAD `50e07bcf…`) |
+| Final audit-target HEAD | `7b49d6f94cb9d03e9b390346063549fc490fc511` (round-2 HANDOFF docs freeze; semantic implementation HEAD `50e07bcf…` + H-16 family docs-only fix) |
 | Migration name | `20261004120000_ui_v1_jobposting_stamp_flags` |
 | Frozen delivery | YES |
 | Canonical gates | PASS |
