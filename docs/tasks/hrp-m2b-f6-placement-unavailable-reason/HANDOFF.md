@@ -15,7 +15,9 @@
 | Merge commit SHA | `eb0cd04556c602aca453dc6de150c31dc3818b8c` (forward-only `git merge --no-ff origin/main`; no F6 source/test/dto conflict — main did not touch any F6 file in the merge window) |
 | Final HEAD | `eb0cd04556c602aca453dc6de150c31dc3818b8c` (T1A does not amend / rebase / reset / force-push; commit is forward-only on the same branch) |
 | Implementation SHA | `eb0cd04556c602aca453dc6de150c31dc3818b8c` |
-| F6 implementation commit | `a558568a0cdf8e99ae981fffc18d979fd361345f` (preserved byte-exact; `git diff --stat a558568a..HEAD -- <6 F6 source/test files>` reports 0 lines; this is the commit that introduced the F6 code, while the Implementation SHA is the post-reconciliation frozen HEAD on the branch) |
+| Frozen delivery note | Forward-merge of origin/main `f570db06` (PR #93); `eb0cd045..HEAD` is docs-only (0 source files) — H-16 invariant satisfied |
+| F6 implementation commit | `a558568a0cdf8e99ae981fffc18d979fd361345f` — preserved byte-exact; `git diff --stat a558568a..HEAD -- <6 F6 source/test files>` reports 0 lines |
+| Branch HEAD | `1a3a515aef34c98b92b4c171ad3371714a7bda4e` |
 | Branch | `codex/t1a-m2b-f6-placement-unavailable-reason` |
 | PR | `#92` (existing; not re-opened; pending T0 PR review + merge coordination with UI V1 / UI V2) |
 | Worktree | `C:\CodeApp\HrP-worktrees\t1a-m2b-f6-placement-unavailable-reason` |
