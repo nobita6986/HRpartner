@@ -17,12 +17,12 @@
 | Phase B baseline (origin/main) | `796e13c69996756d1298bc1a7ec9b50bab935c9f` |
 | Phase B forward-merge SHA | `fb9ae379dcea3c422f3787f30bbe66fd69df0f13` |
 | Phase B UI2-owned semantic SHA | `190983f1fa5fe345148f258c9b45aca8b759619d` (UI2-owned Phase B semantic anchor; preserved as historical reference, NOT the post-merge Implementation SHA per T0 §8) |
-| Implementation SHA | `6db0547166b892cbfeed3789452317fea3b7ab03` |
+| Implementation SHA | `b48e4bbddf5f328f4bf38ed1b01e67586e6eeda0` |
 | Latest-main merged | `937133c2fe96ebbf80c64d5b36f5f830e215efbb` (origin/main at the time of the latest-main reconciliation; contains PR #95 PWA icon hotfix + PR #96 Admin Localization Wave 1 + PR #97 UI V1 public-card-truth correction + PR #98 Admin Localization Wave 2) |
 | Latest-main reconciliation SHA | `a6396ac331a826b0a268dc1dbfafe812ba9e6ac3` (merge commit; two parents: `5120c86c…` UI2 docs/hygiene HEAD + `937133c2…` origin/main HEAD; created via `git merge --no-ff origin/main`; no rebase/amend/reset) |
 | Previous docs HEAD | `b3d9de9bb96e28eec24de156e6bbe64ec6c3a5da` |
-| Correction SHA | `6db0547166b892cbfeed3789452317fea3b7ab03` |
-| Final combined semantic SHA | `6db0547166b892cbfeed3789452317fea3b7ab03` (the correction commit is the final combined implementation/audit anchor) |
+| Correction SHA | `b48e4bbddf5f328f4bf38ed1b01e67586e6eeda0` |
+| Final combined semantic SHA | `b48e4bbddf5f328f4bf38ed1b01e67586e6eeda0` (the correction batch's final test-surface commit is the combined implementation/audit anchor) |
 | HANDOFF freeze commit (pre-merge) | `a4600c1b1c802eea56d6fde8bddd86bab4985e71` (documentation-only; superseded by the merge) |
 | Docs/hygiene correction (pre-merge) | `5120c86ce080c40c9d0ab9fddd0f9cca36aa847c` (documentation-only; superseded by the merge) |
 | Frozen delivery | `YES` |
@@ -33,7 +33,7 @@
 | Production migration | `NOT_RUN` |
 | Correction budget | `1` |
 | Correction batches used | `1` |
-| Revision / identity chain | `190983f1…` (UI2 Phase B semantic) → `a4600c1b…` (HANDOFF flip, docs-only) → `5120c86c…` (docs/hygiene correction, docs-only) → `a6396ac3…` (latest-main reconciliation) → `77b8537b…` (initial correction batch: integration test + TASK repair) → `daa164cd…` (HANDOFF evidence update, docs-only) → `6db05471…` (final correction SHA). Any later docs-only freeze HEAD is reported in the T0 handback, not pinned recursively. |
+| Revision / identity chain | `190983f1…` (UI2 Phase B semantic) → `a4600c1b…` (HANDOFF flip, docs-only) → `5120c86c…` (docs/hygiene correction, docs-only) → `a6396ac3…` (latest-main reconciliation) → `77b8537b…` (initial correction: integration test + TASK repair) → `daa164cd…` (HANDOFF evidence update, docs-only) → `6db05471…` (synthetic evidence/test correction) → `07ad2d0f…` (docs evidence freeze) → `b48e4bbd…` (LF-only test-surface correction; final correction SHA). Any later docs-only freeze HEAD is reported in the T0 handback, not pinned recursively. |
 
 > **Note on SHA identity (post-merge).** The historical post-merge
 > `Implementation SHA` was `a6396ac331a826b0a268dc1dbfafe812ba9e6ac3`
@@ -44,10 +44,13 @@
 > `a4600c1b…` and `5120c86c…` were documentation-only and were absorbed
 > into the merge commit's tree. At pre-correction docs HEAD
 > `b3d9de9b…`, the semantic delta against reconciliation `a6396ac3…` was
-> empty. Correction batch 1/1 ends at `6db0547166b892cbfeed3789452317fea3b7ab03`,
+> empty. Correction batch 1/1 ends at `b48e4bbddf5f328f4bf38ed1b01e67586e6eeda0`,
 > which supersedes that historical anchor and is both the Correction SHA
 > and final combined implementation/audit SHA. The earlier `77b8537b…`
-> added the required test and TASK repair; `daa164cd…` was docs-only.
+> added the required test and TASK repair; `daa164cd…` was docs-only;
+> `6db05471…` finalized the synthetic evidence/test correction;
+> `07ad2d0f…` froze the docs; and `b48e4bbd…` mechanically normalized the
+> integration test to LF with no test-logic change.
 > A later docs-only freeze commit, if used, is not an implementation SHA.
 
 ## 1. Outcome and changed surface
@@ -282,7 +285,7 @@ The repo-wide lint config is unchanged.
 both delivered and frozen; latest-main reconciliation complete.
 `UI2 Phase B semantic SHA: 190983f1…` (UI2-owned anchor, preserved).
 `Correction SHA / final combined Implementation SHA (audit anchor):
-6db05471…`. `Latest-main reconciliation: a6396ac3…`;
+b48e4bbd…`. `Latest-main reconciliation: a6396ac3…`;
 `Latest-main merged: 937133c2…`
 (origin/main at reconciliation time). `Frozen delivery: YES`.
 `Canonical gates: PASS`. `Audit eligibility: ELIGIBLE`. `Production
