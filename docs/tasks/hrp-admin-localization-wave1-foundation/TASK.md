@@ -20,7 +20,7 @@
 | Decision state | `CLOSED` |
 | Test environment | `READY` |
 | Correction budget | `1` |
-| In-scope roots | `src/shared/i18n/**` (NEW); `src/shared/ui/status-badge/**` (NEW); `src/shared/ui/role-guard/role-guard-layout.tsx`; `app/admin/admin-shell.tsx`; `app/admin/staffing-orders/[id]/recruiter-assignment-manager.tsx`; `app/admin/labor-profiles/[id]/page.tsx`; `app/admin/applications/page.tsx`; `app/admin/jobs/__tests__/admin-jobs-terminology.static.test.ts` |
+| In-scope roots | `src/shared/i18n/**` (NEW); `src/shared/ui/status-badge/**` (NEW); `src/shared/ui/role-guard/role-guard-layout.tsx`; `app/admin/admin-shell.tsx`; `app/admin/staffing-orders/[id]/recruiter-assignment-manager.tsx`; `app/admin/labor-profiles/[id]/page.tsx`; `app/admin/applications/page.tsx`; `app/admin/jobs/__tests__/admin-jobs-terminology.static.test.ts`; `app/admin/jobs/job-postings/[id]/editor-shell.tsx` (F11 §9 binding — see RISK-09) |
 | Forbidden paths | `app/admin/jobs/**` (except the explicit static test), `app/admin/job-openings/**`, `app/admin/staffing/**`, `app/admin/users/**`, `app/admin/workers/**`, `app/admin/clients/**`, `app/admin/vendors/**`, `app/admin/media/**`, `app/admin/settings/**`, `app/admin/attendance/**`, `app/admin/reconciliation/**`, `app/admin/payroll/**`, `app/admin/commission/**`, `app/admin/tickets/**`, `src/domains/job-board/public-content-controls/**`, `docs/tasks/hrp-ui2-public-content-controls-sticky/**`, `prisma/**`, `src/shared/auth/**`, `middleware.ts`, `app/(public)/**`, `app/m/**`, `packages/**`, `.github/**` |
 | Required gates | `npm run typecheck`, `npm run lint`, `npm run test:unit`, `npm run build`, `git diff --check`, `.ai-pipeline/scripts/verify-encoding.ps1`, `.ai-pipeline/scripts/verify-task.ps1`, `.ai-pipeline/scripts/verify-handoff.ps1` |
 | Current execution round | `0` |
@@ -123,6 +123,7 @@ Wave 1 của Admin Portal Vietnamese Localization theo binding execution plan đ
 | `RQ-16` | `git diff --check` clean; UTF-8 no BOM; LF-only; no U+FFFD trên changed surface. |
 | `RQ-17` | Handback `READY_FOR_REVIEW` với baseline, implementation SHA, final HEAD, exact Wave 1 items hoàn thành/deferred, English-literal scan, test counts, changed files, PR URL, CI state. |
 | `RQ-18` | Identity verification: domain-owned dictionary lives trong `src/domains/talent/` (theo EP §4.3); shared `glossary.ts` không own domain enum labels ngoài cross-module terms. |
+| `RQ-19` | `app/admin/jobs/job-postings/[id]/editor-shell.tsx` 3 lifecycle ActionButton calls: button text MUST be `Đăng tin / Gỡ tin / Lưu trữ` (Vietnamese primary operator-facing); canonical `Publish / Unpublish / Archive` MUST appear ONLY as `aria-label` attribute. `runStateMutation` argument (canonical operation key) KHÔNG thay đổi. |
 
 ### 4.2 Scope boundaries
 
@@ -138,6 +139,7 @@ Wave 1 của Admin Portal Vietnamese Localization theo binding execution plan đ
   - NEW: `src/domains/talent/__tests__/identity-verification-ui.test.ts`.
   - MODIFY: `app/admin/applications/page.tsx` (chỉ `CCCD` → `Số CCCD` label).
   - MODIFY: `app/admin/jobs/__tests__/admin-jobs-terminology.static.test.ts` (F11 scope update).
+  - MODIFY: `app/admin/jobs/job-postings/[id]/editor-shell.tsx` (F11 §9 binding — display `Đăng tin / Gỡ tin / Lưu trữ`; canonical lifecycle operation names preserved in `aria-label` only). Ngoài EP §5.1 allowlist — motivated by T0 §2 #2 + directive Phần B §3 + §4.
   - NEW: `docs/tasks/hrp-admin-localization-wave1-foundation/{TASK.md, HANDOFF.md}`.
 - **Out:**
   - JobPosting editor shell, JobOpening, Staffing, Applications logic, Users, Workers, Clients, Vendors, Media, Settings, Attendance, Reconciliation, Payroll, Commission, Tickets — defer to Wave 2/3/4 per EP §5.2-§5.4.
@@ -171,6 +173,7 @@ Wave 1 của Admin Portal Vietnamese Localization theo binding execution plan đ
 | `STEP-11` | `app/admin/labor-profiles/[id]/page.tsx` (MODIFY) | Render chip `identityVerification` qua `identityVerificationLabel()` (RQ-10). | `npm run typecheck`, `npm run lint`, `npm run test:unit` | nếu file owner khác có pending edit → defer |
 | `STEP-12` | `app/admin/applications/page.tsx` (MODIFY) | L-413 `CCCD` → `Số CCCD` (RQ-11). | `npm run typecheck`, `npm run lint`, `npm run test:unit` | nếu file owner khác có pending edit → defer |
 | `STEP-13` | `app/admin/jobs/__tests__/admin-jobs-terminology.static.test.ts` (MODIFY) | Update assertion để phản ánh F11 scope clarification §9 (RQ-12). | `npm run test:unit app/admin/jobs/__tests__/admin-jobs-terminology.static.test.ts` | nếu editor-shell.tsx đã được sửa bởi stream khác (T1A/T1C) → STOP & reconcile |
+| `STEP-16` | `app/admin/jobs/job-postings/[id]/editor-shell.tsx` (MODIFY) | Apply F11 §9 binding: button text `Đăng tin / Gỡ tin / Lưu trữ`; canonical `Publish / Unpublish / Archive` only in `aria-label`. Canonical `runStateMutation` argument KHÔNG đổi (RQ-19). | `npm run typecheck`, `npm run lint`, `npm run test:unit app/admin/jobs/__tests__/admin-jobs-terminology.static.test.ts` | nếu đụng T1A F9 closeout lane → STOP & reconcile |
 | `STEP-14` | Verify gates (whole repo) | `npm run typecheck`, `npm run lint`, `npm run test:unit`, `npm run build`, `git diff --check`, `verify-encoding.ps1`. | All pass. | Nếu fail → STOP & debug |
 | `STEP-15` | Commit + push + open PR non-draft. Watch CI 4/4. Handback. | Deliver. | `gh pr checks NUM --watch` (NUM = PR number). | CI fail → STOP & open correction batch (budget 1). |
 
@@ -193,6 +196,7 @@ Wave 1 của Admin Portal Vietnamese Localization theo binding execution plan đ
 | `AC-11` | `labor-profiles/[id]/page.tsx` chip `identityVerification` render qua `identityVerificationLabel()` (import từ `src/domains/talent/identity-verification-ui`). | `rg "identityVerificationLabel" app/admin/labor-profiles/[id]/page.tsx` |
 | `AC-12` | `applications/page.tsx` L-413 chứa `Số CCCD` literal; KHÔNG chứa raw label `CCCD` ở `dt` element nữa. | `rg "Số CCCD" app/admin/applications/page.tsx` + `rg "CCCD" app/admin/applications/page.tsx \| grep -v "Số CCCD"` (negative) |
 | `AC-13` | `admin-jobs-terminology.static.test.ts` đã update: có reference đến `'Đăng tin'`/`'Gỡ tin'`/`'Lưu trữ'` cho editor shell display; có assertion rằng `Publish`/`Unpublish`/`Archive` KHÔNG xuất hiện raw trong editor shell đó không phải `label=` / `aria-label` / `value=`. | `npm run test:unit app/admin/jobs/__tests__/admin-jobs-terminology.static.test.ts` |
+| `AC-22` | `editor-shell.tsx` 3 ActionButton (publish / unpublish / archive) render Vietnamese label; canonical name trong `aria-label`. | `rg "Đăng tin.*aria-label=.Publish" app/admin/jobs/job-postings/[id]/editor-shell.tsx` + tương tự cho 2 button còn lại + `npm run test:unit app/admin/jobs/__tests__/admin-jobs-terminology.static.test.ts` |
 | `AC-14` | `npm run typecheck` PASS. | `npm run typecheck` |
 | `AC-15` | `npm run lint` PASS. | `npm run lint` |
 | `AC-16` | `npm run test:unit` PASS trên full unit lane. | `npm run test:unit` |
@@ -224,6 +228,7 @@ Wave 1 của Admin Portal Vietnamese Localization theo binding execution plan đ
 | `RQ-16` | `STEP-14` | `AC-18`, `AC-19` |
 | `RQ-17` | `STEP-15` | `AC-21` |
 | `RQ-18` | `STEP-09`, `STEP-11` | `AC-11` |
+| `RQ-19` | `STEP-16` | `AC-22` |
 
 ## 7. Risk
 
@@ -237,6 +242,7 @@ Wave 1 của Admin Portal Vietnamese Localization theo binding execution plan đ
 | `RISK-06` | `StatusBadge` initial adoption rỗng (chưa có consumer trong Wave 1) — risk "considered dead code". | StatusBadge đi kèm test render đầy đủ; consumers Wave 2/3/4 adopt từ dictionary consumer-supplied. Document trong HANDOFF. |
 | `RISK-07` | `role-guard-layout.tsx` dùng chung cho 3 cổng (admin / worker / vendor); thay role chip có thể ảnh hưởng worker/vendor portal. | Worker portal đã tiếng Việt (BR locale); role chip hiện hiển thị `role` enum raw (`WORKER`, `VENDOR`, v.v.). Wrap bằng `roleLabel()` sẽ dịch sang tiếng Việt; vendor portal cũng OK vì role enum là `ADMIN`, `HR_*`, `ACCOUNTANT` (đã có mapping). Worker portal role là `WORKER` → `Người lao động` — đúng glossary. Verify lại Worker Portal trong target pages sau khi land Wave 1. Nếu worker portal hiển thị role tiếng Việt là unexpected behavior (chỉ admin muốn) → rollback role chip change chỉ trong admin view. |
 | `RISK-08` | English-literal scan có thể miss raw enum hiển thị (status enum render thẳng vào UI). | Wave 1 chưa chạm các domain pages nên scan chỉ giới hạn changed surface; deferred sang Wave 2/3/4. |
+| `RISK-09` | `editor-shell.tsx` thuộc F9 closeout lane của T1A (`t1a-f9b-r2-production-closeout`). F9 đã closed, nhưng touch có thể ảnh hưởng nếu T1A có WIP pending. Touch 3 lifecycle ActionButton chỉ thay `label` + thêm `ariaLabel` prop — không đổi `runStateMutation` argument, không đổi guard, không đổi API. Wave 1 chỉ sửa F11 binding display, không đổi logic. |
 
 ## 8. Open Questions
 
@@ -254,3 +260,4 @@ Tier 1 append sau review/audit. Audit NONE resolve trực tiếp từ HANDOFF; L
 | Spec version | Date | Change | Reason |
 |---|---|---|---|
 | `v1.0` | `2026-10-04` | Initial contract | Initial (post-merge PR #94; baseline `796e13c6`) |
+| `v1.1` | `2026-10-04` | Add RQ-19 + STEP-13a + AC-22 + RISK-09; add `editor-shell.tsx` to in-scope | Apply F11 §9 binding requires updating the editor shell ActionButton text (Vietnamese) + aria-label (canonical). Directive Phần B §3 + §4 mandates `Publish → Đăng tin` etc. as operator-facing; cannot be deferred to Wave 2 because Wave 1 owns the static-test update that asserts it. Touch is non-logic (label + new `ariaLabel` prop; canonical `runStateMutation` argument unchanged). |
