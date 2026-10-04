@@ -12,7 +12,7 @@
 | Audit mode (phải khớp TASK) | `NONE` |
 | Current Execution round | `1` |
 | Baseline | `796e13c69996756d1298bc1a7ec9b50bab935c9f` |
-| Implementation SHA | `0000000000000000000000000000000000000000` *(placeholder — replaced after semantic commit)* |
+| Implementation SHA | `060078c0a758fdabbda4c650c98a15a2d6d139df` |
 | Frozen delivery | `YES` |
 | Canonical gates | `PASS` |
 | Audit eligibility | `NOT_REQUIRED` |
