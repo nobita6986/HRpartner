@@ -17,12 +17,12 @@
 | Phase B baseline (origin/main) | `796e13c69996756d1298bc1a7ec9b50bab935c9f` |
 | Phase B forward-merge SHA | `fb9ae379dcea3c422f3787f30bbe66fd69df0f13` |
 | Phase B UI2-owned semantic SHA | `190983f1fa5fe345148f258c9b45aca8b759619d` (UI2-owned Phase B semantic anchor; preserved as historical reference, NOT the post-merge Implementation SHA per T0 §8) |
-| Implementation SHA | 77b8537bf4403ef2ec883096c10455d52bb7c1ba |
+| Implementation SHA | `6db0547166b892cbfeed3789452317fea3b7ab03` |
 | Latest-main merged | `937133c2fe96ebbf80c64d5b36f5f830e215efbb` (origin/main at the time of the latest-main reconciliation; contains PR #95 PWA icon hotfix + PR #96 Admin Localization Wave 1 + PR #97 UI V1 public-card-truth correction + PR #98 Admin Localization Wave 2) |
 | Latest-main reconciliation SHA | `a6396ac331a826b0a268dc1dbfafe812ba9e6ac3` (merge commit; two parents: `5120c86c…` UI2 docs/hygiene HEAD + `937133c2…` origin/main HEAD; created via `git merge --no-ff origin/main`; no rebase/amend/reset) |
 | Previous docs HEAD | `b3d9de9bb96e28eec24de156e6bbe64ec6c3a5da` |
-| Correction SHA | `Pending: this forward-only test/docs correction commit; exact SHA will be recorded after commit` |
-| Final combined semantic SHA | `a6396ac331a826b0a268dc1dbfafe812ba9e6ac3` (same as Latest-main reconciliation SHA; this merge IS the final combined delivery — no subsequent semantic correction commit was authored) |
+| Correction SHA | `6db0547166b892cbfeed3789452317fea3b7ab03` |
+| Final combined semantic SHA | `6db0547166b892cbfeed3789452317fea3b7ab03` (the correction commit is the final combined implementation/audit anchor) |
 | HANDOFF freeze commit (pre-merge) | `a4600c1b1c802eea56d6fde8bddd86bab4985e71` (documentation-only; superseded by the merge) |
 | Docs/hygiene correction (pre-merge) | `5120c86ce080c40c9d0ab9fddd0f9cca36aa847c` (documentation-only; superseded by the merge) |
 | Frozen delivery | `YES` |
@@ -33,10 +33,10 @@
 | Production migration | `NOT_RUN` |
 | Correction budget | `1` |
 | Correction batches used | `1` |
-| Revision / identity chain | `190983f1…` (UI2 Phase B semantic) → `a4600c1b…` (HANDOFF flip, docs-only) → `5120c86c…` (docs/hygiene correction, docs-only) → `a6396ac3…` (latest-main reconciliation merge) → pending correction commit. Any later docs-only freeze HEAD is reported in the T0 handback, not pinned recursively. |
+| Revision / identity chain | `190983f1…` (UI2 Phase B semantic) → `a4600c1b…` (HANDOFF flip, docs-only) → `5120c86c…` (docs/hygiene correction, docs-only) → `a6396ac3…` (latest-main reconciliation) → `77b8537b…` (initial correction batch: integration test + TASK repair) → `daa164cd…` (HANDOFF evidence update, docs-only) → `6db05471…` (final correction SHA). Any later docs-only freeze HEAD is reported in the T0 handback, not pinned recursively. |
 
-> **Note on SHA identity (post-merge).** Per H-16, the post-merge
-> `Implementation SHA` field resolves to `a6396ac331a826b0a268dc1dbfafe812ba9e6ac3`
+> **Note on SHA identity (post-merge).** The historical post-merge
+> `Implementation SHA` was `a6396ac331a826b0a268dc1dbfafe812ba9e6ac3`
 > (the latest-main reconciliation merge commit). The `Phase B UI2-owned
 > semantic SHA` (`190983f1…`) is preserved as a historical reference and
 > as the UI2-owned Phase B semantic anchor per T0 §8 ("Không được xóa
@@ -44,9 +44,11 @@
 > `a4600c1b…` and `5120c86c…` were documentation-only and were absorbed
 > into the merge commit's tree. At pre-correction docs HEAD
 > `b3d9de9b…`, the semantic delta against reconciliation `a6396ac3…` was
-> empty. The correction commit supersedes that audit anchor; its exact SHA
-> becomes both the correction SHA and the final combined implementation/audit
-> SHA. A later docs-only freeze commit, if used, is not an implementation SHA.
+> empty. Correction batch 1/1 ends at `6db0547166b892cbfeed3789452317fea3b7ab03`,
+> which supersedes that historical anchor and is both the Correction SHA
+> and final combined implementation/audit SHA. The earlier `77b8537b…`
+> added the required test and TASK repair; `daa164cd…` was docs-only.
+> A later docs-only freeze commit, if used, is not an implementation SHA.
 
 ## 1. Outcome and changed surface
 
@@ -233,7 +235,7 @@ The first row is `verify-task`. Each command registers once via `E-xx`; multiple
 | `E-42` | `npm run test:unit` | exit 0; `Test Files 252 passed (252) · Tests 4081 passed | 9 skipped (4090)`. | inline |
 | `E-43` | `Get-ChildItem prisma/migrations -Directory | Sort-Object Name | Select-Object -Last 1` | exit 0; `20261004230000_ui2_public_content_controls` is latest. | inline |
 | `E-44` | In-process synthetic posture gate; `npx --no-install prisma migrate deploy`; `npx --no-install vitest run --config vitest.integration.config.ts tests/db/public-settings.integration.test.ts` × 3 fresh processes; full-row snapshot SHA-256 comparison | migration already applied (no pending migrations); writer `rolsuper=false`, `rolbypassrls=false`; admin `rolsuper=false`, `rolbypassrls=true`; one test passed per process; before/after snapshot SHA-256 both `3156914f65d9b214c8414b36173882119a1397506157e0f58a5f403f5e9b0691`. | inline, no URLs/row data |
-| `E-45` | `node -e console.log(1)` | `SYNTHETIC_TEST_HARNESS_TIMESTAMP_PRECISION_RESIDUE`; timestamp text was initially round-tripped through JS Date. Fix now preserves `timestamp(6)` text; T0 authorized current synthetic snapshot baseline. No raw data recorded. | synthetic-only |
+| `E-45` | `node -e "const fs=require('fs'),s=fs.readFileSync('tests/db/public-settings.integration.test.ts','utf8'),required=['created_at::text AS created_at','updated_at::text AS updated_at'],casts=s.match(/::timestamptz/g);if(!required.every(x=>s.includes(x)))process.exit(1);if(casts===null)process.exit(1);if(casts.length<2)process.exit(1);if(/new Date\(/.test(s))process.exit(1);if(/\.toISOString\(/.test(s))process.exit(1);console.log('TIMESTAMP_TEXT_RESTORE_GUARD_PASS')"` | exits 0 with `TIMESTAMP_TEXT_RESTORE_GUARD_PASS`; current harness snapshots timestamp text, restores through direct `::timestamptz` casts, and contains no JavaScript `Date`/`toISOString` conversion. Historical first-run classification remains `SYNTHETIC_TEST_HARNESS_TIMESTAMP_PRECISION_RESIDUE`; T0 authorized the current synthetic snapshot as the new baseline. No raw row data is recorded. | synthetic-only |
 | `E-46` | `npx --no-install vitest run --config vitest.unit.config.ts src/domains/applications/marketplace-browse.routes.test.ts src/domains/applications/marketplace-inventory.static.test.ts src/domains/job-board/components/landing/__tests__/stamp-overlay.test.ts src/domains/job-board/components/landing/featured-job-card.test.ts src/domains/job-board/job-posting-stamps-mapping.test.ts src/domains/job-board/public-card-truth.test.ts src/domains/job-board/public-detail.static.test.ts src/domains/job-board/public-listing.static.test.ts src/shared/security/required-relation-sweep.static.test.ts` | exit 0; 9 test files, 292 passed. | inline |
 | `E-47` | `npx --no-install prisma validate`; `npx --no-install prisma generate` | both exit 0; validation used non-routable placeholder URLs; client generated with Prisma 5.22.0. | inline |
 | `E-48` | `pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-ui2-public-content-controls-sticky/TASK.md` | exit 0; `DRAFT-VALID`, one non-blocking A-04 warning because final status is `READY_FOR_AUDIT`; all structural, mapping, and control checks pass. | inline |
@@ -279,13 +281,14 @@ The repo-wide lint config is unchanged.
 `READY_FOR_AUDIT / TIER3_LIGHT_DELTA_AUDIT` — Phase A and Phase B are
 both delivered and frozen; latest-main reconciliation complete.
 `UI2 Phase B semantic SHA: 190983f1…` (UI2-owned anchor, preserved).
-`Implementation SHA (audit anchor): a6396ac3…` (latest-main
-reconciliation merge commit). `Latest-main merged: 937133c2…`
+`Correction SHA / final combined Implementation SHA (audit anchor):
+6db05471…`. `Latest-main reconciliation: a6396ac3…`;
+`Latest-main merged: 937133c2…`
 (origin/main at reconciliation time). `Frozen delivery: YES`.
 `Canonical gates: PASS`. `Audit eligibility: ELIGIBLE`. `Production
 migration: NOT_RUN`. `Correction budget: 1` shipped at zero cents.
 
-- **Latest-main reconciliation (the audit anchor):**
+- **Latest-main reconciliation (historical integration point):**
   - `git merge --no-ff origin/main` produced the merge commit
     `a6396ac3…` (two parents: `5120c86c…` UI2 docs/hygiene HEAD +
     `937133c2…` origin/main HEAD).
@@ -330,7 +333,7 @@ migration: NOT_RUN`. `Correction budget: 1` shipped at zero cents.
     forward-only additive.
   - No T1B Wave 1 / Wave 2 surface reverted; no F11 terminology
     reversal; F6 not in scope.
-- **Working tree state now:** `git status --porcelain` is empty. The
+- **Working tree state at reconciliation:** `git status --porcelain` was empty. The
   pre-existing untracked `pnpm-lock.yaml` and `pnpm-workspace.yaml`
   (workspace-wide artifacts unrelated to any tracked surface, never
   committed) and the workspace's `.editorconfig` were removed during
