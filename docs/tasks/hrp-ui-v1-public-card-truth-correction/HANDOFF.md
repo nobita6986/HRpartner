@@ -18,7 +18,7 @@
 | Canonical gates | `PASS` |
 | Baseline | `796e13c69996756d1298bc1a7ec9b50bab935c9f` (origin/main HEAD at task start) |
 | Implementation SHA | `9556711f631581aff5eee851407132d7fe6c334e` (semantic commit) |
-| Branch HEAD | `94310294fefee52f489db52c033dfecb1b9a09ea` (HEAD at HANDOFF freeze; semantic commit 9556711f is included in HEAD; docs-only commits since then have no app/src delta — `git diff --name-only 9556711f..HEAD -- app src prisma tests scripts packages` is empty) |
+| Branch HEAD | `719058db18ef9bf94dd17a637643cacbf104c57a` (HEAD at HANDOFF freeze; semantic commit 9556711f is included in HEAD; docs-only commits since then have no app/src delta — `git diff --name-only 9556711f..HEAD -- app src prisma tests scripts packages` is empty) |
 | Branch | `codex/t1a-ui-v1-public-card-truth-correction` |
 | Worktree | `C:\CodeApp\HrP-worktrees\t1a-ui-v1-public-card-truth-correction` |
 | PR | `TBD` (opened after commit, non-draft) |
@@ -262,7 +262,7 @@ None. Implementation completed all TASK.md §5 STEP-01..STEP-14. STEP-15 (commit
 
 - **Baseline SHA**: `796e13c69996756d1298bc1a7ec9b50bab935c9f` (origin/main HEAD at task start).
 - **Implementation SHA**: `9556711f631581aff5eee851407132d7fe6c334e` (semantic commit `fix(T1A): ui-v1 public card truth ...`; the only commit in this branch that touches `app/`, `src/`, `prisma/`, `tests/`, `scripts/`, `packages/`).
-- **Final HEAD**: `94310294fefee52f489db52c033dfecb1b9a09ea` (HEAD at HANDOFF freeze; the 2 docs-only commits since `9556711f` only edit `HANDOFF.md` and `TASK.md` — `git diff --name-only 9556711f..HEAD -- app src prisma tests scripts packages` returns 0 files).
+- **Final HEAD**: `719058db18ef9bf94dd17a637643cacbf104c57a` (HEAD at HANDOFF freeze; the 3 docs-only commits since `9556711f` only edit `HANDOFF.md` and `TASK.md` — `git diff --name-only 9556711f..HEAD -- app src prisma tests scripts packages` returns 0 files).
 - **Branch**: `codex/t1a-ui-v1-public-card-truth-correction`.
 - **PR URL**: `TBD` (opened after push; non-draft).
 - **CI status**: `TBD` (awaiting CI 4/4 GREEN + MERGEABLE/CLEAN).
