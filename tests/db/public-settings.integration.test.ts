@@ -43,7 +43,11 @@ suite('UI2 public HomepageSettings synthetic PostgreSQL integration', () => {
 
       const writer = new URL(writerUrl);
       const admin = new URL(adminUrl);
-      expect(writer.hostname).toMatch(/^ep-empty-forest-azlhfyo9(?:-|[.])/);
+      const isSyntheticNeon = /^ep-empty-forest-azlhfyo9(?:-|[.])/.test(writer.hostname);
+      const isLocalCiDatabase =
+        ['localhost', '127.0.0.1', '[::1]'].includes(writer.hostname) &&
+        writer.pathname === '/ci_test';
+      expect(isSyntheticNeon || isLocalCiDatabase).toBe(true);
       expect(writer.hostname).not.toMatch(/^ep-shy-tree-/);
       expect(admin.hostname).toBe(writer.hostname);
       expect(admin.port).toBe(writer.port);
