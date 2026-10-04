@@ -413,7 +413,7 @@ export function RoleGuardLayout({
 function SidebarHeader({
   title,
   portal,
-  logoSrc = '/logo.png',
+  logoSrc = '/hrp-logo.webp',
 }: {
   title: string;
   portal: 'admin' | 'worker' | 'vendor';

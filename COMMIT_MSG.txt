@@ -1,0 +1,51 @@
+feat(T1B UI V1): canonical JobPosting stamp flags (Hot, Tuyen gap, Thuong cao, Sap het han) + brand swap + About removal
+
+D1. Canonical stamp flags
+  - isHighReward (THƯỞNG CAO, amber-500) — author-selected, NOT heuristic.
+  - isExpiringSoon (SẮP HẾT HẠN, orange-600) — author-selected, NOT heuristic.
+  - Existing isHot + isUrgent preserved.
+  - Five-key STAMP_RANK: tuyen-gap(0) < hot(1) < sap-het-han(2) < thuong-cao(3) < moi(4).
+  - Forward-only migration 20261004120000_ui_v1_jobposting_stamp_flags adds BOOLEAN NOT NULL DEFAULT false.
+  - Authoring service DTOs, validators, DB writes, and PATCH idempotency hash (length 13) all extended.
+  - Public projection (publicSelect + PublicJobDto + mappers) emits the two new keys.
+  - DRAFT editor shell adds 4 toggles with dirty-tracking snapshot ref.
+
+D2. Visual standardization
+  - Shared stamp authority via stamp-defs.ts / stamp-badge.tsx / featured-job-card.tsx / deriveStampsFromFlags.
+  - 3D rubber-stamp / ribbon style with -10deg rotation, left-anchor (allow slight card overflow), WCAG AA contrast, reduced-motion safe.
+  - No per-page renderer duplicate.
+
+D3. Brand
+  - public/hrp-logo.webp copied from C:\CodeApp\hrpartner-logo.webp (52,334 bytes).
+  - GlobalNavbar, login-form, role-guard-layout reference new asset.
+  - Alt text "HRP — Việc làm miền Bắc".
+  - Default metadata title "Việc làm miền Bắc - Kết nối để thành công - HRP"; template "%s · HRP"; JobPosting detail titles preserved.
+
+D4. Remove About branch
+  - Deleted app/(portal)/ve-chung-toi/page.tsx and folder.
+  - Removed nav link in GlobalNavbar + footer link in GlobalFooter.
+  - /ve-chung-toi now 404s naturally after build.
+  - public/ve-hrp.html preserved as legal/policy artifact.
+
+Scope: D1-D4 only. No F8 mapper (consumed from T1A Mốc 2A when merged).
+Production migration NOT_RUN. Baseline 6ea2e267b72120de5f67d5954d1074101efccff1.
+
+Static test fences updated:
+  - public-card-truth.test.ts PUBLIC_KEYS allowlist: 22 keys.
+  - public-select.static.test.ts topLevelSelectKeys updated.
+  - job-posting-stamps-mapping.test.ts expects 5 stamp rank keys.
+  - required-relation-sweep.static.test.ts EXPECTED_HITS line numbers bumped for
+    public.service.ts (731/738), job-posting-authoring.service.ts (1007/1119/1246/1315/1388),
+    job-posting-list.service.ts (149/152/245/253).
+
+All gates PASS:
+  - verify-task.ps1: 14/14 OK
+  - verify-encoding.mjs: 24 changed files, strict UTF-8 without BOM
+  - git diff --cached --check: PASS
+  - npm run typecheck: Exit 0
+  - npm run lint: 0 errors, 918 pre-existing warnings (unrelated)
+  - npm run build: All routes built; /ve-chung-toi absent
+  - npm run test:unit: 219/219 files, 3635 passed, 9 skipped, 0 failed
+  - prisma validate + generate: PASS
+
+Refs: docs/tasks/hrp-ui-v1-job-card-stamps-brand/TASK.md

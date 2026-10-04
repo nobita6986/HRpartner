@@ -99,6 +99,10 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
   // (PATCH `/api/admin/jobs/job-postings/[id]`), optimistic revision giữ nguyên pattern.
   const [isHot, setIsHot] = useState<boolean>(initial.isHot ?? false);
   const [isUrgent, setIsUrgent] = useState<boolean>(initial.isUrgent ?? false);
+  // hrp-ui-v1-job-card-stamps-brand (T1B / RQ-11 / DEC-09): 2 author-selected flag canonical
+  // mới — "Thưởng cao" + "Sắp hết hạn". Cùng pattern: DRAFT-only, optimistic revision.
+  const [isHighReward, setIsHighReward] = useState<boolean>(initial.isHighReward ?? false);
+  const [isExpiringSoon, setIsExpiringSoon] = useState<boolean>(initial.isExpiringSoon ?? false);
   const [descriptionJson, setDescriptionJson] = useState<JSONContent>(() =>
     asRichDoc(initial.descriptionJson),
   );
@@ -127,6 +131,8 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
     salaryDisplay: string;
     isHot: boolean;
     isUrgent: boolean;
+    isHighReward: boolean;
+    isExpiringSoon: boolean;
     descriptionJson: JSONContent;
     requirementsJson: JSONContent;
     benefitsJson: JSONContent;
@@ -136,6 +142,8 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
     salaryDisplay: initial.salaryDisplay ?? '',
     isHot: initial.isHot ?? false,
     isUrgent: initial.isUrgent ?? false,
+    isHighReward: initial.isHighReward ?? false,
+    isExpiringSoon: initial.isExpiringSoon ?? false,
     descriptionJson: asRichDoc(initial.descriptionJson),
     requirementsJson: asRichDoc(initial.requirementsJson),
     benefitsJson: asRichDoc(initial.benefitsJson),
@@ -150,6 +158,9 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
       salaryDisplay !== init.salaryDisplay ||
       isHot !== init.isHot ||
       isUrgent !== init.isUrgent ||
+      // hrp-ui-v1-job-card-stamps-brand (T1B / RQ-11): 2 flag mới tham gia dirty check.
+      isHighReward !== init.isHighReward ||
+      isExpiringSoon !== init.isExpiringSoon ||
       JSON.stringify(descriptionJson) !== JSON.stringify(init.descriptionJson) ||
       JSON.stringify(requirementsJson) !== JSON.stringify(init.requirementsJson) ||
       JSON.stringify(benefitsJson) !== JSON.stringify(init.benefitsJson) ||
@@ -161,6 +172,9 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
     salaryDisplay,
     isHot,
     isUrgent,
+    // hrp-ui-v1-job-card-stamps-brand (T1B): 2 flag mới trong dependency array.
+    isHighReward,
+    isExpiringSoon,
     descriptionJson,
     requirementsJson,
     benefitsJson,
@@ -185,6 +199,9 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
       // service `updateDraftContent` đã có `assertBoolean` validator, không cần UI validator.
       isHot,
       isUrgent,
+      // hrp-ui-v1-job-card-stamps-brand (T1B / RQ-11 / DEC-09): 2 flag mới gửi cùng body.
+      isHighReward,
+      isExpiringSoon,
       descriptionJson,
       requirementsJson,
       benefitsJson,
@@ -216,6 +233,9 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
         salaryDisplay: updated.salaryDisplay ?? '',
         isHot: updated.isHot ?? false,
         isUrgent: updated.isUrgent ?? false,
+        // hrp-ui-v1-job-card-stamps-brand (T1B): 2 flag mới copy từ response.
+        isHighReward: updated.isHighReward ?? false,
+        isExpiringSoon: updated.isExpiringSoon ?? false,
         descriptionJson: asRichDoc(updated.descriptionJson),
         requirementsJson: asRichDoc(updated.requirementsJson),
         benefitsJson: asRichDoc(updated.benefitsJson),
@@ -225,6 +245,9 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
       setSalaryDisplay(initialSnapshotRef.current.salaryDisplay);
       setIsHot(initialSnapshotRef.current.isHot);
       setIsUrgent(initialSnapshotRef.current.isUrgent);
+      // hrp-ui-v1-job-card-stamps-brand (T1B): set 2 flag mới về snapshot baseline.
+      setIsHighReward(initialSnapshotRef.current.isHighReward);
+      setIsExpiringSoon(initialSnapshotRef.current.isExpiringSoon);
       setDescriptionJson(initialSnapshotRef.current.descriptionJson);
       setRequirementsJson(initialSnapshotRef.current.requirementsJson);
       setBenefitsJson(initialSnapshotRef.current.benefitsJson);
@@ -242,6 +265,9 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
     salaryDisplay,
     isHot,
     isUrgent,
+    // hrp-ui-v1-job-card-stamps-brand (T1B): 2 flag mới trong dependency array.
+    isHighReward,
+    isExpiringSoon,
     descriptionJson,
     requirementsJson,
     benefitsJson,
@@ -482,7 +508,10 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
             lifecycle P1-A0; nếu muốn đổi stamp của PUBLISHED phải đi qua lifecycle canonical.
             C-04 (correction batch 1/1): disabled unless status === 'DRAFT'. Trước đây chỉ
             disable cho ARCHIVED — giờ PUBLISHED cũng bị disable để đảm bảo stamp chỉ edit
-            được ở DRAFT. Đổi stamp của PUBLISHED phải unpublish trước. */}
+            được ở DRAFT. Đổi stamp của PUBLISHED phải unpublish trước.
+            hrp-ui-v1-job-card-stamps-brand (T1B / RQ-11): 2 author-selected toggle canonical
+            mới "Thưởng cao" + "Sắp hết hạn". Cùng semantics: author tự chọn, KHÔNG heuristic,
+            DRAFT-only, lưu cùng PATCH idempotency hash. */}
         <div className="mt-4 flex flex-wrap items-center gap-4 text-sm">
           <span className="font-medium" style={{ color: 'var(--on-surface-variant)' }}>
             Stamp:
@@ -503,9 +532,25 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
             onChange={setIsUrgent}
             testId="stamp-toggle-urgent"
           />
+          <StampToggle
+            label="Thưởng cao"
+            ariaLabel="Đánh dấu JobPosting có thưởng cao"
+            checked={isHighReward}
+            disabled={!canMutate || isSaving || status !== 'DRAFT'}
+            onChange={setIsHighReward}
+            testId="stamp-toggle-reward"
+          />
+          <StampToggle
+            label="Sắp hết hạn"
+            ariaLabel="Đánh dấu JobPosting sắp hết hạn"
+            checked={isExpiringSoon}
+            disabled={!canMutate || isSaving || status !== 'DRAFT'}
+            onChange={setIsExpiringSoon}
+            testId="stamp-toggle-expiring"
+          />
           <span className="ml-auto text-xs italic" style={{ color: 'var(--on-surface-variant)' }}>
-            Public render stamp theo `isHot` + `isUrgent` (canonical boolean), không heuristic.
-            Stamp chỉ edit được ở DRAFT.
+            Public render stamp theo 4 canonical boolean (Hot, Tuyển gấp, Thưởng cao,
+            Sắp hết hạn), không heuristic. Stamp chỉ edit được ở DRAFT.
           </span>
         </div>
       </section>

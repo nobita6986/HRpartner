@@ -38,11 +38,15 @@ export interface JobStampBadgeProps {
   readonly isHot: boolean;
   /** Canonical boolean `JobPosting.isUrgent` — `true` ⇒ render `tuyen-gap` stamp. */
   readonly isUrgent: boolean;
+  /** hrp-ui-v1-job-card-stamps-brand (T1B / RQ-06): canonical `isHighReward` flag. */
+  readonly isHighReward: boolean;
+  /** hrp-ui-v1-job-card-stamps-brand (T1B / RQ-06): canonical `isExpiringSoon` flag. */
+  readonly isExpiringSoon: boolean;
   /**
    * Optional override of derived stamp set. Khi không truyền, các key được derive
-   * từ `isHot`/`isUrgent`. Khi truyền, dùng nguyên mảng này (đã sort theo
-   * STAMP_RANK nếu caller muốn). Hiện tại chỉ hai caller: listing/detail gọi với
-   * isHot+isUrgent; homepage dùng derived set riêng qua FeaturedJobCard.
+   * từ 4 flag canonical. Khi truyền, dùng nguyên mảng này (đã sort theo
+   * STAMP_RANK nếu caller muốn). Hiện tại chỉ caller: listing/detail/homepage gọi với
+   * 4 flag; service-layer override chỉ cho legacy callers.
    */
   readonly stamps?: readonly StampKey[];
   /** Optional className cho wrapper ngoài (flex positioning). */
@@ -52,8 +56,8 @@ export interface JobStampBadgeProps {
 }
 
 /**
- * Canonical stamp renderer. Khi cả `isHot=false` và `isUrgent=false` (và không có
- * override `stamps`), trả về `null` — caller không phải check rỗng.
+ * Canonical stamp renderer. Khi cả 4 flag = false (và không có override `stamps`),
+ * trả về `null` — caller không phải check rỗng.
  *
  * Mỗi stamp là một `<span>` với class `.job-stamp-attention motion-reduce:*` để
  * CSS keyframe chỉ animate stamp đó (`globals.css`). Reduced-motion tự tắt
@@ -62,11 +66,14 @@ export interface JobStampBadgeProps {
 export function JobStampBadge({
   isHot,
   isUrgent,
+  isHighReward,
+  isExpiringSoon,
   stamps,
   className,
   size = 'sm',
 }: JobStampBadgeProps): ReactElement | null {
-  const keys: readonly StampKey[] = stamps ?? deriveStampsFromFlags(isHot, isUrgent);
+  const keys: readonly StampKey[] =
+    stamps ?? deriveStampsFromFlags(isHot, isUrgent, isHighReward, isExpiringSoon);
   if (keys.length === 0) return null;
   const pxClass = size === 'md' ? 'px-2.5 py-1' : 'px-2 py-1';
   return (

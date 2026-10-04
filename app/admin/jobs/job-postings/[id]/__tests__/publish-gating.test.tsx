@@ -81,6 +81,9 @@ function makeInitial(
     contentSchemaVersion: 1,
     isHot: false,
     isUrgent: false,
+    // hrp-ui-v1-job-card-stamps-brand (T1B): 2 flag mới default false.
+    isHighReward: false,
+    isExpiringSoon: false,
     opening,
     ...overrides,
   };
