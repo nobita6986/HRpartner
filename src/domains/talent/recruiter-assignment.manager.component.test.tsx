@@ -504,7 +504,7 @@ describe('RecruiterAssignmentManager — HR_STAFF display label (B-09)', () => {
   it('never exposes the raw UUID as the primary label', () => {
     const lbl = hrStaffDisplayLabel({ id: '11111111-1111-4111-8111-111111111111', name: null, phone: null, isActive: true });
     expect(lbl).not.toContain('11111111');
-    expect(lbl).toBe('(no name)');
+    expect(lbl).toBe('(chưa có tên)');
   });
 });
 

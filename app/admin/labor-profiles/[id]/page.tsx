@@ -4,6 +4,11 @@ import { getPrisma } from '@/src/lib/db';
 import { withDbContext } from '@/src/shared/auth/with-db-context';
 import { getLaborProfileDetail } from '@/src/domains/talent/labor-profile.read-service';
 import { Breadcrumb } from '@/src/shared/ui/navigation/breadcrumb';
+import {
+  identityVerificationLabel,
+  identityVerificationTone,
+} from '@/src/domains/talent/identity-verification-ui';
+import { StatusBadge } from '@/src/shared/ui/status-badge';
 import { HandlingAssignmentManager } from './handling-assignment-manager';
 
 export const dynamic = 'force-dynamic';
@@ -77,11 +82,13 @@ export default async function LaborProfileDetailPage({ params }: { params: Promi
             <div className="flex justify-between">
               <dt className="text-gray-500">Xác minh:</dt>
               <dd className="font-medium text-gray-900">
-                <span className={`px-2 py-0.5 rounded-full text-xs ${
-                  data.identityVerification === 'VERIFIED' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                }`}>
-                  {data.identityVerification}
-                </span>
+                <StatusBadge
+                  module="labor-profile-identity-verification"
+                  status={data.identityVerification}
+                  tone={identityVerificationTone(data.identityVerification)}
+                >
+                  {identityVerificationLabel(data.identityVerification)}
+                </StatusBadge>
               </dd>
             </div>
             <div className="flex justify-between">
