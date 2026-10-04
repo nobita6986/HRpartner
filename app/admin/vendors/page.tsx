@@ -2,6 +2,8 @@
 
 import * as React from 'react';
 import { useState, useEffect, useCallback } from 'react';
+import { StatusBadge } from '@/src/shared/ui/status-badge';
+import { vendorStatusLabel, vendorStatusTone } from './vendor-ui';
 
 interface VendorRow {
   id: string;
@@ -22,16 +24,6 @@ interface VendorsResponse {
   skip: number;
 }
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  ACTIVE:   { label: 'Hoạt động', color: '#197a56', bg: '#e8f5e9' },
-  INACTIVE: { label: 'Tạm ngưng', color: '#e65100', bg: '#fff3e0' },
-};
-
-function StatusBadge({ status }: { status: string }) {
-  const cfg = STATUS_CONFIG[status] ?? { label: status, color: '#37474f', bg: '#eceff1' };
-  return <span style={{ background: cfg.bg, color: cfg.color }} className="rounded-full px-2 py-0.5 text-xs font-semibold">{cfg.label}</span>;
-}
-
 function Modal({ onClose, onSuccess, editData }: { onClose: () => void; onSuccess: () => void; editData?: VendorRow }) {
   const [code, setCode] = useState(editData?.code ?? '');
   const [name, setName] = useState(editData?.name ?? '');
@@ -47,7 +39,7 @@ function Modal({ onClose, onSuccess, editData }: { onClose: () => void; onSucces
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isEdit && (!code.trim() || !name.trim())) { setErr('Điền đầy đủ các trường bắt buộc.'); return; }
-    if (isEdit && !name.trim()) { setErr('Tên vendor bắt buộc.'); return; }
+    if (isEdit && !name.trim()) { setErr('Tên nhà cung cấp bắt buộc.'); return; }
     setSubmitting(true);
     setErr('');
     try {
@@ -72,17 +64,17 @@ function Modal({ onClose, onSuccess, editData }: { onClose: () => void; onSucces
   return (
     <div style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} className="fixed inset-0 z-50 flex items-center justify-center" onClick={onClose}>
       <div style={{ background: 'var(--surface-container-lowest)' }} className="w-full max-w-md rounded-lg border p-6 shadow-xl" onClick={ev => ev.stopPropagation()}>
-        <h2 style={{ color: 'var(--on-surface)' }} className="mb-4 text-lg font-semibold">{isEdit ? 'Sửa vendor' : 'Thêm vendor mới'}</h2>
+        <h2 style={{ color: 'var(--on-surface)' }} className="mb-4 text-lg font-semibold">{isEdit ? 'Sửa nhà cung cấp' : 'Thêm nhà cung cấp mới'}</h2>
         <form onSubmit={submit} className="space-y-4">
           {!isEdit && (
             <div>
-              <label style={{ color: 'var(--on-surface)' }} className="mb-1 block text-sm font-medium">Mã vendor *</label>
+              <label style={{ color: 'var(--on-surface)' }} className="mb-1 block text-sm font-medium">Mã nhà cung cấp *</label>
               <input value={code} onChange={e => setCode(e.target.value)} placeholder="VD: VD-001"
                 style={{ borderColor: 'var(--outline)', background: 'var(--surface-container)' }} className="w-full rounded border px-3 py-2 text-sm font-mono" required />
             </div>
           )}
           <div>
-            <label style={{ color: 'var(--on-surface)' }} className="mb-1 block text-sm font-medium">Tên vendor *</label>
+            <label style={{ color: 'var(--on-surface)' }} className="mb-1 block text-sm font-medium">Tên nhà cung cấp *</label>
             <input value={name} onChange={e => setName(e.target.value)} placeholder="VD: Công ty XYZ"
               style={{ borderColor: 'var(--outline)', background: 'var(--surface-container)' }} className="w-full rounded border px-3 py-2 text-sm" required />
           </div>
@@ -155,7 +147,7 @@ export default function VendorsPage() {
       const d: VendorsResponse = await r.json();
       setVendors(d.vendors);
       setTotal(d.total);
-    } catch { setError('Không thể tải danh sách vendors.'); } finally { setLoading(false); }
+    } catch { setError('Không thể tải danh sách nhà cung cấp.'); } finally { setLoading(false); }
   }, [statusFilter, search]);
 
   useEffect(() => { const t = setTimeout(load, 300); return () => clearTimeout(t); }, [load]);
@@ -164,10 +156,10 @@ export default function VendorsPage() {
     <div style={{ background: 'var(--surface)' }} className="px-6 py-8 lg:px-8">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 style={{ color: 'var(--on-surface)' }} className="text-2xl font-semibold">Vendors</h1>
-          <p style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-sm">Module M7 — Quản lý đối tác</p>
+          <h1 style={{ color: 'var(--on-surface)' }} className="text-2xl font-semibold">Nhà cung cấp</h1>
+          <p style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-sm">Phân hệ M7 — Quản lý đối tác</p>
         </div>
-        <button onClick={() => setShowCreate(true)} style={{ background: 'var(--primary)', color: 'var(--on-primary)' }} className="rounded px-4 py-2 text-sm font-semibold">+ Thêm vendor</button>
+        <button onClick={() => setShowCreate(true)} style={{ background: 'var(--primary)', color: 'var(--on-primary)' }} className="rounded px-4 py-2 text-sm font-semibold">+ Thêm nhà cung cấp</button>
       </div>
 
       <div className="mb-4 flex flex-wrap gap-3">
@@ -179,7 +171,7 @@ export default function VendorsPage() {
             <button key={s} onClick={() => setStatusFilter(s)}
               style={{ borderColor: statusFilter === s ? 'var(--primary)' : 'var(--outline-variant)', background: statusFilter === s ? 'var(--primary-container)' : 'var(--surface-container-lowest)', color: statusFilter === s ? 'var(--on-primary-container)' : 'var(--on-surface-variant)' }}
               className="rounded-full border px-3 py-1 text-xs font-medium transition-colors">
-              {s === '' ? 'Tất cả' : STATUS_CONFIG[s]?.label ?? s}
+              {s === '' ? 'Tất cả' : vendorStatusLabel(s)}
             </button>
           ))}
         </div>
@@ -187,13 +179,13 @@ export default function VendorsPage() {
 
       {loading ? <p style={{ color: 'var(--on-surface-variant)' }} className="py-12 text-center text-sm">Đang tải…</p>
       : error ? <div style={{ background: 'var(--error-container)', color: 'var(--on-error-container)', borderColor: 'var(--error)' }} className="rounded-lg border p-4 text-sm">{error}</div>
-      : vendors.length === 0 ? <div style={{ background: 'var(--surface-container-lowest)', borderColor: 'var(--outline-variant)', color: 'var(--on-surface-variant)' }} className="rounded-lg border p-8 text-center"><p className="text-sm">Chưa có vendor nào.</p></div>
+      : vendors.length === 0 ? <div style={{ background: 'var(--surface-container-lowest)', borderColor: 'var(--outline-variant)', color: 'var(--on-surface-variant)' }} className="rounded-lg border p-8 text-center"><p className="text-sm">Chưa có nhà cung cấp nào.</p></div>
       : (
         <div style={{ borderColor: 'var(--outline-variant)' }} className="overflow-x-auto rounded-lg border">
           <table className="w-full text-sm">
             <thead>
               <tr style={{ background: 'var(--surface-container)', borderBottom: '1px solid var(--outline-variant)' }}>
-                {['Mã', 'Tên vendor', 'MST', 'Điện thoại', 'Email', 'Khu vực', 'Trạng thái', 'Ngày tạo', 'Hành động'].map(h => (
+                {['Mã', 'Tên nhà cung cấp', 'MST', 'Điện thoại', 'Email', 'Khu vực', 'Trạng thái', 'Ngày tạo', 'Thao tác'].map(h => (
                   <th key={h} style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-left font-semibold">{h}</th>
                 ))}
               </tr>
@@ -207,14 +199,18 @@ export default function VendorsPage() {
                   <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">{v.phone ?? '—'}</td>
                   <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">{v.email ?? '—'}</td>
                   <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">{v.area ?? '—'}</td>
-                  <td className="px-4 py-3"><StatusBadge status={v.status} /></td>
+                  <td className="px-4 py-3">
+                    <StatusBadge module="vendor" status={v.status} tone={vendorStatusTone(v.status)}>
+                      {vendorStatusLabel(v.status)}
+                    </StatusBadge>
+                  </td>
                   <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">{new Date(v.createdAt).toLocaleDateString('vi-VN')}</td>
                   <td className="px-4 py-3"><button onClick={() => setEditRow(v)} style={{ color: 'var(--primary)' }} className="text-xs font-medium hover:underline">Sửa</button></td>
                 </tr>
               ))}
             </tbody>
           </table>
-          <div style={{ borderColor: 'var(--outline-variant)', color: 'var(--on-surface-variant)' }} className="border-t px-4 py-2 text-xs">Tổng: {total} vendors</div>
+          <div style={{ borderColor: 'var(--outline-variant)', color: 'var(--on-surface-variant)' }} className="border-t px-4 py-2 text-xs">Tổng: {total} nhà cung cấp</div>
         </div>
       )}
 
