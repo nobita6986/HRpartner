@@ -248,6 +248,32 @@ export default function AdminJobsPage() {
             <p className='mt-1' style={{ color: 'var(--on-surface-variant)' }}>
               Quản lý danh sách nhu cầu (Project) và trạng thái publish
             </p>
+            {/*
+             * hrp-m2a-operational-ux-debt / F11 — terminology disambiguation
+             * (audit §8.11, execution decision §D Priority 2). The two
+             * `Publish`-flavoured buttons in the admin portal do NOT mean
+             * the same thing:
+             *  - "Công bố dự án" / "Bỏ công bố dự án"  (this page) bật hoặc
+             *    tắt `Project.isPublic` — quyết định Project có xuất hiện
+             *    trên landing / hay đệp & tuyển list công khai hay không.
+             *  - "Publish" / "Unpublish" / "Archive" (JobPosting editor ở
+             *    `/admin/jobs/job-postings/[id]`) chuyển trạng thái
+             *    `JobPosting` sang `PUBLISHED` / `DRAFT` / `ARCHIVED` theo
+             *    canonical P1-A0 (canonical slug, immutable sau lần publish
+             *    đầu tiên).
+             *
+             * Chỉ là copy/label/guidance — không đổi domain transition,
+             * không đổi API contract.
+             */}
+            <p
+              data-testid='jobs-terminology-note'
+              className='mt-2 max-w-2xl text-xs'
+              style={{ color: 'var(--on-surface-variant)' }}
+            >
+              <strong>Công bố dự án</strong> bật/tắt hiển thị Project trên trang chủ;
+              <strong> Publish</strong> trong JobPosting editor chuyển trạng thái JobPosting sang
+              <code> PUBLISHED</code>.
+            </p>
           </div>
           <div className='flex items-center gap-2'>
             <Link
@@ -333,7 +359,16 @@ export default function AdminJobsPage() {
                           className='px-3 py-1 text-sm font-medium rounded border disabled:cursor-not-allowed disabled:opacity-50'
                           style={{ borderColor: 'var(--outline)', color: 'var(--primary)' }}
                         >
-                          {job.isPublic ? 'Unpublish' : 'Publish'}
+                          {/*
+                           * hrp-m2a-operational-ux-debt / F11 — project-level
+                           * publish renamed from English `Publish` / `Unpublish`
+                           * to Vietnamese `Công bố dự án` / `Bỏ công bố dự án`
+                           * (audit §8.11). This button toggles `Project.isPublic`;
+                           * the JobPosting editor's `Publish` / `Unpublish` /
+                           * `Archive` English labels are unchanged (canonical
+                           * English domain terms per audit §8.11 correction).
+                           */}
+                          {job.isPublic ? 'Bỏ công bố dự án' : 'Công bố dự án'}
                         </button>
                       </td>
                     </tr>
