@@ -6,18 +6,20 @@
 |---|---|
 | Task | `hrp-ui2-public-content-controls-sticky` |
 | Delivery protocol | `V2_FAST_FREEZE` |
-| Spec version | `v1.0` |
+| Spec version | `v1.1` |
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
-| Execution round | `1` |
-| Baseline | `6ea2e267b72120de5f67d5954d1074101efccff1` |
+| Execution round | `2` (Phase A: 1, Phase B: 1) |
+| Phase A baseline | `6ea2e267b72120de5f67d5954d1074101efccff1` |
 | Phase A checkpoint SHA | `53696afb3f644a3df06d4cf772828446f16f30d6` |
-| Implementation SHA | `53696afb3f644a3df06d4cf772828446f16f30d6` |
-| Frozen delivery | `YES` |
-| Canonical gates | `NOT_REQUIRED` |
-| Audit eligibility | `NOT_ELIGIBLE` |
+| Phase A control head | `0d4a606ca3c522a606bf69e27a5340db6dc78e18` |
+| Phase B baseline (origin/main) | `796e13c69996756d1298bc1a7ec9b50bab935c9f` |
+| Phase B Implementation SHA | `(PENDING — recorded at Phase B freeze)` |
+| Frozen delivery | `NO` (Phase A checkpoint remained frozen; Phase B commit is the new freeze) |
+| Canonical gates | `FINAL_PENDING` (final-gate surface — to be flipped PASS after Phase B commit) |
+| Audit eligibility | `NOT_ELIGIBLE` (re-evaluated after Phase B commit) |
 | Correction batches used | `0` |
-| Status | `BLOCKED` |
+| Status | `BLOCKED` (Phase B is open; implementation in progress) |
 
 > **Note on `Frozen delivery: YES`.** H-16 requires this field to be `YES`
 > for V2_FAST_FREEZE. The semantic here is **"this Phase A commit IS frozen

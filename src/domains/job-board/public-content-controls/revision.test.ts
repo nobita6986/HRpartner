@@ -11,9 +11,9 @@ import {
   CONTENT_REVISION_LENGTH,
   buildRevisionInput,
   compareContentRevisions,
-  computeContentRevision,
   isCurrentlyDismissed,
 } from './revision';
+import { computeContentRevision } from './revision.server';
 import {
   safeStickyAnnouncement,
   type StickyAnnouncementDto,

@@ -28,6 +28,18 @@ import {
   type HomepageSettingsDto,
 } from '@/src/domains/job-board/public-types';
 import {
+  STICKY_ANIMATIONS,
+  STICKY_EMPHASIS,
+  STICKY_FONTS,
+  STICKY_TEXT_COLORS,
+  safeStickyAnnouncement,
+  type StickyAnimation,
+  type StickyEmphasis,
+  type StickyFont,
+  type StickyTextColor,
+} from '@/src/domains/job-board/public-content-controls/types';
+import { InvalidCtaUrlError, normalizeCtaUrl } from '@/src/domains/job-board/public-content-controls/url-safety';
+import {
   InvalidChatUrlError,
   InvalidPhoneNumberError,
   normalizeChatUrl,
@@ -112,6 +124,34 @@ function validatePhoneNumber(value: string): string | null {
   }
 }
 
+/**
+ * Compute a new, monotonic contentRevision from the prior one.
+ *
+ * The DB row keeps a `{ contentRevision, ... }` JSON; the prior counter is the
+ * last token after `rev-`. We bump it by 1 and keep the prefix stable. Falls
+ * back to a fresh timestamp-derived id if the prior value is malformed.
+ */
+function nextContentRevision(prior: string): string {
+  const match = /^rev-(\d+)$/.exec(prior);
+  if (match) {
+    const n = Number.parseInt(match[1]!, 10);
+    return `rev-${n + 1}`;
+  }
+  return `rev-${Date.now()}`;
+}
+
+function validateCtaUrl(value: string): string | null {
+  const trimmed = value.trim();
+  if (trimmed.length === 0) return null;
+  try {
+    normalizeCtaUrl(trimmed);
+    return null;
+  } catch (error) {
+    if (error instanceof InvalidCtaUrlError) return error.message;
+    return 'URL không hợp lệ.';
+  }
+}
+
 export default function AdminSettingsForm({ initialSettings, unavailableReason }: AdminSettingsFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -123,6 +163,23 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
   const [zaloChatUrl, setZaloChatUrl] = useState(initialSettings.zaloChatUrl ?? '');
   const [messengerChatUrl, setMessengerChatUrl] = useState(initialSettings.messengerChatUrl ?? '');
   const [phoneCallNumber, setPhoneCallNumber] = useState(initialSettings.phoneCallNumber ?? '');
+
+  // ── UI2 / Phase B state ────────────────────────────────────────────────
+  // Pull initial values from `initialSettings.stickyAnnouncement` (already
+  // projected through `safeStickyAnnouncement` server-side).
+  const stickyInitial = safeStickyAnnouncement(initialSettings.stickyAnnouncement ?? null);
+  const [newsSectionEnabled, setNewsSectionEnabled] = useState<boolean>(initialSettings.newsSectionEnabled);
+  const [stickyEnabled, setStickyEnabled] = useState<boolean>(stickyInitial.enabled);
+  const [stickyMessage, setStickyMessage] = useState<string>(stickyInitial.message);
+  const [stickyCtaLabel, setStickyCtaLabel] = useState<string>(stickyInitial.ctaLabel ?? '');
+  const [stickyCtaUrl, setStickyCtaUrl] = useState<string>(stickyInitial.ctaUrl ?? '');
+  const [stickyDismissible, setStickyDismissible] = useState<boolean>(stickyInitial.dismissible);
+  const [stickyTextColor, setStickyTextColor] = useState<StickyTextColor>(stickyInitial.textColor);
+  const [stickyFont, setStickyFont] = useState<StickyFont>(stickyInitial.font);
+  const [stickyEmphasis, setStickyEmphasis] = useState<StickyEmphasis>(stickyInitial.emphasis);
+  const [stickyAnimation, setStickyAnimation] = useState<StickyAnimation>(stickyInitial.animation);
+  const [stickyContentRevision, setStickyContentRevision] = useState<string>(stickyInitial.contentRevision);
+
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -131,19 +188,38 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
   const zaloChatUrlError = validateChatUrl(zaloChatUrl, 'zalo');
   const messengerChatUrlError = validateChatUrl(messengerChatUrl, 'messenger');
   const phoneCallNumberError = validatePhoneNumber(phoneCallNumber);
+  const stickyMessageError =
+    stickyMessage.length > 280 ? 'Nội dung thông báo tối đa 280 ký tự.' : null;
+  const stickyCtaLabelError =
+    stickyCtaLabel.length > 60 ? 'Nhãn CTA tối đa 60 ký tự.' : null;
+  const stickyCtaUrlError = validateCtaUrl(stickyCtaUrl);
   const hasFieldError =
     bestJobsError !== null ||
     listingError !== null ||
     zaloChatUrlError !== null ||
     messengerChatUrlError !== null ||
-    phoneCallNumberError !== null;
+    phoneCallNumberError !== null ||
+    stickyMessageError !== null ||
+    stickyCtaLabelError !== null ||
+    stickyCtaUrlError !== null;
 
   const hasChanges =
     bestJobsPageSize !== savedSnapshot.bestJobsPageSize ||
     listingPageSize !== savedSnapshot.listingPageSize ||
     zaloChatUrl !== (savedSnapshot.zaloChatUrl ?? '') ||
     messengerChatUrl !== (savedSnapshot.messengerChatUrl ?? '') ||
-    phoneCallNumber !== (savedSnapshot.phoneCallNumber ?? '');
+    phoneCallNumber !== (savedSnapshot.phoneCallNumber ?? '') ||
+    newsSectionEnabled !== savedSnapshot.newsSectionEnabled ||
+    stickyEnabled !== savedSnapshot.stickyAnnouncement.enabled ||
+    stickyMessage !== savedSnapshot.stickyAnnouncement.message ||
+    stickyCtaLabel !== (savedSnapshot.stickyAnnouncement.ctaLabel ?? '') ||
+    stickyCtaUrl !== (savedSnapshot.stickyAnnouncement.ctaUrl ?? '') ||
+    stickyDismissible !== savedSnapshot.stickyAnnouncement.dismissible ||
+    stickyTextColor !== savedSnapshot.stickyAnnouncement.textColor ||
+    stickyFont !== savedSnapshot.stickyAnnouncement.font ||
+    stickyEmphasis !== savedSnapshot.stickyAnnouncement.emphasis ||
+    stickyAnimation !== savedSnapshot.stickyAnnouncement.animation ||
+    stickyContentRevision !== savedSnapshot.stickyAnnouncement.contentRevision;
 
   // Clear stale success/error when user edits again.
   useEffect(() => {
@@ -157,9 +233,47 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
     zaloChatUrl,
     messengerChatUrl,
     phoneCallNumber,
+    newsSectionEnabled,
+    stickyEnabled,
+    stickyMessage,
+    stickyCtaLabel,
+    stickyCtaUrl,
+    stickyDismissible,
+    stickyTextColor,
+    stickyFont,
+    stickyEmphasis,
+    stickyAnimation,
+    stickyContentRevision,
     success,
     error,
   ]);
+
+  function buildPayload(): Record<string, unknown> {
+    const trimmedCtaUrl = stickyCtaUrl.trim();
+    const trimmedCtaLabel = stickyCtaLabel.trim();
+    return {
+      bestJobsPageSize,
+      listingPageSize,
+      zaloChatUrl,
+      messengerChatUrl,
+      phoneCallNumber,
+      newsSectionEnabled,
+      stickyAnnouncement: stickyEnabled
+        ? {
+            enabled: true,
+            message: stickyMessage,
+            ctaLabel: trimmedCtaLabel.length > 0 ? trimmedCtaLabel : null,
+            ctaUrl: trimmedCtaUrl.length > 0 ? trimmedCtaUrl : null,
+            dismissible: stickyDismissible,
+            textColor: stickyTextColor,
+            font: stickyFont,
+            emphasis: stickyEmphasis,
+            animation: stickyAnimation,
+            contentRevision: stickyContentRevision,
+          }
+        : null,
+    };
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -178,6 +292,9 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
           zaloChatUrlError ??
           messengerChatUrlError ??
           phoneCallNumberError ??
+          stickyMessageError ??
+          stickyCtaLabelError ??
+          stickyCtaUrlError ??
           'Có trường chưa hợp lệ.',
       );
       return;
@@ -188,13 +305,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
         const res = await fetch('/api/admin/homepage-settings', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            bestJobsPageSize,
-            listingPageSize,
-            zaloChatUrl,
-            messengerChatUrl,
-            phoneCallNumber,
-          }),
+          body: JSON.stringify(buildPayload()),
         });
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
@@ -210,6 +321,18 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
           setZaloChatUrl(data.settings.zaloChatUrl ?? '');
           setMessengerChatUrl(data.settings.messengerChatUrl ?? '');
           setPhoneCallNumber(data.settings.phoneCallNumber ?? '');
+          setNewsSectionEnabled(data.settings.newsSectionEnabled);
+          const snap = safeStickyAnnouncement(data.settings.stickyAnnouncement ?? null);
+          setStickyEnabled(snap.enabled);
+          setStickyMessage(snap.message);
+          setStickyCtaLabel(snap.ctaLabel ?? '');
+          setStickyCtaUrl(snap.ctaUrl ?? '');
+          setStickyDismissible(snap.dismissible);
+          setStickyTextColor(snap.textColor);
+          setStickyFont(snap.font);
+          setStickyEmphasis(snap.emphasis);
+          setStickyAnimation(snap.animation);
+          setStickyContentRevision(snap.contentRevision);
           setSuccess('Đã lưu cài đặt homepage và kênh liên hệ.');
         }
         router.refresh();
@@ -225,8 +348,26 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
     setZaloChatUrl(savedSnapshot.zaloChatUrl ?? '');
     setMessengerChatUrl(savedSnapshot.messengerChatUrl ?? '');
     setPhoneCallNumber(savedSnapshot.phoneCallNumber ?? '');
+    setNewsSectionEnabled(savedSnapshot.newsSectionEnabled);
+    const snap = safeStickyAnnouncement(savedSnapshot.stickyAnnouncement ?? null);
+    setStickyEnabled(snap.enabled);
+    setStickyMessage(snap.message);
+    setStickyCtaLabel(snap.ctaLabel ?? '');
+    setStickyCtaUrl(snap.ctaUrl ?? '');
+    setStickyDismissible(snap.dismissible);
+    setStickyTextColor(snap.textColor);
+    setStickyFont(snap.font);
+    setStickyEmphasis(snap.emphasis);
+    setStickyAnimation(snap.animation);
+    setStickyContentRevision(snap.contentRevision);
     setError(null);
     setSuccess(null);
+  }
+
+  function handlePublish() {
+    // Bump the content revision so prior user dismissals no longer suppress
+    // the new bar. The server stores the new value on next save.
+    setStickyContentRevision((prev) => nextContentRevision(prev));
   }
 
   return (
@@ -490,6 +631,303 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
               )}
             </div>
           </div>
+        </div>
+
+        {/* ── UI2 / Phase B — News section toggle ───────────────────────── */}
+        <div
+          className="mt-6 border-t pt-6"
+          style={{ borderColor: 'var(--outline-variant)' }}
+          data-testid="ui2-news-section-block"
+        >
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <h3 style={{ color: 'var(--on-surface)' }} className="text-sm font-semibold">
+                UI2 · Tin tức &amp; Cẩm nang
+              </h3>
+              <p style={{ color: 'var(--on-surface-variant)' }} className="mt-0.5 text-xs">
+                Khi tắt, mục &quot;Tin tức&quot; ẩn khỏi navigation và homepage. Dữ liệu bài viết được giữ nguyên.
+              </p>
+            </div>
+            <span
+              style={{ background: 'var(--primary-container)', color: 'var(--on-primary-container)' }}
+              className="rounded-full px-2 py-0.5 text-xs font-medium"
+            >
+              UI2 · PUBLIC CONTENT
+            </span>
+          </div>
+
+          <label className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              checked={newsSectionEnabled}
+              onChange={(e) => setNewsSectionEnabled(e.target.checked)}
+              disabled={Boolean(unavailableReason)}
+              className="hrp-focus mt-1 h-4 w-4 rounded border"
+              data-testid="news-section-toggle"
+            />
+            <span>
+              <span style={{ color: 'var(--on-surface)' }} className="block text-sm font-medium">
+                Hiển thị &quot;Tin tức &amp; Cẩm nang&quot; trên homepage công khai
+              </span>
+              <span style={{ color: 'var(--on-surface-variant)' }} className="mt-0.5 block text-xs">
+                Mặc định BẬT để giữ hành vi hiện tại theo contract.
+              </span>
+            </span>
+          </label>
+        </div>
+
+        {/* ── UI2 / Phase B — Sticky bottom announcement ────────────────── */}
+        <div
+          className="mt-6 border-t pt-6"
+          style={{ borderColor: 'var(--outline-variant)' }}
+          data-testid="ui2-sticky-announcement-block"
+        >
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <h3 style={{ color: 'var(--on-surface)' }} className="text-sm font-semibold">
+                UI2 · Thông báo dính phía dưới
+              </h3>
+              <p style={{ color: 'var(--on-surface-variant)' }} className="mt-0.5 text-xs">
+                Thanh thông báo cố định dưới viewport. URL CTA chỉ chấp nhận relative path hoặc HTTPS.
+              </p>
+            </div>
+            <span
+              style={{ background: 'var(--primary-container)', color: 'var(--on-primary-container)' }}
+              className="rounded-full px-2 py-0.5 text-xs font-medium"
+            >
+              UI2 · STICKY BAR
+            </span>
+          </div>
+
+          <label className="mb-4 flex items-start gap-3">
+            <input
+              type="checkbox"
+              checked={stickyEnabled}
+              onChange={(e) => setStickyEnabled(e.target.checked)}
+              disabled={Boolean(unavailableReason)}
+              className="hrp-focus mt-1 h-4 w-4 rounded border"
+              data-testid="sticky-enabled-toggle"
+            />
+            <span>
+              <span style={{ color: 'var(--on-surface)' }} className="block text-sm font-medium">
+                Bật thanh thông báo
+              </span>
+              <span style={{ color: 'var(--on-surface-variant)' }} className="mt-0.5 block text-xs">
+                Khi tắt, thanh không hiển thị trên public và CTA cũng bị ẩn.
+              </span>
+            </span>
+          </label>
+
+          <fieldset
+            disabled={!stickyEnabled || Boolean(unavailableReason)}
+            className="grid grid-cols-1 gap-6 sm:grid-cols-2"
+          >
+            <div className="sm:col-span-2">
+              <label htmlFor="stickyMessage" className="mb-1 block text-sm font-medium" style={{ color: 'var(--on-surface)' }}>
+                Nội dung thông báo
+              </label>
+              <textarea
+                id="stickyMessage"
+                rows={2}
+                maxLength={280}
+                value={stickyMessage}
+                onChange={(e) => setStickyMessage(e.target.value)}
+                aria-invalid={stickyMessageError !== null}
+                aria-describedby="stickyMessage-help stickyMessage-error"
+                className="hrp-focus w-full rounded-lg border bg-white px-3 py-2 text-sm min-h-11"
+                style={{
+                  borderColor: stickyMessageError ? 'var(--error)' : 'var(--outline-variant)',
+                  color: 'var(--on-surface)',
+                }}
+                data-testid="sticky-message-input"
+              />
+              <p id="stickyMessage-help" style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-xs">
+                Tối đa 280 ký tự. Plain text — KHÔNG nhúng HTML hoặc thẻ &lt;marquee&gt;.
+              </p>
+              {stickyMessageError && (
+                <p id="stickyMessage-error" role="alert" style={{ color: 'var(--error)' }} className="mt-1 text-xs font-medium">
+                  {stickyMessageError}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="stickyCtaLabel" className="mb-1 block text-sm font-medium" style={{ color: 'var(--on-surface)' }}>
+                Nhãn CTA
+              </label>
+              <input
+                id="stickyCtaLabel"
+                type="text"
+                maxLength={60}
+                value={stickyCtaLabel}
+                onChange={(e) => setStickyCtaLabel(e.target.value)}
+                aria-invalid={stickyCtaLabelError !== null}
+                aria-describedby="stickyCtaLabel-help stickyCtaLabel-error"
+                className="hrp-focus w-full rounded-lg border bg-white px-3 py-2 text-sm min-h-11"
+                style={{
+                  borderColor: stickyCtaLabelError ? 'var(--error)' : 'var(--outline-variant)',
+                  color: 'var(--on-surface)',
+                }}
+                data-testid="sticky-cta-label-input"
+              />
+              <p id="stickyCtaLabel-help" style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-xs">
+                Để trống nếu không cần nút CTA.
+              </p>
+              {stickyCtaLabelError && (
+                <p id="stickyCtaLabel-error" role="alert" style={{ color: 'var(--error)' }} className="mt-1 text-xs font-medium">
+                  {stickyCtaLabelError}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="stickyCtaUrl" className="mb-1 block text-sm font-medium" style={{ color: 'var(--on-surface)' }}>
+                URL CTA
+              </label>
+              <input
+                id="stickyCtaUrl"
+                type="url"
+                inputMode="url"
+                autoCapitalize="none"
+                autoCorrect="off"
+                value={stickyCtaUrl}
+                onChange={(e) => setStickyCtaUrl(e.target.value)}
+                aria-invalid={stickyCtaUrlError !== null}
+                aria-describedby="stickyCtaUrl-help stickyCtaUrl-error"
+                className="hrp-focus w-full rounded-lg border bg-white px-3 py-2 text-sm min-h-11"
+                style={{
+                  borderColor: stickyCtaUrlError ? 'var(--error)' : 'var(--outline-variant)',
+                  color: 'var(--on-surface)',
+                }}
+                data-testid="sticky-cta-url-input"
+              />
+              <p id="stickyCtaUrl-help" style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-xs">
+                Relative path (vd /viec-lam) hoặc HTTPS tuyệt đối. Từ chối javascript:, data:, vbscript:, file:, plain HTTP.
+              </p>
+              {stickyCtaUrlError && (
+                <p id="stickyCtaUrl-error" role="alert" style={{ color: 'var(--error)' }} className="mt-1 text-xs font-medium">
+                  {stickyCtaUrlError}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="stickyTextColor" className="mb-1 block text-sm font-medium" style={{ color: 'var(--on-surface)' }}>
+                Màu chữ
+              </label>
+              <select
+                id="stickyTextColor"
+                value={stickyTextColor}
+                onChange={(e) => setStickyTextColor(e.target.value as StickyTextColor)}
+                className="hrp-focus w-full rounded-lg border bg-white px-3 py-2 text-sm min-h-11"
+                style={{ borderColor: 'var(--outline-variant)', color: 'var(--on-surface)' }}
+                data-testid="sticky-text-color-select"
+              >
+                {STICKY_TEXT_COLORS.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="stickyFont" className="mb-1 block text-sm font-medium" style={{ color: 'var(--on-surface)' }}>
+                Font chữ
+              </label>
+              <select
+                id="stickyFont"
+                value={stickyFont}
+                onChange={(e) => setStickyFont(e.target.value as StickyFont)}
+                className="hrp-focus w-full rounded-lg border bg-white px-3 py-2 text-sm min-h-11"
+                style={{ borderColor: 'var(--outline-variant)', color: 'var(--on-surface)' }}
+                data-testid="sticky-font-select"
+              >
+                {STICKY_FONTS.map((f) => (
+                  <option key={f} value={f}>
+                    {f}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="stickyEmphasis" className="mb-1 block text-sm font-medium" style={{ color: 'var(--on-surface)' }}>
+                Độ đậm
+              </label>
+              <select
+                id="stickyEmphasis"
+                value={stickyEmphasis}
+                onChange={(e) => setStickyEmphasis(e.target.value as StickyEmphasis)}
+                className="hrp-focus w-full rounded-lg border bg-white px-3 py-2 text-sm min-h-11"
+                style={{ borderColor: 'var(--outline-variant)', color: 'var(--on-surface)' }}
+                data-testid="sticky-emphasis-select"
+              >
+                {STICKY_EMPHASIS.map((em) => (
+                  <option key={em} value={em}>
+                    {em}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="stickyAnimation" className="mb-1 block text-sm font-medium" style={{ color: 'var(--on-surface)' }}>
+                Hiệu ứng
+              </label>
+              <select
+                id="stickyAnimation"
+                value={stickyAnimation}
+                onChange={(e) => setStickyAnimation(e.target.value as StickyAnimation)}
+                className="hrp-focus w-full rounded-lg border bg-white px-3 py-2 text-sm min-h-11"
+                style={{ borderColor: 'var(--outline-variant)', color: 'var(--on-surface)' }}
+                data-testid="sticky-animation-select"
+              >
+                {STICKY_ANIMATIONS.map((a) => (
+                  <option key={a} value={a}>
+                    {a}
+                  </option>
+                ))}
+              </select>
+              <p style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-xs">
+                BLINK/MARQUEE tự động vô hiệu hoá khi prefers-reduced-motion.
+              </p>
+            </div>
+
+            <div className="sm:col-span-2 flex flex-wrap items-center justify-between gap-3">
+              <label className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  checked={stickyDismissible}
+                  onChange={(e) => setStickyDismissible(e.target.checked)}
+                  className="hrp-focus mt-1 h-4 w-4 rounded border"
+                  data-testid="sticky-dismissible-toggle"
+                />
+                <span>
+                  <span style={{ color: 'var(--on-surface)' }} className="block text-sm font-medium">
+                    Cho phép người dùng đóng thanh
+                  </span>
+                  <span style={{ color: 'var(--on-surface-variant)' }} className="mt-0.5 block text-xs">
+                    Trạng thái đóng được version theo contentRevision.
+                  </span>
+                </span>
+              </label>
+              <button
+                type="button"
+                onClick={handlePublish}
+                disabled={!stickyEnabled || Boolean(unavailableReason)}
+                style={{ background: 'var(--surface-container)', color: 'var(--on-surface)' }}
+                className="hrp-focus inline-flex items-center gap-2 rounded-lg border border-[var(--outline-variant)] px-3 py-2 text-xs font-semibold disabled:opacity-40"
+                data-testid="sticky-publish-button"
+              >
+                Phát hành (bump contentRevision)
+              </button>
+            </div>
+
+            <p style={{ color: 'var(--on-surface-variant)' }} className="sm:col-span-2 text-xs">
+              contentRevision hiện tại: <span className="font-mono">{stickyContentRevision}</span>
+            </p>
+          </fieldset>
         </div>
 
         {error && (

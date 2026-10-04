@@ -21,12 +21,16 @@ export {
 } from './url-safety';
 
 export {
-  computeContentRevision,
   compareContentRevisions,
   isCurrentlyDismissed,
   buildRevisionInput,
   CONTENT_REVISION_LENGTH,
 } from './revision';
+// `computeContentRevision` lives in `revision.server.ts` (server-only).
+// It is NOT re-exported from this barrel on purpose: any client that
+// pulls the barrel would inadvertently drag `node:crypto` into its
+// bundle. Server callers must import it directly from
+// `@/src/domains/job-board/public-content-controls/revision.server`.
 
 export {
   getAnimationClass,
@@ -56,3 +60,10 @@ export type {
   NewsSectionToggle,
   NewsSectionGate,
 } from './types';
+
+// Phase B / UI2 — re-exports for the canonical final-delivery surface.
+export { NewsSectionWrapper } from './news-section-wrapper';
+export { PublicStickyAnnouncement } from './public-sticky-announcement';
+export { usePublicContentControls, PUBLIC_CONTENT_CONTROLS_DEFAULTS } from './use-public-content-controls';
+export type { PublicContentControlsState } from './use-public-content-controls';
+export { toStickyAnnouncementDto } from './dto-projection';

@@ -1732,6 +1732,8 @@ model HomepageSettings {
   zaloChatUrl      String?  @map("zalo_chat_url")
   messengerChatUrl String?  @map("messenger_chat_url")
   phoneCallNumber  String?  @map("phone_call_number")
+  newsSectionEnabled Boolean  @default(true) @map("news_section_enabled")
+  stickyAnnouncement Json?    @map("sticky_announcement")
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt    @map("updated_at")
   updatedById      String?  @map("updated_by_id")

@@ -11,7 +11,7 @@ import { RecruitmentHighlight } from '@/src/domains/job-board/components/landing
 import { RecruitingProjectsSection } from '@/src/domains/job-board/components/landing/recruiting-projects-section';
 import { ReferralStrip } from '@/src/domains/job-board/components/landing/referral-strip';
 import { HrpIntroSection } from '@/src/domains/job-board/components/landing/hrp-intro-section';
-import { NewsSection } from '@/src/domains/job-board/components/landing/news-section';
+import { NewsSectionWrapper } from '@/src/domains/job-board/public-content-controls';
 import {
   demoHrpIntro,
   demoNewsSection,
@@ -390,7 +390,11 @@ export default function JobsPage() {
 
       <ReferralStrip />
 
-      <NewsSection content={demoNewsSection} />
+      {/* Phase B / UI2 — gate-aware wrapper. The wrapper reads
+          `newsSectionEnabled` from the public projection route; when
+          `false`, the section (and the matching navbar entry) is hidden
+          without deleting any article data. */}
+      <NewsSectionWrapper content={demoNewsSection} />
 
       {applyJob && (
         <ApplyModal

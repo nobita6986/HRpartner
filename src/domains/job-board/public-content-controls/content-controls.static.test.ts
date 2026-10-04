@@ -47,7 +47,9 @@ function listModuleFiles(): string[] {
 }
 
 const files = listModuleFiles();
-const tsxFile = files.find((f) => f.endsWith('sticky-announcement.tsx'));
+const tsxFile = files.find(
+  (f) => /[/\\]sticky-announcement\.tsx$/.test(f),
+);
 const cssFile = files.find((f) => f.endsWith('sticky-announcement.module.css'));
 const indexFile = files.find((f) => f.endsWith('index.ts'));
 const typesFile = files.find((f) => f.endsWith('types.ts'));
@@ -243,9 +245,14 @@ describe('index.ts — public surface re-exports', () => {
     expect(code).toMatch(/resolveNewsSectionGate/);
   });
 
-  it('re-exports computeContentRevision', () => {
+  it('does NOT re-export computeContentRevision from the barrel (server-only)', () => {
+    // `computeContentRevision` lives in `revision.server.ts` and is intentionally
+    // NOT re-exported through the public barrel — exposing it would force any
+    // client that touches the barrel to drag `node:crypto` into the client
+    // bundle. Server callers must import it directly from
+    // `./revision.server`.
     const code = readText(indexFile!);
-    expect(code).toMatch(/computeContentRevision/);
+    expect(code).not.toMatch(/from\s+['"]\.\/revision\.server['"]/);
   });
 
   it('does NOT export internal helper files directly', () => {
