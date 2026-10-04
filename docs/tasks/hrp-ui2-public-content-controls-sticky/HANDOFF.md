@@ -15,8 +15,9 @@
 | Phase A control head | `0d4a606ca3c522a606bf69e27a5340db6dc78e18` |
 | Phase B baseline (origin/main) | `796e13c69996756d1298bc1a7ec9b50bab935c9f` |
 | Phase B forward-merge SHA | `fb9ae379dcea3c422f3787f30bbe66fd69df0f13` |
-| Phase B Implementation SHA | `190983f1fa5fe345148f258c9b45aca8b759619d` |
+| Phase B Implementation SHA | `190983f1fa5fe345148f258c9b45aca8b759619d` (the canonical final-delivery commit; the HANDOFF flip commit `a4600c1b…` is documentation-only and does not change the implementation SHA per H-16) |
 | Implementation SHA | `190983f1fa5fe345148f258c9b45aca8b759619d` |
+| HANDOFF freeze commit | `a4600c1b1c802eea56d6fde8bddd86bab4985e71` (documentation-only; no app/src/prisma diff vs `190983f1…`) |
 | Frozen delivery | `YES` |
 | Canonical gates | `PASS` |
 | Audit eligibility | `ELIGIBLE` |
@@ -24,7 +25,7 @@
 | Next gate | `TIER3_LIGHT_DELTA_AUDIT` |
 | Production migration | `NOT_RUN` (deploy owner applies out-of-band) |
 | Correction batches used | `0` |
-| Final audit-target HEAD | `190983f1fa5fe345148f258c9b45aca8b759619d` |
+| Final audit-target HEAD | `190983f1fa5fe345148f258c9b45aca8b759619d` (HANDOFF flip commit `a4600c1b…` is documentation-only; the audit anchor is the implementation SHA) |
 
 > **Note on `Phase B Implementation SHA`.** Per H-16, this row resolves to
 > the post-Phase-B commit `190983f1fa5fe345148f258c9b45aca8b759619d`. The
