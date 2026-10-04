@@ -13,7 +13,10 @@
 | Status | READY_FOR_AUDIT |
 | Baseline | `6ea2e267b72120de5f67d5954d1074101efccff1` |
 | Contract correction SHA | `763c55ef213218fcb88967281f584e69ac26588f` |
-| Implementation SHA (D1-D4 + brand + About) | `12a0077b9b731aef7ca583d86ee0b0813ec21213` |
+| Implementation SHA (round 1 — D1-D4 + brand + About) | `12a0077b9b731aef7ca583d86ee0b0813ec21213` |
+| Implementation SHA (round 2 — F8 safe mapper integration) | `50e07bcf462af8a5b2b3871e42618ca83039cf44` |
+| Implementation SHA | `50e07bcf462af8a5b2b3871e42618ca83039cf44` |
+| Implementation SHA note | Round-2 semantic HEAD. Freeze range ends here — only HANDOFF docs commit after. |
 | Cleanup SHA | `108fb9c286ec061d2b7a73f31b3a38ccd7caf383` |
 | Forward-merge SHA (T1A Mốc 2A → T1B UI V1, --no-ff) | `8e7321744ff33bbbfd956ecc9abc3a6e7a71497e` |
 | Forward-merge parents | `a49aa078a46499e8caa03512581c147c7bbe067c` + `8382bbc70b74f2fc21471c532b98bd20ab8a1fac` |
