@@ -10,19 +10,19 @@
 | Spec version | `v1.1` |
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
-| Execution round | `2` (Phase A: 1, Phase B: 1) |
+| Execution round | `3` (Phase A: 1, Phase B: 1, post-audit correction: 1) |
 | Phase A baseline | `6ea2e267b72120de5f67d5954d1074101efccff1` |
 | Phase A checkpoint SHA | `53696afb3f644a3df06d4cf772828446f16f30d6` |
 | Phase A control head | `0d4a606ca3c522a606bf69e27a5340db6dc78e18` |
 | Phase B baseline (origin/main) | `796e13c69996756d1298bc1a7ec9b50bab935c9f` |
 | Phase B forward-merge SHA | `fb9ae379dcea3c422f3787f30bbe66fd69df0f13` |
 | Phase B UI2-owned semantic SHA | `190983f1fa5fe345148f258c9b45aca8b759619d` (UI2-owned Phase B semantic anchor; preserved as historical reference, NOT the post-merge Implementation SHA per T0 §8) |
-| Implementation SHA | `b48e4bbddf5f328f4bf38ed1b01e67586e6eeda0` |
+| Implementation SHA | `f085a3267390385c180f487b0ca0f6f9649e326e` |
 | Latest-main merged | `937133c2fe96ebbf80c64d5b36f5f830e215efbb` (origin/main at the time of the latest-main reconciliation; contains PR #95 PWA icon hotfix + PR #96 Admin Localization Wave 1 + PR #97 UI V1 public-card-truth correction + PR #98 Admin Localization Wave 2) |
 | Latest-main reconciliation SHA | `a6396ac331a826b0a268dc1dbfafe812ba9e6ac3` (merge commit; two parents: `5120c86c…` UI2 docs/hygiene HEAD + `937133c2…` origin/main HEAD; created via `git merge --no-ff origin/main`; no rebase/amend/reset) |
 | Previous docs HEAD | `b3d9de9bb96e28eec24de156e6bbe64ec6c3a5da` |
-| Correction SHA | `b48e4bbddf5f328f4bf38ed1b01e67586e6eeda0` |
-| Final combined semantic SHA | `b48e4bbddf5f328f4bf38ed1b01e67586e6eeda0` (the correction batch's final test-surface commit is the combined implementation/audit anchor) |
+| Correction SHA | `f085a3267390385c180f487b0ca0f6f9649e326e` |
+| Final combined semantic SHA | `f085a3267390385c180f487b0ca0f6f9649e326e` (post-audit terminal correction; combined implementation/re-audit anchor) |
 | HANDOFF freeze commit (pre-merge) | `a4600c1b1c802eea56d6fde8bddd86bab4985e71` (documentation-only; superseded by the merge) |
 | Docs/hygiene correction (pre-merge) | `5120c86ce080c40c9d0ab9fddd0f9cca36aa847c` (documentation-only; superseded by the merge) |
 | Frozen delivery | `YES` |
@@ -33,7 +33,7 @@
 | Production migration | `NOT_RUN` |
 | Correction budget | `1` |
 | Correction batches used | `1` |
-| Revision / identity chain | `190983f1…` (UI2 Phase B semantic) → `a4600c1b…` (HANDOFF flip, docs-only) → `5120c86c…` (docs/hygiene correction, docs-only) → `a6396ac3…` (latest-main reconciliation) → `77b8537b…` (initial correction: integration test + TASK repair) → `daa164cd…` (HANDOFF evidence update, docs-only) → `6db05471…` (synthetic evidence/test correction) → `07ad2d0f…` (docs evidence freeze) → `b48e4bbd…` (LF-only test-surface correction; final correction SHA). Any later docs-only freeze HEAD is reported in the T0 handback, not pinned recursively. |
+| Revision / identity chain | `190983f1…` (UI2 Phase B semantic) → `a4600c1b…` (HANDOFF flip, docs-only) → `5120c86c…` (docs/hygiene correction, docs-only) → `a6396ac3…` (latest-main reconciliation) → `77b8537b…` (integration test + TASK repair) → `daa164cd…` (docs-only) → `6db05471…` (synthetic correction) → `07ad2d0f…` (docs freeze) → `b48e4bbd…` (LF-only correction) → `ea7092b6…` (audit-anchor docs) → `5f122beb…` (Tier 3 FAIL adoption, AUDIT-only) → `f085a326…` (post-audit terminal semantic correction). Any later docs-only freeze HEAD is reported in the T0 handback, not pinned recursively. |
 
 > **Note on SHA identity (post-merge).** The historical post-merge
 > `Implementation SHA` was `a6396ac331a826b0a268dc1dbfafe812ba9e6ac3`
@@ -44,9 +44,11 @@
 > `a4600c1b…` and `5120c86c…` were documentation-only and were absorbed
 > into the merge commit's tree. At pre-correction docs HEAD
 > `b3d9de9b…`, the semantic delta against reconciliation `a6396ac3…` was
-> empty. Correction batch 1/1 ends at `b48e4bbddf5f328f4bf38ed1b01e67586e6eeda0`,
-> which supersedes that historical anchor and is both the Correction SHA
-> and final combined implementation/audit SHA. The earlier `77b8537b…`
+> empty. Correction batch 1/1 ended at `b48e4bbddf5f328f4bf38ed1b01e67586e6eeda0`.
+> Tier 3 round 1 was adopted as FAIL at `5f122beb…`. T0 then authorized one
+> terminal correction: `f085a3267390385c180f487b0ca0f6f9649e326e`,
+> which is now the Correction SHA and final combined implementation/re-audit SHA.
+> The earlier `77b8537b…`
 > added the required test and TASK repair; `daa164cd…` was docs-only;
 > `6db05471…` finalized the synthetic evidence/test correction;
 > `07ad2d0f…` froze the docs; and `b48e4bbd…` mechanically normalized the
@@ -187,23 +189,23 @@ The first row is `verify-task`. Each command registers once via `E-xx`; multiple
 | `AC-23` | `E-23` | `public-settings.service.ts` `getHomepageSettings` projects the new fields via `toHomepageSettingsDto` (default `true` for the toggle, default `safeStickyAnnouncement(null)` for the announcement). | `None` |
 | `AC-24` | `E-24` | `public-settings.service.ts` `updateHomepageSettings` accepts `newsSectionEnabled?: boolean` and `stickyAnnouncement?: StickyAnnouncementDto | null`; re-validates with `StickyAnnouncementSchema` and `normalizeCtaUrl` before persistence. | `None` |
 | `AC-25` | `E-25` | `app/(portal)/layout.tsx` mounts `<PublicStickyAnnouncement />`. `app/(portal)/page.tsx` mounts `<NewsSectionWrapper content={demoNewsSection} />`. `app/components/GlobalNavbar.tsx` filters the `Tin tức` nav entry on `newsSectionEnabled`. | `None` |
-| `AC-26` | `E-26` | `app/admin/settings/admin-settings-form.tsx` exposes the UI2 news toggle block and the UI2 sticky announcement editor block with all required `data-testid`s; POSTs the full payload (including the new fields) to `/api/admin/homepage-settings`. | `None` |
-| `AC-27` | `E-27` | `URL safety`: 17/17 url-safety.test.ts passed (4 reject cases for `javascript:` / `data:text/html` / `vbscript:` / `file:` / plain HTTP / protocol-relative / embedded credentials; 2 positive cases). | `None` |
-| `AC-28` | `E-28` | `Content revision`: 16/16 revision.test.ts passed (5 hash tests + 5 compareContentRevisions tests + 4 isCurrentlyDismissed tests + 2 purity tests). | `None` |
-| `AC-29` | `E-29` | `Dismiss + contentRevision`: `<StickyAnnouncement>` reads `hrp.stickyAnnouncement.dismissed/<contentRevision>`; `isCurrentlyDismissed` is the canonical comparator; the admin form's "Phát hành" button bumps `contentRevision`. | `None` |
-| `AC-30` | `E-30` | `Animation + reduced-motion`: 7/7 animation.test.ts passed; `sticky-announcement.module.css` contains both `@keyframes hrpStickyAnnouncementBlink` and `@keyframes hrpStickyAnnouncementMarquee` plus a `@media (prefers-reduced-motion: reduce)` block that overrides `animation: none`. | `None` |
-| `AC-31` | `E-31` | `Static fence`: 81+ assertions in content-controls.static.test.ts pass; no `dangerouslySetInnerHTML`, no `<script>`, no `<marquee>` (rendered + source), no JSX `on*=` event handlers, no `eval`. | `None` |
-| `AC-32` | `E-32` | `Mount tests`: 7/7 sticky-announcement.mount.test.tsx (jsdom) pass; covers on-state render, off-state null, dismiss state hydration, and animation-class application. | `None` |
-| `AC-33` | `E-33` | `News gate`: 4/4 news-section-gate.test.ts (REAL / INTEGRATION_PENDING) pass; `NewsSectionWrapper` returns `''` when `newsSectionEnabled === false` (2/2 `__tests__/news-section-wrapper.test.tsx`). | `None` |
-| `AC-34` | `E-34` | `Hook`: 5/5 `__tests__/use-public-content-controls.test.tsx` pass; fail-open defaults on HTTP failure / network error; `newsSectionEnabled=false` projection; valid `stickyAnnouncement` projection. | `None` |
-| `AC-35` | `E-35` | `DTO projection`: 6/6 `__tests__/dto-projection.test.ts` pass; `null` / malformed JSON / unknown keys fallback to `safeStickyAnnouncement(null)`. | `None` |
-| `AC-36` | `E-36` | `Admin form`: 6/6 `app/admin/settings/__tests__/admin-settings-form.ui2.test.ts` pass; wires all required `data-testid`s, imports UI2 types, exposes a publish handler that bumps `contentRevision`, no `dangerouslySetInnerHTML`, no `<marquee>`, no `<script>`. | `None` |
-| `AC-37` | `E-37` | `Service tests` cover both read (default values, projection of stored JSON) and write (admin mutation rejects invalid CTA URL, persists the new payload, re-reads via DTO). `public-settings.test.ts` PASSES. | `None` |
-| `AC-38` | `E-38` | `Static fence Phase B`: `pnpm exec vitest run src/domains/job-board/public-content-controls/content-controls.static.test.ts` exits 0; the fence asserts no `&lt;script` / `dangerouslySetInnerHTML` / `<marquee>` in the new `news-section-wrapper.tsx`, `public-sticky-announcement.tsx`, `use-public-content-controls.ts`, and `dto-projection.ts` files. | `None` |
-| `AC-39` | `E-39` | `Design tokens`: `app/shared/ui/design-tokens.static.test.ts` PASSES (12/12). The admin form uses no `var(--…)` pointing at a token not declared in `app/globals.css` (UI2 tags use `var(--primary-container)` / `var(--on-primary-container)`, both declared). | `None` |
-| `AC-40` | `E-40a`, `E-40b`, `E-40c` | `Typecheck`: `npm run typecheck` exit 0. `Lint`: `npm run lint` exit 0, 0 errors, 919 warnings. `Build`: `npm run build` exit 0. | `None` |
-| `AC-41` | `E-41` | `Encoding`: `node .ai-pipeline/scripts/verify-encoding.mjs` and the correction-range scanner PASS; TASK and HANDOFF each have BOM=0, U+FFFD=0, disallowed controls=0, CRLF=0, and zero required mojibake markers. `git diff --check` is clean. | `None` |
-| `AC-42` | `E-42` | `Full unit suite`: `npm run test:unit` → `Test Files 252 passed (252) · Tests 4081 passed | 9 skipped (4090)`. | `None` |
+| `AC-26` | `E-26`, `E-50` | `app/admin/settings/admin-settings-form.tsx` exposes both UI2 blocks and now delegates payload construction to the pure dirty-only helper. | `None` |
+| `AC-27` | `E-51` | Public route test calls `GET /api/public/homepage-settings` and proves the returned JSON includes `newsSectionEnabled` and the complete sticky announcement projection. | `None` |
+| `AC-28` | `E-51` | Admin route valid-payload test returns 200, calls `updateHomepageSettings` with the new fields, and calls `revalidateTag`. | `None` |
+| `AC-29` | `E-51` | Admin route overlong-message test returns 400 and proves no persistence call occurs. | `None` |
+| `AC-30` | `E-51` | Admin route unsafe `javascript:` CTA test returns 400 and proves no persistence call occurs. | `None` |
+| `AC-31` | `E-49` | Exactly one public-layout sticky mount remains; no non-public layout imports it. | `None` |
+| `AC-32` | `E-49` | Navbar toggle behavior remains covered by the focused UI2 lane. | `None` |
+| `AC-33` | `E-49` | News wrapper returns no section when disabled and preserves the existing section source file. | `None` |
+| `AC-34` | `E-50`, `E-52` | Six pure helper tests prove dirty-only payloads: single-field changes stay partial; any sticky edit sends one complete sticky object; disabling an enabled announcement sends `null`; unchanged form sends `{}`. Existing admin-form static tests remain 6/6 PASS. | `None` |
+| `AC-35` | `E-53` | `npx tsc --noEmit` exits 0. | `None` |
+| `AC-36` | `E-53` | ESLint exits 0 on the corrected surface and repo-wide lint exits 0 with zero errors. | `None` |
+| `AC-37` | `E-52`, `E-54` | Focused UI2 lane: 17 files / 272 tests PASS. Full unit lane: 255 files / 4091 passed / 9 skipped / 0 failed. | `None` |
+| `AC-38` | `E-53` | Production build exits 0; 29/29 static pages generated. | `None` |
+| `AC-39` | `E-55` | Encoding verifier passes for all five semantic-correction text files, UTF-8 without BOM. | `None` |
+| `AC-40` | `E-55` | `git diff --check` exits 0. | `None` |
+| `AC-41` | `E-56` | `verify-task.ps1` exits 0 after the terminal correction freeze. | `None` |
+| `AC-42` | `E-57` | `verify-handoff.ps1` exits 0 after the terminal correction freeze. | `None` |
 | `AC-43` | `E-43` | `Migration order`: command `Get-ChildItem prisma/migrations -Directory | Sort-Object Name | Select-Object -Last 1` returns `20261004230000_ui2_public_content_controls`, lexicographically latest on this branch. | `None` |
 | `AC-44` | `E-44` | `Synthetic PostgreSQL`: migration applied with `npx --no-install prisma migrate deploy`; writer was non-super/non-bypassrls and admin was privileged on the same approved synthetic host/database. One integration test passed in each of 3 fresh Vitest processes (1/1 each). Schema/default/nullability, top-level-object and 4 KB checks, service read/write of news + all sticky fields + contentRevision, and invalid CTA/schema rejection passed. The full singleton snapshot hash remained `3156914f65d9b214c8414b36173882119a1397506157e0f58a5f403f5e9b0691` after each process. No URL or row payload is recorded. | `Production DB untouched; production migration NOT_RUN` |
 | `—` | `E-45` | First attempt was classified `SYNTHETIC_TEST_HARNESS_TIMESTAMP_PRECISION_RESIDUE`: its Date-based cleanup could lose sub-millisecond precision in `created_at` / `updated_at` (`timestamp(6)`). Non-timestamp business fields compared equal. The test now snapshots/restores timestamp text directly; the three final runs each had zero full-row delta. T0 selected the current synthetic row as the new baseline; no backup/PITR or guessed timestamp reconstruction was used. | `Synthetic only; corrected harness verified` |
@@ -243,6 +245,14 @@ The first row is `verify-task`. Each command registers once via `E-xx`; multiple
 | `E-47` | `npx --no-install prisma validate`; `npx --no-install prisma generate` | both exit 0; validation used non-routable placeholder URLs; client generated with Prisma 5.22.0. | inline |
 | `E-48` | `pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-ui2-public-content-controls-sticky/TASK.md` | exit 0; `DRAFT-VALID`, one non-blocking A-04 warning because final status is `READY_FOR_AUDIT`; all structural, mapping, and control checks pass. | inline |
 | `E-49` | `npx --no-install vitest run --config vitest.unit.config.ts prisma/migrations/20261004230000_ui2_public_content_controls/migration.test.ts src/domains/job-board/public-settings.test.ts src/domains/job-board/public-content-controls/__tests__/news-section-wrapper.test.tsx src/domains/job-board/public-content-controls/__tests__/use-public-content-controls.test.tsx app/admin/settings/__tests__/admin-settings-form.ui2.test.ts src/domains/job-board/public-content-controls/url-safety.test.ts src/domains/job-board/public-content-controls/revision.test.ts src/domains/job-board/public-content-controls/sticky-announcement.mount.test.tsx src/domains/job-board/public-content-controls/sticky-announcement.test.tsx src/domains/job-board/public-content-controls/animation.test.ts src/domains/job-board/public-content-controls/content-controls.static.test.ts src/domains/job-board/public-content-controls/news-section-gate.test.ts src/domains/job-board/public-content-controls/__tests__/dto-projection.test.ts src/shared/ui/design-tokens.static.test.ts` | exit 0; 14 test files, 262 passed. | inline |
+| `E-50` | `npx --no-install vitest run --config vitest.unit.config.ts app/admin/settings/homepage-settings-patch.test.ts app/admin/settings/__tests__/admin-settings-form.ui2.test.ts` | exit 0; dirty-only helper 6/6 and admin form 6/6 PASS. | inline |
+| `E-51` | `npx --no-install vitest run --config vitest.unit.config.ts app/api/admin/homepage-settings/route.test.ts app/api/public/homepage-settings/route.test.ts` | exit 0; admin route 3/3 and public route 1/1 PASS. | inline |
+| `E-52` | focused UI2 Vitest lane including migration, service, controls, admin form, dirty-patch helper, and both route tests | exit 0; 17 files / 272 tests PASS. | inline |
+| `E-53` | `npx tsc --noEmit`; `npm run lint`; `npm run build`; `npx --no-install prisma validate` | all exit 0; build generated 29/29 static pages; Prisma schema valid using non-routable placeholder URLs only. | inline |
+| `E-54` | `npm run test:unit` | exit 0; 255 files / 4091 passed / 9 skipped / 0 failed. | inline |
+| `E-55` | `node .ai-pipeline/scripts/verify-encoding.mjs`; `git diff --check` | both exit 0; five semantic-correction text files are strict UTF-8 without BOM. | inline |
+| `E-56` | `pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-ui2-public-content-controls-sticky/TASK.md` | exit 0; terminal correction contract/control fields accepted. | inline |
+| `E-57` | `pwsh .ai-pipeline/scripts/verify-handoff.ps1 -TaskPath docs/tasks/hrp-ui2-public-content-controls-sticky/TASK.md` | exit 0; terminal correction handoff accepted. | inline |
 
 ## 4. Deviations and blockers
 
@@ -250,13 +260,16 @@ The first row is `verify-task`. Each command registers once via `E-xx`; multiple
 |---|---|---|---|
 | `BLK-01` | `RESOLVED` | Phase B is open. Forward-merge `fb9ae379…` absorbed `origin/main` (`796e13c6…`). Schema, single migration, and four mount points are implemented. Production migration is `NOT_RUN` by Phase B (deployed owner applies it out-of-band). | None — T1C has frozen Phase B and handed back to T0 for Tier 3. |
 | `INC-01` | `RESOLVED` | First synthetic integration attempt was classified `SYNTHETIC_TEST_HARNESS_TIMESTAMP_PRECISION_RESIDUE`: cleanup serialized `timestamp(6)` values through JavaScript `Date`, so sub-millisecond precision could be lost. The in-test comparison confirmed all non-timestamp fields restored; `created_at` / `updated_at` were the only lossy fields. Per T0, current synthetic singleton snapshot is the new baseline; no backup/PITR or guessed values were used. Test now snapshots/restores PostgreSQL timestamp text exactly. Three fresh processes each passed with zero full-row delta (snapshot SHA-256 `3156914f65d9b214c8414b36173882119a1397506157e0f58a5f403f5e9b0691`). Production DB was not accessed. | None — T0 selected current synthetic snapshot baseline. |
+| `UI2-R1-01` | `RESOLVED` | The admin form previously serialized all settings. `buildHomepageSettingsPatch` now emits only dirty top-level fields and a complete sticky object only when a sticky field changes. Six helper tests cover the contract. | None — corrected at `f085a326…`. |
+| `UI2-R1-02` | `RESOLVED` | Missing AC-27..AC-30 route proof is now present in dedicated admin/public route tests: 4/4 PASS. | None — corrected at `f085a326…`. |
+| `UI2-R1-03` | `RESOLVED` | HANDOFF AC evidence was mapped to stale outcomes. AC-27..AC-42 now map to the actual TASK contract and measured correction gates. | None — corrected in this docs freeze. |
 
-Correction budget: `1/1` used by this contract-required integration test and
-documentation correction. No runtime UI2 source behavior or scope changed. The
-correction surface adds `tests/db/public-settings.integration.test.ts` and its
-registration in `vitest.integration-files.ts`; TASK mojibake/control corruption
-was repaired without changing requirement or traceability mappings. The prior
-reconciliation and semantic SHA identities remain historical anchors.
+Correction budget: `1/1` used by Tier 1 for the contract-required integration
+test and documentation repair. After Tier 3 round 1 returned FAIL, the owner
+authorized T0 to execute the terminal repair directly, outside the Tier 1
+correction budget. That repair fixed the dirty-only admin payload contract and
+added the missing route-level tests. It did not change schema, migrations,
+auth, RLS, dependencies, or production data.
 
 The other intentional implementation touches that need explaining:
 
@@ -284,12 +297,13 @@ The repo-wide lint config is unchanged.
 `READY_FOR_AUDIT / TIER3_LIGHT_DELTA_AUDIT` — Phase A and Phase B are
 both delivered and frozen; latest-main reconciliation complete.
 `UI2 Phase B semantic SHA: 190983f1…` (UI2-owned anchor, preserved).
-`Correction SHA / final combined Implementation SHA (audit anchor):
-b48e4bbd…`. `Latest-main reconciliation: a6396ac3…`;
+`Correction SHA / final combined Implementation SHA (re-audit anchor):
+f085a326…`. Tier 3 round-1 FAIL was adopted at `5f122beb…`.
+`Latest-main reconciliation: a6396ac3…`;
 `Latest-main merged: 937133c2…`
 (origin/main at reconciliation time). `Frozen delivery: YES`.
 `Canonical gates: PASS`. `Audit eligibility: ELIGIBLE`. `Production
-migration: NOT_RUN`. `Correction budget: 1` shipped at zero cents.
+migration: NOT_RUN`. `Correction budget: 1/1`; the post-audit repair is T0-owned.
 
 - **Latest-main reconciliation (historical integration point):**
   - `git merge --no-ff origin/main` produced the merge commit
