@@ -2,14 +2,15 @@
 
 import * as React from 'react';
 import { useState, useEffect, useCallback } from 'react';
-
-type EmploymentStatus = 'NONE' | 'ACTIVE' | 'SUSPENDED' | 'TERMINATED';
+import { workerStatusLabel, workerStatusTone } from '@/src/domains/workforce/worker-ui';
+import type { WorkerEmploymentStatus } from '@/src/domains/workforce/worker-ui';
+import { StatusBadge } from '@/src/shared/ui/status-badge';
 
 interface WorkerRow {
   id: string;
   userId: string;
   fullName: string;
-  employmentStatus: EmploymentStatus | null;
+  employmentStatus: WorkerEmploymentStatus | null;
   phone: string | null;
   createdAt: string;
 }
@@ -19,23 +20,6 @@ interface WorkersResponse {
   total: number;
   take: number;
   skip: number;
-}
-
-const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  NONE:       { label: 'Chưa rõ',    color: '#607d8b', bg: '#eceff1' },
-  ACTIVE:     { label: 'Đang làm',   color: '#197a56', bg: '#e8f5e9' },
-  SUSPENDED:  { label: 'Tạm ngưng',  color: '#6a1b9a', bg: '#f3e5f5' },
-  TERMINATED: { label: 'Đã nghỉ',    color: '#c62828', bg: '#ffebee' },
-};
-
-function StatusBadge({ status }: { status?: string | null }) {
-  if (!status) return <span className="rounded-full px-2 py-0.5 text-xs font-semibold bg-gray-100 text-gray-500">Trống</span>;
-  const cfg = STATUS_CONFIG[status] ?? { label: status, color: '#37474f', bg: '#eceff1' };
-  return (
-    <span style={{ background: cfg.bg, color: cfg.color }} className="rounded-full px-2 py-0.5 text-xs font-semibold">
-      {cfg.label}
-    </span>
-  );
 }
 
 function Modal({ onClose, onSuccess, editData }: { onClose: () => void; onSuccess: () => void; editData?: WorkerRow }) {
@@ -93,7 +77,7 @@ function Modal({ onClose, onSuccess, editData }: { onClose: () => void; onSucces
         <form onSubmit={submit} className="space-y-4">
           {!isEdit && (
             <div>
-              <label style={{ color: 'var(--on-surface)' }} className="mb-1 block text-sm font-medium">User ID *</label>
+              <label style={{ color: 'var(--on-surface)' }} className="mb-1 block text-sm font-medium">Mã người dùng *</label>
               <input value={userId} onChange={e => setUserId(e.target.value)} placeholder="VD: USR-001"
                 style={{ borderColor: 'var(--outline)', background: 'var(--surface-container)' }}
                 className="w-full rounded border px-3 py-2 text-sm font-mono" required />
@@ -175,7 +159,7 @@ export default function WorkersPage() {
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 style={{ color: 'var(--on-surface)' }} className="text-2xl font-semibold">Nhân viên</h1>
-          <p style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-sm">Module M5 — Quản lý master data nhân viên</p>
+          <p style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-sm">Phân hệ M5 — Quản lý dữ liệu gốc nhân viên</p>
         </div>
         <button onClick={() => setShowCreate(true)} style={{ background: 'var(--primary)', color: 'var(--on-primary)' }} className="rounded px-4 py-2 text-sm font-semibold">
           + Thêm nhân viên
@@ -196,7 +180,7 @@ export default function WorkersPage() {
                 color: statusFilter === s ? 'var(--on-primary-container)' : 'var(--on-surface-variant)',
               }}
               className="rounded-full border px-3 py-1 text-xs font-medium transition-colors">
-              {s === '' ? 'Tất cả' : STATUS_CONFIG[s]?.label ?? s}
+              {s === '' ? 'Tất cả' : workerStatusLabel(s)}
             </button>
           ))}
         </div>
@@ -215,7 +199,7 @@ export default function WorkersPage() {
           <table className="w-full text-sm">
             <thead>
               <tr style={{ background: 'var(--surface-container)', borderBottom: '1px solid var(--outline-variant)' }}>
-                {['User ID', 'Họ tên', 'Điện thoại', 'Trạng thái', 'Ngày tạo', 'Hành động'].map(h => (
+                {['Mã người dùng', 'Họ tên', 'Điện thoại', 'Trạng thái', 'Ngày tạo', 'Thao tác'].map(h => (
                   <th key={h} style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-left font-semibold">{h}</th>
                 ))}
               </tr>
@@ -227,7 +211,15 @@ export default function WorkersPage() {
                   <td style={{ color: 'var(--primary)' }} className="px-4 py-3 font-mono text-xs">{w.userId}</td>
                   <td style={{ color: 'var(--on-surface)' }} className="px-4 py-3">{w.fullName}</td>
                   <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">{w.phone ?? '—'}</td>
-                  <td className="px-4 py-3"><StatusBadge status={w.employmentStatus} /></td>
+                  <td className="px-4 py-3">
+                    <StatusBadge
+                      module="worker"
+                      status={w.employmentStatus ?? 'NONE'}
+                      tone={workerStatusTone(w.employmentStatus)}
+                    >
+                      {workerStatusLabel(w.employmentStatus)}
+                    </StatusBadge>
+                  </td>
                   <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">{new Date(w.createdAt).toLocaleDateString('vi-VN')}</td>
                   <td className="px-4 py-3">
                     <button onClick={() => setEditRow(w)} style={{ color: 'var(--primary)' }} className="text-xs font-medium hover:underline">Sửa</button>

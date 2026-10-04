@@ -3,6 +3,8 @@
 import * as React from 'react';
 import { useState, useEffect, useCallback } from 'react';
 import { RowLink } from '@/src/shared/ui/navigation/row-link';
+import { StatusBadge } from '@/src/shared/ui/status-badge';
+import { clientStatusLabel, clientStatusTone, companySizeLabel } from './client-ui';
 
 interface ClientRow {
   id: string;
@@ -20,17 +22,6 @@ interface ClientsResponse {
   total: number;
   take: number;
   skip: number;
-}
-
-const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  PROSPECT:    { label: 'Tiềm năng', color: '#e65100', bg: '#fff3e0' },
-  ACTIVE:      { label: 'Đang hợp tác', color: '#197a56', bg: '#e8f5e9' },
-  BLACKLISTED: { label: 'Đen', color: '#c62828', bg: '#ffebee' },
-};
-
-function StatusBadge({ status }: { status: string }) {
-  const cfg = STATUS_CONFIG[status] ?? { label: status, color: '#37474f', bg: '#eceff1' };
-  return <span style={{ background: cfg.bg, color: cfg.color }} className="rounded-full px-2 py-0.5 text-xs font-semibold">{cfg.label}</span>;
 }
 
 function Modal({ onClose, onSuccess, editData }: { onClose: () => void; onSuccess: () => void; editData?: ClientRow }) {
@@ -116,7 +107,7 @@ function Modal({ onClose, onSuccess, editData }: { onClose: () => void; onSucces
                   style={{ borderColor: 'var(--outline)', background: 'var(--surface-container)' }} className="w-full rounded border px-3 py-2 text-sm">
                   <option value="PROSPECT">Tiềm năng</option>
                   <option value="ACTIVE">Đang hợp tác</option>
-                  <option value="BLACKLISTED">Đen</option>
+                  <option value="BLACKLISTED">Danh sách đen</option>
                 </select>
               </div>
             )}
@@ -164,7 +155,7 @@ export default function ClientsPage() {
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 style={{ color: 'var(--on-surface)' }} className="text-2xl font-semibold">Khách hàng</h1>
-          <p style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-sm">Module M5 — Quản lý master data khách hàng</p>
+          <p style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-sm">Phân hệ M5 — Quản lý dữ liệu gốc khách hàng</p>
         </div>
         <button onClick={() => setShowCreate(true)} style={{ background: 'var(--primary)', color: 'var(--on-primary)' }} className="rounded px-4 py-2 text-sm font-semibold">+ Thêm khách hàng</button>
       </div>
@@ -197,8 +188,12 @@ export default function ClientsPage() {
                   <td style={{ color: 'var(--on-surface)' }} className="px-4 py-3">{c.name}</td>
                   <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">{c.taxCode ?? '—'}</td>
                   <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">{c.industry ?? '—'}</td>
-                  <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">{c.companySize ?? '—'}</td>
-                  <td className="px-4 py-3"><StatusBadge status={c.status} /></td>
+                  <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">{companySizeLabel(c.companySize)}</td>
+                  <td className="px-4 py-3">
+                    <StatusBadge module="client" status={c.status} tone={clientStatusTone(c.status)}>
+                      {clientStatusLabel(c.status)}
+                    </StatusBadge>
+                  </td>
                   <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">{new Date(c.createdAt).toLocaleDateString('vi-VN')}</td>
                   <td className="px-4 py-3"><button onClick={() => setEditRow(c)} style={{ color: 'var(--primary)' }} className="relative z-10 text-xs font-medium hover:underline">Sửa</button></td>
                 </tr>
