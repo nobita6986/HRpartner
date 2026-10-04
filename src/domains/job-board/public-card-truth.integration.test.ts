@@ -437,7 +437,7 @@ describe.skipIf(!enabled)(
       expect(job.shifts).not.toContain("18:00-02:00");
     }, 30_000);
 
-    it("AC-01/RISK-01/RISK-07 — hourlyRateVnd là BigInt THẬT nhưng DTO chỉ có 18 khóa allow-list", async () => {
+    it("AC-01/RISK-01/RISK-07 — hourlyRateVnd là BigInt THẬT nhưng DTO chỉ có 23 khóa allow-list", async () => {
       // Bằng chứng cột thật: đọc bằng admin để chắc con số nằm trên ĐÚNG slot mà card đọc.
       const raw = await admin.staffingOrderSlot.findFirst({
         where: {
@@ -462,7 +462,9 @@ describe.skipIf(!enabled)(
       // hrp-p1-a0-1: thêm `isHot` + `isUrgent` (canonical boolean cho "Hot" + "Tuyển gấp" stamps).
       // hrp-ui-v1-job-card-stamps-brand (T1B): thêm `isHighReward` + `isExpiringSoon`
       // (canonical boolean cho "Thưởng cao" + "Sắp hết hạn" author-selected stamps).
-      // 20 lên 22 — vẫn là phép so tập khóa CHÍNH XÁC trên DB THẬT, không nới sang partial.
+      // hrp-ui-v1-public-card-truth-correction (T1A): thêm `salaryDisplay` — author-entered
+      // verbatim salary text, takes precedence over hourly fallback per RC-03. 22 lên 23 — vẫn là
+      // phép so tập khóa CHÍNH XÁC trên DB THẬT, không nới sang partial.
       expect(Object.keys(job).sort()).toEqual(
         [
           "availableSlots",
@@ -479,6 +481,7 @@ describe.skipIf(!enabled)(
           "position",
           "positionTitles",
           "postedAt",
+          "salaryDisplay",
           "salaryMaxVnd",
           "salaryMinVnd",
           "shift",
