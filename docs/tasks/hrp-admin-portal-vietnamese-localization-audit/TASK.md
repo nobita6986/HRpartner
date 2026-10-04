@@ -14,7 +14,16 @@
 > Supersedes: none
 > Conflict rule: docs-only audit, not a normative contract. V7/V8/V9 authority,
 > `docs/HRP_EXECUTION_REALIGNMENT_PLAN.md`, the maintainability reference,
-> M2A `RESOLVED` boundaries (F11) and current source override any claim made here.
+> M2A F11 business-button literals (`Công bố dự án` / `Bỏ công bố dự án` on
+> Project-level actions; `Đăng tin` / `Gỡ tin` / `Lưu trữ` as the
+> JobPosting-level Vietnamese display) and current source override any claim made here.
+
+## 0a. Revision log
+
+| Rev | Date | Author | Note |
+| --- | --- | --- | --- |
+| 0 | 2026-10-04 | T1B | Initial draft (audit + plan + TASK); awaiting T0 review. |
+| 1 | 2026-10-04 | T1B | T0 correction round applied: severity definitions tightened (raw English → P1, P0 reserved for workflow-blocking evidence); diacritic-missing taxonomy renamed `ENCODING_LOSS_LEGACY` → `VIETNAMESE_DIACRITIC_MISSING` (symptom-only, no causal claim); architecture switched to domain-owned typed dictionaries + shared cross-module glossary (no global status dictionary); ESLint plugins dropped in favor of targeted Vitest / static source tests with per-route forbidden-literal lists + allowlists; F11 freeze scope clarified (only business-button literals + canonical lifecycle operation names; Vietnamese display on editor shell adopts T0 §2 #2); wave ownership aligned with T0 §4 (T1B sole owner of Wave 1–3; T1C sole owner of Wave 4; Owner executes Wave 5; Wave 5 NOT extending to Worker Portal); 27 binding Owner decisions applied verbatim from T0 §2 in plan §3 / audit §8; pre-P2 dependency list updated to the 10 ordered gates per T0 §5. |
 
 ## 0. Outcome (from T0 directive)
 
