@@ -13,7 +13,7 @@
 | Audit mode | `NONE` |
 | Audit reason | Presentation-only Vietnamese localization; no state, calculation, API, authorization, or persistence changes. T0 explicitly forbids Tier 3/AUDIT. |
 | Spec version | `v1.0` |
-| Status | `IN_PROGRESS` |
+| Status | `READY_FOR_EXECUTION`|
 | Planner | `Tier 1` |
 | Baseline | `8a27860fc5e2d77206192fa716d36c04573b110d` |
 | Contract gate | `READY_TO_CODE` |
@@ -25,7 +25,7 @@
 | Required gates | Targeted Wave 4 Vitest tests; `npm run test:unit`; `npm run typecheck`; `npm run lint`; `npm run build`; `npx --no-install prisma validate`; `npx --no-install prisma generate`; `node .ai-pipeline/scripts/verify-encoding.mjs`; `git diff --check`; PR CI 4/4; main CI/deploy and production route smoke |
 | Current execution round | `1` |
 | Current audit round | `0` |
-| Next gate | `NONE: /deliver → /resolve` |
+| Next gate | `NONE: /deliver → /resolve`|
 
 ## 1. Outcome
 
@@ -141,3 +141,4 @@ Localize operator-facing copy in the Wave 4 Admin routes, including attendance a
 | Spec version | Date | Change | Reason |
 |---|---|---|---|
 | `v1.0` | `2026-10-05` | Initial contract | T0 Wave 4 directive |
+| `v1.0` | `2026-10-05` | Status restored to READY_FOR_EXECUTION for the contract gate | Scope and requirements unchanged; handoff records local gates and pending PR CI|
