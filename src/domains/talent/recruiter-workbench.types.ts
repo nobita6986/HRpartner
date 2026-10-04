@@ -205,6 +205,17 @@ export interface RecruiterWorkbenchRow {
    * `JobOpening` (e.g., `READY_TO_PLACE` with no submission yet).
    */
   placementOptions: RecruiterWorkbenchPlacementOption[] | null;
+  /**
+   * F6 optional additive projection — server-derived safe reason code that
+   * the placement action cell renders when no action is available. The
+   * field is OPTIONAL so the read service is forward-compatible without a
+   * contract edit; the cell falls back to its own local resolver when the
+   * field is absent. When present, the value MUST be one of
+   * `PlacementUnavailableReasonCode` (defined in
+   * `recruiter-workbench.placement-actions.unavailable.ts`) and the cell
+   * MUST NOT infer permission from it.
+   */
+  placementUnavailableReason?: import('./recruiter-workbench.placement-actions.unavailable').PlacementUnavailableReasonCode | null;
 }
 
 export type RecruiterWorkbenchPlacementManagementMode = 'HRP_MANAGED' | 'CLIENT_MANAGED';
