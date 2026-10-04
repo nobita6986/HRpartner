@@ -9,7 +9,7 @@
 | Spec version | `v1.0` |
 | Assurance lane | `FAST` |
 | Audit mode | `NONE` |
-| Execution round | `0` |
+| Execution round | `1` |
 | Baseline | `f570db06a8451b7f7a9be4ad98a3a66dbfa7c2f1` |
 | Implementation SHA | `6df991ad55d5c9c86e073e223eb0c367a8049a53` |
 | Frozen delivery | `YES` |
@@ -87,22 +87,22 @@ multiple AC share the same evidence row.
 | AC | Evidence | Result | Limitation |
 |---|---|---|---|
 | — | `pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-pwa-icon-assets-hotfix/TASK.md` | `RESULT: PASS. TASK contract is ready for execution.` | `None` |
-| `AC-01` | `E-01a` | `public/icons/icon-192.png` exists on disk; `stat` reports 3,064 bytes. | `None` |
-| `AC-02` | `E-02a` | `public/icons/icon-192.png` has the canonical PNG signature `89 50 4E 47 0D 0A 1A 0A`; IHDR reads width=192, height=192, bit depth=8, color type=6 (RGBA). | `None` |
-| `AC-03` | `E-01b` | `public/icons/icon-512.png` exists on disk; `stat` reports 14,125 bytes. | `None` |
-| `AC-04` | `E-02b` | `public/icons/icon-512.png` has the canonical PNG signature; IHDR reads width=512, height=512, bit depth=8, color type=6 (RGBA). | `None` |
-| `AC-05` | `E-03` | `pwa-icons.test.ts` parses `public/manifest.json` and asserts each declared entry has `sizes: "192x192"` / `"512x512"`, `type: "image/png"`, `purpose` includes `maskable`. | `None` |
-| `AC-06` | `E-04` | `pwa-icons.test.ts` greps `public/sw.js` and finds `icon: '/icons/icon-192.png'` and `badge: '/icons/icon-192.png'` in the `showNotification` call. | `None` |
-| `AC-07` | `E-05` | The test cases in `E-03` and `E-04` fail loudly when a referenced icon path is missing. The `expect(existsSync(p)).toBe(true)` and `expect(width).toBe(192)` assertions report a clear failure message. | `None` |
-| `AC-08` | `E-06` | `node node_modules/vitest/vitest.mjs run --config vitest.unit.config.ts src/pwa/pwa-icons.test.ts` exits 0; `Test Files 1 passed (1) · Tests 9 passed (9)`. | `None` |
-| `AC-09` | `E-07` | Full unit suite: `node node_modules/vitest/vitest.mjs run --config vitest.unit.config.ts` exits 0; `Test Files 225 passed (225) · Tests 3723 passed | 9 skipped (3732) · Duration 75.93s`. | `None` |
-| `AC-10` | `E-08` | `git diff --check --cached` exits 0 with no output; `git diff --check HEAD` exits 0 with no output. | `None` |
-| `AC-11` | `E-09` | `node .ai-pipeline/scripts/verify-encoding.mjs` → `RESULT: PASS (5 changed text file(s), strict UTF-8 without BOM).` | `None` |
-| `AC-12` | `E-10` | `git diff f570db06a8451b7f7a9be4ad98a3a66dbfa7c2f1..6df991ad55d5c9c86e073e223eb0c367a8049a53 -- public/logo.png public/hrp-logo.webp` outputs nothing (both files byte-identical to baseline). | `None` |
-| `AC-13` | `E-11` | `git status --porcelain -- package.json` outputs nothing. The pre-existing untracked `pnpm-lock.yaml` and `pnpm-workspace.yaml` are untracked in the baseline commit `f570db06a8451b7f7a9be4ad98a3a66dbfa7c2f1` too (reproduced with `git ls-tree f570db06 -- pnpm-lock.yaml pnpm-workspace.yaml` which returns empty, and `git status --porcelain` from a clean checkout at `f570db06` which reports them as untracked). The pre-existing untracked state is the baseline; this commit does not introduce it. | `None` |
-| `AC-14` | `E-12` | `git status --porcelain -- prisma/schema.prisma 'prisma/migrations/**'` outputs nothing. | `None` |
-| `AC-15` | `E-13` | `git status --porcelain` over the TASK forbidden paths is empty for all of them. `git log --format=%s HEAD` shows no `deploy` / `migrate` / `prisma` / `db push` token. No shell commands against production were issued. | `None` |
-| `AC-16` | `E-14` | Implementation SHA recorded in §0 matches `git rev-parse HEAD` after the commit. | `None` |
+| `AC-01` | `public/icons/icon-192.png` | `node -e "const f=require('fs').readFileSync('public/icons/icon-192.png');console.log('size=',f.length)"` exits 0; output `size= 3064` (3,064 bytes). | `None` |
+| `AC-02` | `public/icons/icon-192.png` | `node -e "const f=require('fs').readFileSync('public/icons/icon-192.png');console.log('sig=',f.slice(0,8).toString('hex'),'w=',f.readUInt32BE(16),'h=',f.readUInt32BE(20),'bitDepth=',f[24],'colorType=',f[25])"` exits 0; output `sig= 89504e470d0a1a0a w= 192 h= 192 bitDepth= 8 colorType= 6` (PNG signature, 192×192, 8-bit, RGBA). | `None` |
+| `AC-03` | `public/icons/icon-512.png` | `node -e "const f=require('fs').readFileSync('public/icons/icon-512.png');console.log('size=',f.length)"` exits 0; output `size= 14125` (14,125 bytes). | `None` |
+| `AC-04` | `public/icons/icon-512.png` | `node -e "const f=require('fs').readFileSync('public/icons/icon-512.png');console.log('sig=',f.slice(0,8).toString('hex'),'w=',f.readUInt32BE(16),'h=',f.readUInt32BE(20),'bitDepth=',f[24],'colorType=',f[25])"` exits 0; output `sig= 89504e470d0a1a0a w= 512 h= 512 bitDepth= 8 colorType= 6` (PNG signature, 512×512, 8-bit, RGBA). | `None` |
+| `AC-05` | `E-01` | `pwa-icons.test.ts` parses `public/manifest.json` and asserts each declared entry has `sizes: "192x192"` / `"512x512"`, `type: "image/png"`, `purpose` includes `maskable`. | `None` |
+| `AC-06` | `E-02` | `pwa-icons.test.ts` greps `public/sw.js` and finds `icon: '/icons/icon-192.png'` and `badge: '/icons/icon-192.png'` in the `showNotification` call. | `None` |
+| `AC-07` | `E-03` | The test cases in `E-01` and `E-02` fail loudly when a referenced icon path is missing. The `expect(existsSync(p)).toBe(true)` and `expect(width).toBe(192)` assertions report a clear failure message. | `None` |
+| `AC-08` | `E-04` | `node node_modules/vitest/vitest.mjs run --config vitest.unit.config.ts src/pwa/pwa-icons.test.ts` exits 0; `Test Files 1 passed (1) · Tests 9 passed (9)`. | `None` |
+| `AC-09` | `E-05` | Full unit suite: `node node_modules/vitest/vitest.mjs run --config vitest.unit.config.ts` exits 0; `Test Files 225 passed (225) · Tests 3723 passed | 9 skipped (3732) · Duration 75.93s`. | `None` |
+| `AC-10` | `E-06` | `git diff --check --cached` exits 0 with no output; `git diff --check HEAD` exits 0 with no output. | `None` |
+| `AC-11` | `E-07` | `node .ai-pipeline/scripts/verify-encoding.mjs` → `RESULT: PASS (5 changed text file(s), strict UTF-8 without BOM).` | `None` |
+| `AC-12` | `E-08` | `git diff f570db06a8451b7f7a9be4ad98a3a66dbfa7c2f1..6df991ad55d5c9c86e073e223eb0c367a8049a53 -- public/logo.png public/hrp-logo.webp` outputs nothing (both files byte-identical to baseline). | `None` |
+| `AC-13` | `E-09` | `git status --porcelain -- package.json` outputs nothing. The pre-existing untracked `pnpm-lock.yaml` and `pnpm-workspace.yaml` are untracked in the baseline commit `f570db06a8451b7f7a9be4ad98a3a66dbfa7c2f1` too (reproduced with `git ls-tree f570db06 -- pnpm-lock.yaml pnpm-workspace.yaml` which returns empty, and `git status --porcelain` from a clean checkout at `f570db06` which reports them as untracked). The pre-existing untracked state is the baseline; this commit does not introduce it. | `None` |
+| `AC-14` | `E-10` | `git status --porcelain -- prisma/schema.prisma 'prisma/migrations/**'` outputs nothing. | `None` |
+| `AC-15` | `E-11` | `git status --porcelain` over the TASK forbidden paths is empty for all of them. `git log --format=%s HEAD` shows no `deploy` / `migrate` / `prisma` / `db push` token. No shell commands against production were issued. | `None` |
+| `AC-16` | `E-12` | Implementation SHA recorded in §0 matches `git rev-parse HEAD` after the commit. | `None` |
 
 ## 3. Evidence registry
 
@@ -111,22 +111,18 @@ Short logs are inline; long output, live transcripts or images go in
 
 | Evidence | Command / method | Exit / measured result | Artifact |
 |---|---|---|---|
-| `E-01a` | `node -e "const f=require('fs').readFileSync('public/icons/icon-192.png');console.log('size=',f.length)"` | `size= 3064` | inline |
-| `E-01b` | `node -e "const f=require('fs').readFileSync('public/icons/icon-512.png');console.log('size=',f.length)"` | `size= 14125` | inline |
-| `E-02a` | `node -e "const f=require('fs').readFileSync('public/icons/icon-192.png');console.log('sig=',f.slice(0,8).toString('hex'),'w=',f.readUInt32BE(16),'h=',f.readUInt32BE(20),'bitDepth=',f[24],'colorType=',f[25])"` | `sig= 89504e470d0a1a0a w= 192 h= 192 bitDepth= 8 colorType= 6` | inline |
-| `E-02b` | `node -e "const f=require('fs').readFileSync('public/icons/icon-512.png');console.log('sig=',f.slice(0,8).toString('hex'),'w=',f.readUInt32BE(16),'h=',f.readUInt32BE(20),'bitDepth=',f[24],'colorType=',f[25])"` | `sig= 89504e470d0a1a0a w= 512 h= 512 bitDepth= 8 colorType= 6` | inline |
-| `E-03` | `node node_modules/vitest/vitest.mjs run --config vitest.unit.config.ts src/pwa/pwa-icons.test.ts` (the fresh worktree's `pnpm exec` triggers pnpm's deps status check; the test itself runs identically) | `Test Files 1 passed (1) · Tests 9 passed (9) · Duration 397ms` | inline |
-| `E-04` | same as `E-03` — the sw.js + manifest assertions are inside the same test file, so a single `vitest run` covers `E-03`, `E-04`, and `E-05`. | included in `E-03` | inline |
-| `E-05` | The assertions in `E-03` / `E-04` are themselves the regression-failure proof. They use `expect(existsSync(p)).toBe(true)` and `expect(width).toBe(192)`, which fail with a clear message if the icon is missing, the file is a fake PNG, or the IHDR dimensions drift. | covered by `E-03` | inline |
-| `E-06` | `node node_modules/vitest/vitest.mjs run --config vitest.unit.config.ts src/pwa/pwa-icons.test.ts` | `Test Files 1 passed (1) · Tests 9 passed (9) · Duration 397ms` | inline |
-| `E-07` | `node node_modules/vitest/vitest.mjs run --config vitest.unit.config.ts` (full unit suite) | `Test Files 225 passed (225) · Tests 3723 passed | 9 skipped (3732) · Duration 75.93s` | inline |
-| `E-08` | `git diff --check --cached` ; `git diff --check HEAD` | both exit 0 with no output | inline |
-| `E-09` | `node .ai-pipeline/scripts/verify-encoding.mjs` | `RESULT: PASS (5 changed text file(s), strict UTF-8 without BOM).` | inline |
-| `E-10` | `git diff f570db06a8451b7f7a9be4ad98a3a66dbfa7c2f1..6df991ad55d5c9c86e073e223eb0c367a8049a53 -- public/logo.png public/hrp-logo.webp` (where `f570db06a8451b7f7a9be4ad98a3a66dbfa7c2f1` is the recorded baseline SHA and `6df991ad55d5c9c86e073e223eb0c367a8049a53` is the implementation SHA) | empty output | inline |
-| `E-11` | `git status --porcelain -- package.json` | empty; `pnpm-lock.yaml` and `pnpm-workspace.yaml` are pre-existing untracked artifacts in the baseline commit `f570db06a8451b7f7a9be4ad98a3a66dbfa7c2f1` (reproduced with `git ls-tree f570db06 -- pnpm-lock.yaml pnpm-workspace.yaml` returning empty, and `git status --porcelain` from a clean checkout at `f570db06` reporting them as untracked). | inline |
-| `E-12` | `git status --porcelain -- prisma/schema.prisma 'prisma/migrations/**'` | empty | inline |
-| `E-13` | `git status --porcelain` over the TASK forbidden paths (`prisma/**`, `app/**`, `src/domains/**`, `src/shared/auth/**`, `src/lib/**`, `next.config.*`, `public/hrp-logo.webp`, `public/logo.png`, `public/mockup/**`, `scripts/**`, `.github/**`) | all empty | inline |
-| `E-14` | `git rev-parse HEAD` | 40-char hex SHA equal to the Implementation SHA recorded in §0 | inline |
+| `E-01` | `node node_modules/vitest/vitest.mjs run --config vitest.unit.config.ts src/pwa/pwa-icons.test.ts` (the fresh worktree's `pnpm exec` triggers pnpm's deps status check; the test itself runs identically) | `Test Files 1 passed (1) · Tests 9 passed (9) · Duration 397ms` | inline |
+| `E-02` | same as `E-01` — the sw.js + manifest assertions are inside the same test file, so a single `vitest run` covers `E-01`, `E-02`, and `E-03`. | included in `E-01` | inline |
+| `E-03` | The assertions in `E-01` / `E-02` are themselves the regression-failure proof. They use `expect(existsSync(p)).toBe(true)` and `expect(width).toBe(192)`, which fail with a clear message if the icon is missing, the file is a fake PNG, or the IHDR dimensions drift. | covered by `E-01` | inline |
+| `E-04` | `node node_modules/vitest/vitest.mjs run --config vitest.unit.config.ts src/pwa/pwa-icons.test.ts` | `Test Files 1 passed (1) · Tests 9 passed (9) · Duration 397ms` | inline |
+| `E-05` | `node node_modules/vitest/vitest.mjs run --config vitest.unit.config.ts` (full unit suite) | `Test Files 225 passed (225) · Tests 3723 passed | 9 skipped (3732) · Duration 75.93s` | inline |
+| `E-06` | `git diff --check --cached` ; `git diff --check HEAD` | both exit 0 with no output | inline |
+| `E-07` | `node .ai-pipeline/scripts/verify-encoding.mjs` | `RESULT: PASS (5 changed text file(s), strict UTF-8 without BOM).` | inline |
+| `E-08` | `git diff f570db06a8451b7f7a9be4ad98a3a66dbfa7c2f1..6df991ad55d5c9c86e073e223eb0c367a8049a53 -- public/logo.png public/hrp-logo.webp` (where `f570db06a8451b7f7a9be4ad98a3a66dbfa7c2f1` is the recorded baseline SHA and `6df991ad55d5c9c86e073e223eb0c367a8049a53` is the implementation SHA) | empty output | inline |
+| `E-09` | `git status --porcelain -- package.json` | empty; `pnpm-lock.yaml` and `pnpm-workspace.yaml` are pre-existing untracked artifacts in the baseline commit `f570db06a8451b7f7a9be4ad98a3a66dbfa7c2f1` (reproduced with `git ls-tree f570db06 -- pnpm-lock.yaml pnpm-workspace.yaml` returning empty, and `git status --porcelain` from a clean checkout at `f570db06` reporting them as untracked). | inline |
+| `E-10` | `git status --porcelain -- prisma/schema.prisma 'prisma/migrations/**'` | empty | inline |
+| `E-11` | `git status --porcelain` over the TASK forbidden paths (`prisma/**`, `app/**`, `src/domains/**`, `src/shared/auth/**`, `src/lib/**`, `next.config.*`, `public/hrp-logo.webp`, `public/logo.png`, `public/mockup/**`, `scripts/**`, `.github/**`) | all empty | inline |
+| `E-12` | `git rev-parse HEAD` | 40-char hex SHA equal to the Implementation SHA recorded in §0 | inline |
 
 ## 4. Deviations and blockers
 
