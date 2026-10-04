@@ -39,6 +39,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/src/shared/utils/cn';
 import { getMostSpecificActiveHref } from './active-nav-helper';
+import { roleLabel } from '@/src/shared/i18n/role-labels';
+import { formLabel } from '@/src/shared/i18n/form-dictionary';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -127,7 +129,7 @@ export const ADMIN_NAV_PHASE4: NavItem[] = [
   { href: '/admin/jobs', label: 'Danh sách nhu cầu', icon: Briefcase, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'SALE'], section: 'recruitment' },
   { href: '/admin/jobs/job-postings', label: 'Tin tuyển dụng', icon: FileText, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'SALE'], section: 'recruitment' },
   { href: '/admin/applications', label: 'Đơn ứng tuyển', icon: UserRoundCheck, roles: ['ADMIN', 'HR_MANAGER', 'SALE', 'DIRECTOR'], section: 'recruitment' },
-  { href: '/admin/staffing', label: 'Staffing', icon: ClipboardList, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'PM'], section: 'recruitment' },
+  { href: '/admin/staffing', label: 'Nhu cầu tuyển dụng', icon: ClipboardList, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'PM'], section: 'recruitment' },
 
   // Nhân sự (people) — T1C: chỉ còn Nhân sự (workers). Tài khoản đã chuyển
   // sang Hệ thống, Khách hàng / Nhà cung cấp sang nhóm Đối tác. Header đổi
@@ -468,9 +470,9 @@ function UserFooter({
         </div>
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm font-medium text-slate-900">
-            {user?.name ?? 'User'}
+            {user?.name ?? formLabel('default_user')}
           </div>
-          <div className="truncate text-xs text-slate-500">{role}</div>
+          <div className="truncate text-xs text-slate-500">{roleLabel(role)}</div>
         </div>
         <button
           type="button"

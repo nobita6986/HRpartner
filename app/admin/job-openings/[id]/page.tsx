@@ -38,6 +38,13 @@ import { assertActiveRecruiterForOrder } from '@/src/domains/talent/recruiter-as
 import { Breadcrumb } from '@/src/shared/ui/navigation/breadcrumb';
 import { RelatedObjects } from '@/src/shared/ui/data-display/related-objects';
 import { EmptyState } from '@/src/shared/ui/data-display/empty-state';
+import { StatusBadge } from '@/src/shared/ui/status-badge';
+import {
+  JOB_OPENING_MODULE,
+  jobOpeningServiceModelLabel,
+  jobOpeningStatusLabel,
+  jobOpeningStatusTone,
+} from '@/src/domains/staffing/job-opening-ui';
 import {
   JobOpeningActions,
   type JobOpeningActionsFlags,
@@ -191,7 +198,7 @@ export default async function JobOpeningDetailPage(props: { params: Promise<{ id
 
   const postingItems = opening.jobPosting ? [{
     id: opening.jobPosting.id,
-    title: `Job Posting: ${opening.jobPosting.slug}`,
+    title: `Tin tuyển dụng: ${opening.jobPosting.slug}`,
     subtitle: `Khóa đăng tuyển công khai`,
     statusLabel: opening.jobPosting.status,
     href: `/admin/jobs/job-postings/${opening.jobPosting.id}`,
@@ -212,35 +219,40 @@ export default async function JobOpeningDetailPage(props: { params: Promise<{ id
           { label: 'Admin', href: '/admin' },
           { label: 'Dự án', href: '/admin/projects' },
           { label: opening.staffingOrder.project.name, href: `/admin/projects/${opening.staffingOrder.project.id}` },
-          { label: `Job Opening: ${opening.id.substring(0, 8)}`, href: `/admin/job-openings/${opening.id}` },
+          { label: `Đợt tuyển dụng: ${opening.id.substring(0, 8)}`, href: `/admin/job-openings/${opening.id}` },
         ]} />
         <h1 className="text-3xl font-semibold mt-4" style={{ color: 'var(--on-surface)' }}>
-          Tuyển dụng (Opening)
+          Đợt tuyển dụng
         </h1>
         <div className="mt-2 flex flex-wrap items-center gap-4 text-sm" style={{ color: 'var(--on-surface-variant)' }}>
-          <span>Order: {opening.staffingOrder.code}</span>
+          <span>Đơn: {opening.staffingOrder.code}</span>
           <span>Dự án: {opening.staffingOrder.project.name}</span>
           <span>Mở: {opened}</span>
           <span>Đóng: {closed}</span>
-          <span className="font-medium px-2 py-0.5 rounded" style={{ backgroundColor: 'var(--surface-container)' }}>
-            {opening.status}
-          </span>
+          <StatusBadge
+            module={JOB_OPENING_MODULE}
+            status={opening.status}
+            tone={jobOpeningStatusTone(opening.status)}
+            testId={`job-opening-status-${opening.id}`}
+          >
+            {jobOpeningStatusLabel(opening.status)}
+          </StatusBadge>
           {opening.serviceModel && (
             <span
               className="font-medium px-2 py-0.5 rounded"
               style={{ backgroundColor: 'var(--surface-container)', color: 'var(--on-surface)' }}
               data-testid="opening-service-model-chip"
             >
-              {opening.serviceModel}
+              {jobOpeningServiceModelLabel(opening.serviceModel)}
             </span>
           )}
         </div>
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <MetricCard label="Candidate Submissions" value={opening.metrics.submissionsCount} />
-        <MetricCard label="Project Assignments" value={opening.metrics.assignmentsCount} />
-        <MetricCard label="Placements" value={opening.placementCount} />
+        <MetricCard label="Đơn ứng tuyển" value={opening.metrics.submissionsCount} />
+        <MetricCard label="Phân công dự án" value={opening.metrics.assignmentsCount} />
+        <MetricCard label="Bố trí việc làm" value={opening.placementCount} />
       </div>
 
       {/* Action island — narrow Client Component. Server-derived flags. */}
@@ -250,17 +262,17 @@ export default async function JobOpeningDetailPage(props: { params: Promise<{ id
 
       <section aria-labelledby="opening-posting" className="mb-8">
         <h2 id="opening-posting" className="text-xl font-semibold mb-4" style={{ color: 'var(--on-surface)' }}>
-          Đăng tuyển (Job Posting)
+          Tin tuyển dụng (Job Posting)
         </h2>
         {postingItems.length > 0 ? (
           <RelatedObjects
-            title="Job Posting"
-            emptyState="Chưa có Job Posting nào kết nối."
+            title="Tin tuyển dụng"
+            emptyState="Chưa có Tin tuyển dụng nào kết nối."
             items={postingItems}
           />
         ) : (
           <EmptyState
-            title="Chưa có Job Posting"
+            title="Chưa có Tin tuyển dụng"
             description="Vị trí này chưa được đăng tuyển công khai."
           />
         )}
@@ -268,18 +280,18 @@ export default async function JobOpeningDetailPage(props: { params: Promise<{ id
 
       <section aria-labelledby="opening-slots">
         <h2 id="opening-slots" className="text-xl font-semibold mb-4" style={{ color: 'var(--on-surface)' }}>
-          Vị trí (Slots)
+          Vị trí cần tuyển (Slots)
         </h2>
         {slotItems.length > 0 ? (
           <RelatedObjects
-            title="Vị trí (Slots)"
-            emptyState="Chưa liên kết slot nào."
+            title="Vị trí cần tuyển"
+            emptyState="Chưa liên kết vị trí nào."
             items={slotItems}
           />
         ) : (
           <EmptyState
             title="Chưa có vị trí liên kết"
-            description="Job Opening này chưa được gắn với Slot nào từ đơn tuyển dụng."
+            description="Đợt tuyển dụng này chưa được gắn với vị trí nào từ đơn tuyển dụng."
           />
         )}
       </section>

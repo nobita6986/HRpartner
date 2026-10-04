@@ -1,0 +1,10 @@
+UTF-8 NO-BOM GATE
+RESULT: PASS (0 changed text file(s), strict UTF-8 without BOM).
+
+command: node .ai-pipeline/scripts/verify-encoding.mjs
+exit: 0
+
+note: .ai-pipeline/scripts/verify-encoding.ps1 is not present in this
+worktree (was added in upstream commit c0f4dc69 after this worktree
+branched; see HANDOFF RC-05 / E-encoding round-1). The .mjs gate is the
+worktree-equivalent and was the gate used since wave 1.

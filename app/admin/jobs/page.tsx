@@ -13,6 +13,12 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import JobOpeningStatusCard from './job-opening-status-card';
+import { StatusBadge } from '@/src/shared/ui/status-badge';
+import {
+  PROJECT_MODULE,
+  projectPublishColumnLabel,
+  projectPublishColumnTone,
+} from '@/src/domains/projects/project-ui';
 
 
 
@@ -63,22 +69,17 @@ function freeSlotsByProject(orders: StaffingOrderRow[], now: Date): Map<string, 
 
 
 
-const STATUS_COLORS: Record<string, string> = {
-  TUYEN_GAP: 'bg-red-100 text-red-700',
-  DA_NHAN_DU: 'bg-green-100 text-green-700',
-  DANG_TUYEN: 'bg-blue-100 text-blue-700',
-  NEW: 'bg-yellow-100 text-yellow-700',
-  QUALIFIED: 'bg-green-100 text-green-700',
-  SCREENING: 'bg-blue-100 text-blue-700',
-  REJECTED: 'bg-gray-100 text-gray-700',
-};
-
-function StatusBadge({ status }: { status: string }) {
-  const colorClass = STATUS_COLORS[status] || 'bg-gray-100 text-gray-700';
+function StatusBadgeCell({ job }: { job: Job }) {
+  // T1B Wave 2 (EP §3.2.1): publish column is column-derived from
+  // (isPublic, status) — CLOSED wins over isPublic. Vietnamese label
+  // is read from the Project domain-owned dictionary; raw enum never
+  // rendered as operator-facing text.
+  const label = projectPublishColumnLabel(Boolean(job.isPublic), String(job.status));
+  const tone = projectPublishColumnTone(Boolean(job.isPublic), String(job.status));
   return (
-    <span className={'px-2 py-1 rounded-full text-xs font-medium ' + colorClass}>
-      {status}
-    </span>
+    <StatusBadge module={PROJECT_MODULE} status={label} tone={tone} testId={`project-publish-badge-${job.id}`}>
+      {label}
+    </StatusBadge>
   );
 }
 
@@ -316,11 +317,11 @@ export default function AdminJobsPage() {
             <table className='w-full'>
               <thead style={{ backgroundColor: 'var(--primary-container)' }}>
                 <tr>
-                  <th className='text-left px-4 py-3 font-semibold' style={{ color: 'var(--on-surface)' }}>Project</th>
-                  <th className='text-left px-4 py-3 font-semibold' style={{ color: 'var(--on-surface)' }}>Code</th>
+                  <th className='text-left px-4 py-3 font-semibold' style={{ color: 'var(--on-surface)' }}>Dự án</th>
+                  <th className='text-left px-4 py-3 font-semibold' style={{ color: 'var(--on-surface)' }}>Mã dự án</th>
                   <th className='text-center px-4 py-3 font-semibold' style={{ color: 'var(--on-surface)' }}>Slot trống</th>
-                  <th className='text-center px-4 py-3 font-semibold' style={{ color: 'var(--on-surface)' }}>Status</th>
-                  <th className='text-center px-4 py-3 font-semibold' style={{ color: 'var(--on-surface)' }}>Publish</th>
+                  <th className='text-center px-4 py-3 font-semibold' style={{ color: 'var(--on-surface)' }}>Trạng thái</th>
+                  <th className='text-center px-4 py-3 font-semibold' style={{ color: 'var(--on-surface)' }}>Công bố</th>
                 </tr>
               </thead>
               <tbody>
@@ -329,7 +330,7 @@ export default function AdminJobsPage() {
                 ) : listError ? (
                   <tr><td colSpan={5} className='px-4 py-3 text-red-500 text-sm'>{listError}</td></tr>
                 ) : jobs.length === 0 ? (
-                  <tr><td colSpan={5} className='px-4 py-8 text-center text-sm' style={{ color: 'var(--on-surface-variant)' }}>Chưa có job public nào.</td></tr>
+                  <tr><td colSpan={5} className='px-4 py-8 text-center text-sm' style={{ color: 'var(--on-surface-variant)' }}>Chưa có dự án công khai.</td></tr>
                 ) : (
                   jobs.map((job, idx) => {
                     // undefined = chưa/không đọc được đơn hợp lệ của dự án → in dấu gạch.
@@ -348,7 +349,7 @@ export default function AdminJobsPage() {
                         {knownFree === undefined ? '—' : knownFree}
                       </td>
                       <td className='px-4 py-3 text-center'>
-                        <StatusBadge status={job.isPublic ? 'Published' : job.status === 'CLOSED' ? 'Closed' : 'Unpublished'} />
+                        <StatusBadgeCell job={job} />
                       </td>
                       <td className='px-4 py-3 text-center'>
                         <button

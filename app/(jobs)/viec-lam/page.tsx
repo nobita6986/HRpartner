@@ -56,16 +56,14 @@ import {
   listingIsIndexable,
   parseListingSearchParams,
 } from '@/src/domains/job-board/public-listing.params';
-import { salaryLabel, summaryLabel } from '@/src/domains/job-board/public-listing.labels';
-import {
-  deriveStampsFromFlags,
-} from '@/src/domains/job-board/components/landing/stamp-defs';
-import { JobStampBadge } from '@/src/domains/job-board/components/landing/stamp-badge';
+import { summaryLabel } from '@/src/domains/job-board/public-listing.labels';
+import { JobStampOverlay } from '@/src/domains/job-board/components/landing/stamp-overlay';
+import { formatPublicSalary } from '@/src/domains/job-board/public-listing.labels';
 
 /**
- * NOTE: `deriveStampsFromFlags` is now owned by `stamp-defs.ts` (C-05) and shared
- * with the homepage FeaturedJobCard and the detail `/viec-lam/[slug]` page —
- * không còn local copy.
+ * hrp-ui-v1-public-card-truth-correction (T1A / DEC-07): `deriveStampsFromFlags` ở
+ * `stamp-defs.ts` được dùng trực tiếp bên trong `<JobStampOverlay>` từ 4 boolean. Trang này
+ * không cần gọi trực tiếp — việc pre-compute `stamps: StampKey[]` là nguồn gốc của RC-02.
  */
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -292,12 +290,10 @@ function FilterForm({ params, facets }: { params: ListingParams; facets: Listing
  */
 function JobCard({ job }: { job: ListingJob }) {
   const isPreview = job.id.startsWith('preview-');
-  // Derive từ canonical boolean (DEC-05). Bề mặt này dùng shared
-  // `<JobStampBadge>` (C-05) thay vì inline IIFE — single source of truth.
-  const stamps = deriveStampsFromFlags(job.isHot, job.isUrgent);
+  // Container `relative` cho shared stamp overlay — đã được absolute-positioned (-top-2 -left-2).
   return (
     <article
-      className="flex h-full flex-col gap-3 rounded-2xl border border-outline-variant p-5"
+      className="relative flex h-full flex-col gap-3 overflow-visible rounded-2xl border border-outline-variant p-5"
       style={{ backgroundColor: 'var(--color-surface)' }}
     >
       <header className="flex items-start justify-between gap-2">
@@ -310,20 +306,16 @@ function JobCard({ job }: { job: ListingJob }) {
             {job.title}
           </Link>
         </h3>
-        {/* hrp-p1-a0-1 (DEC-05): shared `<JobStampBadge>` render từ canonical boolean,
-            0.7↔1.0 animation + reduced-motion disable (C-05).
-            hrp-ui-v1-job-card-stamps-brand (T1B / RQ-06 / RQ-12): 4 flag canonical
-            — bổ sung isHighReward + isExpiringSoon. */}
-        {stamps.length === 0 ? null : (
-          <JobStampBadge
-            isHot={job.isHot}
-            isUrgent={job.isUrgent}
-            isHighReward={job.isHighReward}
-            isExpiringSoon={job.isExpiringSoon}
-            stamps={stamps}
-            size="sm"
-          />
-        )}
+        {/* hrp-ui-v1-public-card-truth-correction (T1A / DEC-07 / RC-01+RC-02): shared
+            `<JobStampOverlay>` — 3D tilted rubber stamp, tràn viền, cùng visual với homepage.
+            Truyền 4 flag canonical. */}
+        <JobStampOverlay
+          isHot={job.isHot}
+          isUrgent={job.isUrgent}
+          isHighReward={job.isHighReward}
+          isExpiringSoon={job.isExpiringSoon}
+          size="sm"
+        />
       </header>
       <dl className="flex flex-col gap-1 text-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
         <div className="flex flex-wrap gap-x-1">
@@ -339,7 +331,9 @@ function JobCard({ job }: { job: ListingJob }) {
           <dd>{summaryLabel(job.shifts, 'Thời gian đang cập nhật')}</dd>
         </div>
       </dl>
-      {/* Y3.2: Tách dòng mức lương — đứng riêng, ngay sau phần địa điểm/ca làm. */}
+      {/* hrp-ui-v1-public-card-truth-correction (T1A / DEC-07 / RC-03): dùng
+          `formatPublicSalary` thay cho `salaryLabel`. `salaryDisplay` của tác giả verbatim được ưu
+          tiên (không thêm `đ/giờ`); fallback hourly/range khi rỗng; cuối cùng "Lương thương lượng". */}
       <p
         className="inline-flex w-fit items-center gap-1 rounded-md border px-2.5 py-1 text-sm font-semibold"
         style={{
@@ -349,7 +343,13 @@ function JobCard({ job }: { job: ListingJob }) {
         }}
       >
         <span aria-hidden="true">₫</span>
-        <span>{salaryLabel(job.salaryMinVnd, job.salaryMaxVnd)}</span>
+        <span>
+          {formatPublicSalary({
+            salaryDisplay: job.salaryDisplay,
+            salaryMinVnd: job.salaryMinVnd,
+            salaryMaxVnd: job.salaryMaxVnd,
+          })}
+        </span>
       </p>
       {job.deadline === null ? null : (
         <p className="text-xs" style={{ color: 'var(--color-on-surface-variant)' }}>

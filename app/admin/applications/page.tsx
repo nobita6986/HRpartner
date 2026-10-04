@@ -410,7 +410,7 @@ function DetailPanel({ detail, role, onClose, onChanged }: {
 
         <dl className='text-sm grid grid-cols-3 gap-y-2' style={{ color: 'var(--on-surface-variant)' }}>
           <dt>SĐT</dt><dd className='col-span-2' style={{ color: 'var(--on-surface)' }}>{detail.phone}</dd>
-          <dt>CCCD</dt><dd className='col-span-2' style={{ color: 'var(--on-surface)' }}>{detail.cccdNumber ?? '—'}</dd>
+          <dt>Số CCCD</dt><dd className='col-span-2' style={{ color: 'var(--on-surface)' }}>{detail.cccdNumber ?? '—'}</dd>
           <dt>Dự án</dt><dd className='col-span-2' style={{ color: 'var(--on-surface)' }}>{detail.projectName ?? '—'}</dd>
           <dt>Nguồn</dt><dd className='col-span-2' style={{ color: 'var(--on-surface)' }}>{SOURCE_LABELS[detail.source] ?? detail.source}</dd>
           <dt>CV</dt><dd className='col-span-2' style={{ color: 'var(--on-surface)' }}>{detail.cvFileName ?? '—'}</dd>

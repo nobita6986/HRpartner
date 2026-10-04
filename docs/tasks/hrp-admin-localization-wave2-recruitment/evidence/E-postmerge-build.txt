@@ -1,0 +1,12 @@
+corepack : $ next build
+exit: 0
+
+==> SUMMARY <==
+corepack pnpm run build
+exit: 0
+All routes compiled incl. 5 admin (jobs, jobs/job-postings,
+jobs/job-postings/[id], job-openings/[id], staffing)
+plus public card / stamp / salary routes from wave 1 PR #96 + PR #97.
+
+First Load JS shared by all = 103 kB
+Middleware = 41.4 kB

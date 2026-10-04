@@ -87,9 +87,17 @@ export function BestJobsSection({
                   title: job.title,
                   salaryMinVnd: job.salaryMinVnd,
                   salaryMaxVnd: job.salaryMaxVnd,
+                  // hrp-ui-v1-public-card-truth-correction (T1A / RQ-10, RC-03): truyền
+                  // `salaryDisplay` xuống card để `formatPublicSalary` ưu tiên 1.
+                  salaryDisplay: job.salaryDisplay,
                   location: job.locations[0] ?? 'Toàn quốc',
-                  // Y10.4/UI04g: pass stamps array (admin chọn khi tạo job).
-                  stamps: job.stamps,
+                  // hrp-ui-v1-public-card-truth-correction (T1A / RQ-07, RC-02): truyền đủ 4
+                  // flag boolean xuống card. KHÔNG pre-compute `stamps` nữa (legacy field giữ
+                  // cho back-compat, không dùng ở public card).
+                  isHot: job.isHot,
+                  isUrgent: job.isUrgent,
+                  isHighReward: job.isHighReward,
+                  isExpiringSoon: job.isExpiringSoon,
                   badgeType: job.badgeType === 'urgent' ? 'urgent' : null,
                   // Y10.4/UI04g fix: companyName = tên nhà máy từ API.
                   companyName: job.companyName,

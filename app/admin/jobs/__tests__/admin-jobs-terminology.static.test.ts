@@ -73,15 +73,47 @@ describe('hrp-m2a-operational-ux-debt / F11 — terminology on /admin/jobs', () 
     expect(inner).toContain('PUBLISHED');
   });
 
-  // RQ-07 / AC-04 — JobPosting editor shell keeps the canonical English
-  // `Publish` label (NOT renamed). This is the audit §8.11 boundary.
-  it('editor shell keeps the canonical English `Publish` label (NOT renamed)', () => {
-    expect(EDITOR_SOURCE).toMatch(/label="Publish"/);
-    // The editor shell is not edited in this round (T1B-owned per audit §G.A.1).
-    // We assert the editorial note from this round does NOT leak into the
-    // editor shell source. The Vietnamese rename label must not appear.
-    expect(EDITOR_SOURCE).not.toMatch(/Công bố dự án/);
-    expect(EDITOR_SOURCE).not.toMatch(/Bỏ công bố dự án/);
+  // RQ-12 / AC-13 — F11 scope clarification §9: editor shell adopts
+  // Vietnamese display labels. Canonical lifecycle operation names remain
+  // canonical (API keys, aria-label); they MUST NOT be the primary
+  // operator-facing text.
+  it('editor shell renders Vietnamese primary display labels (Đăng tin / Gỡ tin / Lưu trữ)', () => {
+    expect(EDITOR_SOURCE).toMatch(/label="Đăng tin"/);
+    expect(EDITOR_SOURCE).toMatch(/label="Gỡ tin"/);
+    expect(EDITOR_SOURCE).toMatch(/label="Lưu trữ"/);
+  });
+
+  it('editor shell preserves canonical lifecycle operation names in aria-label', () => {
+    // The ActionButton accepts `ariaLabel?: string` and renders it via the
+    // React JSX `aria-label={ariaLabel}` expression. We assert that the
+    // canonical operation names appear in the JSX as JSX expression content
+    // OR as string literals (the latter happens if a future call site
+    // passes a literal). Both forms are F11-compliant.
+    expect(EDITOR_SOURCE).toMatch(/ariaLabel="Publish"/);
+    expect(EDITOR_SOURCE).toMatch(/ariaLabel="Unpublish"/);
+    expect(EDITOR_SOURCE).toMatch(/ariaLabel="Archive"/);
+    // And the call sites MUST pass the canonical name.
+    expect(EDITOR_SOURCE).toMatch(/ariaLabel="Publish"/);
+    expect(EDITOR_SOURCE).toMatch(/ariaLabel="Unpublish"/);
+    expect(EDITOR_SOURCE).toMatch(/ariaLabel="Archive"/);
+  });
+
+  it('editor shell NEVER renders canonical Publish/Unpublish/Archive as primary button text', () => {
+    // The legacy ternary `job.isPublic ? 'Unpublish' : 'Publish'` rule no longer
+    // applies (this test belongs to the Jobs page, not the editor shell). For
+    // the editor shell, the rule is: raw canonical lifecycle operation names
+    // MUST NOT appear as <button> children.
+    expect(EDITOR_SOURCE).not.toMatch(/>\s*Publish\s*<\/button>/);
+    expect(EDITOR_SOURCE).not.toMatch(/>\s*Unpublish\s*<\/button>/);
+    expect(EDITOR_SOURCE).not.toMatch(/>\s*Archive\s*<\/button>/);
+  });
+
+  // RQ-12 / AC-13 — F11 business-button literals preserved on /admin/jobs.
+  // (Already covered by the earlier `button label` assertions; this is a guard
+  // against accidental rename during the editor-shell update.)
+  it('F11 business-button literals on /admin/jobs are unchanged', () => {
+    expect(JOBS_SOURCE).toMatch(/Công bố dự án/);
+    expect(JOBS_SOURCE).toMatch(/Bỏ công bố dự án/);
   });
 
   // RQ-10 / AC-09 — encoding: LF-only, no UTF-8 BOM.
