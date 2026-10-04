@@ -151,10 +151,17 @@ the baseline.
   workspace-wide artifacts unrelated to this hotfix). Working tree is clean.
 - **Production untouched:** No production deploy, no production-database
   touch, no production-credential load, no merge, no deploy. The branch is
-  pushed and a PR is opened into `main`; CI is awaited.
-- **CI merge state:** Pending — the PR is opened; CI is running; Tier 1
+  pushed and a PR is opened into `main`; CI is green; Tier 1 stops here
+  and waits for T0 to decide merge/deploy.
+- **CI state:** GREEN at PR #95.
+  - `Quality (schema · typecheck · lint · unit · build)`: PASS in 2m57s.
+  - `Integration (DB tests · fail-closed)`: PASS in 1m35s.
+  - `Vercel`: PASS — Deployment has completed.
+  - `Vercel Preview Comments`: PASS.
+  - PR URL: https://github.com/nobita6986/HRpartner/pull/95
+  - PR mergeability: `MERGEABLE` (open, no merge conflicts, CI green).
   will resolve any CI failure on this PR's surface inside the
-  `Correction budget: 1`. T0 is the merge/deploy authority.
+  `Correction budget: 1`. T0 is the merge/deploy authority. (superseded — CI is GREEN; see above.)
 - **Post-merge, T0 will verify on production:**
   - `GET /icons/icon-192.png` → `200 image/png`
   - `GET /icons/icon-512.png` → `200 image/png`
