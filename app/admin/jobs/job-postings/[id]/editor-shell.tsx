@@ -25,6 +25,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { JSONContent } from '@tiptap/core';
 
@@ -34,6 +35,10 @@ import {
 } from '@/src/shared/content/job-posting-rich-text';
 import type { JobPostingDetailDto } from '@/src/domains/staffing/job-posting-list.service';
 import type { JobPostingLifecycleStatus } from '@/src/domains/staffing/job-posting-authoring.service';
+import {
+  summarizeJobPostingApiError,
+} from '@/src/domains/staffing/job-posting-error-map';
+import type { JobPostingApiErrorSummary } from '@/src/domains/staffing/job-posting-error-map';
 
 interface JobPostingEditorShellProps {
   initial: JobPostingDetailDto;
@@ -80,13 +85,61 @@ function asRichDoc(value: unknown): JSONContent {
   return { type: 'doc', content: [{ type: 'paragraph' }] };
 }
 
-async function readErrorMessage(res: Response): Promise<string> {
+/**
+ * hrp-m2a-operational-ux-debt (F8, integrated by T1B UI V1):
+ * Replace the legacy `readErrorMessage` that echoed `body.message` /
+ * `body.error` with a thin call into the repo-owned safe mapper
+ * `summarizeJobPostingApiError`. The mapper NEVER echoes raw developer /
+ * DB messages, UUIDs, SQL, stack traces, or PII — see
+ * `src/domains/staffing/job-posting-error-map.ts`.
+ *
+ * T1A owns the mapper (Mốc 2A). T1B is the only allowed call site on the
+ * editor shell per `docs/tasks/hrp-m2a-operational-ux-debt/HANDOFF.md §6`.
+ *
+ * When the recovery href is present (today only `JOB_OPENING_NOT_OPEN`),
+ * the editor shell renders a `<Link>` to the canonical JobOpening page so
+ * the operator can unblock the publish retry in one click.
+ */
+export async function readApiErrorSummary(
+  res: Response,
+  fallbackJobOpeningId: string | null,
+): Promise<JobPostingApiErrorSummary> {
+  let envelope: {
+    status?: number;
+    error?: string | null;
+    details?: { jobOpeningId?: string | null; [k: string]: unknown } | null;
+  } = {
+    status: res.status,
+  };
   try {
-    const body = (await res.json()) as { error?: string; message?: string };
-    return body?.message ?? body?.error ?? `HTTP ${res.status}`;
+    const body = (await res.json()) as {
+      status?: number;
+      error?: string | null;
+      message?: string;
+      details?: { jobOpeningId?: string | null; [k: string]: unknown } | null;
+    };
+    envelope = {
+      status: typeof body?.status === 'number' ? body.status : res.status,
+      error: typeof body?.error === 'string' ? body.error : null,
+      details: body?.details ?? null,
+    };
   } catch {
-    return `HTTP ${res.status}`;
+    // Non-JSON or unreadable body — keep the status-only envelope; the mapper
+    // collapses unknown shape to the generic safe fallback.
   }
+  // Inject the editor's known jobOpeningId into details only when the
+  // server envelope does NOT carry one — the server value is authoritative.
+  if (
+    fallbackJobOpeningId &&
+    (!envelope.details || !('jobOpeningId' in envelope.details))
+  ) {
+    const base =
+      envelope.details && typeof envelope.details === 'object'
+        ? envelope.details
+        : {};
+    envelope.details = { ...base, jobOpeningId: fallbackJobOpeningId };
+  }
+  return summarizeJobPostingApiError(envelope);
 }
 
 export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorShellProps) {
@@ -124,6 +177,12 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  /**
+   * hrp-m2a-operational-ux-debt (F8, integrated by T1B UI V1):
+   * Repo-owned mapper may return a recovery href (today only for
+   * `JOB_OPENING_NOT_OPEN`). Rendered as a `<Link>` cạnh safe error UI.
+   */
+  const [errorRecoveryHref, setErrorRecoveryHref] = useState<string | null>(null);
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
 
   const initialSnapshotRef = useRef<{
@@ -185,10 +244,12 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
   const onSave = useCallback(async () => {
     if (!canMutate) {
       setErrorMessage('Role hiện tại không có quyền ghi JobPosting.');
+      setErrorRecoveryHref(null);
       return;
     }
     setIsSaving(true);
     setErrorMessage(null);
+    setErrorRecoveryHref(null);
     setInfoMessage(null);
 
     const body = {
@@ -219,7 +280,9 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
         body: JSON.stringify(body),
       });
       if (!res.ok) {
-        setErrorMessage(await readErrorMessage(res));
+        const summary = await readApiErrorSummary(res, initial.jobOpeningId ?? null);
+        setErrorMessage(summary.label);
+        setErrorRecoveryHref(summary.recoveryHref);
         return;
       }
       const json = (await res.json()) as { jobPosting: JobPostingDetailDto; replayed?: boolean };
@@ -253,8 +316,10 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
       setBenefitsJson(initialSnapshotRef.current.benefitsJson);
       setApplicationInstructionsJson(initialSnapshotRef.current.applicationInstructionsJson);
       setInfoMessage(json.replayed ? 'Đã ghi (idempotent replay).' : `Đã lưu bản nháp v${updated.revision}.`);
+      setErrorRecoveryHref(null);
     } catch (e) {
       setErrorMessage(`Network error: ${(e as Error).message}`);
+      setErrorRecoveryHref(null);
     } finally {
       setIsSaving(false);
     }
@@ -280,10 +345,12 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
     async (action: 'publish' | 'unpublish' | 'archive') => {
       if (!canMutate) {
         setErrorMessage('Role hiện tại không có quyền mutate JobPosting.');
+        setErrorRecoveryHref(null);
         return;
       }
       setIsSaving(true);
       setErrorMessage(null);
+      setErrorRecoveryHref(null);
       setInfoMessage(null);
       try {
         const res = await fetch(`/api/admin/jobs/job-postings/${initial.id}/${action}`, {
@@ -295,7 +362,9 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
           body: JSON.stringify({ expectedRevision: revision }),
         });
         if (!res.ok) {
-          setErrorMessage(await readErrorMessage(res));
+          const summary = await readApiErrorSummary(res, initial.jobOpeningId ?? null);
+          setErrorMessage(summary.label);
+          setErrorRecoveryHref(summary.recoveryHref);
           return;
         }
         const json = (await res.json()) as { jobPosting: JobPostingDetailDto; replayed?: boolean };
@@ -308,10 +377,12 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
             ? `Trạng thái đã cập nhật (idempotent replay).`
             : `Đã ${labelOf(action)} → ${updated.status}.`,
         );
+        setErrorRecoveryHref(null);
         // Trigger revalidation so the list page reflects the new state too.
         router.refresh();
       } catch (e) {
         setErrorMessage(`Network error: ${(e as Error).message}`);
+        setErrorRecoveryHref(null);
       } finally {
         setIsSaving(false);
       }
@@ -394,6 +465,7 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
             disabled={!canMutate || isSaving || !isDirty || status !== 'DRAFT'}
             onClick={onSave}
             label={isSaving ? 'Đang lưu…' : 'Lưu bản nháp'}
+            dataTestid="editor-save-button"
           />
           <ActionButton
             disabled={!canPublish || isSaving}
@@ -458,10 +530,23 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
       {errorMessage && (
         <div
           role="alert"
+          data-testid="editor-safe-error"
           className="rounded border p-3 text-sm"
           style={{ borderColor: '#f5b5b5', backgroundColor: '#fdecec', color: '#8a1c1c' }}
         >
           {errorMessage}
+          {errorRecoveryHref && (
+            <>
+              {' '}
+              <Link
+                href={errorRecoveryHref}
+                className="underline"
+                style={{ color: '#8a1c1c' }}
+              >
+                Mở JobOpening →
+              </Link>
+            </>
+          )}
         </div>
       )}
       {infoMessage && (
