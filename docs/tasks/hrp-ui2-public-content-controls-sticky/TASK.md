@@ -1,4 +1,4 @@
-# TASK ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â `hrp-ui2-public-content-controls-sticky`
+# TASK — `hrp-ui2-public-content-controls-sticky`
 
 ## 0. Control
 
@@ -13,7 +13,7 @@
 | Audit mode | `LIGHT` |
 | Audit reason | `Final audit happens after Phase B and covers the whole UI2 surface (Phase A module + Phase B mount + schema/migration + admin form). Phase A is delivered as a CHECKPOINT, not as a frozen final delivery; therefore Phase A is not independently audited.` |
 | Spec version | `v1.1` |
-| Status | `READY_FOR_AUDIT` (Phase B implementation committed at `190983f1…`; awaiting Tier 3 light delta audit) |
+| Status | `READY_FOR_AUDIT` (Phase B implementation `190983f1…`; pre-audit correction 1/1 completed; awaiting Tier 3 light delta audit) |
 | Planner | `Tier 1` |
 | Baseline | `796e13c69996756d1298bc1a7ec9b50bab935c9f` |
 | Phase A checkpoint | `53696afb3f644a3df06d4cf772828446f16f30d6` |
@@ -21,11 +21,11 @@
 | Decision state | `CLOSED` |
 | Test environment | `READY` |
 | Correction budget | `1` |
-| Correction budget used | `0` |
+| Correction budget used | `1` |
 | Frozen delivery | `YES` (Phase A checkpoint frozen first; Phase B implementation commit `190983f1…` is now the canonical final freeze) |
 | Canonical gates | `PASS` (verify-task / verify-handoff / encoding / typecheck / lint / build / test:unit all green at the Phase B freeze) |
 | Audit eligibility | `ELIGIBLE` (Phase B final delivery) |
-| In-scope roots | `src/domains/job-board/public-content-controls/**`; `docs/tasks/hrp-ui2-public-content-controls-sticky/**`. Phase B additionally opens: `prisma/schema.prisma` (additive only); `prisma/migrations/20261004230000_ui2_public_content_controls/**` (new, single forward-only migration); `app/(portal)/layout.tsx`; `app/components/GlobalNavbar.tsx` (Tin tÃƒÂ¡Ã‚Â»Ã‚Â©c entry row only); `app/admin/settings/admin-settings-form.tsx`; `app/admin/settings/page.tsx`; `app/api/admin/homepage-settings/route.ts`; `src/domains/job-board/public-settings.service.ts` (additive); `src/domains/job-board/public-types.ts` (additive DTO fields only). |
+| In-scope roots | `src/domains/job-board/public-content-controls/**`; `docs/tasks/hrp-ui2-public-content-controls-sticky/**`. Phase B additionally opens: `prisma/schema.prisma` (additive only); `prisma/migrations/20261004230000_ui2_public_content_controls/**` (new, single forward-only migration); `app/(portal)/layout.tsx`; `app/components/GlobalNavbar.tsx` (Tin tức entry row only); `app/admin/settings/admin-settings-form.tsx`; `app/admin/settings/page.tsx`; `app/api/admin/homepage-settings/route.ts`; `src/domains/job-board/public-settings.service.ts` (additive); `src/domains/job-board/public-types.ts` (additive DTO fields only). |
 | Forbidden paths | Phase A: `prisma/schema.prisma`; `prisma/migrations/**`; `app/(portal)/page.tsx`; `app/(jobs)/**`; `app/admin/**`; `app/api/admin/homepage-settings/**`; `app/api/public/homepage-settings/**`; `app/components/GlobalNavbar.tsx`; `app/components/GlobalFooter.tsx`; `app/components/FloatingChatActions.tsx`; `src/domains/job-board/public-types.ts`; `src/domains/job-board/public-settings.service.ts`; `src/domains/job-board/chat-links.ts`; `src/domains/job-board/components/landing/news-section.tsx`; `src/domains/job-board/components/landing/news-preview-modal.tsx`; `src/domains/job-board/fixtures/demo-content.ts`; `src/domains/job-board/components/landing/__tests__/sections-policy.test.ts`; `src/shared/auth/permission-catalog.ts`. Phase B retains all of the above EXCEPT those explicitly opened in `In-scope roots`, and adds: `app/components/ContactForm.tsx`; `prisma/migrations/<OTHER_TS>/**`; `src/domains/job-board/components/landing/__tests__/sections-policy.test.ts`. |
 | Required gates | `pwsh .ai-pipeline/scripts/verify-pipeline.ps1`; `node .ai-pipeline/scripts/verify-encoding.mjs`; `npm run typecheck`; `npm run lint -- src/domains/job-board/public-content-controls docs/tasks/hrp-ui2-public-content-controls-sticky`; `npm run test:unit -- src/domains/job-board/public-content-controls` |
 | Current execution round | `2` (Phase A: 1, Phase B: 1) |
@@ -39,14 +39,14 @@
 > `prisma/`, and the four mount points in `app/(portal)/layout.tsx`,
 > `app/components/GlobalNavbar.tsx`, `app/admin/settings/admin-settings-form.tsx`,
 > and the public news section. Phase A alone is not audited. T1B-owned surface
-> (the parts T1B itself touched in its UI V1 PR) is not re-audited here ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â that PR
+> (the parts T1B itself touched in its UI V1 PR) is not re-audited here — that PR
 > carried its own audit.
 
 ## 1. Outcome
 
 ### 1.1 User-visible outcome
 
-**Phase A ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â isolated, no public-render or schema change.** Ship a self-contained module
+**Phase A — isolated, no public-render or schema change.** Ship a self-contained module
 under `src/domains/job-board/public-content-controls/**` that materializes the
 contracts, validators, and components needed to deliver the two user-visible
 outcomes in **Phase B**, after T1B's UI V1 merges:
@@ -54,7 +54,7 @@ outcomes in **Phase B**, after T1B's UI V1 merges:
 1. **News toggle (Outcome 1)**: When an administrator flips a single
    `newsSectionEnabled` boolean in the canonical `HomepageSettings` row, the public
    homepage will:
-   - keep the "Tin tÃƒÂ¡Ã‚Â»Ã‚Â©c & CÃƒÂ¡Ã‚ÂºÃ‚Â©m nang" section rendered (default `true`, preserves
+   - keep the "Tin tức & Cẩm nang" section rendered (default `true`, preserves
      the current ON state), and keep the matching navbar entry rendered;
    - when `false`, hide the section AND hide the matching navbar entry, without
      deleting articles, JobPostings, or any persisted content, and without
@@ -66,7 +66,7 @@ outcomes in **Phase B**, after T1B's UI V1 merges:
    - does not overlay key CTAs or form fields (z-stack discipline);
    - is `prefers-reduced-motion` aware (animations off when reduced motion is on);
    - supports an animation enum `{ NONE, BLINK, MARQUEE }` implemented with
-     pure CSS keyframes ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â never raw `&lt;marquee&gt;`;
+     pure CSS keyframes — never raw `&lt;marquee&gt;`;
    - exposes a dismissible state (when `dismissible === true`) with a
      versioned `contentRevision` so that a new revision reappears for users
      who dismissed the prior one;
@@ -95,8 +95,8 @@ into `app/(portal)/layout.tsx`, **no** write into `prisma/schema.prisma` or
 
 | ID | Evidence | Why it matters |
 |---|---|---|
-| `EV-01` | `app/(portal)/layout.tsx:1-13` (Phase A) | Confirms the public layout still mounts only `GlobalNavbar`, `&lt;main&gt;`, `GlobalFooter`, `FloatingChatActions` ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â no sticky bar, no schema drift, owned by T1B. |
-| `EV-02` | `prisma/schema.prisma:1722-1736` (Phase A) | The canonical `HomepageSettings` singleton model ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â T1B-owned. Phase A does not touch it. |
+| `EV-01` | `app/(portal)/layout.tsx:1-13` (Phase A) | Confirms the public layout still mounts only `GlobalNavbar`, `&lt;main&gt;`, `GlobalFooter`, `FloatingChatActions` — no sticky bar, no schema drift, owned by T1B. |
+| `EV-02` | `prisma/schema.prisma:1722-1736` (Phase A) | The canonical `HomepageSettings` singleton model — T1B-owned. Phase A does not touch it. |
 | `EV-03` | `app/api/public/homepage-settings/route.ts:1-55` (Phase A) | Existing public projection, `unstable_cache` tag `homepage-settings`, TTL 60s. Phase A will integrate the new field projection through this route only in Phase B. |
 | `EV-04` | `src/domains/job-board/components/landing/news-section.tsx:21` (Phase A) | `if (!content.enabled) return null;` policy is already present. Phase A only adds a typed `gate` resolver that reads from `HomepageSettings`; it does NOT change the component. |
 | `EV-05` | `app/admin/settings/admin-settings-form.tsx:32-200` (Phase A) | Admin form is the T1B-owned mount point for the new fields; Phase A leaves it alone. |
@@ -141,8 +141,8 @@ into `app/(portal)/layout.tsx`, **no** write into `prisma/schema.prisma` or
 | `RQ-03` | The `StickyAnnouncement` DTO has fields: `enabled: boolean`, `message: string`, `ctaLabel: string \| null`, `ctaUrl: string \| null`, `dismissible: boolean`, `textColor: 'on-primary' \| 'on-surface' \| 'on-secondary-container'`, `emphasis: 'NORMAL' \| 'BOLD' \| 'EXTRA_BOLD'`, `font: 'SANS' \| 'SERIF'`, `animation: 'NONE' \| 'BLINK' \| 'MARQUEE'`, `contentRevision: string`. |
 | `RQ-04` | The `ctaUrl` is validated by `normalizeCtaUrl` (and a public projection `resolveCtaHref`) that accepts only: (a) relative pathnames starting with `/` and not `//`, and (b) absolute `https://` URLs. It rejects `javascript:`, `data:`, `vbscript:`, `file:`, `http:`, embedded credentials, and any URL whose normalized form contains a `javascript:` substring. Empty values yield `null`. |
 | `RQ-05` | The CTA anchor in `&lt;StickyAnnouncement&gt;` always carries `target="_blank" rel="noopener noreferrer"` for external URLs and `target="_self"` for relative URLs. |
-| `RQ-06` | The component renders a `&lt;div role="region" aria-label="ThÃƒÆ’Ã‚Â´ng bÃƒÆ’Ã‚Â¡o" aria-live="polite"&gt;` wrapper, an optional dismiss `&lt;button&gt;` with `aria-label="Ãƒâ€žÃ‚ÂÃƒÆ’Ã‚Â³ng thÃƒÆ’Ã‚Â´ng bÃƒÆ’Ã‚Â¡o"`, and the message as plain text. No `dangerouslySetInnerHTML`. No `&lt;script&gt;`. No `eval`. No inline event handler attributes. |
-| `RQ-07` | The component uses CSS keyframes for `BLINK` (opacity 1 ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ 0.55 ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ 1) and `MARQUEE` (transform: translateX). When `prefers-reduced-motion: reduce` is set, both animations become `animation: none` and the component does not animate. The component never renders `&lt;marquee&gt;`. |
+| `RQ-06` | The component renders a `&lt;div role="region" aria-label="Thông báo" aria-live="polite"&gt;` wrapper, an optional dismiss `&lt;button&gt;` with `aria-label="Đóng thông báo"`, and the message as plain text. No `dangerouslySetInnerHTML`. No `&lt;script&gt;`. No `eval`. No inline event handler attributes. |
+| `RQ-07` | The component uses CSS keyframes for `BLINK` (opacity 1 → 0.55 → 1) and `MARQUEE` (transform: translateX). When `prefers-reduced-motion: reduce` is set, both animations become `animation: none` and the component does not animate. The component never renders `&lt;marquee&gt;`. |
 | `RQ-08` | The component is suppressed when `enabled === false`, when `dismissible === true` AND the user has dismissed the current `contentRevision` (tracked in `localStorage` under `hrp.stickyAnnouncement.dismissed/{revision}`), and when the message is empty after trim. |
 | `RQ-09` | The `&lt;StickyAnnouncement&gt;` is mounted ONLY from the public layout in Phase B. Phase A ships the component and the contract; it does NOT modify `app/(portal)/layout.tsx`. The component itself, when imported and rendered, never causes portal/admin/auth layouts to mount it. |
 | `RQ-10` | A `computeContentRevision(dto)` pure function produces a stable hash from `(message, ctaLabel, ctaUrl, animation, dismissible)`. Two DTOs that produce the same hash are considered the same revision. The hash is a 16-char hex string (first 16 chars of SHA-256). The function is pure and uses `node:crypto` (server) and the Web Crypto API in browser code paths (Phase A implements both; the component uses the Web Crypto path). |
@@ -178,7 +178,7 @@ into `app/(portal)/layout.tsx`, **no** write into `prisma/schema.prisma` or
 - **Migration/rollback:** No migration in Phase A. Phase B's migration is
   single, forward-only, and additive.
 
-## 4.4 Phase B ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Canonical final delivery (this execution round)
+## 4.4 Phase B — Canonical final delivery (this execution round)
 
 Phase A shipped the isolated, hot-path-free module. Phase B wires the module
 to the real `HomepageSettings` singleton, adds the canonical persistence fields,
@@ -198,12 +198,12 @@ that the Tier-3 LIGHT audit will freeze on.
 | `RQ-18` | The admin write route `/api/admin/homepage-settings` (POST) accepts two new optional body fields: `newsSectionEnabled` (boolean) and `stickyAnnouncement` (object matching `StickyAnnouncementSchema` or `null`). The existing fields remain unchanged. Body shape is additive. |
 | `RQ-19` | Validation of the new fields runs **server-side** through the Phase A Zod schemas (`StickyAnnouncementSchema`, `NewsSectionToggleSchema`). On any schema failure the API returns 400 with the Zod error message; no field is persisted. |
 | `RQ-20` | The public layout `app/(portal)/layout.tsx` mounts `<StickyAnnouncement>` exactly once at the bottom of the layout, OUTSIDE the `<main>` and `<GlobalFooter>` blocks. Admin / recruiter / vendor / worker / CTV / login / `/forbidden` layouts do NOT include this layout; they do not mount the bar. |
-| `RQ-21` | The navbar entry for "Tin tÃƒÂ¡Ã‚Â»Ã‚Â©c" is gated: when `newsSectionEnabled === true`, the entry renders as a route link to `/#hrp-news-heading` (anchor on the homepage where the news section lives). When `false`, the entry is hidden entirely. The existing `type: 'disabled'` "Tin tÃƒÂ¡Ã‚Â»Ã‚Â©c" button is removed. |
+| `RQ-21` | The navbar entry for "Tin tức" is gated: when `newsSectionEnabled === true`, the entry renders as a route link to `/#hrp-news-heading` (anchor on the homepage where the news section lives). When `false`, the entry is hidden entirely. The existing `type: 'disabled'` "Tin tức" button is removed. |
 | `RQ-22` | The public homepage `app/(portal)/page.tsx` composes a thin wrapper around the existing `<NewsSection>` mount so the section is hidden when the gate is `false`. The wrapper is in `src/domains/job-board/public-content-controls/news-section-wrapper.tsx` (new file, in-scope). The existing `news-section.tsx` is **NOT** modified. |
-| `RQ-23` | The Admin form `app/admin/settings/admin-settings-form.tsx` adds two UI blocks: (a) a "Tin tÃƒÂ¡Ã‚Â»Ã‚Â©c & CÃƒÂ¡Ã‚ÂºÃ‚Â©m nang" toggle that calls the existing POST with `{ newsSectionEnabled: <BOOLEAN_PLACEHOLDER> }`; (b) a "ThÃƒÆ’Ã‚Â´ng bÃƒÆ’Ã‚Â¡o dÃƒâ€ Ã‚Â°ÃƒÂ¡Ã‚Â»Ã¢â‚¬Âºi Ãƒâ€žÃ¢â‚¬ËœÃƒÆ’Ã‚Â¡y" editor with `&lt;StickyAnnouncement&gt;` form controls: enable toggle, message textarea, CTA label + URL inputs, dismissible checkbox, three allowlist selects (text color / font / emphasis / animation), and a hidden auto-managed `contentRevision` (regenerated on every content change). The form calls the existing POST with the full new field set when the sticky block is dirty. No raw HTML, no arbitrary CSS, no `dangerouslySetInnerHTML`. URL safety uses `normalizeCtaUrl` from Phase A. |
+| `RQ-23` | The Admin form `app/admin/settings/admin-settings-form.tsx` adds two UI blocks: (a) a "Tin tức & Cẩm nang" toggle that calls the existing POST with `{ newsSectionEnabled: <BOOLEAN_PLACEHOLDER> }`; (b) a "Thông báo dưới đáy" editor with `&lt;StickyAnnouncement&gt;` form controls: enable toggle, message textarea, CTA label + URL inputs, dismissible checkbox, three allowlist selects (text color / font / emphasis / animation), and a hidden auto-managed `contentRevision` (regenerated on every content change). The form calls the existing POST with the full new field set when the sticky block is dirty. No raw HTML, no arbitrary CSS, no `dangerouslySetInnerHTML`. URL safety uses `normalizeCtaUrl` from Phase A. |
 | `RQ-24` | The Admin settings server page `app/admin/settings/page.tsx` projects the new DTO into `initialSettings` so the form receives the live `newsSectionEnabled` + `stickyAnnouncement` values. When the migration is not yet applied, the `unavailableReason` branch is taken (consistent with the existing P2021/P2022 fallback). |
 | `RQ-25` | The default `newsSectionEnabled === true` is preserved at all four read paths: `getHomepageSettings` read, `toHomepageSettingsDto` projection, public projection route, admin initial state. The default `stickyAnnouncement === null` yields `enabled: false` (Phase A defaults) and never renders the bar out of the box. |
-| `RQ-26` | The migration file lives at `prisma/migrations/20261004230000_ui2_public_content_controls/migration.sql`. The migration adds the two columns, the boolean default, and a CHECK constraint that the JSON column (when non-null) is a top-level object (`jsonb_typeof` check) and is bounded in size (ÃƒÂ¢Ã¢â‚¬Â°Ã‚Â¤ 4 KB). |
+| `RQ-26` | The migration file lives at `prisma/migrations/20261004230000_ui2_public_content_controls/migration.sql`. The migration adds the two columns, the boolean default, and a CHECK constraint that the JSON column (when non-null) is a top-level object (`jsonb_typeof` check) and is bounded in size (≤ 4 KB). |
 | `RQ-27` | No RLS, GRANT, or role-matrix changes. The admin write path remains the existing ADMIN / HR_MANAGER / DIRECTOR allowlist. |
 | `RQ-28` | `package.json` is unchanged. No new dependency is added. The Zod schema already used in Phase A is the same Zod used here (3.24.x). |
 | `RQ-29` | Static-fence coverage in Phase B. The `content-controls.static.test.ts` fence is extended to also cover the new Phase B files: `use-public-content-controls.ts`, `news-section-wrapper.tsx`, and the new UI2 blocks inside `app/admin/settings/admin-settings-form.tsx`. The fence continues to assert no `dangerouslySetInnerHTML`, no `&lt;SCRIPT`, no `&lt;MARQUEE`, no `&lt;SCRIPT_`, no `data:text/html`, no `vbscript:`, no `eval(`, no inline `on*=`. |
@@ -211,21 +211,21 @@ that the Tier-3 LIGHT audit will freeze on.
 ### 4.4.2 Phase B scope boundaries
 
 - **In (additive to Phase A):**
-  - `prisma/schema.prisma` (additive ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â two new columns, no destructive change).
+  - `prisma/schema.prisma` (additive — two new columns, no destructive change).
   - `prisma/migrations/20261004230000_ui2_public_content_controls/migration.sql` (single new file).
   - `app/(portal)/layout.tsx` (one-line mount of `<StickyAnnouncement>`).
-  - `app/components/GlobalNavbar.tsx` (replace the disabled "Tin tÃƒÂ¡Ã‚Â»Ã‚Â©c" button with a gate-aware link).
+  - `app/components/GlobalNavbar.tsx` (replace the disabled "Tin tức" button with a gate-aware link).
   - `app/admin/settings/admin-settings-form.tsx` (additive new blocks; existing fields preserved).
   - `app/admin/settings/page.tsx` (project new fields into `initialSettings`; fall through existing unavailable branch when needed).
   - `app/api/admin/homepage-settings/route.ts` (additive new fields in body, additive new validation branch).
-  - `app/api/public/homepage-settings/route.ts` (no code change required ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â uses `getHomepageSettings` DTO; verify coverage only).
+  - `app/api/public/homepage-settings/route.ts` (no code change required — uses `getHomepageSettings` DTO; verify coverage only).
   - `src/domains/job-board/public-types.ts` (additive: new optional DTO fields; existing fields preserved).
   - `src/domains/job-board/public-settings.service.ts` (additive: new columns mapped, new DTO fields, new write-path branch; existing branches preserved).
-  - `src/domains/job-board/public-content-controls/news-section-wrapper.tsx` (NEW ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â composition wrapper, no data fetch beyond what page.tsx already does).
-  - `src/domains/job-board/public-content-controls/dto-projection.ts` (NEW ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â pure helpers: `toStickyAnnouncementDto(value: unknown): StickyAnnouncementDto | null`, `toNewsSectionToggle(row: { newsSectionEnabled: boolean }): NewsSectionToggle`).
+  - `src/domains/job-board/public-content-controls/news-section-wrapper.tsx` (NEW — composition wrapper, no data fetch beyond what page.tsx already does).
+  - `src/domains/job-board/public-content-controls/dto-projection.ts` (NEW — pure helpers: `toStickyAnnouncementDto(value: unknown): StickyAnnouncementDto | null`, `toNewsSectionToggle(row: { newsSectionEnabled: boolean }): NewsSectionToggle`).
   - `src/domains/job-board/public-content-controls/__tests__/dto-projection.test.ts` (NEW).
   - `src/domains/job-board/public-content-controls/__tests__/news-section-wrapper.test.tsx` (NEW).
-  - `prisma/migrations/20261004230000_ui2_public_content_controls/migration.test.ts` (NEW ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â pattern from `homepage-chat-links-migration.test.ts`).
+  - `prisma/migrations/20261004230000_ui2_public_content_controls/migration.test.ts` (NEW — pattern from `homepage-chat-links-migration.test.ts`).
   - `docs/tasks/hrp-ui2-public-content-controls-sticky/TASK.md` (this spec v1.1).
   - `docs/tasks/hrp-ui2-public-content-controls-sticky/HANDOFF.md` (Phase B closeout).
 
@@ -241,26 +241,26 @@ that the Tier-3 LIGHT audit will freeze on.
   - `src/domains/job-board/chat-links.ts` (T1B-owned; URL safety for chat is reused, not re-authored).
   - `src/domains/job-board/fixtures/demo-content.ts`.
   - `src/shared/auth/permission-catalog.ts`.
-  - `app/components/GlobalNavbar.tsx` beyond replacing the existing "Tin tÃƒÂ¡Ã‚Â»Ã‚Â©c" button row and reading the gate.
+  - `app/components/GlobalNavbar.tsx` beyond replacing the existing "Tin tức" button row and reading the gate.
 
 ### 4.4.3 Phase B acceptance criteria
 
 | AC | Pass condition | Verification |
 |---|---|---|
 | `AC-19` | `git fetch origin && git rev-parse origin/main` returns `796e13c69996756d1298bc1a7ec9b50bab935c9f`. | `git rev-parse origin/main` |
-| `AC-20` | `git merge --no-ff origin/main` produces a merge commit on `codex/t1c-ui2-public-content-controls`. The merge has exactly two parents: HEAD (Phase A control head `0d4a606cÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦`) and `796e13c6ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦`. | `git log -1 --pretty=%P` of the merge commit |
+| `AC-20` | `git merge --no-ff origin/main` produces a merge commit on `codex/t1c-ui2-public-content-controls`. The merge has exactly two parents: HEAD (Phase A control head `0d4a606c…`) and `796e13c6…`. | `git log -1 --pretty=%P` of the merge commit |
 | `AC-21` | `git status --porcelain -- app/(portal)/layout.tsx app/(portal)/page.tsx app/components/GlobalNavbar.tsx app/components/GlobalFooter.tsx app/components/FloatingChatActions.tsx app/api/public/homepage-settings/route.ts app/admin/settings/page.tsx src/domains/job-board/chat-links.ts src/domains/job-board/fixtures/demo-content.ts` (Phase A forbidden paths, post-merge) is empty. | `git status --porcelain` |
 | `AC-22` | `prisma/schema.prisma` adds exactly two new fields on the `HomepageSettings` model: `newsSectionEnabled Boolean @default(true) @map("news_section_enabled")` and `stickyAnnouncement Json? @map("sticky_announcement")`. No other model is modified. | `git diff origin/main HEAD -- prisma/schema.prisma` |
-| `AC-23` | The migration `prisma/migrations/20261004230000_ui2_public_content_controls/migration.sql` exists, contains `ALTER TABLE "homepage_settings" ADD COLUMN "news_section_enabled" BOOLEAN NOT NULL DEFAULT TRUE` and `ADD COLUMN "sticky_announcement" JSONB`, plus a CHECK constraint that the JSON column is a top-level object (when non-null) and ÃƒÂ¢Ã¢â‚¬Â°Ã‚Â¤ 4096 bytes. The migration does NOT touch RLS, GRANT, or other tables. | `migration.test.ts` |
+| `AC-23` | The migration `prisma/migrations/20261004230000_ui2_public_content_controls/migration.sql` exists, contains `ALTER TABLE "homepage_settings" ADD COLUMN "news_section_enabled" BOOLEAN NOT NULL DEFAULT TRUE` and `ADD COLUMN "sticky_announcement" JSONB`, plus a CHECK constraint that the JSON column is a top-level object (when non-null) and ≤ 4096 bytes. The migration does NOT touch RLS, GRANT, or other tables. | `migration.test.ts` |
 | `AC-24` | `npx --no-install prisma validate` exits 0. | shell |
 | `AC-25` | `getHomepageSettings` returns a DTO that always includes `newsSectionEnabled: boolean` and `stickyAnnouncement: StickyAnnouncementDto \| null` (or the Phase A defaults when the column is `null` and the default is applied). | `public-settings.test.ts` extended cases |
 | `AC-26` | `updateHomepageSettings` accepts `newsSectionEnabled` and `stickyAnnouncement` in the input. The sticky field is round-tripped through Zod `StickyAnnouncementSchema.parse`; on failure it throws a `ZodError`. | `public-settings.test.ts` extended cases |
 | `AC-27` | The public projection route `/api/public/homepage-settings` returns the new fields in the JSON body when the row has them. | `vitest` integration test using `next/test` route handler |
-| `AC-28` | The admin route `/api/admin/homepage-settings` (POST) accepts `{ newsSectionEnabled: false, stickyAnnouncement: { enabled: true, message: 'Hello', ctaLabel: 'MÃƒÂ¡Ã‚Â»Ã…Â¸', ctaUrl: 'https://hrpartner.vn/about', dismissible: true, textColor: 'on-primary', font: 'SANS', emphasis: 'BOLD', animation: 'NONE', contentRevision: 'rev-1' } }`, persists it, and revalidates the public cache. The status is 200. | admin route test |
-| `AC-29` | The admin route rejects `stickyAnnouncement: { enabled: true, message: 'X'.repeat(300), ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ }` (over the 280-char limit) with 400 and an INVALID_INPUT message. | admin route test |
-| `AC-30` | The admin route rejects `stickyAnnouncement: { enabled: true, ctaUrl: 'javascript:alert(1)', ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ }` (URL safety) with 400 and an INVALID_INPUT message. | admin route test |
+| `AC-28` | The admin route `/api/admin/homepage-settings` (POST) accepts `{ newsSectionEnabled: false, stickyAnnouncement: { enabled: true, message: 'Hello', ctaLabel: 'Mở', ctaUrl: 'https://hrpartner.vn/about', dismissible: true, textColor: 'on-primary', font: 'SANS', emphasis: 'BOLD', animation: 'NONE', contentRevision: 'rev-1' } }`, persists it, and revalidates the public cache. The status is 200. | admin route test |
+| `AC-29` | The admin route rejects `stickyAnnouncement: { enabled: true, message: 'X'.repeat(300), … }` (over the 280-char limit) with 400 and an INVALID_INPUT message. | admin route test |
+| `AC-30` | The admin route rejects `stickyAnnouncement: { enabled: true, ctaUrl: 'javascript:alert(1)', … }` (URL safety) with 400 and an INVALID_INPUT message. | admin route test |
 | `AC-31` | `app/(portal)/layout.tsx` contains exactly one `&lt;StickyAnnouncement&gt;` mount. No admin/recruiter/worker/CTV/login/`/forbidden` layout file imports `&lt;StickyAnnouncement&gt;`. | grep + diff |
-| `AC-32` | The navbar entry "Tin tÃƒÂ¡Ã‚Â»Ã‚Â©c" appears when `newsSectionEnabled === true` and is hidden when `false`. Implementation: a `usePublicContentControls()` hook (NEW file, in-scope) reads the gate from a `SWR`/`fetch('/api/public/homepage-settings')` call. | nav + gate test |
+| `AC-32` | The navbar entry "Tin tức" appears when `newsSectionEnabled === true` and is hidden when `false`. Implementation: a `usePublicContentControls()` hook (NEW file, in-scope) reads the gate from a `SWR`/`fetch('/api/public/homepage-settings')` call. | nav + gate test |
 | `AC-33` | The news section composition wrapper (`news-section-wrapper.tsx`) reads the gate and returns `null` when `enabled === false`. The wrapper is rendered in `app/(portal)/page.tsx` next to the existing `<NewsSection>` mount. The existing `news-section.tsx` file is unchanged. | wrapper test + diff scope check |
 | `AC-34` | The admin form `&lt;AdminSettingsForm&gt;` renders the news toggle and the sticky editor. Saving one field alone issues a partial PATCH-equivalent POST (i.e. only the dirty field goes in the body). The form does not introduce any new `dangerouslySetInnerHTML`, `&lt;SCRIPT_`, `&lt;MARQUEE`, inline `ONCLICK` JSX props, or arbitrary CSS. | `content-controls.static.test.ts` extended (now fences both Phase A module AND the admin form's UI2 blocks) |
 | `AC-35` | `npm run typecheck` exits 0. | shell |
@@ -272,27 +272,27 @@ that the Tier-3 LIGHT audit will freeze on.
 | `AC-41` | `pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-ui2-public-content-controls-sticky/TASK.md` exits 0 with `RESULT: PASS`. | shell |
 | `AC-42` | `pwsh .ai-pipeline/scripts/verify-handoff.ps1 -TaskPath docs/tasks/hrp-ui2-public-content-controls-sticky/TASK.md` exits 0 with `RESULT: PASS`. | shell |
 | `AC-43` | The migration `20261004230000_*` is the latest by lexicographic timestamp on this branch. | `ls prisma/migrations/ | sort \| tail -1` |
-| `AC-44` | Synthetic DB integration: a Vitest test applies the migration to a Postgres test container OR a local Postgres, then issues a read + write through the service, then asserts the new DTO is returned. If no Postgres is available in the agent environment, the integration test is **skipped** (not failed) and the evidence row names the limitation explicitly. | `public-settings.integration.test.ts` (skip when no DB) |
+| `AC-44` | Synthetic DB integration: apply pending migrations with `npx --no-install prisma migrate deploy`; the Vitest test verifies the UI2 migration is applied, then issues a read + write through the service and asserts the new DTO is returned. If no test database URLs are available, the integration test is **skipped** (not failed) and the evidence row names the limitation explicitly. | `public-settings.integration.test.ts` (registered in `vitest.integration-files.ts`; skip only when both test URLs are absent) |
 
 ### 4.4.4 Phase B execution plan
 
 | Step | Target | Intent | Verify | Stop condition |
 |---|---|---|---|---|
 | `STEP-11` | Forward-merge `origin/main` into `codex/t1c-ui2-public-content-controls` via `git merge --no-ff origin/main`. | Bring UI2 onto the latest main (PR #94 + PR #95 already merged). | `git log -1 --pretty=%P` shows two parents; HEAD is a merge commit. | Merge conflict in UI2-owned surface; if conflict touches auth/RLS/lifecycle or T1B localization, STOP and report to T0. |
-| `STEP-12` | `prisma/schema.prisma` ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â append two new fields to `HomepageSettings`. | Materialize persistence contract. | `npx --no-install prisma validate` exits 0. | Schema validation fails. |
+| `STEP-12` | `prisma/schema.prisma` — append two new fields to `HomepageSettings`. | Materialize persistence contract. | `npx --no-install prisma validate` exits 0. | Schema validation fails. |
 | `STEP-13` | `prisma/migrations/20261004230000_ui2_public_content_controls/migration.sql` (new) + `migration.test.ts`. | Single forward-only migration. | `migration.test.ts` passes. | Migration file missing or contains forbidden statements. |
-| `STEP-14` | `src/domains/job-board/public-types.ts` ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â add `newsSectionEnabled: boolean` and `stickyAnnouncement: StickyAnnouncementDto \| null` to `HomepageSettingsDto`. Add the same to `HomepageSettingsView` via the existing `settings`/`source`/`defaultBestJobsPageSize`/`defaultListingPageSize` surface. | DTO extension. | `npm run typecheck`. | Tsc fails. |
-| `STEP-15` | `src/domains/job-board/public-settings.service.ts` ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â extend `SettingsRow`, `toHomepageSettingsDto`, `getHomepageSettings`, `UpdateHomepageSettingsInput`, `updateHomepageSettings`. | Service extension. | `npm run test:unit -- src/domains/job-board/public-settings.test.ts`. | Tests fail. |
-| `STEP-16` | `src/domains/job-board/public-content-controls/dto-projection.ts` (new) + `__tests__/dto-projection.test.ts`. | Pure helpers for DTO ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬Â DB-row conversion with Zod parse at the boundary. | `vitest` green. | Tests fail. |
-| `STEP-17` | `app/api/admin/homepage-settings/route.ts` ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â accept new fields, validate via Zod, pass to service. | Admin API. | Admin route test green. | Validation fails. |
-| `STEP-18` | `app/(portal)/layout.tsx` ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â mount `<StickyAnnouncement>`. | Public mount. | `git diff` shows exactly one mount. | Wrong mount location. |
-| `STEP-19` | `src/domains/job-board/public-content-controls/use-public-content-controls.ts` (new) + `__tests__/use-public-content-controls.test.tsx` ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â client hook reading `/api/public/homepage-settings` and exposing the gate + sticky DTO. | Client gate source. | `vitest` green. | Hook returns wrong shape. |
-| `STEP-20` | `app/components/GlobalNavbar.tsx` ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â replace the disabled "Tin tÃƒÂ¡Ã‚Â»Ã‚Â©c" button with a gate-aware link to `/#hrp-news-heading`. | Navbar gate. | `git diff` shows the replacement; nav test green. | Old `type: 'disabled'` button still present. |
-| `STEP-21` | `src/domains/job-board/public-content-controls/news-section-wrapper.tsx` (new) + `__tests__/news-section-wrapper.test.tsx` ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â composition wrapper reading the hook and returning the existing `<NewsSection>` or `null`. | Section gate. | Wrapper test green; `news-section.tsx` unchanged. | Wrapper mutates section data-fetch shape. |
-| STEP-22 | pp/(portal)/page.tsx — replace the direct &lt;NewsSection&gt; mount with &lt;NewsSectionWrapper content={demoNewsSection} /&gt;. (Tiny composition: import the wrapper, render it in place of the section.) | Wire the gate. | git diff is a 1-line import + 1-line render. | Edit breaks existing tests. |
-| `STEP-23` | `app/admin/settings/admin-settings-form.tsx` ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â add the news toggle block + the sticky announcement editor block. Auto-managed `contentRevision` is a `useMemo` over the editor fields. | Admin UI. | Form snapshot + lint green. | Form introduces forbidden patterns. |
-| `STEP-24` | `app/admin/settings/page.tsx` ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â project `newsSectionEnabled` and `stickyAnnouncement` into `initialSettings` via the new DTO. | Server initial state. | Build green; typecheck green. | Field projection missing. |
-| `STEP-25` | Run all canonical gates on the changed surface. | Phase B freeze. | All of `AC-35` ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ `AC-42` green. | Any gate fails. |
+| `STEP-14` | `src/domains/job-board/public-types.ts` — add `newsSectionEnabled: boolean` and `stickyAnnouncement: StickyAnnouncementDto \| null` to `HomepageSettingsDto`. Add the same to `HomepageSettingsView` via the existing `settings`/`source`/`defaultBestJobsPageSize`/`defaultListingPageSize` surface. | DTO extension. | `npm run typecheck`. | Tsc fails. |
+| `STEP-15` | `src/domains/job-board/public-settings.service.ts` — extend `SettingsRow`, `toHomepageSettingsDto`, `getHomepageSettings`, `UpdateHomepageSettingsInput`, `updateHomepageSettings`. | Service extension. | `npm run test:unit -- src/domains/job-board/public-settings.test.ts`. | Tests fail. |
+| `STEP-16` | `src/domains/job-board/public-content-controls/dto-projection.ts` (new) + `__tests__/dto-projection.test.ts`. | Pure helpers for DTO → DB-row conversion with Zod parse at the boundary. | `vitest` green. | Tests fail. |
+| `STEP-17` | `app/api/admin/homepage-settings/route.ts` — accept new fields, validate via Zod, pass to service. | Admin API. | Admin route test green. | Validation fails. |
+| `STEP-18` | `app/(portal)/layout.tsx` — mount `<StickyAnnouncement>`. | Public mount. | `git diff` shows exactly one mount. | Wrong mount location. |
+| `STEP-19` | `src/domains/job-board/public-content-controls/use-public-content-controls.ts` (new) + `__tests__/use-public-content-controls.test.tsx` — client hook reading `/api/public/homepage-settings` and exposing the gate + sticky DTO. | Client gate source. | `vitest` green. | Hook returns wrong shape. |
+| `STEP-20` | `app/components/GlobalNavbar.tsx` — replace the disabled "Tin tức" button with a gate-aware link to `/#hrp-news-heading`. | Navbar gate. | `git diff` shows the replacement; nav test green. | Old `type: 'disabled'` button still present. |
+| `STEP-21` | `src/domains/job-board/public-content-controls/news-section-wrapper.tsx` (new) + `__tests__/news-section-wrapper.test.tsx` — composition wrapper reading the hook and returning the existing `<NewsSection>` or `null`. | Section gate. | Wrapper test green; `news-section.tsx` unchanged. | Wrapper mutates section data-fetch shape. |
+| STEP-22 | app/(portal)/page.tsx — replace the direct &lt;NewsSection&gt; mount with &lt;NewsSectionWrapper content={demoNewsSection} /&gt;. (Tiny composition: import the wrapper, render it in place of the section.) | Wire the gate. | git diff is a 1-line import + 1-line render. | Edit breaks existing tests. |
+| `STEP-23` | `app/admin/settings/admin-settings-form.tsx` — add the news toggle block + the sticky announcement editor block. Auto-managed `contentRevision` is a `useMemo` over the editor fields. | Admin UI. | Form snapshot + lint green. | Form introduces forbidden patterns. |
+| `STEP-24` | `app/admin/settings/page.tsx` — project `newsSectionEnabled` and `stickyAnnouncement` into `initialSettings` via the new DTO. | Server initial state. | Build green; typecheck green. | Field projection missing. |
+| `STEP-25` | Run all canonical gates on the changed surface. | Phase B freeze. | All of `AC-35` … `AC-42` green. | Any gate fails. |
 | `STEP-26` | `git add` only the UI2-owned surface (NOT the untracked `pnpm-lock.yaml` / `pnpm-workspace.yaml`). Commit. | Freeze. | `git status --porcelain -- UI2_SURFACE_GLOB` is empty. | Working tree dirty. |
 | `STEP-27` | Update `HANDOFF.md` to Phase B `READY_FOR_AUDIT` / `ELIGIBLE`. | Hand-off. | `verify-handoff.ps1` green. | Handoff status mismatch. |
 
@@ -304,7 +304,7 @@ that the Tier-3 LIGHT audit will freeze on.
 | `RISK-07` | The admin form editor block uses an internal `useMemo` for `contentRevision`. The hash must change only when an admin edits one of the editor fields, NOT on every keystroke outside the editor. | The `useMemo` deps include only the editor fields, not the unrelated page-size selectors. |
 | `RISK-08` | The `<StickyAnnouncement>` mount in `app/(portal)/layout.tsx` could double-render on routes that have a child layout. | Mount is in the public-portal layout only; admin/recruiter/worker/CTV/login use their own root layout (`app/(admin)/layout.tsx` etc.) and do not include this file. The component has its own deduping on `contentRevision`. |
 | `RISK-09` | The migration adds a NOT NULL default. Existing singleton rows are upgraded in-place by Postgres (no backfill script required). | The default `TRUE` is the desired Phase B default; existing rows are forward-migrated automatically. |
-| `RISK-10` | Synthetic DB integration test needs Postgres; agent environment may not have it. | Test is `it.skip` when `process.env.UI2_PHASE_B_DB_URL` is unset, with a documented evidence row explaining the limitation. CI in T0's pipeline can re-enable it. |
+| `RISK-10` | Synthetic DB integration test needs Postgres; environments without the dedicated test writer/admin URLs cannot execute it. | Test self-skips only when both `DATABASE_URL_TEST` and `DATABASE_URL_ADMIN_TEST` are absent; the registered integration lane requires a synthetic-only pair and the applied migration. |
 
 ## 5. Execution Plan
 
@@ -336,7 +336,7 @@ between steps so the audit DELTA sees a clean diff.
 | `AC-04` | `normalizeCtaUrl` accepts: `/contact`, `/jobs?area=hcm`, `https://hrpartner.vn/contact`; rejects: `javascript:alert(1)`, `data:text/html,foo`, `vbscript:msgbox(1)`, `file:///etc/passwd`, `http://insecure.example/`, `https://user:pw@host/`, `//evil.com/x`. The rejection throws `InvalidCtaUrlError` whose `code === 'INVALID_CTA_URL'`. | vitest `url-safety.test.ts` |
 | `AC-05` | `resolveCtaHref` returns the canonical string for accepted inputs and `null` for any rejected input (defense-in-depth projection, mirroring `resolveChatHref` in `chat-links.ts`). | vitest `url-safety.test.ts` |
 | `AC-06` | `computeContentRevision` is pure, deterministic, and stable across two DTOs that differ in no observable field. Two DTOs that differ in `message` or `ctaUrl` produce different 16-char hex revisions. | vitest `revision.test.ts` |
-| `AC-07` | `&lt;StickyAnnouncement&gt;` renders `role="region" aria-label="ThÃƒÆ’Ã‚Â´ng bÃƒÆ’Ã‚Â¡o"` when `enabled === true` and a non-empty message; renders `null` when `enabled === false`; renders `null` when the message is empty after `trim()`. | vitest `sticky-announcement.test.tsx` |
+| `AC-07` | `&lt;StickyAnnouncement&gt;` renders `role="region" aria-label="Thông báo"` when `enabled === true` and a non-empty message; renders `null` when `enabled === false`; renders `null` when the message is empty after `trim()`. | vitest `sticky-announcement.test.tsx` |
 | `AC-08` | `&lt;StickyAnnouncement&gt;` adds `target="_blank" rel="noopener noreferrer"` for external `https://` URLs and `target="_self"` for relative URLs. | vitest `sticky-announcement.test.tsx` |
 | `AC-09` | `&lt;StickyAnnouncement&gt;` does NOT include the substring `&lt;marquee` anywhere in its rendered output for any of the three animation values. | `npm run test:unit -- src/domains/job-board/public-content-controls/sticky-announcement.test.tsx -t "does NOT include"` exits 0. |
 | `AC-10` | `&lt;StickyAnnouncement&gt;` includes the animation class only when the reduced-motion media query is NOT active. The static CSS includes `@media (prefers-reduced-motion: reduce) { ... animation: none ... }`. | `npm run test:unit -- src/domains/job-board/public-content-controls/content-controls.static.test.ts -t "reduced-motion"` exits 0. |
@@ -415,4 +415,5 @@ Tier 1 appends after review/audit. Audit `NONE` resolves directly from HANDOFF; 
 |---|---|---|---|
 | `v1.0` | `2026-10-04` | Initial contract | Initial |
 | `v1.0` | `2026-10-04` | Control fields flipped to `Status: READY_FOR_EXECUTION`, `Contract gate: READY_TO_CODE`, `Decision state: CLOSED`, `Current execution round: 1`, `Next gate: WAIT_UI_V1_MAIN_THEN_PHASE_B`. Phase A checkpoint recorded as `53696afb3f644a3df06d4cf772828446f16f30d6`. `Frozen delivery: YES` (the Phase A commit is frozen as a checkpoint, per H-16 gate constraint; final delivery remains `FINAL_PENDING` per T0 until Phase B freezes its own commit), `Canonical gates: FINAL_PENDING` (final-gate surface; phase A in-module gates already PASS), `Audit eligibility: NOT_ELIGIBLE`, `Correction budget used: 0`. HTML/JSX literal mentions in the body encoded as `&lt;...&gt;` so the A-04 placeholder gate passes for an executable contract. Phase B remains the canonical final-delivery surface (schema, single migration, mount points) and will not start until T1B UI V1 has merged and `origin/main` carries it. | T0 verdict `PHASE_A_ACCEPTED / FINAL_DELIVERY_NOT_READY_FOR_AUDIT`. Phase A is a CHECKPOINT, not the audit anchor. |
-| `v1.1` | `2026-10-04` | Phase B section §4.4 added. Spec version bumped. `Baseline` set to `796e13c69996756d1298bc1a7ec9b50bab935c9f` (`origin/main` after PR #94 + PR #95). `Current execution round: 2`. `Next gate: PHASE_B_T1C_EXECUTION`. Phase A in-scope roots retained. Phase B in-scope roots / forbidden paths split. Phase B requirements `RQ-13` ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ `RQ-28`, acceptance `AC-19` ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ `AC-44`, execution plan `STEP-11` ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ `STEP-27`, and risks `RISK-06` ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ `RISK-10` added. T0 disposition `RESUME UI2 PHASE B NOW` (2026-10-04 16:21 ICT) with both prerequisite gates (PR #94 + PR #95) confirmed PASS. Forward-merge `origin/main` into `codex/t1c-ui2-public-content-controls` is the first Phase B step. | T0 disposition to RESUME UI2 Phase B with gates confirmed (PR #94 + PR #95 merged, `origin/main = 796e13c6ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦`, main CI run 37191624366 PASS). |
+| `v1.1` | `2026-10-04` | Phase B section §4.4 added. Spec version bumped. `Baseline` set to `796e13c69996756d1298bc1a7ec9b50bab935c9f` (`origin/main` after PR #94 + PR #95). `Current execution round: 2`. `Next gate: PHASE_B_T1C_EXECUTION`. Phase A in-scope roots retained. Phase B in-scope roots / forbidden paths split. Phase B requirements `RQ-13` … `RQ-28`, acceptance `AC-19` … `AC-44`, execution plan `STEP-11` … `STEP-27`, and risks `RISK-06` … `RISK-10` added. T0 disposition `RESUME UI2 PHASE B NOW` (2026-10-04 16:21 ICT) with both prerequisite gates (PR #94 + PR #95) confirmed PASS. Forward-merge `origin/main` into `codex/t1c-ui2-public-content-controls` is the first Phase B step. | T0 disposition to RESUME UI2 Phase B with gates confirmed (PR #94 + PR #95 merged, `origin/main = 796e13c6…`, main CI run 37191624366 PASS). |
+| `v1.1.1` | `2026-10-04` | T0 pre-audit correction 1/1: added and registered the AC-44 synthetic PostgreSQL integration test, repaired TASK UTF-8/mojibake and STEP-22 path, and reconciled correction-budget usage. No UI2 runtime contract or scope changed. | T0 verdict `CHANGES_REQUIRED_TEST_AND_DOCS / NOT_READY_FOR_AUDIT`. |

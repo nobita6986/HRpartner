@@ -17,9 +17,11 @@
 | Phase B baseline (origin/main) | `796e13c69996756d1298bc1a7ec9b50bab935c9f` |
 | Phase B forward-merge SHA | `fb9ae379dcea3c422f3787f30bbe66fd69df0f13` |
 | Phase B UI2-owned semantic SHA | `190983f1fa5fe345148f258c9b45aca8b759619d` (UI2-owned Phase B semantic anchor; preserved as historical reference, NOT the post-merge Implementation SHA per T0 §8) |
-| Implementation SHA | `a6396ac331a826b0a268dc1dbfafe812ba9e6ac3` |
+| Implementation SHA | 38a871da3194e9fb60f3911a4b6af7a95b737f05 |
 | Latest-main merged | `937133c2fe96ebbf80c64d5b36f5f830e215efbb` (origin/main at the time of the latest-main reconciliation; contains PR #95 PWA icon hotfix + PR #96 Admin Localization Wave 1 + PR #97 UI V1 public-card-truth correction + PR #98 Admin Localization Wave 2) |
 | Latest-main reconciliation SHA | `a6396ac331a826b0a268dc1dbfafe812ba9e6ac3` (merge commit; two parents: `5120c86c…` UI2 docs/hygiene HEAD + `937133c2…` origin/main HEAD; created via `git merge --no-ff origin/main`; no rebase/amend/reset) |
+| Previous docs HEAD | `b3d9de9bb96e28eec24de156e6bbe64ec6c3a5da` |
+| Correction SHA | `Pending: this forward-only test/docs correction commit; exact SHA will be recorded after commit` |
 | Final combined semantic SHA | `a6396ac331a826b0a268dc1dbfafe812ba9e6ac3` (same as Latest-main reconciliation SHA; this merge IS the final combined delivery — no subsequent semantic correction commit was authored) |
 | HANDOFF freeze commit (pre-merge) | `a4600c1b1c802eea56d6fde8bddd86bab4985e71` (documentation-only; superseded by the merge) |
 | Docs/hygiene correction (pre-merge) | `5120c86ce080c40c9d0ab9fddd0f9cca36aa847c` (documentation-only; superseded by the merge) |
@@ -29,8 +31,9 @@
 | Status | `READY_FOR_AUDIT` |
 | Next gate | `TIER3_LIGHT_DELTA_AUDIT` |
 | Production migration | `NOT_RUN` |
-| Correction batches used | `0` |
-| Revision / identity chain | `190983f1…` (UI2 Phase B semantic) → `a4600c1b…` (HANDOFF flip, docs-only) → `5120c86c…` (docs/hygiene correction, docs-only) → `a6396ac3…` (latest-main reconciliation merge commit — the post-merge audit anchor). Exact final branch HEAD is reported in the post-commit T0 handback, not recursively pinned inside HANDOFF.md. |
+| Correction budget | `1` |
+| Correction batches used | `1` |
+| Revision / identity chain | `190983f1…` (UI2 Phase B semantic) → `a4600c1b…` (HANDOFF flip, docs-only) → `5120c86c…` (docs/hygiene correction, docs-only) → `a6396ac3…` (latest-main reconciliation merge) → pending correction commit. Any later docs-only freeze HEAD is reported in the T0 handback, not pinned recursively. |
 
 > **Note on SHA identity (post-merge).** Per H-16, the post-merge
 > `Implementation SHA` field resolves to `a6396ac331a826b0a268dc1dbfafe812ba9e6ac3`
@@ -192,11 +195,12 @@ The first row is `verify-task`. Each command registers once via `E-xx`; multiple
 | `AC-37` | `E-37` | `Service tests` cover both read (default values, projection of stored JSON) and write (admin mutation rejects invalid CTA URL, persists the new payload, re-reads via DTO). `public-settings.test.ts` PASSES. | `None` |
 | `AC-38` | `E-38` | `Static fence Phase B`: `pnpm exec vitest run src/domains/job-board/public-content-controls/content-controls.static.test.ts` exits 0; the fence asserts no `&lt;script` / `dangerouslySetInnerHTML` / `<marquee>` in the new `news-section-wrapper.tsx`, `public-sticky-announcement.tsx`, `use-public-content-controls.ts`, and `dto-projection.ts` files. | `None` |
 | `AC-39` | `E-39` | `Design tokens`: `app/shared/ui/design-tokens.static.test.ts` PASSES (12/12). The admin form uses no `var(--…)` pointing at a token not declared in `app/globals.css` (UI2 tags use `var(--primary-container)` / `var(--on-primary-container)`, both declared). | `None` |
-| `AC-40` | `E-40a`, `E-40b`, `E-40c` | `Typecheck`: `npm run typecheck` exit 0. `Lint`: `npm run lint` exit 0 with 0 errors (920 pre-existing warnings — re-verified at baseline `fb9ae379…` (Phase B merge commit) before this commit's edit surface, same 920 warnings; this commit introduces 0 new lint warnings). `Build`: `npm run build` exit 0. | `None` |
-| `AC-41` | `E-41` | `Encoding`: `node .ai-pipeline/scripts/verify-encoding.mjs docs/tasks/hrp-ui2-public-content-controls-sticky` → `RESULT: PASS (29 changed text file(s), strict UTF-8 without BOM)`. `git diff --check` → silent (no trailing whitespace). | `None` |
-| `AC-42` | `E-42` | `Full unit suite`: `npm run test:unit` → `Test Files 237 passed (237) · Tests 3939 passed | 9 skipped (3948)`. | `None` |
-| `AC-43` | `E-43` | `Synthetic DB integration`: AC-44's "skip if no Postgres" branch — no synthetic Postgres is available in this agent environment, so the synthetic migration apply test is explicitly **not run**. The static `migration.test.ts` and the in-process `public-settings.test.ts` provide equivalent coverage of the migration shape and the read/write path. | `synthetic DB unavailable in agent env` |
-| `AC-44` | `E-44` | `Migration posture`: the migration is additive, idempotent at the row level (single `homepage_settings` row), and reversible by re-applying `default(true)` / JSON null on rollback. The migration has NOT been run on the production database. | `Production migration: NOT_RUN` |
+| `AC-40` | `E-40a`, `E-40b`, `E-40c` | `Typecheck`: `npm run typecheck` exit 0. `Lint`: `npm run lint` exit 0, 0 errors, 919 warnings. `Build`: `npm run build` exit 0. | `None` |
+| `AC-41` | `E-41` | `Encoding`: `node .ai-pipeline/scripts/verify-encoding.mjs` and the correction-range scanner PASS; TASK and HANDOFF each have BOM=0, U+FFFD=0, disallowed controls=0, CRLF=0, and zero required mojibake markers. `git diff --check` is clean. | `None` |
+| `AC-42` | `E-42` | `Full unit suite`: `npm run test:unit` → `Test Files 252 passed (252) · Tests 4081 passed | 9 skipped (4090)`. | `None` |
+| `AC-43` | `E-43` | `Migration order`: `20261004230000_ui2_public_content_controls` is lexicographically latest on this branch. | `None` |
+| `AC-44` | `E-44` | `Synthetic PostgreSQL`: migration applied with `npx --no-install prisma migrate deploy`; writer was non-super/non-bypassrls and admin was privileged on the same approved synthetic host/database. One integration test passed in each of 3 fresh Vitest processes (1/1 each). Schema/default/nullability, top-level-object and 4 KB checks, service read/write of news + all sticky fields + contentRevision, and invalid CTA/schema rejection passed. The full singleton snapshot hash remained `3156914f65d9b214c8414b36173882119a1397506157e0f58a5f403f5e9b0691` after each process. No URL or row payload is recorded. | `Production DB untouched; production migration NOT_RUN` |
+| `—` | `E-45` | First attempt was classified `SYNTHETIC_TEST_HARNESS_TIMESTAMP_PRECISION_RESIDUE`: its Date-based cleanup could lose sub-millisecond precision in `created_at` / `updated_at` (`timestamp(6)`). Non-timestamp business fields compared equal. The test now snapshots/restores timestamp text directly; the three final runs each had zero full-row delta. T0 selected the current synthetic row as the new baseline; no backup/PITR or guessed timestamp reconstruction was used. | `Synthetic only; corrected harness verified` |
 
 ## 3. Evidence registry
 
@@ -223,11 +227,14 @@ The first row is `verify-task`. Each command registers once via `E-xx`; multiple
 | `E-38` | `pnpm exec vitest run src/domains/job-board/public-content-controls/content-controls.static.test.ts` | exit 0; fence covers Phase B files. | inline |
 | `E-38` | same as `E-31` | exit 0; fence covers Phase B files. | inline |
 | `E-39` | `pnpm exec vitest run src/shared/ui/design-tokens.static.test.ts` | exit 0; 12/12 cases pass; no `var(--ten)` resolution violations. | inline |
-| `E-40` | `npm run typecheck && npm run lint && npm run build` | exit 0 / 0 / 0; 0 errors. The 920 lint warnings are pre-existing in the repo at `fb9ae379…` (re-checked with `git checkout fb9ae379 -- . && npm run lint` — same 920 warnings); this commit introduces 0 new lint warnings. | inline |
-| `E-41` | `node .ai-pipeline/scripts/verify-encoding.mjs docs/tasks/hrp-ui2-public-content-controls-sticky && git diff --check` | exit 0; PASS (29 files, strict UTF-8 without BOM) + `git diff --check` silent. | inline |
-| `E-42` | `npm run test:unit` | exit 0; `Test Files 237 passed (237) · Tests 3939 passed | 9 skipped (3948)`. | inline |
-| `E-43` | synthetic migration apply (skip path) | SKIPPED; no Postgres in agent environment. Static `migration.test.ts` covers the SQL shape. | `n/a — limitation` |
-| `E-44` | `git log -1 --pretty=%H -- prisma/schema.prisma` + `git status --porcelain -- prisma/migrations/` | exit 0; one additive migration; no destructive ops. | inline |
+| `E-40` | `npm run typecheck`; `npm run lint`; `npm run build` | all exit 0; lint reports 0 errors and 919 warnings. | inline |
+| `E-41` | `node .ai-pipeline/scripts/verify-encoding.mjs`; TASK/HANDOFF exact scanner; `git diff --check` | encoding checks and diff check PASS; see corrected-range gate after commits. | inline |
+| `E-42` | `npm run test:unit` | exit 0; `Test Files 252 passed (252) · Tests 4081 passed | 9 skipped (4090)`. | inline |
+| `E-43` | migration directory lexical-order check | exit 0; `20261004230000_ui2_public_content_controls` is latest. | inline |
+| `E-44` | synthetic posture gate; `npx --no-install prisma migrate deploy`; integration Vitest × 3 fresh processes; full-row snapshot comparison | migration applied; writer `rolsuper=false`, `rolbypassrls=false`; admin `rolbypassrls=true`; one test passed per process; all three snapshots zero-delta, SHA-256 `3156914f65d9b214c8414b36173882119a1397506157e0f58a5f403f5e9b0691`. | inline, no URLs/row data |
+| `E-45` | First attempt residue classification | `SYNTHETIC_TEST_HARNESS_TIMESTAMP_PRECISION_RESIDUE`; timestamp text was initially round-tripped through JS Date. Fix now preserves `timestamp(6)` text; T0 authorized current synthetic snapshot baseline. No raw data recorded. | synthetic-only |
+| `E-46` | PR #97 targeted stamp/salary regression selector | exit 0; 7 test files, 224 passed. | inline |
+| `E-47` | `npx --no-install prisma validate`; `npx --no-install prisma generate` | both exit 0; validation used non-routable placeholder URLs; client generated with Prisma 5.22.0. | inline |
 
 ## 4. Deviations and blockers
 

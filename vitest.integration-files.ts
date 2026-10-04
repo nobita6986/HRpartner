@@ -237,4 +237,8 @@ export const INTEGRATION_TEST_FILES: string[] = [
   // describe.skipIf when DATABASE_URL_TEST + DATABASE_URL_ADMIN_TEST
   // are absent (ENV_BLOCKED).
   'tests/db/p1a07-f9b-r2-role-scope.integration.test.ts',
+  // hrp-ui2-public-content-controls-sticky: real synthetic-Postgres proof for
+  // the applied migration, HomepageSettings read/write, JSONB constraints,
+  // fail-closed validation, and value-equivalent cleanup.
+  'tests/db/public-settings.integration.test.ts',
 ];
