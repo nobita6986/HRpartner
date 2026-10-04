@@ -163,7 +163,7 @@ describe('/admin/job-openings/[id] — page-level authorization (AC-06 / v1.2 §
     mockSession = { userId: 'admin-1', role: 'ADMIN' };
     mockOpeningDto = defaultOpeningDto();
     const html = await renderPage();
-    expect(html).toContain('Tuyển dụng (Opening)');
+    expect(html).toContain('Đợt tuyển dụng');
     expect(stubbedActionsProps).toHaveLength(1);
     const flags = stubbedActionsProps[0].flags;
     expect(flags.canClassify).toBe(true);
