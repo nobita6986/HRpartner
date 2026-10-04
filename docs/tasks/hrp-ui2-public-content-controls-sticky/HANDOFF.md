@@ -11,7 +11,7 @@
 | Branch | `codex/t1c-ui2-public-content-controls` |
 | Worktree | `C:/CodeApp/HrP-t1c-ui2-public-content-controls` |
 | Baseline | `origin/main @ 6ea2e267b72120de5f67d5954d1074101efccff1` |
-| Implementation SHA | `cc45afff51e75ad024143360be319f5e6ea526df` (short: `cc45afff`). Verified by `git rev-parse HEAD` immediately after this HANDOFF.md was authored and committed in the same SHA. The audit cross-check is `git log --oneline -1 cc45afff` → subject line starts with `t1c(phase-a): ui2 public content controls + sticky announcement module` and `git show --stat cc45afff` → 17 files in the two declared paths. |
+| Implementation SHA | `53696afb3f644a3df06d4cf772828446f16f30d6` (short: `53696afb`). This is the commit on branch `codex/t1c-ui2-public-content-controls` whose `git log --oneline -1` shows `t1c(phase-a): ui2 public content controls + sticky announcement module` and whose `git show --stat` lists exactly the 17 files in the two declared paths (8 source + 7 test under `src/domains/job-board/public-content-controls/`, plus 2 docs under `docs/tasks/hrp-ui2-public-content-controls-sticky/`). Audit cross-check: `git log --oneline -1 53696afb` and `git show --stat 53696afb`. |
 | Frozen delivery | **YES** |
 | Ready for audit | **YES** |
 | Audit eligibility | **ELIGIBLE** |
@@ -20,9 +20,12 @@
 | Contract gate | `READY_FOR_EXECUTION` |
 | Decision state | `CLOSED` |
 
-> The Implementation SHA above (`cc45afff`) is the audit anchor. It is the
-> exact commit `git rev-parse HEAD` produced after staging the 17 files in
-> this Phase A delivery. Do not hand-edit it.
+> The Implementation SHA above (`53696afb`) is the audit anchor. The SHA
+> is also recorded as the literal hex string in this very row of the table.
+> To verify, run `git log --oneline -1 53696afb` and `git show --stat 53696afb`
+> from the worktree root. Do not amend the implementation commit after the
+> HANDOFF is published — any future HANDOFF edits go in a follow-up `docs:`
+> commit on top of `53696afb`, never rewriting it.
 
 ## 1. Delivery status
 
@@ -179,8 +182,9 @@ Phase B **will not**:
   module isomorphic-safe (works in Node tests AND in the Edge runtime, which
   does not expose `node:crypto`). Verify by running `vitest run` and reading
   `revision.ts`.
-- The HANDOFF is the audit anchor. Do not edit `Implementation SHA` after the
-  freeze commit; that line is the commit SHA the audit cross-references.
+- The HANDOFF is the audit anchor. The Implementation SHA is the literal
+  hex value `53696afb3f644a3df06d4cf772828446f16f30d6`. Cross-check via
+  `git show --stat 53696afb` — must list the 17 files declared in §2.
 
 ## 7. Reproduction commands
 
@@ -215,4 +219,5 @@ This commit **does not**:
 - run any production migration (none exists in this commit);
 - author `AUDIT.md` (Tier 3's job).
 
-The next gate is `TIER3_LIGHT_AUDIT` against the Implementation SHA above.
+The next gate is `TIER3_LIGHT_AUDIT` against the Implementation SHA above
+(`53696afb`).
