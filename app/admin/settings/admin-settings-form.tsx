@@ -45,6 +45,7 @@ import {
   normalizeChatUrl,
   normalizePhoneNumber,
 } from '@/src/domains/job-board/chat-links';
+import { buildHomepageSettingsPatch } from './homepage-settings-patch';
 
 const PLACEHOLDER_GROUPS = [
   {
@@ -251,7 +252,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
   function buildPayload(): Record<string, unknown> {
     const trimmedCtaUrl = stickyCtaUrl.trim();
     const trimmedCtaLabel = stickyCtaLabel.trim();
-    return {
+    return buildHomepageSettingsPatch({
       bestJobsPageSize,
       listingPageSize,
       zaloChatUrl,
@@ -272,7 +273,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
             contentRevision: stickyContentRevision,
           }
         : null,
-    };
+    }, savedSnapshot);
   }
 
   async function handleSubmit(e: React.FormEvent) {
