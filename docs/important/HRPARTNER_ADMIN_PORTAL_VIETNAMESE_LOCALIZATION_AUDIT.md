@@ -142,8 +142,8 @@ These modules already follow the pattern this audit recommends for Wave 1. They 
 
 | File | What it asserts |
 | --- | --- |
-| `app/admin/jobs/__tests__/admin-jobs-terminology.static.test.ts` | The current assertions (`Công bố dự án` / `Bỏ công bố dự án` literal on `/admin/jobs` ; `Publish` / `Unpublish` / `Archive` preserved on the JobPosting editor) **do not** reflect the binding state under T0 §2 #2. Wave 2 MUST update this static test to assert:
-- **`Project`** level: the ** `Công bố dự án` / `Bỏ công bố dự án` business-button literal** MUST appear on `/admin/jobs` Project-level actions (F11 frozen business-literal). The **`Publish` column header** MUST adopt `Công bố` (T0 §2 #1).
+| `app/admin/jobs/__tests__/admin-jobs-terminology.static.test.ts` | The current assertions (`Công bố dự án` / `Bỏ công bố dự án` literal on `/admin/jobs`; `Publish` / `Unpublish` / `Archive` preserved on the JobPosting editor) **do not** reflect the binding state under T0 §2 #2. Wave 2 MUST update this static test to assert:
+- **`Project`** level: the **`Công bố dự án` / `Bỏ công bố dự án` business-button literal** MUST appear on `/admin/jobs` Project-level actions (F11 frozen business-literal). The **`Publish` column header** MUST adopt `Công bố` (T0 §2 #1).
 - **`JobPosting`** level: the `Đăng tin` / `Gỡ tin` / `Lưu trữ` Vietnamese display actions MUST appear on the editor shell; rendering the canonical lifecycle operation names `Publish` / `Unpublish` / `Archive` as operator-facing display labels is forbidden. Canonical names are permitted only as API request keys and as `value` / `aria` attributes. |
 | `app/admin/recruiter-workbench/_components/RecruiterWorkbenchTable.test.ts` | Snapshot of all 9 column headers in Vietnamese. |
 | `app/admin/recruiter-workbench/_components/NextActionBadge.test.ts` | All 7 `NEXT_ACTION_META.label` values render in Vietnamese. |
