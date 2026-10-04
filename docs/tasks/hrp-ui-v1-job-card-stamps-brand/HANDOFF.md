@@ -9,15 +9,17 @@
 | Audit mode (phải khớp TASK) | LIGHT |
 | Delivery protocol | V2_FAST_FREEZE |
 | Assurance lane | CRITICAL |
-| Execution round | 1 |
+| Execution round | 2 |
 | Status | READY_FOR_AUDIT |
 | Baseline | `6ea2e267b72120de5f67d5954d1074101efccff1` |
 | Contract correction SHA | `763c55ef213218fcb88967281f584e69ac26588f` |
-| Implementation SHA | `12a0077b9b731aef7ca583d86ee0b0813ec21213` |
-| Implementation SHA role | semantic commit for D1-D4 + brand swap + About removal |
+| Implementation SHA (D1-D4 + brand + About) | `12a0077b9b731aef7ca583d86ee0b0813ec21213` |
 | Cleanup SHA | `108fb9c286ec061d2b7a73f31b3a38ccd7caf383` |
-| Cleanup SHA role | root-level only — removes temporary COMMIT_MSG.txt, no `app/src/prisma/tests/scripts/packages` delta |
-| Final audit-target HEAD | `714e712cd329a171e2a3fb418adabcd129da3ba9` |
+| Forward-merge SHA (T1A Mốc 2A → T1B UI V1, --no-ff) | `8e7321744ff33bbbfd956ecc9abc3a6e7a71497e` |
+| Forward-merge parents | `a49aa078a46499e8caa03512581c147c7bbe067c` + `8382bbc70b74f2fc21471c532b98bd20ab8a1fac` |
+| Forward-merge other head (`origin/main`) | `8382bbc70b74f2fc21471c532b98bd20ab8a1fac` (verified) |
+| F8 integration SHA | `50e07bcf462af8a5b2b3871e42618ca83039cf44` |
+| Final audit-target HEAD | `01e4ab79742629eb8b482708426efd8fa23822bb` (round-2 HANDOFF freeze; semantic implementation HEAD `50e07bcf…`) |
 | Migration name | `20261004120000_ui_v1_jobposting_stamp_flags` |
 | Frozen delivery | YES |
 | Canonical gates | PASS |
@@ -161,10 +163,22 @@ isHighReward ?? null, isExpiringSoon ?? null`) — bao gồm 4 stamp flags.
 Mỗi toggle là `<StampToggle>` độc lập, dirty-tracking snapshot ref dùng để so sánh với `init`,
 save payload tự gửi cả 4 flag. Reload / restore dùng `initialSnapshotRef.current`.
 
-T1B KHÔNG tạo safe error mapper — đợi T1A Mốc 2A handoff mapper. Khi đó:
-- T1B forward-merge `origin/main`.
-- Consume shared mapper (không tạo mapper trùng).
-- Nếu T1A không giao, ghi rõ F8 integration pending.
+**F8 integration (resolved in round 2):**
+
+- Editor consumes shared safe error mapper
+  `summarizeJobPostingApiError` from
+  `src/domains/staffing/job-posting-error-map.ts` (T1A-owned, Mốc 2A).
+- `readErrorMessage(res)` legacy path is REPLACED by `readApiErrorSummary(res, fallbackJobOpeningId)`
+  (exported, pure helper).
+- Editor renders ONLY safe Vietnamese label. When `recoveryHref` is present
+  (today only `JOB_OPENING_NOT_OPEN`), renders a `<Link>` to canonical
+  `/admin/job-openings/<jobOpeningId>` so operator can unblock publish
+  retry in one click.
+- NEVER echoes raw `body.message`, UUID, SQL, stack, or PII.
+- T1B DID NOT author a duplicate mapper.
+- Publish button / lifecycle / idempotency untouched.
+
+F8 status: **RESOLVED**.
 
 ## 2. Execution Trace
 
@@ -241,6 +255,8 @@ T1B KHÔNG tạo safe error mapper — đợi T1A Mốc 2A handoff mapper. Khi �
 | STEP-24 | Canonical gates: `npx prisma validate`, `npx prisma generate`, `npm run typecheck`, `npm run lint`, `npm run test:unit`, `npm run build`, `git diff --check`, `node .ai-pipeline/scripts/verify-encoding.mjs`, `pwsh .ai-pipeline/scripts/verify-task.ps1`, `pwsh .ai-pipeline/scripts/verify-handoff.ps1` — all PASS. | DONE |
 | STEP-25 | F8 forward-merge: deferred until T1A Mốc 2A merges to `origin/main`. T1B DID NOT author duplicate safe error mapper. | DEFERRED |
 | STEP-26 | Commit + HANDOFF: semantic commit `12a0077b9b731aef7ca583d86ee0b0813ec21213`; cleanup commit `108fb9c286ec061d2b7a73f31b3a38ccd7caf383`; HANDOFF.md authored. Re-run `verify-handoff.ps1` → PASS WITH WARNINGS (2 H-12 STEP-19..26 traceability warning resolved by §2 expansion; H-01 HANDOFF staging warning resolved by docs freeze commit). | DONE |
+| STEP-27 | **Round 2 — Mốc 2A merge into origin/main + T1B forward-merge**: T0 confirmed Mốc 2A merged to `origin/main = 8382bbc70b74f2fc21471c532b98bd20ab8a1fac` (PR #90). T1B ran `git fetch origin main` + `git rev-parse origin/main` (verified equal to T0 SHA) + `git merge --no-ff origin/main` → forward-merge SHA `8e7321744ff33bbbfd956ecc9abc3a6e7a71497e` with parents `a49aa078a46499e8caa03512581c147c7bbe067c` (T1B docs freeze) + `8382bbc70b74f2fc21471c532b98bd20ab8a1fac` (origin/main). NO rebase, NO amend, NO reset, NO force-push. | DONE |
+| STEP-28 | **F8 integration (round 2)**: `app/admin/jobs/job-postings/[id]/editor-shell.tsx` — replaced `readErrorMessage` with `readApiErrorSummary(res, fallbackJobOpeningId)` (exported pure helper), consuming `summarizeJobPostingApiError` from `src/domains/staffing/job-posting-error-map.ts`. Added `errorRecoveryHref` state, `<Link>` rendered when present (today only `JOB_OPENING_NOT_OPEN` → `/admin/job-openings/<jobOpeningId>`). Added `data-testid="editor-save-button"` and `data-testid="editor-safe-error"` for F8 unit-test affordance. Added `app/admin/jobs/job-postings/[id]/__tests__/editor-shell.f8.test.ts` (12/12 PASS). Semantic commit `50e07bcf`. | DONE |
 
 ## 3. Acceptance Evidence
 
@@ -284,7 +300,9 @@ T1B KHÔNG tạo safe error mapper — đợi T1A Mốc 2A handoff mapper. Khi �
 | PATCH route (`app/api/admin/jobs/job-postings/[id]/route.ts`) | Delivered |
 | Public projection (`src/domains/job-board/public.service.ts`) | Delivered |
 | Stamp registry + shared renderer (`stamp-defs.ts`, `stamp-badge.tsx`, `featured-job-card.tsx`) | Delivered |
-| Editor shell (`app/admin/jobs/job-postings/[id]/editor-shell.tsx`) — 4 toggles | Delivered |
+| Editor shell (`app/admin/jobs/job-postings/[id]/editor-shell.tsx`) — 4 toggles | Delivered (round 1) |
+| Editor shell F8 safe error mapper integration | Delivered (round 2) |
+| Editor shell F8 unit test (`__tests__/editor-shell.f8.test.ts`) — 12/12 PASS | Delivered (round 2) |
 | Viec-lam surfaces (`app/(jobs)/viec-lam/page.tsx`, `app/(jobs)/viec-lam/[slug]/page.tsx`) | Delivered |
 | Brand swap (`public/hrp-logo.webp`, `GlobalNavbar.tsx`, `login-form.tsx`, `role-guard-layout.tsx`, `layout.tsx`) | Delivered |
 | About removal (`ve-chung-toi/page.tsx` deleted, nav/footer links removed) | Delivered |
@@ -298,7 +316,7 @@ T1B KHÔNG tạo safe error mapper — đợi T1A Mốc 2A handoff mapper. Khi �
 
 | ID | Category | Description | Resolution |
 |---|---|---|---|
-| DEV-01 | T1A dependency | T1B authored D1-D4 before T1A Mốc 2A merged. T1B DID NOT author a duplicate safe error mapper. Editor shell relies on existing PATCH route error envelope (no behavioral change). | Awaiting T1A merge → forward-merge `origin/main` → consume shared mapper (T0 §E.4-6). F8 integration pending; no scope expansion. |
+| DEV-01 | T1A dependency (round 1) → RESOLVED in round 2 | Round 1: T1B authored D1-D4 before T1A Mốc 2A merged. T1B DID NOT author a duplicate safe error mapper. Round 2: T0 confirmed Mốc 2A merged (`origin/main = 8382bbc70b74f2fc21471c532b98bd20ab8a1fac`). T1B forward-merged `origin/main` via `--no-ff` (merge SHA `8e7321744ff33bbbfd956ecc9abc3a6e7a71497e`) and consumed shared safe mapper (`summarizeJobPostingApiError`) from `src/domains/staffing/job-posting-error-map.ts`. F8 = RESOLVED. Editor shell renders safe Vietnamese label + canonical recovery `<Link>` for `JOB_OPENING_NOT_OPEN`. 12/12 F8 unit tests PASS. |
 | DEV-02 | pnpm interference | pnpm attempted to relocate `node_modules` to `.ignored/` on first invocation, breaking `@tiptap/*`, `@prisma/*`, `@tailwindcss/*`, `@upstash/*`, `@vercel/*`, `@tanstack/*` nested scope resolution. | Restored `node_modules/` from `.ignored/` manually; switched to `npm` for all subsequent gate runs. Not a code change — worktree-local tooling effect. |
 | DEV-03 | @eslint/js missing | `@eslint/js@9.39.5` was missing from `node_modules` after the pnpm re-arrangement. | Installed via `npm install --no-save @eslint/js@9.39.5`. Not a code change. |
 | DEV-04 | Static-test fixture coupling | `required-relation-sweep.static.test.ts` and `public-card-truth.test.ts` are static scanners that read source line numbers and key lists. T1B had to update both to reflect additive schema columns + line shifts. | All updates committed in `12a0077b`. Both tests PASS (11/11 and 23/23 respectively). |
@@ -336,27 +354,43 @@ T1B KHÔNG tạo safe error mapper — đợi T1A Mốc 2A handoff mapper. Khi �
 | 1 | 2026-10-04 | Semantic implementation: schema, migration, services, route, public projection, stamp registry, viec-lam surfaces, brand swap, About removal | All gates PASS |
 | 1 | 2026-10-04 | Semantic commit | `12a0077b9b731aef7ca583d86ee0b0813ec21213` |
 | 1 | 2026-10-04 | Cleanup commit (root-level only; no `app/src/prisma/tests/scripts/packages` delta) | `108fb9c286ec061d2b7a73f31b3a38ccd7caf383` |
-| 1 | 2026-10-04 | Docs freeze commit (HANDOFF.md) — pinned after final amend | `714e712cd329a171e2a3fb418adabcd129da3ba9` |
+| 1 | 2026-10-04 | Docs freeze commit (HANDOFF.md) — pinned after final amend | `714e712cd329a171e2a3fb418adabcd129da3ba9` (replaced by round-2 final HEAD) |
+| 2 | 2026-10-04 | T0 confirmed Mốc 2A merged → `origin/main = 8382bbc70b74f2fc21471c532b98bd20ab8a1fac` (PR #90). T1B fetched + verified SHA. | OK |
+| 2 | 2026-10-04 | Forward-merge `--no-ff` → parents `a49aa078…` (T1B) + `8382bbc7…` (origin/main) | `8e7321744ff33bbbfd956ecc9abc3a6e7a71497e` |
+| 2 | 2026-10-04 | F8 integration: editor-shell consumes `summarizeJobPostingApiError`, renders safe Vietnamese label + canonical recovery `<Link>` for `JOB_OPENING_NOT_OPEN`. F8 unit test 12/12 PASS. All gates re-run: typecheck/lint/build/unit (3714)/prisma validate/encoding/diff-check. | `50e07bcf` (final audit-target HEAD) |
+| 2 | 2026-10-04 | HANDOFF.md re-pinned to round-2 SHA, F8 = RESOLVED, Execution Round = 2, all gates = PASS, Preview Tier 3 = READY. | DONE |
 
-## 8. F8 Mapper Integration (disposition)
+## 8. F8 Mapper Integration (RESOLVED in round 2)
 
-Per T0 §E, F8 (shared safe error mapper) is owned by T1A Mốc 2A and not yet merged.
+**F8 status: RESOLVED.**
 
-T1B therefore:
-- DID NOT author a duplicate mapper in `editor-shell.tsx`.
-- DID NOT extend scope to create one.
+Per T0 §E, F8 (shared safe error mapper) was owned by T1A Mốc 2A and merged
+into `origin/main = 8382bbc70b74f2fc21471c532b98bd20ab8a1fac` on Sun Oct 4.
 
-Action items deferred until T1A Mốc 2A merges to `origin/main`:
+T1B then:
 
-1. Fetch latest `origin/main`.
-2. `git merge --no-ff origin/main` (no rebase / amend / reset / force-push).
-3. Consume shared safe mapper if T1A handoff confirms it is ready.
-4. If T1A does NOT hand off the mapper, document explicitly: F8 integration pending,
-   do NOT self-expand scope.
+1. Fetched `origin/main` and confirmed SHA `8382bbc70b74f2fc21471c532b98bd20ab8a1fac`
+   (matches T0 directive).
+2. Forward-merged via `git merge --no-ff origin/main` →
+   `8e7321744ff33bbbfd956ecc9abc3a6e7a71497e` (parents: T1B docs freeze `a49aa078…`
+   + `origin/main 8382bbc7…`). NO rebase / amend / reset / force-push.
+3. Consumed shared mapper `summarizeJobPostingApiError` from
+   `src/domains/staffing/job-posting-error-map.ts` in
+   `app/admin/jobs/job-postings/[id]/editor-shell.tsx` via the new
+   `readApiErrorSummary(res, fallbackJobOpeningId)` thin helper (exported).
+4. Editor renders safe Vietnamese label only. When `recoveryHref` is present
+   (today only `JOB_OPENING_NOT_OPEN`), renders a `<Link>` to canonical
+   `/admin/job-openings/<jobOpeningId>` so operator can unblock the publish
+   retry in one click.
+5. Did NOT author a duplicate mapper.
+6. Publish button / lifecycle / idempotency / revision untouched.
+7. Added `app/admin/jobs/job-postings/[id]/__tests__/editor-shell.f8.test.ts`
+   — 12/12 PASS covering the directive's coverage list.
 
-This branch's `editor-shell.tsx` retains the current per-toggle `<StampToggle>` rendering.
-Error handling today relies on the existing PATCH route error envelope
-(see `app/api/admin/jobs/job-postings/[id]/route.ts`) — no behavioral change introduced by T1B.
+Seed SHAs:
+
+- Forward-merge: `8e7321744ff33bbbfd956ecc9abc3a6e7a71497e`
+- F8 semantic commit: `50e07bcf` (final audit-target HEAD)
 
 ## 9. Production Migration Disposition
 
@@ -378,6 +412,8 @@ Until then the production database is at `20260930090000_p1a05_hr_staff_job_open
 - [x] Production migration: `NOT_RUN`.
 - [x] T1B owns `app/admin/jobs/job-postings/[id]/editor-shell.tsx` (TASK ownership).
 - [x] T1A owns shared safe error mapper (T1B did NOT author duplicate).
+- [x] F8 integration RESOLVED in round 2: editor consumes `summarizeJobPostingApiError` + renders safe Vietnamese label + conditional `<Link>` recovery. F8 unit test 12/12 PASS.
+- [x] Forward-merge `--no-ff` to `origin/main` (`8382bbc7…`) recorded with parents in §0.
 - [x] T1C owns UI2 (T1B did NOT touch HomepageSettings / Tin tức & Cẩm nang / sticky announcement).
 - [x] No F6 / AFF / P2 / production DB / lifecycle / auth / RLS changes.
 - [x] All gate results PASS.
@@ -386,7 +422,11 @@ Until then the production database is at `20260930090000_p1a05_hr_staff_job_open
 
 ## 11. Next Action
 
-Forward to TIER3_LIGHT_AUDIT. T1B awaits T1A Mốc 2A merge to `origin/main`
-for the F8 mapper consumption step (per T0 §E.4–E.6).
+F8 integration RESOLVED. All gates PASS. Final audit-target HEAD pinned at
+`50e07bcf` (F8 semantic commit) on branch
+`codex/t1b-ui-v1-job-card-stamps-brand`.
+
+Handback to T0 to invoke `TIER3_LIGHT_AUDIT`. T1B does NOT author `AUDIT.md`,
+does NOT push/merge/deploy.
 
 Handoff status: READY_FOR_AUDIT
