@@ -16,9 +16,13 @@
 | Phase A control head | `0d4a606ca3c522a606bf69e27a5340db6dc78e18` |
 | Phase B baseline (origin/main) | `796e13c69996756d1298bc1a7ec9b50bab935c9f` |
 | Phase B forward-merge SHA | `fb9ae379dcea3c422f3787f30bbe66fd69df0f13` |
-| Phase B Implementation SHA | `190983f1fa5fe345148f258c9b45aca8b759619d` |
-| Implementation SHA | `190983f1fa5fe345148f258c9b45aca8b759619d` |
-| HANDOFF freeze commit | `a4600c1b1c802eea56d6fde8bddd86bab4985e71` |
+| Phase B UI2-owned semantic SHA | `190983f1fa5fe345148f258c9b45aca8b759619d` (UI2-owned Phase B semantic anchor; preserved as historical reference, NOT the post-merge Implementation SHA per T0 §8) |
+| Implementation SHA | `a6396ac331a826b0a268dc1dbfafe812ba9e6ac3` |
+| Latest-main merged | `937133c2fe96ebbf80c64d5b36f5f830e215efbb` (origin/main at the time of the latest-main reconciliation; contains PR #95 PWA icon hotfix + PR #96 Admin Localization Wave 1 + PR #97 UI V1 public-card-truth correction + PR #98 Admin Localization Wave 2) |
+| Latest-main reconciliation SHA | `a6396ac331a826b0a268dc1dbfafe812ba9e6ac3` (merge commit; two parents: `5120c86c…` UI2 docs/hygiene HEAD + `937133c2…` origin/main HEAD; created via `git merge --no-ff origin/main`; no rebase/amend/reset) |
+| Final combined semantic SHA | `a6396ac331a826b0a268dc1dbfafe812ba9e6ac3` (same as Latest-main reconciliation SHA; this merge IS the final combined delivery — no subsequent semantic correction commit was authored) |
+| HANDOFF freeze commit (pre-merge) | `a4600c1b1c802eea56d6fde8bddd86bab4985e71` (documentation-only; superseded by the merge) |
+| Docs/hygiene correction (pre-merge) | `5120c86ce080c40c9d0ab9fddd0f9cca36aa847c` (documentation-only; superseded by the merge) |
 | Frozen delivery | `YES` |
 | Canonical gates | `PASS` |
 | Audit eligibility | `ELIGIBLE` |
@@ -26,17 +30,19 @@
 | Next gate | `TIER3_LIGHT_DELTA_AUDIT` |
 | Production migration | `NOT_RUN` |
 | Correction batches used | `0` |
-| Revision / identity chain | `190983f1…` Phase B semantic implementation (audit anchor) → `a4600c1b…` HANDOFF control flip (docs-only) → `b2bebbbc…` HANDOFF SHA clarification (docs-only) → `<NEW_SHA>` docs/hygiene correction (docs-only, this commit). Exact audit-target HEAD is reported in the post-commit T0 handback, not recursively pinned inside HANDOFF.md. |
+| Revision / identity chain | `190983f1…` (UI2 Phase B semantic) → `a4600c1b…` (HANDOFF flip, docs-only) → `5120c86c…` (docs/hygiene correction, docs-only) → `a6396ac3…` (latest-main reconciliation merge commit — the post-merge audit anchor). Exact final branch HEAD is reported in the post-commit T0 handback, not recursively pinned inside HANDOFF.md. |
 
-> **Note on `Phase B Implementation SHA`.** Per H-16, this row resolves to
-> the post-Phase-B commit `190983f1fa5fe345148f258c9b45aca8b759619d`. The
-> Phase A checkpoint `53696afb…` is preserved in history as a reference;
-> the audit anchor is `190983f1…`. The HANDOFF commits `a4600c1b…` and
-> `b2bebbbc…` are documentation-only; this docs/hygiene correction is also
-> documentation-only. None of these post-implementation commits introduce a
-> semantic delta against `190983f1…` (verified by
-> `git diff 190983f1..HEAD -- app src prisma tests scripts packages configs`
-> returning empty).
+> **Note on SHA identity (post-merge).** Per H-16, the post-merge
+> `Implementation SHA` field resolves to `a6396ac331a826b0a268dc1dbfafe812ba9e6ac3`
+> (the latest-main reconciliation merge commit). The `Phase B UI2-owned
+> semantic SHA` (`190983f1…`) is preserved as a historical reference and
+> as the UI2-owned Phase B semantic anchor per T0 §8 ("Không được xóa
+> hoặc đổi ý nghĩa SHA `190983f1…`"). The pre-merge HANDOFF commits
+> `a4600c1b…` and `5120c86c…` were documentation-only and were absorbed
+> into the merge commit's tree. The audit anchor is `a6396ac3…`; the
+> semantic delta against it (working tree + tests + migrations) is empty:
+> `git diff a6396ac3..HEAD -- app src prisma tests scripts packages configs`
+> returns empty.
 
 ## 1. Outcome and changed surface
 
@@ -253,36 +259,82 @@ The repo-wide lint config is unchanged.
 
 ## 5. Final status
 
-`READY_FOR_AUDIT / TIER3_LIGHT_DELTA_AUDIT` — Phase A and Phase B are both
-delivered and frozen. `Implementation SHA: 190983f1…`. `Frozen delivery:
-YES`. `Canonical gates: PASS`. `Audit eligibility: ELIGIBLE`. `Production
+`READY_FOR_AUDIT / TIER3_LIGHT_DELTA_AUDIT` — Phase A and Phase B are
+both delivered and frozen; latest-main reconciliation complete.
+`UI2 Phase B semantic SHA: 190983f1…` (UI2-owned anchor, preserved).
+`Implementation SHA (audit anchor): a6396ac3…` (latest-main
+reconciliation merge commit). `Latest-main merged: 937133c2…`
+(origin/main at reconciliation time). `Frozen delivery: YES`.
+`Canonical gates: PASS`. `Audit eligibility: ELIGIBLE`. `Production
 migration: NOT_RUN`. `Correction budget: 1` shipped at zero cents.
 
+- **Latest-main reconciliation (the audit anchor):**
+  - `git merge --no-ff origin/main` produced the merge commit
+    `a6396ac3…` (two parents: `5120c86c…` UI2 docs/hygiene HEAD +
+    `937133c2…` origin/main HEAD).
+  - The merge auto-merged the single overlapping surface
+    `app/(portal)/page.tsx` cleanly via the `ort` strategy (no manual
+    conflict resolution required; UI2 changed the JSX mount + import
+    line; PR #97 changed the `EnrichedJob` type + `enrichJob` function).
+    All other UI2 files vs. main-side files are disjoint; main brought
+    in PR #95 PWA icon hotfix, PR #96 Admin Localization Wave 1
+    Foundation, PR #97 UI V1 public-card-truth correction, and PR #98
+    Admin Localization Wave 2 Recruitment without touching any UI2
+    Phase B surface.
+  - UI2 Phase B's six binding constraints were preserved by the merge:
+    1. Four canonical stamp flags (Hot / Tuyển gấp / Thưởng cao / Sắp
+       hết hạn) — preserved: `EnrichedJob` now carries all four flags
+       (`isHot`, `isUrgent`, `isHighReward`, `isExpiringSoon`) and
+       `JobStampOverlay` derives them via `deriveStampsFromFlags`.
+    2. Shared single 3D stamp renderer — preserved: `JobStampOverlay`
+       (replaces retired `stamp-badge.tsx`) is the single public surface
+       on homepage, `/viec-lam`, `/viec-lam/[slug]`.
+    3. Homepage + `/viec-lam` not diverging — preserved: identical
+       `formatPublicSalary` precedence (1→2→3) and shared
+       `<JobStampOverlay>` consumed on both surfaces.
+    4. `salaryDisplay` admin precedence — preserved: `PublicJobDto`
+       carries `salaryDisplay: string | null`; `formatPublicSalary`
+       applies the canonical precedence.
+    5. News section toggle + Sticky announcement — preserved:
+       `app/(portal)/page.tsx` now mounts
+       `<NewsSectionWrapper content={demoNewsSection} />` (UI2 owns);
+       `app/(portal)/layout.tsx` mounts
+       `<PublicStickyAnnouncement />` (UI2 owns); the UI2
+       `public-content-controls/` module is intact.
+    6. Admin settings form + auth/RLS — preserved: UI2 additions to
+       `app/admin/settings/admin-settings-form.tsx`,
+       `app/api/admin/homepage-settings/route.ts`,
+       `app/admin/settings/page.tsx` are intact; auth/RLS not weakened;
+       admin mutation authority still on the existing ADMIN /
+       HR_MANAGER / DIRECTOR allowlist.
+  - The reconciliation `schema/migration` is unchanged: UI2's
+    `20261004230000_ui2_public_content_controls` migration timestamp
+    sits lexicographically after every migration on origin/main and is
+    forward-only additive.
+  - No T1B Wave 1 / Wave 2 surface reverted; no F11 terminology
+    reversal; F6 not in scope.
 - **Working tree state now:** `git status --porcelain` is empty. The
   pre-existing untracked `pnpm-lock.yaml` and `pnpm-workspace.yaml`
   (workspace-wide artifacts unrelated to any tracked surface, never
-  committed) were removed under C-04 docs/hygiene correction without
-  touching the canonical tracked surface or any package/dependency contract.
-  No edits to T1B-owned surface (`app/admin/**` UI shell, etc.).
-- **Docs/hygiene correction (this commit, docs-only):** forward-only
-  HANDOFF/TASK hygiene commit, no source/test/schema/migration edits.
-  - `HANDOFF §0` Baseline pinned to `796e13c69996756d1298bc1a7ec9b50bab935c9f`.
-  - `HANDOFF §0` removed the recursive `Final audit-target HEAD` field;
-    the exact audit-target HEAD is reported in the post-commit T0
-    handback instead.
-  - `HANDOFF §0` adds a Revision/identity chain row documenting
-    `190983f1… → a4600c1b… → b2bebbbc… → <NEW_SHA>` (this commit).
-  - `HANDOFF §2` restores AC-01..AC-18 evidence rows (Phase A ACs)
-    marked `CARRY_FORWARD_PHASE_A` with SHA `53696afb…` where the
-    evidence was measured. AC-19..AC-44 (Phase B) remain intact.
-  - `HANDOFF §5` updated to reflect the C-04 worktree-hygiene removal.
-  - Semantic delta against `190983f1…` remains empty:
-    `git diff 190983f1..HEAD -- app src prisma tests scripts packages configs`
-    returns empty.
-- **Push state:** this commit is NOT pushed. Push is the responsibility of
-  the orchestrator / repo owner. T1C does not push, merge, or deploy.
+  committed) and the workspace's `.editorconfig` were removed during
+  reconciliation cleanup (under C-04 hygiene principle) without
+  touching the canonical tracked surface or any package/dependency
+  contract. No edits to T1B-owned surface (`app/admin/**` UI shell,
+  `src/shared/i18n/**`, `src/domains/projects/**`, `src/domains/staffing/**`,
+  `src/domains/talent/**`, etc.) beyond what main itself brought in.
+- **Pre-merge docs/hygiene correction:** `5120c86c…` (absorbed by the
+  merge commit's tree) — forward-only HANDOFF/TASK hygiene commit, no
+  source/test/schema/migration edits. Restored AC-01..AC-18 evidence
+  rows marked `CARRY_FORWARD_PHASE_A` with SHA `53696afb…` where the
+  evidence was measured. Removed the recursive `Final audit-target
+  HEAD` field. Removed untracked worktree artifacts. None of this
+  affected source/test/schema/migration surface.
+- **Push state:** this merge commit is NOT pushed. Push is the
+  responsibility of the orchestrator / repo owner. T1C does not push,
+  merge, or deploy.
 - **Production migration:** NOT_RUN. The deploy owner applies
   `20261004230000_ui2_public_content_controls` out-of-band, after the
-  Phase B commit is on `main` and the application is rolled forward.
+  reconciliation merge commit is on `main` and the application is
+  rolled forward.
 
 > Handoff status: `READY_FOR_AUDIT`
