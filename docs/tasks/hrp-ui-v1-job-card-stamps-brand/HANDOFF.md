@@ -9,20 +9,20 @@
 | Audit mode (phải khớp TASK) | LIGHT |
 | Delivery protocol | V2_FAST_FREEZE |
 | Assurance lane | CRITICAL |
-| Execution round | 2 |
+| Execution round | 3 |
+| Audit round | 0 (T1B handback complete; TIER3_LIGHT_AUDIT not yet invoked) |
 | Status | READY_FOR_AUDIT |
 | Baseline | `6ea2e267b72120de5f67d5954d1074101efccff1` |
 | Contract correction SHA | `763c55ef213218fcb88967281f584e69ac26588f` |
-| Implementation SHA (round 1 — D1-D4 + brand + About) | `12a0077b9b731aef7ca583d86ee0b0813ec21213` |
-| Implementation SHA (round 2 — F8 safe mapper integration) | `50e07bcf462af8a5b2b3871e42618ca83039cf44` |
+| Implementation SHA (round 1 — D1-D4 + brand + About) | `12a0077b9b731aef7ca583d86ee0b0813ec21213` (round-1 historical) |
 | Implementation SHA | `50e07bcf462af8a5b2b3871e42618ca83039cf44` |
-| Implementation SHA note | Round-2 semantic HEAD. Freeze range ends here — only HANDOFF docs commit after. |
+| Implementation SHA note | Final semantic Implementation SHA — round 2 (F8 safe mapper integration). Freeze range ends at `50e07bcf`; every commit after is docs/evidence-only and does not change the audit-target SHA. |
 | Cleanup SHA | `108fb9c286ec061d2b7a73f31b3a38ccd7caf383` |
 | Forward-merge SHA (T1A Mốc 2A → T1B UI V1, --no-ff) | `8e7321744ff33bbbfd956ecc9abc3a6e7a71497e` |
 | Forward-merge parents | `a49aa078a46499e8caa03512581c147c7bbe067c` + `8382bbc70b74f2fc21471c532b98bd20ab8a1fac` |
 | Forward-merge other head (`origin/main`) | `8382bbc70b74f2fc21471c532b98bd20ab8a1fac` (verified) |
 | F8 integration SHA | `50e07bcf462af8a5b2b3871e42618ca83039cf44` |
-| Final audit-target HEAD | `7b49d6f94cb9d03e9b390346063549fc490fc511` (round-2 HANDOFF docs freeze; semantic implementation HEAD `50e07bcf…` + H-16 family docs-only fix) |
+| Audit-target HEAD pinning | `Exact audit-target HEAD is reported in the post-commit T0 handback; every commit after 50e07bcf is docs/evidence-only.` |
 | Migration name | `20261004120000_ui_v1_jobposting_stamp_flags` |
 | Frozen delivery | YES |
 | Canonical gates | PASS |
@@ -252,14 +252,14 @@ F8 status: **RESOLVED**.
 | STEP-18 | Semantic implementation commit: `12a0077b9b731aef7ca583d86ee0b0813ec21213`. | DONE |
 | STEP-19 | Nav/footer link removal: `app/components/GlobalNavbar.tsx` + `app/components/GlobalFooter.tsx` — removed `/ve-chung-toi` entries; `rg "ve-chung-toi" app/components/` returns 0 hits. | DONE |
 | STEP-20 | `HrpIntroSection` reference sweep in `app/(portal)/page.tsx` — no leftover references after `ve-chung-toi/page.tsx` deletion. | DONE |
-| STEP-21 | Synthetic-DB integration `tests/db/job-posting-stamps.integration.test.ts` — extension deferred to T1A-merged main as part of audit-target HEAD run (per T0 §G and §E). Migration application against synthetic DB verified by static test suite. | DEFERRED (gated on T1A merge) |
+| STEP-21 | Synthetic-DB integration `tests/db/job-posting-stamps.integration.test.ts` — measured against synthetic Neon pair `ep-empty-forest-azlhfyo9` (writer=app_user_writer non-super non-bypassrls; admin=neondb_owner bypassrls; same host+db). Migration `20261004120000_ui_v1_jobposting_stamp_flags` applied via admin URL. **10/10 cases PASS in fresh process** (CASE 1 OPEN, CASE 2 CLOSING_SOON, CASE 3 expired/full/closed, CASE 4+5 existing Opening/Posting, CASE 6 stale POST, CASE 7 PATCH persistence, CASE 8 invalid flag, CASE 9+10 PUBLISHED visibility, CASE 11 idempotency conflict). Zero-residue enforced by integration-test afterEach. Targeted authoring/public unit regressions 8/8 files 134/134 tests PASS. | DONE — see E-20..E-22 |
 | STEP-22 | `src/domains/job-board/components/landing/__tests__/stamp-badge.test.ts` — 21/21 PASS covering render 0/1/2/3/4 stamp via STAMP_RANK. | DONE |
 | STEP-23 | `src/domains/job-board/job-posting-stamps.static.test.ts` — N/A (file does not exist in current tree); `job-posting-stamps-mapping.test.ts` covers the STAMP_RANK invariant with 2/2 PASS. Static fence for `app/globals.css` `.job-stamp-attention` + `@keyframes job-stamp-blink` is enforced by the broader CI pipeline (lint + visual). | DONE |
 | STEP-24 | Canonical gates: `npx prisma validate`, `npx prisma generate`, `npm run typecheck`, `npm run lint`, `npm run test:unit`, `npm run build`, `git diff --check`, `node .ai-pipeline/scripts/verify-encoding.mjs`, `pwsh .ai-pipeline/scripts/verify-task.ps1`, `pwsh .ai-pipeline/scripts/verify-handoff.ps1` — all PASS. | DONE |
-| STEP-25 | F8 forward-merge: deferred until T1A Mốc 2A merges to `origin/main`. T1B DID NOT author duplicate safe error mapper. | DEFERRED |
-| STEP-26 | Commit + HANDOFF: semantic commit `12a0077b9b731aef7ca583d86ee0b0813ec21213`; cleanup commit `108fb9c286ec061d2b7a73f31b3a38ccd7caf383`; HANDOFF.md authored. Re-run `verify-handoff.ps1` → PASS WITH WARNINGS (2 H-12 STEP-19..26 traceability warning resolved by §2 expansion; H-01 HANDOFF staging warning resolved by docs freeze commit). | DONE |
+| STEP-25 | F8 forward-merge: completed in round 2 — T1A Mốc 2A merged to `origin/main = 8382bbc7…` (PR #90); T1B forward-merged via `git merge --no-ff origin/main` → `8e732174…`. T1B DID NOT author duplicate safe error mapper. | DONE — see STEP-27/28 |
+| STEP-26 | Round-1 commit + HANDOFF: round-1 semantic commit `12a0077b9b731aef7ca583d86ee0b0813ec21213`; cleanup commit `108fb9c286ec061d2b7a73f31b3a38ccd7caf383`; HANDOFF.md authored. Re-run `verify-handoff.ps1` → PASS WITH WARNINGS (2 H-12 STEP-19..26 traceability warning resolved by §2 expansion; H-01 HANDOFF staging warning resolved by docs freeze commit). Note: `12a0077b` is **round-1 historical only** — it is NOT the final semantic Implementation SHA. The final semantic Implementation SHA is `50e07bcf` (round 2, F8 safe mapper integration). | DONE |
 | STEP-27 | **Round 2 — Mốc 2A merge into origin/main + T1B forward-merge**: T0 confirmed Mốc 2A merged to `origin/main = 8382bbc70b74f2fc21471c532b98bd20ab8a1fac` (PR #90). T1B ran `git fetch origin main` + `git rev-parse origin/main` (verified equal to T0 SHA) + `git merge --no-ff origin/main` → forward-merge SHA `8e7321744ff33bbbfd956ecc9abc3a6e7a71497e` with parents `a49aa078a46499e8caa03512581c147c7bbe067c` (T1B docs freeze) + `8382bbc70b74f2fc21471c532b98bd20ab8a1fac` (origin/main). NO rebase, NO amend, NO reset, NO force-push. | DONE |
-| STEP-28 | **F8 integration (round 2)**: `app/admin/jobs/job-postings/[id]/editor-shell.tsx` — replaced `readErrorMessage` with `readApiErrorSummary(res, fallbackJobOpeningId)` (exported pure helper), consuming `summarizeJobPostingApiError` from `src/domains/staffing/job-posting-error-map.ts`. Added `errorRecoveryHref` state, `<Link>` rendered when present (today only `JOB_OPENING_NOT_OPEN` → `/admin/job-openings/<jobOpeningId>`). Added `data-testid="editor-save-button"` and `data-testid="editor-safe-error"` for F8 unit-test affordance. Added `app/admin/jobs/job-postings/[id]/__tests__/editor-shell.f8.test.ts` (12/12 PASS). Semantic commit `50e07bcf`. | DONE |
+| STEP-28 | **F8 integration (round 2)**: `app/admin/jobs/job-postings/[id]/editor-shell.tsx` — replaced `readErrorMessage` with `readApiErrorSummary(res, fallbackJobOpeningId)` (exported pure helper), consuming `summarizeJobPostingApiError` from `src/domains/staffing/job-posting-error-map.ts`. Added `errorRecoveryHref` state, `<Link>` rendered when present (today only `JOB_OPENING_NOT_OPEN` → `/admin/job-openings/<jobOpeningId>`). Added `data-testid="editor-save-button"` and `data-testid="editor-safe-error"` for F8 unit-test affordance. Added `app/admin/jobs/job-postings/[id]/__tests__/editor-shell.f8.test.ts` (12/12 PASS). Semantic commit `50e07bcf` — **final semantic Implementation SHA**. Docs commits after `50e07bcf` are docs/evidence-only and do not change the audit-target SHA. | DONE |
 
 ## 3. Acceptance Evidence
 
@@ -275,7 +275,7 @@ F8 status: **RESOLVED**.
 | AC-07 | `app/admin/jobs/job-postings/[id]/editor-shell.tsx`: 4 toggles with `aria-label`, dirty tracking, PATCH body includes all 4 flags — see E-15 | none | PASS |
 | AC-08 | `job-posting-authoring.service.ts` validator + `app/api/admin/jobs/job-postings/[id]/route.ts` `assertStrictBoolean`: non-boolean input → 400 — see E-15 | none | PASS |
 | AC-09 | `npm run test:unit -- app/api/admin/jobs/job-postings/[id]/route.test.ts` → 42 cases (requestBody length 13 + matrix tests) — see E-15 | none | PASS |
-| AC-10 | Synthetic-DB integration `tests/db/job-posting-stamps.integration.test.ts` configured in TASK §G; will run on T1A-merged main as part of audit-target HEAD. Migration application against synthetic DB verified by static test suite. | synthetic-DB run gated on T1A-merged main | DEFERRED |
+| AC-10 | Synthetic-DB integration `tests/db/job-posting-stamps.integration.test.ts` measured against synthetic Neon pair `ep-empty-forest-azlhfyo9` (writer=app_user_writer, admin=neondb_owner, same host+db). Migration `20261004120000_ui_v1_jobposting_stamp_flags` applied via admin URL; schema validated. **10/10 cases PASS in fresh process**; integration-test afterEach enforced zero-residue. Targeted authoring/public unit regressions 8/8 files, 134/134 tests PASS — see E-20, E-21, E-22 | none | PASS |
 | AC-11 | `app/api/admin/jobs/job-postings/[id]/route.ts`: same idempotency hash on duplicate body → 1 logical attempt — see E-15 | none | PASS |
 | AC-12 | Service auth check in `job-posting-authoring.service.ts` + `job-posting-list.service.ts` — 403 for non-ADMIN/HR_MANAGER/HR_STAFF — see E-15 | none | PASS |
 | AC-13 | Public projection includes all 4 flags; `PUBLIC_KEYS` allowlist updated to 22 — see E-11 | none | PASS |
@@ -285,7 +285,7 @@ F8 status: **RESOLVED**.
 | AC-17 | `node .ai-pipeline/scripts/verify-encoding.mjs` → RESULT: PASS (24 changed files, 0 BOM/CRLF) — see E-01 | none | PASS |
 | AC-18 | `git diff --cached --check` → 0 errors — see E-02 | none | PASS |
 | AC-19 | `pwsh .ai-pipeline/scripts/verify-task.ps1` → RESULT: PASS — see E-03 | none | PASS |
-| AC-20 | HANDOFF.md §0 pins Implementation SHA `12a0077b9b731aef7ca583d86ee0b0813ec21213` (semantic commit) + Contract correction SHA `763c55ef213218fcb88967281f584e69ac26588f` (docs correction, not counted as implementation round) — see E-17, E-19 | none | PASS |
+| AC-20 | HANDOFF.md §0 pins Implementation SHA `50e07bcf462af8a5b2b3871e42618ca83039cf44` (final semantic, F8 safe mapper integration — round 2) and `12a0077b9b731aef7ca583d86ee0b0813ec21213` (round-1 historical, D1–D4 + brand + About) for context. Contract correction SHA `763c55ef213218fcb88967281f584e69ac26588f` is docs correction, not counted as implementation round. Audit-target HEAD is not pinned inside this document — see §0 boilerplate — see E-17, E-18, E-19 | none | PASS |
 | AC-21 (D2) | `npm run build` → exit 0; all routes built; `/ve-chung-toi` absent from route table — see E-08 | none | PASS |
 | AC-22 (D3 brand) | `public/hrp-logo.webp` (52,334 bytes, RIFF WEBP header confirmed); alt text `HRP — Việc làm miền Bắc`; default title `Việc làm miền Bắc - Kết nối để thành công - HRP` — see E-08 | none | PASS |
 | AC-23 (D4 removal) | `app/(portal)/ve-chung-toi/page.tsx` deleted; `next build` output excludes `/ve-chung-toi` (exit 0); `public/ve-hrp.html` preserved — see E-08 | none | PASS |
@@ -312,7 +312,7 @@ F8 status: **RESOLVED**.
 | Static test fences updated (4 files) | Delivered |
 | Test fixtures updated (3 files) | Delivered |
 | All gate results PASS | Delivered |
-| Implementation SHA pinned (`12a0077b9b731aef7ca583d86ee0b0813ec21213`) | Delivered |
+| Implementation SHA pinned (`50e07bcf462af8a5b2b3871e42618ca83039cf44`, final semantic — round 2 F8) | Delivered |
 | Production migration | NOT_RUN (per T0 §B) |
 
 ## 5. Deviations
@@ -323,6 +323,7 @@ F8 status: **RESOLVED**.
 | DEV-02 | pnpm interference | pnpm attempted to relocate `node_modules` to `.ignored/` on first invocation, breaking `@tiptap/*`, `@prisma/*`, `@tailwindcss/*`, `@upstash/*`, `@vercel/*`, `@tanstack/*` nested scope resolution. | Restored `node_modules/` from `.ignored/` manually; switched to `npm` for all subsequent gate runs. Not a code change — worktree-local tooling effect. |
 | DEV-03 | @eslint/js missing | `@eslint/js@9.39.5` was missing from `node_modules` after the pnpm re-arrangement. | Installed via `npm install --no-save @eslint/js@9.39.5`. Not a code change. |
 | DEV-04 | Static-test fixture coupling | `required-relation-sweep.static.test.ts` and `public-card-truth.test.ts` are static scanners that read source line numbers and key lists. T1B had to update both to reflect additive schema columns + line shifts. | All updates committed in `12a0077b`. Both tests PASS (11/11 and 23/23 respectively). |
+| DEV-05 | Pre-audit runtime verification (T0→T1B round 3) | Per T0 directive, runtime + identity correction round before TIER3_LIGHT_AUDIT. Part A = synthetic DB gate against Owner-provided Neon pair `ep-empty-forest-azlhfyo9` (writer=app_user_writer non-super non-bypassrls; admin=neondb_owner bypassrls; same host+db). 7/7 steps PASS: posture gate, `prisma migrate deploy` applying `20261004120000_ui_v1_jobposting_stamp_flags`, `prisma validate`, integration test 10/10 in fresh process, targeted unit regressions 8/8 files 134/134, zero-residue check, self-delete wrapper. Part B = HANDOFF identity correction (this commit): pinned Implementation SHA `50e07bcf` (NOT `12a0077b` or `7b49d6f9`) as final semantic; removed "Final audit-target HEAD" line; added boilerplate "Exact audit-target HEAD is reported in the post-commit T0 handback; every commit after 50e07bcf is docs/evidence-only"; STEP-21 and AC-10 promoted from DEFERRED to measured synthetic results; E-17 clarified as round-1 reference. Part C invariants all PASS: `git diff 50e07bcf..HEAD -- app src prisma tests scripts packages` = empty; no AUDIT.md; working tree clean (post-commit); verify-task/verify-handoff/encoding/diff-check all PASS; production migration = NOT_RUN; F8 = RESOLVED. Credentials passed in-process only (no .env, no log echo, no file write); wrapper self-deleted. | All PASS — see §0 boilerplate + §7 round 3 |
 
 ## 6. Evidence Index
 
@@ -344,9 +345,12 @@ F8 status: **RESOLVED**.
 | E-14 | `npm run test:unit -- src/shared/security/required-relation-sweep.static.test.ts` | 11/11 passed (PASS) — line shifts recorded |
 | E-15 | `npm run test:unit -- app/api/admin/jobs/job-postings/[id]/route.test.ts` | 42 tests passed (PASS) — requestBody length 13 + matrix tests |
 | E-16 | `pwsh .ai-pipeline/scripts/verify-handoff.ps1 -TaskPath docs/tasks/hrp-ui-v1-job-card-stamps-brand/TASK.md -HandoffPath docs/tasks/hrp-ui-v1-job-card-stamps-brand/HANDOFF.md` | see after gate run |
-| E-17 | `git log -1 --format='%H'` (Implementation SHA) | `12a0077b9b731aef7ca583d86ee0b0813ec21213` |
-| E-18 | `git rev-parse --verify --quiet 12a0077b9b731aef7ca583d86ee0b0813ec21213` | resolves (exit 0) |
-| E-19 | `git rev-parse --verify --quiet 763c55ef213218fcb88967281f584e69ac26588f` | resolves (exit 0) — contract correction SHA |
+| E-17 | `git rev-parse --verify 50e07bcf462af8a5b2b3871e42618ca83039cf44^{commit}` (final semantic Implementation SHA — round 2 F8) | resolves (exit 0) |
+| E-18 | `git rev-parse --verify 12a0077b9b731aef7ca583d86ee0b0813ec21213^{commit}` (round-1 historical — D1–D4 + brand + About) | resolves (exit 0) |
+| E-19 | `git rev-parse --verify 763c55ef213218fcb88967281f584e69ac26588f^{commit}` | resolves (exit 0) — contract correction SHA |
+| E-20 | Synthetic posture gate (Part A Step 1) — writer=app_user_writer, admin=neondb_owner, both on `ep-empty-forest-azlhfyo9.c-3.ap-southeast-1.aws.neon.tech/neondb`, sslmode=require, same host+db. Non-super non-bypassrls writer; bypassrls admin. Production `ep-shy-tree-*` URLs in cred file were NEVER loaded. | PASS |
+| E-21 | `npx --no-install prisma migrate deploy` (Part A Step 2) — applied `20261004120000_ui_v1_jobposting_stamp_flags` on synthetic admin URL. `prisma validate` (Part A Step 3) PASS. | PASS |
+| E-22 | `npx --no-install vitest run --config vitest.integration.config.ts tests/db/job-posting-stamps.integration.test.ts` (Part A Step 4, fresh process) — **10/10 cases PASS** (CASE 1 OPEN, CASE 2 CLOSING_SOON, CASE 3 expired/full/closed, CASE 4+5 existing Opening/Posting, CASE 6 stale POST, CASE 7 PATCH persistence, CASE 8 invalid flag → 400, CASE 9+10 PUBLISHED visibility, CASE 11 idempotency 409). Zero-residue enforced by afterEach. Targeted unit regressions (Part A Step 5) — 8/8 files, **134/134 tests PASS** (mapping 2, stamp-badge 21, route 42, public-select 3, public-card-truth 23, eligibility 6, list 32, public-detail 5). | PASS |
 
 ## 7. Execution Round History
 
@@ -355,12 +359,14 @@ F8 status: **RESOLVED**.
 | 1 | 2026-10-04 | Contract correction commit (T0 §A/§B/§C): TASK fields corrected, migration timestamp renamed, ownership confirmed | `763c55ef213218fcb88967281f584e69ac26588f` |
 | 1 | 2026-10-04 | Re-ran `verify-task`, `verify-encoding`, `git diff --check` | All PASS |
 | 1 | 2026-10-04 | Semantic implementation: schema, migration, services, route, public projection, stamp registry, viec-lam surfaces, brand swap, About removal | All gates PASS |
-| 1 | 2026-10-04 | Semantic commit | `12a0077b9b731aef7ca583d86ee0b0813ec21213` |
+| 1 | 2026-10-04 | Semantic commit (round-1 historical) — D1–D4 + brand + About | `12a0077b9b731aef7ca583d86ee0b0813ec21213` (round-1 only — NOT the final semantic Implementation SHA; final = `50e07bcf`) |
 | 1 | 2026-10-04 | Cleanup commit (root-level only; no `app/src/prisma/tests/scripts/packages` delta) | `108fb9c286ec061d2b7a73f31b3a38ccd7caf383` |
 | 1 | 2026-10-04 | Docs freeze commit (HANDOFF.md) — pinned after final amend | `714e712cd329a171e2a3fb418adabcd129da3ba9` (replaced by round-2 final HEAD) |
 | 2 | 2026-10-04 | T0 confirmed Mốc 2A merged → `origin/main = 8382bbc70b74f2fc21471c532b98bd20ab8a1fac` (PR #90). T1B fetched + verified SHA. | OK |
 | 2 | 2026-10-04 | Forward-merge `--no-ff` → parents `a49aa078…` (T1B) + `8382bbc7…` (origin/main) | `8e7321744ff33bbbfd956ecc9abc3a6e7a71497e` |
-| 2 | 2026-10-04 | F8 integration: editor-shell consumes `summarizeJobPostingApiError`, renders safe Vietnamese label + canonical recovery `<Link>` for `JOB_OPENING_NOT_OPEN`. F8 unit test 12/12 PASS. All gates re-run: typecheck/lint/build/unit (3714)/prisma validate/encoding/diff-check. | `50e07bcf` (final audit-target HEAD) |
+| 2 | 2026-10-04 | F8 integration: editor-shell consumes `summarizeJobPostingApiError`, renders safe Vietnamese label + canonical recovery `<Link>` for `JOB_OPENING_NOT_OPEN`. F8 unit test 12/12 PASS. All gates re-run: typecheck/lint/build/unit (3714)/prisma validate/encoding/diff-check. Semantic commit `50e07bcf` — **final semantic Implementation SHA**. | `50e07bcf` |
+| 2 | 2026-10-04 | Docs commits after `50e07bcf` (commit `578269cc`, `7b49d6f9`, then HEAD `8e06b898`) are HANDOFF/docs/evidence-only and DO NOT change the audit-target SHA. | docs/evidence-only |
+| 3 | 2026-10-04 | **T0→T1B pre-audit runtime + identity correction (Part A + Part B + Part C)**: synthetic DB gate against `ep-empty-forest-azlhfyo9` (writer=app_user_writer, admin=neondb_owner, same host+db). 7/7 steps PASS. Migration `20261004120000_ui_v1_jobposting_stamp_flags` applied on synthetic admin URL. Integration test 10/10 + unit 134/134 + zero-residue PASS. HANDOFF identity corrected: `50e07bcf` is final semantic Implementation SHA; `12a0077b` is round-1 historical only; removed "Final audit-target HEAD" line in favor of post-T0 handback boilerplate; STEP-21 and AC-10 promoted DEFERRED → measured. Invariants: `git diff 50e07bcf..HEAD -- app src prisma tests scripts packages` empty; no AUDIT.md; working tree clean; verify-task / verify-handoff / encoding / diff-check all PASS. Production migration = NOT_RUN. F8 = RESOLVED. | forward-only docs/evidence commit (T0 handback reports exact new HEAD in chat) |
 | 2 | 2026-10-04 | HANDOFF.md re-pinned to round-2 SHA, F8 = RESOLVED, Execution Round = 2, all gates = PASS, Preview Tier 3 = READY. | DONE |
 
 ## 8. F8 Mapper Integration (RESOLVED in round 2)
@@ -393,7 +399,7 @@ T1B then:
 Seed SHAs:
 
 - Forward-merge: `8e7321744ff33bbbfd956ecc9abc3a6e7a71497e`
-- F8 semantic commit: `50e07bcf` (final audit-target HEAD)
+- F8 semantic commit (final semantic Implementation SHA): `50e07bcf`
 
 ## 9. Production Migration Disposition
 
@@ -422,12 +428,16 @@ Until then the production database is at `20260930090000_p1a05_hr_staff_job_open
 - [x] All gate results PASS.
 - [x] No `AUDIT.md` authored (Tier 3 owns it).
 - [x] No push, merge, or deploy attempted (Tier 0 authorization required).
+- [x] Pre-audit runtime + identity correction (T0→T1B round 3): synthetic DB gate 7/7 PASS, HANDOFF identity corrected (final semantic Implementation SHA `50e07bcf`), STEP-21 / AC-10 promoted from DEFERRED to measured synthetic results.
 
 ## 11. Next Action
 
-F8 integration RESOLVED. All gates PASS. Final audit-target HEAD pinned at
-`50e07bcf` (F8 semantic commit) on branch
-`codex/t1b-ui-v1-job-card-stamps-brand`.
+F8 integration RESOLVED. All canonical gates PASS. Synthetic DB gate (Part A)
+PASS on `ep-empty-forest-azlhfyo9` with measured 10/10 integration + 134/134
+unit + zero-residue. HANDOFF identity corrected (Part B): `50e07bcf` is the
+final semantic Implementation SHA. Audit-target HEAD is **NOT** pinned inside
+this document — see §0 boilerplate. Exact audit-target HEAD is reported in
+the post-commit T0 handback chat.
 
 Handback to T0 to invoke `TIER3_LIGHT_AUDIT`. T1B does NOT author `AUDIT.md`,
 does NOT push/merge/deploy.
