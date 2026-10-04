@@ -45,6 +45,19 @@ export default async function AdminSettingsPage() {
         zaloChatUrl: null,
         messengerChatUrl: null,
         phoneCallNumber: null,
+        newsSectionEnabled: true,
+        stickyAnnouncement: {
+          enabled: false,
+          message: '',
+          ctaLabel: null,
+          ctaUrl: null,
+          dismissible: true,
+          textColor: 'on-primary',
+          font: 'SANS',
+          emphasis: 'BOLD',
+          animation: 'NONE',
+          contentRevision: 'rev-0',
+        },
         updatedAt: new Date(0).toISOString(),
       };
       unavailableReason =
