@@ -1,0 +1,40 @@
+==> Wave 1 / PR #97 surface presence <==
+$ Test-Path src/domains/job-board/components/landing/featured-job-card.tsx
+True
+$ Test-Path src/domains/job-board/components/landing/stamp-overlay.tsx
+True
+$ Test-Path src/domains/job-board/components/landing/best-jobs-section.tsx
+True
+$ Test-Path src/domains/job-board/components/detail/related-jobs-section.tsx
+True
+$ Test-Path src/domains/job-board/public-listing.labels.ts
+True
+$ Test-Path src/domains/job-board/public.service.ts
+True
+
+==> Wave 1 foundation i18n primitives presence <==
+$ Test-Path src/shared/i18n/glossary.ts
+True
+$ Test-Path src/shared/i18n/form-dictionary.ts
+True
+$ Test-Path src/shared/i18n/action-dictionary.ts
+True
+$ Test-Path src/shared/i18n/role-labels.ts
+True
+$ Test-Path src/shared/ui/status-badge/index.tsx
+True (file is at status-badge/index.tsx, not status-badge.tsx)
+
+==> Wave 2 dictionaries import shared Wave 1 primitives (no duplication) <==
+$ rg "shared/i18n|status-badge" \
+    src/domains/projects/project-ui.ts \
+    src/domains/staffing/job-opening-ui.ts \
+    src/domains/staffing/job-posting-ui.ts \
+    src/domains/staffing/staffing-order-ui.ts \
+    src/domains/staffing/recruiter-assignment-ui.ts
+src/domains/staffing/job-posting-ui.ts:21:import { actionLabel, type ActionCode } from '@/src/shared/i18n/action-dictionary';
+[+ cross-reference comments in 4 files pointing at glossary.ts and status-badge/index.tsx]
+
+==> SUMMARY <==
+Wave 1 / PR #97 surfaces intact post-merge.
+Wave 2 dictionaries reuse shared Wave 1 primitives (action-dictionary.ts,
+glossary.ts, status-badge/index.tsx) — no duplication.

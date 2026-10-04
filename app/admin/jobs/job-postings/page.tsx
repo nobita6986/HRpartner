@@ -43,6 +43,13 @@ import {
   type JobPostingSlotSelectorDto,
 } from '@/src/domains/staffing/job-posting-list.service';
 import {
+  JOB_POSTING_MODULE,
+  jobPostingStatusLabel,
+  jobPostingStatusTone,
+  type JobPostingLifecycleStatus,
+} from '@/src/domains/staffing/job-posting-ui';
+import { StatusBadge } from '@/src/shared/ui/status-badge';
+import {
   CreateJobPostingForm,
   type EligibleSlotDto,
 } from './create-job-posting-form';
@@ -52,7 +59,9 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export const metadata = {
-  title: 'JobPosting viewer — Admin',
+  // EP §3.5 #47 — breadcrumb + H1 binding (binding the display name to
+  // the cross-module glossary term `job_posting`).
+  title: 'Tin tuyển dụng — soạn & đăng — Admin',
 };
 
 /**
@@ -189,15 +198,15 @@ export default async function AdminJobPostingsListPage({ searchParams }: PagePro
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--on-surface-variant)' }}>
-              <Link href="/admin/jobs" className="hover:underline">Admin Jobs</Link>
+              <Link href="/admin/jobs" className="hover:underline">Danh sách nhu cầu</Link>
               <span aria-hidden="true">/</span>
-              <span>JobPosting authoring &amp; publish</span>
+              <span>Tin tuyển dụng — soạn &amp; đăng</span>
             </div>
             <h1 className="mt-1 text-2xl font-semibold" style={{ color: 'var(--on-surface)' }}>
-              JobPosting — authoring &amp; publish
+              Tin tuyển dụng — soạn &amp; đăng
             </h1>
             <p className="mt-1 text-sm" style={{ color: 'var(--on-surface-variant)' }}>
-              Chọn một JobPosting để chỉnh nội dung, lưu bản nháp, publish/unpublish/archive.
+              Chọn một JobPosting để chỉnh nội dung, lưu bản nháp, đăng/gỡ/lưu trữ.
               Schema JobPosting mở rộng ở P1-A0 với rich content (Tiptap, contentSchemaVersion=1);
               form tạo/reuse JobOpening từ StaffingOrderSlot đã được dựng ở P1-A0.1 (chỉ
               CREATE_ROLES thấy). Trang public <code>/viec-lam/[slug]</code> hiện đọc JobPosting
@@ -209,7 +218,7 @@ export default async function AdminJobPostingsListPage({ searchParams }: PagePro
             className="rounded px-3 py-1.5 text-sm font-medium"
             style={{ borderColor: 'var(--outline)', color: 'var(--on-surface)' }}
           >
-            ← Quay lại Admin Jobs
+            ← Quay lại Danh sách nhu cầu
           </Link>
         </div>
 
@@ -227,7 +236,7 @@ export default async function AdminJobPostingsListPage({ searchParams }: PagePro
           >
             <option value="">Tất cả</option>
             {STATUSES.map((s) => (
-              <option key={s} value={s}>{s}</option>
+              <option key={s} value={s}>{jobPostingStatusLabel(s)}</option>
             ))}
           </select>
           <button
@@ -291,19 +300,19 @@ export default async function AdminJobPostingsListPage({ searchParams }: PagePro
             <thead style={{ backgroundColor: 'var(--primary-container)' }}>
               <tr>
                 <th className="px-4 py-3 text-left text-sm font-semibold" style={{ color: 'var(--on-surface)' }}>
-                  Slug
+                  Đường dẫn tin (slug)
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold" style={{ color: 'var(--on-surface)' }}>
-                  Staffing Order
+                  Đơn tuyển dụng
                 </th>
                 <th className="px-4 py-3 text-center text-sm font-semibold" style={{ color: 'var(--on-surface)' }}>
-                  Status
+                  Trạng thái
                 </th>
                 <th className="px-4 py-3 text-center text-sm font-semibold" style={{ color: 'var(--on-surface)' }}>
-                  Revision
+                  Phiên bản chỉnh sửa
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold" style={{ color: 'var(--on-surface)' }}>
-                  Cập nhật
+                  Ngày cập nhật
                 </th>
               </tr>
             </thead>
@@ -375,7 +384,14 @@ export default async function AdminJobPostingsListPage({ searchParams }: PagePro
                       )}
                     </td>
                     <td className="px-4 py-3 text-center text-sm">
-                      <StatusBadge status={item.status} />
+                      <StatusBadge
+                        module={JOB_POSTING_MODULE}
+                        status={item.status}
+                        tone={jobPostingStatusTone(item.status)}
+                        testId={`job-posting-list-status-${item.id}`}
+                      >
+                        {jobPostingStatusLabel(item.status)}
+                      </StatusBadge>
                     </td>
                     <td className="px-4 py-3 text-center text-sm" style={{ color: 'var(--on-surface-variant)' }}>
                       v{item.revision}
@@ -463,19 +479,9 @@ export default async function AdminJobPostingsListPage({ searchParams }: PagePro
   );
 }
 
-function StatusBadge({ status }: { status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED' }) {
-  const colorMap: Record<string, { bg: string; fg: string }> = {
-    DRAFT: { bg: 'var(--color-surface-container-high)', fg: 'var(--on-surface-variant)' },
-    PUBLISHED: { bg: 'var(--color-primary-soft)', fg: 'var(--color-primary-dark)' },
-    ARCHIVED: { bg: 'var(--color-surface-container)', fg: 'var(--on-surface-variant)' },
-  };
-  const c = colorMap[status] ?? colorMap.DRAFT;
-  return (
-    <span
-      className="px-2 py-0.5 rounded-full text-xs font-semibold"
-      style={{ backgroundColor: c.bg, color: c.fg }}
-    >
-      {status}
-    </span>
-  );
-}
+// T1B Wave 2 (EP §3.2.3): the inline `colorMap` + local `StatusBadge`
+// component previously at the bottom of this file is replaced by the
+// shared `<StatusBadge module={JOB_POSTING_MODULE}>` primitive + the
+// domain-owned `jobPostingStatusLabel()` / `jobPostingStatusTone()`
+// helpers from `src/domains/staffing/job-posting-ui.ts`. There is no
+// local StatusBadge or colorMap in this file anymore.

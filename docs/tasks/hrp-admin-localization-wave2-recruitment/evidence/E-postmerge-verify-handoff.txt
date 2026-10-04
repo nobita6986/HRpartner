@@ -1,0 +1,49 @@
+==> STATE BEFORE this docs-only freeze commit <==
+$ pwsh -NoProfile -File .ai-pipeline/scripts/verify-handoff.ps1 \
+    -TaskPath docs/tasks/hrp-admin-localization-wave2-recruitment/TASK.md
+
+HANDOFF SUBSTANCE GATE
+  subject: docs\tasks\hrp-admin-localization-wave2-recruitment\HANDOFF.md (against docs/tasks/hrp-admin-localization-wave2-recruitment/TASK.md)
+[OK]   H-01 HANDOFF.md size ... bytes.
+[OK]   H-02 all 8 required sections present (legacy).
+[OK]   H-03 spec version v1.0 matches TASK.
+[OK]   H-03 assurance lane STANDARD matches TASK.
+[FAIL] H-16 committed semantic delta exists after Implementation SHA:
+       app/(jobs)/viec-lam/[slug]/page.tsx,
+       app/(jobs)/viec-lam/page.tsx,
+       app/(portal)/page.tsx,
+       src/domains/applications/marketplace-browse.routes.test.ts,
+       src/domains/applications/marketplace-inventory.static.test.ts.
+       Pin the newest semantic commit.
+[OK]   H-04 section 3 opens with verify-task.ps1 RESULT: PASS.
+[OK]   H-05 all 27 AC have an evidence row.
+[OK]   H-06 every AC row carries a command/result directly or through a runnable E-xx registry entry.
+[OK]   H-07 1 referenced evidence file(s) exist.
+[OK]   H-09 no plaintext secret in HANDOFF.md.
+[OK]   H-10 status READY_FOR_REVIEW is consistent between section 0 and the closing line.
+[OK]   H-12 all 13 STEP appear in the execution trace.
+[OK]   H-14 section 7 records round 1.
+[WARN] H-15 TASK.md control field(s) differ from HEAD: Next gate.
+
+RESULT: FAIL (1 error(s), 1 warning(s)).
+Do NOT write "Handoff status: READY_FOR_AUDIT" until these fail items are fixed.
+exit: 2
+
+==> RESOLUTION <==
+After forward-merge of origin/main = 7f6e6361, HANDOFF §0 Implementation SHA
+= c68aede… is no longer the newest semantic commit. The merge commit
+0aff665f… is the actual semantic-freeze combination (contains Wave 1 + Wave 2
+semantic content; no separate correction commit needed).
+
+This docs-only freeze commit updates HANDOFF §0 to:
+  - Implementation SHA = 0aff665f…  (the merge commit, the actual final combined semantic SHA)
+  - Wave 2 semantic SHA = c68aede… (immutable Wave 2-owned; preserved verbatim)
+  - origin/main SHA merged = 7f6e6361…
+  - Latest-main reconciliation SHA = 0aff665f…
+  - Final combined semantic SHA = 0aff665f…
+  - Merge parents = 1685c14a + 7f6e6361
+
+After this commit lands:
+  $ pwsh ... verify-handoff.ps1 -TaskPath ...
+  expected exit: 0 (PASS WITH WARNINGS) — H-15 non-blocking warning about
+  TASK.md Next gate field; same behavior as round 1.

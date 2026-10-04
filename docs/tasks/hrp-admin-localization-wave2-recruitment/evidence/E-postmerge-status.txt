@@ -1,0 +1,17 @@
+$ git status --short
+(empty — exit 0)
+
+$ git status --porcelain
+(empty)
+
+$ git ls-files --others --exclude-standard
+(empty — exit 0)
+
+==> SUMMARY <==
+Worktree CLEAN post-merge:
+  - no untracked files
+  - no pnpm-lock.yaml
+  - no pnpm-workspace.yaml
+  - no helper scripts untracked
+
+state captured after docs-only freeze commit (HEAD = final combined semantic SHA).
