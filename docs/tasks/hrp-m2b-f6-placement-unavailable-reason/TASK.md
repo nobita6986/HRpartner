@@ -14,10 +14,10 @@
 | Status | `RESOLVED_PENDING_MAIN_MERGE` |
 | Contract gate | `RESOLVED` |
 | Decision state | `CLOSED` |
-| Implementation SHA | `a558568a0cdf8e99ae981fffc18d979fd361345f` (`a558568a`) — UNCHANGED through round 2 (latest-main reconciliation); F6 source/test/dto byte-equivalent to this SHA on the merged HEAD `eb0cd04556c602aca453dc6de150c31dc3818b8c` |
-| Latest main observed | `f570db06a8451b7f7a9be4ad98a3a66dbfa7c2f1` (merge commit of PR #93 — `fix-migrate-vps-public-ghcr`; PR #91 UI V1 + PR #93 merged into main between task baseline `8382bbc7` and round 2) |
-| Merge commit SHA | `eb0cd04556c602aca453dc6de150c31dc3818b8c` (forward-only `git merge --no-ff origin/main`; no F6 source/test conflict — main did not touch any F6 file in the merge window) |
-| Branch HEAD | `eb0cd04556c602aca453dc6de150c31dc3818b8c` |
+| Implementation SHA | `a558568a0cdf8e99ae981fffc18d979fd361345f` (`a558568a`) — F6 code commit; byte-exact through round 2 latest-main reconciliation |
+| Latest main observed | `f570db06a8451b7f7a9be4ad98a3a66dbfa7c2f1` (merge commit of PR #93 — `fix-migrate-vps-public-ghcr`; PR #91 UI V1 + PR #93 merged into main between baseline `8382bbc7` and round 2) |
+| Round 2 merge commit | `eb0cd04556c602aca453dc6de150c31dc3818b8c` (forward-only `git merge --no-ff origin/main`; no F6 source/test conflict — main did not touch any F6 file in the merge window; `eb0cd045..HEAD` is docs-only) |
+| Branch HEAD | `31baa34d8afe2b068712419bec2c9b0dd5ba7405` (docs commit on the branch after round 2; ahead 18 of origin) |
 | PR | `#92` (existing; not re-opened; pending T0 PR review + CI 4/4 + merge coordination with UI V1/UI V2) |
 | Test environment | `READY` (Vitest unit lane — 240/240 green post-implementation: 78 pure resolver unit tests in `recruiter-workbench.placement-actions.unavailable.test.ts` + 67 placement-action render tests in `recruiter-workbench.placement-actions.test.tsx` + 95 workbench tests; no DB required for this scope; no integration test added) |
 | Baseline | `8382bbc70b74f2fc21471c532b98bd20ab8a1fac` (origin/main HEAD at task start; merge commit of PR #90 — T1A M2A operational UX debt) |
