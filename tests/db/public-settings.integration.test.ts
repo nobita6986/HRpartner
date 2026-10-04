@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Prisma } from '@prisma/client';
-import { getPrisma } from '@/src/lib/db';
+import { Prisma, PrismaClient } from '@prisma/client';
 import {
   getHomepageSettings,
   updateHomepageSettings,
@@ -9,7 +8,6 @@ import {
 const writerUrl = process.env.DATABASE_URL_TEST ?? '';
 const adminUrl = process.env.DATABASE_URL_ADMIN_TEST ?? '';
 const suite = describe.skipIf(!writerUrl && !adminUrl);
-const prisma = getPrisma();
 
 type HomepageSettingsRow = {
   id: string;
@@ -37,6 +35,7 @@ const originalSelect = Prisma.sql`
 suite('UI2 public HomepageSettings synthetic PostgreSQL integration', () => {
   it('verifies migration, constraints, service round-trip, and restores the original singleton', async () => {
     let originalRows: HomepageSettingsRow[] | undefined;
+    let prisma: PrismaClient | undefined;
 
     try {
       expect(writerUrl).toBeTruthy();
@@ -49,6 +48,12 @@ suite('UI2 public HomepageSettings synthetic PostgreSQL integration', () => {
       expect(admin.hostname).toBe(writer.hostname);
       expect(admin.port).toBe(writer.port);
       expect(admin.pathname).toBe(writer.pathname);
+
+      prisma = new PrismaClient({
+        datasources: { db: { url: writerUrl } },
+        log: [],
+        transactionOptions: { timeout: 15_000 },
+      });
 
       const [database, writerPosture, migrationRows, columns, constraints] =
         await Promise.all([
@@ -192,37 +197,39 @@ suite('UI2 public HomepageSettings synthetic PostgreSQL integration', () => {
       const unchangedAfterConstraintChecks = await getHomepageSettings(prisma);
       expect(unchangedAfterConstraintChecks.stickyAnnouncement).toEqual(stickyAnnouncement);
     } finally {
-      if (originalRows !== undefined) {
-        if (originalRows.length === 0) {
-          await prisma.$executeRaw`
-            DELETE FROM homepage_settings WHERE id = 'default'
-          `;
-        } else {
-          const original = originalRows[0];
-          await prisma.$executeRaw`
-            UPDATE homepage_settings
-            SET best_jobs_page_size = ${original.best_jobs_page_size},
-                listing_page_size = ${original.listing_page_size},
-                zalo_chat_url = ${original.zalo_chat_url},
-                messenger_chat_url = ${original.messenger_chat_url},
-                phone_call_number = ${original.phone_call_number},
-                news_section_enabled = ${original.news_section_enabled},
-                sticky_announcement =
-                  ${original.sticky_announcement === null
-                    ? null
-                    : JSON.stringify(original.sticky_announcement)}::jsonb,
-                created_at = ${original.created_at}::timestamptz,
-                updated_at = ${original.updated_at}::timestamptz,
-                updated_by_id = ${original.updated_by_id}
-            WHERE id = ${original.id}
-          `;
+      try {
+        if (prisma && originalRows !== undefined) {
+          if (originalRows.length === 0) {
+            await prisma.$executeRaw`
+              DELETE FROM homepage_settings WHERE id = 'default'
+            `;
+          } else {
+            const original = originalRows[0];
+            await prisma.$executeRaw`
+              UPDATE homepage_settings
+              SET best_jobs_page_size = ${original.best_jobs_page_size},
+                  listing_page_size = ${original.listing_page_size},
+                  zalo_chat_url = ${original.zalo_chat_url},
+                  messenger_chat_url = ${original.messenger_chat_url},
+                  phone_call_number = ${original.phone_call_number},
+                  news_section_enabled = ${original.news_section_enabled},
+                  sticky_announcement =
+                    ${original.sticky_announcement === null
+                      ? null
+                      : JSON.stringify(original.sticky_announcement)}::jsonb,
+                  created_at = ${original.created_at}::timestamptz,
+                  updated_at = ${original.updated_at}::timestamptz,
+                  updated_by_id = ${original.updated_by_id}
+              WHERE id = ${original.id}
+            `;
+          }
+
+          const restoredRows = await prisma.$queryRaw<HomepageSettingsRow[]>(originalSelect);
+          expect(restoredRows).toEqual(originalRows);
         }
-
-        const restoredRows = await prisma.$queryRaw<HomepageSettingsRow[]>(originalSelect);
-        expect(restoredRows).toEqual(originalRows);
+      } finally {
+        await prisma?.$disconnect();
       }
-
-      await prisma.$disconnect();
     }
   }, 60_000);
 });
