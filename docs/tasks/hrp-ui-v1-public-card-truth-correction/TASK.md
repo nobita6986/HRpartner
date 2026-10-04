@@ -7,7 +7,7 @@
 | Task slug | `hrp-ui-v1-public-card-truth-correction` |
 | Work type | `CODE` |
 | Delivery protocol | `V2_FAST_FREEZE` |
-| Spec version | `v1.0` |
+| Spec version | `v1.1` |
 | Assurance lane | `STANDARD` |
 | Audit mode | `NONE` |
 | Audit reason | Bounded public UI/data projection correction. No schema, no migration, no auth/RLS/lifecycle, no Admin localization, no UI2 wiring. Targeted regression tests + CI + production smoke by T0. Per `tier1.md` STANDARD lane may use `NONE` when no public-contract or shared-foundation expansion is detected. |
@@ -290,3 +290,4 @@ Three production defects on public `JobPosting` cards are corrected in a single 
 | Rev | Date | Change | Reason |
 |---|---|---|---|
 | `v1.0` | 2026-10-04 | Initial TASK.md authored. Baseline `796e13c6` (origin/main HEAD at task start, post PR #94 merge). Status `READY_TO_CODE`. Contract gate `READY_TO_CODE`. Lane `STANDARD`. Audit `NONE`. Correction budget `1`. 3 production defects (RC-01..RC-03) addressed: shared `JobStampOverlay` (extracted from homepage `RubberStamp`); 4-flag canonical derivation via `deriveStampsFromFlags`; salary precedence `salaryDisplay` → hourly → `"Lương thương lương"`. 1 new file (`stamp-overlay.tsx`); 1 delete (`stamp-badge.tsx`); 1 new DTO scalar (`PublicJobDto.salaryDisplay`); 1 new resolver (`formatPublicSalary`); 3 page files updated; 4 test files updated/extended. Forbidden paths: prisma, migrations, app/admin, app/api/admin, F6, F8 mapper, M2A HANDOFF, UI2, Admin localization, pnpm. | T0 directive 2026-10-04 §1-§9 chốt outcome/boundary/lane/audit. |
+| `v1.1` | 2026-10-04 | T0 docs/hygiene correction 1/1 contract sync: changed-surface accounting reconciled — actual diff is 4 NEW (`stamp-overlay.tsx`, `stamp-overlay.test.ts`, `TASK.md`, `HANDOFF.md`) + 2 DELETED (`stamp-badge.tsx`, `stamp-badge.test.ts`) + 17 MODIFIED = 23 files; `TASK.md` and `HANDOFF.md` are counted separately under NEW, not MODIFIED. Also note the T0-approved mechanical exception for `src/shared/security/required-relation-sweep.static.test.ts` line-anchor shift (no auth/RLS/security behavior change). No semantic delta in this contract revision — it is a paperwork alignment with the implemented surface. | T0 directive 2026-10-04 docs/hygiene correction 1/1: HANDOFF §1.3 + §4.1 must reflect exact 4+2+17 = 23 file split. |

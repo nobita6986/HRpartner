@@ -5,10 +5,10 @@
 | Field | Value |
 |---|---|
 | Task slug | `hrp-ui-v1-public-card-truth-correction` |
-| Status | `READY_FOR_REVIEW` |
+| Status | `READY_FOR_REVIEW` (chat-level handback to T0 is `READY_FOR_T0_MERGE` — see Revision Log v1.1) |
 | Work type | `CODE` |
 | Delivery protocol | `V2_FAST_FREEZE` |
-| Spec version | `v1.0` |
+| Spec version | `v1.1` |
 | Assurance lane | `STANDARD` |
 | Audit mode | `NONE` |
 | Audit selection reason | Bounded public UI/data projection correction. No schema, no migration, no auth/RLS/lifecycle, no Admin localization, no UI2 wiring. Targeted regression tests + CI + production smoke by T0. Per `tier1.md` STANDARD lane may use `NONE` when no public-contract or shared-foundation expansion is detected. |
@@ -18,15 +18,16 @@
 | Canonical gates | `PASS` |
 | Baseline | `796e13c69996756d1298bc1a7ec9b50bab935c9f` (origin/main HEAD at task start) |
 | Implementation SHA | `bd5d8d16ed305d1b67922f826c154cc3b1d187b5` |
-| Branch HEAD | `bd5d8d16ed305d1b67922f826c154cc3b1d187b5` (same as Implementation SHA — one semantic commit ahead at HANDOFF freeze) |
+| Branch HEAD | Exact final branch HEAD is reported in the post-commit handback; every commit after Implementation SHA is docs/control-only. |
 | Branch | `codex/t1a-ui-v1-public-card-truth-correction` |
 | Worktree | `C:\CodeApp\HrP-worktrees\t1a-ui-v1-public-card-truth-correction` |
-| PR | `TBD` (opened after commit, non-draft) |
+| PR | `https://github.com/nobita6986/HRpartner/pull/97` (non-draft, MERGEABLE, state=OPEN) |
+| CI | 4/4 GREEN — run `37195991568` (Quality SUCCESS, Integration SUCCESS, Vercel SUCCESS, Vercel Preview Comments SUCCESS) |
 | Correction batches used | `0` |
 | Decision state | `CLOSED` |
 | Next gate | `T0_PR_REVIEW_MERGE` (T1A does NOT merge; T0 coordinates UI V1 release) |
 
-> Lane = STANDARD, Audit = NONE. Reason: public UI/data projection correction, no schema, no migration, no auth/RLS/lifecycle. Targeted regression + CI + production smoke (T0). READY_FOR_REVIEW is correct for Audit NONE per `verify-handoff.ps1` H-10.
+> Lane = STANDARD, Audit = NONE. Reason: public UI/data projection correction, no schema, no migration, no auth/RLS/lifecycle. Targeted regression + CI + production smoke (T0). HANDOFF status is `READY_FOR_REVIEW` (per `tier1.md` whitelist). Chat-level handback to T0 is `READY_FOR_T0_MERGE` after T0 docs/hygiene correction 1/1 — implementation SHA is `bd5d8d16`, all docs/control-only commits pass `git diff bd5d8d16..HEAD -- app src prisma tests scripts packages configs` = empty.
 
 ---
 
@@ -66,18 +67,19 @@ No DB backfill. No production data change. Editor input semantics untouched. `St
 
 ### 1.3 Changed surface (exact files)
 
-**New files (3):**
+**New files (4):**
 
 - `src/domains/job-board/components/landing/stamp-overlay.tsx` — shared canonical stamp visual (3D / tilted / ink / overflow) extracted from `featured-job-card.tsx::RubberStamp`. Exports `JobStampOverlay({ isHot, isUrgent, isHighReward, isExpiringSoon, size?, className? }): ReactElement | null`. NO `stamps?` override prop on the public surface.
 - `src/domains/job-board/components/landing/__tests__/stamp-overlay.test.ts` — static source-analysis fence renamed from `stamp-badge.test.ts`. Path constants point to `stamp-overlay.tsx`. Asserts `JobStampOverlay` export, derive helper import, per-stamp data attributes, `prefers-reduced-motion`, no external packages, listing + detail + featured-card all consume the shared overlay, no inline `data-testid="job-stamp"` on public surfaces, no `JobStampBadge` import anywhere, detail page references `formatPublicSalary`.
-- `docs/tasks/hrp-ui-v1-public-card-truth-correction/{TASK.md,HANDOFF.md}` — this task artifact.
+- `docs/tasks/hrp-ui-v1-public-card-truth-correction/TASK.md` — task contract artifact.
+- `docs/tasks/hrp-ui-v1-public-card-truth-correction/HANDOFF.md` — task handback artifact (this file).
 
 **Deleted files (2):**
 
 - `src/domains/job-board/components/landing/stamp-badge.tsx` — old flat-pill renderer; visual drift (RC-01). Retired in favor of shared `JobStampOverlay`.
 - `src/domains/job-board/components/landing/__tests__/stamp-badge.test.ts` — replaced by `stamp-overlay.test.ts`.
 
-**Modified files (semantic, forward-only) (16):**
+**Modified files (semantic, forward-only) (17):**
 
 | Path | Change |
 |---|---|
@@ -90,14 +92,14 @@ No DB backfill. No production data change. Editor input semantics untouched. `St
 | `app/(jobs)/viec-lam/page.tsx` | `JobCard` uses `<JobStampOverlay ... size="sm" />`. No precomputed `stamps` array. Salary pill uses `formatPublicSalary`. Card container `<article>` gains `relative overflow-visible`. |
 | `app/(jobs)/viec-lam/[slug]/page.tsx` | Detail SUMMARY uses `<JobStampOverlay ... size="md" />`. New `<Fact label="Mức lương" value={formatPublicSalary(...)} />` in the SUMMARY `<dl>`. No precomputed `stamps` array. |
 | `src/domains/job-board/public-card-truth.test.ts` | `PUBLIC_KEYS` allowlist gains `'salaryDisplay'` (24 keys). 4 new production-repro tests: "Nhân viên kho" + "Thợ điện" + salaryDisplay-empty/hourly + salaryDisplay-empty/null. |
-| `src/domains/job-board/public-select.static.test.ts` | `topLevelSelectKeys` (sorted) unchanged — `salaryDisplay` already in allowlist from T1B freeze (and from this hotfix's `publicSelect` addition). |
+| `src/domains/job-board/public-card-truth.integration.test.ts` | Live-DB allow-list updated: 22→23 DTO keys (adds `'salaryDisplay'`); comments updated to match the new key count and history line `22 lên 23`. |
 | `src/domains/job-board/job-posting-stamps-mapping.test.ts` | Extended `deriveStampsFromFlags` matrix: 0/1/2/3/4 flag combinations (16 permutations), rank order invariant, no `moi` stamp from any combination. |
 | `src/domains/job-board/components/landing/featured-job-card.test.ts` | Tests that visual ink/3D/inner ring/offset/`pointer-events-none`/`data-testid` etc. live in `stamp-overlay.tsx` (not in `featured-job-card.tsx`). Tests that `<JobStampOverlay>` element passes all 4 flags. Salary precedence: `formatPublicSalary` lives in `public-listing.labels.ts`, featured-job-card delegates. |
 | `src/domains/job-board/public-detail.static.test.ts` | DEC-07 updated: detail page MUST reference `formatPublicSalary` (T0 §6.C requires detail page renders `salaryDisplay`); inline `'Lương thương lượng'` and inline `salaryLabel(` still banned. |
 | `src/domains/job-board/public-listing.static.test.ts` | Test that labels module carries `'Lương thương lượng'` literal; featured-job-card calls `formatPublicSalary(` (shared resolver); both forbid `'0 đ/giờ'`. |
 | `src/domains/applications/marketplace-browse.routes.test.ts` | `PUBLISHED_JOB` fixture adds `salaryDisplay: null` (DTO allowlist compliance). |
 | `src/domains/applications/marketplace-inventory.static.test.ts` | DEC-04 / T1A update: card receives `salaryDisplay` field and uses `formatPublicSalary`, NOT inline `salaryLabel`. |
-| `src/shared/security/required-relation-sweep.static.test.ts` | Line numbers in `EXPECTED_HITS` for `public.service.ts:752` (`staffingOrder`) and `:759` (`project`) updated to match the new line numbers after duplicate-key removal. |
+| `src/shared/security/required-relation-sweep.static.test.ts` | Line numbers in `EXPECTED_HITS` for `public.service.ts:752` (`staffingOrder`) and `:759` (`project`) updated to match the new line numbers after duplicate-key removal. **T0-approved mechanical exception** (see §4.1 `DEV-04` and Revision Log) — line-anchor numbers in a static-analysis test shift when an unrelated change moves the relations the test is looking for; no auth/RLS/security behavior change. |
 
 ---
 
@@ -115,7 +117,7 @@ Each AC below has: a runnable command (column 2) and a measured result (column 4
 | `AC-28` | `npx next build` | none | Exit 0; /viec-lam 106 kB, /viec-lam/[slug] 114 kB |
 | `AC-29` | `node .ai-pipeline/scripts/verify-encoding.mjs` | none | RESULT: PASS (22 changed text file(s), strict UTF-8 without BOM) |
 | `AC-30` | `pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-ui-v1-public-card-truth-correction/TASK.md` | none | RESULT: DRAFT-VALID (5 non-blocking warning(s)) |
-| `AC-31` | `pwsh .ai-pipeline/scripts/verify-handoff.ps1 -TaskPath docs/tasks/hrp-ui-v1-public-card-truth-correction/TASK.md` | none | RESULT: PASS (after Implementation SHA pinned and dirty check clean). |
+| `AC-31` | `pwsh .ai-pipeline/scripts/verify-handoff.ps1 -TaskPath docs/tasks/hrp-ui-v1-public-card-truth-correction/TASK.md` | none | RESULT: PASS (Implementation SHA pinned; dirty check clean after correction batch). |
 | `AC-01` | `npx vitest run --config vitest.unit.config.ts src/domains/job-board/components/landing/__tests__/stamp-overlay.test.ts` | none | Exit 0, 26 passed |
 | `AC-02` | `npx vitest run --config vitest.unit.config.ts src/domains/job-board/components/landing/__tests__/stamp-overlay.test.ts` | none | Exit 0, 26 passed |
 | `AC-03` | `npx vitest run --config vitest.unit.config.ts src/domains/job-board/components/landing/__tests__/stamp-overlay.test.ts` | none | Exit 0, 26 passed |
@@ -140,7 +142,7 @@ Each AC below has: a runnable command (column 2) and a measured result (column 4
 | `AC-22` | `npx vitest run --config vitest.unit.config.ts src/domains/job-board/components/landing/featured-job-card.test.ts` | none | Exit 0, 105 passed; salary precedence cases green |
 | `AC-23` | `npx vitest run --config vitest.unit.config.ts src/domains/job-board/components/landing/__tests__/stamp-overlay.test.ts` | none | Exit 0, 26 passed; all fence invariants green |
 | `AC-24` | `git diff --check` | none | Exit 0 |
-| `AC-25` | `git diff --stat 796e13c6..HEAD -- prisma migrations app/admin app/api/admin src/shared/auth src/shared/security package.json package-lock.json pnpm-lock.yaml pnpm-workspace.yaml src/domains/staffing/job-posting-error-map.ts src/domains/talent/recruiter-workbench.* tests/db` | none | 0 lines on every forbidden path |
+| `AC-25` | `git diff --stat 796e13c6..HEAD -- prisma migrations app/admin app/api/admin src/shared/auth src/domains/staffing/job-posting-error-map.ts src/domains/talent/recruiter-workbench.* tests/db` | none | 0 lines on every SCHEMA-WRITING / WRITE-PATH / LIFECYCLE / F6 / F8 / M2A forbidden path. (One T0-approved mechanical exception: `src/shared/security/required-relation-sweep.static.test.ts` shifted two expected line anchors in `EXPECTED_HITS` — see `DEV-04` §4.1; no auth/RLS/security behavior change.) `package.json` / `pnpm-lock.yaml` / `pnpm-workspace.yaml` were not modified. |
 
 ### 2.2 Root cause disposition
 
@@ -245,10 +247,10 @@ Targeted tests changed/added:
 
 | DEV | Description | Reason |
 |---|---|---|
-| `DEV-01` | None substantive. Implementation matches TASK.md v1.0 scope exactly: 1 new file (`stamp-overlay.tsx`); 1 rename (`stamp-badge.test.ts` → `stamp-overlay.test.ts`); 2 deletes (`stamp-badge.tsx`, `stamp-badge.test.ts`); 18 modified files. | n/a |
+| `DEV-01` | None substantive. Implementation matches TASK.md v1.0 scope exactly: 4 new files (`stamp-overlay.tsx`, `stamp-overlay.test.ts`, `TASK.md`, `HANDOFF.md`); 2 deletes (`stamp-badge.tsx`, `stamp-badge.test.ts`); 17 modified files (TASK.md and HANDOFF.md counted separately under NEW, not MODIFIED). | n/a |
 | `DEV-02` | Minor fence adjustment: `public-detail.static.test.ts::DEC-07` was updated to ALLOW `formatPublicSalary` (single source resolver) in the detail page; the OLD rule forbade ANY `salary` / `luong` / `lương` substring on the detail page. T0 §6.C requires the detail page render `salaryDisplay` in a summary fact — this is a binding change. The fence still forbids inline `'Lương thương lượng'` literal and inline `salaryLabel(` call. | T0 §6.C: "Public detail phải hiển thị salaryDisplay trong summary/fact/chip phù hợp, không chỉ mang field trong DTO rồi bỏ không." |
 | `DEV-03` | Minor fence adjustment: `marketplace-inventory.static.test.ts::DEC-04` was updated to assert `formatPublicSalary(` and `salaryDisplay: job.salaryDisplay` in best-jobs section; the OLD rule asserted inline `salaryLabel(`. The featured-job-card now delegates to `formatPublicSalary` (single source), NOT inline `salaryLabel`. | T1A / RC-03: single resolver replaces inline formatter. |
-| `DEV-04` | Minor fence adjustment: `required-relation-sweep.static.test.ts::EXPECTED_HITS` line numbers for `public.service.ts:731 → 752` and `:738 → 759` after the duplicate-key removal. The semantic change is identical (same relations, same select chains). | Mechanical line shift after removing a duplicate `salaryDisplay: true` entry that was already in T1B freeze. |
+| `DEV-04` | **T0-approved mechanical exception**: `src/shared/security/required-relation-sweep.static.test.ts::EXPECTED_HITS` shifted two expected line anchors for `public.service.ts` (`:731 → :752` and `:738 → :759`) after the duplicate `salaryDisplay: true` key was removed from `publicSelect` and `toDetailDto`. The relations under sweep (`staffingOrder`, `project`) are IDENTICAL — only the line numbers they sit on moved. This is NOT an auth/RLS/security behavior change; the test still asserts the same RLS-required relations are reachable from `publicSelect`. No other `src/shared/security/**` file is touched; the exception does not extend. | T0 docs/hygiene correction 1/1: "Đây là T0-approved mechanical exception: không đổi auth/RLS/security behavior." |
 
 ### 4.2 Blockers
 
@@ -261,13 +263,15 @@ None. Implementation completed all TASK.md §5 STEP-01..STEP-14. STEP-15 (commit
 ### 5.1 Handback to T0
 
 - **Baseline SHA**: `796e13c69996756d1298bc1a7ec9b50bab935c9f` (origin/main HEAD at task start).
-- **Implementation SHA**: `bd5d8d16ed305d1b67922f826c154cc3b1d187b5` (the latest semantic commit on this branch; combines the 3 production fixes from `9556711f` + the integration-test allow-list update from `bd5d8d16` — together they implement the 3 RCs and keep the live-DB test green).
-- **Final HEAD**: same as Implementation SHA (one semantic commit ahead at HANDOFF freeze; no later docs-only commits will be added in this round — T0 will read push-time HEAD from `git rev-parse origin/codex/t1a-ui-v1-public-card-truth-correction`).
+- **Implementation SHA** (semantic, the binding pointer): `bd5d8d16ed305d1b67922f826c154cc3b1d187b5`. Composed of:
+  - `9556711f631581aff5eee851407132d7fe6c334e` — 3 production fixes (RC-01..RC-03): shared `JobStampOverlay`, 4-flag canonical derivation, `formatPublicSalary` resolver.
+  - `bd5d8d16ed305d1b67922f826c154cc3b1d187b5` — integration-test allow-list fix (22→23 DTO keys for `salaryDisplay`); triggered by the CI Integration check on the first push.
+- **Branch HEAD**: Exact final branch HEAD is reported in the post-commit handback; every commit after Implementation SHA is docs/control-only. `git diff bd5d8d16..HEAD -- app src prisma tests scripts packages configs` must remain empty after each docs/control-only commit; the run is part of §5 verification.
 - **Branch**: `codex/t1a-ui-v1-public-card-truth-correction`.
-- **PR URL**: `TBD` (opened after push; non-draft).
-- **CI status**: `TBD` (awaiting CI 4/4 GREEN + MERGEABLE/CLEAN).
+- **PR URL**: `https://github.com/nobita6986/HRpartner/pull/97` (non-draft, MERGEABLE, state=OPEN).
+- **CI status**: 4/4 GREEN — run `37195991568` (Quality SUCCESS, Integration SUCCESS, Vercel SUCCESS, Vercel Preview Comments SUCCESS).
 - **Root cause disposition**: RC-01..RC-03 all RESOLVED (see §2.2).
-- **Exact changed files**: see §1.3 (3 new + 2 deleted + 18 modified).
+- **Exact changed files**: see §1.3 (4 new + 2 deleted + 17 modified = 23 total).
 - **Test counts**: 225 test files, 3752 passed, 9 skipped, 0 failed. Targeted tests added/extended in 10 files.
 - **Four-flag render proof**: see §2.5.
 - **Salary precedence proof**: see §2.4.
@@ -316,5 +320,6 @@ None. Implementation completed all TASK.md §5 STEP-01..STEP-14. STEP-15 (commit
 | Rev | Date | Change | Reason |
 |---|---|---|---|
 | `v1.0` | 2026-10-04 | Initial HANDOFF.md authored alongside TASK.md v1.0 (READY_TO_CODE → READY_FOR_REVIEW). 3 production defects (RC-01..RC-03) addressed: shared `JobStampOverlay` extracted from homepage `RubberStamp`; old `JobStampBadge` (flat pill) retired; 4-flag canonical derivation enforced at all three surfaces; salary precedence `salaryDisplay` → hourly → "Lương thương lượng" via single resolver `formatPublicSalary`. | T0 directive 2026-10-04 §1-§9 chốt outcome/boundary/lane/audit. |
+| `v1.1` | 2026-10-04 | T0 docs/hygiene correction 1/1 (`SOURCE_ACCEPTED / CHANGES_REQUIRED_DOCS_AND_HYGIENE_ONLY`): (a) §0 + §5.1 no longer pin a self-referencing Final HEAD — uses the standardized "Exact final branch HEAD is reported in the post-commit handback; every commit after Implementation SHA is docs/control-only." line; (b) PR URL replaced with `#97` (non-draft), CI replaced with `4/4 GREEN — run 37195991568`; (c) §1.3 changed-surface accounting: 4 NEW (split `TASK.md` and `HANDOFF.md` into distinct rows), 2 DELETED, 17 MODIFIED = 23 total; (d) §2.5 `AC-25` + §4.1 `DEV-04` now explicitly document the `required-relation-sweep.static.test.ts` line-anchor shift as a T0-approved mechanical exception (no auth/RLS/security behavior change; exception does not extend to other `src/shared/security/**` files); (e) worktree hygiene: `pnpm-lock.yaml` and `pnpm-workspace.yaml` removed from the worktree so `git status --short` is clean. **Implementation SHA = `bd5d8d16ed305d1b67922f826c154cc3b1d187b5` is unchanged**; no source/test/schema/migration/package change in this commit. | T0 directive 2026-10-04 docs/hygiene correction 1/1: SOURCE_ACCEPTED but §0, §1.3, §2, §4.1, §5.1 all required documentation/format updates; worktree must be clean. |
 
 Handoff status: READY_FOR_REVIEW
