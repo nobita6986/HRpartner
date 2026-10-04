@@ -2,9 +2,9 @@
 
 import Link from 'next/link';
 import { MapPin, Clock3, Banknote } from 'lucide-react';
-import type { EnrichedJob } from '@/app/(portal)/page';
 import { HrMonogram } from './hr-monogram';
-import { STAMPS, STAMP_RANK, type StampKey, deriveStampsFromFlags } from './stamp-defs';
+import { formatPublicSalary } from '@/src/domains/job-board/public-listing.labels';
+import { JobStampOverlay } from './stamp-overlay';
 
 export interface FeaturedJobCardProps {
   /** Job data — EnrichedJob shape from page.tsx */
@@ -15,32 +15,36 @@ export interface FeaturedJobCardProps {
     salaryMinVnd: number | null;
     salaryMaxVnd: number | null;
     location?: string | null;
-    /** Backward compat (single urgent flag). Deprecated — dùng `stamps`. */
+    /** Backward compat (single urgent flag). Deprecated — dùng 4 flag trực tiếp. */
     badgeType?: 'urgent' | 'new' | null;
-    /** Y10.4/UI04g: list các stamp sẽ render trên card góc trên phải. */
-    stamps?: StampKey[];
     /** Y10.4/UI04g: tên công ty/nhà máy — render thay hardcoded "HRP Việt Nam". */
     companyName?: string | null;
     source?: 'REAL' | 'DEMO' | 'INTEGRATION_PENDING';
     /** RQ-20: ISO timestamp of newest visible order — render only when truthy */
     postedAt?: string | null;
+    /** Y10.4/UI04g: pass stamps array (legacy field, KHÔNG dùng trên public card T1A+).
+     *  Deprecated sau RC-02 fix — `<JobStampOverlay>` derive trực tiếp từ 4 flag dưới. */
+    stamps?: string[];
+    /** hrp-ui-v1-public-card-truth-correction (T1A / RQ-07, RC-02): 4 canonical flag truyền
+     *  xuống `<JobStampOverlay>`. Trước đây 2 flag đầu (`isHot`, `isUrgent`) đến từ
+     *  `EnrichedJob` (page.tsx enrich) và chưa là prop trực tiếp của card — T1A đưa cả 4
+     *  vào prop để caller chủ động cung cấp, KHÔNG pre-compute `stamps` array. */
+    isHot?: boolean;
+    isUrgent?: boolean;
     /** hrp-ui-v1-job-card-stamps-brand (T1B / DEC-06 / RQ-07): 2 canonical flag mới. */
     isHighReward?: boolean;
     isExpiringSoon?: boolean;
+    /**
+     * hrp-ui-v1-public-card-truth-correction (T1A / RQ-06): author-entered salaryDisplay
+     * từ `JobPosting.salaryDisplay`. Khi trim() non-empty, card render nguyên văn
+     * (precedence 1 trong `formatPublicSalary`).
+     */
+    salaryDisplay?: string | null;
   };
   /** Canonical detail URL built by BestJobsSection via buildHref(job.slug) */
   href: string;
   /** Called when REAL card CTA is clicked — triggers ApplyModal via page-level closure. */
   onApply?: () => void;
-}
-
-/** Formats VND salary range for display. */
-function salaryLabel(min: number | null, max: number | null): string {
-  if (min === null) return 'Lương thương lượng';
-  const VND_FORMAT = new Intl.NumberFormat('vi-VN');
-  const from = VND_FORMAT.format(min);
-  if (max !== null && max !== min) return `${from} – ${VND_FORMAT.format(max)} đ/giờ`;
-  return `${from} đ/giờ`;
 }
 
 /** True when the card should behave as a preview/DEMO (fixture data, not live). */
@@ -64,92 +68,6 @@ function deriveMonogram(title: string): string {
   return initials || 'HRP';
 }
 
-/**
- * Y10.6/UI04j r2: rubber stamp redesign — bỏ viền dashed đen,
- * chỉ dùng mực cam HRP + grunge ink texture + concentric rings.
- *
- * Style: con dấu cao su thật — không border đen, chỉ ink + shadow 3D.
- *
- * hrp-p1-a0-1 (DEC-06, T0 §1.5): mỗi stamp render trong wrapper riêng có class
- * `job-stamp-attention motion-reduce:animate-none motion-reduce:opacity-100`.
- * Animation `job-stamp-blink` (CSS keyframe 0.7↔1.0, đã có sẵn ở `app/globals.css`)
- * chỉ áp dụng lên wrapper từng stamp — KHÔNG animate toàn card. Reduced-motion
- * (`prefers-reduced-motion: reduce`) tắt animation và set opacity về 1.0 ngay.
- *
- * `index` dùng để lệch vị trí các stamp khi có 2+ cùng lúc (offset `translate-x`)
- * — không chồng lên nhau.
- *
- * C-05 (correction batch 1/1): helper phái sinh stamp từ flags sống ở
- * `stamp-defs.ts` (`deriveStampsFromFlags`) — chia sẻ với listing + detail page.
- * Hero RubberStamp giữ art direction riêng (con dấu tilted có offset + grunge ink);
- * các bề mặt phẳng (chip) dùng `<JobStampBadge>` cũng từ cùng registry.
- */
-function RubberStamp({ stampKey, idx }: { stampKey: StampKey; idx: number }) {
-  const def = STAMPS[stampKey];
-  const Icon = def.Icon;
-  // idx 0: góc trên trái như cũ. idx 1: lệch phải + xuống 12px. idx 2: lệch thêm.
-  const offsetX = idx * 18;
-  const offsetY = idx * 8;
-  return (
-    <div
-      /* Y10.8+: -top-2 -left-2 (tràn 8px ra ngoài card) — đủ nổi mà không quá xa.
-         hrp-p1-a0-1: className giữ animation keyframe + reduced-motion disable ở wrapper riêng
-         để stamp là phần tử animate duy nhất. `pointer-events-none` để không chặn card CTA. */
-      className="job-stamp-attention motion-reduce:animate-none motion-reduce:opacity-100 pointer-events-none absolute z-30"
-      data-testid="job-stamp"
-      data-stamp-key={stampKey}
-      data-stamp-index={idx}
-      aria-label={def.ariaLabel}
-      style={{
-        top: `${-8 + offsetY}px`,
-        left: `${-8 + offsetX}px`,
-        transform: `rotate(${def.rotateDeg}deg) scale(0.7)`,
-        transformOrigin: 'top left',
-      }}
-    >
-      {/* Stamp body: hình tròn, không viền đen, chỉ có mực + shadow-2xl 3D */}
-      <div
-        className={`relative flex flex-col items-center justify-center rounded-full ${def.bgClass} px-4 py-2 shadow-2xl`}
-        style={{
-          // Y10.7/UI04j r6: Grunge ink texture NHẸ (80% opacity), CHỈ phần TÂM stamp.
-          // - Opacity giảm từ 0.35→0.28, 0.18→0.14, v.v.
-          // - Các blob radial gradient nhỏ tập trung ở TÂM, rìa stamp giữ nguyên màu mực đặc.
-          // - Dùng radial-gradient mask effect: blend mực sáng/tối ở tâm, rìa mực đều.
-          // - Shadow mạnh để 3D pop khỏi card
-          backgroundImage:
-            `radial-gradient(ellipse 80% 80% at 50% 50%, rgba(0,0,0,0.22) 0%, transparent 100%),` +
-            `radial-gradient(ellipse at 30% 35%, rgba(255,255,255,0.28) 0%, transparent 30%),` +
-            `radial-gradient(ellipse at 70% 65%, rgba(0,0,0,0.14) 0%, transparent 28%),` +
-            `radial-gradient(ellipse at 50% 50%, rgba(255,255,255,0.20) 0%, transparent 50%),` +
-            `radial-gradient(ellipse at 20% 75%, rgba(255,255,255,0.22) 0%, transparent 25%),` +
-            `radial-gradient(ellipse at 80% 25%, rgba(0,0,0,0.12) 0%, transparent 22%),` +
-            `radial-gradient(ellipse at 50% 20%, rgba(255,255,255,0.18) 0%, transparent 30%)`,
-          boxShadow: `0 8px 20px -4px ${def.ringClass.includes('amber') ? 'rgba(217,119,6,0.6)' : def.ringClass.includes('orange') ? 'rgba(249,115,22,0.6)' : 'rgba(239,68,68,0.6)'}, 0 4px 8px -2px rgba(0,0,0,0.3)`,
-        }}
-      >
-        {/* Inner ring line — vòng tròn mực bên trong (kiểu con dấu) */}
-        <div
-          className={`absolute inset-1.5 rounded-full border-2 ${def.borderClass} opacity-60`}
-          aria-hidden="true"
-        />
-
-        {/* Nội dung stamp */}
-        <div className={`relative flex flex-col items-center gap-0.5 ${def.fgClass}`}>
-          <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
-          <span className="text-[10px] font-black uppercase tracking-widest leading-none whitespace-nowrap">
-            {def.label}
-          </span>
-        </div>
-
-        {/* Grunge dots nhỏ — hạt mực văng (đối xứng cho stamp góc trái) */}
-        <div className={`pointer-events-none absolute -right-0.5 top-1/3 h-1 w-1 rounded-full ${def.bgClass} opacity-30`} aria-hidden="true" />
-        <div className={`pointer-events-none absolute -bottom-0.5 left-0 h-0.5 w-0.5 rounded-full ${def.bgClass} opacity-20`} aria-hidden="true" />
-        <div className={`pointer-events-none absolute -left-0.5 bottom-1/4 h-0.5 w-1 rounded-full ${def.bgClass} opacity-15`} aria-hidden="true" />
-      </div>
-    </div>
-  );
-}
-
 /** Formats postedAt ISO to a short date label for display. */
 function postedAtLabel(iso: string | null | undefined): string {
   if (!iso) return '';
@@ -163,7 +81,16 @@ function postedAtLabel(iso: string | null | undefined): string {
 
 export function FeaturedJobCard({ job, href, onApply }: FeaturedJobCardProps) {
   const preview = isPreview(job);
-  const displaySalary = salaryLabel(job.salaryMinVnd, job.salaryMaxVnd);
+  // hrp-ui-v1-public-card-truth-correction (T1A / RQ-13): salary pill dùng shared resolver
+  // `formatPublicSalary`. Precedence 1: salaryDisplay.trim() non-empty → render nguyên văn.
+  // Precedence 2/3: hourly fallback hoặc "Lương thương lượng".
+  const displaySalary = formatPublicSalary({
+    salaryDisplay: job.salaryDisplay ?? null,
+    salaryMinVnd: job.salaryMinVnd,
+    salaryMaxVnd: job.salaryMaxVnd,
+  });
+  // Khi salaryDisplay non-empty, KHÔNG prefix `₫` (đó là chuỗi HR/Owner tự gõ, không phải VND amount).
+  const showVndPrefix = !job.salaryDisplay?.trim();
   const postedAtDisplay = postedAtLabel(job.postedAt);
   // Y10.8+: Strip prefix "Tuyển ..." khỏi title (vd "Tuyển nhân viên Kho Yên Phong 3" → "Nhân viên Kho Yên Phong 3")
   // — title trong DB thường có prefix "Tuyển" / "Tuyển gấp" / "Tuyển dụng" nhưng UI không cần.
@@ -175,39 +102,22 @@ export function FeaturedJobCard({ job, href, onApply }: FeaturedJobCardProps) {
     <article
       data-testid={`featured-job-${job.id}`}
       /* RQ-14: Minimal SaaS surface — white bg + slate border + rounded-xl + shadow-sm.
-         Y10.6/UI04j: bỏ overflow-hidden để RubberStamp tràn ra ngoài card (3D overflow).
-         Border-radius vẫn áp dụng cho nội dung bên trong vì không có element nào tràn qua edge. */
+         hrp-ui-v1-public-card-truth-correction (T1A / DEC-03): `relative` để `<JobStampOverlay>`
+         (position: absolute) neo đúng; KHÔNG `overflow-hidden` để stamp tràn ra ngoài card
+         (3D overflow) trên cả 3 bề mặt (homepage, /viec-lam, /viec-lam/[slug]). */
       className="hrp-focus group relative flex h-full flex-col rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:shadow-md"
     >
-      {/* Y10.4/UI04g: Single rubber stamp badge — tilted stamp style với tone cam HRP.
-          hrp-p1-a0-1 (DEC-06): render TẤT CẢ stamps trong wrapper riêng (mỗi stamp có class
-          `.job-stamp-attention` + `motion-reduce:animate-none`) để:
-          - Chỉ stamp animate (opacity 0.7↔1.0), KHÔNG animate toàn card.
-          - Reduced-motion tắt animation cho TẤT CẢ stamp cùng lúc.
-          - Multi-stamp có offset (index × 18px X, index × 8px Y) để không chồng nhau. */}
-      {(() => {
-        // C-05 (correction batch 1/1): canonical derivation lives in `stamp-defs.ts`
-        // (`deriveStampsFromFlags`). FeaturedJobCard giữ override path (job.stamps) cho
-        // service-layer callers; default derive dùng helper chung để listing +
-        // detail + homepage đều share một conversion logic.
-        const stamps: StampKey[] =
-          job.stamps && job.stamps.length > 0
-            ? [...job.stamps].sort((a, b) => STAMP_RANK[a] - STAMP_RANK[b])
-            : deriveStampsFromFlags(
-                Boolean((job as { isHot?: boolean }).isHot),
-                Boolean((job as { isUrgent?: boolean }).isUrgent),
-                Boolean((job as { isHighReward?: boolean }).isHighReward),
-                Boolean((job as { isExpiringSoon?: boolean }).isExpiringSoon),
-              );
-        if (stamps.length === 0) return null;
-        return (
-          <>
-            {stamps.map((stampKey, idx) => (
-              <RubberStamp key={`stamp-${stampKey}-${idx}`} stampKey={stampKey} idx={idx} />
-            ))}
-          </>
-        );
-      })()}
+      {/* hrp-ui-v1-public-card-truth-correction (T1A / DEC-01, DEC-02, RQ-01, RQ-06): dùng shared
+          `<JobStampOverlay>` (3D tilted, ink, overflow) thay vì local `RubberStamp`. Derive flags
+          qua `deriveStampsFromFlags` từ `stamp-defs.ts` (single source of truth). KHÔNG có
+          `stamps?` override — đó là RC-02 root cause (mảng 2 flag nuốt 4 boolean). */}
+      <JobStampOverlay
+        isHot={Boolean(job.isHot)}
+        isUrgent={Boolean(job.isUrgent)}
+        isHighReward={Boolean(job.isHighReward)}
+        isExpiringSoon={Boolean(job.isExpiringSoon)}
+        size="sm"
+      />
 
       {/* ─── Header ─────────────────────────────────────────────────────── */}
       {/* Y10.8+: Header min-h-[4.75rem] (không fixed) để salary pill vẫn đồng bộ ngang giữa các card
@@ -254,10 +164,12 @@ export function FeaturedJobCard({ job, href, onApply }: FeaturedJobCardProps) {
       </div>
 
       {/* Y3.2: Tách dòng Mức lương — đứng riêng ngay sau phần địa điểm/thời gian,
-          TRƯỚC footer nút bấm. Giữ nguyên className pill emerald để fence test pass. */}
+          TRƯỚC footer nút bấm. hrp-ui-v1-public-card-truth-correction (T1A / RQ-13): pill
+          gọi `formatPublicSalary` (salaryDisplay > hourly > thương lượng). Khi salaryDisplay
+          non-empty, KHÔNG prefix `₫` — đó là chuỗi HR tự gõ. */}
       <div className="px-4 pb-3">
         <span className="inline-flex items-center gap-1 rounded-md border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-sm font-semibold text-emerald-700">
-          <Banknote className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+          {showVndPrefix ? <Banknote className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> : null}
           <span>{displaySalary}</span>
         </span>
       </div>
