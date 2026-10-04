@@ -133,7 +133,7 @@ These modules already follow the pattern this audit recommends for Wave 1. They 
 | Contract | File | Boundary |
 | --- | --- | --- |
 | Project publish = `Công bố dự án` / `Bỏ công bố dự án` | `app/admin/jobs/__tests__/admin-jobs-terminology.static.test.ts` (static fence) + `app/admin/jobs/page.tsx:371` | F11 RESOLVED; no rename |
-| JobPosting editor = `Publish` / `Unpublish` / `Archive` | `app/admin/jobs/job-postings/[id]/editor-shell.tsx` (frozen at T1A HANDOFF SHA `162453e29f3e2a882cda17e56d3578e1038b72bf`) | Canonical English labels preserved deliberately |
+| JobPosting editor = `Publish` / `Unpublish` / `Archive` (historical state at T1A HANDOFF SHA `162453e29f3e2a882cda17e56d3578e1038b72bf`) | `app/admin/jobs/job-postings/[id]/editor-shell.tsx` | **Historical state — superseded by T0 §2 #2 binding.** The canonical lifecycle operation names (`Publish` / `Unpublish` / `Archive`) remain canonical API keys and server handler names; they are NEVER renamed. The operator-facing **display labels** adopt the T0 §2 #2 binding (`Đăng tin` / `Gỡ tin` / `Lưu trữ`) on the editor shell and every other surface. |
 | 7-value `ServerDerivedNextAction` map | `app/admin/recruiter-workbench/_components/NextActionBadge.tsx:24-33, 38-50` | Exhaustive TypeScript check; adding/removing values MUST break the build |
 | Application lifecycle actions matrix | `src/domains/applications/placement-ui.ts:35-49` | Mirrors server gates |
 | Permission resolver role mapping | `app/admin/admin-shell.tsx:26-39` (`SYSTEM_TO_UI_ROLE`) | Maps Prisma `SystemRole` → shared `Role`; no role widening |
@@ -142,7 +142,9 @@ These modules already follow the pattern this audit recommends for Wave 1. They 
 
 | File | What it asserts |
 | --- | --- |
-| `app/admin/jobs/__tests__/admin-jobs-terminology.static.test.ts` | `Công bố dự án` / `Bỏ công bố dự án` literal on `/admin/jobs`; `Publish` / `Unpublish` / `Archive` preserved on the JobPosting editor. Frozen by F11. |
+| `app/admin/jobs/__tests__/admin-jobs-terminology.static.test.ts` | The current assertions (`Công bố dự án` / `Bỏ công bố dự án` literal on `/admin/jobs` ; `Publish` / `Unpublish` / `Archive` preserved on the JobPosting editor) **do not** reflect the binding state under T0 §2 #2. Wave 2 MUST update this static test to assert:
+- **`Project`** level: the ** `Công bố dự án` / `Bỏ công bố dự án` business-button literal** MUST appear on `/admin/jobs` Project-level actions (F11 frozen business-literal). The **`Publish` column header** MUST adopt `Công bố` (T0 §2 #1).
+- **`JobPosting`** level: the `Đăng tin` / `Gỡ tin` / `Lưu trữ` Vietnamese display actions MUST appear on the editor shell; rendering the canonical lifecycle operation names `Publish` / `Unpublish` / `Archive` as operator-facing display labels is forbidden. Canonical names are permitted only as API request keys and as `value` / `aria` attributes. |
 | `app/admin/recruiter-workbench/_components/RecruiterWorkbenchTable.test.ts` | Snapshot of all 9 column headers in Vietnamese. |
 | `app/admin/recruiter-workbench/_components/NextActionBadge.test.ts` | All 7 `NEXT_ACTION_META.label` values render in Vietnamese. |
 | `app/admin/recruiter-workbench/_components/ForbiddenPanel.test.ts` | Forbidden copy rendered in Vietnamese. |

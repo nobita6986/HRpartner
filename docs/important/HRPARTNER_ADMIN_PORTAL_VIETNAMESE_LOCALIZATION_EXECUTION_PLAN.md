@@ -317,9 +317,10 @@ The following MUST remain in their canonical form, ever:
 - IDs (UUIDs, CUIDs), codes (e.g. `USR-001`, `CC-001`).
 - Log lines, migration files, idempotency keys.
 - Symbol names in error code constants (e.g. `JOB_OPENING_NOT_OPEN`).
-- Frozen M2A F11 labels (`Công bố dự án`, `Bỏ công bố dự án` on the Project page; `Publish` / `Unpublish` / `Archive` on the JobPosting editor).
+- Frozen M2A F11 business-literal labels (`Công bố dự án`, `Bỏ công bố dự án` on the Project-level buttons). These are the ONLY display labels F11 protects.
+- **Canonical lifecycle operation names / API identifiers** (`Publish` / `Unpublish` / `Archive` for JobPosting; the corresponding Vietnamese display labels `Đăng tin` / `Gỡ tin` / `Lưu trữ` are NOT frozen — they are the binding per T0 §2 #2 and are rendered wherever the operator sees the action). Canonical names appear only as API request keys, server handler names, and `<button value="...">` / `aria-label` attributes. They MUST NOT be rendered as the primary operator-facing display label on the editor shell or anywhere else.
 
-The display label can be Vietnamese, but the enum VALUE never changes.
+The display label can be Vietnamese, but the enum VALUE never changes. The canonical lifecycle operation name `Publish` / `Unpublish` / `Archive` also never changes.
 
 ### 3.7 Open Owner decisions
 
