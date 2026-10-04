@@ -71,6 +71,13 @@ export interface PublicJobDto {
    * boolean từ `JobPosting.isExpiringSoon`. Author-selected, KHÔNG heuristic.
    */
   isExpiringSoon: boolean;
+  /**
+   * hrp-ui-v1-public-card-truth-correction (T1A / RQ-10): author-entered lương text
+   * từ `JobPosting.salaryDisplay` — string ngắn do người soạn nhập, KHÔNG phải rich text.
+   * Khi trim() non-empty, card render nguyên văn (precedence 1 trong `formatPublicSalary`).
+   * Khi null/rỗng, card dùng hourly fallback (`salaryMinVnd`/`salaryMaxVnd`).
+   */
+  salaryDisplay: string | null;
   /** go-live-09 / RQ-02 — ISO của `createdAt` ĐƠN còn hiệu lực mới nhất; trục sắp của `overview.newest`. */
   postedAt: string | null;
   /**
@@ -310,6 +317,11 @@ type PublicProjectRow = {
    */
   isHighReward: boolean;
   isExpiringSoon: boolean;
+  /**
+   * hrp-ui-v1-public-card-truth-correction (T1A / RQ-10): author-entered salaryDisplay text
+   * từ `JobPosting.salaryDisplay` — internal field, mapper `toDto` / `toDetailDto` copy ra DTO.
+   */
+  salaryDisplay: string | null;
 };
 
 /**
@@ -584,6 +596,9 @@ function toDto(project: PublicProjectRow, now: Date): PublicJobDto | null {
     // hrp-ui-v1-job-card-stamps-brand (T1B / RQ-13): 2 author-selected flag mới.
     isHighReward: project.isHighReward,
     isExpiringSoon: project.isExpiringSoon,
+    // hrp-ui-v1-public-card-truth-correction (T1A / RQ-10): author-entered salaryDisplay
+    // text — truyền nguyên văn xuống DTO; resolver `formatPublicSalary` quyết định render path.
+    salaryDisplay: project.salaryDisplay,
   };
 }
 
@@ -672,7 +687,6 @@ function toDetailDto(
     benefits: rich.benefitsJson,
     applicationSteps: rich.applicationInstructionsJson,
     contentSchemaVersion: rich.contentSchemaVersion,
-    salaryDisplay: rich.salaryDisplay,
     // hrp-p1-a0-1 (DEC-05): stamp flags từ JobPosting canonical row (override sau spread `...jobHeadline`
     // để đảm bảo cùng nguồn `project.isHot` / `project.isUrgent` cho cả card và detail).
     isHot: project.isHot,
@@ -680,6 +694,9 @@ function toDetailDto(
     // hrp-ui-v1-job-card-stamps-brand (T1B / RQ-13): 2 flag mới — cùng convention.
     isHighReward: project.isHighReward,
     isExpiringSoon: project.isExpiringSoon,
+    // hrp-ui-v1-public-card-truth-correction (T1A / RQ-10): salaryDisplay cùng nguồn với list DTO
+    // (đã được `toDto` copy). Detail page render trong SUMMARY fact/chip (Mức lương).
+    salaryDisplay: rich.salaryDisplay,
   };
 }
 
@@ -726,6 +743,10 @@ const publicSelect = Prisma.validator<Prisma.JobPostingSelect>()({
   // Cùng semantics — additive, default false, KHÔNG heuristic.
   isHighReward: true,
   isExpiringSoon: true,
+  // hrp-ui-v1-public-card-truth-correction (T1A / RQ-10): `salaryDisplay` đã được select
+  // ở khối rich-text phía trên (cùng dòng `descriptionJson`/`requirementsJson`/...) cho
+  // AC-03..05. KHÔNG khai báo trùng ở đây — Prisma validator object literal không được
+  // phép duplicate key và static test fence `public-select.static.test.ts` sẽ FAIL.
   jobOpening: {
     select: {
       staffingOrder: {
@@ -805,6 +826,10 @@ function projectRowFromPosting(posting: PublicJobPostingSelectPayload): PublicPr
     // hrp-ui-v1-job-card-stamps-brand (T1B / RQ-13): 2 flag mới — cùng convention.
     isHighReward: posting.isHighReward,
     isExpiringSoon: posting.isExpiringSoon,
+    // hrp-ui-v1-public-card-truth-correction (T1A / RQ-10): author-entered salaryDisplay
+    // text — internal field; mapper `toDto` / `toDetailDto` copy ra DTO. Card render theo
+    // precedence 1→2→3 trong `formatPublicSalary` ở `public-listing.labels.ts`.
+    salaryDisplay: posting.salaryDisplay,
   };
 }
 

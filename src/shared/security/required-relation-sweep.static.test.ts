@@ -134,8 +134,8 @@ const EXPECTED_HITS = [
   // `staffingOrder.slots`. Cả hai là BẮT BUỘC trong schema (không optional, không list) — sweep phải
   // đếm. An toàn vì đã chặn trước bằng `status: 'PUBLISHED'` (JobPosting) + RLS `hrp_project_visible_for`
   // mà MKT thoả khi `Project.is_public=true` (migration s1_rls_project 2026-08-16).
-  'src/domains/job-board/public.service.ts:731 staffingOrder',
-  'src/domains/job-board/public.service.ts:738 project',
+  'src/domains/job-board/public.service.ts:752 staffingOrder',
+  'src/domains/job-board/public.service.ts:759 project',
   // hrp-p1-e0 (2026-09-26): Recruiter Workbench read-model cần `fullName`/`phone`/`cccdNumber`/
   // `identityVerification`/`completeness` để build `RecruiterWorkbenchRow.candidate` (§4.3 RQ-02).
   // `LaborProfile` là quan hệ BẮT BUỘC trong schema `placement_case` (không optional, không list) — sweep

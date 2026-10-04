@@ -45,3 +45,28 @@ export function salaryLabel(min: number | null, max: number | null): string {
   if (max !== null && max !== min) return `${from} – ${VND_FORMAT.format(max)} đ/giờ`;
   return `${from} đ/giờ`;
 }
+
+/**
+ * hrp-ui-v1-public-card-truth-correction (T1A / DEC-09, DEC-10, RQ-11) — MỘT resolver cho cả
+ * homepage FeaturedJobCard, public listing `/viec-lam`, public detail `/viec-lam/[slug]`, và
+ * related-jobs card. Thứ tự ưu tiên:
+ *
+ *   1. Nếu `salaryDisplay.trim()` khác rỗng: render nguyên văn plain text của người soạn.
+ *      - KHÔNG thêm `đ/giờ` — đó là chuỗi HR/Owner tự gõ (vd "20 triệu", "Thỏa thuận").
+ *      - React render plain text qua `<p>{...}</p>` ⇒ không HTML injection.
+ *   2. Nếu `salaryDisplay` null/rỗng và `salaryMinVnd != null`: dùng hourly/range fallback
+ *      hiện tại (`salaryLabel`). Hai đầu bằng nhau ⇒ in một số; `null` ⇒ "Lương thương lượng".
+ *   3. Cả hai không có: "Lương thương lượng".
+ *
+ * Pure function: không I/O, không `Date.now()`, không `Math.random()`. Hai lần gọi cùng
+ * input cho cùng output.
+ */
+export function formatPublicSalary(input: {
+  salaryDisplay: string | null;
+  salaryMinVnd: number | null;
+  salaryMaxVnd: number | null;
+}): string {
+  const trimmed = input.salaryDisplay?.trim();
+  if (trimmed) return trimmed;
+  return salaryLabel(input.salaryMinVnd, input.salaryMaxVnd);
+}
