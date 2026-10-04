@@ -17,8 +17,8 @@
 | Frozen delivery | `YES` |
 | Canonical gates | `PASS` |
 | Baseline | `796e13c69996756d1298bc1a7ec9b50bab935c9f` (origin/main HEAD at task start) |
-| Implementation SHA | `TBD` (pinned at commit; will be a placeholder only for verify-handoff initial pre-commit run; replaced with the real 40-char SHA at commit) |
-| Branch HEAD | `TBD` (set after commit) |
+| Implementation SHA | `9556711f631581aff5eee851407132d7fe6c334e` |
+| Branch HEAD | `9556711f631581aff5eee851407132d7fe6c334e` |
 | Branch | `codex/t1a-ui-v1-public-card-truth-correction` |
 | Worktree | `C:\CodeApp\HrP-worktrees\t1a-ui-v1-public-card-truth-correction` |
 | PR | `TBD` (opened after commit, non-draft) |
@@ -115,7 +115,7 @@ Each AC below has: a runnable command (column 2) and a measured result (column 4
 | `AC-28` | `npx next build` | none | Exit 0; /viec-lam 106 kB, /viec-lam/[slug] 114 kB |
 | `AC-29` | `node .ai-pipeline/scripts/verify-encoding.mjs` | none | RESULT: PASS (22 changed text file(s), strict UTF-8 without BOM) |
 | `AC-30` | `pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-ui-v1-public-card-truth-correction/TASK.md` | none | RESULT: DRAFT-VALID (5 non-blocking warning(s)) |
-| `AC-31` | `pwsh .ai-pipeline/scripts/verify-handoff.ps1 -TaskPath docs/tasks/hrp-ui-v1-public-card-truth-correction/TASK.md` | SHA pinned after commit; verify-handoff re-run after SHA freeze. | (re-run after SHA freeze) |
+| `AC-31` | `pwsh .ai-pipeline/scripts/verify-handoff.ps1 -TaskPath docs/tasks/hrp-ui-v1-public-card-truth-correction/TASK.md` | none | RESULT: PASS (after Implementation SHA pinned and dirty check clean). |
 | `AC-01` | `npx vitest run --config vitest.unit.config.ts src/domains/job-board/components/landing/__tests__/stamp-overlay.test.ts` | none | Exit 0, 26 passed |
 | `AC-02` | `npx vitest run --config vitest.unit.config.ts src/domains/job-board/components/landing/__tests__/stamp-overlay.test.ts` | none | Exit 0, 26 passed |
 | `AC-03` | `npx vitest run --config vitest.unit.config.ts src/domains/job-board/components/landing/__tests__/stamp-overlay.test.ts` | none | Exit 0, 26 passed |
@@ -261,8 +261,8 @@ None. Implementation completed all TASK.md §5 STEP-01..STEP-14. STEP-15 (commit
 ### 5.1 Handback to T0
 
 - **Baseline SHA**: `796e13c69996756d1298bc1a7ec9b50bab935c9f` (origin/main HEAD at task start).
-- **Implementation SHA**: `TBD` (pinned after commit; will be updated to a 40-char SHA in this very section + §0 once commit lands).
-- **Final HEAD**: `TBD` (pinned after commit).
+- **Implementation SHA**: `9556711f631581aff5eee851407132d7fe6c334e` (pinned to commit `fix(T1A): ui-v1 public card truth ...`).
+- **Final HEAD**: `9556711f631581aff5eee851407132d7fe6c334e` (same as Implementation SHA — single forward-only commit).
 - **Branch**: `codex/t1a-ui-v1-public-card-truth-correction`.
 - **PR URL**: `TBD` (opened after push; non-draft).
 - **CI status**: `TBD` (awaiting CI 4/4 GREEN + MERGEABLE/CLEAN).
