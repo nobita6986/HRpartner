@@ -11,21 +11,23 @@
 | Audit mode | `NONE` |
 | Execution round | `1` |
 | Baseline | `6ea2e267b72120de5f67d5954d1074101efccff1` (origin/main HEAD at task start; merge commit of PR #89 — T1A F9-B R2 production closeout) |
-| Implementation SHA | `262c5c9a3365f119609fa0491bf2c8e21df57166` |
+| Implementation SHA | `8bb71c10fa669ea1206e17e4d7ab42efc88202d5` |
 | Frozen delivery | `YES` |
 | Canonical gates | `PASS` |
 | Audit eligibility | `NOT_REQUIRED` |
-| Correction batches used | `0` |
+| Correction batches used | `1` |
 | Status | `READY_FOR_REVIEW` |
+
+> Canonical-gates evidence (per T0 verdict `SOURCE_ACCEPTED / CHANGES_REQUIRED_DOCS_ONLY`): PR #90 CI run [`37173116377`](https://github.com/nobita6986/HRpartner/actions/runs/37173116377) — Quality (schema · typecheck · lint · unit · build) + Integration (DB tests · fail-closed) + Vercel 4/4 SUCCESS, recorded 2026-10-04T03:09Z. Quality job `111349983909`: steps 5–10 (`prisma generate` → `prisma schema validate` → `typecheck (tsc --noEmit)` → `lint (eslint .)` → `unit tests (no DB — fail-closed sentinel)` → `build (next build)`) all SUCCESS. Integration job `111349984116`: step 13 `Integration tests (container test DB; fail-closed preflight on guard mismatch)` SUCCESS. PR is `MERGEABLE`. Correction round 1 is this docs-only correction; scope locked to `TASK.md` + `HANDOFF.md`, no source/test/migration touched. The Implementation SHA cell holds the actual full SHA `8bb71c10fa669ea1206e17e4d7ab42efc88202d5`; the short form `8bb71c10` is the abbreviation used in diff ranges and runbook prose.
 
 ## 1. Outcome and changed surface
 
-- **Delivered:** Five P2/P3 findings from `docs/important/HRPARTNER_OPERATIONAL_WORKFLOW_DEBT_AUDIT.md` closed in a single bounded UI batch:
-  - **F2/F3 — LaborProfile navigation & intake**: Two new sidebar entries under `Nhân sự`: `Hồ sơ NLD` (`/admin/labor-profiles`) and `Tiếp nhận NLD` (`/admin/labor-profiles/new`). Role list byte-mirrors `app/admin/labor-profiles/page.tsx:16` `ALLOWED_ROLES`.
-  - **F7 — JobPosting list → JobOpening**: Staffing-order code + `JobOpening: <status>` rendered as `<Link href="/admin/job-openings/{jobOpeningId}">` when canonical ID is present; orphan rows retain plain-text fallback (`IFNOT_FOUND`).
-  - **F8 — Safe Vietnamese error mapping**: NEW repo-owned module `src/domains/staffing/job-posting-error-map.ts` with `JOB_POSTING_ERROR_LABELS` (11 codes), `JOB_POSTING_RECOVERY_HINTS` (1 entry), `jobPostingErrorLabel`, `summarizeJobPostingApiError`. Unknown / null / empty code → single generic safe Vietnamese fallback. T1B integration contract for `editor-shell.tsx` shipped verbatim in this round's HANDOFF §6 (see commit message body).
-  - **F11 — Terminology disambiguation**: Project-level button on `/admin/jobs` renamed to `Công bố dự án` / `Bỏ công bố dự án`; header `<p data-testid="jobs-terminology-note">` glossary added. JobPosting editor shell keeps canonical English `Publish` (not edited).
-- **Not delivered:** F1/F5 (already RESOLVED by PR #86); F6 (separate round, Priority 3); F9 (separate round, Priority 1); schema/migration/backfill; auth/RLS/role-matrix widening; JobPosting editor-shell wiring (T1B-owned per audit §G.A.1); AFF/P2.
+- **Delivered (RESOLVED in this round):** Four P2/P3 findings from `docs/important/HRPARTNER_OPERATIONAL_WORKFLOW_DEBT_AUDIT.md` closed in a single bounded UI batch:
+  - **F2/F3 — LaborProfile navigation & intake** (`RESOLVED`): Two new sidebar entries under `Nhân sự`: `Hồ sơ NLD` (`/admin/labor-profiles`) and `Tiếp nhận NLD` (`/admin/labor-profiles/new`). Role list byte-mirrors `app/admin/labor-profiles/page.tsx:16` `ALLOWED_ROLES`.
+  - **F7 — JobPosting list → JobOpening** (`RESOLVED`): Staffing-order code + `JobOpening: <status>` rendered as `<Link href="/admin/job-openings/{jobOpeningId}">` when canonical ID is present; orphan rows retain plain-text fallback (`IFNOT_FOUND`).
+  - **F11 — Terminology disambiguation** (`RESOLVED`): Project-level button on `/admin/jobs` renamed to `Công bố dự án` / `Bỏ công bố dự án`; header `<p data-testid="jobs-terminology-note">` glossary added. JobPosting editor shell keeps canonical English `Publish` (not edited).
+- **Delivered (REMEDIATION_READY / PENDING_T1B_UI_V1_INTEGRATION):** F8 — Safe Vietnamese error mapping: NEW repo-owned module `src/domains/staffing/job-posting-error-map.ts` with `JOB_POSTING_ERROR_LABELS` (11 codes), `JOB_POSTING_RECOVERY_HINTS` (1 entry), `jobPostingErrorLabel`, `summarizeJobPostingApiError`. Unknown / null / empty code → single generic safe Vietnamese fallback. The mapper module is **shipped and unit-tested PASS** (covered by Quality CI step 9 `Unit tests (no DB — fail-closed sentinel)` — the 5 new vitest test files in this round, including the F8 mapper unit suite, all green on PR #90 CI run [`37173116377`](https://github.com/nobita6986/HRpartner/actions/runs/37173116377)) and the T1B integration contract for `editor-shell.tsx` is shipped verbatim in this round's HANDOFF §6. **F8 stays `PENDING_T1B_UI_V1_INTEGRATION`** until the T1B round wires `summarizeJobPostingApiError` into `editor-shell.tsx.readErrorMessage` and the new T1B editor-shell test suite (`editor-shell.f8.test.ts`) PASSes. Only then does F8 transition to `RESOLVED`.
+- **Not delivered:** F1/F5 (already RESOLVED by PR #86); F6 (separate round, Priority 3, not yet opened); F9 (separate round, Priority 1); schema/migration/backfill; auth/RLS/role-matrix widening; JobPosting editor-shell wiring (T1B-owned per audit §G.A.1); AFF/P2.
 - **Changed:**
   - `src/shared/ui/role-guard/role-guard-layout.tsx` (MODIFY — 2 new `NavItem` entries in `ADMIN_NAV_PHASE4`)
   - `app/admin/jobs/job-postings/page.tsx` (MODIFY — wrap F7 link target)
@@ -40,6 +42,7 @@
 
   Total: **10 paths** (3 MODIFIED production + 5 NEW test files + 2 NEW docs; the 1 NEW production file `job-posting-error-map.ts` brings the production total to 4 MODIFIED-or-NEW in production code; 5 NEW tests).
 - **Lane escalation:** No.
+- **Finding ledger (per T0 verdict, post-correction):** F2/F3/F7/F11 = `RESOLVED` (this round); F8 = `REMEDIATION_READY / PENDING_T1B_UI_V1_INTEGRATION` (mapper shipped + tested; editor-shell wiring deferred to T1B). F1/F5 = `RESOLVED` (PR #86, pre-batch). F6 = `NOT_OPENED`. F9 = `NOT_OPENED`.
 
 ### Self-review checklist
 
@@ -56,24 +59,24 @@
 
 | AC | Evidence | Result | Limitation |
 |---|---|---|---|
-| `AC-16` | `pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-m2a-operational-ux-debt/TASK.md` | `RESULT: PASS` (filled at STEP-11) | `None` |
-| `AC-01` | `E-01` | 14/14 vitest cases green (`admin-nav-phase4-people-section.static.test.ts`) | `None` |
-| `AC-02` | `E-02` | 7/7 vitest cases green (`job-postings-list-linkage.static.test.ts`) | `None` |
-| `AC-03` | `E-03` | 6/6 vitest cases green (`admin-jobs-terminology.static.test.ts`) | `None` |
-| `AC-04` | `E-04` | `cat app/admin/jobs/job-postings/[id]/editor-shell.tsx` confirms `label="Publish"` literal preserved; same test `admin-jobs-terminology.static.test.ts` case 4 enforces this. `git diff --stat origin/main..HEAD -- app/admin/jobs/job-postings/[id]/editor-shell.tsx` reports 0 lines. | `None` |
-| `AC-05` | `E-05` | `src/domains/staffing/job-posting-error-map.ts` exists; `JOB_POSTING_ERROR_LABELS` 11 entries, `JOB_POSTING_RECOVERY_HINTS` 1 entry, `jobPostingErrorLabel` + `summarizeJobPostingApiError` exported; 40+/40+ vitest cases green. | `None` |
-| `AC-06` | `E-06` | Unknown/null/empty/unrecognized code → single generic safe Vietnamese fallback (`JOB_POSTING_UNKNOWN_ERROR_LABEL`); never echoes `body.message`, UUID, SQL, stack, or PII. Tested by 5+ assertions in `job-posting-error-map.test.ts`. | `None` |
-| `AC-07` | `E-07` | `summarizeJobPostingApiError({ status: 409, error: 'JOB_OPENING_NOT_OPEN', details: { jobOpeningId: '1c2d3e4f-5a6b-7c8d-9e0f-1a2b3c4d5e6f' } })` returns `{ label: <known label>, recoveryHref: '/admin/job-openings/1c2d3e4f-5a6b-7c8d-9e0f-1a2b3c4d5e6f' }`; non-UUID inputs return `recoveryHref: null`. | `None` |
-| `AC-08` | `E-08` | `npm run typecheck` exit 0 (filled at STEP-11). | `None` |
-| `AC-09` | `E-09` | `npx eslint <changed files>` exit 0 (filled at STEP-11). | `None` |
-| `AC-10` | `E-10` | `npm run test:unit` PASS on baseline + 4 new test files (filled at STEP-11). | `None` |
-| `AC-11` | `E-11` | `npm run build` exit 0 (next build) (filled at STEP-11). | `None` |
-| `AC-12` | `E-12` | `git diff --check origin/main..HEAD` exit 0 (no whitespace errors) (filled at STEP-11). | `None` |
-| `AC-13` | `E-13` | `git diff --stat origin/main..HEAD -- prisma app/api/app/(jobs)/editor-shell.tsx` reports 0 lines on every forbidden path (filled at STEP-11). | `None` |
-| `AC-14` | `E-14` | `node .ai-pipeline/scripts/verify-encoding.mjs` exit 0 on working-tree changed surface (filled at STEP-11). | `None` |
-| `AC-15` | `E-15` | `node .ai-pipeline/scripts/verify-encoding-range.mjs 6ea2e267b72120de5f67d5954d1074101efccff1 HEAD` exit 0 on committed range (filled at STEP-11). | `None` |
-| `AC-17` | `pwsh .ai-pipeline/scripts/verify-handoff.ps1 -TaskPath docs/tasks/hrp-m2a-operational-ux-debt/TASK.md` | exit 0 (filled at STEP-11). | `None` |
-| `AC-18` | `E-17` | `git status --porcelain` after freeze enumerates exactly 10 paths (3 MODIFIED + 7 NEW: 4 production + 4 tests + 2 docs); forbidden paths all 0-line (filled at STEP-11). | `None` |
+| `AC-16` | `pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-m2a-operational-ux-debt/TASK.md` | `RESULT: PASS` (run locally on implementation SHA `8bb71c10`; see §3 E-16) | `None` |
+| `AC-01` | `E-01` | 14/14 vitest cases green (`admin-nav-phase4-people-section.static.test.ts`); also covered by Quality CI step 9 `Unit tests (no DB — fail-closed sentinel)` SUCCESS ([run 37173116377 job 111349983909](https://github.com/nobita6986/HRpartner/actions/runs/37173116377/job/111349983909)) | `None` |
+| `AC-02` | `E-02` | 7/7 vitest cases green (`job-postings-list-linkage.static.test.ts`); also covered by Quality CI step 9 SUCCESS | `None` |
+| `AC-03` | `E-03` | 6/6 vitest cases green (`admin-jobs-terminology.static.test.ts`); also covered by Quality CI step 9 SUCCESS | `None` |
+| `AC-04` | `E-04` | `git diff --stat origin/main..HEAD -- app/admin/jobs/job-postings/[id]/editor-shell.tsx` reports 0 lines; `admin-jobs-terminology.static.test.ts` case 4 (`Publish` literal preserved) PASS. Editor shell file is byte-exact baseline. | `None` |
+| `AC-05` | `E-05` | `src/domains/staffing/job-posting-error-map.ts` exists; `JOB_POSTING_ERROR_LABELS` 11 entries, `JOB_POSTING_RECOVERY_HINTS` 1 entry, `jobPostingErrorLabel` + `summarizeJobPostingApiError` exported; all mapper unit cases green in Quality CI step 9 SUCCESS | `None` |
+| `AC-06` | `E-06` | Unknown/null/empty/unrecognized code → single generic safe Vietnamese fallback (`JOB_POSTING_UNKNOWN_ERROR_LABEL`); never echoes `body.message`, UUID, SQL, stack, or PII. Verified by 5+ assertions; covered by Quality CI step 9 SUCCESS | `None` |
+| `AC-07` | `E-07` | `summarizeJobPostingApiError({ status: 409, error: 'JOB_OPENING_NOT_OPEN', details: { jobOpeningId: '1c2d3e4f-5a6b-7c8d-9e0f-1a2b3c4d5e6f' } })` returns `{ label: <known label>, recoveryHref: '/admin/job-openings/1c2d3e4f-5a6b-7c8d-9e0f-1a2b3c4d5e6f' }`; non-UUID inputs return `recoveryHref: null`. Verified locally + covered by Quality CI step 9 SUCCESS | `None` |
+| `AC-08` | `E-08` | `npm run typecheck` exit 0. **Canonical evidence:** Quality CI step 7 `Typecheck (tsc --noEmit)` SUCCESS ([run 37173116377 job 111349983909](https://github.com/nobita6986/HRpartner/actions/runs/37173116377/job/111349983909)) | `None` |
+| `AC-09` | `E-09` | `npx eslint .` exit 0. **Canonical evidence:** Quality CI step 8 `Lint (eslint .)` SUCCESS ([run 37173116377 job 111349983909](https://github.com/nobita6986/HRpartner/actions/runs/37173116377/job/111349983909)) | `None` |
+| `AC-10` | `E-10` | PASS on full vitest unit lane (baseline + 4 new test files). **Canonical evidence:** Quality CI step 9 `Unit tests (no DB — fail-closed sentinel)` SUCCESS ([run 37173116377 job 111349983909](https://github.com/nobita6986/HRpartner/actions/runs/37173116377/job/111349983909)) | `None` |
+| `AC-11` | `E-11` | `npm run build` (next build) exit 0. **Canonical evidence:** Quality CI step 10 `Build (next build)` SUCCESS ([run 37173116377 job 111349983909](https://github.com/nobita6986/HRpartner/actions/runs/37173116377/job/111349983909)) | `None` |
+| `AC-12` | `E-12` | `git diff --check 6ea2e267..8bb71c10` exit 0 (no whitespace errors); run locally on implementation SHA | `None` |
+| `AC-13` | `E-13` | `git diff --stat 6ea2e267..8bb71c10 -- prisma migrations 'app/api' 'app/(jobs)' 'app/admin/jobs/job-postings/[id]/editor-shell.tsx' src/domains/staffing/job-posting-authoring.service.ts` reports 0 lines on every forbidden path; run locally on implementation SHA | `None` |
+| `AC-14` | `E-14` | `node .ai-pipeline/scripts/verify-encoding.mjs` exit 0 on working-tree changed surface; no BOM, no invalid UTF-8; run locally on implementation SHA | `None` |
+| `AC-15` | `E-15` | `node .ai-pipeline/scripts/verify-encoding-range.mjs 6ea2e267b72120de5f67d5954d1074101efccff1 8bb71c10fa669ea1206e17e4d7ab42efc88202d5` exit 0 on committed range; no CRLF, no U+FFFD, no mojibake streaks; run locally on implementation SHA | `None` |
+| `AC-17` | `pwsh .ai-pipeline/scripts/verify-handoff.ps1 -TaskPath docs/tasks/hrp-m2a-operational-ux-debt/TASK.md` | exit 0; run locally on implementation SHA (see §3 E-16) | `None` |
+| `AC-18` | `E-17` | `git status --porcelain` after implementation commit enumerates exactly 10 paths (3 MOD + 7 NEW: 4 production + 4 tests + 2 docs); forbidden paths all 0-line; run locally on implementation SHA | `None` |
 
 ## 3. Evidence registry
 
@@ -86,16 +89,16 @@
 | `E-05` | `npx vitest run --config vitest.unit.config.ts src/domains/staffing/job-posting-error-map.test.ts` | `40+/40+ passed` | inline |
 | `E-06` | `npx vitest run --config vitest.unit.config.ts src/domains/staffing/job-posting-error-map.test.ts -t "unknown"` | All unknown/null/empty cases green; no `body.message` substring in any returned `label` | inline |
 | `E-07` | `npx vitest run --config vitest.unit.config.ts src/domains/staffing/job-posting-error-map.test.ts -t "envelope"` | `summarizeJobPostingApiError` returns `{ label: <known>, recoveryHref: '/admin/job-openings/<uuid>' }` for valid UUID; `recoveryHref: null` for invalid/missing UUID | inline |
-| `E-08` | `npm run typecheck` | exit 0 (filled at STEP-11) | inline |
-| `E-09` | `npx eslint <changed files>` | exit 0 (filled at STEP-11) | inline |
-| `E-10` | `npm run test:unit` | PASS on full vitest unit lane (filled at STEP-11) | inline |
-| `E-11` | `npm run build` | exit 0 (filled at STEP-11) | inline |
-| `E-12` | `git diff --check origin/main..HEAD` | exit 0 (filled at STEP-11) | inline |
-| `E-13` | `git diff --stat origin/main..HEAD -- prisma migrations 'app/api' 'app/(jobs)' 'app/admin/jobs/job-postings/[id]/editor-shell.tsx' src/domains/staffing/job-posting-authoring.service.ts` | `0` lines on every forbidden path (filled at STEP-11) | inline |
-| `E-14` | `node .ai-pipeline/scripts/verify-encoding.mjs` | exit 0; no BOM, no invalid UTF-8 (filled at STEP-11) | inline |
-| `E-15` | `node .ai-pipeline/scripts/verify-encoding-range.mjs 6ea2e267b72120de5f67d5954d1074101efccff1 HEAD` | exit 0; no CRLF, no U+FFFD, no mojibake streaks (filled at STEP-11) | inline |
-| `E-16` | `pwsh .ai-pipeline/scripts/verify-handoff.ps1 -TaskPath docs/tasks/hrp-m2a-operational-ux-debt/TASK.md` | exit 0 (filled at STEP-11) | inline |
-| `E-17` | `git status --porcelain` after freeze AND `git diff --stat origin/main..HEAD -- .` | 10 paths total (3 MOD + 7 NEW); `grep` for forbidden-path prefixes returns 0 matches (filled at STEP-11) | inline |
+| `E-08` | `npm run typecheck` | exit 0. **Canonical evidence:** Quality CI step 7 `Typecheck (tsc --noEmit)` SUCCESS ([run 37173116377 job 111349983909](https://github.com/nobita6986/HRpartner/actions/runs/37173116377/job/111349983909)) | inline |
+| `E-09` | `npx eslint .` | exit 0. **Canonical evidence:** Quality CI step 8 `Lint (eslint .)` SUCCESS ([run 37173116377 job 111349983909](https://github.com/nobita6986/HRpartner/actions/runs/37173116377/job/111349983909)) | inline |
+| `E-10` | `npm run test:unit` | PASS on full vitest unit lane (baseline + 4 new test files + 1 mapper unit suite). **Canonical evidence:** Quality CI step 9 `Unit tests (no DB — fail-closed sentinel)` SUCCESS ([run 37173116377 job 111349983909](https://github.com/nobita6986/HRpartner/actions/runs/37173116377/job/111349983909)) | inline |
+| `E-11` | `npm run build` (next build) | exit 0. **Canonical evidence:** Quality CI step 10 `Build (next build)` SUCCESS ([run 37173116377 job 111349983909](https://github.com/nobita6986/HRpartner/actions/runs/37173116377/job/111349983909)) | inline |
+| `E-12` | `git diff --check 6ea2e267..8bb71c10` | exit 0 (no whitespace errors); run locally on implementation SHA | inline |
+| `E-13` | `git diff --stat 6ea2e267..8bb71c10 -- prisma migrations 'app/api' 'app/(jobs)' 'app/admin/jobs/job-postings/[id]/editor-shell.tsx' src/domains/staffing/job-posting-authoring.service.ts` | `0` lines on every forbidden path; run locally on implementation SHA | inline |
+| `E-14` | `node .ai-pipeline/scripts/verify-encoding.mjs` | exit 0; no BOM, no invalid UTF-8; run locally on implementation SHA | inline |
+| `E-15` | `node .ai-pipeline/scripts/verify-encoding-range.mjs 6ea2e267b72120de5f67d5954d1074101efccff1 8bb71c10fa669ea1206e17e4d7ab42efc88202d5` | exit 0; no CRLF, no U+FFFD, no mojibake streaks; run locally on implementation SHA | inline |
+| `E-16` | `pwsh .ai-pipeline/scripts/verify-handoff.ps1 -TaskPath docs/tasks/hrp-m2a-operational-ux-debt/TASK.md` | exit 0; run locally on implementation SHA | inline |
+| `E-17` | `git status --porcelain` after implementation commit AND `git diff --stat 6ea2e267..8bb71c10 -- .` | 10 paths total (3 MOD + 7 NEW); `grep` for forbidden-path prefixes returns 0 matches; run locally on implementation SHA | inline |
 
 ## 4. Deviations and blockers
 
@@ -105,8 +108,9 @@
 
 ## 5. Final status
 
-- READY_FOR_REVIEW: TASK §0 `Required gates` are all pass-or-NOT_REQUIRED-class for `STANDARD`/`Audit NONE`; no schema/migration/auth/RLS/role-matrix change; 5 findings closed within the audit §D Priority 2 scope; 4 static guards + 1 unit suite enforce every code regression; T1B integration contract for `editor-shell.tsx` shipped verbatim in HANDOFF §6 below.
-- Source/test/migration clean after Implementation SHA: `git status --porcelain` after the forward-only commit shows 0 dirty paths; `git diff --stat <implementationSha>..HEAD -- app src prisma tests scripts packages` returns 0 paths (filled at STEP-11).
+- READY_FOR_REVIEW: TASK §0 `Required gates` are all pass-or-NOT_REQUIRED-class for `STANDARD`/`Audit NONE`; no schema/migration/auth/RLS/role-matrix change; **4 findings RESOLVED within the audit §D Priority 2 scope (F2/F3/F7/F11) plus F8 mapper REMEDIATION_READY / PENDING_T1B_UI_V1_INTEGRATION**; 4 static guards + 1 unit suite enforce every code regression; T1B integration contract for `editor-shell.tsx` shipped verbatim in HANDOFF §6 below.
+- **Canonical evidence source of truth:** PR #90 CI run [`37173116377`](https://github.com/nobita6986/HRpartner/actions/runs/37173116377) (Quality + Integration + Vercel 4/4 SUCCESS, 2026-10-04T03:09Z). Step-level evidence: Quality steps 5–10 cover `prisma generate` → `prisma schema validate` → `typecheck` → `lint` → `unit tests` → `next build` (all SUCCESS). Integration step 13 `Integration tests (container test DB; fail-closed preflight on guard mismatch)` SUCCESS. The PR is `MERGEABLE`. Main CI proves source hợp lệ; the local-worktree `staffingOrderRecruiterAssignment` complaint observed in this detached worktree is a transient Prisma-client/.next-cache desync (this worktree shares `node_modules` via junction with another branch and inherits a stale `tsbuildinfo` from a prior `tier1/admin-detail-foundation` session) — **not a source defect**. The same source passes main CI on the canonical runner; the local anomaly is not load-bearing.
+- Source/test/migration clean after Implementation SHA: `git status --porcelain` after the implementation commit shows 0 dirty paths; `git diff --stat 8bb71c10..HEAD -- app src prisma tests scripts packages` returns 0 paths (this docs-only correction round touches only `docs/tasks/hrp-m2a-operational-ux-debt/{TASK.md,HANDOFF.md}`, no production paths).
 
 ---
 
