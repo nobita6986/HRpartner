@@ -9,10 +9,15 @@
 | Spec version | `v1.0` |
 | Assurance lane | `STANDARD` |
 | Audit mode | `NONE` |
-| Execution round | `1` |
+| Execution round | `2` (round 1 = initial implementation; round 2 = latest-main reconciliation) |
 | Baseline | `8382bbc70b74f2fc21471c532b98bd20ab8a1fac` (origin/main HEAD at task start; merge commit of PR #90 — T1A M2A operational UX debt) |
-| Implementation SHA | `a558568a0cdf8e99ae981fffc18d979fd361345f` |
+| Latest main observed | `f570db06a8451b7f7a9be4ad98a3a66dbfa7c2f1` (merge commit of PR #93 — `fix-migrate-vps-public-ghcr`; UI V1 from PR #91 and PR #93 were merged in between `8382bbc7` and `f570db06`) |
+| Merge commit SHA | `eb0cd04556c602aca453dc6de150c31dc3818b8c` (forward-only `git merge --no-ff origin/main`; no F6 source/test/dto conflict — main did not touch any F6 file in the merge window) |
+| Final HEAD | `eb0cd04556c602aca453dc6de150c31dc3818b8c` (T1A does not amend / rebase / reset / force-push; commit is forward-only on the same branch) |
+| Implementation SHA | `eb0cd04556c602aca453dc6de150c31dc3818b8c` |
+| F6 implementation commit | `a558568a0cdf8e99ae981fffc18d979fd361345f` (preserved byte-exact; `git diff --stat a558568a..HEAD -- <6 F6 source/test files>` reports 0 lines; this is the commit that introduced the F6 code, while the Implementation SHA is the post-reconciliation frozen HEAD on the branch) |
 | Branch | `codex/t1a-m2b-f6-placement-unavailable-reason` |
+| PR | `#92` (existing; not re-opened; pending T0 PR review + merge coordination with UI V1 / UI V2) |
 | Worktree | `C:\CodeApp\HrP-worktrees\t1a-m2b-f6-placement-unavailable-reason` |
 | Frozen delivery | `YES` |
 | Canonical gates | `PASS` |
@@ -132,27 +137,86 @@ The only off-contract action was running `npx prisma generate` inside the worktr
 | `E-16` | `node .ai-pipeline/scripts/verify-encoding-range.mjs 8382bbc70b74f2fc21471c532b98bd20ab8a1fac HEAD` | exit 0; 6/6 files in range, 0 BOM, 0 NUL, 0 U+FFFD, 0 CRLF, 0 mojibake streaks | inline |
 | `E-17` | `pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-m2b-f6-placement-unavailable-reason/TASK.md` | `RESULT: DRAFT-VALID (3 warning(s))` — warnings advisory, exit 0 | inline |
 | `E-18` | `pwsh .ai-pipeline/scripts/verify-handoff.ps1 -TaskPath docs/tasks/hrp-m2b-f6-placement-unavailable-reason/TASK.md` | exit 0 (on this HANDOFF content) | inline |
+| `E-19` | round 2: F6 source/test/dto byte-equivalence after forward-merge | `git diff --stat a558568a..HEAD -- src/domains/talent/recruiter-workbench.placement-actions.tsx src/domains/talent/recruiter-workbench.placement-actions.unavailable.ts src/domains/talent/recruiter-workbench.placement-actions.unavailable.test.ts src/domains/talent/recruiter-workbench.placement-actions.test.tsx src/domains/talent/recruiter-workbench.types.ts app/admin/recruiter-workbench/_components/RecruiterWorkbenchTable.tsx` | reports **0 lines** across all 6 F6 source/test files; Implementation SHA preserved. Main's diff into the F6 surface = 0 files; F6's diff into the F6 surface = 8 files (matches §0 In-scope roots). | inline |
+| `E-20` | round 2: F6 forbidden-surface discipline | `git diff --name-only 8382bbc7..eedc2a76 -- prisma migrations src/domains/talent/placement.lifecycle.ts src/domains/talent/placement.service.ts src/domains/talent/recruiter-workbench.read-service.ts app/api/admin/placements app/api/admin/recruiter/placements app/api/admin/recruiter-workbench app/admin/jobs/job-postings src/shared/auth src/shared/security package.json pnpm-lock.yaml pnpm-workspace.yaml` | reports **0 files** — F6 round contributed zero forbidden-path changes. Files that appear in the post-merge `8382bbc7..HEAD` forbidden diff are all from main (PR #91 UI V1: `editor-shell.tsx`, `editor-shell.f8.test.ts`, `publish-gating.test.tsx`, `prisma/migrations/20261004120000_ui_v1_jobposting_stamp_flags/migration.sql`, `prisma/schema.prisma`, `required-relation-sweep.static.test.ts`) — already-shipped, not introduced by F6. | inline |
+| `E-21` | round 2: F6 targeted unit lane on merged tree | `npx vitest run --config vitest.unit.config.ts src/domains/talent/recruiter-workbench.placement-actions.unavailable.test.ts src/domains/talent/recruiter-workbench.placement-actions.test.tsx src/domains/talent/recruiter-workbench.placement-actions.states.test.ts` | **204/204 passed** (78 resolver + 67 render + 59 state); matches the §4 T0 directive's 204/204 contract. Test inventory on main is unchanged (no new placement-actions tests on main since `8382bbc7`); 204/204 is the canonical contract. | inline |
+| `E-22` | round 2: full Next build on merged tree | `npx next build` (with `.next/` cleared first to invalidate stale types from the pre-merge `app/(portal)/ve-chung-toi/page.tsx` that PR #91 deleted) | `✓ Compiled successfully in 39.8s`, 29/29 static pages, full route table emitted, `EXIT=0`. Note: static-page count is **29** on the merged tree (was **30** on the F6-only tree) because PR #91 removed `app/(portal)/ve-chung-toi/page.tsx` from main. This is a main-side route-table delta, not an F6 regression. Pre-merge `next build` cleared `.next/types/` stale cache once (worktree-infrastructure maintenance, no `prisma/**` / no F6 source edit) — see §5 Deviations. | inline |
+
+### 6.1 Round 2 reconciliation evidence (encoding scanner note)
+
+The pre-merge `node .ai-pipeline/scripts/verify-encoding-range.mjs 8382bbc7 HEAD` returns **FAIL** with one violation on `public/hrp-logo.webp` (binary brand image added by PR #91 UI V1). This is a **scanner limitation**, not a real encoding violation:
+
+- `git diff --numstat 8382bbc7..HEAD -- public/hrp-logo.webp` reports `-	-` (binary marker), confirming the file is binary.
+- The scanner only skips files > 2 MiB; it does not pre-classify via `git diff --numstat`. The 52 KB webp file is therefore naively UTF-8-decoded and trips the fatal-decode guard.
+- The webp file is **not in the F6 surface**, was **not introduced by F6**, and was already-shipped on main via PR #91. CI for PR #91 ran the same scanner at per-PR scope (not baseline-to-main) and was 4/4 GREEN.
+- The post-merge scope scanner `node .ai-pipeline/scripts/verify-encoding.mjs` on the working-tree changed surface reports **3/3 PASS** (the 3 untracked repo-root files `.editorconfig`, `pnpm-lock.yaml`, `pnpm-workspace.yaml` — these are global repo policy files, NOT F6 changes; the F6 surface has zero untracked files and zero non-UTF-8 files).
+
+This is recorded here as a transparent limitation; the F6 round did not introduce the failure and the underlying webp file is correctly stored as a binary asset. Recommended follow-up: extend the scanner to pre-classify via `git diff --numstat` and skip `-	-` rows (out of F6 scope; tracked as scanner-side tech debt).
 
 ## 7. Execution Round History
 
 | Round | Date | Commit | Action | Outcome |
 |---|---|---|---|---|
 | 1 | 2026-10-04 | `a558568a0cdf8e99ae981fffc18d979fd361345f` | Initial implementation | PASS — implementation frozen on branch `codex/t1a-m2b-f6-placement-unavailable-reason`; all 18 AC PASS; correction budget `0/1`; awaiting T0 PR review + merge coordination with UI V1 |
+| 2 | 2026-10-04 | `eb0cd04556c602aca453dc6de150c31dc3818b8c` | Latest-main reconciliation (forward-only `git merge --no-ff origin/main` of `f570db06` — PR #93; main brought in PR #91 UI V1 + PR #93) | PASS — zero F6 source/test/dto delta; `git diff --stat a558568a..HEAD -- <6 F6 surface files>` reports 0 lines; F6 forbidden-surface discipline clean (F6 round contributed 0 forbidden-path changes); targeted unit lane 204/204; typecheck 0 errors; build `✓ Compiled successfully in 39.8s` + 29/29 static pages; ESLint 0 errors; `git diff --check` exit 0; `verify-encoding.mjs` 3/3 PASS; `verify-task.ps1` exit 0; `verify-handoff.ps1` exit 0 post-update. No correction budget consumed. PR head advanced to `eb0cd045`; Implementation SHA unchanged. Status remains `RESOLVED_PENDING_MAIN_MERGE`. |
 
-This round executed exactly as the TASK contract specified. No correction round was needed.
+Round 1 executed exactly as the TASK contract specified. Round 2 executed exactly as the T0 reconciliation directive specified: forward-only merge, no F6 source/test edit, no amend, no rebase, no reset, no force-push, no correction budget consumption.
 
-## 8. T0 handback
+## 8. T0 handback (round 2 — latest-main reconciliation)
 
-T0 — F6 is `RESOLVED_PENDING_MAIN_MERGE` on branch `codex/t1a-m2b-f6-placement-unavailable-reason` (PR opened against `main`). Implementation SHA `a558568a0cdf8e99ae981fffc18d979fd361345f`. Zero lifecycle / auth / schema / RLS / mutation / role-matrix delta. 240 placement+workbench unit tests green; typecheck + build + ESLint + encoding gates all PASS; forbidden paths clean.
+T0 — F6 latest-main reconciliation is complete. F6 is `RESOLVED_PENDING_MAIN_MERGE` on branch `codex/t1a-m2b-f6-placement-unavailable-reason` (PR #92 against `main`).
 
-T0 is authorized to:
+**Reconciliation summary**
 
-1. Re-run CI on the PR head and verify all 4 checks GREEN + MERGEABLE/CLEAN.
-2. Coordinate sequencing with UI V1 (per the T0 directive: "Tạm dừng trước merge để T0 lựa chọn thứ tự với UI V1").
+| Field | Value |
+|---|---|
+| Latest main observed | `f570db06a8451b7f7a9be4ad98a3a66dbfa7c2f1` (PR #93 — `fix-migrate-vps-public-ghcr`) |
+| Merge commit | `eb0cd04556c602aca453dc6de150c31dc3818b8c` (forward-only `git merge --no-ff origin/main`) |
+| Final HEAD on branch | `eb0cd04556c602aca453dc6de150c31dc3818b8c` |
+| Implementation SHA | `a558568a0cdf8e99ae981fffc18d979fd361345f` — **UNCHANGED** (F6 source/test/dto byte-equivalent) |
+| F6 source/test surface delta vs `a558568a` | **0 lines** across the 6 in-scope F6 source/test files |
+| F6 forbidden-path delta vs `8382bbc7` | **0 files** (zero F6-introduced forbidden changes; main's forbidden files come from PR #91 only) |
+| Targeted unit lane (resolver 78 + render 67 + state 59) | **204/204 PASS** |
+| Typecheck | exit 0, 0 errors |
+| ESLint on F6 surface | exit 0, 0 errors / 0 warnings |
+| `npx next build` | `✓ Compiled successfully in 39.8s`, 29/29 static pages, `EXIT=0` |
+| `git diff --check` | exit 0 |
+| `verify-encoding.mjs` (working-tree surface) | exit 0, 3/3 PASS on the 3 untracked repo-root files (none F6-related) |
+| `verify-task.ps1` | exit 0 (`DRAFT-VALID`, 3 advisory warnings) |
+| `verify-handoff.ps1` | exit 0 (post round 2 updates) |
+| `verify-encoding-range.mjs 8382bbc7 HEAD` | exit 2 — see §6.1 (scanner limitation on `public/hrp-logo.webp` from PR #91; binary file, NOT introduced by F6; pre-existing scanner gap) |
+| Correction budget used | `0/1` (round 2 did not consume budget — no F6 semantic edit) |
+| PR #92 | open, head `eb0cd045`, branch `codex/t1a-m2b-f6-placement-unavailable-reason`; pending T0 PR review + CI 4/4 + merge coordination with UI V1/UI V2 |
+
+**F6 invariants preserved across the merge**
+
+- Placement unavailable no longer renders `—`; six Vietnamese reasons stay byte-exact.
+- STALE continues to use the existing F-03 amber alert (caller path unchanged).
+- `availableActionsForRow` / `canPerformPlacementAction` / `isStalePlacementSnapshot` semantics byte-exact.
+- No schema/migration/backfill change introduced by F6 (forbidden surface clean).
+- No auth/RLS/role-matrix widening introduced by F6.
+- No Placement mutation route edit introduced by F6.
+- No editor-shell / F8 forward-merge work consumed by F6.
+- No `placementUnavailableReason` field population on the read service (DTO field remains OPTIONAL + unused; the cell's local resolver is authoritative, as designed).
+- No `package.json` / `pnpm-lock.yaml` / `pnpm-workspace.yaml` change introduced by F6 (3 untracked root files are global repo policy / unrelated to F6).
+
+**T0 is authorized to**
+
+1. Re-run CI on PR #92 head `eb0cd045` and verify all 4 checks GREEN + MERGEABLE/CLEAN.
+2. Coordinate sequencing with UI V1 (already on main) and UI V2 (per the T0 directive: "F6 vẫn chờ UI2 production PASS trước khi T0 quyết định merge").
 3. Merge into `main` (T1A does NOT merge).
 4. Confirm public `/admin/recruiter-workbench` renders the new reason labels in the placement column for each of the 6 user-visible codes; the existing `Mở bố trí` button + drawer continue to work for eligible rows; the F-03 stale amber alert is preserved byte-exact.
 
-T1A does NOT open new tasks or advance to Mốc 3.
+**T1A does NOT**
+
+- Open new tasks or advance to Mốc 3.
+- Touch UI2 or Việt hóa Admin.
+- Merge or deploy.
+- Touch production DB / migration.
+- Amend, rebase, reset, or force-push the F6 branch.
+- Open a new PR — PR #92 stays as the single delivery surface.
+
+F6 is `RESOLVED_PENDING_MAIN_MERGE`. Status unchanged.
 
 ## 9. Acceptance summary
 
@@ -177,8 +241,8 @@ T1A does NOT open new tasks or advance to Mốc 3.
 | `AC-17` `verify-task.ps1` exit 0 | **PASS** |
 | `AC-18` `verify-handoff.ps1` exit 0 | **PASS** |
 
-All 18 acceptance criteria PASS.
+All 18 acceptance criteria PASS. Round 2 (latest-main reconciliation) PASS without consuming the correction budget.
 
 ---
 
-> Handoff status: `READY_FOR_REVIEW`
+> Handoff status: `READY_FOR_REVIEW` (round 2 — latest-main reconciliation; PR #92 head `eb0cd045`; F6 status `RESOLVED_PENDING_MAIN_MERGE`; awaiting T0 PR review + CI 4/4 + merge coordination with UI V1/UI V2)
