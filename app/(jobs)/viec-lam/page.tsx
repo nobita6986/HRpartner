@@ -311,11 +311,15 @@ function JobCard({ job }: { job: ListingJob }) {
           </Link>
         </h3>
         {/* hrp-p1-a0-1 (DEC-05): shared `<JobStampBadge>` render từ canonical boolean,
-            0.7↔1.0 animation + reduced-motion disable (C-05). */}
+            0.7↔1.0 animation + reduced-motion disable (C-05).
+            hrp-ui-v1-job-card-stamps-brand (T1B / RQ-06 / RQ-12): 4 flag canonical
+            — bổ sung isHighReward + isExpiringSoon. */}
         {stamps.length === 0 ? null : (
           <JobStampBadge
             isHot={job.isHot}
             isUrgent={job.isUrgent}
+            isHighReward={job.isHighReward}
+            isExpiringSoon={job.isExpiringSoon}
             stamps={stamps}
             size="sm"
           />

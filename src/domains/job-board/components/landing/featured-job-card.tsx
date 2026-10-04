@@ -24,6 +24,9 @@ export interface FeaturedJobCardProps {
     source?: 'REAL' | 'DEMO' | 'INTEGRATION_PENDING';
     /** RQ-20: ISO timestamp of newest visible order — render only when truthy */
     postedAt?: string | null;
+    /** hrp-ui-v1-job-card-stamps-brand (T1B / DEC-06 / RQ-07): 2 canonical flag mới. */
+    isHighReward?: boolean;
+    isExpiringSoon?: boolean;
   };
   /** Canonical detail URL built by BestJobsSection via buildHref(job.slug) */
   href: string;
@@ -193,6 +196,8 @@ export function FeaturedJobCard({ job, href, onApply }: FeaturedJobCardProps) {
             : deriveStampsFromFlags(
                 Boolean((job as { isHot?: boolean }).isHot),
                 Boolean((job as { isUrgent?: boolean }).isUrgent),
+                Boolean((job as { isHighReward?: boolean }).isHighReward),
+                Boolean((job as { isExpiringSoon?: boolean }).isExpiringSoon),
               );
         if (stamps.length === 0) return null;
         return (

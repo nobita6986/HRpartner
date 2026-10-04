@@ -147,6 +147,9 @@ describe('C-01 PATCH /api/admin/jobs/job-postings/[id] — actual route handler'
         contentSchemaVersion: 1,
         isHot: input.isHot ?? false,
         isUrgent: input.isUrgent ?? false,
+        // hrp-ui-v1-job-card-stamps-brand (T1B): 2 flag mới echo từ input.
+        isHighReward: input.isHighReward ?? false,
+        isExpiringSoon: input.isExpiringSoon ?? false,
         publishedAt: null,
         archivedAt: null,
         createdAt: '2026-09-26T08:00:00.000Z',
@@ -241,20 +244,87 @@ describe('C-01 PATCH /api/admin/jobs/job-postings/[id] — actual route handler'
   // ──────────────────────────────────────────────────────────────────────
   it('requestBody hash includes both isHot and isUrgent slots in fixed positions', async () => {
     await PATCH(patchReq({ ...BASE_BODY, isHot: true, isUrgent: false }), PARAMS);
-    expect(mocks.capturedRequestBody).toHaveLength(11);
-    // Last two slots are the canonical stamp flags.
+    // hrp-ui-v1-job-card-stamps-brand (T1B / RQ-10 / AC-09): 4 flag slot thay vì 2.
+    // Total array length mở rộng 11 → 13 để bao gồm isHighReward + isExpiringSoon.
+    expect(mocks.capturedRequestBody).toHaveLength(13);
+    // Slot 9 + 10 là 2 flag cũ (giữ vị trí cũ để idempotency hash stable).
     expect(mocks.capturedRequestBody[9]).toBe(true);
     expect(mocks.capturedRequestBody[10]).toBe(false);
+    // Slot 11 + 12 là 2 flag mới (omitted → null).
+    expect(mocks.capturedRequestBody[11]).toBeNull();
+    expect(mocks.capturedRequestBody[12]).toBeNull();
   });
 
   it('omitted stamp flag serialises to null (NOT undefined) for stable idempotency hash', async () => {
     await PATCH(patchReq({ ...BASE_BODY, isHot: true }), PARAMS);
     expect(mocks.capturedRequestBody[9]).toBe(true);
     expect(mocks.capturedRequestBody[10]).toBeNull();
+    // hrp-ui-v1-job-card-stamps-brand (T1B): 2 flag omitted cũng null ở slot 11 + 12.
+    expect(mocks.capturedRequestBody[11]).toBeNull();
+    expect(mocks.capturedRequestBody[12]).toBeNull();
     // Critical: undefined values are serialised as null so JSON.stringify keeps the
     // array length stable. A 9-element array here would mean the hash ignores the
-    // flag — exactly the C-01 invariant the bug report called out.
-    expect(mocks.capturedRequestBody).toHaveLength(11);
+    // flag — exactly the C-01 invariant the bug report called out. T1B tăng lên 13.
+    expect(mocks.capturedRequestBody).toHaveLength(13);
+  });
+
+  // hrp-ui-v1-job-card-stamps-brand (T1B / RQ-10): 2 flag mới có test matrix riêng.
+  it.each([
+    { flag: 'isHighReward', value: 'true' },
+    { flag: 'isHighReward', value: 1 },
+    { flag: 'isHighReward', value: null },
+    { flag: 'isHighReward', value: { truthy: true } },
+    { flag: 'isExpiringSoon', value: 'false' },
+    { flag: 'isExpiringSoon', value: 2 },
+    { flag: 'isExpiringSoon', value: null },
+    { flag: 'isExpiringSoon', value: {} },
+  ])('invalid $flag=$value → 400 INVALID_INPUT (service NOT called)', async ({ flag, value }) => {
+    const res = await PATCH(patchReq({ ...BASE_BODY, [flag]: value }), PARAMS);
+    expect(res.status).toBe(400);
+    const body = (await res.json()) as { error: string; message: string };
+    expect(body.error).toBe('INVALID_INPUT');
+    expect(body.message).toContain(flag);
+    expect(mocks.updateDraftContent).not.toHaveBeenCalled();
+  });
+
+  it('isHighReward false → true persisted independently', async () => {
+    const res = await PATCH(patchReq({ ...BASE_BODY, isHighReward: true }), PARAMS);
+    expect(res.status).toBe(200);
+    const input = mocks.updateDraftContent.mock.calls[0][2] as {
+      isHighReward: boolean;
+      isExpiringSoon?: boolean;
+    };
+    expect(input.isHighReward).toBe(true);
+    expect(mocks.capturedRequestBody[11]).toBe(true);
+  });
+
+  it('isExpiringSoon false → true persisted independently', async () => {
+    const res = await PATCH(patchReq({ ...BASE_BODY, isExpiringSoon: true }), PARAMS);
+    expect(res.status).toBe(200);
+    const input = mocks.updateDraftContent.mock.calls[0][2] as {
+      isExpiringSoon: boolean;
+      isHighReward?: boolean;
+    };
+    expect(input.isExpiringSoon).toBe(true);
+    expect(mocks.capturedRequestBody[12]).toBe(true);
+  });
+
+  it('4-flag combination (all true) → 200, all 4 slots hold true at fixed positions', async () => {
+    await PATCH(
+      patchReq({
+        ...BASE_BODY,
+        isHot: true,
+        isUrgent: true,
+        isHighReward: true,
+        isExpiringSoon: true,
+      }),
+      PARAMS,
+    );
+    expect(mocks.capturedRequestBody).toHaveLength(13);
+    expect(mocks.capturedRequestBody[9]).toBe(true);
+    expect(mocks.capturedRequestBody[10]).toBe(true);
+    expect(mocks.capturedRequestBody[11]).toBe(true);
+    expect(mocks.capturedRequestBody[12]).toBe(true);
   });
 
   it('flag flip (isHot true→false) changes the captured requestBody', async () => {
@@ -262,8 +332,31 @@ describe('C-01 PATCH /api/admin/jobs/job-postings/[id] — actual route handler'
     const beforeFlip = [...mocks.capturedRequestBody];
     await PATCH(patchReq({ ...BASE_BODY, isHot: false }), PARAMS);
     const afterFlip = [...mocks.capturedRequestBody];
+    // hrp-ui-v1-job-card-stamps-brand (T1B): 4 flag slot thay vì 2.
+    expect(beforeFlip).toHaveLength(13);
+    expect(afterFlip).toHaveLength(13);
     expect(beforeFlip[9]).toBe(true);
     expect(afterFlip[9]).toBe(false);
+    expect(afterFlip).not.toEqual(beforeFlip);
+  });
+
+  it('flag flip (isHighReward true→false) changes the captured requestBody', async () => {
+    await PATCH(patchReq({ ...BASE_BODY, isHighReward: true }), PARAMS);
+    const beforeFlip = [...mocks.capturedRequestBody];
+    await PATCH(patchReq({ ...BASE_BODY, isHighReward: false }), PARAMS);
+    const afterFlip = [...mocks.capturedRequestBody];
+    expect(beforeFlip[11]).toBe(true);
+    expect(afterFlip[11]).toBe(false);
+    expect(afterFlip).not.toEqual(beforeFlip);
+  });
+
+  it('flag flip (isExpiringSoon true→false) changes the captured requestBody', async () => {
+    await PATCH(patchReq({ ...BASE_BODY, isExpiringSoon: true }), PARAMS);
+    const beforeFlip = [...mocks.capturedRequestBody];
+    await PATCH(patchReq({ ...BASE_BODY, isExpiringSoon: false }), PARAMS);
+    const afterFlip = [...mocks.capturedRequestBody];
+    expect(beforeFlip[12]).toBe(true);
+    expect(afterFlip[12]).toBe(false);
     expect(afterFlip).not.toEqual(beforeFlip);
   });
 

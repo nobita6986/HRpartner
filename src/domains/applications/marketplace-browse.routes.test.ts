@@ -115,6 +115,9 @@ const PUBLISHED_JOB: PublicJobDto = {
   // hrp-p1-a0-1 (DEC-05): stamp flags từ canonical boolean JobPosting.isHot/isUrgent.
   isHot: false,
   isUrgent: false,
+  // hrp-ui-v1-job-card-stamps-brand (T1B / RQ-13): 2 author-selected flag canonical mới.
+  isHighReward: false,
+  isExpiringSoon: false,
   // go-live-05 / RQ-02: ba field đơn ở trên là PHẦN TỬ ĐẦU của ba mảng này, không phải giá trị rời.
   // Fixture giữ đúng quan hệ đó để nó vẫn là hình dạng mà service thật có thể sinh ra.
   positionTitles: ['Công nhân sản xuất', 'Nhân viên kho'],

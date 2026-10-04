@@ -360,11 +360,20 @@ export default async function PublicJobDetailPage({ params }: PageProps) {
             {/* hrp-p1-a0-1 (DEC-05, C-05): detail page render stamps từ canonical boolean
                 `JobPosting.isHot`/`isUrgent` qua shared `<JobStampBadge>` — single source
                 với listing + homepage FeaturedJobCard. 0.7↔1.0 animation per stamp qua class
-                `.job-stamp-attention`; reduced-motion tắt animation. */}
+                `.job-stamp-attention`; reduced-motion tắt animation.
+                hrp-ui-v1-job-card-stamps-brand (T1B / RQ-06 / RQ-12): 4 flag canonical —
+                bổ sung isHighReward + isExpiringSoon. */}
             <JobStampBadge
               isHot={job.isHot}
               isUrgent={job.isUrgent}
-              stamps={deriveStampsFromFlags(job.isHot, job.isUrgent)}
+              isHighReward={job.isHighReward}
+              isExpiringSoon={job.isExpiringSoon}
+              stamps={deriveStampsFromFlags(
+                job.isHot,
+                job.isUrgent,
+                job.isHighReward,
+                job.isExpiringSoon,
+              )}
               size="md"
             />
           </div>
