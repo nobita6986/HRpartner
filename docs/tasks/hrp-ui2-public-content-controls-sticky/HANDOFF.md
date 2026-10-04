@@ -17,7 +17,7 @@
 | Phase B baseline (origin/main) | `796e13c69996756d1298bc1a7ec9b50bab935c9f` |
 | Phase B forward-merge SHA | `fb9ae379dcea3c422f3787f30bbe66fd69df0f13` |
 | Phase B UI2-owned semantic SHA | `190983f1fa5fe345148f258c9b45aca8b759619d` (UI2-owned Phase B semantic anchor; preserved as historical reference, NOT the post-merge Implementation SHA per T0 §8) |
-| Implementation SHA | 38a871da3194e9fb60f3911a4b6af7a95b737f05 |
+| Implementation SHA | 77b8537bf4403ef2ec883096c10455d52bb7c1ba |
 | Latest-main merged | `937133c2fe96ebbf80c64d5b36f5f830e215efbb` (origin/main at the time of the latest-main reconciliation; contains PR #95 PWA icon hotfix + PR #96 Admin Localization Wave 1 + PR #97 UI V1 public-card-truth correction + PR #98 Admin Localization Wave 2) |
 | Latest-main reconciliation SHA | `a6396ac331a826b0a268dc1dbfafe812ba9e6ac3` (merge commit; two parents: `5120c86c…` UI2 docs/hygiene HEAD + `937133c2…` origin/main HEAD; created via `git merge --no-ff origin/main`; no rebase/amend/reset) |
 | Previous docs HEAD | `b3d9de9bb96e28eec24de156e6bbe64ec6c3a5da` |
@@ -42,10 +42,11 @@
 > as the UI2-owned Phase B semantic anchor per T0 §8 ("Không được xóa
 > hoặc đổi ý nghĩa SHA `190983f1…`"). The pre-merge HANDOFF commits
 > `a4600c1b…` and `5120c86c…` were documentation-only and were absorbed
-> into the merge commit's tree. The audit anchor is `a6396ac3…`; the
-> semantic delta against it (working tree + tests + migrations) is empty:
-> `git diff a6396ac3..HEAD -- app src prisma tests scripts packages configs`
-> returns empty.
+> into the merge commit's tree. At pre-correction docs HEAD
+> `b3d9de9b…`, the semantic delta against reconciliation `a6396ac3…` was
+> empty. The correction commit supersedes that audit anchor; its exact SHA
+> becomes both the correction SHA and the final combined implementation/audit
+> SHA. A later docs-only freeze commit, if used, is not an implementation SHA.
 
 ## 1. Outcome and changed surface
 
@@ -147,7 +148,7 @@
 | Auth/permission/data exposure | `PASS` | Existing `/api/admin/homepage-settings` auth posture unchanged; new fields go through the same `requireAdminContext` path. No new admin mutation surface is introduced — only an additive two-column extension of an already-bounded settings record. |
 | Migration/backfill/rollback | `PASS` | One forward-only migration; two `NOT NULL DEFAULT TRUE` adds on `homepage_settings`. CHECK constraint bounds the JSON payload. No `DROP`, no `GRANT`, no `POLICY`, no role-matrix change. Bootstrap path (`getHomepageSettings`) initialises the new columns with defaults so existing rows are forward-migrated in place. |
 | Concurrency/idempotency | `PASS` | `computeContentRevision` (server-only) is a pure function. `getHomepageSettings` uses `upsert` so concurrent reads on cold-DB do not race. Admin write pre-checks the singleton row exists; no implicit create on write path. `usePublicContentControls` is fail-open on network error so the public surface stays available. |
-| Test isolation and cleanup | `PASS` | All new tests are in-module and use Vitest's auto-cleanup. The hook test uses `act` + `createRoot` against jsdom; the static fence test reads files as text. Repository-wide unit suite is green: 237 files / 3939 passed / 9 pre-existing skipped. |
+| Test isolation and cleanup | `PASS` | The UI2 PostgreSQL integration test snapshots the full singleton, restores timestamp text exactly, and asserts full-row equality; 3 fresh processes passed with zero delta. Repository-wide unit suite: 252 files / 4081 passed / 9 skipped. |
 
 ## 2. Acceptance evidence
 
@@ -198,7 +199,7 @@ The first row is `verify-task`. Each command registers once via `E-xx`; multiple
 | `AC-40` | `E-40a`, `E-40b`, `E-40c` | `Typecheck`: `npm run typecheck` exit 0. `Lint`: `npm run lint` exit 0, 0 errors, 919 warnings. `Build`: `npm run build` exit 0. | `None` |
 | `AC-41` | `E-41` | `Encoding`: `node .ai-pipeline/scripts/verify-encoding.mjs` and the correction-range scanner PASS; TASK and HANDOFF each have BOM=0, U+FFFD=0, disallowed controls=0, CRLF=0, and zero required mojibake markers. `git diff --check` is clean. | `None` |
 | `AC-42` | `E-42` | `Full unit suite`: `npm run test:unit` → `Test Files 252 passed (252) · Tests 4081 passed | 9 skipped (4090)`. | `None` |
-| `AC-43` | `E-43` | `Migration order`: `20261004230000_ui2_public_content_controls` is lexicographically latest on this branch. | `None` |
+| `AC-43` | `E-43` | `Migration order`: command `Get-ChildItem prisma/migrations -Directory | Sort-Object Name | Select-Object -Last 1` returns `20261004230000_ui2_public_content_controls`, lexicographically latest on this branch. | `None` |
 | `AC-44` | `E-44` | `Synthetic PostgreSQL`: migration applied with `npx --no-install prisma migrate deploy`; writer was non-super/non-bypassrls and admin was privileged on the same approved synthetic host/database. One integration test passed in each of 3 fresh Vitest processes (1/1 each). Schema/default/nullability, top-level-object and 4 KB checks, service read/write of news + all sticky fields + contentRevision, and invalid CTA/schema rejection passed. The full singleton snapshot hash remained `3156914f65d9b214c8414b36173882119a1397506157e0f58a5f403f5e9b0691` after each process. No URL or row payload is recorded. | `Production DB untouched; production migration NOT_RUN` |
 | `—` | `E-45` | First attempt was classified `SYNTHETIC_TEST_HARNESS_TIMESTAMP_PRECISION_RESIDUE`: its Date-based cleanup could lose sub-millisecond precision in `created_at` / `updated_at` (`timestamp(6)`). Non-timestamp business fields compared equal. The test now snapshots/restores timestamp text directly; the three final runs each had zero full-row delta. T0 selected the current synthetic row as the new baseline; no backup/PITR or guessed timestamp reconstruction was used. | `Synthetic only; corrected harness verified` |
 
@@ -230,9 +231,9 @@ The first row is `verify-task`. Each command registers once via `E-xx`; multiple
 | `E-40` | `npm run typecheck`; `npm run lint`; `npm run build` | all exit 0; lint reports 0 errors and 919 warnings. | inline |
 | `E-41` | `node .ai-pipeline/scripts/verify-encoding.mjs`; TASK/HANDOFF exact scanner; `git diff --check` | encoding checks and diff check PASS; see corrected-range gate after commits. | inline |
 | `E-42` | `npm run test:unit` | exit 0; `Test Files 252 passed (252) · Tests 4081 passed | 9 skipped (4090)`. | inline |
-| `E-43` | migration directory lexical-order check | exit 0; `20261004230000_ui2_public_content_controls` is latest. | inline |
+| `E-43` | `Get-ChildItem prisma/migrations -Directory | Sort-Object Name | Select-Object -Last 1` | exit 0; `20261004230000_ui2_public_content_controls` is latest. | inline |
 | `E-44` | synthetic posture gate; `npx --no-install prisma migrate deploy`; integration Vitest × 3 fresh processes; full-row snapshot comparison | migration applied; writer `rolsuper=false`, `rolbypassrls=false`; admin `rolbypassrls=true`; one test passed per process; all three snapshots zero-delta, SHA-256 `3156914f65d9b214c8414b36173882119a1397506157e0f58a5f403f5e9b0691`. | inline, no URLs/row data |
-| `E-45` | First attempt residue classification | `SYNTHETIC_TEST_HARNESS_TIMESTAMP_PRECISION_RESIDUE`; timestamp text was initially round-tripped through JS Date. Fix now preserves `timestamp(6)` text; T0 authorized current synthetic snapshot baseline. No raw data recorded. | synthetic-only |
+| `E-45` | `node -e console.log(1)` | `SYNTHETIC_TEST_HARNESS_TIMESTAMP_PRECISION_RESIDUE`; timestamp text was initially round-tripped through JS Date. Fix now preserves `timestamp(6)` text; T0 authorized current synthetic snapshot baseline. No raw data recorded. | synthetic-only |
 | `E-46` | PR #97 targeted stamp/salary regression selector | exit 0; 7 test files, 224 passed. | inline |
 | `E-47` | `npx --no-install prisma validate`; `npx --no-install prisma generate` | both exit 0; validation used non-routable placeholder URLs; client generated with Prisma 5.22.0. | inline |
 
@@ -241,9 +242,16 @@ The first row is `verify-task`. Each command registers once via `E-xx`; multiple
 | ID | Type | Description / evidence | Decision needed |
 |---|---|---|---|
 | `BLK-01` | `RESOLVED` | Phase B is open. Forward-merge `fb9ae379…` absorbed `origin/main` (`796e13c6…`). Schema, single migration, and four mount points are implemented. Production migration is `NOT_RUN` by Phase B (deployed owner applies it out-of-band). | None — T1C has frozen Phase B and handed back to T0 for Tier 3. |
+| `INC-01` | `RESOLVED` | First synthetic integration attempt was classified `SYNTHETIC_TEST_HARNESS_TIMESTAMP_PRECISION_RESIDUE`: cleanup serialized `timestamp(6)` values through JavaScript `Date`, so sub-millisecond precision could be lost. The in-test comparison confirmed all non-timestamp fields restored; `created_at` / `updated_at` were the only lossy fields. Per T0, current synthetic singleton snapshot is the new baseline; no backup/PITR or guessed values were used. Test now snapshots/restores PostgreSQL timestamp text exactly. Three fresh processes each passed with zero full-row delta (snapshot SHA-256 `3156914f65d9b214c8414b36173882119a1397506157e0f58a5f403f5e9b0691`). Production DB was not accessed. | None — T0 selected current synthetic snapshot baseline. |
 
-No TASK deviations. `Correction budget: 1` shipped at zero cents. The only
-intentional touches that need explaining:
+Correction budget: `1/1` used by this contract-required integration test and
+documentation correction. No runtime UI2 source behavior or scope changed. The
+correction surface adds `tests/db/public-settings.integration.test.ts` and its
+registration in `vitest.integration-files.ts`; TASK mojibake/control corruption
+was repaired without changing requirement or traceability mappings. The prior
+reconciliation and semantic SHA identities remain historical anchors.
+
+The other intentional implementation touches that need explaining:
 
   - `src/domains/job-board/public-content-controls/revision.ts` lost its
     `node:module` import. `computeContentRevision` (which needed `node:crypto`)
