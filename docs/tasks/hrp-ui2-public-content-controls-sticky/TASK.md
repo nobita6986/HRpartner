@@ -13,7 +13,7 @@
 | Audit mode | `LIGHT` |
 | Audit reason | `Final audit happens after Phase B and covers the whole UI2 surface (Phase A module + Phase B mount + schema/migration + admin form). Phase A is delivered as a CHECKPOINT, not as a frozen final delivery; therefore Phase A is not independently audited.` |
 | Spec version | `v1.1` |
-| Status | `READY_FOR_EXECUTION` |
+| Status | `READY_FOR_AUDIT` (Phase B implementation committed at `190983f1…`; awaiting Tier 3 light delta audit) |
 | Planner | `Tier 1` |
 | Baseline | `796e13c69996756d1298bc1a7ec9b50bab935c9f` |
 | Phase A checkpoint | `53696afb3f644a3df06d4cf772828446f16f30d6` |
@@ -22,15 +22,15 @@
 | Test environment | `READY` |
 | Correction budget | `1` |
 | Correction budget used | `0` |
-| Frozen delivery | `YES` (Phase A checkpoint) / `NO` (Phase B final delivery ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â re-frozen after Phase B commit) |
-| Canonical gates | `FINAL_PENDING` |
-| Audit eligibility | `NOT_ELIGIBLE` (Phase A checkpoint) / `ELIGIBLE` (Phase B final delivery) |
+| Frozen delivery | `YES` (Phase A checkpoint frozen first; Phase B implementation commit `190983f1…` is now the canonical final freeze) |
+| Canonical gates | `PASS` (verify-task / verify-handoff / encoding / typecheck / lint / build / test:unit all green at the Phase B freeze) |
+| Audit eligibility | `ELIGIBLE` (Phase B final delivery) |
 | In-scope roots | `src/domains/job-board/public-content-controls/**`; `docs/tasks/hrp-ui2-public-content-controls-sticky/**`. Phase B additionally opens: `prisma/schema.prisma` (additive only); `prisma/migrations/20261004230000_ui2_public_content_controls/**` (new, single forward-only migration); `app/(portal)/layout.tsx`; `app/components/GlobalNavbar.tsx` (Tin tÃƒÂ¡Ã‚Â»Ã‚Â©c entry row only); `app/admin/settings/admin-settings-form.tsx`; `app/admin/settings/page.tsx`; `app/api/admin/homepage-settings/route.ts`; `src/domains/job-board/public-settings.service.ts` (additive); `src/domains/job-board/public-types.ts` (additive DTO fields only). |
 | Forbidden paths | Phase A: `prisma/schema.prisma`; `prisma/migrations/**`; `app/(portal)/page.tsx`; `app/(jobs)/**`; `app/admin/**`; `app/api/admin/homepage-settings/**`; `app/api/public/homepage-settings/**`; `app/components/GlobalNavbar.tsx`; `app/components/GlobalFooter.tsx`; `app/components/FloatingChatActions.tsx`; `src/domains/job-board/public-types.ts`; `src/domains/job-board/public-settings.service.ts`; `src/domains/job-board/chat-links.ts`; `src/domains/job-board/components/landing/news-section.tsx`; `src/domains/job-board/components/landing/news-preview-modal.tsx`; `src/domains/job-board/fixtures/demo-content.ts`; `src/domains/job-board/components/landing/__tests__/sections-policy.test.ts`; `src/shared/auth/permission-catalog.ts`. Phase B retains all of the above EXCEPT those explicitly opened in `In-scope roots`, and adds: `app/components/ContactForm.tsx`; `prisma/migrations/<OTHER_TS>/**`; `src/domains/job-board/components/landing/__tests__/sections-policy.test.ts`. |
 | Required gates | `pwsh .ai-pipeline/scripts/verify-pipeline.ps1`; `node .ai-pipeline/scripts/verify-encoding.mjs`; `npm run typecheck`; `npm run lint -- src/domains/job-board/public-content-controls docs/tasks/hrp-ui2-public-content-controls-sticky`; `npm run test:unit -- src/domains/job-board/public-content-controls` |
 | Current execution round | `2` (Phase A: 1, Phase B: 1) |
 | Current audit round | `0` |
-| Next gate | `PHASE_B_T1C_EXECUTION` |
+| Next gate | `TIER3_LIGHT_DELTA_AUDIT` |
 
 > CRITICAL + LIGHT: Phase A is delivered as a CHECKPOINT (no schema/migration/mount yet).
 > The final audit happens AFTER Phase B, against the post-Phase-B implementation SHA,
