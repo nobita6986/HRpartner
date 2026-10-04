@@ -139,10 +139,23 @@ describe('RQ-06/RQ-08 — bề mặt hiển thị đúng phạm vi DTO công kha
     }
   });
 
-  it('DEC-07: không dựng lại nhãn khách hàng/đơn vị tuyển dụng và không có mức lương', () => {
+  it('DEC-07: không dựng lại nhãn khách hàng/đơn vị tuyển dụng; lương (nếu có) đi qua shared resolver', () => {
+    // hrp-ui-v1-public-card-truth-correction (T1A / DEC-09, RQ-11, RC-03): public detail
+    // PHẢI hiển thị `salaryDisplay` (T0 §6.C) — KHÔNG "mang field trong DTO rồi bỏ không".
+    // Phương án: dùng `formatPublicSalary` (single source) ở một `Fact` — KHÔNG dựng literal
+    // inline. Test dưới đây vẫn cấm "dựng nhãn khách hàng/đơn vị tuyển dụng" và cấm inline
+    // `'Lương thương lượng'` / inline `'đ/giờ'`, nhưng cho phép `formatPublicSalary` + label
+    // `Mức lương`.
     const code = strip(page);
     expect(code).not.toContain('HRP Partners');
-    expect(code).not.toMatch(/salary|luong|lương|\bVND\b/i);
+    // Inline literal fallback vẫn bị cấm — salary phải qua shared resolver.
+    expect(code).not.toMatch(/'Lương thương lượng'/);
+    expect(code).not.toMatch(/đ\/giờ/);
+    // T1A cho phép: gọi `formatPublicSalary` ở đúng 1 chỗ (fact "Mức lương").
+    expect(code).toContain('formatPublicSalary');
+    expect(code).toContain('Mức lương');
+    // Vẫn cấm hard-code `salaryLabel(...)` (đã superseded).
+    expect(code).not.toMatch(/salaryLabel\(/);
   });
 
   it('RQ-08: có đúng hai đường quay lại danh sách việc làm ở `/viec-lam`', () => {

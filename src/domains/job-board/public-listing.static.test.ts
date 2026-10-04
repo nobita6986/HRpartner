@@ -213,13 +213,15 @@ describe('RQ-12/AC-14 — nhãn của /viec-lam nói y hệt nhãn trang chủ',
   it('mọi chuỗi nghĩa trong module nhãn có mặt TỪNG BYTE bên trang chủ', () => {
     // ui-03: labels file has the canonical string
     expect(labels).toContain("'Lương thương lượng'");
-    // RQ-01: salaryLabel now lives in FeaturedJobCard (not inline in page.tsx)
-    expect(featuredCard).toContain("'Lương thương lượng'");
+    // RQ-01 / hrp-ui-v1-public-card-truth-correction (T1A / RC-03): salaryLabel chuyển về
+    // shared resolver `formatPublicSalary` ở labels.ts; featured-job-card không còn inline
+    // literal `'Lương thương lượng'` — nó gọi resolver và nhận kết quả từ đó.
+    expect(featuredCard).toMatch(/formatPublicSalary\(/);
   });
 
   it('chuỗi lương canonical là Lương thương lượng ở CẢ hai tệp, không phải 0 đ/giờ', () => {
     expect(labels).toContain("'Lương thương lượng'");
-    expect(featuredCard).toContain("'Lương thương lượng'");
+    expect(featuredCard).toMatch(/formatPublicSalary\(/);
     expect(labels).not.toContain('0 đ/giờ');
     expect(featuredCard).not.toContain('0 đ/giờ');
   });
