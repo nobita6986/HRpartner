@@ -470,19 +470,22 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
           <ActionButton
             disabled={!canPublish || isSaving}
             onClick={() => runStateMutation('publish')}
-            label="Publish"
+            label="Đăng tin"
+            ariaLabel="Publish"
             primary
             dataTestid="publish-button"
           />
           <ActionButton
             disabled={!canMutate || isSaving || status !== 'PUBLISHED'}
             onClick={() => runStateMutation('unpublish')}
-            label="Unpublish"
+            label="Gỡ tin"
+            ariaLabel="Unpublish"
           />
           <ActionButton
             disabled={!canMutate || isSaving || status === 'ARCHIVED'}
             onClick={() => runStateMutation('archive')}
-            label="Archive"
+            label="Lưu trữ"
+            ariaLabel="Archive"
             danger
           />
         </div>
@@ -729,13 +732,21 @@ function StampToggle({
 
 function ActionButton({
   label,
+  ariaLabel,
   onClick,
   disabled,
   primary,
   danger,
   dataTestid,
 }: {
+  /** Visible button text (operator-facing). Vietnamese per F11 binding §9. */
   label: string;
+  /**
+   * Canonical lifecycle operation name (English) for accessibility / screen
+   * readers / programmatic API keys. T0 §2 #2 binding: the canonical name is
+   * preserved; it MUST NOT be the primary operator-facing text.
+   */
+  ariaLabel?: string;
   onClick: () => void;
   disabled: boolean;
   primary?: boolean;
@@ -757,6 +768,7 @@ function ActionButton({
       onClick={onClick}
       disabled={disabled}
       data-testid={dataTestid}
+      aria-label={ariaLabel}
       className="rounded border px-3 py-1 text-sm font-medium"
       style={{
         borderColor: primary ? 'var(--color-primary)' : danger ? '#f5b5b5' : 'var(--outline)',

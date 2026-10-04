@@ -18,7 +18,8 @@
  * handlers that handle auth, cache tags, and rate limits.
  */
 
-import type { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+import type { Prisma as PrismaTypes } from '@prisma/client';
 import {
   BEST_JOBS_PAGE_SIZE_DEFAULT,
   LISTING_PAGE_SIZE_DEFAULT,
@@ -32,14 +33,20 @@ import {
   resolveChatHref,
   resolvePhoneNumber,
 } from './chat-links';
+import type { StickyAnnouncementDto } from './public-content-controls/types';
+import { StickyAnnouncementSchema } from './public-content-controls/types';
+import { toStickyAnnouncementDto } from './public-content-controls/dto-projection';
+import { normalizeCtaUrl } from './public-content-controls/url-safety';
 
 export const HOMEPAGE_SETTINGS_SINGLETON_ID = 'default' as const;
 
 /** Subset of Prisma client surface used by this service — accepts both PrismaClient and TransactionClient. */
-type SettingsDelegate = Prisma.HomepageSettingsDelegate;
+type SettingsDelegate = PrismaTypes.HomepageSettingsDelegate;
 type SettingsClient =
   | { homepageSettings: SettingsDelegate }
-  | (Prisma.TransactionClient & { homepageSettings: SettingsDelegate });
+  | (PrismaTypes.TransactionClient & { homepageSettings: SettingsDelegate });
+
+export { toStickyAnnouncementDto };
 
 /** Internal row shape from Prisma (matches schema.prisma `HomepageSettings`). */
 type SettingsRow = {
@@ -49,6 +56,8 @@ type SettingsRow = {
   zaloChatUrl: string | null;
   messengerChatUrl: string | null;
   phoneCallNumber: string | null;
+  newsSectionEnabled: boolean;
+  stickyAnnouncement: Prisma.JsonValue | null;
   updatedAt: Date;
 };
 
@@ -61,6 +70,8 @@ export function toHomepageSettingsDto(row: SettingsRow): HomepageSettingsDto {
     zaloChatUrl: resolveChatHref(row.zaloChatUrl, 'zalo'),
     messengerChatUrl: resolveChatHref(row.messengerChatUrl, 'messenger'),
     phoneCallNumber: resolvePhoneNumber(row.phoneCallNumber),
+    newsSectionEnabled: row.newsSectionEnabled ?? true,
+    stickyAnnouncement: toStickyAnnouncementDto(row.stickyAnnouncement),
     updatedAt: row.updatedAt.toISOString(),
   };
 }
@@ -88,6 +99,8 @@ export async function getHomepageSettings(prisma: SettingsClient): Promise<Homep
       id: HOMEPAGE_SETTINGS_SINGLETON_ID,
       bestJobsPageSize: BEST_JOBS_PAGE_SIZE_DEFAULT,
       listingPageSize: LISTING_PAGE_SIZE_DEFAULT,
+      newsSectionEnabled: true,
+      stickyAnnouncement: Prisma.JsonNull,
     },
     update: {}, // no-op when row already exists
   });
@@ -102,6 +115,17 @@ export interface UpdateHomepageSettingsInput {
   zaloChatUrl?: string | null;
   messengerChatUrl?: string | null;
   phoneCallNumber?: string | null;
+  /** Phase B / UI2 — news section toggle. Optional. */
+  newsSectionEnabled?: boolean;
+  /**
+   * Phase B / UI2 — sticky announcement payload. Optional.
+   *
+   *   - `undefined` → column unchanged.
+   *   - `null`      → column set to NULL (admin cleared the bar).
+   *   - object      → validated by `StickyAnnouncementSchema` and persisted.
+   *                   Throws `ZodError` on schema failure.
+   */
+  stickyAnnouncement?: StickyAnnouncementDto | null;
 }
 
 /** Result type for admin write — returns the post-write DTO. */
@@ -147,6 +171,8 @@ export async function updateHomepageSettings(
     zaloChatUrl?: string | null;
     messengerChatUrl?: string | null;
     phoneCallNumber?: string | null;
+    newsSectionEnabled?: boolean;
+    stickyAnnouncement?: Prisma.InputJsonValue | Prisma.JsonNullValueInput;
     updatedById: string | null;
   } = { updatedById: actorId };
 
@@ -164,6 +190,29 @@ export async function updateHomepageSettings(
   }
   if (input.phoneCallNumber !== undefined) {
     data.phoneCallNumber = normalizePhoneNumber(input.phoneCallNumber);
+  }
+  if (input.newsSectionEnabled !== undefined) {
+    if (typeof input.newsSectionEnabled !== 'boolean') {
+      throw new Error('newsSectionEnabled phải là boolean.');
+    }
+    data.newsSectionEnabled = input.newsSectionEnabled;
+  }
+  if (input.stickyAnnouncement !== undefined) {
+    if (input.stickyAnnouncement === null) {
+      data.stickyAnnouncement = Prisma.JsonNull;
+    } else {
+      const parsed = StickyAnnouncementSchema.parse(input.stickyAnnouncement);
+      // Defense-in-depth: Phase A also enforces URL safety on the read path.
+      // The server-side write must reject unsafe URLs before persistence.
+      if (parsed.ctaUrl) {
+        try {
+          normalizeCtaUrl(parsed.ctaUrl);
+        } catch {
+          throw new Error('ctaUrl không hợp lệ.');
+        }
+      }
+      data.stickyAnnouncement = parsed as unknown as Prisma.InputJsonValue;
+    }
   }
 
   const updated = await prisma.homepageSettings.update({

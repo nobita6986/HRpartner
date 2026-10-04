@@ -39,11 +39,17 @@ import { notFound, redirect } from 'next/navigation';
 
 import { Breadcrumb } from '@/src/shared/ui/navigation/breadcrumb';
 import { RelatedObjects } from '@/src/shared/ui/data-display/related-objects';
+import { StatusBadge } from '@/src/shared/ui/status-badge';
 
 import { getServerSession } from '@/src/shared/auth/server-session';
 import { getPrisma } from '@/src/lib/db';
 import { withDbContext } from '@/src/shared/auth/with-db-context';
 import { getJobPostingForAdmin } from '@/src/domains/staffing/job-posting-list.service';
+import {
+  JOB_POSTING_MODULE,
+  jobPostingStatusLabel,
+  jobPostingStatusTone,
+} from '@/src/domains/staffing/job-posting-ui';
 import type { SystemRole } from '@prisma/client';
 
 import { JobPostingEditorShell } from './editor-shell';
@@ -52,7 +58,8 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export const metadata = {
-  title: 'JobPosting viewer — Admin',
+  // EP §3.5 #47 — breadcrumb + H1 binding.
+  title: 'Tin tuyển dụng — trang xem — Admin',
 };
 
 const MUTATION_ROLES: ReadonlySet<SystemRole> = new Set([
@@ -100,12 +107,12 @@ export default async function AdminJobPostingDetailPage({ params }: PageProps) {
   return (
     <div className="min-h-screen p-6" style={{ backgroundColor: 'var(--surface)' }}>
       <div className="max-w-7xl mx-auto">
-        {/* Breadcrumb */}
+        {/* Breadcrumb — EP §3.5 #46/#47/#48 binding */}
         <div className="mb-4">
           <Breadcrumb
             items={[
-              { label: 'Admin Jobs', href: '/admin/jobs' },
-              { label: 'JobPosting viewer', href: '/admin/jobs/job-postings' },
+              { label: 'Danh sách nhu cầu', href: '/admin/jobs' },
+              { label: 'Tin tuyển dụng — trang xem', href: '/admin/jobs/job-postings' },
               { label: posting.slug },
             ]}
           />
@@ -122,20 +129,27 @@ export default async function AdminJobPostingDetailPage({ params }: PageProps) {
                 ID: <span className="font-mono">{posting.id}</span>
               </p>
             </div>
-            <StatusBadge status={posting.status} />
+            <StatusBadge
+              module={JOB_POSTING_MODULE}
+              status={posting.status}
+              tone={jobPostingStatusTone(posting.status)}
+              testId={`job-posting-detail-status-${posting.id}`}
+            >
+              {jobPostingStatusLabel(posting.status)}
+            </StatusBadge>
           </div>
 
           <dl className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <Fact label="Slug" value={posting.slug} mono />
-            <Fact label="Revision" value={`v${posting.revision}`} />
-            <Fact label="Created" value={new Date(posting.createdAt).toLocaleString('vi-VN')} />
-            <Fact label="Updated" value={new Date(posting.updatedAt).toLocaleString('vi-VN')} />
+            <Fact label="Đường dẫn tin (slug)" value={posting.slug} mono />
+            <Fact label="Phiên bản chỉnh sửa" value={`v${posting.revision}`} />
+            <Fact label="Ngày tạo" value={new Date(posting.createdAt).toLocaleString('vi-VN')} />
+            <Fact label="Ngày cập nhật" value={new Date(posting.updatedAt).toLocaleString('vi-VN')} />
             <Fact
-              label="Published at"
+              label="Ngày đăng"
               value={posting.publishedAt ? new Date(posting.publishedAt).toLocaleString('vi-VN') : '—'}
             />
             <Fact
-              label="Archived at"
+              label="Ngày lưu trữ"
               value={posting.archivedAt ? new Date(posting.archivedAt).toLocaleString('vi-VN') : '—'}
             />
           </dl>
@@ -242,22 +256,12 @@ export default async function AdminJobPostingDetailPage({ params }: PageProps) {
   );
 }
 
-function StatusBadge({ status }: { status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED' }) {
-  const colorMap: Record<string, { bg: string; fg: string }> = {
-    DRAFT: { bg: 'var(--color-surface-container-high)', fg: 'var(--on-surface-variant)' },
-    PUBLISHED: { bg: 'var(--color-primary-soft)', fg: 'var(--color-primary-dark)' },
-    ARCHIVED: { bg: 'var(--color-surface-container)', fg: 'var(--on-surface-variant)' },
-  };
-  const c = colorMap[status] ?? colorMap.DRAFT;
-  return (
-    <span
-      className="inline-block whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-bold"
-      style={{ backgroundColor: c.bg, color: c.fg }}
-    >
-      {status}
-    </span>
-  );
-}
+// T1B Wave 2 (EP §3.2.3): the inline `colorMap` + local `StatusBadge`
+// component previously at the bottom of this file is replaced by the
+// shared `<StatusBadge module={JOB_POSTING_MODULE}>` primitive + the
+// domain-owned `jobPostingStatusLabel()` / `jobPostingStatusTone()`
+// helpers from `src/domains/staffing/job-posting-ui.ts`. There is no
+// local StatusBadge or colorMap in this file anymore.
 
 function Fact({
   label,

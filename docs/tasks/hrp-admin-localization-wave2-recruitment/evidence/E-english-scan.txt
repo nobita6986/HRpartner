@@ -1,0 +1,43 @@
+$ rg '<span>\{(\w*[Ss]tatus\w*)\}</span>' \
+    app/admin/jobs/page.tsx \
+    app/admin/jobs/job-postings/page.tsx \
+    app/admin/jobs/job-postings/[id]/page.tsx \
+    app/admin/job-openings/[id]/page.tsx \
+    app/admin/staffing/staffing-list-client.tsx
+(no output — exit 1)
+
+$ rg '^>[A-Z_]+$' \
+    app/admin/jobs/page.tsx \
+    app/admin/jobs/job-postings/page.tsx \
+    app/admin/jobs/job-postings/[id]/page.tsx \
+    app/admin/job-openings/[id]/page.tsx \
+    app/admin/staffing/staffing-list-client.tsx
+(no output — exit 1)
+
+$ rg '"Published"|"Unpublished"|"Closed"' \
+    app/admin/jobs/page.tsx \
+    app/admin/jobs/job-postings/page.tsx \
+    app/admin/jobs/job-postings/[id]/page.tsx \
+    app/admin/job-openings/[id]/page.tsx \
+    app/admin/staffing/staffing-list-client.tsx
+(no output — exit 1)
+
+$ rg 'Công bố dự án|Bỏ công bố dự án|Đăng tin|Gỡ tin|Lưu trữ' \
+    app/admin/jobs \
+    app/admin/jobs/job-postings \
+    app/admin/job-openings \
+    app/admin/staffing
+app/admin/jobs/page.tsx:222:          reason: turningOn ? 'Đăng tin từ trang quản trị' : 'Tắt tin từ trang quản trị',
+app/admin/jobs/page.tsx:257:             *  - "Công bố dự án" / "Bỏ công bố dự án"  (this page) bật hoặc
+[+ references inside static test files: jobs-terminology / admin-jobs-terminology]
+
+==> SUMMARY <==
+English-literal scan on 5 Wave 2 surfaces: 0 raw-enum-form hits.
+F11 frozen literals (Công bố dự án / Bỏ công bố dự án / Đăng tin / Gỡ tin / Lưu trữ)
+all preserved verbatim.
+
+Allowlisted canonical enum tokens (DRAFT / PUBLISHED / ARCHIVED / OPEN / CLOSING_SOON /
+CLOSED / FILLED / CANCELLED / ACTIVE / REVOKED / SUPERSEDED / PAUSED / COMPLETED) appear
+ONLY as TS source identifiers inside the Wave 2 files (e.g. STATUSES constant,
+type guards like value === 'DRAFT', or <option value={s}> mapping). They are NEVER
+rendered as visible display text on any operator-facing surface.

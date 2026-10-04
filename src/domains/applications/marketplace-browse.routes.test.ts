@@ -118,6 +118,9 @@ const PUBLISHED_JOB: PublicJobDto = {
   // hrp-ui-v1-job-card-stamps-brand (T1B / RQ-13): 2 author-selected flag canonical mới.
   isHighReward: false,
   isExpiringSoon: false,
+  // hrp-ui-v1-public-card-truth-correction (T1A / RQ-09, RQ-10): author-entered salaryDisplay
+  // verbatim text — null khi tác giả không nhập.
+  salaryDisplay: null,
   // go-live-05 / RQ-02: ba field đơn ở trên là PHẦN TỬ ĐẦU của ba mảng này, không phải giá trị rời.
   // Fixture giữ đúng quan hệ đó để nó vẫn là hình dạng mà service thật có thể sinh ra.
   positionTitles: ['Công nhân sản xuất', 'Nhân viên kho'],
