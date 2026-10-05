@@ -133,3 +133,19 @@ Pre-P2 gate `codex/t1c-jobposting-media-youtube` — JobPosting media gallery + 
 - `RISK-05` (PATCH `requestBody` regression): NOT TRIGGERED — slot appended at end of array; clients omitting `youtubeVideoId` produce identical hash.
 - `RISK-06` (PR #108 merge conflict): APPLIED — branch is based on `origin/main` after PR #107; `prisma/migrations/20261004230000_ui2_public_content_controls/migration.test.ts` updated to handle the new migration order.
 - `RISK-07` (integration test DB unavailable): DEFERRED — unit tests cover 100% of logic. Synthetic-DB integration tests will run on Owner-provided DB later.
+
+## Integration CI fix (post-P1A1 chain proof)
+
+CI run `37331688538` initially failed at `tests/db/p1a1-migration-chain-proof.integration.test.ts:411:32` — the predecessor-state ephemeral DB did NOT have the new `youtube_video_id` column, but the regenerated Prisma client emits it on `job_posting.create()`. The existing test already handles this same pattern for additive compat migrations (`p1a01_jobposting_stamps`, `ui_v1_jobposting_stamp_flags`) by `applyMigrationFile` on top of the predecessor chain before instantiating Prisma.
+
+**Fix** (commit `02e20351`): add `applyMigrationFile(ephemeralUrl, ".../20261005200000_jp_youtube_video_id/migration.sql")` to the same chain as `p1a01_jobposting_stamps` and `ui_v1_jobposting_stamp_flags`. The migration is purely additive (NULL column) and does not touch any A1 catalog object the chain proof inspects.
+
+## CI status — PR #109 (final freeze)
+
+| Check | Status | Notes |
+|---|---|---|
+| Quality (schema · typecheck · lint · unit · build) | ✅ SUCCESS | `37331688538` job `111836095360` |
+| Integration (DB tests · fail-closed) | ✅ SUCCESS | `37331688538` job `111836096039` — predecessor chain proof now GREEN with T1C additive migration |
+| Vercel Preview Comments | ⚠️ FAILURE | `upgradeToPro=build-rate-limit` — Vercel account plan limit on free tier, NOT a code defect. Re-deploy resolves once rate window resets or plan upgrades. |
+
+CI green-light for the merge gating criteria (Quality + Integration). Vercel build is decoupled and triggers on its own rate-limit schedule.
