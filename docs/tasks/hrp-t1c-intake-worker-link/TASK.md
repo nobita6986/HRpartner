@@ -12,7 +12,7 @@
 | Assurance lane | `STANDARD` |
 | Audit mode | `NONE` |
 | Audit reason | Fix bug trong transaction convert hiện hữu, blast radius hữu hạn (1 service + 1 integration test). Không đụng schema/migration/RLS. Tier 1 self-review. |
-| Spec version | `v1.0` |
+| Spec version | `v1.1` |
 | Status | `READY_TO_CODE` |
 | Planner | `Tier 1` |
 | Baseline | `ea8f81a47c23e33a836a4f57a834a91b994b6665` |
@@ -185,3 +185,4 @@
 | Spec version | Date | Change | Reason |
 |---|---|---|---|
 | `v1.0` | 2026-10-05 | Initial contract | Initial |
+| `v1.1` | 2026-10-05 | Correction 1/1: refactor `linkLaborProfileWorker` to CAS-update with `where: { id, workerId: null }`; on `count = 0` re-read and decide idempotent (matching) vs `LABOR_PROFILE_WORKER_CONFLICT` (409). Add `AC-RAC-01..AC-RAC-03` test cases covering CAS hit, CAS miss + idempotent, concurrent overwrite. Forward-merge `origin/main` (`598feacc`). | Owner/Tier 0 review feedback: prior `findUnique` then `update({id})` had a TOCTOU window where two simultaneous conversions could both succeed, with the loser's `update` clobbering the winner's workerId. CAS-update under `workerId: null` filter makes the row read-modify-write atomic and surfaces contention as a typed 409. |
