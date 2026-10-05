@@ -188,10 +188,28 @@ describe('P1-A0.4 F-08 UI surface — static guards', () => {
     expect(componentSrc).toContain('Chuyên viên tuyển dụng');
 
     const pageSrc = codeFor(pagePath);
-    expect(pageSrc).toContain('RecruiterAssignmentManager');
-    expect(pageSrc).toContain("from './recruiter-assignment-manager'");
-    // Role gate: ADMIN/HR_MANAGER only (B-09 mandate).
-    expect(pageSrc).toMatch(/MANAGE_ROLES\.has/);
+    // t1a-staffing-order-management: page có thể import manager trực tiếp
+    // (cũ) hoặc qua client wrapper (mới — OrderManagementClient). Cả hai
+    // đều đảm bảo component được mount trong DOM thật.
+    const clientPath = join(APP_DIR, 'admin', 'staffing-orders', '[id]', 'order-management-client.tsx');
+    const clientSrc = codeFor(clientPath);
+    const pageImportsManager = pageSrc.includes("from './recruiter-assignment-manager'");
+    const clientImportsManager = clientSrc.includes("from './recruiter-assignment-manager'");
+    expect(pageImportsManager || clientImportsManager).toBe(true);
+    if (pageImportsManager) {
+      expect(pageSrc).toContain('RecruiterAssignmentManager');
+    } else {
+      // Mount happens trong client wrapper.
+      expect(clientSrc).toContain('RecruiterAssignmentManager');
+    }
+    // Role gate vẫn được enforce — `MANAGE_ROLES.has()` đã được thay bằng
+    // `ASSIGN_ROLES.has(...)` trong capability của page, và client dùng
+    // `canManage={capability.canAssign}` để gate manager.
+    const gateOk =
+      pageSrc.includes('ASSIGN_ROLES') ||
+      pageSrc.includes('MANAGE_ROLES') ||
+      clientSrc.includes('capability.canAssign');
+    expect(gateOk).toBe(true);
     expect(pageSrc).toMatch(/ADMIN/);
     expect(pageSrc).toMatch(/HR_MANAGER/);
   });

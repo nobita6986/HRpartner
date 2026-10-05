@@ -24,7 +24,14 @@ type MockTx = {
     findUnique: MockFn;
     findFirst: MockFn;
     update: MockFn;
+    delete: MockFn;
     count: MockFn;
+  };
+  staffingOrderSlot: {
+    create: MockFn;
+    update: MockFn;
+    delete: MockFn;
+    deleteMany: MockFn;
   };
   outboxEvent: { create: MockFn };
   $queryRawUnsafe: MockFn;
@@ -39,7 +46,14 @@ function makeMockTx(overrides?: Partial<MockTx>): MockTx {
       findUnique: vi.fn().mockResolvedValue(null),
       findFirst: vi.fn().mockResolvedValue(null),
       update: vi.fn().mockResolvedValue(null),
+      delete: vi.fn().mockResolvedValue(null),
       count: vi.fn().mockResolvedValue(0),
+    },
+    staffingOrderSlot: {
+      create: vi.fn().mockResolvedValue(null),
+      update: vi.fn().mockResolvedValue(null),
+      delete: vi.fn().mockResolvedValue(null),
+      deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
     },
     outboxEvent: {
       create: vi.fn().mockResolvedValue({ id: 'ev-001', status: 'PENDING' }),
@@ -52,7 +66,9 @@ function makeMockTx(overrides?: Partial<MockTx>): MockTx {
 
 const ADMIN_CTX = { userId: 'admin-001', role: 'ADMIN' as const };
 const PM_CTX = { userId: 'pm-001', role: 'PM' as const };
+const SALE_CTX = { userId: 'sale-001', role: 'SALE' as const };
 const WORKER_CTX = { userId: 'wk-001', role: 'WORKER' as const };
+const HR_STAFF_CTX = { userId: 'hrstaff-001', role: 'HR_STAFF' as const };
 
 // ─── Import after mock setup ─────────────────────────────────────────────────
 // Dynamic import để tránh module-level evaluation trước mock.
@@ -61,6 +77,8 @@ import {
   listStaffingOrders,
   getStaffingOrder,
   updateStaffingOrderStatus,
+  updateStaffingOrder,
+  deleteStaffingOrder,
   StaffingOrderServiceError,
 } from './order.service';
 import { buildStaffingOrderScope } from '@/src/shared/auth/scopes/staffing.scope';
@@ -252,6 +270,331 @@ describe('order.service', () => {
       const result = await getStaffingOrder(tx as any, ADMIN_CTX, 'o1');
       expect(result.id).toBe('o1');
       expect(result.slots).toHaveLength(1);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // t1a-staffing-order-management — updateStaffingOrder / deleteStaffingOrder
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  describe('updateStaffingOrder', () => {
+    it('sửa title + description + deadline thành công (ADMIN)', async () => {
+      const existing = {
+        id: 'o1', projectId: 'p1', title: 'Old', status: 'OPEN',
+        slots: [
+          { id: 's1', positionTitle: 'Thợ điện', slotsNeeded: 3, slotsFilled: 0,
+            _count: { submissions: 0, assignments: 0 },
+            jobOpening: null, neoJobOpenings: [] },
+        ],
+      };
+      const tx = makeMockTx({
+        staffingOrder: {
+          ...makeMockTx().staffingOrder,
+          findFirst: vi.fn().mockResolvedValue(existing),
+          update: vi.fn().mockResolvedValue({ id: 'o1' }),
+        },
+      });
+      const result = await updateStaffingOrder(tx as any, ADMIN_CTX, 'o1', {
+        title: 'New title',
+        description: 'New desc',
+        deadlineDate: '2026-12-31',
+      });
+      expect(result.updated).toBe(true);
+      expect(tx.staffingOrder.update).toHaveBeenCalledOnce();
+    });
+
+    it('SALE cũng có quyền sửa (cùng tập với create/status)', async () => {
+      const existing = {
+        id: 'o1', projectId: 'p1', title: 'Old', status: 'OPEN',
+        slots: [],
+      };
+      const tx = makeMockTx({
+        staffingOrder: {
+          ...makeMockTx().staffingOrder,
+          findFirst: vi.fn().mockResolvedValue(existing),
+        },
+      });
+      await updateStaffingOrder(tx as any, SALE_CTX, 'o1', { title: 'x' });
+      expect(tx.staffingOrder.update).toHaveBeenCalledOnce();
+    });
+
+    it('HR_STAFF bị từ chối (PERMISSION_DENIED)', async () => {
+      const tx = makeMockTx();
+      await expect(
+        updateStaffingOrder(tx as any, HR_STAFF_CTX, 'o1', { title: 'x' }),
+      ).rejects.toMatchObject({ code: 'PERMISSION_DENIED' });
+    });
+
+    it('PM bị từ chối (PERMISSION_DENIED)', async () => {
+      const tx = makeMockTx();
+      await expect(
+        updateStaffingOrder(tx as any, PM_CTX, 'o1', { title: 'x' }),
+      ).rejects.toMatchObject({ code: 'PERMISSION_DENIED' });
+    });
+
+    it('slotsNeeded < slotsFilled → ORDER_NOT_EDITABLE', async () => {
+      const existing = {
+        id: 'o1', projectId: 'p1', title: 'Old', status: 'OPEN',
+        slots: [
+          { id: 's1', positionTitle: 'Thợ điện', slotsNeeded: 3, slotsFilled: 2,
+            _count: { submissions: 0, assignments: 0 },
+            jobOpening: null, neoJobOpenings: [] },
+        ],
+      };
+      const tx = makeMockTx({
+        staffingOrder: {
+          ...makeMockTx().staffingOrder,
+          findFirst: vi.fn().mockResolvedValue(existing),
+        },
+      });
+      await expect(
+        updateStaffingOrder(tx as any, ADMIN_CTX, 'o1', {
+          slots: [{ id: 's1', positionCode: 'ELEC', positionTitle: 'Thợ điện', slotsNeeded: 1, validFrom: '2026-10-01' }],
+        }),
+      ).rejects.toMatchObject({ code: 'ORDER_NOT_EDITABLE' });
+    });
+
+    it('slot có JobOpening → _delete=true bị SLOT_HAS_DEPENDENCIES', async () => {
+      const existing = {
+        id: 'o1', projectId: 'p1', title: 'Old', status: 'OPEN',
+        slots: [
+          { id: 's1', positionTitle: 'Thợ điện', slotsNeeded: 3, slotsFilled: 0,
+            _count: { submissions: 0, assignments: 0 },
+            jobOpening: { id: 'jo-1' }, neoJobOpenings: [] },
+        ],
+      };
+      const tx = makeMockTx({
+        staffingOrder: {
+          ...makeMockTx().staffingOrder,
+          findFirst: vi.fn().mockResolvedValue(existing),
+        },
+      });
+      await expect(
+        updateStaffingOrder(tx as any, ADMIN_CTX, 'o1', {
+          slots: [{ id: 's1', positionCode: 'ELEC', positionTitle: 'Thợ điện', slotsNeeded: 3, validFrom: '2026-10-01', _delete: true }],
+        }),
+      ).rejects.toMatchObject({ code: 'SLOT_HAS_DEPENDENCIES' });
+    });
+
+    it('slot có submissions → _delete=true bị SLOT_HAS_DEPENDENCIES', async () => {
+      const existing = {
+        id: 'o1', projectId: 'p1', title: 'Old', status: 'OPEN',
+        slots: [
+          { id: 's1', positionTitle: 'Thợ điện', slotsNeeded: 3, slotsFilled: 1,
+            _count: { submissions: 1, assignments: 0 },
+            jobOpening: null, neoJobOpenings: [] },
+        ],
+      };
+      const tx = makeMockTx({
+        staffingOrder: {
+          ...makeMockTx().staffingOrder,
+          findFirst: vi.fn().mockResolvedValue(existing),
+        },
+      });
+      await expect(
+        updateStaffingOrder(tx as any, ADMIN_CTX, 'o1', {
+          slots: [{ id: 's1', positionCode: 'ELEC', positionTitle: 'Thợ điện', slotsNeeded: 3, validFrom: '2026-10-01', _delete: true }],
+        }),
+      ).rejects.toMatchObject({ code: 'SLOT_HAS_DEPENDENCIES' });
+    });
+
+    it('slot không phụ thuộc có thể xoá', async () => {
+      const existing = {
+        id: 'o1', projectId: 'p1', title: 'Old', status: 'OPEN',
+        slots: [
+          { id: 's1', positionTitle: 'Thợ điện', slotsNeeded: 3, slotsFilled: 0,
+            _count: { submissions: 0, assignments: 0 },
+            jobOpening: null, neoJobOpenings: [] },
+        ],
+      };
+      const tx = makeMockTx({
+        staffingOrder: {
+          ...makeMockTx().staffingOrder,
+          findFirst: vi.fn().mockResolvedValue(existing),
+        },
+      });
+      await updateStaffingOrder(tx as any, ADMIN_CTX, 'o1', {
+        slots: [{ id: 's1', positionCode: 'ELEC', positionTitle: 'Thợ điện', slotsNeeded: 3, validFrom: '2026-10-01', _delete: true }],
+      });
+      expect(tx.staffingOrderSlot.delete).toHaveBeenCalledWith({ where: { id: 's1' } });
+    });
+
+    it('append slot mới (không id) thành công', async () => {
+      const existing = {
+        id: 'o1', projectId: 'p1', title: 'Old', status: 'OPEN', slots: [],
+      };
+      const tx = makeMockTx({
+        staffingOrder: {
+          ...makeMockTx().staffingOrder,
+          findFirst: vi.fn().mockResolvedValue(existing),
+        },
+      });
+      await updateStaffingOrder(tx as any, ADMIN_CTX, 'o1', {
+        slots: [{ positionCode: 'ELEC', positionTitle: 'Thợ điện', slotsNeeded: 5, validFrom: '2026-10-01' }],
+      });
+      expect(tx.staffingOrderSlot.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            staffingOrderId: 'o1', slotsFilled: 0, slotsNeeded: 5,
+          }),
+        }),
+      );
+    });
+
+    it('order không tồn tại → NOT_FOUND', async () => {
+      const tx = makeMockTx({
+        staffingOrder: {
+          ...makeMockTx().staffingOrder,
+          findFirst: vi.fn().mockResolvedValue(null),
+        },
+      });
+      await expect(
+        updateStaffingOrder(tx as any, ADMIN_CTX, 'fake', { title: 'x' }),
+      ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    });
+  });
+
+  describe('deleteStaffingOrder', () => {
+    it('order sạch + ADMIN → xoá thành công', async () => {
+      const existing = {
+        id: 'o1', code: 'SO-00001', projectId: 'p1', title: 'Old', status: 'OPEN',
+        _count: { jobOpenings: 0, recruiterAssignments: 0, assignments: 0 },
+        slots: [],
+        jobOpenings: [],
+      };
+      const tx = makeMockTx({
+        staffingOrder: {
+          ...makeMockTx().staffingOrder,
+          findFirst: vi.fn().mockResolvedValue(existing),
+          delete: vi.fn().mockResolvedValue({ id: 'o1' }),
+        },
+      });
+      const result = await deleteStaffingOrder(tx as any, ADMIN_CTX, 'o1');
+      expect(result.deleted).toBe(true);
+      expect(tx.staffingOrderSlot.deleteMany).toHaveBeenCalledWith({ where: { staffingOrderId: 'o1' } });
+      expect(tx.staffingOrder.delete).toHaveBeenCalledWith({ where: { id: 'o1' } });
+    });
+
+    it('HR_MANAGER không có quyền xoá (PERMISSION_DENIED)', async () => {
+      const tx = makeMockTx();
+      await expect(
+        deleteStaffingOrder(tx as any, { userId: 'h1', role: 'HR_MANAGER' as any }, 'o1'),
+      ).rejects.toMatchObject({ code: 'PERMISSION_DENIED' });
+    });
+
+    it('SALE không có quyền xoá (PERMISSION_DENIED)', async () => {
+      const tx = makeMockTx();
+      await expect(
+        deleteStaffingOrder(tx as any, SALE_CTX, 'o1'),
+      ).rejects.toMatchObject({ code: 'PERMISSION_DENIED' });
+    });
+
+    it('order có JobOpening → ORDER_NOT_DELETABLE + guidance', async () => {
+      const existing = {
+        id: 'o1', code: 'SO-00001', projectId: 'p1', title: 'Old', status: 'OPEN',
+        _count: { jobOpenings: 1, recruiterAssignments: 0, assignments: 0 },
+        slots: [],
+        jobOpenings: [{ id: 'jo-1', posting: null }],
+      };
+      const tx = makeMockTx({
+        staffingOrder: {
+          ...makeMockTx().staffingOrder,
+          findFirst: vi.fn().mockResolvedValue(existing),
+        },
+      });
+      await expect(
+        deleteStaffingOrder(tx as any, ADMIN_CTX, 'o1'),
+      ).rejects.toMatchObject({
+        code: 'ORDER_NOT_DELETABLE',
+        message: expect.stringMatching(/Hủy nhu cầu/),
+      });
+      expect(tx.staffingOrder.delete).not.toHaveBeenCalled();
+    });
+
+    it('order có JobPosting (qua opening.posting) → ORDER_NOT_DELETABLE', async () => {
+      const existing = {
+        id: 'o1', code: 'SO-00001', projectId: 'p1', title: 'Old', status: 'OPEN',
+        _count: { jobOpenings: 1, recruiterAssignments: 0, assignments: 0 },
+        slots: [],
+        jobOpenings: [{ id: 'jo-1', posting: { id: 'jp-1' } }],
+      };
+      const tx = makeMockTx({
+        staffingOrder: {
+          ...makeMockTx().staffingOrder,
+          findFirst: vi.fn().mockResolvedValue(existing),
+        },
+      });
+      await expect(
+        deleteStaffingOrder(tx as any, ADMIN_CTX, 'o1'),
+      ).rejects.toMatchObject({ code: 'ORDER_NOT_DELETABLE' });
+    });
+
+    it('order có RecruiterAssignment → ORDER_NOT_DELETABLE', async () => {
+      const existing = {
+        id: 'o1', code: 'SO-00001', projectId: 'p1', title: 'Old', status: 'OPEN',
+        _count: { jobOpenings: 0, recruiterAssignments: 1, assignments: 0 },
+        slots: [],
+        jobOpenings: [],
+      };
+      const tx = makeMockTx({
+        staffingOrder: {
+          ...makeMockTx().staffingOrder,
+          findFirst: vi.fn().mockResolvedValue(existing),
+        },
+      });
+      await expect(
+        deleteStaffingOrder(tx as any, ADMIN_CTX, 'o1'),
+      ).rejects.toMatchObject({ code: 'ORDER_NOT_DELETABLE' });
+    });
+
+    it('order có ProjectAssignment (placement) → ORDER_NOT_DELETABLE', async () => {
+      const existing = {
+        id: 'o1', code: 'SO-00001', projectId: 'p1', title: 'Old', status: 'OPEN',
+        _count: { jobOpenings: 0, recruiterAssignments: 0, assignments: 1 },
+        slots: [],
+        jobOpenings: [],
+      };
+      const tx = makeMockTx({
+        staffingOrder: {
+          ...makeMockTx().staffingOrder,
+          findFirst: vi.fn().mockResolvedValue(existing),
+        },
+      });
+      await expect(
+        deleteStaffingOrder(tx as any, ADMIN_CTX, 'o1'),
+      ).rejects.toMatchObject({ code: 'ORDER_NOT_DELETABLE' });
+    });
+
+    it('slot có CandidateSubmission → ORDER_NOT_DELETABLE', async () => {
+      const existing = {
+        id: 'o1', code: 'SO-00001', projectId: 'p1', title: 'Old', status: 'OPEN',
+        _count: { jobOpenings: 0, recruiterAssignments: 0, assignments: 0 },
+        slots: [
+          { id: 's1', _count: { submissions: 1, assignments: 0 } },
+        ],
+        jobOpenings: [],
+      };
+      const tx = makeMockTx({
+        staffingOrder: {
+          ...makeMockTx().staffingOrder,
+          findFirst: vi.fn().mockResolvedValue(existing),
+        },
+      });
+      await expect(
+        deleteStaffingOrder(tx as any, ADMIN_CTX, 'o1'),
+      ).rejects.toMatchObject({ code: 'ORDER_NOT_DELETABLE' });
+    });
+
+    it('order không tồn tại → NOT_FOUND', async () => {
+      const tx = makeMockTx({
+        staffingOrder: {
+          ...makeMockTx().staffingOrder,
+          findFirst: vi.fn().mockResolvedValue(null),
+        },
+      });
+      await expect(
+        deleteStaffingOrder(tx as any, ADMIN_CTX, 'fake'),
+      ).rejects.toMatchObject({ code: 'NOT_FOUND' });
     });
   });
 });
