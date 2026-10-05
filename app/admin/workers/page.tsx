@@ -72,7 +72,11 @@ function Modal({ onClose, onSuccess, editData }: { onClose: () => void; onSucces
     <div style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} className="fixed inset-0 z-50 flex items-center justify-center" onClick={onClose}>
       <div style={{ background: 'var(--surface-container-lowest)' }} className="w-full max-w-md rounded-lg border p-6 shadow-xl" onClick={ev => ev.stopPropagation()}>
         <h2 style={{ color: 'var(--on-surface)' }} className="mb-4 text-lg font-semibold">
-          {isEdit ? 'Sửa nhân viên' : 'Thêm nhân viên mới'}
+  // T0 T1B — HOTFIX UI NGƯỜI LAO ĐỘNG: workforce surface label
+  // "Nhân viên" (line-worker) → "Người lao động" per canonical operator
+  // terminology. Modal title, button text, empty-state, and footer renamed.
+  // Backend field names (userId, fullName, cccdNumber) are unchanged.
+          {isEdit ? 'Sửa người lao động' : 'Thêm người lao động mới'}
         </h2>
         <form onSubmit={submit} className="space-y-4">
           {!isEdit && (
@@ -143,7 +147,7 @@ export default function WorkersPage() {
       setWorkers(d.workers);
       setTotal(d.total);
     } catch {
-      setError('Không thể tải danh sách nhân viên.');
+      setError('Không thể tải danh sách người lao động.');
     } finally {
       setLoading(false);
     }
@@ -158,11 +162,11 @@ export default function WorkersPage() {
     <div style={{ background: 'var(--surface)' }} className="px-6 py-8 lg:px-8">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 style={{ color: 'var(--on-surface)' }} className="text-2xl font-semibold">Nhân viên</h1>
-          <p style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-sm">Phân hệ M5 — Quản lý dữ liệu gốc nhân viên</p>
+          <h1 style={{ color: 'var(--on-surface)' }} className="text-2xl font-semibold">Danh sách người lao động</h1>
+          <p style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-sm">Phân hệ M5 — Quản lý hồ sơ người lao động</p>
         </div>
         <button onClick={() => setShowCreate(true)} style={{ background: 'var(--primary)', color: 'var(--on-primary)' }} className="rounded px-4 py-2 text-sm font-semibold">
-          + Thêm nhân viên
+          + Thêm người lao động
         </button>
       </div>
 
@@ -192,7 +196,7 @@ export default function WorkersPage() {
         <div style={{ background: 'var(--error-container)', color: 'var(--on-error-container)', borderColor: 'var(--error)' }} className="rounded-lg border p-4 text-sm">{error}</div>
       ) : workers.length === 0 ? (
         <div style={{ background: 'var(--surface-container-lowest)', borderColor: 'var(--outline-variant)', color: 'var(--on-surface-variant)' }} className="rounded-lg border p-8 text-center">
-          <p className="text-sm">Chưa có nhân viên nào.</p>
+          <p className="text-sm">Chưa có người lao động nào.</p>
         </div>
       ) : (
         <div style={{ borderColor: 'var(--outline-variant)' }} className="overflow-x-auto rounded-lg border">
@@ -228,7 +232,7 @@ export default function WorkersPage() {
               ))}
             </tbody>
           </table>
-          <div style={{ borderColor: 'var(--outline-variant)', color: 'var(--on-surface-variant)' }} className="border-t px-4 py-2 text-xs">Tổng: {total} nhân viên</div>
+          <div style={{ borderColor: 'var(--outline-variant)', color: 'var(--on-surface-variant)' }} className="border-t px-4 py-2 text-xs">Tổng: {total} người lao động</div>
         </div>
       )}
 

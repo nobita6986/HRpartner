@@ -117,10 +117,13 @@ describe('RoleGuardLayout — T1C Con người IA realignment', () => {
     );
   });
 
-  it('renders the people group header as "Nhân sự" (not "Con người")', () => {
-    // The header text is rendered inside the JSX of the peopleNav block.
-    // We assert the new label is present and the old one is not.
-    expect(source).toMatch(/>Nhân sự</);
+  it('renders the people group header as "NGƯỜI LAO ĐỘNG" (not "Con người" nor the old "Nhân sự")', () => {
+    // T0 T1B — HOTFIX UI NGƯỜI LAO ĐỘNG: the people-section header is the
+    // canonical operator-facing group label "NGƯỜI LAO ĐỘNG" (uppercase to
+    // match the visual treatment of the other sidebar section headers). The
+    // legacy "Nhân sự" (HR-staff) header must NOT be reintroduced.
+    expect(source).toMatch(/>NGƯỜI LAO ĐỘNG</);
+    expect(source).not.toMatch(/>Nhân sự</);
     expect(source).not.toMatch(/>Con người</);
   });
 
@@ -277,8 +280,85 @@ describe('RoleGuardLayout — PR #82 + PR #83 reconciliation', () => {
     expect(source).toMatch(/>Đối tác</);
   });
 
-  it('keeps the people header as "Nhân sự" and never reintroduces "Con người"', () => {
-    expect(source).toMatch(/>Nhân sự</);
+  it('keeps the people header as "NGƯỜI LAO ĐỘNG" and never reintroduces "Con người" or the legacy "Nhân sự"', () => {
+    // T0 T1B — HOTFIX UI NGƯỜI LAO ĐỘNG follow-up: the workforce roster is
+    // "Người lao động" (people being managed), not "Nhân sự" (HR staff). The
+    // group header was updated to "NGƯỜI LAO ĐỘNG".
+    expect(source).toMatch(/>NGƯỜI LAO ĐỘNG</);
+    expect(source).not.toMatch(/>Nhân sự</);
     expect(source).not.toMatch(/>Con người</);
+  });
+});
+
+describe('RoleGuardLayout — T0 T1B HOTFIX UI NGƯỜI LAO ĐỘNG', () => {
+  // T0 directive §1: standardize the people section. The workforce roster is
+  // "Người lao động" (people being managed); the canonical LaborProfile list
+  // label is "Hồ sơ tiếp nhận"; the dedicated intake menu
+  // /admin/labor-profiles/new is removed from the sidebar (the route remains
+  // reachable via the in-page "+ Tiếp nhận người lao động" CTA).
+  const source = readFileSync(LAYOUT_PATH, 'utf8');
+
+  it('renames the /admin/workers entry label to "Người lao động"', () => {
+    // The exact object-literal scan: the { ... } slice containing
+    // href: '/admin/workers' must carry label: 'Người lao động'.
+    const slice = source.match(/\{[^}]*href:\s*'\/admin\/workers'[^}]*\}/);
+    expect(slice).not.toBeNull();
+    expect(slice![0]).toMatch(/label:\s*'Người lao động'/);
+  });
+
+  it('renames the /admin/labor-profiles entry label to "Hồ sơ tiếp nhận"', () => {
+    const slice = source.match(/\{[^}]*href:\s*'\/admin\/labor-profiles'[^}]*\}/);
+    expect(slice).not.toBeNull();
+    expect(slice![0]).toMatch(/label:\s*'Hồ sơ tiếp nhận'/);
+  });
+
+  it('removes the dedicated /admin/labor-profiles/new sidebar entry', () => {
+    // T0 directive §1.3: the dedicated intake menu is removed from the
+    // sidebar. The route /admin/labor-profiles/new itself is NOT touched —
+    // the page remains reachable via the LaborProfile list page's
+    // "+ Tiếp nhận người lao động" CTA and via direct URL.
+    expect(source).not.toMatch(/href:\s*'\/admin\/labor-profiles\/new'/);
+  });
+
+  it('preserves role matrix byte-exact for both people entries', () => {
+    // T1B is a UI hotfix, not a permission change. The role arrays on
+    // /admin/workers and /admin/labor-profiles must remain
+    // ['ADMIN', 'HR_STAFF', 'HR_MANAGER'] (the same set the page's own
+    // ALLOWED_ROLES uses).
+    const workersSlice = source.match(/\{[^}]*href:\s*'\/admin\/workers'[^}]*\}/);
+    const profilesSlice = source.match(/\{[^}]*href:\s*'\/admin\/labor-profiles'[^}]*\}/);
+    expect(workersSlice).not.toBeNull();
+    expect(profilesSlice).not.toBeNull();
+    expect(workersSlice![0]).toContain("roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER']");
+    expect(profilesSlice![0]).toContain("roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER']");
+  });
+
+  it('preserves section: "people" for both renamed entries', () => {
+    // The IA realignment is unchanged — both entries still render under
+    // the people group.
+    const workersSlice = source.match(/\{[^}]*href:\s*'\/admin\/workers'[^}]*\}/);
+    const profilesSlice = source.match(/\{[^}]*href:\s*'\/admin\/labor-profiles'[^}]*\}/);
+    expect(workersSlice![0]).toMatch(/section:\s*'people'/);
+    expect(profilesSlice![0]).toMatch(/section:\s*'people'/);
+  });
+
+  it('keeps /admin/labor-profiles positioned AFTER /admin/workers in ADMIN_NAV_PHASE4', () => {
+    // Operators read the sidebar top-to-bottom: workforce roster first,
+    // then the candidate-side intake list. The T1B rename did not re-order
+    // the entries.
+    const workersIdx = source.indexOf("href: '/admin/workers'");
+    const profilesIdx = source.indexOf("href: '/admin/labor-profiles'");
+    expect(workersIdx).toBeGreaterThanOrEqual(0);
+    expect(profilesIdx).toBeGreaterThan(workersIdx);
+  });
+
+  it('does not reintroduce the legacy "Nhân sự" / "Hồ sơ NLD" / "Tiếp nhận NLD" labels', () => {
+    // Anti-regression fence: the F2/F3 labels must be gone from the nav
+    // array. (Other files such as `app/admin/labor-profiles/page.tsx` and
+    // the new page <h1> legitimately use the longer "Hồ sơ tiếp nhận người
+    // lao động" title; this test scopes to the sidebar source only.)
+    expect(source).not.toMatch(/label:\s*'Nhân sự'/);
+    expect(source).not.toMatch(/label:\s*'Hồ sơ NLD'/);
+    expect(source).not.toMatch(/label:\s*'Tiếp nhận NLD'/);
   });
 });
