@@ -62,3 +62,34 @@ export interface FillSlotResult {
   slotsRemaining: number;
   slotId: string;
 }
+
+// ─── t1a-staffing-order-management: edit/delete input ────────────────────────
+
+/** Một slot trong payload edit (PUT /api/staffing/orders/[id]). */
+export interface UpdateSlotInput {
+  /** UUID tồn tại trong order = cập nhật slot đó; thiếu = append slot mới. */
+  id?: string;
+  positionCode: string;
+  positionTitle: string;
+  slotsNeeded: number;
+  hourlyRateVnd?: number | null;
+  shiftStart?: string | null;
+  shiftEnd?: string | null;
+  validFrom: string;
+  validTo?: string | null;
+  workLocation?: string | null;
+  /**
+   * `true` = xoá slot (chỉ có ý nghĩa khi `id` tồn tại). Backend vẫn enforce
+   * guard: không xoá slot đã có JobOpening/Submission/Assignment/NeoJobOpening
+   * — trả `SLOT_HAS_DEPENDENCIES` 409.
+   */
+  _delete?: boolean;
+}
+
+/** Input PUT /api/staffing/orders/[id] — sửa title/description/deadline/slots. */
+export interface UpdateStaffingOrderInput {
+  title?: string;
+  description?: string | null;
+  deadlineDate?: string | null;
+  slots?: UpdateSlotInput[];
+}

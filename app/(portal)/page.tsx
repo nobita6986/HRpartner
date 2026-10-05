@@ -11,7 +11,7 @@ import { RecruitmentHighlight } from '@/src/domains/job-board/components/landing
 import { RecruitingProjectsSection } from '@/src/domains/job-board/components/landing/recruiting-projects-section';
 import { ReferralStrip } from '@/src/domains/job-board/components/landing/referral-strip';
 import { HrpIntroSection } from '@/src/domains/job-board/components/landing/hrp-intro-section';
-import { NewsSection } from '@/src/domains/job-board/components/landing/news-section';
+import { NewsSectionWrapper } from '@/src/domains/job-board/public-content-controls';
 import {
   demoHrpIntro,
   demoNewsSection,
@@ -25,10 +25,9 @@ import type {
   PublicJobOverview,
 } from '@/src/domains/job-board/public.service';
 import { BEST_JOBS_PAGE_SIZE_DEFAULT } from '@/src/domains/job-board/public-types';
-import {
-  deriveStampsFromFlags,
-  type StampKey,
-} from '@/src/domains/job-board/components/landing/stamp-defs';
+// hrp-ui-v1-public-card-truth-correction (T1A / DEC-07): `enrichJob` không còn pre-compute
+// `stamps: StampKey[]` nữa — `<JobStampOverlay>` (shared, ở `featured-job-card.tsx`) tự derive
+// qua `deriveStampsFromFlags` từ 4 flag boolean. Tránh RC-02 root cause (mảng 2 flag override).
 
 // ─── UI-adapter: projection công khai → props của card ───────────────────────
 
@@ -63,8 +62,24 @@ export interface EnrichedJob {
    * hrp-p1-a0-1 (DEC-05): derive TỪ `job.isHot` + `job.isUrgent` — KHÔNG heuristic.
    * Trả `['tuyen-gap']` khi `isUrgent`, `['hot']` khi `isHot`, cả hai khi both, `[]` khi neither.
    * Sort theo STAMP_RANK (`tuyen-gap` trước `hot`) để wrapper render quan trọng nhất trước.
+   *
+   * hrp-ui-v1-job-card-stamps-brand (T1B / RQ-07): 2 author-selected flag canonical mới —
+   * cùng semantics, derive thẳng từ `JobPosting.isHighReward`/`isExpiringSoon`.
+   *
+   * hrp-ui-v1-public-card-truth-correction (T1A / RQ-07): thêm 2 flag còn lại (`isHighReward`,
+   * `isExpiringSoon`) — homepage caller TỪNG drop 2 flag này trước T1A; flag bổ sung đảm bảo
+   * TẤT CẢ 4 author-selected boolean đều tới `<JobStampOverlay>` của `featured-job-card`.
    */
-  stamps: StampKey[];
+  isHot: boolean;
+  isUrgent: boolean;
+  isHighReward: boolean;
+  isExpiringSoon: boolean;
+  /**
+   * hrp-ui-v1-public-card-truth-correction (T1A / RQ-07): author-entered salaryDisplay
+   * text từ `JobPosting.salaryDisplay`. Truyền nguyên xuống card để `formatPublicSalary`
+   * áp dụng precedence 1→2→3.
+   */
+  salaryDisplay: string | null;
   /** Y10.4/UI04g fix: tên công ty/nhà máy (project.name), hiển thị dưới title job. */
   companyName: string | null;
 }
@@ -83,7 +98,18 @@ export interface EnrichedJob {
  */
 
 function enrichJob(job: PublicJobDto): EnrichedJob {
-  const { salaryMinVnd, salaryMaxVnd, urgency, postedAt, companyName, isHot, isUrgent } = job;
+  const {
+    salaryMinVnd,
+    salaryMaxVnd,
+    urgency,
+    postedAt,
+    companyName,
+    isHot,
+    isUrgent,
+    isHighReward,
+    isExpiringSoon,
+    salaryDisplay,
+  } = job;
   return {
     id: job.id,
     slug: job.slug ?? job.id,
@@ -95,8 +121,18 @@ function enrichJob(job: PublicJobDto): EnrichedJob {
     salaryMaxVnd,
     availableSlots: job.availableSlots,
     postedAt: postedAt ?? null,
-    // hrp-p1-a0-1 (DEC-05): canonical flags từ JobPosting row.
-    stamps: deriveStampsFromFlags(isHot, isUrgent),
+    // hrp-p1-a0-1 (DEC-05) + hrp-ui-v1-job-card-stamps-brand (T1B / RQ-07):
+    // canonical flags từ JobPosting row — truyền nguyên xuống `<FeaturedJobCard>` để
+    // `<JobStampOverlay>` (shared) derive qua `deriveStampsFromFlags(isHot, isUrgent,
+    // isHighReward, isExpiringSoon)`. KHÔNG pre-compute `stamps` ở đây — đó là RC-02
+    // root cause (mảng 2 flag `[]` override 4 boolean trên `/viec-lam`).
+    isHot,
+    isUrgent,
+    isHighReward,
+    isExpiringSoon,
+    // hrp-ui-v1-public-card-truth-correction (T1A / RQ-07): author-entered salaryDisplay
+    // text — truyền nguyên xuống card; `formatPublicSalary` quyết định render path.
+    salaryDisplay: salaryDisplay ?? null,
     // Y10.4/UI04g fix: companyName = tên nhà máy từ API, hiển thị dưới title.
     companyName: companyName ?? null,
   };
@@ -390,7 +426,11 @@ export default function JobsPage() {
 
       <ReferralStrip />
 
-      <NewsSection content={demoNewsSection} />
+      {/* Phase B / UI2 — gate-aware wrapper. The wrapper reads
+          `newsSectionEnabled` from the public projection route; when
+          `false`, the section (and the matching navbar entry) is hidden
+          without deleting any article data. */}
+      <NewsSectionWrapper content={demoNewsSection} />
 
       {applyJob && (
         <ApplyModal

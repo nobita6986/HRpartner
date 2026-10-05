@@ -25,18 +25,34 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { JSONContent } from '@tiptap/core';
 
 import { JobPostingRichTextEditor } from '@/src/shared/ui/editor/JobPostingRichTextEditor';
-import {
-  JOB_POSTING_RICH_TEXT_SCHEMA_VERSION,
-} from '@/src/shared/content/job-posting-rich-text';
+import { JOB_POSTING_RICH_TEXT_SCHEMA_VERSION } from '@/src/shared/content/job-posting-rich-text';
 import type { JobPostingDetailDto } from '@/src/domains/staffing/job-posting-list.service';
 import type { JobPostingLifecycleStatus } from '@/src/domains/staffing/job-posting-authoring.service';
+import { jobOpeningStatusLabel } from '@/src/domains/staffing/job-opening-ui';
+import { jobPostingStatusLabel } from '@/src/domains/staffing/job-posting-ui';
+import {
+  summarizeJobPostingApiError,
+} from '@/src/domains/staffing/job-posting-error-map';
+import type { JobPostingApiErrorSummary } from '@/src/domains/staffing/job-posting-error-map';
+// hrp-t1c-jobposting-media-youtube (RQ-05..RQ-09, RQ-02..RQ-04): gallery + YouTube cards.
+// Editor shell pre-loads initial server snapshot qua route handler
+// `/api/admin/jobs/job-postings/[id]/media` để tránh waterfall.
+import { JobPostingMediaCard, type JobPostingMediaAssignment } from './media-card';
+import { JobPostingYouTubeCard } from './youtube-card';
 
 interface JobPostingEditorShellProps {
   initial: JobPostingDetailDto;
+  /**
+   * hrp-t1c-jobposting-media-youtube (RQ-05): server-side pre-fetch của
+   * `listJobPostingMedia` (PUBLIC media, cover-first, order ASC). Tránh
+   * waterfall khi client mount — đã chạy trong Server Component page.
+   */
+  initialMedia: JobPostingMediaAssignment[];
   /** Mutation roles gate (server already enforces; this is just UI affordance). */
   canMutate: boolean;
 }
@@ -44,7 +60,7 @@ interface JobPostingEditorShellProps {
 type RichFieldKey = 'descriptionJson' | 'requirementsJson' | 'benefitsJson' | 'applicationInstructionsJson';
 
 const RICH_FIELD_LABELS: Record<RichFieldKey, string> = {
-  descriptionJson: 'Mô tả công việc (bắt buộc khi publish)',
+  descriptionJson: 'Mô tả công việc (bắt buộc khi đăng tin)',
   requirementsJson: 'Yêu cầu ứng viên (tuỳ chọn)',
   benefitsJson: 'Phúc lợi (tuỳ chọn)',
   applicationInstructionsJson: 'Hướng dẫn ứng tuyển (tuỳ chọn)',
@@ -80,16 +96,64 @@ function asRichDoc(value: unknown): JSONContent {
   return { type: 'doc', content: [{ type: 'paragraph' }] };
 }
 
-async function readErrorMessage(res: Response): Promise<string> {
+/**
+ * hrp-m2a-operational-ux-debt (F8, integrated by T1B UI V1):
+ * Replace the legacy `readErrorMessage` that echoed `body.message` /
+ * `body.error` with a thin call into the repo-owned safe mapper
+ * `summarizeJobPostingApiError`. The mapper NEVER echoes raw developer /
+ * DB messages, UUIDs, SQL, stack traces, or PII — see
+ * `src/domains/staffing/job-posting-error-map.ts`.
+ *
+ * T1A owns the mapper (Mốc 2A). T1B is the only allowed call site on the
+ * editor shell per `docs/tasks/hrp-m2a-operational-ux-debt/HANDOFF.md §6`.
+ *
+ * When the recovery href is present (today only `JOB_OPENING_NOT_OPEN`),
+ * the editor shell renders a `<Link>` to the canonical JobOpening page so
+ * the operator can unblock the publish retry in one click.
+ */
+export async function readApiErrorSummary(
+  res: Response,
+  fallbackJobOpeningId: string | null,
+): Promise<JobPostingApiErrorSummary> {
+  let envelope: {
+    status?: number;
+    error?: string | null;
+    details?: { jobOpeningId?: string | null; [k: string]: unknown } | null;
+  } = {
+    status: res.status,
+  };
   try {
-    const body = (await res.json()) as { error?: string; message?: string };
-    return body?.message ?? body?.error ?? `HTTP ${res.status}`;
+    const body = (await res.json()) as {
+      status?: number;
+      error?: string | null;
+      message?: string;
+      details?: { jobOpeningId?: string | null; [k: string]: unknown } | null;
+    };
+    envelope = {
+      status: typeof body?.status === 'number' ? body.status : res.status,
+      error: typeof body?.error === 'string' ? body.error : null,
+      details: body?.details ?? null,
+    };
   } catch {
-    return `HTTP ${res.status}`;
+    // Non-JSON or unreadable body — keep the status-only envelope; the mapper
+    // collapses unknown shape to the generic safe fallback.
   }
+  // Inject the editor's known jobOpeningId into details only when the
+  // server envelope does NOT carry one — the server value is authoritative.
+  if (
+    fallbackJobOpeningId &&
+    (!envelope.details || !('jobOpeningId' in envelope.details))
+  ) {
+    const base =
+      envelope.details && typeof envelope.details === 'object'
+        ? envelope.details
+        : {};
+    envelope.details = { ...base, jobOpeningId: fallbackJobOpeningId };
+  }
+  return summarizeJobPostingApiError(envelope);
 }
 
-export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorShellProps) {
+export function JobPostingEditorShell({ initial, initialMedia, canMutate }: JobPostingEditorShellProps) {
   const router = useRouter();
 
   // ----- Local form state ------------------------------------------------
@@ -99,6 +163,10 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
   // (PATCH `/api/admin/jobs/job-postings/[id]`), optimistic revision giữ nguyên pattern.
   const [isHot, setIsHot] = useState<boolean>(initial.isHot ?? false);
   const [isUrgent, setIsUrgent] = useState<boolean>(initial.isUrgent ?? false);
+  // hrp-ui-v1-job-card-stamps-brand (T1B / RQ-11 / DEC-09): 2 author-selected flag canonical
+  // mới — "Thưởng cao" + "Sắp hết hạn". Cùng pattern: DRAFT-only, optimistic revision.
+  const [isHighReward, setIsHighReward] = useState<boolean>(initial.isHighReward ?? false);
+  const [isExpiringSoon, setIsExpiringSoon] = useState<boolean>(initial.isExpiringSoon ?? false);
   const [descriptionJson, setDescriptionJson] = useState<JSONContent>(() =>
     asRichDoc(initial.descriptionJson),
   );
@@ -120,6 +188,12 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  /**
+   * hrp-m2a-operational-ux-debt (F8, integrated by T1B UI V1):
+   * Repo-owned mapper may return a recovery href (today only for
+   * `JOB_OPENING_NOT_OPEN`). Rendered as a `<Link>` cạnh safe error UI.
+   */
+  const [errorRecoveryHref, setErrorRecoveryHref] = useState<string | null>(null);
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
 
   const initialSnapshotRef = useRef<{
@@ -127,6 +201,8 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
     salaryDisplay: string;
     isHot: boolean;
     isUrgent: boolean;
+    isHighReward: boolean;
+    isExpiringSoon: boolean;
     descriptionJson: JSONContent;
     requirementsJson: JSONContent;
     benefitsJson: JSONContent;
@@ -136,6 +212,8 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
     salaryDisplay: initial.salaryDisplay ?? '',
     isHot: initial.isHot ?? false,
     isUrgent: initial.isUrgent ?? false,
+    isHighReward: initial.isHighReward ?? false,
+    isExpiringSoon: initial.isExpiringSoon ?? false,
     descriptionJson: asRichDoc(initial.descriptionJson),
     requirementsJson: asRichDoc(initial.requirementsJson),
     benefitsJson: asRichDoc(initial.benefitsJson),
@@ -150,6 +228,9 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
       salaryDisplay !== init.salaryDisplay ||
       isHot !== init.isHot ||
       isUrgent !== init.isUrgent ||
+      // hrp-ui-v1-job-card-stamps-brand (T1B / RQ-11): 2 flag mới tham gia dirty check.
+      isHighReward !== init.isHighReward ||
+      isExpiringSoon !== init.isExpiringSoon ||
       JSON.stringify(descriptionJson) !== JSON.stringify(init.descriptionJson) ||
       JSON.stringify(requirementsJson) !== JSON.stringify(init.requirementsJson) ||
       JSON.stringify(benefitsJson) !== JSON.stringify(init.benefitsJson) ||
@@ -161,6 +242,9 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
     salaryDisplay,
     isHot,
     isUrgent,
+    // hrp-ui-v1-job-card-stamps-brand (T1B): 2 flag mới trong dependency array.
+    isHighReward,
+    isExpiringSoon,
     descriptionJson,
     requirementsJson,
     benefitsJson,
@@ -170,11 +254,13 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
   // ----- Save (PATCH) ----------------------------------------------------
   const onSave = useCallback(async () => {
     if (!canMutate) {
-      setErrorMessage('Role hiện tại không có quyền ghi JobPosting.');
+      setErrorMessage('Tài khoản hiện tại không có quyền chỉnh sửa tin tuyển dụng.');
+      setErrorRecoveryHref(null);
       return;
     }
     setIsSaving(true);
     setErrorMessage(null);
+    setErrorRecoveryHref(null);
     setInfoMessage(null);
 
     const body = {
@@ -185,6 +271,9 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
       // service `updateDraftContent` đã có `assertBoolean` validator, không cần UI validator.
       isHot,
       isUrgent,
+      // hrp-ui-v1-job-card-stamps-brand (T1B / RQ-11 / DEC-09): 2 flag mới gửi cùng body.
+      isHighReward,
+      isExpiringSoon,
       descriptionJson,
       requirementsJson,
       benefitsJson,
@@ -202,7 +291,9 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
         body: JSON.stringify(body),
       });
       if (!res.ok) {
-        setErrorMessage(await readErrorMessage(res));
+        const summary = await readApiErrorSummary(res, initial.jobOpeningId ?? null);
+        setErrorMessage(summary.label);
+        setErrorRecoveryHref(summary.recoveryHref);
         return;
       }
       const json = (await res.json()) as { jobPosting: JobPostingDetailDto; replayed?: boolean };
@@ -216,6 +307,9 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
         salaryDisplay: updated.salaryDisplay ?? '',
         isHot: updated.isHot ?? false,
         isUrgent: updated.isUrgent ?? false,
+        // hrp-ui-v1-job-card-stamps-brand (T1B): 2 flag mới copy từ response.
+        isHighReward: updated.isHighReward ?? false,
+        isExpiringSoon: updated.isExpiringSoon ?? false,
         descriptionJson: asRichDoc(updated.descriptionJson),
         requirementsJson: asRichDoc(updated.requirementsJson),
         benefitsJson: asRichDoc(updated.benefitsJson),
@@ -225,13 +319,18 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
       setSalaryDisplay(initialSnapshotRef.current.salaryDisplay);
       setIsHot(initialSnapshotRef.current.isHot);
       setIsUrgent(initialSnapshotRef.current.isUrgent);
+      // hrp-ui-v1-job-card-stamps-brand (T1B): set 2 flag mới về snapshot baseline.
+      setIsHighReward(initialSnapshotRef.current.isHighReward);
+      setIsExpiringSoon(initialSnapshotRef.current.isExpiringSoon);
       setDescriptionJson(initialSnapshotRef.current.descriptionJson);
       setRequirementsJson(initialSnapshotRef.current.requirementsJson);
       setBenefitsJson(initialSnapshotRef.current.benefitsJson);
       setApplicationInstructionsJson(initialSnapshotRef.current.applicationInstructionsJson);
-      setInfoMessage(json.replayed ? 'Đã ghi (idempotent replay).' : `Đã lưu bản nháp v${updated.revision}.`);
-    } catch (e) {
-      setErrorMessage(`Network error: ${(e as Error).message}`);
+      setInfoMessage(json.replayed ? 'Thay đổi đã được lưu trước đó.' : `Đã lưu bản nháp v${updated.revision}.`);
+      setErrorRecoveryHref(null);
+    } catch {
+      setErrorMessage('Không thể kết nối máy chủ. Vui lòng thử lại.');
+      setErrorRecoveryHref(null);
     } finally {
       setIsSaving(false);
     }
@@ -242,6 +341,9 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
     salaryDisplay,
     isHot,
     isUrgent,
+    // hrp-ui-v1-job-card-stamps-brand (T1B): 2 flag mới trong dependency array.
+    isHighReward,
+    isExpiringSoon,
     descriptionJson,
     requirementsJson,
     benefitsJson,
@@ -253,11 +355,13 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
   const runStateMutation = useCallback(
     async (action: 'publish' | 'unpublish' | 'archive') => {
       if (!canMutate) {
-        setErrorMessage('Role hiện tại không có quyền mutate JobPosting.');
+        setErrorMessage('Tài khoản hiện tại không có quyền chỉnh sửa tin tuyển dụng.');
+        setErrorRecoveryHref(null);
         return;
       }
       setIsSaving(true);
       setErrorMessage(null);
+      setErrorRecoveryHref(null);
       setInfoMessage(null);
       try {
         const res = await fetch(`/api/admin/jobs/job-postings/${initial.id}/${action}`, {
@@ -269,7 +373,9 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
           body: JSON.stringify({ expectedRevision: revision }),
         });
         if (!res.ok) {
-          setErrorMessage(await readErrorMessage(res));
+          const summary = await readApiErrorSummary(res, initial.jobOpeningId ?? null);
+          setErrorMessage(summary.label);
+          setErrorRecoveryHref(summary.recoveryHref);
           return;
         }
         const json = (await res.json()) as { jobPosting: JobPostingDetailDto; replayed?: boolean };
@@ -279,13 +385,15 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
         setSavedAt(updated.updatedAt);
         setInfoMessage(
           json.replayed
-            ? `Trạng thái đã cập nhật (idempotent replay).`
+            ? 'Trạng thái đã được cập nhật trước đó.'
             : `Đã ${labelOf(action)} → ${updated.status}.`,
         );
+        setErrorRecoveryHref(null);
         // Trigger revalidation so the list page reflects the new state too.
         router.refresh();
-      } catch (e) {
-        setErrorMessage(`Network error: ${(e as Error).message}`);
+      } catch {
+        setErrorMessage('Không thể kết nối máy chủ. Vui lòng thử lại.');
+        setErrorRecoveryHref(null);
       } finally {
         setIsSaving(false);
       }
@@ -313,22 +421,22 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
   // Publish is disabled so admin has an actionable next step.
   const publishBlockedReason = useMemo<string | null>(() => {
     if (!canMutate) {
-      return 'Role hiện tại không có quyền publish JobPosting.';
+      return 'Tài khoản hiện tại không có quyền đăng tin tuyển dụng.';
     }
     if (status !== 'DRAFT') {
-      return `JobPosting đang ở trạng thái ${status}; chỉ JobPosting DRAFT mới publish được.`;
+      return `Chỉ có thể đăng tin khi tin đang ở trạng thái bản nháp. Trạng thái hiện tại: ${jobPostingStatusLabel(status)}.`;
     }
     if (title.trim().length === 0) {
-      return 'Tiêu đề JobPosting là bắt buộc trước khi publish.';
+      return 'Cần nhập tiêu đề tin tuyển dụng trước khi đăng.';
     }
     if (descriptionJson === null) {
       return 'Mô tả công việc (description) là bắt buộc trước khi publish.';
     }
     if (initial.opening === null) {
-      return 'JobPosting chưa gắn với JobOpening nào — không thể publish.';
+      return 'Tin tuyển dụng chưa được gắn với đợt tuyển dụng nào.';
     }
     if (initial.opening.status !== 'OPEN') {
-      return `Linked JobOpening ${initial.opening.id.substring(0, 8)}… đang ở trạng thái ${initial.opening.status}; cần OPEN để publish.`;
+      return `Đợt tuyển dụng liên kết đang ở trạng thái ${jobOpeningStatusLabel(initial.opening.status)}; cần mở đợt tuyển dụng trước khi đăng tin.`;
     }
     return null;
   }, [canMutate, status, title, descriptionJson, initial.opening]);
@@ -348,13 +456,9 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
       >
         <div className="flex items-center gap-2">
           <span>
-            Trạng thái: <strong style={{ color: 'var(--on-surface)' }}>{status}</strong>
+            Trạng thái: <strong style={{ color: 'var(--on-surface)' }}>{jobPostingStatusLabel(status)}</strong>
             {' · '}
-            Revision: <strong style={{ color: 'var(--on-surface)' }}>v{revision}</strong>
-            {' · '}
-            Schema: <strong style={{ color: 'var(--on-surface)' }}>
-              v{JOB_POSTING_RICH_TEXT_SCHEMA_VERSION}
-            </strong>
+            Lần chỉnh sửa: <strong style={{ color: 'var(--on-surface)' }}>v{revision}</strong>
             {savedAt && (
               <>
                 {' · '}
@@ -368,23 +472,27 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
             disabled={!canMutate || isSaving || !isDirty || status !== 'DRAFT'}
             onClick={onSave}
             label={isSaving ? 'Đang lưu…' : 'Lưu bản nháp'}
+            dataTestid="editor-save-button"
           />
           <ActionButton
             disabled={!canPublish || isSaving}
             onClick={() => runStateMutation('publish')}
-            label="Publish"
+            label="Đăng tin"
+            ariaLabel="Đăng tin"
             primary
             dataTestid="publish-button"
           />
           <ActionButton
             disabled={!canMutate || isSaving || status !== 'PUBLISHED'}
             onClick={() => runStateMutation('unpublish')}
-            label="Unpublish"
+            label="Gỡ tin"
+            ariaLabel="Gỡ tin"
           />
           <ActionButton
             disabled={!canMutate || isSaving || status === 'ARCHIVED'}
             onClick={() => runStateMutation('archive')}
-            label="Archive"
+            label="Lưu trữ"
+            ariaLabel="Lưu trữ"
             danger
           />
         </div>
@@ -409,7 +517,7 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
           aria-live="polite"
         >
           <div className="font-medium" style={{ color: 'var(--on-surface)' }}>
-            Publish chưa sẵn sàng
+            Chưa thể đăng tin
           </div>
           <p className="mt-1" data-testid="publish-blocked-reason">
             {publishBlockedReason}
@@ -422,7 +530,7 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
                 style={{ color: 'var(--color-primary-dark)' }}
                 data-testid="publish-blocked-link"
               >
-                Mở JobOpening {initial.opening.id.substring(0, 8)}… để chuẩn bị
+                Mở đợt tuyển dụng để tiếp tục
               </a>
             </p>
           )}
@@ -432,10 +540,23 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
       {errorMessage && (
         <div
           role="alert"
+          data-testid="editor-safe-error"
           className="rounded border p-3 text-sm"
           style={{ borderColor: '#f5b5b5', backgroundColor: '#fdecec', color: '#8a1c1c' }}
         >
           {errorMessage}
+          {errorRecoveryHref && (
+            <>
+              {' '}
+              <Link
+                href={errorRecoveryHref}
+                className="underline"
+                style={{ color: '#8a1c1c' }}
+              >
+                Mở đợt tuyển dụng →
+              </Link>
+            </>
+          )}
         </div>
       )}
       {infoMessage && (
@@ -451,7 +572,7 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
       {/* Title + salary + stamp toggles */}
       <section className="rounded-xl border p-4" style={{ borderColor: 'var(--outline-variant)', backgroundColor: 'var(--color-surface)' }}>
         <div className="grid gap-3 sm:grid-cols-2">
-          <FieldShell label="Tiêu đề JobPosting (bắt buộc khi publish)">
+          <FieldShell label="Tiêu đề tin tuyển dụng (bắt buộc khi đăng)">
             <input
               type="text"
               value={title}
@@ -463,7 +584,7 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
               placeholder="Ví dụ: Kỹ sư điện công trình — Hà Nội"
             />
           </FieldShell>
-          <FieldShell label="Hiển thị lương (free-form, tuỳ chọn)">
+          <FieldShell label="Mức lương hiển thị (không bắt buộc)">
             <input
               type="text"
               value={salaryDisplay}
@@ -482,14 +603,17 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
             lifecycle P1-A0; nếu muốn đổi stamp của PUBLISHED phải đi qua lifecycle canonical.
             C-04 (correction batch 1/1): disabled unless status === 'DRAFT'. Trước đây chỉ
             disable cho ARCHIVED — giờ PUBLISHED cũng bị disable để đảm bảo stamp chỉ edit
-            được ở DRAFT. Đổi stamp của PUBLISHED phải unpublish trước. */}
+            được ở DRAFT. Đổi stamp của PUBLISHED phải unpublish trước.
+            hrp-ui-v1-job-card-stamps-brand (T1B / RQ-11): 2 author-selected toggle canonical
+            mới "Thưởng cao" + "Sắp hết hạn". Cùng semantics: author tự chọn, KHÔNG heuristic,
+            DRAFT-only, lưu cùng PATCH idempotency hash. */}
         <div className="mt-4 flex flex-wrap items-center gap-4 text-sm">
           <span className="font-medium" style={{ color: 'var(--on-surface-variant)' }}>
-            Stamp:
+            Nhãn nổi bật:
           </span>
           <StampToggle
-            label="Hot"
-            ariaLabel="Đánh dấu JobPosting là Hot"
+            label="Nổi bật"
+            ariaLabel="Đánh dấu tin tuyển dụng là nổi bật"
             checked={isHot}
             disabled={!canMutate || isSaving || status !== 'DRAFT'}
             onChange={setIsHot}
@@ -497,18 +621,81 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
           />
           <StampToggle
             label="Tuyển gấp"
-            ariaLabel="Đánh dấu JobPosting là Tuyển gấp"
+            ariaLabel="Đánh dấu tin tuyển dụng là tuyển gấp"
             checked={isUrgent}
             disabled={!canMutate || isSaving || status !== 'DRAFT'}
             onChange={setIsUrgent}
             testId="stamp-toggle-urgent"
           />
+          <StampToggle
+            label="Thưởng cao"
+            ariaLabel="Đánh dấu tin tuyển dụng có thưởng cao"
+            checked={isHighReward}
+            disabled={!canMutate || isSaving || status !== 'DRAFT'}
+            onChange={setIsHighReward}
+            testId="stamp-toggle-reward"
+          />
+          <StampToggle
+            label="Sắp hết hạn"
+            ariaLabel="Đánh dấu tin tuyển dụng sắp hết hạn"
+            checked={isExpiringSoon}
+            disabled={!canMutate || isSaving || status !== 'DRAFT'}
+            onChange={setIsExpiringSoon}
+            testId="stamp-toggle-expiring"
+          />
           <span className="ml-auto text-xs italic" style={{ color: 'var(--on-surface-variant)' }}>
-            Public render stamp theo `isHot` + `isUrgent` (canonical boolean), không heuristic.
-            Stamp chỉ edit được ở DRAFT.
+            Các nhãn nổi bật không tự động thay đổi. Chỉ chỉnh sửa được khi tin còn là bản nháp.
           </span>
         </div>
       </section>
+
+      {/* hrp-t1c-jobposting-media-youtube (RQ-05..RQ-09, RQ-02..RQ-04):
+          Gallery media + YouTube URL. Server đã load `initialMedia` qua
+          `listJobPostingMedia` trong Server Component page để tránh waterfall.
+          Mỗi card là client component độc lập — chỉ tự gọi API khi user
+          thao tác. Editor shell chỉ nhận `onPatched` callback để sync
+          `revision` (dùng cho dirty tracking nếu cần). */}
+      <JobPostingMediaCard
+        jobPostingId={initial.id}
+        initialItems={initialMedia}
+        canMutate={canMutate}
+        isSaving={isSaving}
+        status={status}
+        onPatched={() => {
+          // Bump revision để dirty tracking & next PATCH không trượt 409.
+          setRevision((prev) => prev + 1);
+        }}
+        onError={(label) => {
+          if (label) {
+            setErrorMessage(label);
+            setErrorRecoveryHref(null);
+          } else {
+            setErrorMessage(null);
+            setErrorRecoveryHref(null);
+          }
+        }}
+      />
+      <JobPostingYouTubeCard
+        jobPostingId={initial.id}
+        initialVideoId={initial.youtubeVideoId ?? null}
+        initialRevision={revision}
+        canMutate={canMutate}
+        isSaving={isSaving}
+        status={status}
+        onPatched={(updated) => {
+          setRevision(updated.revision);
+          setSavedAt(updated.updatedAt);
+        }}
+        onError={(label) => {
+          if (label) {
+            setErrorMessage(label);
+            setErrorRecoveryHref(null);
+          } else {
+            setErrorMessage(null);
+            setErrorRecoveryHref(null);
+          }
+        }}
+      />
 
       {/* Rich content fields */}
       <RichFieldCard
@@ -599,13 +786,21 @@ function StampToggle({
 
 function ActionButton({
   label,
+  ariaLabel,
   onClick,
   disabled,
   primary,
   danger,
   dataTestid,
 }: {
+  /** Visible button text (operator-facing). Vietnamese per F11 binding §9. */
   label: string;
+  /**
+   * Canonical lifecycle operation name (English) for accessibility / screen
+   * readers / programmatic API keys. T0 §2 #2 binding: the canonical name is
+   * preserved; it MUST NOT be the primary operator-facing text.
+   */
+  ariaLabel?: string;
   onClick: () => void;
   disabled: boolean;
   primary?: boolean;
@@ -627,6 +822,7 @@ function ActionButton({
       onClick={onClick}
       disabled={disabled}
       data-testid={dataTestid}
+      aria-label={ariaLabel}
       className="rounded border px-3 py-1 text-sm font-medium"
       style={{
         borderColor: primary ? 'var(--color-primary)' : danger ? '#f5b5b5' : 'var(--outline)',

@@ -4,13 +4,21 @@ import { getPrisma } from '@/src/lib/db';
 import { withDbContext } from '@/src/shared/auth/with-db-context';
 import { getLaborProfileDetail } from '@/src/domains/talent/labor-profile.read-service';
 import { Breadcrumb } from '@/src/shared/ui/navigation/breadcrumb';
+import {
+  laborProfileIdentityVerificationLabel,
+  identityVerificationTone,
+  laborProfileCompletenessLabel,
+  laborProfileIntakeChannelLabel,
+  placementCaseStatusLabel,
+} from '@/src/domains/labor-profile/labor-profile-ui';
+import { StatusBadge } from '@/src/shared/ui/status-badge';
 import { HandlingAssignmentManager } from './handling-assignment-manager';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export const metadata = {
-  title: 'Chi tiết Hồ sơ NLD - Admin',
+  title: 'Chi tiết hồ sơ người lao động - Quản trị',
 };
 
 const ALLOWED_ROLES = new Set(['ADMIN', 'HR_MANAGER', 'HR_STAFF']);
@@ -42,7 +50,7 @@ export default async function LaborProfileDetailPage({ params }: { params: Promi
     <div className="p-8 max-w-7xl mx-auto space-y-8">
       <Breadcrumb
         items={[
-          { label: 'Hồ sơ NLD', href: '/admin/labor-profiles' },
+          { label: 'Hồ sơ người lao động', href: '/admin/labor-profiles' },
           { label: data.fullName || data.phone || 'Chi tiết hồ sơ' },
         ]}
       />
@@ -56,7 +64,7 @@ export default async function LaborProfileDetailPage({ params }: { params: Promi
         <div className="flex space-x-3">
           {!data.workerId && (
             <button disabled className="bg-gray-100 text-gray-400 px-4 py-2 rounded-lg font-medium cursor-not-allowed opacity-70 border border-gray-200" title="Tính năng đang được phát triển">
-              Chuyển đổi thành Worker
+              Chuyển đổi thành nhân viên
             </button>
           )}
           <button className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium shadow-sm hover:bg-blue-700">
@@ -77,16 +85,18 @@ export default async function LaborProfileDetailPage({ params }: { params: Promi
             <div className="flex justify-between">
               <dt className="text-gray-500">Xác minh:</dt>
               <dd className="font-medium text-gray-900">
-                <span className={`px-2 py-0.5 rounded-full text-xs ${
-                  data.identityVerification === 'VERIFIED' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                }`}>
-                  {data.identityVerification}
-                </span>
+                <StatusBadge
+                  module="labor-profile-identity-verification"
+                  status={data.identityVerification}
+                  tone={identityVerificationTone(data.identityVerification)}
+                >
+                  {laborProfileIdentityVerificationLabel(data.identityVerification)}
+                </StatusBadge>
               </dd>
             </div>
             <div className="flex justify-between">
               <dt className="text-gray-500">Độ hoàn thiện:</dt>
-              <dd className="font-medium text-gray-900">{data.completeness}</dd>
+              <dd className="font-medium text-gray-900">{laborProfileCompletenessLabel(data.completeness)}</dd>
             </div>
           </dl>
         </div>
@@ -96,17 +106,17 @@ export default async function LaborProfileDetailPage({ params }: { params: Promi
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Tình trạng quan hệ</h2>
           <dl className="space-y-3 text-sm">
             <div className="flex justify-between">
-              <dt className="text-gray-500">Ngày đồng ý (Consent):</dt>
+              <dt className="text-gray-500">Ngày đồng ý:</dt>
               <dd className="font-medium text-gray-900">
                 {data.consentAt ? new Date(data.consentAt).toLocaleDateString('vi-VN') : 'Chưa có'}
               </dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-gray-500">Số lần tiếp nhận (Intakes):</dt>
+              <dt className="text-gray-500">Số lần tiếp nhận:</dt>
               <dd className="font-medium text-gray-900">{data.intakes.length}</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-gray-500">Trạng thái liên kết Worker:</dt>
+              <dt className="text-gray-500">Trạng thái liên kết nhân viên:</dt>
               <dd className="font-medium text-gray-900">{data.workerId ? 'Đã liên kết' : 'Chưa'}</dd>
             </div>
           </dl>
@@ -119,7 +129,7 @@ export default async function LaborProfileDetailPage({ params }: { params: Promi
             <ul className="space-y-2 text-sm text-gray-700">
               {data.intakes.map(intake => (
                 <li key={intake.id} className="flex justify-between items-center bg-gray-50 px-3 py-2 rounded">
-                  <span>{intake.channel}</span>
+                  <span>{laborProfileIntakeChannelLabel(intake.channel)}</span>
                   <span className="text-gray-500 text-xs">{new Date(intake.createdAt).toLocaleDateString('vi-VN')}</span>
                 </li>
               ))}
@@ -143,7 +153,7 @@ export default async function LaborProfileDetailPage({ params }: { params: Promi
 
         {/* Block 6: Nhu cầu qua thời gian */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Nhu cầu (Submissions)</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Nhu cầu ứng tuyển</h2>
           {data.submissions.length > 0 ? (
             <ul className="space-y-2 text-sm text-gray-700">
               {data.submissions.map(sub => (
@@ -162,12 +172,12 @@ export default async function LaborProfileDetailPage({ params }: { params: Promi
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Lịch sử làm việc</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-2">Quá trình làm việc (Episodes)</h3>
+              <h3 className="text-sm font-medium text-gray-700 mb-2">Quá trình làm việc</h3>
               {data.episodes.length > 0 ? (
                 <ul className="space-y-2 text-sm text-gray-700">
                   {data.episodes.map(ep => (
                     <li key={ep.id} className="bg-gray-50 px-3 py-2 rounded border border-gray-200">
-                      ID: {ep.id}
+                      Mã: {ep.id}
                     </li>
                   ))}
                 </ul>
@@ -176,13 +186,13 @@ export default async function LaborProfileDetailPage({ params }: { params: Promi
               )}
             </div>
             <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-2">Bố trí việc làm (Placement Cases)</h3>
+              <h3 className="text-sm font-medium text-gray-700 mb-2">Ca bố trí việc làm</h3>
               {data.placementCases.length > 0 ? (
                 <ul className="space-y-2 text-sm text-gray-700">
                   {data.placementCases.map(pc => (
                     <li key={pc.id} className="bg-gray-50 px-3 py-2 rounded border border-gray-200 flex justify-between">
-                      <span>ID: {pc.id}</span>
-                      <span className="font-medium">{pc.status}</span>
+                      <span>Mã: {pc.id}</span>
+                      <span className="font-medium">{placementCaseStatusLabel(pc.status)}</span>
                     </li>
                   ))}
                 </ul>

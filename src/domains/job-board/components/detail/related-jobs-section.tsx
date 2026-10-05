@@ -53,10 +53,17 @@ export function RelatedJobsSection({
               title: job.title,
               salaryMinVnd: job.salaryMinVnd,
               salaryMaxVnd: job.salaryMaxVnd,
+              salaryDisplay: job.salaryDisplay,
               location: job.location ?? null,
               companyName: job.companyName,
               source: 'REAL',
               postedAt: job.postedAt,
+              // hrp-ui-v1-public-card-truth-correction (T1A / DEC-07 / RC-02): truyền 4 flag
+              // boolean canonical để `<JobStampOverlay>` derive đủ — tránh regression 2 flag.
+              isHot: job.isHot,
+              isUrgent: job.isUrgent,
+              isHighReward: job.isHighReward,
+              isExpiringSoon: job.isExpiringSoon,
             }}
             href={publicJobDetailPath(job.slug)}
           />

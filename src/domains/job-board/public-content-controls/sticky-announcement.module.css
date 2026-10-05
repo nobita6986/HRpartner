@@ -1,0 +1,204 @@
+/* ==========================================================================
+   sticky-announcement.module.css — UI2 Sticky Announcement (Phase A)
+
+   Pure CSS keyframes for BLINK and MARQUEE animations. NEVER use the
+   legacy <marquee> element. The `prefers-reduced-motion: reduce` media
+   query collapses all three classes to a no-op animation.
+
+   Positioning: fixed at the bottom of the viewport with `env(safe-area-inset-bottom)`
+   for iOS / Android home-indicator offsets. Z-index sits BELOW modal
+   dialogs (1000+) and admin overlays but ABOVE sticky navbars (50).
+
+   Class names are referenced from `sticky-announcement.tsx` via
+   `getAnimationClass`. The naming is intentionally `hrpStickyAnnouncement*`
+   so the static source-analysis fence (`AC-09`, `AC-10`) can grep for it
+   with low risk of false positives.
+   ========================================================================== */
+
+.hrpStickyAnnouncement {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  padding: 0 0.75rem;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  min-height: 44px;
+  color: var(--color-on-primary);
+  font-size: 0.95rem;
+  line-height: 1.25rem;
+  isolation: isolate;
+  /* Avoid horizontal page overflow on mobile. */
+  max-width: 100vw;
+  overflow-x: hidden;
+  /* Don't catch focus on initial render before user interaction. */
+  pointer-events: auto;
+}
+
+.hrpStickyAnnouncement::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 4px 0 calc(env(safe-area-inset-bottom, 0px) + 4px);
+  background-color: color-mix(
+    in srgb,
+    var(--color-primary) var(--sticky-background-opacity),
+    transparent
+  );
+  box-shadow: 0 -2px 8px color-mix(in srgb, rgb(0 0 0 / 8%) var(--sticky-background-opacity), transparent);
+  pointer-events: none;
+}
+
+.hrpStickyAnnouncementMessage {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  /* Marquee animation needs overflow: hidden; BLINK does not. The class
+     is added by the component only when needed. */
+}
+
+.hrpStickyAnnouncementViewport {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.hrpStickyAnnouncementCta {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.625rem;
+  border-radius: 0.5rem;
+  background-color: var(--color-on-primary);
+  color: var(--color-primary);
+  font-weight: 600;
+  text-decoration: none;
+  min-height: 1.75rem;
+}
+
+.hrpStickyAnnouncementCta:hover,
+.hrpStickyAnnouncementCta:focus-visible {
+  text-decoration: underline;
+  outline: 2px solid var(--color-on-primary);
+  outline-offset: 2px;
+}
+
+.hrpStickyAnnouncementDismiss {
+  position: relative;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  color: inherit;
+  cursor: pointer;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.hrpStickyAnnouncementDismiss::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
+}
+
+.hrpStickyAnnouncementDismiss:hover,
+.hrpStickyAnnouncementDismiss:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+/* ─── Animation: NONE ──────────────────────────────────────────────── */
+
+.hrpStickyAnnouncementAnimNone {
+  animation: none;
+}
+
+/* ─── Animation: BLINK ────────────────────────────────────────────── */
+
+@keyframes hrpStickyAnnouncementBlink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.hrpStickyAnnouncementAnimBlink {
+  animation: none;
+}
+
+.hrpStickyAnnouncementAnimBlink::before {
+  animation: hrpStickyAnnouncementBlink 1.4s ease-in-out infinite;
+}
+
+/* ─── Animation: MARQUEE ──────────────────────────────────────────── */
+
+@keyframes hrpStickyAnnouncementMarquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.hrpStickyAnnouncementAnimMarquee {
+  min-width: 0;
+}
+
+.hrpStickyAnnouncementAnimMarquee .hrpStickyAnnouncementViewport {
+  overflow: hidden;
+}
+
+.hrpStickyAnnouncementTrack {
+  display: flex;
+  width: max-content;
+  animation: hrpStickyAnnouncementMarquee var(--sticky-marquee-duration, 18s) linear infinite;
+}
+
+.hrpStickyAnnouncementMarqueeGroup {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 2rem;
+  padding-right: 2rem;
+}
+
+.hrpStickyAnnouncementMarqueeGroup .hrpStickyAnnouncementMessage {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+/* ─── Reduced motion override (must be last) ──────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .hrpStickyAnnouncementAnimBlink::before,
+  .hrpStickyAnnouncementAnimMarquee .hrpStickyAnnouncementTrack {
+    animation: none;
+  }
+  .hrpStickyAnnouncementAnimMarquee .hrpStickyAnnouncementViewport {
+    overflow: visible;
+  }
+  .hrpStickyAnnouncementAnimMarquee .hrpStickyAnnouncementMarqueeGroup[aria-hidden='true'] {
+    display: none;
+  }
+  .hrpStickyAnnouncementAnimMarquee .hrpStickyAnnouncementMessage {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}

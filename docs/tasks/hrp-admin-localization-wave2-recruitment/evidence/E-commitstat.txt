@@ -1,0 +1,158 @@
+commit c68aede301bdb986533cc9f9e1c3696207a5c441
+Author: T1B Localization Agent <agent@hrp.local>
+Date:   Sun Oct 4 18:38:32 2026 +0700
+
+    docs(t1b-wave2): implement wave 2 recruitment high-traffic localization
+    
+    T1B sole owner. Branch: codex/t1b-admin-localization-wave2-recruitment.
+    Baseline (wave-1 head): 16df26ee10faf47c5e5ed483e6b2b780658e007c.
+    
+    MODIFY (5 admin pages, no lifecycle/RLS/schema/api/auth changes):
+    - app/admin/jobs/page.tsx ΓÇö replace inline STATUS_COLORS + local StatusBadge
+      with projectPublishColumnLabel() + shared <StatusBadge> from Wave 1.
+      Localized column headers (Dß╗▒ ├ín / M├ú dß╗▒ ├ín / Trß║íng th├íi / C├┤ng bß╗æ) and
+      empty state copy. F11 business-button literals (C├┤ng bß╗æ dß╗▒ ├ín /
+      Bß╗Å c├┤ng bß╗æ dß╗▒ ├ín) preserved on the row action button.
+    - app/admin/jobs/job-postings/page.tsx ΓÇö replace inline colorMap + local
+      StatusBadge with <StatusBadge module={JOB_POSTING_MODULE}> and
+      jobPostingStatusLabel(). Localized H1 (Tin tuyß╗ân dß╗Ñng ΓÇö soß║ín & ─æ─âng),
+      breadcrumb, back link (ΓåÉ Quay lß║íi Danh s├ích nhu cß║ºu), and table column
+      headers (─É╞░ß╗¥ng dß║½n tin (slug) / ─É╞ín tuyß╗ân dß╗Ñng / Trß║íng th├íi /
+      Phi├¬n bß║ún chß╗ënh sß╗¡a / Ng├áy cß║¡p nhß║¡t). Status filter <option value>
+      keeps canonical enum (DRAFT / PUBLISHED / ARCHIVED); visible text is
+      Vietnamese via jobPostingStatusLabel(). F11 fence on editor-shell.tsx
+      preserved (─É─âng tin / Gß╗í tin / L╞░u trß╗»).
+    - app/admin/jobs/job-postings/[id]/page.tsx ΓÇö replace raw
+      DRAFT/PUBLISHED/ARCHIVED render with <StatusBadge
+      module={JOB_POSTING_MODULE}> + jobPostingStatusLabel(). Localized
+      breadcrumb (Tin tuyß╗ân dß╗Ñng ΓÇö trang xem) and fact labels
+      (─É╞░ß╗¥ng dß║½n tin (slug) / Phi├¬n bß║ún chß╗ënh sß╗¡a / Ng├áy tß║ío / Ng├áy cß║¡p nhß║¡t /
+      Ng├áy ─æ─âng / Ng├áy l╞░u trß╗»). <option value> on filter unchanged.
+    - app/admin/job-openings/[id]/page.tsx ΓÇö replace raw enum rendering
+      with <StatusBadge module={JOB_OPENING_MODULE}> +
+      jobOpeningStatusLabel(). serviceModel routed through
+      jobOpeningServiceModelLabel(). Localized H1 (─Éß╗út tuyß╗ân dß╗Ñng),
+      breadcrumb last segment (─Éß╗út tuyß╗ân dß╗Ñng: <id8>), header info, metric
+      card labels (─É╞ín ß╗⌐ng tuyß╗ân / Ph├ón c├┤ng dß╗▒ ├ín / Bß╗æ tr├¡ viß╗çc l├ám),
+      and section H2s (Tin tuyß╗ân dß╗Ñng (Job Posting) / Vß╗ï tr├¡ cß║ºn tuyß╗ân (Slots)).
+    - app/admin/staffing/staffing-list-client.tsx ΓÇö replace inline
+      STATUS_CONFIG + local StatusBadge component with
+      <StatusBadge module={STAFFING_ORDER_MODULE}> +
+      staffingOrderStatusLabel() / staffingOrderStatusTone(). Localized H1
+      (Nhu cß║ºu tuyß╗ân dß╗Ñng), filter buttons, empty state (Ch╞░a c├│ ─æ╞ín tuyß╗ân
+      dß╗Ñng n├áo), table header Slots ΓåÆ Vß╗ï tr├¡ cß║ºn tuyß╗ân, and Tß╗òng count text
+      (Tß╗òng: {total} ─æ╞ín tuyß╗ân dß╗Ñng).
+    - app/admin/job-openings/[id]/page.test.tsx ΓÇö update one legacy-string
+      assertion ('Tuyß╗ân dß╗Ñng (Opening)' ΓåÆ '─Éß╗út tuyß╗ân dß╗Ñng') to reflect the
+      localized H1. No coverage change.
+    
+    NEW domain dictionaries (5 module-owned typed dictionaries per EP ┬º4.2):
+    - src/domains/projects/project-ui.ts ΓÇö exports PROJECT_MODULE,
+      projectStatusLabel() for 5 lifecycle statuses (Bß║ún nh├íp / Hoß║ít ─æß╗Öng /
+      Tß║ím dß╗½ng / Ho├án th├ánh / ─É├ú hß╗ºy) + 3 column-derived publish states
+      (─É├ú c├┤ng bß╗æ / Ch╞░a c├┤ng bß╗æ / ─É├ú ─æ├│ng), projectStatusTone(),
+      projectPublishColumnLabel(), and STAFFING/PLACEMENT cross-glossary
+      re-exports. 9 tests passing.
+    - src/domains/staffing/job-opening-ui.ts ΓÇö exports JOB_OPENING_MODULE,
+      jobOpeningStatusLabel() for 6 lifecycle statuses (Bß║ún nh├íp / ─Éang mß╗ƒ /
+      Sß║»p ─æ├│ng / ─É├ú ─æ├│ng / ─É├ú ─æß╗º chß╗ë ti├¬u / ─É├ú hß╗ºy) + serviceModel labels
+      (Tß║íi n╞íi l├ám viß╗çc / Tß╗½ xa), and jobOpeningStatusTone() /
+      jobOpeningServiceModelLabel(). 10 tests passing.
+    - src/domains/staffing/job-posting-ui.ts ΓÇö exports JOB_POSTING_MODULE,
+      jobPostingStatusLabel() for 3 statuses (Bß║ún nh├íp / ─É├ú ─æ─âng /
+      ─É├ú l╞░u trß╗»), jobPostingStatusTone(), and re-exports action labels
+      from Wave 1 (─É─âng tin / Gß╗í tin / L╞░u trß╗»). 8 tests passing.
+    - src/domains/staffing/staffing-order-ui.ts ΓÇö exports
+      STAFFING_ORDER_MODULE, staffingOrderStatusLabel() for 4 statuses
+      (Mß╗ƒ / Sß║»p ─æ├│ng / ─É├ú ─æ├│ng / ─É├ú hß╗ºy) and staffingOrderStatusTone().
+      6 tests passing.
+    - src/domains/staffing/recruiter-assignment-ui.ts ΓÇö exports
+      RECRUITER_ASSIGNMENT_MODULE, recruiterAssignmentStatusLabel() for 3
+      statuses (─Éang phß╗Ñ tr├ích / ─É├ú thu hß╗ôi / ─É├ú thay thß║┐) and tone helper.
+      6 tests passing. (For completeness per EP ┬º5.2; no consumer file edit
+      because recruiter-assignment-manager.tsx was already Vietnamese from
+      Wave 1 closeout.)
+    
+    NEW per-route static terminology tests (mirror Wave 1 fence pattern):
+    - app/admin/jobs/__tests__/jobs-terminology.static.test.ts ΓÇö 6 tests
+      covering L-010..L-018 (Project list).
+    - app/admin/jobs/job-postings/__tests__/job-postings-terminology.static.test.ts ΓÇö
+      13 tests covering L-019..L-035 (JobPosting list + detail).
+    - app/admin/job-openings/__tests__/job-openings-terminology.static.test.ts ΓÇö
+      10 tests covering L-036..L-043 (JobOpening detail).
+    - app/admin/staffing/__tests__/staffing-terminology.static.test.ts ΓÇö
+      9 tests covering L-044..L-046 (Staffing list) + diacritic-missing
+      literal scan with canonical allowlist.
+    
+    F11 business-button literals preserved:
+    - Project (jobs): C├┤ng bß╗æ dß╗▒ ├ín / Bß╗Å c├┤ng bß╗æ dß╗▒ ├ín (fence: Wave 1
+      admin-jobs-terminology.static.test.ts).
+    - JobPosting editor: ─É─âng tin / Gß╗í tin / L╞░u trß╗» (fence: Wave 1
+      admin-jobs-terminology.static.test.ts).
+    Canonical publish/unpublish/archive enums preserved in operation keys,
+    API payloads, and aria-labels per EP ┬º3.6 KEEP_CANONICAL_IDENTIFIER.
+    
+    L-010..L-046 disposition:
+    - L-010..L-018 (Project): closed.
+    - L-019..L-035 (JobPosting): closed.
+    - L-036..L-043 (JobOpening): closed.
+    - L-044..L-046 (Staffing): closed.
+    
+    Forbidden list adherence:
+    - No raw English enum rendered on 4 surfaces (verified by 4 per-route
+      static tests + full unit suite 240 files / 3836 tests PASS).
+    - No <option value> / API payload semantic change (canonical enums
+      preserved).
+    - No lifecycle / authorization / RLS / schema / migration / write
+      semantics / idempotency change.
+    - No package.json / pnpm-lock.yaml / pnpm-workspace.yaml / prisma /**
+      / middleware.ts / .github/** delta.
+    - No public JobCard / stamp / salary surface touched (PR #97 boundary).
+    - No F6 / Worker / Users / LaborProfile / Clients / Vendors /
+      Attendance / Reconciliation / Tickets / Payroll / Commission change.
+    - No dependency added. Reuses Wave 1 glossary, form-dictionary,
+      action-dictionary, role-labels, error-dictionary, status-badge.
+    
+    Required gates (all PASS on implementation SHA):
+    - Targeted dictionary tests: 45/45 PASS (5 NEW + 1 pre-existing pnpm
+      publish-contract).
+    - Per-route static terminology tests: 47/47 PASS (4 NEW + F11 fence 9/9).
+    - Full unit suite: 240 files / 3836 tests PASS / 9 skipped / 0 failed.
+    - typecheck (tsc --noEmit): 0 errors.
+    - lint (eslint): 0 errors, 920 pre-existing warnings (no new ones).
+    - build (next build): succeeded; 5 admin routes compiled.
+    - git diff --check: 0 whitespace errors.
+    - UTF-8 no-BOM (verify-encoding.mjs): 22/22 PASS on changed files.
+    - verify-task.ps1: DRAFT-VALID (2 non-blocking warnings, exit 0).
+    
+    Delivery protocol:
+    - V2_FAST_FREEZE, lane STANDARD, audit mode NONE.
+    - Forward-only single commit, no amend / reset / force-push.
+    - Worktree at C:/CodeApp/HrP-worktrees/t1b-admin-localization-wave2-recruitment.
+    - Dß╗¬NG tr╞░ß╗¢c merge/deploy. Sau khi PR #96 merge v├áo main,
+      forward-merge origin/main bß║▒ng git merge --no-ff origin/main, re-verify
+      canonical gates, rß╗ôi final freeze + mß╗ƒ PR Wave 2.
+    
+    Co-authored-by: Cursor <cursoragent@cursor.com>
+
+ app/admin/job-openings/[id]/page.test.tsx          |   2 +-
+ app/admin/job-openings/[id]/page.tsx               |  50 +++++----
+ .../job-openings-terminology.static.test.ts        |  75 +++++++++++++
+ .../jobs/__tests__/jobs-terminology.static.test.ts |  78 ++++++++++++++
+ app/admin/jobs/job-postings/[id]/page.tsx          |  58 ++++++-----
+ .../job-postings-terminology.static.test.ts        | 116 +++++++++++++++++++++
+ app/admin/jobs/job-postings/page.tsx               |  64 ++++++------
+ app/admin/jobs/page.tsx                            |  43 ++++----
+ .../__tests__/staffing-terminology.static.test.ts  |  88 ++++++++++++++++
+ app/admin/staffing/staffing-list-client.tsx        |  56 ++++++----
+ src/domains/projects/__tests__/project-ui.test.ts  |  91 ++++++++++++++++
+ src/domains/projects/project-ui.ts                 |  99 ++++++++++++++++++
+ .../staffing/__tests__/job-opening-ui.test.ts      |  83 +++++++++++++++
+ .../staffing/__tests__/job-posting-ui.test.ts      |  74 +++++++++++++
+ .../__tests__/recruiter-assignment-ui.test.ts      |  55 ++++++++++
+ .../staffing/__tests__/staffing-order-ui.test.ts   |  59 +++++++++++
+ src/domains/staffing/job-opening-ui.ts             |  74 +++++++++++++
+ src/domains/staffing/job-posting-ui.ts             |  75 +++++++++++++
+ src/domains/staffing/recruiter-assignment-ui.ts    |  52 +++++++++
+ src/domains/staffing/staffing-order-ui.ts          |  51 +++++++++
+ 20 files changed, 1224 insertions(+), 119 deletions(-)

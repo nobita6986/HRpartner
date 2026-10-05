@@ -22,7 +22,7 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export const metadata = {
-  title: 'Thư viện Media — HRP Admin',
+  title: 'Thư viện tệp và ảnh — HRP Admin',
 };
 
 interface PageProps {

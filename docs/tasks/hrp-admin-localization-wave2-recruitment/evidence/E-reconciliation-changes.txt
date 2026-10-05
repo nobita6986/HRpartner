@@ -1,0 +1,57 @@
+$ git log --oneline c68aede..HEAD
+0aff665f Merge branch 'main' (PR #96 wave 1 foundation + PR #97 public-card-truth correction) into codex/t1b-admin-localization-wave2-recruitment
+
+$ git diff c68aede..HEAD --stat
+ app/(jobs)/viec-lam/[slug]/page.tsx                              |  40 +-
+ app/(jobs)/viec-lam/page.tsx                                     |  56 +-
+ app/(portal)/page.tsx                                            |  52 ++-
+ .../hrp-ui-v1-public-card-truth-correction/HANDOFF.md           | 325 +++++++
+ .../hrp-ui-v1-public-card-truth-correction/TASK.md              | 293 +++++++
+ .../applications/marketplace-browse.routes.test.ts              |   3 +
+ .../marketplace-inventory.static.test.ts                        |   9 +-
+ .../components/detail/related-jobs-section.tsx                  |   7 +
+ .../landing/__tests__/stamp-overlay.test.ts                     | 264 ++++
+ .../components/landing/best-jobs-section.tsx                    |  12 +-
+ .../components/landing/featured-job-card.test.ts                | 276 ++++++---
+ .../components/landing/featured-job-card.tsx                    | 180 +++-----
+ .../jod-posting-stamps-mapping.test.ts                          |  77 ++++-
+ .../public-card-truth.integration.test.ts                       |   7 +-
+ src/domains/job-board/public-card-truth.test.ts                 | 128 ++++++-
+ src/domains/job-board/public-detail.static.test.ts              |  17 +-
+ src/domains/job-board/public-listing.labels.ts                  |  25 ++
+ .../job-board/public-listing.static.test.ts                     |   8 +-
+ src/domains/job-board/public.service.ts                         |  27 +-
+ .../required-relation-sweep.static.test.ts                      |   4 +-
+ 23 files changed, 1685 insertions(+), 605 deletions(-)
+
+==> SUMMARY <==
+Wave 2 semantic SHA c68aede..HEAD diff = 23 files / +1685 / -605.
+All 23 files are in PR #96/PR #97 (Wave 1 surface); zero delta on
+Wave 2-owned surface (admin pages, 5 dictionaries, 10 tests).
+
+Wave 2 owned surface verified UNTOUCHED by merge:
+  app/admin/jobs/page.tsx
+  app/admin/jobs/job-postings/page.tsx
+  app/admin/jobs/job-postings/[id]/page.tsx
+  app/admin/job-openings/[id]/page.tsx
+  app/admin/job-openings/[id]/page.test.tsx
+  app/admin/staffing/staffing-list-client.tsx
+  src/domains/projects/project-ui.ts
+  src/domains/staffing/job-opening-ui.ts
+  src/domains/staffing/job-posting-ui.ts
+  src/domains/staffing/staffing-order-ui.ts
+  src/domains/staffing/recruiter-assignment-ui.ts
+  src/domains/projects/__tests__/project-ui.test.ts
+  src/domains/staffing/__tests__/job-opening-ui.test.ts
+  src/domains/staffing/__tests__/job-posting-ui.test.ts
+  src/domains/staffing/__tests__/staffing-order-ui.test.ts
+  src/domains/staffing/__tests__/recruiter-assignment-ui.test.ts
+  app/admin/jobs/__tests__/jobs-terminology.static.test.ts
+  app/admin/jobs/__tests__/admin-jobs-terminology.static.test.ts
+  app/admin/jobs/job-postings/__tests__/job-postings-terminology.static.test.ts
+  app/admin/job-openings/__tests__/job-openings-terminology.static.test.ts
+  app/admin/staffing/__tests__/staffing-terminology.static.test.ts
+
+DELETED in merge (wave 1 surface cleanup, not Wave 2):
+  src/domains/job-board/components/landing/__tests__/stamp-badge.test.ts
+  src/domains/job-board/components/landing/stamp-badge.tsx

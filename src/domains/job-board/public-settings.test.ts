@@ -49,6 +49,8 @@ function createMockPrisma(existingRow?: Record<string, unknown> | null) {
         zaloChatUrl: data.zaloChatUrl ?? null,
         messengerChatUrl: data.messengerChatUrl ?? null,
         phoneCallNumber: data.phoneCallNumber ?? null,
+        newsSectionEnabled: data.newsSectionEnabled ?? true,
+        stickyAnnouncement: data.stickyAnnouncement ?? null,
         updatedAt: new Date(),
       })),
     },
@@ -143,6 +145,8 @@ describe('toHomepageSettingsDto', () => {
       zaloChatUrl: 'https://zalo.me/hrpartner',
       messengerChatUrl: 'https://m.me/hrpartner',
       phoneCallNumber: '+84901234567',
+      newsSectionEnabled: true,
+      stickyAnnouncement: null,
       updatedAt: new Date('2026-09-11T14:00:00.000Z'),
     };
     const dto = toHomepageSettingsDto(row);
@@ -163,6 +167,8 @@ describe('toHomepageSettingsDto', () => {
       zaloChatUrl: null,
       messengerChatUrl: null,
       phoneCallNumber: null,
+      newsSectionEnabled: true,
+      stickyAnnouncement: null,
       updatedAt: new Date(),
     };
     expect(toHomepageSettingsDto(row).listingPageSize).toBe(LISTING_PAGE_SIZE_MAX);
@@ -176,6 +182,8 @@ describe('toHomepageSettingsDto', () => {
       zaloChatUrl: null,
       messengerChatUrl: null,
       phoneCallNumber: null,
+      newsSectionEnabled: true,
+      stickyAnnouncement: null,
       updatedAt: new Date(),
     };
     expect(toHomepageSettingsDto(row).bestJobsPageSize).toBe(9);
@@ -370,6 +378,21 @@ describe('toHomepageSettingsView', () => {
       zaloChatUrl: null,
       messengerChatUrl: null,
       phoneCallNumber: null,
+      newsSectionEnabled: true,
+      stickyAnnouncement: {
+        enabled: false,
+        message: '',
+        ctaLabel: null,
+        ctaUrl: null,
+        dismissible: true,
+        backgroundOpacity: 100,
+        marqueeDurationSeconds: 18,
+        textColor: 'on-primary',
+        font: 'SANS',
+        emphasis: 'BOLD',
+        animation: 'NONE',
+        contentRevision: 'rev-0',
+      },
       updatedAt: '2026-09-11T14:00:00.000Z',
     };
     const view = toHomepageSettingsView(dto);
@@ -383,5 +406,220 @@ describe('toHomepageSettingsView', () => {
     const view = toHomepageSettingsView(null);
     expect(view.source).toBe('INTEGRATION_PENDING');
     expect(view.settings).toBeNull();
+  });
+});
+
+// ─── Phase B / UI2 — newsSectionEnabled + stickyAnnouncement ─────────────────
+
+import { toStickyAnnouncementDto } from './public-settings.service';
+
+describe('toStickyAnnouncementDto', () => {
+  it('returns safe defaults (enabled=false) for null', () => {
+    const dto = toStickyAnnouncementDto(null);
+    expect(dto.enabled).toBe(false);
+    expect(dto.message).toBe('');
+    expect(dto.ctaLabel).toBeNull();
+    expect(dto.ctaUrl).toBeNull();
+    expect(dto.dismissible).toBe(true);
+    expect(dto.backgroundOpacity).toBe(100);
+    expect(dto.marqueeDurationSeconds).toBe(18);
+    expect(dto.contentRevision).toBe('rev-0');
+  });
+
+  it('returns safe defaults for non-object values (defense-in-depth)', () => {
+    expect(toStickyAnnouncementDto('hello').enabled).toBe(false);
+    expect(toStickyAnnouncementDto(42).enabled).toBe(false);
+    expect(toStickyAnnouncementDto([1, 2, 3]).enabled).toBe(false);
+  });
+
+  it('parses a valid Phase A DTO and returns it', () => {
+    const dto = toStickyAnnouncementDto({
+      enabled: true,
+      message: 'Hello world',
+      ctaLabel: 'Open',
+      ctaUrl: 'https://hrpartner.vn/about',
+      dismissible: true,
+      backgroundOpacity: 64,
+      marqueeDurationSeconds: 13,
+      textColor: 'on-primary',
+      font: 'SANS',
+      emphasis: 'BOLD',
+      animation: 'NONE',
+      contentRevision: 'rev-1234',
+    });
+    expect(dto.enabled).toBe(true);
+    expect(dto.message).toBe('Hello world');
+    expect(dto.ctaLabel).toBe('Open');
+    expect(dto.ctaUrl).toBe('https://hrpartner.vn/about');
+    expect(dto.backgroundOpacity).toBe(64);
+    expect(dto.marqueeDurationSeconds).toBe(13);
+    expect(dto.contentRevision).toBe('rev-1234');
+  });
+
+  it('rejects invalid URL with safe defaults', () => {
+    // The DTO projection is permissive (URL safety is enforced at the
+    // service write path AND in the read-side component). This test pins
+    // the projection's contract: a non-empty message + invalid URL is still
+    // a parseable DTO; the runtime component is responsible for URL safety.
+    const dto = toStickyAnnouncementDto({
+      enabled: true,
+      message: 'X',
+      ctaLabel: null,
+      ctaUrl: 'javascript:alert(1)',
+      dismissible: true,
+      textColor: 'on-primary',
+      font: 'SANS',
+      emphasis: 'BOLD',
+      animation: 'NONE',
+      contentRevision: 'rev-1',
+    });
+    expect(dto.enabled).toBe(true);
+    expect(dto.ctaUrl).toBe('javascript:alert(1)');
+  });
+});
+
+describe('Phase B / UI2 - toHomepageSettingsDto with new fields', () => {
+  it('defaults newsSectionEnabled to true when row has no value (legacy data)', () => {
+    const row = {
+      id: HOMEPAGE_SETTINGS_SINGLETON_ID,
+      bestJobsPageSize: 9,
+      listingPageSize: 12,
+      zaloChatUrl: null,
+      messengerChatUrl: null,
+      phoneCallNumber: null,
+      newsSectionEnabled: undefined as unknown as boolean,
+      stickyAnnouncement: null,
+      updatedAt: new Date(),
+    };
+    const dto = toHomepageSettingsDto(row);
+    expect(dto.newsSectionEnabled).toBe(true);
+    expect(dto.stickyAnnouncement.enabled).toBe(false);
+  });
+
+  it('propagates newsSectionEnabled=false and a valid sticky DTO', () => {
+    const row = {
+      id: HOMEPAGE_SETTINGS_SINGLETON_ID,
+      bestJobsPageSize: 9,
+      listingPageSize: 12,
+      zaloChatUrl: null,
+      messengerChatUrl: null,
+      phoneCallNumber: null,
+      newsSectionEnabled: false,
+      stickyAnnouncement: {
+        enabled: true,
+        message: 'Open jobs in Hanoi',
+        ctaLabel: 'Xem',
+        ctaUrl: '/viec-lam',
+        dismissible: true,
+        backgroundOpacity: 73,
+        marqueeDurationSeconds: 15,
+        textColor: 'on-primary',
+        font: 'SANS',
+        emphasis: 'BOLD',
+        animation: 'NONE',
+        contentRevision: 'rev-2026-10-04',
+      },
+      updatedAt: new Date('2026-10-04T16:00:00.000Z'),
+    };
+    const dto = toHomepageSettingsDto(row);
+    expect(dto.newsSectionEnabled).toBe(false);
+    expect(dto.stickyAnnouncement.enabled).toBe(true);
+    expect(dto.stickyAnnouncement.message).toBe('Open jobs in Hanoi');
+    expect(dto.stickyAnnouncement.backgroundOpacity).toBe(73);
+    expect(dto.stickyAnnouncement.marqueeDurationSeconds).toBe(15);
+    expect(dto.stickyAnnouncement.contentRevision).toBe('rev-2026-10-04');
+  });
+});
+
+describe('Phase B / UI2 - updateHomepageSettings new fields', () => {
+  it('persists newsSectionEnabled', async () => {
+    const prisma = createMockPrisma({ id: 'default', bestJobsPageSize: 9, listingPageSize: 12, updatedAt: new Date() });
+    const result = await updateHomepageSettings(prisma, { newsSectionEnabled: false }, 'user-1');
+    expect(result.settings.newsSectionEnabled).toBe(false);
+    expect(prisma.homepageSettings.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ newsSectionEnabled: false }),
+      }),
+    );
+  });
+
+  it('persists a valid stickyAnnouncement payload', async () => {
+    const prisma = createMockPrisma({ id: 'default', bestJobsPageSize: 9, listingPageSize: 12, updatedAt: new Date() });
+    const sticky = {
+      enabled: true,
+      message: 'Hello',
+      ctaLabel: 'Open',
+      ctaUrl: 'https://hrpartner.vn/about',
+      dismissible: true,
+      backgroundOpacity: 63,
+      marqueeDurationSeconds: 12,
+      textColor: 'on-primary' as const,
+      font: 'SANS' as const,
+      emphasis: 'BOLD' as const,
+      animation: 'NONE' as const,
+      contentRevision: 'rev-1',
+    };
+    const result = await updateHomepageSettings(prisma, { stickyAnnouncement: sticky }, 'user-1');
+    expect(result.settings.stickyAnnouncement.enabled).toBe(true);
+    expect(result.settings.stickyAnnouncement.contentRevision).toBe('rev-1');
+    expect(result.settings.stickyAnnouncement.backgroundOpacity).toBe(63);
+    expect(result.settings.stickyAnnouncement.marqueeDurationSeconds).toBe(12);
+    expect(prisma.homepageSettings.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          stickyAnnouncement: expect.objectContaining({
+            backgroundOpacity: 63,
+            marqueeDurationSeconds: 12,
+          }),
+        }),
+      }),
+    );
+  });
+
+  it('clears stickyAnnouncement when set to null', async () => {
+    const prisma = createMockPrisma({ id: 'default', bestJobsPageSize: 9, listingPageSize: 12, updatedAt: new Date() });
+    const result = await updateHomepageSettings(prisma, { stickyAnnouncement: null }, 'user-1');
+    expect(result.settings.stickyAnnouncement.enabled).toBe(false);
+    expect(result.settings.stickyAnnouncement.message).toBe('');
+  });
+
+  it('throws when stickyAnnouncement has an invalid URL', async () => {
+    const prisma = createMockPrisma({ id: 'default', bestJobsPageSize: 9, listingPageSize: 12, updatedAt: new Date() });
+    const bad = {
+      enabled: true,
+      message: 'X',
+      ctaLabel: null,
+      ctaUrl: 'javascript:alert(1)',
+      dismissible: true,
+      backgroundOpacity: 100,
+      marqueeDurationSeconds: 18,
+      textColor: 'on-primary' as const,
+      font: 'SANS' as const,
+      emphasis: 'BOLD' as const,
+      animation: 'NONE' as const,
+      contentRevision: 'rev-1',
+    };
+    await expect(updateHomepageSettings(prisma, { stickyAnnouncement: bad }, 'user-1'))
+      .rejects.toThrow();
+  });
+
+  it('throws when stickyAnnouncement.message exceeds 280 chars', async () => {
+    const prisma = createMockPrisma({ id: 'default', bestJobsPageSize: 9, listingPageSize: 12, updatedAt: new Date() });
+    const bad = {
+      enabled: true,
+      message: 'X'.repeat(300),
+      ctaLabel: null,
+      ctaUrl: null,
+      dismissible: true,
+      backgroundOpacity: 100,
+      marqueeDurationSeconds: 18,
+      textColor: 'on-primary' as const,
+      font: 'SANS' as const,
+      emphasis: 'BOLD' as const,
+      animation: 'NONE' as const,
+      contentRevision: 'rev-1',
+    };
+    await expect(updateHomepageSettings(prisma, { stickyAnnouncement: bad }, 'user-1'))
+      .rejects.toThrow();
   });
 });

@@ -1,0 +1,20 @@
+$ corepack pnpm exec vitest run --config vitest.unit.config.ts \
+    app/admin/jobs/__tests__/jobs-terminology.static.test.ts \
+    app/admin/jobs/job-postings/__tests__/job-postings-terminology.static.test.ts \
+    app/admin/job-openings/__tests__/job-openings-terminology.static.test.ts \
+    app/admin/staffing/__tests__/staffing-terminology.static.test.ts \
+    app/admin/jobs/__tests__/admin-jobs-terminology.static.test.ts \
+    app/admin/job-openings/[id]/page.test.tsx \
+    src/domains/projects/__tests__/project-ui.test.ts \
+    src/domains/staffing/__tests__/job-opening-ui.test.ts \
+    src/domains/staffing/__tests__/job-posting-ui.test.ts \
+    src/domains/staffing/__tests__/recruiter-assignment-ui.test.ts \
+    src/domains/staffing/__tests__/staffing-order-ui.test.ts
+exit: 0
+
+Test Files  11 passed (11)
+     Tests  101 passed (101)
+  Duration  3.35s
+
+==> SUMMARY <==
+Wave 2 targeted tests: 11/11 files, 101/101 tests PASS.

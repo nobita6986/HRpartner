@@ -221,7 +221,7 @@ describe('JobOpeningActions — submit / fetch / refresh (server-rendered HTML s
       />,
     );
     expect(html).toContain('data-testid="inline-status"');
-    expect(html).toContain('ServiceModel hiện tại: RECRUITMENT_SERVICE');
+    expect(html).toContain('Hình thức tuyển dụng: Dịch vụ tuyển dụng');
   });
 });
 
@@ -342,6 +342,6 @@ describe('JobOpeningActions — D section (hrp-t1a-postdeploy-runtime-correction
     );
     // Inline status hiển thị trạng thái OPEN.
     expect(html).toContain('data-testid="inline-status"');
-    expect(html).toContain('ServiceModel hiện tại: STAFFING_SUPPLY');
+    expect(html).toContain('Hình thức tuyển dụng: Cung ứng nhân sự');
   });
 });

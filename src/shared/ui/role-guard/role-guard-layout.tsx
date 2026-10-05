@@ -39,6 +39,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/src/shared/utils/cn';
 import { getMostSpecificActiveHref } from './active-nav-helper';
+import { roleLabel } from '@/src/shared/i18n/role-labels';
+import { formLabel } from '@/src/shared/i18n/form-dictionary';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -123,16 +125,53 @@ export const ADMIN_NAV_PHASE4: NavItem[] = [
 
   // Nhu cầu & Tuyển (recruitment) — T1C: Staffing moved here from "Con người"
   // because StaffingOrder is the input of the recruitment flow, not workforce.
-  { href: '/admin/projects', label: 'Dự án', icon: Briefcase, roles: ['ADMIN', 'PM', 'HR_MANAGER'], section: 'recruitment' },
-  { href: '/admin/jobs', label: 'Danh sách nhu cầu', icon: Briefcase, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'SALE'], section: 'recruitment' },
+  //
+  // hrp-t1a-introduce-hrp-and-menu-cleanup: recruitment section collapsed
+  // from 4 items to 3 (Dự án → Nhu cầu tuyển dụng → Tin tuyển dụng).
+  // The old "Danh sách nhu cầu" entry (`/admin/jobs`) was removed; the
+  // slot-trống + publish + Công bố columns now live inside `/admin/projects`.
+  // `/admin/jobs` is kept as a 307 redirect to `/admin/projects` (T0 directive §B.5).
+  //
+  // correction 1/1 (T0 PR #104): the user-facing recruitment flow is
+  //   Dự án → Nhu cầu tuyển dụng → Tin tuyển dụng → Đơn ứng tuyển
+  // so the recruitment sub-list is reordered accordingly. The role
+  // matrix on each item is unchanged at the structural level — see
+  // PRJ / PM / HR_STAFF role corrections in `app/admin/projects/page.tsx`.
+  { href: '/admin/projects', label: 'Dự án', icon: Briefcase, roles: ['ADMIN', 'PM', 'HR_MANAGER', 'HR_STAFF'], section: 'recruitment' },
+  { href: '/admin/staffing', label: 'Nhu cầu tuyển dụng', icon: ClipboardList, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'PM'], section: 'recruitment' },
   { href: '/admin/jobs/job-postings', label: 'Tin tuyển dụng', icon: FileText, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'SALE'], section: 'recruitment' },
   { href: '/admin/applications', label: 'Đơn ứng tuyển', icon: UserRoundCheck, roles: ['ADMIN', 'HR_MANAGER', 'SALE', 'DIRECTOR'], section: 'recruitment' },
-  { href: '/admin/staffing', label: 'Staffing', icon: ClipboardList, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'PM'], section: 'recruitment' },
 
   // Nhân sự (people) — T1C: chỉ còn Nhân sự (workers). Tài khoản đã chuyển
   // sang Hệ thống, Khách hàng / Nhà cung cấp sang nhóm Đối tác. Header đổi
   // từ "Con người" → "Nhân sự" để phản ánh đúng domain.
-  { href: '/admin/workers', label: 'Nhân sự', icon: Users, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER'], section: 'people' },
+  //
+  // hrp-m2a-operational-ux-debt / F2+F3 — LaborProfile navigation & intake
+  // discoverability (audit §8.2 + §8.3, execution decision §D Priority 2):
+  // add the two canonical pages that already exist at
+  // `app/admin/labor-profiles/page.tsx` (ALLOWED_ROLES = ADMIN/HR_MANAGER/HR_STAFF)
+  // and `app/admin/labor-profiles/new/page.tsx` to the people group so the
+  // list and the `+ Tiếp nhận NLD` CTA are reachable in one click from the
+  // sidebar instead of via the recruiter-workbench deep-link only. Roles
+  // byte-mirror `app/admin/labor-profiles/page.tsx:16` — no widening.
+  //
+  // T0 T1B — HOTFIX UI NGƯỜI LAO ĐỘNG (F2+F3 follow-up):
+  // - RENAME the workers entry label 'Nhân sự' → 'Người lao động' to align
+  //   with the canonical operator-facing terminology; the workforce roster
+  //   surface is "người lao động" (people being managed), not "nhân sự"
+  //   (HR staff). Section stays 'people'.
+  // - RENAME the LaborProfile list label 'Hồ sơ NLD' → 'Hồ sơ tiếp nhận'
+  //   (the slot in the sidebar is a noun-phrase title; the full title
+  //   "Hồ sơ tiếp nhận người lao động" remains on the page <h1>).
+  // - REMOVE the dedicated /admin/labor-profiles/new sidebar entry
+  //   ('Tiếp nhận NLD'). The intake flow is reachable from the LaborProfile
+  //   list page's own "+ Tiếp nhận người lao động" CTA (T0 directive §1.4);
+  //   keeping a separate sidebar slot duplicates the same destination and
+  //   confuses operators. The route /admin/labor-profiles/new remains
+  //   routable (no route change, no role-matrix change) — only the sidebar
+  //   item is removed.
+  { href: '/admin/workers', label: 'Người lao động', icon: Users, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER'], section: 'people' },
+  { href: '/admin/labor-profiles', label: 'Hồ sơ tiếp nhận', icon: UserRoundCheck, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER'], section: 'people' },
 
   // Đối tác (partners) — T1C: nhóm mới. Khách hàng / Nhà cung cấp là dữ
   // liệu đối tác bên ngoài, không thuộc workforce nội bộ.
@@ -322,7 +361,10 @@ export function RoleGuardLayout({
             
             {portal === 'admin' && peopleNav.length > 0 && (
               <>
-                <div className="mt-4 mb-1 px-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Nhân sự</div>
+                {/* T0 T1B — HOTFIX UI NGƯỜI LAO ĐỘNG: group header is the
+                    section title in UPPERCASE tracking; matches the directive
+                    naming "NGƯỜI LAO ĐỘNG". Visual style unchanged. */}
+                <div className="mt-4 mb-1 px-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">NGƯỜI LAO ĐỘNG</div>
                 {peopleNav.map(item => renderNavItem(item))}
               </>
             )}
@@ -413,7 +455,7 @@ export function RoleGuardLayout({
 function SidebarHeader({
   title,
   portal,
-  logoSrc = '/logo.png',
+  logoSrc = '/hrp-logo.webp',
 }: {
   title: string;
   portal: 'admin' | 'worker' | 'vendor';
@@ -457,9 +499,9 @@ function UserFooter({
         </div>
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm font-medium text-slate-900">
-            {user?.name ?? 'User'}
+            {user?.name ?? formLabel('default_user')}
           </div>
-          <div className="truncate text-xs text-slate-500">{role}</div>
+          <div className="truncate text-xs text-slate-500">{roleLabel(role)}</div>
         </div>
         <button
           type="button"

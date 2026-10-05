@@ -1,0 +1,24 @@
+UTF-8 NO-BOM GATE
+  [OK]   app/admin/job-openings/[id]/page.test.tsx
+  [OK]   app/admin/job-openings/[id]/page.tsx
+  [OK]   app/admin/job-openings/__tests__/job-openings-terminology.static.test.ts
+  [OK]   app/admin/jobs/__tests__/jobs-terminology.static.test.ts
+  [OK]   app/admin/jobs/job-postings/[id]/page.tsx
+  [OK]   app/admin/jobs/job-postings/__tests__/job-postings-terminology.static.test.ts
+  [OK]   app/admin/jobs/job-postings/page.tsx
+  [OK]   app/admin/jobs/page.tsx
+  [OK]   app/admin/staffing/__tests__/staffing-terminology.static.test.ts
+  [OK]   app/admin/staffing/staffing-list-client.tsx
+  [OK]   docs/tasks/hrp-admin-localization-wave2-recruitment/TASK.md
+  [OK]   pnpm-lock.yaml
+  [OK]   src/domains/projects/__tests__/project-ui.test.ts
+  [OK]   src/domains/projects/project-ui.ts
+  [OK]   src/domains/staffing/__tests__/job-opening-ui.test.ts
+  [OK]   src/domains/staffing/__tests__/job-posting-ui.test.ts
+  [OK]   src/domains/staffing/__tests__/recruiter-assignment-ui.test.ts
+  [OK]   src/domains/staffing/__tests__/staffing-order-ui.test.ts
+  [OK]   src/domains/staffing/job-opening-ui.ts
+  [OK]   src/domains/staffing/job-posting-ui.ts
+  [OK]   src/domains/staffing/recruiter-assignment-ui.ts
+  [OK]   src/domains/staffing/staffing-order-ui.ts
+RESULT: PASS (22 changed text file(s), strict UTF-8 without BOM).
