@@ -418,7 +418,10 @@ describe.skipIf(!HAS_TEST_DB)('t1a-staffing-order-management — canonical order
     // bug — surface it explicitly instead of masking it as a race outcome.
     const preCheck = await admin.staffingOrder.findUnique({
       where: { id: orderId },
-      select: { id: true, status: true, _count: { select: { slots: true } } },
+      include: {
+        slots: { select: { id: true, positionCode: true } },
+        jobOpenings: { select: { id: true } },
+      },
     });
     console.log('[t1a] Case C precheck: %j', preCheck);
     expect(preCheck?.id, 'orderSameLock must exist before Case C').toBe(orderId);
