@@ -61,7 +61,7 @@ export default async function AdminSettingsPage() {
         updatedAt: new Date(0).toISOString(),
       };
       unavailableReason =
-        'Cấu hình trang chủ đang tạm khóa vì migration HomepageSettings chưa được áp dụng trên cơ sở dữ liệu.';
+        'Cài đặt trang chủ tạm thời không thể chỉnh sửa vì cơ sở dữ liệu chưa được cập nhật cấu trúc cần thiết.';
     } else {
       throw error;
     }

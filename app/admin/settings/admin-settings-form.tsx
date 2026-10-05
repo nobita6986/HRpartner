@@ -46,6 +46,30 @@ import {
   normalizePhoneNumber,
 } from '@/src/domains/job-board/chat-links';
 import { buildHomepageSettingsPatch } from './homepage-settings-patch';
+import { actionLabel } from '@/src/shared/i18n/action-dictionary';
+
+const STICKY_TEXT_COLOR_LABELS: Readonly<Record<StickyTextColor, string>> = {
+  'on-primary': 'Trên nền màu chính',
+  'on-surface': 'Trên nền nội dung',
+  'on-secondary-container': 'Trên nền màu phụ',
+};
+
+const STICKY_FONT_LABELS: Readonly<Record<StickyFont, string>> = {
+  SANS: 'Không chân (Sans-serif)',
+  SERIF: 'Có chân (Serif)',
+};
+
+const STICKY_EMPHASIS_LABELS: Readonly<Record<StickyEmphasis, string>> = {
+  NORMAL: 'Thông thường',
+  BOLD: 'Đậm',
+  EXTRA_BOLD: 'Rất đậm',
+};
+
+const STICKY_ANIMATION_LABELS: Readonly<Record<StickyAnimation, string>> = {
+  NONE: 'Không có',
+  BLINK: 'Nhấp nháy',
+  MARQUEE: 'Chạy chữ',
+};
 
 const PLACEHOLDER_GROUPS = [
   {
@@ -61,22 +85,22 @@ const PLACEHOLDER_GROUPS = [
     items: [
       { label: 'Email thông báo', description: 'Cấu hình email nhận thông báo' },
       { label: 'SMS / Zalo', description: 'Cấu hình kênh SMS và Zalo OA' },
-      { label: 'App Push', description: 'Bật/tắt thông báo trên ứng dụng' },
+      { label: 'Thông báo đẩy', description: 'Bật hoặc tắt thông báo trên ứng dụng' },
     ],
   },
   {
     title: 'Tích hợp',
     items: [
-      { label: 'API Keys', description: 'Quản lý API keys cho bên thứ ba' },
-      { label: 'Webhook', description: 'Cấu hình webhook nhận sự kiện' },
-      { label: 'Single Sign-On (SSO)', description: 'Kết nối LDAP / SAML / OAuth' },
+      { label: 'Khóa API', description: 'Quản lý khóa API dùng cho dịch vụ bên thứ ba' },
+      { label: 'Webhook', description: 'Cấu hình webhook để nhận sự kiện' },
+      { label: 'Đăng nhập một lần (SSO)', description: 'Kết nối LDAP / SAML / OAuth' },
     ],
   },
   {
     title: 'Nhật ký hệ thống',
     items: [
-      { label: 'Audit Log', description: 'Xem lịch sử thay đổi quan trọng' },
-      { label: 'Error Log', description: 'Các lỗi hệ thống gần đây' },
+      { label: 'Nhật ký kiểm toán', description: 'Xem lịch sử các thay đổi quan trọng' },
+      { label: 'Nhật ký lỗi', description: 'Xem các lỗi hệ thống gần đây' },
     ],
   },
 ];
@@ -334,7 +358,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
           setStickyEmphasis(snap.emphasis);
           setStickyAnimation(snap.animation);
           setStickyContentRevision(snap.contentRevision);
-          setSuccess('Đã lưu cài đặt homepage và kênh liên hệ.');
+          setSuccess('Đã lưu cài đặt trang chủ và kênh liên hệ.');
         }
         router.refresh();
       } catch (e) {
@@ -378,7 +402,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
           Cài đặt
         </h1>
         <p style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-sm">
-          Cấu hình hệ thống. Nhóm AV1 bên dưới đã có hiệu lực; các nhóm khác đang liệt kê để biết sẽ có gì.
+          Cấu hình hệ thống. Nhóm cài đặt trang chủ bên dưới đã có hiệu lực; các nhóm khác sẽ sớm khả dụng.
         </p>
       </div>
 
@@ -409,10 +433,10 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
             <h2 style={{ color: 'var(--on-surface)' }} className="text-base font-semibold">
-              Homepage Settings
+              Cài đặt trang chủ
             </h2>
             <p style={{ color: 'var(--on-surface-variant)' }} className="mt-0.5 text-xs">
-              Singleton — chỉ một row id=&apos;default&apos;. Cập nhật ảnh hưởng homepage ngay lập tức.
+              Chỉ có một bản ghi cấu hình (id=&apos;default&apos;). Thay đổi có hiệu lực ngay trên trang chủ.
             </p>
           </div>
           <span
@@ -422,7 +446,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
             }}
             className="rounded-full px-2 py-0.5 text-xs font-medium"
           >
-            AV1 · ACTIVE
+            AV1 · ĐANG HOẠT ĐỘNG
           </span>
         </div>
 
@@ -601,7 +625,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
 
             <div>
               <label htmlFor="messengerChatUrl" className="mb-1 block text-sm font-medium" style={{ color: 'var(--on-surface)' }}>
-                URL Messenger Page
+                URL Trang Messenger
               </label>
               <input
                 id="messengerChatUrl"
@@ -646,14 +670,14 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
                 UI2 · Tin tức &amp; Cẩm nang
               </h3>
               <p style={{ color: 'var(--on-surface-variant)' }} className="mt-0.5 text-xs">
-                Khi tắt, mục &quot;Tin tức&quot; ẩn khỏi navigation và homepage. Dữ liệu bài viết được giữ nguyên.
+                Khi tắt, mục &quot;Tin tức&quot; sẽ ẩn khỏi điều hướng và trang chủ. Dữ liệu bài viết vẫn được giữ nguyên.
               </p>
             </div>
             <span
               style={{ background: 'var(--primary-container)', color: 'var(--on-primary-container)' }}
               className="rounded-full px-2 py-0.5 text-xs font-medium"
             >
-              UI2 · PUBLIC CONTENT
+              UI2 · NỘI DUNG CÔNG KHAI
             </span>
           </div>
 
@@ -668,10 +692,10 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
             />
             <span>
               <span style={{ color: 'var(--on-surface)' }} className="block text-sm font-medium">
-                Hiển thị &quot;Tin tức &amp; Cẩm nang&quot; trên homepage công khai
+                Hiển thị &quot;Tin tức &amp; Cẩm nang&quot; trên trang chủ công khai
               </span>
               <span style={{ color: 'var(--on-surface-variant)' }} className="mt-0.5 block text-xs">
-                Mặc định BẬT để giữ hành vi hiện tại theo contract.
+                Mặc định BẬT để giữ nguyên hành vi hiện tại.
               </span>
             </span>
           </label>
@@ -689,14 +713,14 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
                 UI2 · Thông báo dính phía dưới
               </h3>
               <p style={{ color: 'var(--on-surface-variant)' }} className="mt-0.5 text-xs">
-                Thanh thông báo cố định dưới viewport. URL CTA chỉ chấp nhận relative path hoặc HTTPS.
+                Thanh thông báo cố định ở cuối màn hình. Đường dẫn CTA chỉ chấp nhận đường dẫn tương đối hoặc URL HTTPS.
               </p>
             </div>
             <span
               style={{ background: 'var(--primary-container)', color: 'var(--on-primary-container)' }}
               className="rounded-full px-2 py-0.5 text-xs font-medium"
             >
-              UI2 · STICKY BAR
+              UI2 · THANH THÔNG BÁO CỐ ĐỊNH
             </span>
           </div>
 
@@ -714,7 +738,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
                 Bật thanh thông báo
               </span>
               <span style={{ color: 'var(--on-surface-variant)' }} className="mt-0.5 block text-xs">
-                Khi tắt, thanh không hiển thị trên public và CTA cũng bị ẩn.
+                Khi tắt, thanh và nút CTA sẽ không hiển thị trên trang công khai.
               </span>
             </span>
           </label>
@@ -743,7 +767,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
                 data-testid="sticky-message-input"
               />
               <p id="stickyMessage-help" style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-xs">
-                Tối đa 280 ký tự. Plain text — KHÔNG nhúng HTML hoặc thẻ &lt;marquee&gt;.
+                Tối đa 280 ký tự. Chỉ nhập văn bản thuần — KHÔNG nhúng HTML hoặc thẻ &lt;marquee&gt;.
               </p>
               {stickyMessageError && (
                 <p id="stickyMessage-error" role="alert" style={{ color: 'var(--error)' }} className="mt-1 text-xs font-medium">
@@ -754,7 +778,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
 
             <div>
               <label htmlFor="stickyCtaLabel" className="mb-1 block text-sm font-medium" style={{ color: 'var(--on-surface)' }}>
-                Nhãn CTA
+                Nhãn nút kêu gọi hành động (CTA)
               </label>
               <input
                 id="stickyCtaLabel"
@@ -783,7 +807,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
 
             <div>
               <label htmlFor="stickyCtaUrl" className="mb-1 block text-sm font-medium" style={{ color: 'var(--on-surface)' }}>
-                URL CTA
+                Đường dẫn nút CTA
               </label>
               <input
                 id="stickyCtaUrl"
@@ -803,7 +827,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
                 data-testid="sticky-cta-url-input"
               />
               <p id="stickyCtaUrl-help" style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-xs">
-                Relative path (vd /viec-lam) hoặc HTTPS tuyệt đối. Từ chối javascript:, data:, vbscript:, file:, plain HTTP.
+                Dùng đường dẫn nội bộ (ví dụ /viec-lam) hoặc URL HTTPS. Không chấp nhận javascript:, data:, vbscript:, file: hoặc HTTP.
               </p>
               {stickyCtaUrlError && (
                 <p id="stickyCtaUrl-error" role="alert" style={{ color: 'var(--error)' }} className="mt-1 text-xs font-medium">
@@ -826,7 +850,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
               >
                 {STICKY_TEXT_COLORS.map((c) => (
                   <option key={c} value={c}>
-                    {c}
+                    {STICKY_TEXT_COLOR_LABELS[c]}
                   </option>
                 ))}
               </select>
@@ -834,7 +858,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
 
             <div>
               <label htmlFor="stickyFont" className="mb-1 block text-sm font-medium" style={{ color: 'var(--on-surface)' }}>
-                Font chữ
+                Kiểu chữ
               </label>
               <select
                 id="stickyFont"
@@ -846,7 +870,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
               >
                 {STICKY_FONTS.map((f) => (
                   <option key={f} value={f}>
-                    {f}
+                    {STICKY_FONT_LABELS[f]}
                   </option>
                 ))}
               </select>
@@ -866,7 +890,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
               >
                 {STICKY_EMPHASIS.map((em) => (
                   <option key={em} value={em}>
-                    {em}
+                    {STICKY_EMPHASIS_LABELS[em]}
                   </option>
                 ))}
               </select>
@@ -886,12 +910,12 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
               >
                 {STICKY_ANIMATIONS.map((a) => (
                   <option key={a} value={a}>
-                    {a}
+                    {STICKY_ANIMATION_LABELS[a]}
                   </option>
                 ))}
               </select>
               <p style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-xs">
-                BLINK/MARQUEE tự động vô hiệu hoá khi prefers-reduced-motion.
+                Hiệu ứng nhấp nháy và chạy chữ tự động tắt khi thiết bị bật chế độ giảm chuyển động (prefers-reduced-motion).
               </p>
             </div>
 
@@ -909,7 +933,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
                     Cho phép người dùng đóng thanh
                   </span>
                   <span style={{ color: 'var(--on-surface-variant)' }} className="mt-0.5 block text-xs">
-                    Trạng thái đóng được version theo contentRevision.
+                    Phiên bản nội dung (contentRevision) quyết định trạng thái đóng có còn hiệu lực hay không.
                   </span>
                 </span>
               </label>
@@ -921,12 +945,12 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
                 className="hrp-focus inline-flex items-center gap-2 rounded-lg border border-[var(--outline-variant)] px-3 py-2 text-xs font-semibold disabled:opacity-40"
                 data-testid="sticky-publish-button"
               >
-                Phát hành (bump contentRevision)
+                Tăng phiên bản nội dung
               </button>
             </div>
 
             <p style={{ color: 'var(--on-surface-variant)' }} className="sm:col-span-2 text-xs">
-              contentRevision hiện tại: <span className="font-mono">{stickyContentRevision}</span>
+              Phiên bản nội dung hiện tại (contentRevision): <span className="font-mono">{stickyContentRevision}</span>
             </p>
           </fieldset>
         </div>
@@ -983,7 +1007,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
             data-testid="settings-save-button"
           >
             {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            Lưu thay đổi
+            {actionLabel('save')}
           </button>
         </div>
       </form>
@@ -1024,7 +1048,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
         className="mt-8 rounded-lg border p-4 text-center"
       >
         <p style={{ color: 'var(--on-surface-variant)' }} className="text-sm">
-          Phiên bản hệ thống HRP <span className="font-mono text-xs">v1.0.0</span> — Các module cài đặt chi tiết đang được phát triển.
+          Phiên bản hệ thống HRP <span className="font-mono text-xs">v1.0.0</span> — Các nhóm cài đặt chi tiết khác đang được phát triển.
         </p>
       </div>
     </div>
