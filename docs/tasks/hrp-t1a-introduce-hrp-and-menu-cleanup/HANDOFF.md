@@ -18,7 +18,7 @@
 | Correction batches used | `1` |
 | Status | `READY_FOR_REVIEW` |
 | Branch | `codex/t1a-introduce-hrp-and-menu-cleanup` |
-| Branch HEAD | `f3e2aa16` — forward-only correction on top of `5bfeb258`; contains all correction 1/1 source + test changes. |
+| Branch HEAD | `f3e2aa16` — final semantic commit (correction 1/1 source + test changes). The follow-up docs-only commit `5f3fe56a` carries the same content for SHA pinning. Both commits are forward-only on top of `5bfeb258`. Exact final branch HEAD = `5f3fe56a` (reported in the post-commit handback). |
 
 ## 1. Outcome and changed surface
 
