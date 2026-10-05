@@ -62,6 +62,8 @@ export interface StickyAnnouncementDto {
   dismissible: boolean;
   /** Background opacity percentage. Text and controls remain fully opaque. */
   backgroundOpacity: number;
+  /** Duration of one marquee cycle in seconds. */
+  marqueeDurationSeconds: number;
   /** Text color enum. */
   textColor: StickyTextColor;
   /** Font style enum. */
@@ -109,6 +111,7 @@ export const StickyAnnouncementSchema = z.object({
   ctaUrl: z.string().max(2048).nullable(),
   dismissible: z.boolean(),
   backgroundOpacity: z.number().int().min(0).max(100).default(100),
+  marqueeDurationSeconds: z.number().int().min(5).max(60).default(18),
   textColor: z.enum(STICKY_TEXT_COLORS),
   font: z.enum(STICKY_FONTS),
   emphasis: z.enum(STICKY_EMPHASIS),
@@ -137,6 +140,7 @@ export const STICKY_ANNOUNCEMENT_DEFAULTS: Omit<
   ctaUrl: null,
   dismissible: true,
   backgroundOpacity: 100,
+  marqueeDurationSeconds: 18,
   textColor: 'on-primary',
   font: 'SANS',
   emphasis: 'BOLD',

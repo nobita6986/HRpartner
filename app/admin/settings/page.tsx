@@ -53,6 +53,7 @@ export default async function AdminSettingsPage() {
           ctaUrl: null,
           dismissible: true,
           backgroundOpacity: 100,
+          marqueeDurationSeconds: 18,
           textColor: 'on-primary',
           font: 'SANS',
           emphasis: 'BOLD',

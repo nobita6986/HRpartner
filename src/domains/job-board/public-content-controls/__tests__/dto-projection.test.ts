@@ -15,6 +15,7 @@ describe('toStickyAnnouncementDto (Phase B / UI2)', () => {
     expect(dto.ctaUrl).toBeNull();
     expect(dto.dismissible).toBe(true);
     expect(dto.backgroundOpacity).toBe(100);
+    expect(dto.marqueeDurationSeconds).toBe(18);
     expect(dto.contentRevision).toBe('rev-0');
   });
 
@@ -37,6 +38,7 @@ describe('toStickyAnnouncementDto (Phase B / UI2)', () => {
       ctaUrl: '/contact',
       dismissible: true,
       backgroundOpacity: 64,
+      marqueeDurationSeconds: 12,
       textColor: 'on-primary',
       font: 'SANS',
       emphasis: 'BOLD',
@@ -48,7 +50,43 @@ describe('toStickyAnnouncementDto (Phase B / UI2)', () => {
     expect(dto.ctaLabel).toBe('Open');
     expect(dto.ctaUrl).toBe('/contact');
     expect(dto.backgroundOpacity).toBe(64);
+    expect(dto.marqueeDurationSeconds).toBe(12);
     expect(dto.contentRevision).toBe('rev-1234');
+  });
+
+  it('defaults the duration on legacy sticky JSON', () => {
+    const dto = toStickyAnnouncementDto({
+      enabled: true,
+      message: 'Legacy announcement',
+      ctaLabel: null,
+      ctaUrl: null,
+      dismissible: true,
+      textColor: 'on-primary',
+      font: 'SANS',
+      emphasis: 'BOLD',
+      animation: 'NONE',
+      contentRevision: 'rev-1',
+    });
+    expect(dto.enabled).toBe(true);
+    expect(dto.marqueeDurationSeconds).toBe(18);
+  });
+
+  it.each([4, 61, 18.5])('rejects invalid marquee duration %s', (marqueeDurationSeconds) => {
+    expect(
+      toStickyAnnouncementDto({
+        enabled: true,
+        message: 'Announcement',
+        ctaLabel: null,
+        ctaUrl: null,
+        dismissible: true,
+        textColor: 'on-primary',
+        font: 'SANS',
+        emphasis: 'BOLD',
+        animation: 'MARQUEE',
+        marqueeDurationSeconds,
+        contentRevision: 'rev-1',
+      }).enabled,
+    ).toBe(false);
   });
 
   it('returns safe defaults for an object that fails schema validation', () => {

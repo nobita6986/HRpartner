@@ -18,6 +18,7 @@ const saved: HomepageSettingsDto = {
     ctaUrl: '/viec-lam',
     dismissible: true,
     backgroundOpacity: 100,
+    marqueeDurationSeconds: 18,
     textColor: 'on-primary',
     font: 'SANS',
     emphasis: 'BOLD',
@@ -73,6 +74,17 @@ describe('buildHomepageSettingsPatch', () => {
     const stickyAnnouncement = {
       ...saved.stickyAnnouncement,
       backgroundOpacity: 60,
+    };
+
+    expect(buildHomepageSettingsPatch(draft({ stickyAnnouncement }), saved)).toEqual({
+      stickyAnnouncement,
+    });
+  });
+
+  it('sends the complete sticky object when marquee duration changes', () => {
+    const stickyAnnouncement = {
+      ...saved.stickyAnnouncement,
+      marqueeDurationSeconds: 12,
     };
 
     expect(buildHomepageSettingsPatch(draft({ stickyAnnouncement }), saved)).toEqual({

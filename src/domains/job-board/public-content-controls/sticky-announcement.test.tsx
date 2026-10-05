@@ -116,9 +116,18 @@ describe('StickyAnnouncement — server-side first render', () => {
   it('applies background opacity without reducing foreground opacity', () => {
     const transparent = render({ dto: dto({ backgroundOpacity: 0 }) });
     expect(transparent).toContain('--sticky-background-opacity:0%');
+    expect(transparent).not.toMatch(/(?:^|;)\s*opacity:/);
     expect(transparent).toContain('color:var(--color-on-primary)');
     const opaque = render({ dto: dto({ backgroundOpacity: 100 }) });
     expect(opaque).toContain('--sticky-background-opacity:100%');
+  });
+
+  it('passes marquee duration to the track without applying opacity to the wrapper', () => {
+    const html = render({
+      dto: dto({ animation: 'MARQUEE', marqueeDurationSeconds: 9 }),
+    });
+    expect(html).toContain('--sticky-marquee-duration:9s');
+    expect(html).not.toMatch(/(?:^|;)\s*opacity:/);
   });
 
   it('does NOT render a doubled message track for NONE or BLINK', () => {

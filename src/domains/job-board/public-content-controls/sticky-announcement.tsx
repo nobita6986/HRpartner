@@ -41,6 +41,7 @@ const DISMISS_STORAGE_PREFIX = 'hrp.stickyAnnouncement.dismissed/';
 
 type StickyAnnouncementStyle = CSSProperties & {
   '--sticky-background-opacity': string;
+  '--sticky-marquee-duration': string;
 };
 
 export interface StickyAnnouncementProps {
@@ -134,6 +135,7 @@ export function StickyAnnouncement({
   const announcementStyle: StickyAnnouncementStyle = {
     color: `var(${textColorVar})`,
     '--sticky-background-opacity': `${normalized.backgroundOpacity}%`,
+    '--sticky-marquee-duration': `${normalized.marqueeDurationSeconds}s`,
   };
 
   // Suppression predicates. Order matters: a missing message is a hard no;
