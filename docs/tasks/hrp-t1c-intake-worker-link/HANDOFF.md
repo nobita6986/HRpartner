@@ -91,7 +91,7 @@
 | `AC-08` | inline | PASS — 29/29 conversion.service.test.ts; 4296/4296 full unit (9 skipped) | None |
 | `AC-09` | inline | self-skip — `DATABASE_URL_TEST`/`DATABASE_URL_ADMIN_TEST` chưa cấp cho worktree; file `tests/db/intake-convert-worker-link.integration.test.ts` sẵn sàng chạy ở CI/owner pre-merge | Synthetic Neon DB env chưa cấp; Tier 1 đã cover toàn bộ race semantics trong unit test (`AC-RAC-01..03`) |
 | `AC-10` | inline | PASS — `git diff --check HEAD` exit 0; `verify-encoding.mjs` PASS; `git status --porcelain` clean cho tracked ngoài `pnpm-*` (workspace infra, ngoài scope) | None |
-| `AC-11` | inline | PARTIAL — Branch pushed, PR #107 open; Quality + Integration GREEN; **Vercel deployment rate-limited** (free-tier quota; non-code). Owner cần đợi quota reset hoặc upgrade Pro. | Vercel infra rate limit; không phải code/build defect. |
+| `AC-11` | inline | PARTIAL — Branch pushed (`fb0364b2`), PR #107 open; Quality ✅ + Integration ✅; **Vercel deployment rate-limited** (free-tier quota; non-code). Owner cần đợi quota reset hoặc upgrade Pro. | Vercel infra rate limit; không phải code/build defect. Re-run sau khi docs commit `fb0364b2`: Quality ✅ + Integration ✅ (run 37293085036). |
 
 ## 3. Evidence registry (inline measurement, no raw log files)
 
@@ -165,9 +165,11 @@
 - Forward-merge commit: `e2cbbdda` (merge `origin/main` `598feacc` → branch, `--no-ff`)
 - Round 1 implementation commit (superseded): `5cbc3f06d4179c2389d79541745e38e0db5ef0b2`
 - Round 2 implementation commit (correction 1/1, current): `4f1a041f`
+- Round 2 docs commit (HANDOFF/TASK spec bump): `4d3de3c0`
+- Round 2 docs commit (HANDOFF CI status update): `fb0364b2`
 - Branch: `codex/t1c-intake-worker-link` → `main` (non-draft, PR #107)
 - PR: [#107](https://github.com/nobita6986/HRpartner/pull/107)
-- CI at handoff: Quality ✅ + Integration ✅; Vercel deployment rate-limited (free-tier quota; non-code, will reset in 24h).
+- CI runs: Quality ✅ + Integration ✅ (run 37293085036, head `fb0364b2`); Vercel rate-limited (free-tier quota, will reset in 24h).
 
 > Handoff status: `READY_FOR_REVIEW` — chờ owner confirm Vercel quota reset
 > hoặc Pro upgrade; không merge.
