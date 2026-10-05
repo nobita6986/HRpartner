@@ -7,7 +7,7 @@
 | Task slug | `t1a-staffing-order-management` |
 | Delivery protocol | `V2_FAST_FREEZE` |
 | Work type | `MIXED` |
-| Status | `CORRECTING` → `ACCEPTED` (after CI 4/4 GREEN) |
+| Status | `ACCEPTED` (after CI 4/4 GREEN) |
 | Correction budget | `1` (used) |
 | Baseline | `598feacc456becd450dcdb3942d2046691af3a3b` (`origin/main`) |
 | Branch | `codex/t1a-staffing-order-management` |
@@ -174,6 +174,7 @@ No new enum, no new state.
 | `v1.0` | 2026-10-05 | Initial contract | V2_FAST_FREEZE STANDARD + NONE |
 | `v1.0` | 2026-10-05 | Status ACCEPTED; PR opened | All gates GREEN; PR pending CI 4/4 GREEN |
 | `v1.0` | 2026-10-05 | CORRECTION 1/1: Implementation SHA `d94b9a66` | T0 5-point correction: Vietnamese copy, advisory-lock concurrency, DELETE idempotency, PUT validation 400, ADMIN delete on CLOSED/CANCELLED; all gates GREEN (4386 unit tests, typecheck, lint, build, encoding, diff-check); awaiting CI 4/4 GREEN |
+| `v1.0` | 2026-10-05 | CORRECTION 1/1 closed: final doc commit `6b765e9c` | Both PR #108 CI runs GREEN: code commit `d94b9a66` (run 37293868400) + docs commit `6b765e9c` (run 37294546190) — Quality + Integration jobs all `success`. Stop before merge per T0 directive. |
 
 ## 9. Correction 1/1 summary (T0, 2026-10-05)
 

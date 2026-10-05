@@ -13,7 +13,7 @@
 | Audit mode | `NONE` |
 | Audit reason | T0 directive explicitly: "Không Tier 3/AUDIT mode" — manual Tier 1 self-review suffices; no public contract addition (state machine unchanged) and no auth/RLS expansion. CRITICAL-class surface (state machine + delete) is bounded by existing transitions and existing RLS — no new authority. Risk-accept: Tier 0. |
 | Spec version | `v1.0` |
-| Status | `CORRECTING` |
+| Status | `ACCEPTED` |
 | Planner | `Tier 1` |
 | Baseline | `598feacc456becd450dcdb3942d2046691af3a3b` (`origin/main`) |
 | Contract gate | `READY_TO_CODE` |
@@ -25,7 +25,7 @@
 | Required gates | `pnpm typecheck`, `pnpm lint`, `pnpm test:unit`, `pnpm build`, `prisma validate`, `git diff --check`, `node .ai-pipeline/scripts/verify-encoding.mjs` |
 | Current execution round | `2` |
 | Current audit round | `0` |
-| Next gate | `/deliver → /resolve` (PR opened, CI monitoring) |
+| Next gate | `/deliver → /resolve` (PR CI 4/4 GREEN; stop before merge) |
 
 > Lane và audit là hai quyết định riêng. T0 đã chốt `STANDARD + NONE`.
 
@@ -211,4 +211,5 @@ Tier 1 append sau khi chạy self-review; audit NONE resolve trực tiếp từ 
 | `v1.0` | 2026-10-05 | Initial contract | Initial |
 | `v1.0` | 2026-10-05 | Status READY_FOR_EXECUTION → ACCEPTED; Current execution round 0 → 1; Next gate = `/deliver → /resolve` (PR opened, CI monitoring) | Tier 1 self-review passed; all gates GREEN; implementation complete (28 test files + 4349 unit tests passing) |
 | `v1.0` | 2026-10-05 | CORRECTION 1/1 in-flight: Status ACCEPTED → CORRECTING; Execution round 1 → 2 | T0 correction 1/1 PR #108: (1) full Vietnamese UI copy (Order → nhu cầu tuyển dụng, Slot → vị trí tuyển, JobOpening → vị trí tuyển nội bộ, JobPosting → tin tuyển dụng, role → vai trò, terminal → trạng thái kết thúc; no internal field in user-facing copy); (2) concurrent-safe delete/update-slot (advisory locks + re-read under lock); (3) DELETE dùng `withIdempotency` (route key `DELETE:/api/staffing/orders/:id`, requires `x-idempotency-key`); (4) PUT strict validation (hourlyRateVnd safe int ≥ 0 / null, ISO dates, validTo≥validFrom, HH:mm times); (5) ADMIN delete visible on CLOSED/CANCELLED (backend guard is authority) |
-| `v1.0` | 2026-10-05 | CORRECTION 1/1 implementation: Implementation SHA `d94b9a66` | Branch `codex/t1a-staffing-order-management`; push OK; pre-push gates all GREEN (4386 unit tests, typecheck, lint, build, encoding, diff-check); static guard `required-relation-sweep` updated for new post-lock select (39→40 hits in `src/`); 21 new route tests in `app/api/staffing/orders/[id]/route.test.ts`; awaiting CI 4/4 GREEN |
+| `v1.0` | 2026-10-05 | CORRECTION 1/1 implementation: Implementation SHA `d94b9a66` | Branch `codex/t1a-staffing-order-management`; push OK; pre-push gates all GREEN (4386 unit tests, typecheck, lint, build, encoding, diff-check); static guard `required-relation-sweep` updated for new post-lock select (39→40 hits in `src/`); 21 new route tests in `app/api/staffing/orders/[id]/route.test.ts`; CI run 37294546190 (`docs(t1a)`) Quality+Integration both `success` |
+| `v1.0` | 2026-10-05 | CORRECTION 1/1 closed: Status CORRECTING → ACCEPTED; final commit `6b765e9c` | Both PR #108 CI runs (code commit `d94b9a66` run 37293868400 + docs commit `6b765e9c` run 37294546190) GREEN: Quality (schema·typecheck·lint·unit·build) success, Integration (DB tests·fail-closed) success; PR state OPEN, mergeable MERGEABLE; stop before merge per T0 directive |
