@@ -126,8 +126,25 @@ const EXPECTED_HITS = [
   'src/domains/staffing/job-posting-list.service.ts:152 staffingOrder',
   'src/domains/staffing/job-posting-list.service.ts:245 jobOpening',
   'src/domains/staffing/job-posting-list.service.ts:253 staffingOrder',
-  'src/domains/staffing/order.service.ts:153 project',
-  'src/domains/staffing/order.service.ts:179 project',
+  // t1a-staffing-order-management (2026-10-05): getStaffingOrderDetail + updateStaffingOrder
+  // thêm `slots.jobOpening` / `slots.neoJobOpenings` (qua include include con) để đếm
+  // phụ thuộc cho UI. Line number shift từ 153/179 (cũ) do thêm 2 hàm mới.
+  // CORRECTION 1/1 (2026-10-05): updateStaffingOrder + deleteStaffingOrder
+  // thêm advisory lock + re-read. Hai path mới phát sinh hit sweep:
+  //   - `order.service.ts:192` `getStaffingOrder` (detail) — line shift 158
+  //     do thêm `acquireOrderAdvisoryLock` helper + 2 hàm mới. 158 → 192.
+  //   - `order.service.ts:218` `getStaffingOrder` (detail) — line shift 184 → 218.
+  //   - `order.service.ts:331` `getStaffingOrderDetail` — line shift 297 → 331.
+  //   - `order.service.ts:336` `getStaffingOrderDetail` — line shift 302 → 336.
+  //   - `order.service.ts:428` `updateStaffingOrder` re-read slots — line shift 387 → 428.
+  //   - `order.service.ts:459` `updateStaffingOrder` re-read slots.jobOpening
+  //     (thêm mới — sweep phát hiện thêm 1 hit).
+  'src/domains/staffing/order.service.ts:207 project',
+  'src/domains/staffing/order.service.ts:233 project',
+  'src/domains/staffing/order.service.ts:346 project',
+  'src/domains/staffing/order.service.ts:351 jobOpening',
+  'src/domains/staffing/order.service.ts:443 jobOpening',
+  'src/domains/staffing/order.service.ts:474 jobOpening',
   'src/domains/staffing/submission.service.ts:204 project',
   // AFF-04 STEP-04: re-read SourceClaim -> Worker.userId under lock for
   // self-referral classification. Worker is required in schema, so the
@@ -445,8 +462,21 @@ describe('quan hệ BẮT BUỘC trên bảng bị RLS che: tập vị trí sele
     // not add a new lock namespace. All five selects are RLS-covered
     // (read-only; `withDbContext` sets the GUC session role; JobOpening
     // is not a recruiter-gated table on its own — the scope is the
-    // order, not the opening).
-    expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(36);
+    // order, not the opening). t1a-staffing-order-management
+    // (2026-10-05): getStaffingOrderDetail + updateStaffingOrder thêm 3
+    // entries (project@297, jobOpening@302, jobOpening@387); line shift
+    // 153/179 → 158/184. Net +3 entries: 36 → 39 src hits.
+    // CORRECTION 1/1 (2026-10-05): updateStaffingOrder re-read thêm 1
+    // entry (jobOpening@459); các entries cũ line shift do thêm 2 hàm
+    // mới (`acquireOrderAdvisoryLock`/`acquireSlotAdvisoryLock` helpers
+    // + 2 hàm delete). Net +1 entry: 39 → 40 src hits.
+    // CORRECTION 2/1 (2026-10-05): advisory lock đổi sang canonical
+    // `p1a04:order:` / `p1a04:slot:` với bit-masked signature (thêm
+    // `(hashtext($1)::bigint) & 9223372036854775807::bigint` so với
+    // `hashtext($1::text)` cũ). Body dài hơn ⇒ line shift 6 entries
+    // order.service.ts: 192/218/331/336/428/459 → 207/233/346/351/443/474.
+    // Tổng entries KHÔNG đổi (40); chỉ line literals shift.
+    expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(40);
   });
 });
 
