@@ -80,10 +80,12 @@ async function withContext<T>(
   callback: (tx: PrismaTypes.TransactionClient) => Promise<T>,
 ): Promise<T> {
   return client.$transaction(async (tx) => {
+    // `is_local` (3rd arg) MUST be a SQL boolean literal — NOT a parameter
+    // binding. Passing '' here would be cast to boolean and fail with 22P02.
     await tx.$executeRawUnsafe("SELECT set_config('app.user_id', $1, true)", userId);
     await tx.$executeRawUnsafe("SELECT set_config('app.role', $1, true)", role);
-    await tx.$executeRawUnsafe("SELECT set_config('app.vendor_id', $1, '')", '');
-    await tx.$executeRawUnsafe("SELECT set_config('app.worker_id', $1, '')", '');
+    await tx.$executeRawUnsafe("SELECT set_config('app.vendor_id', $1, true)", '');
+    await tx.$executeRawUnsafe("SELECT set_config('app.worker_id', $1, true)", '');
     return callback(tx);
   });
 }
