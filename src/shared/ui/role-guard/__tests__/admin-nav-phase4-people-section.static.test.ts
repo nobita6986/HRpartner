@@ -1,20 +1,29 @@
 /**
  * admin-nav-phase4-people-section.static.test.ts — hrp-m2a-operational-ux-debt / F2+F3.
  *
- * Static guard for the F2/F3 fix that adds `Hồ sơ NLD` + `Tiếp nhận NLD` to
- * `ADMIN_NAV_PHASE4` under `section: 'people'`. The audit (audit §8.2 + §8.3,
- * execution decision §D Priority 2) authorized this small bounded UI fix so
- * the canonical LaborProfile list and intake flow are reachable in one click
- * from the admin sidebar instead of via a recruiter-workbench deep-link.
+ * Static guard for the F2/F3 fix that adds `Hồ sơ tiếp nhận` (formerly
+ * `Hồ sơ NLD`) to `ADMIN_NAV_PHASE4` under `section: 'people'`, and the T0
+ * T1B follow-up that:
+ *  - RENAME `/admin/workers` label `Nhân sự` → `Người lao động` (the
+ *    workforce roster is "người lao động" — people being managed — not
+ *    "nhân sự" which is HR staff).
+ *  - REMOVE the dedicated `/admin/labor-profiles/new` sidebar entry
+ *    (the route remains reachable via the list-page CTA and direct URL;
+ *    the sidebar slot is consolidated so the section has one fewer
+ *    duplicate destination).
+ *  - RENAME the people-group header from "Nhân sự" → "NGƯỜI LAO ĐỘNG".
  *
  * The test enforces:
- *  (a) The two new NavItem entries exist with exact href / label / roles / icon.
- *  (b) The roles list byte-mirrors `app/admin/labor-profiles/page.tsx:16`
- *      `ALLOWED_ROLES = new Set(['ADMIN', 'HR_MANAGER', 'HR_STAFF'])` — no
- *      widening and no shrinking.
- *  (c) Both entries live under `section: 'people'` so the renderer puts
- *      them under the `Nhân sự` sidebar header (audit §G).
- *  (d) The existing `Nhân sự` (workers) entry is preserved.
+ *  (a) The /admin/labor-profiles entry exists with exact href / label /
+ *      roles / icon, and its roles byte-mirror
+ *      `app/admin/labor-profiles/page.tsx:16` `ALLOWED_ROLES` — no widening
+ *      and no shrinking.
+ *  (b) The /admin/labor-profiles/new entry is NOT in the sidebar array
+ *      (the dedicated intake menu is removed; the route itself is
+ *      unchanged and the page is still reachable via the in-page CTA).
+ *  (c) Both workforce entries live under `section: 'people'` so the
+ *      renderer puts them under the "NGƯỜI LAO ĐỘNG" sidebar header.
+ *  (d) The /admin/workers entry label is exactly "Người lao động".
  *  (e) No accidental role drift to a forbidden role (HR_MANAGER / ADMIN /
  *      HR_STAFF only — no PM / SALE / DIRECTOR / ACCOUNTANT).
  *
@@ -82,21 +91,23 @@ function findEntry(predicate: (entry: NavEntrySpec) => boolean): NavEntrySpec | 
 }
 
 describe('hrp-m2a-operational-ux-debt / F2+F3 — sidebar people-section entries', () => {
-  // RQ-01 / AC-01 — both entries exist with exact href / label / roles / icon.
+  // RQ-01 / AC-01 — the /admin/labor-profiles entry exists with the new
+  // operator-facing label "Hồ sơ tiếp nhận" (T0 T1B rename of the old
+  // "Hồ sơ NLD" label).
   it('ADMIN_NAV_PHASE4 carries a /admin/labor-profiles entry under section="people"', () => {
     const entry = findEntry((e) => e.href === '/admin/labor-profiles');
     expect(entry, '/admin/labor-profiles entry missing').toBeDefined();
-    expect(entry!.label).toBe('Hồ sơ NLD');
+    expect(entry!.label).toBe('Hồ sơ tiếp nhận');
     expect(entry!.section).toBe('people');
     expect(entry!.icon).toBe('UserRoundCheck');
   });
 
-  it('ADMIN_NAV_PHASE4 carries a /admin/labor-profiles/new entry under section="people"', () => {
+  // T0 T1B — HOTFIX UI NGƯỜI LAO ĐỘNG §1.3: the dedicated
+  // /admin/labor-profiles/new sidebar entry is removed. The route is still
+  // routable — only the sidebar slot is dropped.
+  it('ADMIN_NAV_PHASE4 does NOT carry a dedicated /admin/labor-profiles/new entry', () => {
     const entry = findEntry((e) => e.href === '/admin/labor-profiles/new');
-    expect(entry, '/admin/labor-profiles/new entry missing').toBeDefined();
-    expect(entry!.label).toBe('Tiếp nhận NLD');
-    expect(entry!.section).toBe('people');
-    expect(entry!.icon).toBe('UserRoundCheck');
+    expect(entry, '/admin/labor-profiles/new should be removed from sidebar').toBeUndefined();
   });
 
   // RQ-01 / RQ-09 / AC-01 — roles set-equal the ALLOWED_ROLES in the page
@@ -110,51 +121,53 @@ describe('hrp-m2a-operational-ux-debt / F2+F3 — sidebar people-section entries
     );
 
     const listEntry = findEntry((e) => e.href === '/admin/labor-profiles');
-    const newEntry = findEntry((e) => e.href === '/admin/labor-profiles/new');
     const listSorted = [...listEntry!.roles].sort();
-    const newSorted = [...newEntry!.roles].sort();
     const expectedSorted = [...EXPECTED_ALLOWED_ROLES].sort();
     expect(listSorted).toEqual(expectedSorted);
-    expect(newSorted).toEqual(expectedSorted);
   });
 
   // RISK-04 / AC-01 — no forbidden role drift.
-  it.each(FORBIDDEN_DRIFT_ROLES)('does NOT include forbidden role "%s" on either entry', (role) => {
+  it.each(FORBIDDEN_DRIFT_ROLES)('does NOT include forbidden role "%s" on the /admin/labor-profiles entry', (role) => {
     const listEntry = findEntry((e) => e.href === '/admin/labor-profiles');
-    const newEntry = findEntry((e) => e.href === '/admin/labor-profiles/new');
     expect(listEntry!.roles).not.toContain(role);
-    expect(newEntry!.roles).not.toContain(role);
   });
 
-  // RQ-09 / AC-01 — both entries are non-disabled (the page exists and is reachable).
-  it('both entries are NOT disabled (the canonical pages exist and are reachable)', () => {
+  // RQ-09 / AC-01 — the /admin/labor-profiles entry is non-disabled (the
+  // page exists and is reachable). The T1B fix does not gate it behind the
+  // Đang phát triển block.
+  it('/admin/labor-profiles entry is NOT disabled (the canonical page is reachable)', () => {
     // Source regex does not capture `disabled`; verify by string scan of the
     // exact object literal.
     const listSlice = ROLE_GUARD_SOURCE.match(/\{[^}]*href:\s*'\/admin\/labor-profiles'[^}]*\}/);
-    const newSlice = ROLE_GUARD_SOURCE.match(/\{[^}]*href:\s*'\/admin\/labor-profiles\/new'[^}]*\}/);
     expect(listSlice).not.toBeNull();
-    expect(newSlice).not.toBeNull();
     expect(listSlice![0]).not.toMatch(/\bdisabled:\s*true\b/);
-    expect(newSlice![0]).not.toMatch(/\bdisabled:\s*true\b/);
   });
 
-  // RQ-09 / AC-01 — the existing `Nhân sự` (workers) entry is preserved.
-  it('preserves the existing /admin/workers entry under section="people"', () => {
+  // T0 T1B — HOTFIX UI NGƯỜI LAO ĐỘNG §1.1: the workforce roster entry is
+  // now "Người lao động" (people being managed), not "Nhân sự" (HR staff).
+  it('preserves the /admin/workers entry under section="people" with label "Người lao động"', () => {
     const workers = findEntry((e) => e.href === '/admin/workers');
     expect(workers, '/admin/workers entry missing').toBeDefined();
-    expect(workers!.label).toBe('Nhân sự');
+    expect(workers!.label).toBe('Người lao động');
     expect(workers!.section).toBe('people');
   });
 
-  // RQ-01 / AC-01 — both new entries are positioned AFTER workers (visual
-  // order matters for operators reading the sidebar top-to-bottom).
-  it('new entries are positioned AFTER /admin/workers in ADMIN_NAV_PHASE4', () => {
+  // T0 T1B — HOTFIX UI NGƯỜI LAO ĐỘNG: visual order unchanged. The /admin/
+  // labor-profiles entry sits AFTER /admin/workers (workforce roster first,
+  // then candidate-side intake list).
+  it('/admin/labor-profiles is positioned AFTER /admin/workers in ADMIN_NAV_PHASE4', () => {
     const workersIdx = entries.findIndex((e) => e.href === '/admin/workers');
     const listIdx = entries.findIndex((e) => e.href === '/admin/labor-profiles');
-    const newIdx = entries.findIndex((e) => e.href === '/admin/labor-profiles/new');
     expect(workersIdx).toBeGreaterThanOrEqual(0);
     expect(listIdx).toBeGreaterThan(workersIdx);
-    expect(newIdx).toBeGreaterThan(listIdx);
+  });
+
+  // T0 T1B — HOTFIX UI NGƯỜI LAO ĐỘNG: anti-regression fence. None of the
+  // legacy labels is reintroduced anywhere in the sidebar source.
+  it('does not reintroduce the legacy "Nhân sự" / "Hồ sơ NLD" / "Tiếp nhận NLD" labels', () => {
+    expect(ROLE_GUARD_SOURCE).not.toMatch(/label:\s*'Nhân sự'/);
+    expect(ROLE_GUARD_SOURCE).not.toMatch(/label:\s*'Hồ sơ NLD'/);
+    expect(ROLE_GUARD_SOURCE).not.toMatch(/label:\s*'Tiếp nhận NLD'/);
   });
 
   // RQ-01 / AC-09 — encoding of the file is LF only (no CRLF, no BOM).

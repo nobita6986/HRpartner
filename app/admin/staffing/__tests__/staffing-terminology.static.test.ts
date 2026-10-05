@@ -86,3 +86,40 @@ describe('hrp-admin-localization-wave2 — /admin/staffing list client (L-044..L
     expect(SOURCE.charCodeAt(0)).not.toBe(0xfeff);
   });
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// t1a-staffing-order-management — STEP-01 column format guard.
+// T0 directive: cột `Vị trí` phải render TÊN VỊ TRÍ kèm filled/needed +
+// "(còn thiếu N)" thay cho chip `0/1` đơn thuần. Thêm cột `Hạn tuyển`
+// (deadlineDate) và cột `Thao tác` với link `Xem chi tiết` tới trang
+// quản lý.
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('t1a-staffing-order-management — /admin/staffing list cột Vị trí + Thao tác', () => {
+  it('SlotBreakdown component renders "Tên vị trí — filled/needed (còn thiếu N)"', () => {
+    // Component mới thay chip `0/1` đơn thuần. Phải có render TÊN + "(còn thiếu N)" cho slot chưa đủ.
+    expect(SOURCE).toMatch(/function SlotBreakdown/);
+    expect(SOURCE).toMatch(/Còn thiếu/i);
+    expect(SOURCE).toMatch(/\(đã đủ\)/);
+  });
+
+  it('legacy SlotChip component is REMOVED', () => {
+    // SlotChip chỉ render `filled/needed` không có tên vị trí — không đủ ngữ cảnh.
+    expect(SOURCE).not.toMatch(/function SlotChip/);
+  });
+
+  it('bảng có cột "Hạn tuyển" + "Thao tác" (header array literal)', () => {
+    expect(SOURCE).toMatch(/'Hạn tuyển'/);
+    expect(SOURCE).toMatch(/'Thao tác'/);
+  });
+
+  it('cột "Thao tác" render link "Xem chi tiết" trỏ tới /admin/staffing-orders/[id]', () => {
+    expect(SOURCE).toMatch(/Xem chi tiết/);
+    expect(SOURCE).toMatch(/staffing-order-action-\$\{o\.id\}/);
+  });
+
+  it('cột "Ngày tạo" đã được thay bằng "Hạn tuyển" trên header', () => {
+    // Bảng cũ có cột "Ngày tạo" — đã được thay bằng "Hạn tuyển" (deadline).
+    expect(SOURCE).not.toMatch(/'Ngày tạo'/);
+  });
+});

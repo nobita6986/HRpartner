@@ -18,6 +18,8 @@ interface StaffingOrderRow {
   status: 'OPEN' | 'CLOSING_SOON' | 'CLOSED' | 'CANCELLED';
   project: { id: string; name: string; code: string };
   slots: Array<{ id: string; positionTitle: string; slotsNeeded: number; slotsFilled: number }>;
+  /** T1A-staffing-order-management: deadlineDate surfaced để user còn cân nhắc hạn tuyển trên list. */
+  deadlineDate: string | null;
   createdAt: string;
 }
 
@@ -58,14 +60,25 @@ function StaffingOrderStatusBadge({ status }: { status: string }) {
   );
 }
 
-function SlotChip({ needed, filled }: { needed: number; filled: number }) {
-  const pct = needed === 0 ? 100 : Math.round((filled / needed) * 100);
-  const bg = pct >= 100 ? '#e8f5e9' : pct >= 50 ? '#fff3e0' : '#ffebee';
-  const fg = pct >= 100 ? '#197a56' : pct >= 50 ? '#e65100' : '#c62828';
+/**
+ * T1A-staffing-order-management: chip `0/1` đơn thuần không đủ ngữ cảnh.
+ * T0 directive yêu cầu: hiển thị `Tên vị trí — filled/needed (còn thiếu N)` cho
+ * từng slot để user quyết định được tình trạng tuyển thực tế mà không cần mở
+ * chi tiết. Color cue giữ tone xanh/đỏ để dễ quét; còn thiếu 0 vẫn hiển thị
+ * "(đã đủ)" thay vì "(còn thiếu 0)" để copy tự nhiên hơn.
+ */
+function SlotBreakdown({ slot }: { slot: { id: string; positionTitle: string; slotsNeeded: number; slotsFilled: number } }) {
+  const remaining = Math.max(0, slot.slotsNeeded - slot.slotsFilled);
+  const isFull = remaining === 0;
+  const color = isFull ? '#197a56' : remaining >= slot.slotsNeeded / 2 ? '#e65100' : '#c62828';
   return (
-    <span style={{ background: bg, color: fg }} className="rounded px-1.5 py-0.5 text-xs font-mono">
-      {filled}/{needed}
-    </span>
+    <div className="text-xs" style={{ color: 'var(--on-surface)' }}>
+      <span className="font-medium">{slot.positionTitle}</span>{' '}
+      <span className="font-mono" style={{ color }} data-testid={`slot-summary-${slot.id}`}>
+        {slot.slotsFilled}/{slot.slotsNeeded}
+        {isFull ? ' (đã đủ)' : ` (còn thiếu ${remaining})`}
+      </span>
+    </div>
   );
 }
 
@@ -491,7 +504,7 @@ export default function StaffingListClient({ canCreate }: StaffingListClientProp
             <table className="w-full text-sm">
               <thead>
                 <tr style={{ background: 'var(--surface-container)', borderBottom: '1px solid var(--outline-variant)' }}>
-                  {['Mã', 'Tiêu đề', 'Dự án', 'Vị trí cần tuyển', 'Trạng thái', 'Ngày tạo'].map(h => (
+                  {['Mã', 'Tiêu đề', 'Dự án', 'Vị trí cần tuyển', 'Hạn tuyển', 'Trạng thái', 'Thao tác'].map(h => (
                     <th key={h} style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-left font-semibold">{h}</th>
                   ))}
                 </tr>
@@ -524,15 +537,27 @@ export default function StaffingListClient({ canCreate }: StaffingListClientProp
                     </td>
                     <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">{o.project?.name ?? o.project?.code ?? '—'}</td>
                     <td className="px-4 py-3">
-                      <div className="flex flex-wrap gap-1">
-                        {o.slots.map(s => (
-                          <SlotChip key={s.id} needed={s.slotsNeeded} filled={s.slotsFilled} />
-                        ))}
+                      <div className="flex flex-col gap-0.5">
+                        {o.slots.length === 0 ? (
+                          <span style={{ color: 'var(--on-surface-variant)' }} className="text-xs">—</span>
+                        ) : (
+                          o.slots.map(s => <SlotBreakdown key={s.id} slot={s} />)
+                        )}
                       </div>
                     </td>
-                    <td className="px-4 py-3"><StaffingOrderStatusBadge status={o.status} /></td>
                     <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">
-                      {new Date(o.createdAt).toLocaleDateString('vi-VN')}
+                      {o.deadlineDate ? new Date(o.deadlineDate).toLocaleDateString('vi-VN') : '—'}
+                    </td>
+                    <td className="px-4 py-3"><StaffingOrderStatusBadge status={o.status} /></td>
+                    <td className="px-4 py-3">
+                      <Link
+                        href={`/admin/staffing-orders/${o.id}`}
+                        data-testid={`staffing-order-action-${o.id}`}
+                        style={{ color: 'var(--primary)' }}
+                        className="text-xs font-medium underline-offset-2 hover:underline"
+                      >
+                        Xem chi tiết
+                      </Link>
                     </td>
                   </tr>
                 ))}

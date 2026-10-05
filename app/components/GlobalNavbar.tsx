@@ -30,9 +30,10 @@ interface NavLink {
 
 const navLinks: NavLink[] = [
   { href: '/', label: 'Việc làm', type: 'route' },
-  { href: '#', label: 'Công ty', type: 'disabled' },
-  // hrp-ui-v1-job-card-stamps-brand (T1B / D4): nav link "Về HRP Việt Nam" đã xoá.
-  // Route `app/(portal)/ve-chung-toi/page.tsx` cũng bị xoá — Next.js App Router trả 404 tự động.
+  // hrp-t1a-introduce-hrp-and-menu-cleanup: "Công ty" → "Giới thiệu".
+  // Route re-created at `app/(portal)/ve-chung-toi/page.tsx` (was deleted
+  // before this task's baseline). Type flipped from 'disabled' to 'route'.
+  { href: '/ve-chung-toi', label: 'Giới thiệu', type: 'route' },
   // Phase B / UI2: the "Tin tức" entry is now a route link to the news
   // anchor on the homepage. It is hidden when the admin has set
   // `newsSectionEnabled === false` (the gate is read at render time via the
