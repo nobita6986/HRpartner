@@ -125,8 +125,13 @@ export const ADMIN_NAV_PHASE4: NavItem[] = [
 
   // Nhu cầu & Tuyển (recruitment) — T1C: Staffing moved here from "Con người"
   // because StaffingOrder is the input of the recruitment flow, not workforce.
+  //
+  // hrp-t1a-introduce-hrp-and-menu-cleanup: recruitment section collapsed
+  // from 4 items to 3 (Dự án → Nhu cầu tuyển dụng → Tin tuyển dụng).
+  // The old "Danh sách nhu cầu" entry (`/admin/jobs`) was removed; the
+  // slot-trống + publish + Công bố columns now live inside `/admin/projects`.
+  // `/admin/jobs` is kept as a 307 redirect to `/admin/projects` (T0 directive §B.5).
   { href: '/admin/projects', label: 'Dự án', icon: Briefcase, roles: ['ADMIN', 'PM', 'HR_MANAGER'], section: 'recruitment' },
-  { href: '/admin/jobs', label: 'Danh sách nhu cầu', icon: Briefcase, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'SALE'], section: 'recruitment' },
   { href: '/admin/jobs/job-postings', label: 'Tin tuyển dụng', icon: FileText, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'SALE'], section: 'recruitment' },
   { href: '/admin/applications', label: 'Đơn ứng tuyển', icon: UserRoundCheck, roles: ['ADMIN', 'HR_MANAGER', 'SALE', 'DIRECTOR'], section: 'recruitment' },
   { href: '/admin/staffing', label: 'Nhu cầu tuyển dụng', icon: ClipboardList, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'PM'], section: 'recruitment' },

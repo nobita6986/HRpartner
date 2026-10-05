@@ -57,9 +57,17 @@ describe('RoleGuardLayout — P1-NAV-01 wiring proof', () => {
   it('preserves ADMIN_NAV_PHASE4 structure byte-exact — labels and order are not changed', () => {
     // Indirect guard: no `ADMIN_NAV_PHASE4 = [` reassignment, no removal of any
     // pre-existing nav entry. The full array should still appear in the file.
+    //
+    // hrp-t1a-introduce-hrp-and-menu-cleanup: the old "Danh sách nhu cầu"
+    // entry (`/admin/jobs`) was removed from the sidebar (T0 directive §B.2);
+    // the slot-trống + publish + Công bố columns now live inside
+    // `/admin/projects`. The test asserts that the surviving recruitment
+    // entry (`/admin/jobs/job-postings` → "Tin tuyển dụng") is still in the
+    // file. The `/admin/staffing` entry stays under the "Nhu cầu tuyển dụng"
+    // label per T0 directive §B.3.
     expect(source).toContain('export const ADMIN_NAV_PHASE4: NavItem[] = [');
-    expect(source).toContain("href: '/admin/jobs'");
     expect(source).toContain("href: '/admin/jobs/job-postings'");
+    expect(source).not.toContain("label: 'Danh sách nhu cầu'");
   });
 });
 
