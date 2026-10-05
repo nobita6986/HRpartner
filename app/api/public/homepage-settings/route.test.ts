@@ -29,6 +29,7 @@ const settings = {
     ctaUrl: '/viec-lam',
     dismissible: true,
     backgroundOpacity: 100,
+    marqueeDurationSeconds: 18,
     textColor: 'on-primary' as const,
     font: 'SANS' as const,
     emphasis: 'BOLD' as const,

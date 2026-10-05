@@ -200,6 +200,9 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
   const [stickyCtaUrl, setStickyCtaUrl] = useState<string>(stickyInitial.ctaUrl ?? '');
   const [stickyDismissible, setStickyDismissible] = useState<boolean>(stickyInitial.dismissible);
   const [stickyBackgroundOpacity, setStickyBackgroundOpacity] = useState<number>(stickyInitial.backgroundOpacity);
+  const [stickyMarqueeDurationSeconds, setStickyMarqueeDurationSeconds] = useState<number>(
+    stickyInitial.marqueeDurationSeconds,
+  );
   const [stickyTextColor, setStickyTextColor] = useState<StickyTextColor>(stickyInitial.textColor);
   const [stickyFont, setStickyFont] = useState<StickyFont>(stickyInitial.font);
   const [stickyEmphasis, setStickyEmphasis] = useState<StickyEmphasis>(stickyInitial.emphasis);
@@ -219,6 +222,12 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
   const stickyCtaLabelError =
     stickyCtaLabel.length > 60 ? 'Nhãn nút hành động tối đa 60 ký tự.' : null;
   const stickyCtaUrlError = validateCtaUrl(stickyCtaUrl);
+  const stickyMarqueeDurationError =
+    Number.isInteger(stickyMarqueeDurationSeconds) &&
+    stickyMarqueeDurationSeconds >= 5 &&
+    stickyMarqueeDurationSeconds <= 60
+      ? null
+      : 'Tốc độ chạy chữ phải từ 5 đến 60 giây mỗi vòng.';
   const hasFieldError =
     bestJobsError !== null ||
     listingError !== null ||
@@ -227,7 +236,8 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
     phoneCallNumberError !== null ||
     stickyMessageError !== null ||
     stickyCtaLabelError !== null ||
-    stickyCtaUrlError !== null;
+    stickyCtaUrlError !== null ||
+    stickyMarqueeDurationError !== null;
 
   const hasChanges =
     bestJobsPageSize !== savedSnapshot.bestJobsPageSize ||
@@ -242,6 +252,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
     stickyCtaUrl !== (savedSnapshot.stickyAnnouncement.ctaUrl ?? '') ||
     stickyDismissible !== savedSnapshot.stickyAnnouncement.dismissible ||
     stickyBackgroundOpacity !== savedSnapshot.stickyAnnouncement.backgroundOpacity ||
+    stickyMarqueeDurationSeconds !== savedSnapshot.stickyAnnouncement.marqueeDurationSeconds ||
     stickyTextColor !== savedSnapshot.stickyAnnouncement.textColor ||
     stickyFont !== savedSnapshot.stickyAnnouncement.font ||
     stickyEmphasis !== savedSnapshot.stickyAnnouncement.emphasis ||
@@ -267,6 +278,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
     stickyCtaUrl,
     stickyDismissible,
     stickyBackgroundOpacity,
+    stickyMarqueeDurationSeconds,
     stickyTextColor,
     stickyFont,
     stickyEmphasis,
@@ -294,6 +306,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
             ctaUrl: trimmedCtaUrl.length > 0 ? trimmedCtaUrl : null,
             dismissible: stickyDismissible,
             backgroundOpacity: stickyBackgroundOpacity,
+            marqueeDurationSeconds: stickyMarqueeDurationSeconds,
             textColor: stickyTextColor,
             font: stickyFont,
             emphasis: stickyEmphasis,
@@ -324,6 +337,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
           stickyMessageError ??
           stickyCtaLabelError ??
           stickyCtaUrlError ??
+          stickyMarqueeDurationError ??
           'Có trường chưa hợp lệ.',
       );
       return;
@@ -362,6 +376,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
           setStickyCtaUrl(snap.ctaUrl ?? '');
           setStickyDismissible(snap.dismissible);
           setStickyBackgroundOpacity(snap.backgroundOpacity);
+          setStickyMarqueeDurationSeconds(snap.marqueeDurationSeconds);
           setStickyTextColor(snap.textColor);
           setStickyFont(snap.font);
           setStickyEmphasis(snap.emphasis);
@@ -390,6 +405,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
     setStickyCtaUrl(snap.ctaUrl ?? '');
     setStickyDismissible(snap.dismissible);
     setStickyBackgroundOpacity(snap.backgroundOpacity);
+    setStickyMarqueeDurationSeconds(snap.marqueeDurationSeconds);
     setStickyTextColor(snap.textColor);
     setStickyFont(snap.font);
     setStickyEmphasis(snap.emphasis);
@@ -506,37 +522,6 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
                 {bestJobsError}
               </p>
             )}
-          </div>
-
-          <div className="sm:col-span-2">
-            <label htmlFor="stickyBackgroundOpacity" className="mb-1 block text-sm font-medium" style={{ color: 'var(--on-surface)' }}>
-              Độ trong suốt nền
-            </label>
-            <div className="flex items-center gap-4">
-              <input
-                id="stickyBackgroundOpacity"
-                type="range"
-                min={0}
-                max={100}
-                step={1}
-                value={stickyBackgroundOpacity}
-                onChange={(e) => setStickyBackgroundOpacity(Number(e.target.value))}
-                aria-valuetext={`${stickyBackgroundOpacity}%`}
-                className="hrp-focus min-h-11 flex-1 accent-[var(--color-primary)]"
-                data-testid="sticky-background-opacity-input"
-              />
-              <output
-                htmlFor="stickyBackgroundOpacity"
-                className="w-12 text-right text-sm tabular-nums"
-                style={{ color: 'var(--on-surface)' }}
-                data-testid="sticky-background-opacity-value"
-              >
-                {stickyBackgroundOpacity}%
-              </output>
-            </div>
-            <p style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-xs">
-              Chỉ làm trong suốt nền; nội dung và nút vẫn rõ. Mặc định 100%.
-            </p>
           </div>
 
           <div>
@@ -957,6 +942,75 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
               </select>
               <p style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-xs">
                 Hiệu ứng nhấp nháy và chạy chữ tự tắt khi thiết bị bật chế độ giảm chuyển động.
+              </p>
+            </div>
+
+            <div>
+              <label htmlFor="stickyMarqueeDurationSeconds" className="mb-1 block text-sm font-medium" style={{ color: 'var(--on-surface)' }}>
+                Tốc độ chạy chữ
+              </label>
+              <div className="flex items-center gap-4">
+                <input
+                  id="stickyMarqueeDurationSeconds"
+                  type="range"
+                  min={5}
+                  max={60}
+                  step={1}
+                  value={stickyMarqueeDurationSeconds}
+                  onChange={(e) => setStickyMarqueeDurationSeconds(Number(e.target.value))}
+                  disabled={stickyAnimation !== 'MARQUEE'}
+                  aria-valuetext={`${stickyMarqueeDurationSeconds} giây mỗi vòng`}
+                  aria-describedby="stickyMarqueeDurationSeconds-help"
+                  className="hrp-focus min-h-11 flex-1 accent-[var(--color-primary)]"
+                  data-testid="sticky-marquee-duration-input"
+                />
+                <output
+                  htmlFor="stickyMarqueeDurationSeconds"
+                  className="w-20 text-right text-sm tabular-nums"
+                  style={{ color: 'var(--on-surface)' }}
+                  data-testid="sticky-marquee-duration-value"
+                >
+                  {stickyMarqueeDurationSeconds} giây
+                </output>
+              </div>
+              <p id="stickyMarqueeDurationSeconds-help" style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-xs">
+                Một vòng mất 5–60 giây; giá trị nhỏ hơn chạy nhanh hơn. Chỉ áp dụng khi chọn Chạy chữ; mặc định 18 giây.
+              </p>
+              {stickyMarqueeDurationError && (
+                <p role="alert" style={{ color: 'var(--error)' }} className="mt-1 text-xs font-medium">
+                  {stickyMarqueeDurationError}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="stickyBackgroundOpacity" className="mb-1 block text-sm font-medium" style={{ color: 'var(--on-surface)' }}>
+                Độ trong suốt nền
+              </label>
+              <div className="flex items-center gap-4">
+                <input
+                  id="stickyBackgroundOpacity"
+                  type="range"
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={stickyBackgroundOpacity}
+                  onChange={(e) => setStickyBackgroundOpacity(Number(e.target.value))}
+                  aria-valuetext={`${stickyBackgroundOpacity}%`}
+                  className="hrp-focus min-h-11 flex-1 accent-[var(--color-primary)]"
+                  data-testid="sticky-background-opacity-input"
+                />
+                <output
+                  htmlFor="stickyBackgroundOpacity"
+                  className="w-12 text-right text-sm tabular-nums"
+                  style={{ color: 'var(--on-surface)' }}
+                  data-testid="sticky-background-opacity-value"
+                >
+                  {stickyBackgroundOpacity}%
+                </output>
+              </div>
+              <p style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-xs">
+                Chỉ làm trong suốt nền; nội dung và nút vẫn rõ. Mặc định 100%.
               </p>
             </div>
 

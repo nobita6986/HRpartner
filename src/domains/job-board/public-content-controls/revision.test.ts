@@ -86,6 +86,18 @@ describe('computeContentRevision', () => {
     expect(b).not.toBe(c);
   });
 
+  it('changes when background opacity changes', () => {
+    const a = computeContentRevision(baseDto({ backgroundOpacity: 100 }));
+    const b = computeContentRevision(baseDto({ backgroundOpacity: 55 }));
+    expect(a).not.toBe(b);
+  });
+
+  it('changes when marquee duration changes', () => {
+    const a = computeContentRevision(baseDto({ marqueeDurationSeconds: 18 }));
+    const b = computeContentRevision(baseDto({ marqueeDurationSeconds: 12 }));
+    expect(a).not.toBe(b);
+  });
+
   it('does NOT change when the contentRevision field itself changes', () => {
     // The hash is over the OBSERVABLE fields, not the contentRevision field,
     // because the revision is the hash result, not its input. The admin

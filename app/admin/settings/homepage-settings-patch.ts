@@ -34,6 +34,7 @@ function stickyAnnouncementsEqual(
     left.ctaUrl === right.ctaUrl &&
     left.dismissible === right.dismissible &&
     left.backgroundOpacity === right.backgroundOpacity &&
+    left.marqueeDurationSeconds === right.marqueeDurationSeconds &&
     left.textColor === right.textColor &&
     left.font === right.font &&
     left.emphasis === right.emphasis &&
