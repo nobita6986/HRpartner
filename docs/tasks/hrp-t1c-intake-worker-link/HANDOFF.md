@@ -127,10 +127,22 @@
 - Standard lane NONE; self-review complete; all canonical gates PASS; integration
   test self-skip an toàn do env-blocked, sẵn sàng chạy khi owner cấp
   `DATABASE_URL_TEST` + `DATABASE_URL_ADMIN_TEST`. Implementation đã được commit
-  forward-only (chờ final SHA sau commit). Source, test, integration test
-  không còn semantic delta ngoài commit này.
+  forward-only (Implementation SHA `5cbc3f06`, Docs SHA `679ee170`). Source, test,
+  integration test không còn semantic delta ngoài 2 commit này.
 
-- `git status --porcelain` clean cho tracked surface; untracked `node_modules/`,
-  `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `.env` đã được `.gitignore` cover.
+- Branch `codex/t1c-intake-worker-link` đã push lên origin; PR
+  [#107](https://github.com/nobita6986/HRpartner/pull/107) opened (non-draft)
+  với CI 4/4 GREEN (Quality, Integration, Vercel, Vercel Preview Comments).
+
+- `git status --porcelain` clean cho tracked surface; untracked `pnpm-lock.yaml`,
+  `pnpm-workspace.yaml` là workspace infra không thuộc scope task này.
+
+### Delivery record
+
+- Implementation commit: `5cbc3f06d4179c2389d79541745e38e0db5ef0b2`
+- Docs commit: `679ee170ba64eae877a5dc676d79cfe444ef60f1`
+- Branch: `codex/t1c-intake-worker-link` → `main` (non-draft)
+- PR: [#107](https://github.com/nobita6986/HRpartner/pull/107)
+- CI at handoff: 4/4 GREEN. No merge performed.
 
 > Handoff status: `READY_FOR_REVIEW` (chờ owner confirm base branch + tạo PR non-draft).
