@@ -34,6 +34,10 @@ describe('job-opening-ui (T1B Wave 2) — JobOpening status dictionary', () => {
   it('exports EP §3.2.11 serviceModel labels (onsite / remote)', () => {
     expect(JOB_OPENING_SERVICE_MODEL_LABELS.onsite).toBe('Tại nơi làm việc');
     expect(JOB_OPENING_SERVICE_MODEL_LABELS.remote).toBe('Từ xa');
+    expect(JOB_OPENING_SERVICE_MODEL_LABELS.STAFFING_SUPPLY).toBe('Cung ứng nhân sự');
+    expect(JOB_OPENING_SERVICE_MODEL_LABELS.LABOR_LEASING).toBe('Cho thuê lại lao động');
+    expect(JOB_OPENING_SERVICE_MODEL_LABELS.RECRUITMENT_SERVICE).toBe('Dịch vụ tuyển dụng');
+    expect(JOB_OPENING_SERVICE_MODEL_LABELS.REFERRAL_SERVICE).toBe('Giới thiệu ứng viên');
   });
 
   it('tone map has matching shape (no undefined values for known statuses)', () => {
@@ -52,8 +56,8 @@ describe('job-opening-ui (T1B Wave 2) — JobOpening status dictionary', () => {
     expect(jobOpeningStatusLabel('CANCELLED')).toBe('Đã hủy');
   });
 
-  it('jobOpeningStatusLabel() falls back to canonical enum (KEEP_CANONICAL_IDENTIFIER) for unknown values', () => {
-    expect(jobOpeningStatusLabel('SOMETHING_NEW')).toBe('SOMETHING_NEW');
+  it('jobOpeningStatusLabel() does not expose unknown raw values', () => {
+    expect(jobOpeningStatusLabel('SOMETHING_NEW')).toBe('Không xác định');
   });
 
   it('jobOpeningStatusTone() returns the matching tone for known values', () => {
@@ -77,7 +81,7 @@ describe('job-opening-ui (T1B Wave 2) — JobOpening status dictionary', () => {
     expect(jobOpeningServiceModelLabel('')).toBe('');
   });
 
-  it('jobOpeningServiceModelLabel() falls back to canonical enum for unknown values', () => {
-    expect(jobOpeningServiceModelLabel('hybrid')).toBe('hybrid');
+  it('jobOpeningServiceModelLabel() does not expose unknown raw values', () => {
+    expect(jobOpeningServiceModelLabel('hybrid')).toBe('Chưa phân loại');
   });
 });

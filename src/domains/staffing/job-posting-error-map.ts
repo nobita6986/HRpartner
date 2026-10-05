@@ -69,25 +69,25 @@ export type JobPostingErrorCode =
 export const JOB_POSTING_ERROR_LABELS: Readonly<Record<string, string>> = Object.freeze({
   // ─── Authoring / lifecycle ──────────────────────────────────────────────
   JOB_OPENING_NOT_OPEN:
-    'Linked JobOpening chưa ở trạng thái OPEN — mở JobOpening này trước khi publish JobPosting.',
+    'Đợt tuyển dụng chưa được mở. Hãy mở đợt tuyển dụng trước khi đăng tin.',
   INVALID_STATE_TRANSITION:
-    'JobPosting đang ở trạng thái không cho phép thao tác này — hãy tải lại trang rồi thử lại.',
+    'Tin tuyển dụng đang ở trạng thái không cho phép thao tác này. Hãy tải lại trang rồi thử lại.',
   INVALID_REVISION:
-    'Phiên bản JobPosting đã được người khác cập nhật — hãy tải lại rồi lưu lại.',
-  INVALID_INPUT: 'Dữ liệu nhập chưa hợp lệ — kiểm tra lại tiêu đề và nội dung JobPosting.',
-  NOT_FOUND: 'Không tìm thấy JobPosting — có thể đã bị xoá hoặc bạn không có quyền đọc.',
+    'Tin tuyển dụng vừa được cập nhật. Hãy tải lại trang rồi lưu lại.',
+  INVALID_INPUT: 'Dữ liệu chưa hợp lệ. Hãy kiểm tra tiêu đề và nội dung tin tuyển dụng.',
+  NOT_FOUND: 'Không tìm thấy tin tuyển dụng hoặc bạn không có quyền xem.',
   SLUG_COLLISION:
-    'Hệ thống không thể tạo slug duy nhất cho JobPosting — hãy đổi tiêu đề rồi lưu lại.',
+    'Không thể tạo đường dẫn công khai. Hãy đổi tiêu đề rồi lưu lại.',
   IDEMPOTENCY_CONFLICT:
-    'Cùng Idempotency-Key nhưng payload khác — hãy tạo lại thao tác và thử lại.',
-  PERMISSION_DENIED: 'Tài khoản hiện tại không có quyền thực hiện thao tác JobPosting.',
+    'Thao tác trước đó chưa hoàn tất. Hãy tải lại trang rồi thử lại.',
+  PERMISSION_DENIED: 'Tài khoản hiện tại không có quyền thực hiện thao tác với tin tuyển dụng.',
 
   // ─── Route / transport ─────────────────────────────────────────────────
   IDEMPOTENCY_REQUIRED:
-    'Thiếu Idempotency-Key khi gọi API JobPosting — hãy tải lại trang rồi thử lại.',
+    'Không thể xác nhận thao tác. Hãy tải lại trang rồi thử lại.',
   INTERNAL:
-    'Không cập nhật được JobPosting do lỗi hệ thống — vui lòng thử lại hoặc liên hệ quản trị viên.',
-  FORBIDDEN: 'Tài khoản hiện tại không có quyền truy cập JobPosting này.',
+    'Không thể cập nhật tin tuyển dụng do lỗi hệ thống. Vui lòng thử lại hoặc liên hệ quản trị viên.',
+  FORBIDDEN: 'Tài khoản hiện tại không có quyền xem tin tuyển dụng này.',
   UNAUTHORIZED: 'Phiên đăng nhập đã hết hạn — hãy đăng nhập lại rồi thử lại.',
 });
 
@@ -98,7 +98,7 @@ export const JOB_POSTING_ERROR_LABELS: Readonly<Record<string, string>> = Object
  * PR cannot accidentally diverge.
  */
 export const JOB_POSTING_UNKNOWN_ERROR_LABEL =
-  'Không thể cập nhật JobPosting — vui lòng thử lại hoặc liên hệ quản trị viên.';
+  'Không thể cập nhật tin tuyển dụng. Vui lòng thử lại hoặc liên hệ quản trị viên.';
 
 // ─── Recovery navigation hints ────────────────────────────────────────────
 

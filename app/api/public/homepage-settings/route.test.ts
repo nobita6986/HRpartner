@@ -28,6 +28,7 @@ const settings = {
     ctaLabel: 'Xem việc làm',
     ctaUrl: '/viec-lam',
     dismissible: true,
+    backgroundOpacity: 100,
     textColor: 'on-primary' as const,
     font: 'SANS' as const,
     emphasis: 'BOLD' as const,

@@ -16,6 +16,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { createElement } from 'react';
 import { StickyAnnouncement } from './sticky-announcement';
 import { safeStickyAnnouncement, type StickyAnnouncementDto } from './types';
+import styles from './sticky-announcement.module.css';
 
 function dto(overrides: Partial<StickyAnnouncementDto> = {}): StickyAnnouncementDto {
   return safeStickyAnnouncement({
@@ -107,6 +108,17 @@ describe('StickyAnnouncement — server-side first render', () => {
     // and the aria-hidden tail.
     const occurrences = (html.match(/Hỗ trợ tư vấn 24\/7/g) ?? []).length;
     expect(occurrences).toBe(2);
+    expect(html).toContain(styles.hrpStickyAnnouncementAnimMarquee);
+    expect(html).toContain('data-testid="sticky-announcement-marquee-track"');
+    expect(html).toContain('data-testid="sticky-announcement-marquee-tail"');
+  });
+
+  it('applies background opacity without reducing foreground opacity', () => {
+    const transparent = render({ dto: dto({ backgroundOpacity: 0 }) });
+    expect(transparent).toContain('--sticky-background-opacity:0%');
+    expect(transparent).toContain('color:var(--color-on-primary)');
+    const opaque = render({ dto: dto({ backgroundOpacity: 100 }) });
+    expect(opaque).toContain('--sticky-background-opacity:100%');
   });
 
   it('does NOT render a doubled message track for NONE or BLINK', () => {

@@ -14,6 +14,7 @@ describe('toStickyAnnouncementDto (Phase B / UI2)', () => {
     expect(dto.ctaLabel).toBeNull();
     expect(dto.ctaUrl).toBeNull();
     expect(dto.dismissible).toBe(true);
+    expect(dto.backgroundOpacity).toBe(100);
     expect(dto.contentRevision).toBe('rev-0');
   });
 
@@ -35,6 +36,7 @@ describe('toStickyAnnouncementDto (Phase B / UI2)', () => {
       ctaLabel: 'Open',
       ctaUrl: '/contact',
       dismissible: true,
+      backgroundOpacity: 64,
       textColor: 'on-primary',
       font: 'SANS',
       emphasis: 'BOLD',
@@ -45,6 +47,7 @@ describe('toStickyAnnouncementDto (Phase B / UI2)', () => {
     expect(dto.message).toBe('Hello world');
     expect(dto.ctaLabel).toBe('Open');
     expect(dto.ctaUrl).toBe('/contact');
+    expect(dto.backgroundOpacity).toBe(64);
     expect(dto.contentRevision).toBe('rev-1234');
   });
 
@@ -79,5 +82,23 @@ describe('toStickyAnnouncementDto (Phase B / UI2)', () => {
       contentRevision: 'rev-1',
     });
     expect(dto.enabled).toBe(false);
+  });
+
+  it.each([-1, 101, 50.5])('rejects invalid background opacity %s', (backgroundOpacity) => {
+    expect(
+      toStickyAnnouncementDto({
+        enabled: true,
+        message: 'Hello',
+        ctaLabel: null,
+        ctaUrl: null,
+        dismissible: true,
+        backgroundOpacity,
+        textColor: 'on-primary',
+        font: 'SANS',
+        emphasis: 'BOLD',
+        animation: 'NONE',
+        contentRevision: 'rev-1',
+      }).enabled,
+    ).toBe(false);
   });
 });

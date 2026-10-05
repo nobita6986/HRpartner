@@ -385,6 +385,7 @@ describe('toHomepageSettingsView', () => {
         ctaLabel: null,
         ctaUrl: null,
         dismissible: true,
+        backgroundOpacity: 100,
         textColor: 'on-primary',
         font: 'SANS',
         emphasis: 'BOLD',
@@ -419,6 +420,7 @@ describe('toStickyAnnouncementDto', () => {
     expect(dto.ctaLabel).toBeNull();
     expect(dto.ctaUrl).toBeNull();
     expect(dto.dismissible).toBe(true);
+    expect(dto.backgroundOpacity).toBe(100);
     expect(dto.contentRevision).toBe('rev-0');
   });
 
@@ -435,6 +437,7 @@ describe('toStickyAnnouncementDto', () => {
       ctaLabel: 'Open',
       ctaUrl: 'https://hrpartner.vn/about',
       dismissible: true,
+      backgroundOpacity: 64,
       textColor: 'on-primary',
       font: 'SANS',
       emphasis: 'BOLD',
@@ -445,6 +448,7 @@ describe('toStickyAnnouncementDto', () => {
     expect(dto.message).toBe('Hello world');
     expect(dto.ctaLabel).toBe('Open');
     expect(dto.ctaUrl).toBe('https://hrpartner.vn/about');
+    expect(dto.backgroundOpacity).toBe(64);
     expect(dto.contentRevision).toBe('rev-1234');
   });
 
@@ -503,6 +507,7 @@ describe('Phase B / UI2 - toHomepageSettingsDto with new fields', () => {
         ctaLabel: 'Xem',
         ctaUrl: '/viec-lam',
         dismissible: true,
+        backgroundOpacity: 73,
         textColor: 'on-primary',
         font: 'SANS',
         emphasis: 'BOLD',
@@ -515,6 +520,7 @@ describe('Phase B / UI2 - toHomepageSettingsDto with new fields', () => {
     expect(dto.newsSectionEnabled).toBe(false);
     expect(dto.stickyAnnouncement.enabled).toBe(true);
     expect(dto.stickyAnnouncement.message).toBe('Open jobs in Hanoi');
+    expect(dto.stickyAnnouncement.backgroundOpacity).toBe(73);
     expect(dto.stickyAnnouncement.contentRevision).toBe('rev-2026-10-04');
   });
 });
@@ -539,6 +545,7 @@ describe('Phase B / UI2 - updateHomepageSettings new fields', () => {
       ctaLabel: 'Open',
       ctaUrl: 'https://hrpartner.vn/about',
       dismissible: true,
+      backgroundOpacity: 63,
       textColor: 'on-primary' as const,
       font: 'SANS' as const,
       emphasis: 'BOLD' as const,
@@ -548,6 +555,14 @@ describe('Phase B / UI2 - updateHomepageSettings new fields', () => {
     const result = await updateHomepageSettings(prisma, { stickyAnnouncement: sticky }, 'user-1');
     expect(result.settings.stickyAnnouncement.enabled).toBe(true);
     expect(result.settings.stickyAnnouncement.contentRevision).toBe('rev-1');
+    expect(result.settings.stickyAnnouncement.backgroundOpacity).toBe(63);
+    expect(prisma.homepageSettings.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          stickyAnnouncement: expect.objectContaining({ backgroundOpacity: 63 }),
+        }),
+      }),
+    );
   });
 
   it('clears stickyAnnouncement when set to null', async () => {
@@ -565,6 +580,7 @@ describe('Phase B / UI2 - updateHomepageSettings new fields', () => {
       ctaLabel: null,
       ctaUrl: 'javascript:alert(1)',
       dismissible: true,
+      backgroundOpacity: 100,
       textColor: 'on-primary' as const,
       font: 'SANS' as const,
       emphasis: 'BOLD' as const,
@@ -583,6 +599,7 @@ describe('Phase B / UI2 - updateHomepageSettings new fields', () => {
       ctaLabel: null,
       ctaUrl: null,
       dismissible: true,
+      backgroundOpacity: 100,
       textColor: 'on-primary' as const,
       font: 'SANS' as const,
       emphasis: 'BOLD' as const,

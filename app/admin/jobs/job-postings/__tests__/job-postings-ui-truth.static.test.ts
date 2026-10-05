@@ -135,9 +135,7 @@ describe('hrp-p1-a0.2 / T1C — JobPosting admin UI truth baseline', () => {
       const header = stripComments(headerBlock);
       expect(header).not.toMatch(/chưa dựng/i);
       expect(header).not.toMatch(/chờ\s*P1-A1/i);
-      // Sanity: the header should now affirm the public detail IS bound to JobPosting.
-      expect(header).toMatch(/P1-A1/i);
-      expect(header).toMatch(/P1-B/i);
+      expect(header).not.toMatch(/P1-A1|P1-B/i);
     });
 
     it('detail page header no longer claims public apply goes via "Project/Slot cũ"', () => {
@@ -149,11 +147,11 @@ describe('hrp-p1-a0.2 / T1C — JobPosting admin UI truth baseline', () => {
   });
 
   describe('G7 — Remaining deferred text is truthful', () => {
-    it('list page keeps Gallery/media as the only remaining deferred item', () => {
+    it('list page uses localized copy for the unavailable capability', () => {
       // Surface must still mention Gallery/media; the deferred block uses new wording.
       expect(listSrc).toMatch(/Gallery\s*media/i);
-      expect(listSrc).toMatch(/Phần còn hạn chế/);
-      expect(listSrc).toMatch(/aria-label="Phần còn hạn chế"/);
+      expect(listSrc).toMatch(/aria-label="Tính năng chưa khả dụng"/);
+      expect(listSrc).toMatch(/Tính năng chưa khả dụng/);
       expect(listSrc).toMatch(/data-testid="locked-section-list"/);
     });
 
@@ -161,10 +159,10 @@ describe('hrp-p1-a0.2 / T1C — JobPosting admin UI truth baseline', () => {
       expect(detailSrc).toMatch(/Gallery\s*media/i);
       // Slug rename (P1-A0 AC-11) is a real schema-level invariant, not a temporary
       // lock — must remain surfaced as a deferred constraint, but with truthful wording.
-      expect(detailSrc).toMatch(/Sửa slug trước publish/i);
+      expect(detailSrc).not.toMatch(/Sửa slug trước publish/i);
       expect(detailSrc).toMatch(/AC-11/i);
-      expect(detailSrc).toMatch(/Phần còn hạn chế/);
-      expect(detailSrc).toMatch(/aria-label="Phần còn hạn chế"/);
+      expect(detailSrc).toMatch(/aria-label="Tính năng chưa khả dụng"/);
+      expect(detailSrc).toMatch(/Tính năng chưa khả dụng/);
       expect(detailSrc).toMatch(/data-testid="locked-section-detail"/);
     });
 
@@ -221,22 +219,13 @@ describe('hrp-p1-a0.2 / T1C — JobPosting admin UI truth baseline', () => {
     });
 
     it('empty state explains the four canonical predicate clauses', () => {
-      // The improved empty-state text must mention all four predicate clauses
-      // so users understand WHY no slot is listed.
-      expect(formSrc).toMatch(/OPEN/);
-      expect(formSrc).toMatch(/CLOSING_SOON/);
-      expect(formSrc).toMatch(/deadline_date/);
-      expect(formSrc).toMatch(/valid_to/);
-      expect(formSrc).toMatch(/slots_filled/);
-      expect(formSrc).toMatch(/slots_needed/);
-      // Canonical predicate name explicitly referenced so the user can grep:
-      expect(formSrc).toMatch(/eligibleSlotPredicateSql/);
+      expect(formSrc).toMatch(/Chưa có vị trí tuyển dụng phù hợp/);
+      expect(formSrc).toMatch(/Thời hạn tuyển dụng và thời hạn nhận hồ sơ chưa kết thúc/);
+      expect(formSrc).toMatch(/Vẫn còn vị trí cần tuyển/);
     });
 
     it('empty state credits write-path authority, not just selector', () => {
-      // The improved empty state must credit `assertSlotEligibleForNewJobPosting`
-      // so users understand the server write-path is the source of truth.
-      expect(formSrc).toMatch(/assertSlotEligibleForNewJobPosting/);
+      expect(formSrc).not.toMatch(/assertSlotEligibleForNewJobPosting|eligibleSlotPredicateSql/);
     });
 
     it('load-error state carries data-testid for downstream assertion', () => {

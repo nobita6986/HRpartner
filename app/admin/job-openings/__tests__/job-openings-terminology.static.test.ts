@@ -8,7 +8,7 @@
  *   - serviceModel chip via `jobOpeningServiceModelLabel()` (EP §3.2.11).
  *   - Metric card labels: `Đơn ứng tuyển` / `Phân công dự án` / `Bố trí việc làm`
  *     (glossary `candidate_submission` / `project_assignment` / `placement`).
- *   - H2 sections: `Tin tuyển dụng (Job Posting)` / `Vị trí cần tuyển (Slots)`.
+ *   - H2 sections: `Tin tuyển dụng` / `Vị trí cần tuyển`.
  *   - No raw `DRAFT` / `OPEN` / `CLOSING_SOON` / `CLOSED` / `FILLED` / `CANCELLED`
  *     rendered as text in JSX (KEEP_CANONICAL_IDENTIFIER).
  *   - No raw `onsite` / `remote` rendered as text.
@@ -32,8 +32,9 @@ describe('hrp-admin-localization-wave2 — /admin/job-openings/[id] (L-036..L-04
     expect(SOURCE).not.toMatch(/>\s*Tuyển dụng \(Opening\)\s*</);
   });
 
-  it('breadcrumb last segment uses glossary term `Đợt tuyển dụng`', () => {
-    expect(SOURCE).toMatch(/Đợt tuyển dụng: \$\{opening\.id\.substring\(0, 8\)\}/);
+  it('breadcrumb uses the Vietnamese glossary term without exposing an internal ID', () => {
+    expect(SOURCE).toMatch(/\{ label: 'Đợt tuyển dụng', href:/);
+    expect(SOURCE).not.toMatch(/Đợt tuyển dụng: \$\{opening\.id/);
   });
 
   it('status chip routed through domain dictionary + shared <StatusBadge>', () => {
@@ -47,7 +48,7 @@ describe('hrp-admin-localization-wave2 — /admin/job-openings/[id] (L-036..L-04
   });
 
   it('metric card labels use cross-module glossary', () => {
-    expect(SOURCE).toMatch(/label="Đơn ứng tuyển"/);
+    expect(SOURCE).toMatch(/label="Lượt ứng tuyển"/);
     expect(SOURCE).toMatch(/label="Phân công dự án"/);
     expect(SOURCE).toMatch(/label="Bố trí việc làm"/);
   });
@@ -58,9 +59,9 @@ describe('hrp-admin-localization-wave2 — /admin/job-openings/[id] (L-036..L-04
     expect(SOURCE).not.toMatch(/label="Placements"/);
   });
 
-  it('H2 sections are Vietnamese (Tin tuyển dụng / Vị trí cần tuyển)', () => {
-    expect(SOURCE).toMatch(/>\s*Tin tuyển dụng \(Job Posting\)\s*</);
-    expect(SOURCE).toMatch(/>\s*Vị trí cần tuyển \(Slots\)\s*</);
+  it('H2 sections use Vietnamese only (Tin tuyển dụng / Vị trí cần tuyển)', () => {
+    expect(SOURCE).toMatch(/>\s*Tin tuyển dụng\s*</);
+    expect(SOURCE).toMatch(/>\s*Vị trí cần tuyển\s*</);
   });
 
   it('legacy H2 (Đăng tuyển (Job Posting) / Vị trí (Slots)) are REMOVED', () => {

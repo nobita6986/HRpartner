@@ -50,6 +50,7 @@ import {
   jobPostingStatusLabel,
   jobPostingStatusTone,
 } from '@/src/domains/staffing/job-posting-ui';
+import { jobOpeningStatusLabel } from '@/src/domains/staffing/job-opening-ui';
 import type { SystemRole } from '@prisma/client';
 
 import { JobPostingEditorShell } from './editor-shell';
@@ -113,7 +114,7 @@ export default async function AdminJobPostingDetailPage({ params }: PageProps) {
             items={[
               { label: 'Danh sách nhu cầu', href: '/admin/jobs' },
               { label: 'Tin tuyển dụng — trang xem', href: '/admin/jobs/job-postings' },
-              { label: posting.slug },
+              { label: 'Tin tuyển dụng' },
             ]}
           />
         </div>
@@ -123,11 +124,8 @@ export default async function AdminJobPostingDetailPage({ params }: PageProps) {
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
               <h1 className="text-xl font-bold" style={{ color: 'var(--on-surface)' }}>
-                {posting.slug}
+                {posting.title || 'Tin tuyển dụng'}
               </h1>
-              <p className="mt-1 text-xs" style={{ color: 'var(--on-surface-variant)' }}>
-                ID: <span className="font-mono">{posting.id}</span>
-              </p>
             </div>
             <StatusBadge
               module={JOB_POSTING_MODULE}
@@ -140,7 +138,7 @@ export default async function AdminJobPostingDetailPage({ params }: PageProps) {
           </div>
 
           <dl className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <Fact label="Đường dẫn tin (slug)" value={posting.slug} mono />
+            <Fact label="Đường dẫn công khai" value={posting.slug} mono />
             <Fact label="Phiên bản chỉnh sửa" value={`v${posting.revision}`} />
             <Fact label="Ngày tạo" value={new Date(posting.createdAt).toLocaleString('vi-VN')} />
             <Fact label="Ngày cập nhật" value={new Date(posting.updatedAt).toLocaleString('vi-VN')} />
@@ -156,17 +154,17 @@ export default async function AdminJobPostingDetailPage({ params }: PageProps) {
 
           <div className="mt-6">
             <RelatedObjects
-              title="Job Opening"
+              title="Đợt tuyển dụng"
               items={posting.opening ? [{
                 // hrp-t1a-postdeploy-runtime-correction-2 (round 2):
                 // wire JobOpening UUID as the React key + add href so the
                 // card deep-links into /admin/job-openings/[id] (was missing).
                 id: posting.opening.id,
-                title: <span className="flex flex-wrap items-center gap-2"><span className="font-mono">{posting.opening.staffingOrderCode}</span><span className="text-xs" style={{ color: 'var(--on-surface-variant)' }} data-testid="opening-subtitle">{posting.opening.status === 'OPEN' ? 'Đã mở — sẵn sàng publish' : posting.opening.status === 'DRAFT' ? 'DRAFT — cần mở trước khi publish' : `Trạng thái: ${posting.opening.status}`}</span></span>,
-                statusLabel: posting.opening.status,
+                title: <span className="flex flex-wrap items-center gap-2"><span className="font-mono">{posting.opening.staffingOrderCode}</span><span className="text-xs" style={{ color: 'var(--on-surface-variant)' }} data-testid="opening-subtitle">{jobOpeningStatusLabel(posting.opening.status)}</span></span>,
+                statusLabel: jobOpeningStatusLabel(posting.opening.status),
                 href: `/admin/job-openings/${posting.opening.id}`,
               }] : []}
-              emptyState="Chưa được gắn với JobOpening nào (orphan)."
+              emptyState="Chưa được gắn với đợt tuyển dụng nào."
             />
 
             {/* hrp-t1a-postdeploy-runtime-correction-2 (round 2):
@@ -181,7 +179,7 @@ export default async function AdminJobPostingDetailPage({ params }: PageProps) {
                 style={{ color: 'var(--on-surface-variant)' }}
                 data-testid="opening-cta-hint"
               >
-                Nút Publish ở trên sẽ bật sau khi JobOpening ở trạng thái OPEN. Mở JobOpening qua liên kết ở trên để chuẩn bị.
+                Có thể đăng tin sau khi đợt tuyển dụng được mở. Mở đợt tuyển dụng qua liên kết ở trên để tiếp tục.
               </p>
             )}
           </div>
@@ -229,25 +227,19 @@ export default async function AdminJobPostingDetailPage({ params }: PageProps) {
             backgroundColor: 'var(--color-surface-container)',
             color: 'var(--on-surface-variant)',
           }}
-          aria-label="Phần còn hạn chế"
+          aria-label="Tính năng chưa khả dụng"
           data-testid="locked-section-detail"
         >
           <h2 className="mb-2 text-sm font-semibold" style={{ color: 'var(--on-surface)' }}>
-            Phần còn hạn chế (đang chờ tích hợp)
+            Tính năng chưa khả dụng
           </h2>
           <ul className="ml-4 list-disc space-y-1">
             <li>
-              <strong>Gallery media</strong> (ảnh đính kèm JobPosting) — JobPosting hiện chỉ mang
-              rich-text content qua 4 field <code>descriptionJson</code> /
-              <code>requirementsJson</code> / <code>benefitsJson</code> /
-              <code>applicationInstructionsJson</code>. Media library integration chưa có;
-              dự kiến đến cùng với AV4 Media Library.
+              Hiện chưa thể đính kèm ảnh vào tin tuyển dụng.
             </li>
             <li>
-              <strong>Sửa slug trước publish</strong> — schema khóa slug sau lần
-              publish đầu tiên (P1-A0 AC-11: published slug immutable). Hiện chưa
-              expose route rename slug pre-publish; cần tạo JobOpening mới để đổi
-              slug. Đây là schema-level invariant, không phải khóa tạm thời.
+              Sau khi đăng tin, đường dẫn không thể thay đổi. Nếu cần dùng đường dẫn khác,
+              hãy tạo một đợt tuyển dụng mới.
             </li>
           </ul>
         </section>

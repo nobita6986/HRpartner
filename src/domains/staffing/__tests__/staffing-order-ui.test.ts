@@ -42,8 +42,8 @@ describe('staffing-order-ui (T1B Wave 2) — StaffingOrder status dictionary', (
     expect(staffingOrderStatusLabel('CANCELLED')).toBe('Đã hủy');
   });
 
-  it('staffingOrderStatusLabel() falls back to canonical enum (KEEP_CANONICAL_IDENTIFIER) for unknown values', () => {
-    expect(staffingOrderStatusLabel('SOMETHING_NEW')).toBe('SOMETHING_NEW');
+  it('staffingOrderStatusLabel() does not expose unknown raw values', () => {
+    expect(staffingOrderStatusLabel('SOMETHING_NEW')).toBe('Không xác định');
   });
 
   it('staffingOrderStatusTone() returns the matching tone for known values', () => {

@@ -17,6 +17,7 @@ const saved: HomepageSettingsDto = {
     ctaLabel: 'Xem thêm',
     ctaUrl: '/viec-lam',
     dismissible: true,
+    backgroundOpacity: 100,
     textColor: 'on-primary',
     font: 'SANS',
     emphasis: 'BOLD',
@@ -61,6 +62,17 @@ describe('buildHomepageSettingsPatch', () => {
       ...saved.stickyAnnouncement,
       message: 'Thông báo mới',
       contentRevision: 'rev-2',
+    };
+
+    expect(buildHomepageSettingsPatch(draft({ stickyAnnouncement }), saved)).toEqual({
+      stickyAnnouncement,
+    });
+  });
+
+  it('sends the complete sticky object when background opacity changes', () => {
+    const stickyAnnouncement = {
+      ...saved.stickyAnnouncement,
+      backgroundOpacity: 60,
     };
 
     expect(buildHomepageSettingsPatch(draft({ stickyAnnouncement }), saved)).toEqual({

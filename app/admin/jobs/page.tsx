@@ -247,7 +247,7 @@ export default function AdminJobsPage() {
               Danh sách nhu cầu
             </h1>
             <p className='mt-1' style={{ color: 'var(--on-surface-variant)' }}>
-              Quản lý danh sách nhu cầu (Project) và trạng thái publish
+              Quản lý nhu cầu tuyển dụng và nội dung hiển thị công khai.
             </p>
             {/*
              * hrp-m2a-operational-ux-debt / F11 — terminology disambiguation
@@ -271,9 +271,8 @@ export default function AdminJobsPage() {
               className='mt-2 max-w-2xl text-xs'
               style={{ color: 'var(--on-surface-variant)' }}
             >
-              <strong>Công bố dự án</strong> bật/tắt hiển thị Project trên trang chủ;
-              <strong> Publish</strong> trong JobPosting editor chuyển trạng thái JobPosting sang
-              <code> PUBLISHED</code>.
+              <strong>Công bố dự án</strong> quyết định việc dự án có hiển thị công khai;
+              <strong> Đăng tin</strong> quyết định việc tin tuyển dụng có xuất hiện trên trang tìm việc.
             </p>
           </div>
           <div className='flex items-center gap-2'>
@@ -282,7 +281,7 @@ export default function AdminJobsPage() {
               className='rounded border px-3 py-2 text-sm font-medium'
               style={{ borderColor: 'var(--outline)', color: 'var(--primary)' }}
             >
-              AV2 — Soạn JobPosting (bản nháp)
+              Soạn tin tuyển dụng
             </Link>
           </div>
         </div>

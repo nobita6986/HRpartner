@@ -58,8 +58,8 @@ describe('job-posting-ui (T1B Wave 2) — JobPosting status dictionary', () => {
     expect(jobPostingStatusLabel('ARCHIVED')).toBe('Đã lưu trữ');
   });
 
-  it('jobPostingStatusLabel() falls back to canonical enum (KEEP_CANONICAL_IDENTIFIER) for unknown values', () => {
-    expect(jobPostingStatusLabel('SOMETHING_NEW')).toBe('SOMETHING_NEW');
+  it('jobPostingStatusLabel() does not expose unknown raw values', () => {
+    expect(jobPostingStatusLabel('SOMETHING_NEW')).toBe('Không xác định');
   });
 
   it('jobPostingStatusTone() returns the matching tone for known values', () => {

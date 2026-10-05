@@ -33,9 +33,21 @@ export const JOB_OPENING_STATUS_LABELS: Readonly<Record<JobOpeningLifecycleStatu
 };
 
 /** EP §3.2.11 — serviceModel enum values (canonical `onsite` / `remote`). */
-export const JOB_OPENING_SERVICE_MODEL_LABELS: Readonly<Record<'onsite' | 'remote', string>> = {
+export const JOB_OPENING_SERVICE_MODEL_LABELS: Readonly<Record<
+  | 'onsite'
+  | 'remote'
+  | 'STAFFING_SUPPLY'
+  | 'LABOR_LEASING'
+  | 'RECRUITMENT_SERVICE'
+  | 'REFERRAL_SERVICE',
+  string
+>> = {
   onsite: 'Tại nơi làm việc',
   remote: 'Từ xa',
+  STAFFING_SUPPLY: 'Cung ứng nhân sự',
+  LABOR_LEASING: 'Cho thuê lại lao động',
+  RECRUITMENT_SERVICE: 'Dịch vụ tuyển dụng',
+  REFERRAL_SERVICE: 'Giới thiệu ứng viên',
 };
 
 /** Tone per JobOpening status. */
@@ -54,7 +66,7 @@ export const JOB_OPENING_STATUS_TONES: Readonly<Record<JobOpeningLifecycleStatus
  * (KEEP_CANONICAL_IDENTIFIER) if the value is missing.
  */
 export function jobOpeningStatusLabel(status: string): string {
-  return JOB_OPENING_STATUS_LABELS[status as JobOpeningLifecycleStatus] ?? status;
+  return JOB_OPENING_STATUS_LABELS[status as JobOpeningLifecycleStatus] ?? 'Không xác định';
 }
 
 export function jobOpeningStatusTone(status: string): 'NEUTRAL' | 'SUCCESS' | 'WARN' | 'DANGER' {
@@ -67,7 +79,9 @@ export function jobOpeningStatusTone(status: string): 'NEUTRAL' | 'SUCCESS' | 'W
  */
 export function jobOpeningServiceModelLabel(serviceModel: string | null | undefined): string {
   if (serviceModel === null || serviceModel === undefined || serviceModel === '') return '';
-  return JOB_OPENING_SERVICE_MODEL_LABELS[serviceModel as 'onsite' | 'remote'] ?? serviceModel;
+  return JOB_OPENING_SERVICE_MODEL_LABELS[
+    serviceModel as keyof typeof JOB_OPENING_SERVICE_MODEL_LABELS
+  ] ?? 'Chưa phân loại';
 }
 
 /** Stable module identifier for `<StatusBadge module="job_opening" />`. */

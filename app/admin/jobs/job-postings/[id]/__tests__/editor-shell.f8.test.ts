@@ -53,7 +53,7 @@ describe('F8 integration — editor-shell.readApiErrorSummary (hrp-m2a-operation
     });
     const summary = await readApiErrorSummary(res, EDITOR_JOB_OPENING_ID);
     expect(summary.label).toContain(
-      'Phiên bản JobPosting đã được người khác cập nhật',
+      'Tin tuyển dụng vừa được cập nhật',
     );
     // Mapper table value, not raw body.message.
     expect(summary.label).not.toContain('db error');
@@ -72,7 +72,7 @@ describe('F8 integration — editor-shell.readApiErrorSummary (hrp-m2a-operation
       details: { jobOpeningId: EDITOR_JOB_OPENING_ID },
     });
     const summary = await readApiErrorSummary(res, EDITOR_JOB_OPENING_ID);
-    expect(summary.label).toContain('Linked JobOpening chưa ở trạng thái OPEN');
+    expect(summary.label).toContain('Đợt tuyển dụng chưa được mở');
     expect(summary.recoveryHref).toBe(`/admin/job-openings/${EDITOR_JOB_OPENING_ID}`);
   });
 
@@ -84,7 +84,7 @@ describe('F8 integration — editor-shell.readApiErrorSummary (hrp-m2a-operation
       details: null,
     });
     const summary = await readApiErrorSummary(res, EDITOR_JOB_OPENING_ID);
-    expect(summary.label).toContain('Linked JobOpening chưa ở trạng thái OPEN');
+    expect(summary.label).toContain('Đợt tuyển dụng chưa được mở');
     expect(summary.recoveryHref).toBe(`/admin/job-openings/${EDITOR_JOB_OPENING_ID}`);
   });
 
@@ -96,7 +96,7 @@ describe('F8 integration — editor-shell.readApiErrorSummary (hrp-m2a-operation
       details: { jobOpeningId: 'not-a-uuid' },
     });
     const summary = await readApiErrorSummary(res, EDITOR_JOB_OPENING_ID);
-    expect(summary.label).toContain('Linked JobOpening chưa ở trạng thái OPEN');
+    expect(summary.label).toContain('Đợt tuyển dụng chưa được mở');
     // jobPostingRecoveryHref rejects non-UUID strings; safe fallback is to stay on the page.
     expect(summary.recoveryHref).toBeNull();
   });
@@ -163,7 +163,7 @@ describe('F8 integration — editor-shell.readApiErrorSummary (hrp-m2a-operation
       details: null,
     });
     const summary = await readApiErrorSummary(res, EDITOR_JOB_OPENING_ID);
-    expect(summary.label).toContain('không có quyền thực hiện thao tác JobPosting');
+    expect(summary.label).toContain('không có quyền thực hiện thao tác với tin tuyển dụng');
     expect(summary.recoveryHref).toBeNull();
   });
 
@@ -175,7 +175,7 @@ describe('F8 integration — editor-shell.readApiErrorSummary (hrp-m2a-operation
       details: null,
     });
     const summary = await readApiErrorSummary(res, EDITOR_JOB_OPENING_ID);
-    expect(summary.label).toContain('không có quyền truy cập JobPosting này');
+    expect(summary.label).toContain('không có quyền xem tin tuyển dụng này');
     expect(summary.recoveryHref).toBeNull();
   });
 
@@ -199,7 +199,7 @@ describe('F8 integration — editor-shell.readApiErrorSummary (hrp-m2a-operation
       details: null,
     });
     const summary = await readApiErrorSummary(res, EDITOR_JOB_OPENING_ID);
-    expect(summary.label).toContain('slug duy nhất cho JobPosting');
+    expect(summary.label).toContain('đường dẫn công khai');
     expect(summary.recoveryHref).toBeNull();
   });
 });

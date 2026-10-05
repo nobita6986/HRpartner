@@ -34,6 +34,7 @@ import { getServerSession } from '@/src/shared/auth/server-session';
 import { getPrisma } from '@/src/lib/db';
 import { withDbContext } from '@/src/shared/auth/with-db-context';
 import { getJobOpeningDetail } from '@/src/domains/staffing/job-opening-read.service';
+import { staffingOrderStatusLabel } from '@/src/domains/staffing/staffing-order-ui';
 import { assertActiveRecruiterForOrder } from '@/src/domains/talent/recruiter-assignment.service';
 import { Breadcrumb } from '@/src/shared/ui/navigation/breadcrumb';
 import { RelatedObjects } from '@/src/shared/ui/data-display/related-objects';
@@ -45,6 +46,7 @@ import {
   jobOpeningStatusLabel,
   jobOpeningStatusTone,
 } from '@/src/domains/staffing/job-opening-ui';
+import { jobPostingStatusLabel } from '@/src/domains/staffing/job-posting-ui';
 import {
   JobOpeningActions,
   type JobOpeningActionsFlags,
@@ -54,7 +56,7 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 const HR_STAFF_OPEN_BLOCKED_REASON =
-  'Bạn cần được phân công vào StaffingOrder để mở JobOpening này';
+  'Bạn cần được phân công vào nhu cầu tuyển dụng này mới có thể mở đợt tuyển dụng.';
 
 export default async function JobOpeningDetailPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
@@ -164,22 +166,21 @@ export default async function JobOpeningDetailPage(props: { params: Promise<{ id
     if (!callerHasOpenAuthority) {
       blockedReason = HR_STAFF_OPEN_BLOCKED_REASON;
     } else if (!isDraft) {
-      blockedReason = `Trạng thái hiện tại là ${opening.status}; chỉ JobOpening ở trạng thái DRAFT mới có thể mở`;
+      blockedReason = `Chỉ có thể mở đợt tuyển dụng ở trạng thái bản nháp. Trạng thái hiện tại: ${jobOpeningStatusLabel(opening.status)}.`;
     } else if (!hasServiceModel) {
-      blockedReason = 'Cần phân loại ServiceModel trước khi mở';
+      blockedReason = 'Hãy chọn hình thức tuyển dụng trước khi mở.';
     } else if (!orderStrictlyOpen) {
-      // Pre-audit correction batch 1/1 §D — strict OPEN wording.
-      blockedReason = `StaffingOrder ở trạng thái ${orderStatus}; cần OPEN (CLOSING_SOON không đủ điều kiện mở)`;
+      blockedReason = `Nhu cầu tuyển dụng đang ở trạng thái ${staffingOrderStatusLabel(orderStatus)}; chỉ có thể mở khi đang tuyển.`;
     } else if (!slotExists) {
-      blockedReason = 'JobOpening không liên kết với StaffingOrderSlot — không thể mở';
+      blockedReason = 'Đợt tuyển dụng chưa có vị trí cần tuyển.';
     } else if (!deadlineOk) {
-      blockedReason = `StaffingOrder đã quá hạn nộp (deadlineDate < now)`;
+      blockedReason = 'Nhu cầu tuyển dụng đã hết hạn nhận hồ sơ.';
     } else if (!slotValidToOk) {
-      blockedReason = 'StaffingOrderSlot đã quá hạn (validTo < now)';
+      blockedReason = 'Vị trí cần tuyển đã hết hạn.';
     } else if (!slotCapacityOk) {
-      blockedReason = 'StaffingOrderSlot đã đủ chỉ tiêu';
+      blockedReason = 'Vị trí cần tuyển đã đủ chỉ tiêu.';
     } else {
-      blockedReason = 'Không đủ điều kiện mở JobOpening';
+      blockedReason = 'Đợt tuyển dụng chưa đủ điều kiện để mở.';
     }
   }
 
@@ -198,9 +199,9 @@ export default async function JobOpeningDetailPage(props: { params: Promise<{ id
 
   const postingItems = opening.jobPosting ? [{
     id: opening.jobPosting.id,
-    title: `Tin tuyển dụng: ${opening.jobPosting.slug}`,
-    subtitle: `Khóa đăng tuyển công khai`,
-    statusLabel: opening.jobPosting.status,
+    title: 'Tin tuyển dụng đã liên kết',
+    subtitle: 'Tin được liên kết với đợt tuyển dụng này.',
+    statusLabel: jobPostingStatusLabel(opening.jobPosting.status),
     href: `/admin/jobs/job-postings/${opening.jobPosting.id}`,
   }] : [];
 
@@ -219,13 +220,13 @@ export default async function JobOpeningDetailPage(props: { params: Promise<{ id
           { label: 'Admin', href: '/admin' },
           { label: 'Dự án', href: '/admin/projects' },
           { label: opening.staffingOrder.project.name, href: `/admin/projects/${opening.staffingOrder.project.id}` },
-          { label: `Đợt tuyển dụng: ${opening.id.substring(0, 8)}`, href: `/admin/job-openings/${opening.id}` },
+          { label: 'Đợt tuyển dụng', href: `/admin/job-openings/${opening.id}` },
         ]} />
         <h1 className="text-3xl font-semibold mt-4" style={{ color: 'var(--on-surface)' }}>
           Đợt tuyển dụng
         </h1>
         <div className="mt-2 flex flex-wrap items-center gap-4 text-sm" style={{ color: 'var(--on-surface-variant)' }}>
-          <span>Đơn: {opening.staffingOrder.code}</span>
+          <span>Nhu cầu tuyển dụng: {opening.staffingOrder.code}</span>
           <span>Dự án: {opening.staffingOrder.project.name}</span>
           <span>Mở: {opened}</span>
           <span>Đóng: {closed}</span>
@@ -250,7 +251,7 @@ export default async function JobOpeningDetailPage(props: { params: Promise<{ id
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <MetricCard label="Đơn ứng tuyển" value={opening.metrics.submissionsCount} />
+        <MetricCard label="Lượt ứng tuyển" value={opening.metrics.submissionsCount} />
         <MetricCard label="Phân công dự án" value={opening.metrics.assignmentsCount} />
         <MetricCard label="Bố trí việc làm" value={opening.placementCount} />
       </div>
@@ -262,7 +263,7 @@ export default async function JobOpeningDetailPage(props: { params: Promise<{ id
 
       <section aria-labelledby="opening-posting" className="mb-8">
         <h2 id="opening-posting" className="text-xl font-semibold mb-4" style={{ color: 'var(--on-surface)' }}>
-          Tin tuyển dụng (Job Posting)
+          Tin tuyển dụng
         </h2>
         {postingItems.length > 0 ? (
           <RelatedObjects
@@ -280,7 +281,7 @@ export default async function JobOpeningDetailPage(props: { params: Promise<{ id
 
       <section aria-labelledby="opening-slots">
         <h2 id="opening-slots" className="text-xl font-semibold mb-4" style={{ color: 'var(--on-surface)' }}>
-          Vị trí cần tuyển (Slots)
+          Vị trí cần tuyển
         </h2>
         {slotItems.length > 0 ? (
           <RelatedObjects
