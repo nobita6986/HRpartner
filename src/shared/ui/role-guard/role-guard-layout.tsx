@@ -154,9 +154,24 @@ export const ADMIN_NAV_PHASE4: NavItem[] = [
   // list and the `+ Tiếp nhận NLD` CTA are reachable in one click from the
   // sidebar instead of via the recruiter-workbench deep-link only. Roles
   // byte-mirror `app/admin/labor-profiles/page.tsx:16` — no widening.
-  { href: '/admin/workers', label: 'Nhân sự', icon: Users, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER'], section: 'people' },
-  { href: '/admin/labor-profiles', label: 'Hồ sơ NLD', icon: UserRoundCheck, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER'], section: 'people' },
-  { href: '/admin/labor-profiles/new', label: 'Tiếp nhận NLD', icon: UserRoundCheck, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER'], section: 'people' },
+  //
+  // T0 T1B — HOTFIX UI NGƯỜI LAO ĐỘNG (F2+F3 follow-up):
+  // - RENAME the workers entry label 'Nhân sự' → 'Người lao động' to align
+  //   with the canonical operator-facing terminology; the workforce roster
+  //   surface is "người lao động" (people being managed), not "nhân sự"
+  //   (HR staff). Section stays 'people'.
+  // - RENAME the LaborProfile list label 'Hồ sơ NLD' → 'Hồ sơ tiếp nhận'
+  //   (the slot in the sidebar is a noun-phrase title; the full title
+  //   "Hồ sơ tiếp nhận người lao động" remains on the page <h1>).
+  // - REMOVE the dedicated /admin/labor-profiles/new sidebar entry
+  //   ('Tiếp nhận NLD'). The intake flow is reachable from the LaborProfile
+  //   list page's own "+ Tiếp nhận người lao động" CTA (T0 directive §1.4);
+  //   keeping a separate sidebar slot duplicates the same destination and
+  //   confuses operators. The route /admin/labor-profiles/new remains
+  //   routable (no route change, no role-matrix change) — only the sidebar
+  //   item is removed.
+  { href: '/admin/workers', label: 'Người lao động', icon: Users, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER'], section: 'people' },
+  { href: '/admin/labor-profiles', label: 'Hồ sơ tiếp nhận', icon: UserRoundCheck, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER'], section: 'people' },
 
   // Đối tác (partners) — T1C: nhóm mới. Khách hàng / Nhà cung cấp là dữ
   // liệu đối tác bên ngoài, không thuộc workforce nội bộ.
@@ -346,7 +361,10 @@ export function RoleGuardLayout({
             
             {portal === 'admin' && peopleNav.length > 0 && (
               <>
-                <div className="mt-4 mb-1 px-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Nhân sự</div>
+                {/* T0 T1B — HOTFIX UI NGƯỜI LAO ĐỘNG: group header is the
+                    section title in UPPERCASE tracking; matches the directive
+                    naming "NGƯỜI LAO ĐỘNG". Visual style unchanged. */}
+                <div className="mt-4 mb-1 px-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">NGƯỜI LAO ĐỘNG</div>
                 {peopleNav.map(item => renderNavItem(item))}
               </>
             )}

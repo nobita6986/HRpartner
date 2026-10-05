@@ -17,7 +17,7 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export const metadata = {
-  title: 'Hồ sơ người lao động - Quản trị',
+  title: 'Hồ sơ tiếp nhận người lao động - Quản trị',
 };
 
 const ALLOWED_ROLES = new Set(['ADMIN', 'HR_MANAGER', 'HR_STAFF']);
@@ -34,7 +34,7 @@ export default async function LaborProfilesPage({
   if (!ALLOWED_ROLES.has(session.role)) {
     return (
       <div className="p-8 text-red-600">
-        Bạn không có quyền truy cập danh sách hồ sơ người lao động.
+        Bạn không có quyền truy cập danh sách hồ sơ tiếp nhận người lao động.
       </div>
     );
   }
@@ -54,14 +54,17 @@ export default async function LaborProfilesPage({
     <div className="p-8 max-w-7xl mx-auto">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Hồ sơ người lao động</h1>
-          <p className="text-gray-500 mt-2 text-sm">Quản lý hồ sơ người lao động, nhận diện và đối chiếu trùng lặp.</p>
+          {/* T0 T1B — HOTFIX UI NGƯỜI LAO ĐỘNG: page title is the full
+              operator-facing label "Hồ sơ tiếp nhận người lao động"
+              (the sidebar slot uses the shorter "Hồ sơ tiếp nhận"). */}
+          <h1 className="text-3xl font-bold text-gray-900">Hồ sơ tiếp nhận người lao động</h1>
+          <p className="text-gray-500 mt-2 text-sm">Quản lý hồ sơ tiếp nhận người lao động, nhận diện và đối chiếu trùng lặp.</p>
         </div>
         <Link 
           href="/admin/labor-profiles/new" 
           className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm transition-colors"
         >
-          Tiếp nhận hồ sơ người lao động
+          + Tiếp nhận người lao động
         </Link>
       </div>
 
@@ -103,13 +106,39 @@ export default async function LaborProfilesPage({
               {data.items.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
-                    Chưa có hồ sơ người lao động nào.
+                    Chưa có hồ sơ tiếp nhận người lao động nào.
                   </td>
                 </tr>
               ) : (
+                /* T0 T1B — HOTFIX UI NGƯỜI LAO ĐỘNG: table-HTML fix.
+                   Previous markup wrapped a <tr> in <RowLink> (which renders an
+                   <a>), then put <td> children inside that <a>. That produced
+                   invalid HTML: <tbody><a><td>…</td></a></tbody> — browsers
+                   react by hoisting the <a> out of the <tbody> and re-parenting
+                   the <td>s, which misaligns columns and clips the last cell.
+
+                   The contract used by RowLink (`src/shared/ui/navigation/
+                   row-link.tsx`) is the opposite: the <tr> must be the
+                   outermost element with class `relative`, and RowLink is
+                   placed inside a single <td>. The whole row stays clickable
+                   via RowLink's `before:absolute before:inset-0` pseudo-link
+                   overlay, the inner <a> is a real anchor (focusable, middle-
+                   click to open in a new tab, right-click → "Open in new
+                   tab"), and there is exactly one <a> per row (no nested
+                   links). The same pattern is already used by
+                   `app/admin/clients/page.tsx` and
+                   `app/admin/projects/projects-table-client.tsx`, so this is a
+                   convergent alignment with the canonical RowLink contract. */
                 data.items.map((profile) => (
-                  <RowLink key={profile.id} href={`/admin/labor-profiles/${profile.id}`} className="hover:bg-blue-50/50 transition-colors">
-                    <td className="px-6 py-4 font-medium text-gray-900">{profile.fullName || 'Chưa cập nhật'}</td>
+                  <tr
+                    key={profile.id}
+                    className="relative transition-colors hover:bg-blue-50/50"
+                  >
+                    <td className="px-6 py-4 font-medium text-gray-900">
+                      <RowLink href={`/admin/labor-profiles/${profile.id}`}>
+                        {profile.fullName || 'Chưa cập nhật'}
+                      </RowLink>
+                    </td>
                     <td className="px-6 py-4">{profile.phone || '-'}</td>
                     <td className="px-6 py-4">
                       <StatusBadge
@@ -139,7 +168,7 @@ export default async function LaborProfilesPage({
                     <td className="px-6 py-4 text-right">
                       {new Date(profile.createdAt).toLocaleDateString('vi-VN')}
                     </td>
-                  </RowLink>
+                  </tr>
                 ))
               )}
             </tbody>
