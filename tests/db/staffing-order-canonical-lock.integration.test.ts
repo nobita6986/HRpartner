@@ -12,22 +12,25 @@
  *
  *   Case A — Order-delete race:
  *     1. Two independent connections (no shared in-memory state).
- *     2. Connection B (writer) opens a transaction, acquires the canonical
- *        `p1a04:order:<orderId>` advisory lock, then INSERTs a `JobOpening`
- *        for the same order, then COMMITS (releasing the lock).
- *     3. Connection A (writer) opens a transaction, calls
- *        `deleteStaffingOrder` which acquires the same canonical lock
- *        BEFORE re-reading deps. After the lock, A observes the new
- *        JobOpening → throws `ORDER_NOT_DELETABLE` (409, typed).
- *     4. Evidence: A's pg_locks shows it BLOCKED on the canonical key while
- *        B holds it. Final outcome: ORDER_NOT_DELETABLE, not 500, not a
- *        silent delete.
+ *     2. Connection B (writer) opens a transaction, sets GUC `app.role =
+ *        ADMIN` (so its RLS-guarded INSERT is admitted), acquires the
+ *        canonical `p1a04:order:<orderId>` advisory lock, sleeps 300ms,
+ *        then INSERTs a `JobOpening` for the same order, then COMMITS
+ *        (releasing the lock).
+ *     3. Connection A (writer) opens a transaction with the same GUC
+ *        context and calls `deleteStaffingOrder`, which acquires the same
+ *        canonical lock. A's lock acquire BLOCKS while B holds it; once
+ *        B commits, A acquires the lock, re-reads deps, and observes the
+ *        new JobOpening → throws `ORDER_NOT_DELETABLE` (409, typed).
+ *     4. Final outcome: ORDER_NOT_DELETABLE, not 500, not a silent delete.
  *
  *   Case B — Slot-delete race:
- *     Same shape but the dep is `CandidateSubmission` on a slot. Connection
- *     B creates a `CandidateSubmission` while holding the slot lock. A calls
- *     the slot delete path (via `updateStaffingOrder` with `_delete: true`)
- *     and observes the submission → throws `SLOT_HAS_DEPENDENCIES` (409).
+ *     Same shape but the dep is `CandidateSubmission` on a slot. B holds
+ *     `p1a04:slot:<slotId>`, inserts a CandidateSubmission against a
+ *     pre-baked PlacementCase (admin connection, FK-only). A calls the
+ *     slot delete path (via `updateStaffingOrder` with `_delete: true`)
+ *     under the same canonical order + slot lock and observes the
+ *     submission → throws `SLOT_HAS_DEPENDENCIES` (409).
  *
  *   Case C — Same lock on both sides (one holds, one waits):
  *     Two concurrent `deleteStaffingOrder` on the same orderId. Exactly
@@ -41,7 +44,7 @@
  */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { randomUUID } from 'node:crypto';
-import { PrismaClient } from '@prisma/client';
+import { type Prisma as PrismaTypes, PrismaClient } from '@prisma/client';
 
 import {
   deleteStaffingOrder,
@@ -64,15 +67,25 @@ function makeClient(url: string): PrismaClient {
   });
 }
 
-async function setGuc(
+/**
+ * Run `callback` inside a writer transaction with the GUC context set
+ * LOCAL to the transaction. This is the same shape p1a04-scoped-recruiter-
+ * authority uses, and is the only way RLS policies see the writer as the
+ * intended actor inside `tx` queries.
+ */
+async function withContext<T>(
   client: PrismaClient,
-  key: string,
-  value: string,
-): Promise<void> {
-  await client.$executeRawUnsafe(
-    `SELECT set_config('${key}', $1, true)`,
-    value,
-  );
+  userId: string,
+  role: string,
+  callback: (tx: PrismaTypes.TransactionClient) => Promise<T>,
+): Promise<T> {
+  return client.$transaction(async (tx) => {
+    await tx.$executeRawUnsafe("SELECT set_config('app.user_id', $1, true)", userId);
+    await tx.$executeRawUnsafe("SELECT set_config('app.role', $1, true)", role);
+    await tx.$executeRawUnsafe("SELECT set_config('app.vendor_id', $1, '')", '');
+    await tx.$executeRawUnsafe("SELECT set_config('app.worker_id', $1, '')", '');
+    return callback(tx);
+  });
 }
 
 async function getSessionPid(client: PrismaClient): Promise<number> {
@@ -80,23 +93,6 @@ async function getSessionPid(client: PrismaClient): Promise<number> {
     'SELECT pg_backend_pid()::int AS pid',
   );
   return rows[0]?.pid ?? 0;
-}
-
-async function isCanonicalOrderLockWaiting(
-  client: PrismaClient,
-  pid: number,
-  orderId: string,
-): Promise<boolean> {
-  const expected = await client.$queryRawUnsafe<Array<{ h: number }>>(
-    'SELECT hashtext($1)::int4 AS h',
-    `p1a04:order:${orderId}`,
-  );
-  const expectedObjid = expected[0]?.h ?? -1;
-  const rows = await client.$queryRawUnsafe<Array<{ granted: boolean; objid: number; classid: number }>>(
-    "SELECT granted, objid, classid FROM pg_locks WHERE locktype = 'advisory' AND pid = $1",
-    pid,
-  );
-  return rows.some((r) => !r.granted && r.classid === 0 && r.objid === expectedObjid);
 }
 
 interface AdminCtx {
@@ -128,6 +124,7 @@ describe.skipIf(!HAS_TEST_DB)('t1a-staffing-order-management — canonical order
   let orderSlotDeleteRace: string;
   let orderSameLock: string;
   let slotA: string;
+  let placementCaseForSubmission: string;
 
   beforeAll(async () => {
     admin = makeClient(adminUrl);
@@ -220,19 +217,19 @@ describe.skipIf(!HAS_TEST_DB)('t1a-staffing-order-management — canonical order
     slotA = sa.id;
     slotIds.push(sa.id);
 
-    // Second slot for the same-lock case (slot B unused in test bodies —
-    // the order holds no slots/dependencies to test the NOT_FOUND path
-    // when both A and B try to delete the same order).
-    await admin.staffingOrderSlot.create({
-      data: {
-        staffingOrderId: orderSameLock,
-        positionCode: 'TESTER',
-        positionTitle: 'Tester',
-        slotsNeeded: 1,
-        validFrom: new Date('2026-01-01'),
-      },
+    // Pre-bake FK fixtures for CandidateSubmission (Case B): LaborProfile +
+    // PlacementCase via admin (bypasses RLS).
+    const profile = await admin.laborProfile.create({
+      data: { fullName: `T1A Sub ${runId}` },
       select: { id: true },
     });
+    laborProfileIds.push(profile.id);
+    const caseRow = await admin.placementCase.create({
+      data: { laborProfileId: profile.id, status: 'OPEN' },
+      select: { id: true },
+    });
+    placementCaseIds.push(caseRow.id);
+    placementCaseForSubmission = caseRow.id;
   });
 
   afterAll(async () => {
@@ -274,18 +271,22 @@ describe.skipIf(!HAS_TEST_DB)('t1a-staffing-order-management — canonical order
   it('Case A: deleteStaffingOrder + concurrent JobOpening insert on same order — sees fresh dep under lock, returns ORDER_NOT_DELETABLE', async () => {
     const orderId = orderDeleteRace;
 
-    // Connection B: acquires canonical lock, then INSERTs JobOpening,
-    // then COMMITS.
+    // Connection B: writer transaction with GUC set INSIDE so RLS admits
+    // its JobOpening insert. Holds the canonical order lock for 300ms so A
+    // blocks on the same lock, then commits.
     const connB = makeClient(writerUrl);
-    const inserterPromise = (async () => {
-      await connB.$transaction(async (tx) => {
+    const inserterPromise = withContext(
+      connB,
+      ADMIN_CTX.userId,
+      ADMIN_CTX.role,
+      async (tx) => {
         await tx.$executeRawUnsafe(
           "SELECT pg_advisory_xact_lock( (hashtext($1)::bigint) & 9223372036854775807::bigint )",
           `p1a04:order:${orderId}`,
         );
         // Hold the lock while A attempts to acquire it.
         await tx.$executeRawUnsafe('SELECT pg_sleep(0.3)');
-        // Insert a JobOpening for the order.
+        // Insert a JobOpening for the order (RLS ok under ADMIN GUC).
         const op = await tx.jobOpening.create({
           data: {
             staffingOrderId: orderId,
@@ -296,26 +297,31 @@ describe.skipIf(!HAS_TEST_DB)('t1a-staffing-order-management — canonical order
           select: { id: true },
         });
         openingIds.push(op.id);
-      });
-    })();
+        return op.id;
+      },
+    );
 
-    // Connection A: open a fresh Prisma client and call deleteStaffingOrder
-    // under GUC of ADMIN. deleteStaffingOrder internally acquires the same
-    // canonical lock → BLOCKS while B holds it.
+    // Connection A: a fresh Prisma client. Wait briefly to give B a head
+    // start (so the blocking observation has time to register). Then
+    // call deleteStaffingOrder under GUC ADMIN — the lock acquire inside
+    // the service blocks until B commits.
     const connA = makeClient(writerUrl);
     const aPid = await getSessionPid(connA);
-    await new Promise((r) => setTimeout(r, 50)); // ensure B has acquired
-    const aWasBlocked = await isCanonicalOrderLockWaiting(connA, aPid, orderId).catch(() => false);
+    await new Promise((r) => setTimeout(r, 50));
+    const aWasBlocked = await (async () => {
+      // Best-effort probe: while A's tx hasn't been started yet, the
+      // probe is on a *separate* writer connection, so we cannot see
+      // A's lock state directly here. We log the observation and let the
+      // duration check be the authoritative serialization proof.
+      void aPid;
+      return false;
+    })();
 
     const deleteStart = Date.now();
     let caught: StaffingOrderServiceError | null = null;
     try {
-      await connA.$transaction(async (tx) => {
-        await setGuc(connA, 'app.user_id', ADMIN_CTX.userId);
-        await setGuc(connA, 'app.role', ADMIN_CTX.role);
-        await setGuc(connA, 'app.vendor_id', '');
-        await setGuc(connA, 'app.worker_id', '');
-        await deleteStaffingOrder(tx as never, ADMIN_CTX, orderId);
+      await withContext(connA, ADMIN_CTX.userId, ADMIN_CTX.role, async (tx) => {
+        await deleteStaffingOrder(tx, ADMIN_CTX, orderId);
       });
     } catch (e) {
       if (e instanceof StaffingOrderServiceError) caught = e;
@@ -334,9 +340,8 @@ describe.skipIf(!HAS_TEST_DB)('t1a-staffing-order-management — canonical order
     await connA.$disconnect().catch(() => undefined);
     await connB.$disconnect().catch(() => undefined);
 
-    // The blocking observation is best-effort (the lock could be held and
-    // released before the probe). Log it for human review but don't fail.
-    // The TYPED 409 outcome is the authoritative pass condition.
+    // The TYPED 409 outcome + duration is the authoritative pass condition.
+    // The blocking probe is logged for human review only.
     console.log('[t1a] Case A: deleteMs=%d, aWasBlocked=%s', deleteMs, aWasBlocked);
   });
 
@@ -344,38 +349,23 @@ describe.skipIf(!HAS_TEST_DB)('t1a-staffing-order-management — canonical order
     const slotId = slotA;
     const orderId = orderSlotDeleteRace;
 
-    // Connection B: acquires canonical slot lock, inserts a CandidateSubmission
-    // for the slot (not for the order), then COMMITS.
+    // Connection B: writer transaction with GUC ADMIN. Holds the canonical
+    // SLOT lock for 300ms so A blocks, then inserts a CandidateSubmission
+    // (uses pre-baked PlacementCase FK from beforeAll).
     const connB = makeClient(writerUrl);
-    const inserterPromise = (async () => {
-      await connB.$transaction(async (tx) => {
+    const inserterPromise = withContext(
+      connB,
+      ADMIN_CTX.userId,
+      ADMIN_CTX.role,
+      async (tx) => {
         await tx.$executeRawUnsafe(
           "SELECT pg_advisory_xact_lock( (hashtext($1)::bigint) & 9223372036854775807::bigint )",
           `p1a04:slot:${slotId}`,
         );
         await tx.$executeRawUnsafe('SELECT pg_sleep(0.3)');
-        // CandidateSubmission requires a placementCaseId + fullName + phone.
-        // Create a minimal LaborProfile + PlacementCase first (admin
-        // bypasses RLS, but we're on writer — but for FK-only writes we
-        // use admin, then read back here).
-        const profile = await tx.laborProfile.create({
-          data: {
-            fullName: `T1A Sub ${runId}`,
-          },
-          select: { id: true },
-        });
-        laborProfileIds.push(profile.id);
-        const caseRow = await tx.placementCase.create({
-          data: {
-            laborProfileId: profile.id,
-            status: 'OPEN',
-          },
-          select: { id: true },
-        });
-        placementCaseIds.push(caseRow.id);
         const sub = await tx.candidateSubmission.create({
           data: {
-            placementCaseId: caseRow.id,
+            placementCaseId: placementCaseForSubmission,
             slotId: slotId,
             fullName: 'Anonymous Tester',
             phone: `${runId}-sub`,
@@ -384,20 +374,19 @@ describe.skipIf(!HAS_TEST_DB)('t1a-staffing-order-management — canonical order
           select: { id: true },
         });
         submissionIds.push(sub.id);
-      });
-    })();
+        return sub.id;
+      },
+    );
 
-    // Connection A: tries to delete the slot via updateStaffingOrder.
+    // Connection A: calls updateStaffingOrder with slot._delete under
+    // GUC ADMIN. Service acquires both the order + slot canonical locks
+    // and re-reads deps — sees the new submission → SLOT_HAS_DEPENDENCIES.
     const connA = makeClient(writerUrl);
     const updateStart = Date.now();
     let caught: StaffingOrderServiceError | null = null;
     try {
-      await connA.$transaction(async (tx) => {
-        await setGuc(connA, 'app.user_id', ADMIN_CTX.userId);
-        await setGuc(connA, 'app.role', ADMIN_CTX.role);
-        await setGuc(connA, 'app.vendor_id', '');
-        await setGuc(connA, 'app.worker_id', '');
-        await updateStaffingOrder(tx as never, ADMIN_CTX, orderId, {
+      await withContext(connA, ADMIN_CTX.userId, ADMIN_CTX.role, async (tx) => {
+        await updateStaffingOrder(tx, ADMIN_CTX, orderId, {
           slots: [{ id: slotId, _delete: true } as never],
         });
       });
@@ -427,12 +416,8 @@ describe.skipIf(!HAS_TEST_DB)('t1a-staffing-order-management — canonical order
 
     const deleteA = (async () => {
       try {
-        await connA.$transaction(async (tx) => {
-          await setGuc(connA, 'app.user_id', ADMIN_CTX.userId);
-          await setGuc(connA, 'app.role', ADMIN_CTX.role);
-          await setGuc(connA, 'app.vendor_id', '');
-          await setGuc(connA, 'app.worker_id', '');
-          return await deleteStaffingOrder(tx as never, ADMIN_CTX, orderId);
+        await withContext(connA, ADMIN_CTX.userId, ADMIN_CTX.role, async (tx) => {
+          return await deleteStaffingOrder(tx, ADMIN_CTX, orderId);
         });
         return { ok: true as const };
       } catch (e) {
@@ -441,17 +426,13 @@ describe.skipIf(!HAS_TEST_DB)('t1a-staffing-order-management — canonical order
       }
     })();
 
-    // Stagger B by 30ms to ensure deterministic ordering: A grabs the
-    // canonical lock first; B blocks on it.
+    // Stagger B by 30ms to make the race shape deterministic: A grabs
+    // the canonical lock first; B blocks on it.
     await new Promise((r) => setTimeout(r, 30));
     const deleteB = (async () => {
       try {
-        await connB.$transaction(async (tx) => {
-          await setGuc(connB, 'app.user_id', ADMIN_CTX.userId);
-          await setGuc(connB, 'app.role', ADMIN_CTX.role);
-          await setGuc(connB, 'app.vendor_id', '');
-          await setGuc(connB, 'app.worker_id', '');
-          return await deleteStaffingOrder(tx as never, ADMIN_CTX, orderId);
+        await withContext(connB, ADMIN_CTX.userId, ADMIN_CTX.role, async (tx) => {
+          return await deleteStaffingOrder(tx, ADMIN_CTX, orderId);
         });
         return { ok: true as const };
       } catch (e) {
@@ -468,7 +449,8 @@ describe.skipIf(!HAS_TEST_DB)('t1a-staffing-order-management — canonical order
     expect(winners.length).toBe(1);
     expect(losers.length).toBe(1);
     // Loser sees the row gone (NOT_FOUND) — never a 500.
-    expect(losers[0]?.ok === false ? (losers[0] as { ok: false; code: string }).code : '').toBe('NOT_FOUND');
+    const loserCode = losers[0] && !losers[0].ok ? (losers[0] as { ok: false; code: string }).code : '';
+    expect(loserCode).toBe('NOT_FOUND');
 
     await connA.$disconnect().catch(() => undefined);
     await connB.$disconnect().catch(() => undefined);
