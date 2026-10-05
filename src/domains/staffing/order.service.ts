@@ -58,34 +58,49 @@ export class StaffingOrderServiceError extends Error {
 // ─── Lock helpers ──────────────────────────────────────────────────────────
 
 /**
- * Advisory lock cấp-order, transaction-scoped — same hashtext pattern as
- * `generateOrderCode` / `transfer.service.ts`. Khoá luong serializes mọi
- * request đụng cùng order trong cùng transaction Postgres ⇒ concurrent
- * update/delete không thể đọc-dẫn-ghi trên cùng orderId.
+ * Advisory lock cấp-order, transaction-scoped — canonical P1-A04 primitive
+ * (`recruiter-assignment.service.ts:140`). Cùng key/pattern bắt buộc dùng
+ * giữa mọi service đụng cùng `staffingOrderId` để các đường mutate khác
+ * nhau (assign recruiter, revoke, claim, place, transition, edit, delete)
+ * đều serialize trên cùng order. Lock TỰ ĐỘNG giải phóng khi transaction
+ * COMMIT/ROLLBACK (pg_advisory_xact_lock) — không leak, không deadlock do
+ * cross-process lock leak.
  *
- * CORRECTION 1/1 (T0): concurrency-safe cho updateStaffingOrder +
- * deleteStaffingOrder. Caller PHẢI mở transaction trước (qua
- * `withDbContext` / `$transaction`) — lock tự động được giải phóng khi
- * transaction COMMIT hoặc ROLLBACK.
+ * CORRECTION 2/1 (T0): key MUST là `p1a04:order:<staffingOrderId>` với
+ * signature `(hashtext($1)::bigint) & 9223372036854775807::bigint` — y hệt
+ * recruiter-assignment.service.ts và cùng gia đình với
+ * `p1a04:candidate:` (submission). KHÔNG dùng private namespace
+ * `staffing_order:<id>` (int4) — sẽ không serialize với các domain khác.
+ *
+ * Caller PHẢI mở transaction trước (qua `withDbContext` / `$transaction`).
  */
 async function acquireOrderAdvisoryLock(
   tx: Prisma.TransactionClient,
   orderId: string,
 ): Promise<void> {
   await tx.$executeRawUnsafe(
-    `SELECT pg_advisory_xact_lock(hashtext($1::text))`,
-    `staffing_order:${orderId}`,
+    "SELECT pg_advisory_xact_lock( (hashtext($1)::bigint) & 9223372036854775807::bigint )",
+    `p1a04:order:${orderId}`,
   );
 }
 
-/** Advisory lock cấp-slot — khoá từng slot khi sửa/delete. */
+/**
+ * Advisory lock cấp-slot — dùng cùng gia đình namespace với order lock
+ * (`p1a04:slot:<slotId>`) và cùng bit-masked signature. Khoá từng slot
+ * khi sửa/delete để slot-level guard không race với
+ * submission/placement creation chạy song song.
+ *
+ * CORRECTION 2/1 (T0): trước đây dùng `staffing_order_slot:<id>` với
+ * `hashtext($1::text)` (int4). Đổi sang canonical để cùng không gian lock
+ * với order/slot khác.
+ */
 async function acquireSlotAdvisoryLock(
   tx: Prisma.TransactionClient,
   slotId: string,
 ): Promise<void> {
   await tx.$executeRawUnsafe(
-    `SELECT pg_advisory_xact_lock(hashtext($1::text))`,
-    `staffing_order_slot:${slotId}`,
+    "SELECT pg_advisory_xact_lock( (hashtext($1)::bigint) & 9223372036854775807::bigint )",
+    `p1a04:slot:${slotId}`,
   );
 }
 

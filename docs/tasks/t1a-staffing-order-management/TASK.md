@@ -12,20 +12,21 @@
 | Assurance lane | `STANDARD` |
 | Audit mode | `NONE` |
 | Audit reason | T0 directive explicitly: "Không Tier 3/AUDIT mode" — manual Tier 1 self-review suffices; no public contract addition (state machine unchanged) and no auth/RLS expansion. CRITICAL-class surface (state machine + delete) is bounded by existing transitions and existing RLS — no new authority. Risk-accept: Tier 0. |
-| Spec version | `v1.0` |
+| Spec version | `v1.1` |
 | Status | `ACCEPTED` |
 | Planner | `Tier 1` |
 | Baseline | `598feacc456becd450dcdb3942d2046691af3a3b` (`origin/main`) |
+| Forward-merge head | `8e7f465e` (origin/main = `4a9ade6a`, merge with branch HEAD `f28a2fed` via `git merge --no-ff origin/main`, no rebase/force-push) |
 | Contract gate | `READY_TO_CODE` |
 | Decision state | `CLOSED` |
 | Test environment | `READY` |
 | Correction budget | `1` |
-| In-scope roots | `app/admin/staffing/`, `app/admin/staffing-orders/`, `app/api/staffing/orders/`, `src/domains/staffing/` |
+| In-scope roots | `app/admin/staffing/`, `app/admin/staffing-orders/`, `app/api/staffing/orders/`, `src/domains/staffing/`, `tests/db/` (v1.1) |
 | Forbidden paths | `prisma/`, `prisma/schema.prisma`, `prisma/migrations/`, `src/shared/auth/scopes/`, `app/api/auth/**`, `app/api/me/**`, `middleware.ts` |
 | Required gates | `pnpm typecheck`, `pnpm lint`, `pnpm test:unit`, `pnpm build`, `prisma validate`, `git diff --check`, `node .ai-pipeline/scripts/verify-encoding.mjs` |
-| Current execution round | `2` |
+| Current execution round | `3` |
 | Current audit round | `0` |
-| Next gate | `/deliver → /resolve` (PR CI 4/4 GREEN; stop before merge) |
+| Next gate | `/deliver → /resolve` (push forward-only into PR #108; CI 4/4 GREEN; stop before merge) |
 
 > Lane và audit là hai quyết định riêng. T0 đã chốt `STANDARD + NONE`.
 
@@ -75,6 +76,9 @@
 | `DEC-07` | Test chống regression: thêm 1 test domain-level cho `deleteStaffingOrder` guards và 1 test cho `updateStaffingOrderSlots` guards; 1 test static guard cho terminology của list page; 1 test static guard cho detail page role visibility | `CHOSEN` |
 | `DEC-08` | Lane STANDARD + Audit NONE — T0 đã chốt | `CHOSEN` |
 | `DEC-09` | Forbidden paths: KHÔNG đụng `prisma/`, không sửa `src/shared/auth/scopes/`, không mở rộng auth core | `CHOSEN` |
+| `DEC-10` (v1.1) | **Canonical order-lock namespace** — `order.service.ts` advisory lock dùng `p1a04:order:<staffingOrderId>` và `p1a04:slot:<slotId>`, với bit-masked signature `(hashtext($1)::bigint) & 9223372036854775807::bigint` — y hệt `recruiter-assignment.service.ts:140` (P1-A04) và cùng gia đình `p1a04:candidate:`. Bỏ private namespace cũ `staffing_order:<id>` / `staffing_order_slot:<id>` (int4) | `CHOSEN` |
+| `DEC-11` (v1.1) | **Real PostgreSQL race test** — viết integration test dùng 2 connection thật tới Postgres (không mock) cho cả order-delete race và slot-delete race, đặt trong `tests/db/`. Sử dụng env `INTEGRATION_DATABASE_URL` đã có sẵn cho CI. | `CHOSEN` |
+| `DEC-12` (v1.1) | **Vietnamese UI — `/admin/staffing-orders/[id]`** — xóa mọi raw `Slot` trong `edit-order-modal.tsx` line 311/352 (thay bằng `Vị trí tuyển #N` / `Vị trí tuyển mới #N` / `Vị trí tuyển này sẽ bị xoá khi lưu`); thay raw `{role}` ở `order-management-client.tsx:643` bằng `roleLabel(role)`; status enum thô đã được wrap bởi `staffingOrderStatusLabel()` sẵn ở header, không leak thêm. | `CHOSEN` |
 
 ### 3.1 Build vs Adopt
 
@@ -104,6 +108,9 @@
 | `RQ-08` | Public listing/apply fail-closed khi order `CLOSED/CANCELLED` (regression test) |
 | `RQ-09` | View authority giữ nguyên; create/edit/status giữ `ADMIN/HR_MANAGER/SALE`; phân công chuyên viên giữ `ADMIN/HR_MANAGER`; delete chỉ `ADMIN` |
 | `RQ-10` | Bổ sung test: UI list terminology, UI detail role visibility, transition state machine (đã có), edit guards, delete guards, fail-closed public |
+| `RQ-11` (v1.1) | **Canonical order-lock namespace**: `updateStaffingOrder` + `deleteStaffingOrder` dùng đúng `p1a04:order:<staffingOrderId>` (canonical, P1-A04); slot-level dùng `p1a04:slot:<slotId>`; bit-masked signature `(hashtext($1)::bigint) & 9223372036854775807::bigint`. Hai connection concurrent trên cùng `orderId` PHẢI serialize; lock giải phóng khi COMMIT/ROLLBACK. |
+| `RQ-12` (v1.1) | **Real PostgreSQL race test (không mock)**: 2 connection đồng thời, mỗi connection mở transaction riêng, một bên `deleteStaffingOrder`, một bên tạo `JobOpening` / `CandidateSubmission` ngay trước khi connection kia commit. Kết quả: connection delete phải thấy deps MỚI (vì lock + re-read) ⇒ trả 409 typed. Hai test con: order-delete + slot-delete. |
+| `RQ-13` (v1.1) | **Vietnamese UI** `/admin/staffing-orders/[id]`: không còn raw `Slot` / raw role / raw enum trong copy hiển thị operator. `edit-order-modal.tsx` 311/352 dùng label tiếng Việt. `order-management-client.tsx:643` dùng `roleLabel(role)`. |
 
 ### 4.2 Scope boundaries
 
@@ -152,6 +159,10 @@
 | `STEP-08` | Public fail-closed regression test | Thêm 1 test domain-level gọi `VISIBLE_ORDER_STATUSES`/`OPEN_ORDER_STATUSES` + mock Prisma; xác nhận filter áp dụng cho status `CLOSED`/`CANCELLED` | E-10 vitest pass | Test fail |
 | `STEP-09` | Full verification: `pnpm typecheck`, `pnpm lint`, `pnpm test:unit`, `pnpm build`, `prisma validate`, `node .ai-pipeline/scripts/verify-encoding.mjs`, `git diff --check` | Tất cả pass | E-11 to E-15 | Bất kỳ lệnh fail |
 | `STEP-10` | Commit + push branch; mở non-draft PR; chờ CI 4/4 GREEN; dừng trước merge | PR URL reported | E-16 gh run list | CI fail hoặc conflict |
+| `STEP-11` (v1.1) | `src/domains/staffing/order.service.ts` | Đổi `acquireOrderAdvisoryLock` / `acquireSlotAdvisoryLock` sang canonical namespace `p1a04:order:<id>` / `p1a04:slot:<id>` với bit-masked signature; update test mocks trong `order.service.test.ts`; sweep `src/shared/security/required-relation-sweep.static.test.ts` nếu line count thay đổi. | Targeted vitest + sweep | Test fail |
+| `STEP-12` (v1.1) | `tests/db/staffing-order-race.integration.test.ts` (NEW) | Real PostgreSQL race test với 2 connection: order-delete vs JobOpening insert; slot-delete vs CandidateSubmission insert. Dùng `INTEGRATION_DATABASE_URL` có sẵn. | `pnpm test:integration:db` | Test fail hoặc ENV_BLOCKED |
+| `STEP-13` (v1.1) | `app/admin/staffing-orders/[id]/edit-order-modal.tsx`, `order-management-client.tsx` | Bỏ raw `Slot` ở dòng 311/352; dùng `roleLabel(role)` ở dòng 643. | Targeted vitest | Test fail |
+| `STEP-14` (v1.1) | Full verification + push forward-only vào PR #108 | `pnpm typecheck`, `pnpm lint`, `pnpm test:unit`, `pnpm test:integration:db` (nếu có), `pnpm build`, `prisma validate`, `verify-encoding.mjs`, `git diff --check`; push; chờ CI 4/4 GREEN; stop before merge | All gates | CI fail |
 
 ## 6. Acceptance
 
@@ -168,6 +179,9 @@
 | `AC-07` | Public fail-closed: order `CLOSED`/`CANCELLED` không list, không apply | `E-10` regression test |
 | `AC-08` | Full verification: typecheck/lint/test:unit/build/prisma validate/encoding/diff check pass | `E-11`..`E-15` |
 | `AC-09` | PR CI 4/4 GREEN; dừng trước merge | `E-16` |
+| `AC-10` (v1.1) | Canonical order-lock: lock SQL chứa `p1a04:order:` và bit-masked `9223372036854775807::bigint`; KHÔNG còn `staffing_order:` private namespace; lock hai connection serialize | Targeted vitest + integration race test |
+| `AC-11` (v1.1) | Real PostgreSQL race test: order-delete + slot-delete với 2 connection thật; kết quả typed 409 khi concurrent insert; test pass trên `INTEGRATION_DATABASE_URL` | `pnpm test:integration:db` |
+| `AC-12` (v1.1) | Vietnamese UI: `edit-order-modal.tsx` line 311/352 không còn raw `Slot`; `order-management-client.tsx:643` dùng `roleLabel(role)`; static guard test confirm | Static guard |
 
 ### 6.2 Traceability
 
@@ -192,6 +206,8 @@
 | `RISK-02` | `DELETE` cascade ngầm qua Prisma `onDelete: Cascade` của `slots`/`assignments`/`jobOpenings` (xem `prisma/schema.prisma:432-433,487,506,509`) | Service check trước khi gọi `tx.staffingOrder.delete`; nếu có phụ thuộc thì trả 409, không gọi delete |
 | `RISK-03` | Read-only HR_STAFF thấy internal data nhạy cảm (salary, location) | Hiện đã có cùng data trong list page; không mở rộng so với LIST_ROLES — rollback nếu Tier 0 muốn siết |
 | `RISK-04` | Edit/Delete UI chưa idempotent → double-click gây duplicate action | Dùng pattern idempotency key + disable button khi pending (giống `RecruiterAssignmentManager`) |
+| `RISK-05` (v1.1) | Lock namespace drift: nếu tự ý tạo private namespace, hai domain service serialize với nhau trên cùng orderId sẽ KHÔNG thực sự serialize. | BẮT BUỘC dùng canonical `p1a04:order:` / `p1a04:slot:` với bit-mask `9223372036854775807::bigint`; test sweep grep SQL phát hiện namespace lạ |
+| `RISK-06` (v1.1) | Integration test race flake: 2 connection có thể không race đúng thứ tự nếu sleep quá ngắn | Dùng `pg_advisory_xact_lock` thay vì timing trick; COMMIT/ROLLBACK rõ ràng; test verify typed 409 thay vì đếm round |
 
 ## 8. Open Questions
 
@@ -213,3 +229,5 @@ Tier 1 append sau khi chạy self-review; audit NONE resolve trực tiếp từ 
 | `v1.0` | 2026-10-05 | CORRECTION 1/1 in-flight: Status ACCEPTED → CORRECTING; Execution round 1 → 2 | T0 correction 1/1 PR #108: (1) full Vietnamese UI copy (Order → nhu cầu tuyển dụng, Slot → vị trí tuyển, JobOpening → vị trí tuyển nội bộ, JobPosting → tin tuyển dụng, role → vai trò, terminal → trạng thái kết thúc; no internal field in user-facing copy); (2) concurrent-safe delete/update-slot (advisory locks + re-read under lock); (3) DELETE dùng `withIdempotency` (route key `DELETE:/api/staffing/orders/:id`, requires `x-idempotency-key`); (4) PUT strict validation (hourlyRateVnd safe int ≥ 0 / null, ISO dates, validTo≥validFrom, HH:mm times); (5) ADMIN delete visible on CLOSED/CANCELLED (backend guard is authority) |
 | `v1.0` | 2026-10-05 | CORRECTION 1/1 implementation: Implementation SHA `d94b9a66` | Branch `codex/t1a-staffing-order-management`; push OK; pre-push gates all GREEN (4386 unit tests, typecheck, lint, build, encoding, diff-check); static guard `required-relation-sweep` updated for new post-lock select (39→40 hits in `src/`); 21 new route tests in `app/api/staffing/orders/[id]/route.test.ts`; CI run 37294546190 (`docs(t1a)`) Quality+Integration both `success` |
 | `v1.0` | 2026-10-05 | CORRECTION 1/1 closed: Status CORRECTING → ACCEPTED; final commit `6b765e9c` | Both PR #108 CI runs (code commit `d94b9a66` run 37293868400 + docs commit `6b765e9c` run 37294546190) GREEN: Quality (schema·typecheck·lint·unit·build) success, Integration (DB tests·fail-closed) success; PR state OPEN, mergeable MERGEABLE; stop before merge per T0 directive |
+
+| `v1.1` | 2026-10-05 | CORRECTION 2/1: Status ACCEPTED → CORRECTING; Execution round 2 → 3; Forward-merge head `8e7f465e` (`git merge --no-ff origin/main` on top of `f28a2fed`, NO rebase/force-push) | T0 correction 2/1 PR #108: (1) **Concurrency** — `order.service.ts` advisory lock MUST use the **canonical P1-A04 order-lock namespace** `p1a04:order:<staffingOrderId>` with canonical bit-masked signature `(hashtext($1)::bigint) & 9223372036854775807::bigint` — same key/pattern as `recruiter-assignment.service.ts:140` (P1-A04). The previous private namespaces `staffing_order:<id>` and `staffing_order_slot:<id>` with bare `hashtext($1::text)` (int4) MUST be replaced. Slot-level follows the same family: `p1a04:slot:<slotId>`. (2) **Race re-read under lock** — keep order: lock order → re-read order+slots → lock slots → re-read deps (jobOpenings, submissions, assignments, recruiterAssignments) → validate → mutate. Conflict path returns typed 409, never 500. (3) **Real PostgreSQL integration test** (two real connections, NOT mock) for order-delete race + slot-delete race. (4) **Vietnamese copy** — remove raw `Slot`, raw role, raw status enum from `/admin/staffing-orders/[id]` UI detail. `edit-order-modal.tsx` line 311 + 352 still contain raw `Slot` strings; `order-management-client.tsx:643` renders raw `{role}` instead of `roleLabel(role)`. Use `roleLabel()` and existing dictionary/status labels. |

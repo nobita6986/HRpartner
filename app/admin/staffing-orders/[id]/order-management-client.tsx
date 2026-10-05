@@ -41,6 +41,7 @@ import {
   staffingOrderStatusLabel,
   staffingOrderStatusTone,
 } from '@/src/domains/staffing/staffing-order-ui';
+import { roleLabel } from '@/src/shared/i18n/role-labels';
 
 import { RecruiterAssignmentManager } from './recruiter-assignment-manager';
 import { EditOrderModal } from './edit-order-modal';
@@ -640,7 +641,7 @@ export function OrderManagementClient({
               }}
               className="rounded border px-3 py-2 text-xs"
             >
-              Chế độ chỉ đọc — vai trò <span className="font-mono">{role}</span> có quyền xem nhưng không thể thao tác.
+              Chế độ chỉ đọc — vai trò <span>{roleLabel(role)}</span> có quyền xem nhưng không thể thao tác.
             </div>
           )}
         </div>

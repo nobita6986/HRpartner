@@ -12,11 +12,11 @@
 | Baseline | `598feacc456becd450dcdb3942d2046691af3a3b` (`origin/main`) |
 | Branch | `codex/t1a-staffing-order-management` |
 | Worktree | `C:/CodeApp/HrP-worktrees/t1a-staffing-order-management` |
-| Spec version | `v1.0` |
+| Spec version | `v1.1` |
 | Acceptance gate | STANDARD + NONE (T0 pre-authorized) |
 | Next gate | `/deliver → /resolve` (PR pushed, CI monitoring, stop before merge) |
-| Implementation SHA | `d94b9a66` (CORRECTION 1/1) |
-| Closing line | CORRECTION 1/1 in flight: all 5 T0 corrections implemented — Vietnamese copy, advisory-lock concurrency, DELETE idempotency, PUT validation, ADMIN delete on CLOSED/CANCELLED. Awaiting CI 4/4 GREEN. |
+| Implementation SHA | `d94b9a66` (CORRECTION 1/1); CORRECTION 2/1 code pending commit + push |
+| Closing line | CORRECTION 1/1 closed (CI 4/4 GREEN). CORRECTION 2/1: canonical order-lock namespace + real PostgreSQL 2-connection race test + Vietnamese copy cleanup. Awaiting CI 4/4 GREEN on the new commit. |
 
 ## 1. Outcome delivered
 
@@ -175,6 +175,7 @@ No new enum, no new state.
 | `v1.0` | 2026-10-05 | Status ACCEPTED; PR opened | All gates GREEN; PR pending CI 4/4 GREEN |
 | `v1.0` | 2026-10-05 | CORRECTION 1/1: Implementation SHA `d94b9a66` | T0 5-point correction: Vietnamese copy, advisory-lock concurrency, DELETE idempotency, PUT validation 400, ADMIN delete on CLOSED/CANCELLED; all gates GREEN (4386 unit tests, typecheck, lint, build, encoding, diff-check); awaiting CI 4/4 GREEN |
 | `v1.0` | 2026-10-05 | CORRECTION 1/1 closed: final doc commit `6b765e9c` | Both PR #108 CI runs GREEN: code commit `d94b9a66` (run 37293868400) + docs commit `6b765e9c` (run 37294546190) — Quality + Integration jobs all `success`. Stop before merge per T0 directive. |
+| `v1.1` | 2026-10-05 | CORRECTION 2/1: forward-merge head `8e7f465e` (`git merge --no-ff origin/main` on top of `f28a2fed`); canonical order-lock namespace `p1a04:order:` / `p1a04:slot:` with bit-masked `(hashtext($1)::bigint) & 9223372036854775807::bigint` (y hệt `recruiter-assignment.service.ts:140`); real PostgreSQL 2-connection race test (`tests/db/staffing-order-canonical-lock.integration.test.ts`, 3 cases); raw `Slot` removed from `edit-order-modal.tsx:311/352`; raw `{role}` replaced with `roleLabel(role)` in `order-management-client.tsx:643`; static guard extended; required-relation-sweep updated for line drift; awaiting CI 4/4 GREEN | T0 4-point correction 2/1 PR #108: (1) concurrency — canonical order-lock namespace + re-read under lock; (2) real PostgreSQL race test (2 connections, not mock); (3) Vietnamese UI — remove raw `Slot` from `edit-order-modal.tsx`, use `roleLabel(role)` in `order-management-client.tsx`; (4) static guard for the new constraints |
 
 ## 9. Correction 1/1 summary (T0, 2026-10-05)
 
@@ -190,7 +191,7 @@ No `slotsNeeded` / `validFrom` / `CANCELLED` raw enum in user-facing strings.
 Enum/field/error-code unchanged in TS/backend.
 
 ### 2. Concurrency-safe delete/update (order.service.ts)
-`acquireOrderAdvisoryLock(tx, 'staffing_order:${orderId}')` + per-slot lock.
+`acquireOrderAdvisoryLock(tx, 'p1a04:order:${orderId}')` + per-slot lock với cùng bit-masked signature `(hashtext($1)::bigint) & 9223372036854775807::bigint` — y hệt `recruiter-assignment.service.ts:140` (P1-A04) và cùng gia đình `p1a04:candidate:`.
 Re-read deps after lock before mutation:
 - `updateStaffingOrder`: locks order → reads → locks slots → re-reads slots → validates → applies.
 - `deleteStaffingOrder`: locks order → reads → locks slots → re-reads counts/openings → validates → deletes.

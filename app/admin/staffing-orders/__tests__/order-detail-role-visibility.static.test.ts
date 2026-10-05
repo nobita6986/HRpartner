@@ -119,9 +119,16 @@ describe('t1a-staffing-order-management — /admin/staffing-orders/[id] role vis
   });
 
   // CORRECTION 1/1 (T0): banner copy dùng "vai trò" thay vì "role".
-  it('read-only banner dùng "vai trò" (không hiện "role")', () => {
+  // CORRECTION 2/1 (T0): phải dùng `roleLabel(role)` (canonical helper) thay
+  // vì in raw `{role}` enum; KHÔNG dùng `font-mono` cho vai trò (là label, không phải mã).
+  it('read-only banner dùng "vai trò" + roleLabel(role), KHÔNG hiện raw role enum', () => {
     expect(CLIENT_SOURCE).toMatch(/vai trò/);
-    expect(CLIENT_SOURCE).not.toMatch(/role \{role\} có quyền xem/);
+    expect(CLIENT_SOURCE).toMatch(/roleLabel\(role\)/);
+    // raw `{role}` không còn xuất hiện trong banner (đã thay bằng roleLabel).
+    expect(CLIENT_SOURCE).not.toMatch(/\{role\} có quyền xem/);
+    // font-mono KHÔNG còn gắn với vai trò (giữ ở nơi khác OK).
+    // Kiểm tra cụ thể dòng banner: "vai trò ... có quyền xem"
+    expect(CLIENT_SOURCE).not.toMatch(/vai trò[^<]*<span[^>]*font-mono[^>]*>\{role\}/);
   });
 
   // RQ-05: toolbar chỉ render khi canEdit.
@@ -167,6 +174,18 @@ describe('t1a-staffing-order-management — /admin/staffing-orders/[id] role vis
     expect(EDIT_MODAL_SOURCE).toMatch(/data-testid="edit-add-slot"/);
     expect(EDIT_MODAL_SOURCE).toMatch(/Đánh dấu xoá/);
     expect(EDIT_MODAL_SOURCE).toMatch(/đã phát sinh/);
+  });
+
+  // CORRECTION 2/1 (T0): EditOrderModal KHÔNG hiển thị raw "Slot" trong
+  // copy operator-facing. Phải dùng label tiếng Việt "Vị trí tuyển".
+  it('EditOrderModal không hiển thị raw "Slot" trong copy user-facing (CORRECTION 2/1)', () => {
+    // Header row per draft: phải bắt đầu bằng "Vị trí tuyển" / "Vị trí tuyển mới"
+    expect(EDIT_MODAL_SOURCE).toMatch(/Vị trí tuyển #\$\{idx \+ 1\}/);
+    expect(EDIT_MODAL_SOURCE).toMatch(/Vị trí tuyển mới #\$\{idx \+ 1\}/);
+    // Không được còn "Slot #" / "Slot mới" / "Slot này" trong copy.
+    expect(EDIT_MODAL_SOURCE).not.toMatch(/`Slot #\$\{idx/);
+    expect(EDIT_MODAL_SOURCE).not.toMatch(/`Slot mới #/);
+    expect(EDIT_MODAL_SOURCE).not.toMatch(/Slot này sẽ bị xoá/);
   });
 
   it('EditOrderModal KHÔNG gửi projectId (immutable)', () => {

@@ -308,7 +308,7 @@ export function EditOrderModal({ order, canEdit, onClose, onSaved }: EditOrderMo
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span style={{ color: 'var(--on-surface)' }} className="text-sm font-semibold">
-                      {d.id ? `Slot #${idx + 1} (${d.positionCode})` : `Slot mới #${idx + 1}`}
+                      {d.id ? `Vị trí tuyển #${idx + 1} (${d.positionCode})` : `Vị trí tuyển mới #${idx + 1}`}
                     </span>
                     <div className="flex items-center gap-2 text-xs">
                       {d.id && d.locked && (
@@ -349,7 +349,7 @@ export function EditOrderModal({ order, canEdit, onClose, onSaved }: EditOrderMo
                       style={{ color: 'var(--on-surface-variant)' }}
                       className="mt-2 text-xs italic"
                     >
-                      Slot này sẽ bị xoá khi lưu.
+                      Vị trí tuyển này sẽ bị xoá khi lưu.
                     </p>
                   ) : (
                     <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">

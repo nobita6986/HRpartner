@@ -139,12 +139,12 @@ const EXPECTED_HITS = [
   //   - `order.service.ts:428` `updateStaffingOrder` re-read slots — line shift 387 → 428.
   //   - `order.service.ts:459` `updateStaffingOrder` re-read slots.jobOpening
   //     (thêm mới — sweep phát hiện thêm 1 hit).
-  'src/domains/staffing/order.service.ts:192 project',
-  'src/domains/staffing/order.service.ts:218 project',
-  'src/domains/staffing/order.service.ts:331 project',
-  'src/domains/staffing/order.service.ts:336 jobOpening',
-  'src/domains/staffing/order.service.ts:428 jobOpening',
-  'src/domains/staffing/order.service.ts:459 jobOpening',
+  'src/domains/staffing/order.service.ts:207 project',
+  'src/domains/staffing/order.service.ts:233 project',
+  'src/domains/staffing/order.service.ts:346 project',
+  'src/domains/staffing/order.service.ts:351 jobOpening',
+  'src/domains/staffing/order.service.ts:443 jobOpening',
+  'src/domains/staffing/order.service.ts:474 jobOpening',
   'src/domains/staffing/submission.service.ts:204 project',
   // AFF-04 STEP-04: re-read SourceClaim -> Worker.userId under lock for
   // self-referral classification. Worker is required in schema, so the
@@ -470,6 +470,12 @@ describe('quan hệ BẮT BUỘC trên bảng bị RLS che: tập vị trí sele
     // entry (jobOpening@459); các entries cũ line shift do thêm 2 hàm
     // mới (`acquireOrderAdvisoryLock`/`acquireSlotAdvisoryLock` helpers
     // + 2 hàm delete). Net +1 entry: 39 → 40 src hits.
+    // CORRECTION 2/1 (2026-10-05): advisory lock đổi sang canonical
+    // `p1a04:order:` / `p1a04:slot:` với bit-masked signature (thêm
+    // `(hashtext($1)::bigint) & 9223372036854775807::bigint` so với
+    // `hashtext($1::text)` cũ). Body dài hơn ⇒ line shift 6 entries
+    // order.service.ts: 192/218/331/336/428/459 → 207/233/346/351/443/474.
+    // Tổng entries KHÔNG đổi (40); chỉ line literals shift.
     expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(40);
   });
 });

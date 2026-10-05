@@ -655,13 +655,15 @@ describe('order.service', () => {
       const tx = makeDeleteMocks({ existing });
       await deleteStaffingOrder(tx as any, ADMIN_CTX, 'o1');
       // Lock key cho order + 2 advisory_lock call (order + slot cho mỗi
-      // slot đã enumerate).
+      // slot đã enumerate). CORRECTION 2/1: canonical namespace `p1a04:order:`
+      // với bit-masked signature.
       const locks = (tx.$executeRawUnsafe as MockFn).mock.calls.filter(
         (c: unknown[]) => typeof c[0] === 'string' && String(c[0]).includes('pg_advisory_xact_lock'),
       );
       expect(locks.length).toBeGreaterThanOrEqual(1);
       expect(String(locks[0][0])).toMatch(/pg_advisory_xact_lock/);
-      expect(String(locks[0][1])).toContain('staffing_order:o1');
+      expect(String(locks[0][0])).toMatch(/9223372036854775807::bigint/);
+      expect(String(locks[0][1])).toContain('p1a04:order:o1');
     });
 
     it('re-read dưới lock: deps tăng giữa findFirst và findUnique → fail-closed', async () => {
@@ -821,8 +823,11 @@ describe('order.service', () => {
         (c: unknown[]) => typeof c[0] === 'string' && String(c[0]).includes('pg_advisory_xact_lock'),
       );
       expect(lockCalls.length).toBeGreaterThanOrEqual(1);
-      // First lock should be on order key
-      expect(String(lockCalls[0][1])).toContain('staffing_order:o1');
+      // First lock should be on order key. CORRECTION 2/1: canonical
+      // `p1a04:order:` namespace with bit-masked signature.
+      expect(String(lockCalls[0][0])).toMatch(/pg_advisory_xact_lock/);
+      expect(String(lockCalls[0][0])).toMatch(/9223372036854775807::bigint/);
+      expect(String(lockCalls[0][1])).toContain('p1a04:order:o1');
     });
 
     it('re-read dưới lock: submissions được tạo concurrent trên slot → fail-closed', async () => {
