@@ -307,6 +307,31 @@ describe("P1-A1 migration chain proof (C-05)", () => {
           "migration.sql",
         ),
       );
+      // hrp-t1c-jobposting-media-youtube (T1C): apply the JobPosting media + YouTube
+      // ADD-only migration SQL on top of the predecessor DB. The current generated
+      // Prisma client (from REPO_ROOT's schema.prisma) emits INSERT with
+      // `youtube_video_id` on `job_postings`; without this step the column does not
+      // exist in the ephemeral DB and Prisma throws P2022 at
+      // `ephemeral.jobPosting.create()` below.
+      //
+      // Additive compatibility migration: applied AFTER the predecessor chain +
+      // P1-A0.1 + T1B (so the table and prior stamp columns exist) and BEFORE the
+      // Prisma clients are instantiated (so the `ephemeral` client generated from
+      // the same schema can INSERT all current fields). The chain proof's intent is
+      // preserved because 20261005200000_jp_youtube_video_id is purely additive
+      // (NULL column) and independent of A1 (it does not modify A1's function
+      // signature, prosecdef, search_path, grants, or any catalog object the A1
+      // assertions inspect).
+      applyMigrationFile(
+        ephemeralUrl,
+        path.join(
+          REPO_ROOT,
+          "prisma",
+          "migrations",
+          "20261005200000_jp_youtube_video_id",
+          "migration.sql",
+        ),
+      );
     } finally {
       rmSync(staging.root, { recursive: true, force: true });
     }
