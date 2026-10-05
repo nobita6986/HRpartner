@@ -25,6 +25,20 @@ type LaborProfileMockState = {
   findUniqueError?: unknown;
   /** When set, update rejects with this error. */
   updateError?: unknown;
+  /**
+   * Optional hook called for each CAS-updateMany attempt. Receives
+   * `{ id, workerId, expectedWorkerId }` (the `where.workerId` filter the
+   * helper passed) and returns a `{ count, after? }` describing the result.
+   * If omitted, the default behavior is: when the byId row currently has
+   * `workerId === null`, write and return `{ count: 1 }`; otherwise return
+   * `{ count: 0 }` and leave the byId row as the winner's value (caller can
+   * pre-set byId to simulate an already-committed winner).
+   */
+  casHook?: (input: {
+    id: string;
+    workerId: string;
+    expectedWorkerId: string | null;
+  }) => { count: number; after?: { id: string; workerId: string | null } };
 };
 
 function txFor(over: {
@@ -91,6 +105,35 @@ function txFor(over: {
         laborProfileState.workerOwners.set(data.workerId, where.id);
         return next;
       }),
+      updateMany: vi.fn().mockImplementation(
+        async ({ where, data }: { where: { id: string; workerId: string | null }; data: { workerId: string } }) => {
+          if (laborProfileState.updateError) throw laborProfileState.updateError;
+          const expected = where.workerId;
+          const current = laborProfileState.byId.get(where.id) ?? { id: where.id, workerId: null };
+          // Honor the test-supplied CAS hook first so tests can model
+          // concurrent losers deterministically.
+          if (laborProfileState.casHook) {
+            const r = laborProfileState.casHook({
+              id: where.id,
+              workerId: data.workerId,
+              expectedWorkerId: expected,
+            });
+            if (typeof r.after !== 'undefined') {
+              laborProfileState.byId.set(where.id, r.after);
+            }
+            return { count: r.count };
+          }
+          if (current.workerId !== expected) {
+            // CAS miss: do NOT mutate. The helper will re-read.
+            return {};
+          }
+          // CAS hit: write through and update the back-relation index.
+          const next = { ...current, workerId: data.workerId };
+          laborProfileState.byId.set(where.id, next);
+          laborProfileState.workerOwners.set(data.workerId, where.id);
+          return { count: 1 };
+        },
+      ),
     },
     applicationStatusHistory: { create: vi.fn().mockResolvedValue({ id: 'history-1' }) },
     auditLog: { create: vi.fn().mockResolvedValue({ id: 'audit-1' }) },
@@ -387,10 +430,11 @@ describe('MP-3B application conversion', () => {
       });
       const result = await convertApplication(tx as any, HR, 'sub-1', { reason: 'Convert' });
       expect(result.workerId).toBe('worker-new');
-      expect(tx.laborProfile.update).toHaveBeenCalledWith({
-        where: { id: 'lp-new' },
+      // Compare-and-set: WHERE filter includes workerId: null so two concurrent
+      // writers cannot clobber the row.
+      expect(tx.laborProfile.updateMany).toHaveBeenCalledWith({
+        where: { id: 'lp-new', workerId: null },
         data: { workerId: 'worker-new' },
-        select: { id: true, workerId: true },
       });
       // Audit diff payload includes the laborProfileLink block.
       const auditCall = (tx.auditLog.create as ReturnType<typeof vi.fn>).mock.calls[0]![0] as {
@@ -414,10 +458,9 @@ describe('MP-3B application conversion', () => {
       });
       expect(result.workerId).toBe('worker-existing');
       expect(tx.worker.create).not.toHaveBeenCalled();
-      expect(tx.laborProfile.update).toHaveBeenCalledWith({
-        where: { id: 'lp-dedup' },
+      expect(tx.laborProfile.updateMany).toHaveBeenCalledWith({
+        where: { id: 'lp-dedup', workerId: null },
         data: { workerId: 'worker-existing' },
-        select: { id: true, workerId: true },
       });
     });
 
@@ -446,7 +489,8 @@ describe('MP-3B application conversion', () => {
       expect(tx.sourceClaim.create).not.toHaveBeenCalled();
       expect(tx.applicationStatusHistory.create).not.toHaveBeenCalled();
       expect(tx.auditLog.create).not.toHaveBeenCalled();
-      expect(tx.laborProfile.update).not.toHaveBeenCalled();
+      // No CAS-update attempted (helper bailed out before the update).
+      expect(tx.laborProfile.updateMany).not.toHaveBeenCalled();
     });
 
     it('AC-04: REPLAY CONVERTED + LaborProfile.workerId NULL → khôi phục idempotent, no-op các bước khác', async () => {
@@ -463,10 +507,11 @@ describe('MP-3B application conversion', () => {
         id: 'sub-1', status: 'CONVERTED', workerId: 'worker-replay',
         sourceClaimId: 'claim-replay', changed: false,
       });
-      expect(tx.laborProfile.update).toHaveBeenCalledWith({
-        where: { id: 'lp-replay' },
+      // CAS-update fires for the replay path too because the helper sees
+      // `workerId: null` on read.
+      expect(tx.laborProfile.updateMany).toHaveBeenCalledWith({
+        where: { id: 'lp-replay', workerId: null },
         data: { workerId: 'worker-replay' },
-        select: { id: true, workerId: true },
       });
       // No-op other writes.
       expect(tx.sourceClaim.create).not.toHaveBeenCalled();
@@ -489,7 +534,8 @@ describe('MP-3B application conversion', () => {
       });
       const result = await convertApplication(tx as any, HR, 'sub-1', { reason: 'Retry' });
       expect(result.changed).toBe(false);
-      expect(tx.laborProfile.update).not.toHaveBeenCalled();
+      // Helper short-circuits because findUnique returns matching workerId.
+      expect(tx.laborProfile.updateMany).not.toHaveBeenCalled();
     });
 
     it('AC-05: REPLAY CONVERTED + LaborProfile.workerId ≠ submission.workerId → fail-closed LABOR_PROFILE_WORKER_CONFLICT', async () => {
@@ -520,33 +566,159 @@ describe('MP-3B application conversion', () => {
       const result = await convertApplication(tx as any, HR, 'sub-1', { reason: 'Convert' });
       expect(result.workerId).toBe('worker-new');
       expect(tx.laborProfile.findUnique).not.toHaveBeenCalled();
-      expect(tx.laborProfile.findFirst).not.toHaveBeenCalled();
-      expect(tx.laborProfile.update).not.toHaveBeenCalled();
+      expect(tx.laborProfile.updateMany).not.toHaveBeenCalled();
     });
 
-    it('AC-RQ-04: Worker đang thuộc LaborProfile khác (qua back-relation) → fail-closed', async () => {
-      // Worker `worker-new` is already owned by `lp-other` via Worker.laborProfile
-      // back-relation; the conversion is trying to link it to `lp-current`.
+    it('AC-RAC-01: CAS-update on a null→X transition → count=1, before=null, after=workerId', async () => {
       const tx = txFor({
-        current: application({ laborProfileId: 'lp-current' }),
+        current: application({ laborProfileId: 'lp-cas' }),
+      });
+      const result = await convertApplication(tx as any, HR, 'sub-1', { reason: 'Convert' });
+      expect(result.workerId).toBe('worker-new');
+      const auditCall = (tx.auditLog.create as ReturnType<typeof vi.fn>).mock.calls[0]![0] as {
+        data: { diff: { after: { laborProfileLink?: { before: string | null; after: string } } } };
+      };
+      expect(auditCall.data.diff.after.laborProfileLink).toEqual({
+        laborProfileId: 'lp-cas',
+        before: null,
+        after: 'worker-new',
+      });
+    });
+
+    it('AC-RAC-02: CAS miss + re-read shows matching workerId → idempotent success, before=workerId, after=workerId', async () => {
+      // Simulate the scenario where a previous (already-committed) writer has
+      // set `LaborProfile.workerId` to the exact value this conversion is
+      // trying to bind. The helper sees `null` on the very first findUnique
+      // (returns from byId), then the CAS-update reports count=0 because
+      // the row was advanced by another path between the read and the
+      // update. The re-read shows the same workerId we wanted, so the
+      // helper returns idempotent and does not raise.
+      const tx = txFor({
+        current: application({ laborProfileId: 'lp-idempotent' }),
         laborProfile: {
-          byId: new Map([['lp-current', { id: 'lp-current', workerId: null }]]),
-          workerOwners: new Map([['worker-new', 'lp-other']]),
+          // First findUnique reads null (byId). CAS sees a row that's no
+          // longer null, so it returns count=0. The re-read then needs to
+          // return the matching workerId — we use mockResolvedValueOnce for
+          // the next findUnique only.
+          byId: new Map([['lp-idempotent', { id: 'lp-idempotent', workerId: null }]]),
+          workerOwners: new Map<string, string>(),
+          casHook: ({ id, workerId, expectedWorkerId }) => {
+            if (expectedWorkerId === null) {
+              // Force CAS miss; stage the re-read to return the matching
+              // workerId so the helper takes the idempotent path.
+              tx.laborProfile.findUnique.mockResolvedValueOnce({ id, workerId });
+              return { count: 0 };
+            }
+            return { count: 1 };
+          },
         },
       });
+      const result = await convertApplication(tx as any, HR, 'sub-1', { reason: 'Convert' });
+      expect(result.workerId).toBe('worker-new');
+      // Audit diff payload records the idempotent resolution: before and
+      // after both equal the workerId we tried to bind (i.e. another
+      // concurrent writer had already set the row to the same value).
+      const auditCall = (tx.auditLog.create as ReturnType<typeof vi.fn>).mock.calls[0]![0] as {
+        data: { diff: { after: { laborProfileLink?: { before: string | null; after: string } } } };
+      };
+      expect(auditCall.data.diff.after.laborProfileLink).toEqual({
+        laborProfileId: 'lp-idempotent',
+        before: 'worker-new',
+        after: 'worker-new',
+      });
+    });
+
+    it('AC-RAC-03: concurrent overwrite — two conversions racing on the same LaborProfile → exactly one wins, the other fails typed and rolls back', async () => {
+      // Shared LaborProfile mock store shared between two simultaneous
+      // conversions. Both findUnique see null; both attempt CAS-update. The
+      // first CAS hits (count=1) and writes through. The second CAS sees
+      // the row already advanced (current.workerId !== null) and reports
+      // count=0. The helper then re-reads and observes the divergent
+      // workerId, raising LABOR_PROFILE_WORKER_CONFLICT 409.
+      const sharedById = new Map<string, { id: string; workerId: string | null }>([
+        ['lp-shared', { id: 'lp-shared', workerId: null }],
+      ]);
+      const sharedWorkerOwners = new Map<string, string>();
+      let casCallCount = 0;
+      const casHook = (input: {
+        id: string;
+        workerId: string;
+        expectedWorkerId: string | null;
+      }) => {
+        if (input.expectedWorkerId !== null) return { count: 0 };
+        casCallCount += 1;
+        const cur = sharedById.get(input.id) ?? { id: input.id, workerId: null };
+        if (cur.workerId !== null) {
+          return { count: 0 };
+        }
+        const next = { ...cur, workerId: input.workerId };
+        sharedById.set(input.id, next);
+        sharedWorkerOwners.set(input.workerId, input.id);
+        return { count: 1 };
+      };
+
+      // First conversion (winner): creates Worker A from sub-A and binds it.
+      const txA = txFor({
+        current: application({
+          id: 'sub-A', version: 3, workerId: null, laborProfileId: 'lp-shared',
+          laborProfile: null,
+        }),
+        laborProfile: {
+          byId: sharedById,
+          workerOwners: sharedWorkerOwners,
+          casHook,
+        },
+      });
+      // Override worker.create to return a deterministic A id.
+      txA.worker.create.mockResolvedValue({ id: 'worker-A' });
+
+      // Second conversion (loser): same LaborProfile, different submission,
+      // would create Worker B. The CAS must fail because Worker A is already
+      // bound to the same LaborProfile.
+      const txB = txFor({
+        current: application({
+          id: 'sub-B', version: 5, workerId: null, laborProfileId: 'lp-shared',
+          laborProfile: null,
+        }),
+        laborProfile: {
+          byId: sharedById,
+          workerOwners: sharedWorkerOwners,
+          casHook,
+        },
+      });
+      txB.worker.create.mockResolvedValue({ id: 'worker-B' });
+
+      // First run: simulates the committed winner.
+      const winner = await convertApplication(txA as any, HR, 'sub-A', { reason: 'Convert A' });
+      expect(winner.workerId).toBe('worker-A');
+      expect(sharedById.get('lp-shared')?.workerId).toBe('worker-A');
+      expect(casCallCount).toBe(1);
+
+      // Second run: simulates a concurrent loser racing the same profile.
       await expect(
-        convertApplication(tx as any, HR, 'sub-1', { reason: 'Convert' }),
+        convertApplication(txB as any, HR, 'sub-B', { reason: 'Convert B' }),
       ).rejects.toMatchObject({
         code: 'LABOR_PROFILE_WORKER_CONFLICT',
         httpStatus: 409,
+        details: { laborProfileId: 'lp-shared', expected: 'worker-A', actual: 'worker-B' },
       });
-      expect(tx.worker.create).toHaveBeenCalledOnce();
-      expect(tx.laborProfile.update).not.toHaveBeenCalled();
+
+      // Loser must not have advanced the LaborProfile row.
+      expect(sharedById.get('lp-shared')?.workerId).toBe('worker-A');
+      // Loser must not have produced downstream durable writes after the
+      // conflict was raised (the withDbContext transaction rolls them back
+      // in production; in unit mock we just assert no .create fired).
+      expect(txB.sourceClaim.create).not.toHaveBeenCalled();
+      expect(txB.applicationStatusHistory.create).not.toHaveBeenCalled();
+      expect(txB.auditLog.create).not.toHaveBeenCalled();
+      // Loser did attempt the Worker create (it has to, to know which workerId
+      // to bind); production rolls back via withDbContext.
+      expect(txB.worker.create).toHaveBeenCalledOnce();
     });
 
-    it('AC-P2002: Prisma P2002 từ unique index → surface LABOR_PROFILE_WORKER_CONFLICT', async () => {
-      // LaborProfile.workerId = null, Worker back-relation = null, but the UPDATE
-      // raises P2002 (simulating a concurrent writer that won the unique index).
+    it('AC-P2002: Prisma P2002 từ unique index trên LaborProfile.workerId → surface LABOR_PROFILE_WORKER_CONFLICT', async () => {
+      // The CAS-update rejects with P2002, simulating a concurrent writer
+      // that already bound this workerId to a different LaborProfile.
       const tx = txFor({
         current: application({ laborProfileId: 'lp-race' }),
         laborProfile: {

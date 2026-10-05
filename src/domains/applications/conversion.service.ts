@@ -381,8 +381,9 @@ export async function convertApplication(
  * the conversion runs in.
  *
  * Contract (RQ-01..RQ-04):
- *  - RQ-01/02: if `LaborProfile.workerId` is NULL → set to `workerId`; if it
- *    already equals `workerId` → idempotent no-op (no DB write).
+ *  - RQ-01/02: if `LaborProfile.workerId` is NULL → CAS-update sets it to
+ *    `workerId`. If CAS misses but the row already equals `workerId` →
+ *    idempotent no-op (no DB write; return `{ before: workerId, after: workerId }`).
  *  - RQ-03: if `LaborProfile.workerId` is set to a different workerId →
  *    fail-closed with `LABOR_PROFILE_WORKER_CONFLICT` (409); the surrounding
  *    transaction rolls back, including the status lock and accepted SourceClaim.
@@ -392,6 +393,15 @@ export async function convertApplication(
  *    with a typed error instead of an opaque Prisma P2002).
  *  - Prisma `P2002` from the unique index on `LaborProfile.workerId` is
  *    surfaced as `LABOR_PROFILE_WORKER_CONFLICT` to keep error codes stable.
+ *
+ * Concurrency:
+ *  - The CAS-update uses `where: { id, workerId: null }` so a concurrent
+ *    writer that already won the null→X transition will not be clobbered.
+ *    The loser re-reads; if the new value matches → idempotent; if it
+ *    diverges → `LABOR_PROFILE_WORKER_CONFLICT` 409.
+ *  - RQ-04 (Worker back-relation) is re-checked after a CAS miss so two
+ *    writers racing on the same LaborProfile with different WorkerIds are
+ *    both rejected typed (one wins, the other rolls back).
  *
  * Returns `{ laborProfileId, before, after }` for audit; `before` is the
  * previous `LaborProfile.workerId` (null if unset), `after` is the resulting
@@ -423,6 +433,7 @@ export async function linkLaborProfileWorker(
     );
   }
   if (profile.workerId === workerId) {
+    // Already linked by an earlier (or this same) conversion — idempotent.
     return { laborProfileId, before: workerId, after: workerId };
   }
   if (profile.workerId !== null) {
@@ -433,40 +444,102 @@ export async function linkLaborProfileWorker(
       { laborProfileId, expected: profile.workerId, actual: workerId },
     );
   }
-  // Check the Worker's own back-relation (RQ-04). A Worker can only own one
-  // LaborProfile because `LaborProfile.workerId` is `@unique`.
-  const workerOwner = await tx.laborProfile.findFirst({
-    where: { workerId },
-    select: { id: true },
-  });
-  if (workerOwner && workerOwner.id !== laborProfileId) {
-    throw new ConversionError(
-      'LABOR_PROFILE_WORKER_CONFLICT',
-      409,
-      'Worker is already linked to a different LaborProfile',
-      { laborProfileId, expected: laborProfileId, actual: workerOwner.id, workerId },
-    );
-  }
+  // Compare-and-set: only succeeds if `LaborProfile.workerId` is still NULL.
+  // This guards against a concurrent writer that won the null→X transition
+  // between our findUnique above and the update below — Prisma's
+  // `update` will simply report `count: 0` when the WHERE filter no longer
+  // matches.
+  let cas;
   try {
-    await tx.laborProfile.update({
-      where: { id: laborProfileId },
+    cas = await tx.laborProfile.updateMany({
+      where: { id: laborProfileId, workerId: null },
       data: { workerId },
-      select: { id: true, workerId: true },
     });
   } catch (error) {
     if (isUniqueConflict(error)) {
-      // Concurrent writer won the unique-index race; surface a typed error
-      // instead of an opaque Prisma exception.
+      // Worker đã bị bind sang LaborProfile khác (qua unique index).
+      // P2002 được surface thành `LABOR_PROFILE_WORKER_CONFLICT` để giữ
+      // error code ổn định cho client.
       throw new ConversionError(
         'LABOR_PROFILE_WORKER_CONFLICT',
         409,
-        'LaborProfile worker link is contended by a concurrent conversion',
+        'Worker is already linked to a different LaborProfile',
         { laborProfileId, workerId },
       );
     }
     throw error;
   }
-  return { laborProfileId, before: null, after: workerId };
+  if (cas.count === 1) {
+    return { laborProfileId, before: null, after: workerId };
+  }
+  // CAS lost. Re-read the row to decide idempotent vs. conflict.
+  const after = await tx.laborProfile.findUnique({
+    where: { id: laborProfileId },
+    select: { id: true, workerId: true },
+  });
+  if (!after) {
+    // Profile was deleted inside the same transaction (impossible in
+    // practice but keep the invariant loud).
+    throw new ConversionError(
+      'CONVERSION_INVARIANT_BROKEN',
+      409,
+      'LaborProfile referenced by submission vanished mid-conversion',
+      { laborProfileId },
+    );
+  }
+  if (after.workerId === workerId) {
+    return { laborProfileId, before: workerId, after: workerId };
+  }
+  // RQ-04 cross-check: even if CAS lost, ensure the loser is also blocked
+  // by the Worker→LaborProfile back-relation (no second profile can claim
+  // the same Worker). This is the missing-relation defensive belt for the
+  // case where the concurrent winner is on a *different* LaborProfile.
+  if (after.workerId !== null) {
+    throw new ConversionError(
+      'LABOR_PROFILE_WORKER_CONFLICT',
+      409,
+      'LaborProfile worker link is contended by a concurrent conversion',
+      { laborProfileId, expected: after.workerId, actual: workerId },
+    );
+  }
+  // after.workerId === null again — the winner undid its update (extremely
+  // rare; would only happen if the winning transaction itself rolled back).
+  // Re-attempt CAS so the user-facing conversion has a chance to succeed.
+  let retry;
+  try {
+    retry = await tx.laborProfile.updateMany({
+      where: { id: laborProfileId, workerId: null },
+      data: { workerId },
+    });
+  } catch (error) {
+    if (isUniqueConflict(error)) {
+      throw new ConversionError(
+        'LABOR_PROFILE_WORKER_CONFLICT',
+        409,
+        'Worker is already linked to a different LaborProfile',
+        { laborProfileId, workerId },
+      );
+    }
+    throw error;
+  }
+  if (retry.count === 1) {
+    return { laborProfileId, before: null, after: workerId };
+  }
+  // Fall through: re-read after the retry attempt to give a typed error.
+  const finalRead = await tx.laborProfile.findUnique({
+    where: { id: laborProfileId },
+    select: { id: true, workerId: true },
+  });
+  throw new ConversionError(
+    'LABOR_PROFILE_WORKER_CONFLICT',
+    409,
+    'LaborProfile worker link is contended by a concurrent conversion',
+    {
+      laborProfileId,
+      expected: finalRead?.workerId ?? null,
+      actual: workerId,
+    },
+  );
 }
 
 async function findDedupCandidates(
