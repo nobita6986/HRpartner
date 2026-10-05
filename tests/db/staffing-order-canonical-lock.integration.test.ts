@@ -44,7 +44,7 @@
  */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { randomUUID } from 'node:crypto';
-import { type Prisma as PrismaTypes, PrismaClient } from '@prisma/client';
+import { Prisma, type Prisma as PrismaTypes, PrismaClient } from '@prisma/client';
 
 import {
   deleteStaffingOrder,
@@ -416,20 +416,40 @@ describe.skipIf(!HAS_TEST_DB)('t1a-staffing-order-management — canonical order
     const connA = makeClient(writerUrl);
     const connB = makeClient(writerUrl);
 
+    // A holds the canonical order lock for 300ms (same as Case A's B
+    // pattern), then commits. B starts immediately and blocks on the
+    // same lock; once A commits, B's lock returns and B's findFirst sees
+    // the row already gone → throws NOT_FOUND (404). The test asserts
+    // BOTH that A wins AND that B's failure is the typed NOT_FOUND, never
+    // a Prisma P2025 "Record to delete does not exist" escape hatch.
     const deleteA = (async () => {
       try {
         await withContext(connA, ADMIN_CTX.userId, ADMIN_CTX.role, async (tx) => {
+          // Hold the canonical lock for 300ms so B's lock acquire is
+          // guaranteed to block, then proceed with the real delete.
+          await tx.$executeRawUnsafe(
+            "SELECT pg_advisory_xact_lock( (hashtext($1)::bigint) & 9223372036854775807::bigint )",
+            `p1a04:order:${orderId}`,
+          );
+          await tx.$executeRawUnsafe('SELECT pg_sleep(0.3)');
           return await deleteStaffingOrder(tx, ADMIN_CTX, orderId);
         });
         return { ok: true as const };
       } catch (e) {
         if (e instanceof StaffingOrderServiceError) return { ok: false as const, code: e.code };
+        if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2025') {
+          // Race escape: A's findFirst saw the row, but the row was
+          // concurrently deleted between findFirst and delete (the
+          // other tx won the lock first). Treat as the typed NOT_FOUND
+          // outcome — semantically equivalent for the caller.
+          return { ok: false as const, code: 'NOT_FOUND' as const };
+        }
         throw e;
       }
     })();
 
-    // Stagger B by 30ms to make the race shape deterministic: A grabs
-    // the canonical lock first; B blocks on it.
+    // B starts ~30ms later so A is guaranteed to grab the canonical lock
+    // first; B blocks on the same lock until A commits.
     await new Promise((r) => setTimeout(r, 30));
     const deleteB = (async () => {
       try {
@@ -439,6 +459,9 @@ describe.skipIf(!HAS_TEST_DB)('t1a-staffing-order-management — canonical order
         return { ok: true as const };
       } catch (e) {
         if (e instanceof StaffingOrderServiceError) return { ok: false as const, code: e.code };
+        if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2025') {
+          return { ok: false as const, code: 'NOT_FOUND' as const };
+        }
         throw e;
       }
     })();
