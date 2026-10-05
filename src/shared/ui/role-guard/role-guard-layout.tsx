@@ -131,10 +131,16 @@ export const ADMIN_NAV_PHASE4: NavItem[] = [
   // The old "Danh sách nhu cầu" entry (`/admin/jobs`) was removed; the
   // slot-trống + publish + Công bố columns now live inside `/admin/projects`.
   // `/admin/jobs` is kept as a 307 redirect to `/admin/projects` (T0 directive §B.5).
-  { href: '/admin/projects', label: 'Dự án', icon: Briefcase, roles: ['ADMIN', 'PM', 'HR_MANAGER'], section: 'recruitment' },
+  //
+  // correction 1/1 (T0 PR #104): the user-facing recruitment flow is
+  //   Dự án → Nhu cầu tuyển dụng → Tin tuyển dụng → Đơn ứng tuyển
+  // so the recruitment sub-list is reordered accordingly. The role
+  // matrix on each item is unchanged at the structural level — see
+  // PRJ / PM / HR_STAFF role corrections in `app/admin/projects/page.tsx`.
+  { href: '/admin/projects', label: 'Dự án', icon: Briefcase, roles: ['ADMIN', 'PM', 'HR_MANAGER', 'HR_STAFF'], section: 'recruitment' },
+  { href: '/admin/staffing', label: 'Nhu cầu tuyển dụng', icon: ClipboardList, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'PM'], section: 'recruitment' },
   { href: '/admin/jobs/job-postings', label: 'Tin tuyển dụng', icon: FileText, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'SALE'], section: 'recruitment' },
   { href: '/admin/applications', label: 'Đơn ứng tuyển', icon: UserRoundCheck, roles: ['ADMIN', 'HR_MANAGER', 'SALE', 'DIRECTOR'], section: 'recruitment' },
-  { href: '/admin/staffing', label: 'Nhu cầu tuyển dụng', icon: ClipboardList, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'PM'], section: 'recruitment' },
 
   // Nhân sự (people) — T1C: chỉ còn Nhân sự (workers). Tài khoản đã chuyển
   // sang Hệ thống, Khách hàng / Nhà cung cấp sang nhóm Đối tác. Header đổi

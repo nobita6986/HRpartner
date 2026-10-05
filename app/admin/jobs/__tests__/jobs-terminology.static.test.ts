@@ -31,7 +31,14 @@ import { describe, expect, it } from 'vitest';
 // /admin/jobs to /admin/projects. /admin/jobs is now a server-component
 // 307 redirect to /admin/projects, so the static guards now point at the
 // new owner page.
-const PROJECTS_PAGE_PATH = join(process.cwd(), 'app/admin/projects/page.tsx');
+//
+// correction 1/1: the page was split into a server component
+// (app/admin/projects/page.tsx) that derives `ProjectsCapability` from
+// `AuthContext.role` and a client component
+// (app/admin/projects/projects-table-client.tsx) that owns the table.
+// All column headers, button labels and the empty-state copy moved into
+// the client file, so the static guards now read the client file.
+const PROJECTS_PAGE_PATH = join(process.cwd(), 'app/admin/projects/projects-table-client.tsx');
 const PROJECTS_SOURCE = readFileSync(PROJECTS_PAGE_PATH, 'utf8');
 
 describe('hrp-admin-localization-wave2 — /admin/projects terminology (L-010..L-018)', () => {
@@ -71,7 +78,13 @@ describe('hrp-admin-localization-wave2 — /admin/projects terminology (L-010..L
 
   // RQ-06 — empty state copy (EP §3.5 #49).
   it('empty state copy uses Vietnamese', () => {
-    expect(PROJECTS_SOURCE).toMatch(/Chưa có dự án công khai/);
+    // correction 1/1: copy shortened from
+    //   "Chưa có dự án công khai."
+    // to
+    //   "Chưa có dự án nào."
+    // (T0 §B.4). The longer copy is no longer rendered anywhere.
+    expect(PROJECTS_SOURCE).toMatch(/Chưa có dự án nào\./);
+    expect(PROJECTS_SOURCE).not.toMatch(/Chưa có dự án công khai/);
     // Legacy "Chưa có job public nào" removed.
     expect(PROJECTS_SOURCE).not.toMatch(/Chưa có job public nào/);
   });

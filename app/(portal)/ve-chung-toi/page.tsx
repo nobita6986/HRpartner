@@ -16,10 +16,19 @@ export const metadata = {
 
 export default function VeChungToiPage() {
   return (
-    <main
+    // hrp-t1a-introduce-hrp-and-menu-cleanup — correction 1/1:
+    // `app/(portal)/layout.tsx` already wraps children in <main className="flex-1">,
+    // so the page root must NOT be another <main> (HTML5 forbids nested <main>
+    // landmarks and breaks the skip-link target semantics). Root is a
+    // <div id="hrp-main" tabIndex={-1}> so:
+    //   1. There is exactly one <main> on the page (provided by the layout).
+    //   2. The GlobalNavbar skip link `href="#hrp-main"` still resolves.
+    //   3. Programmatic focus from the skip link still lands on a focusable
+    //      element (div + tabIndex={-1}) for screen-reader / keyboard users.
+    <div
       id="hrp-main"
       tabIndex={-1}
-      className="flex w-full flex-col items-stretch gap-0"
+      className="flex w-full flex-col items-stretch gap-0 focus:outline-none"
       style={{ backgroundColor: 'var(--surface)' }}
     >
       {/* Hero / tiêu đề trang */}
@@ -147,6 +156,6 @@ export default function VeChungToiPage() {
           </div>
         </div>
       </section>
-    </main>
+    </div>
   );
 }

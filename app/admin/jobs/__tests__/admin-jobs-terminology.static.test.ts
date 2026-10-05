@@ -36,7 +36,14 @@ import { describe, expect, it } from 'vitest';
 // /admin/jobs to /admin/projects. /admin/jobs is now a server-component
 // 307 redirect to /admin/projects, so the static guards now point at the
 // new owner page.
-const PROJECTS_PAGE_PATH = join(process.cwd(), 'app/admin/projects/page.tsx');
+//
+// correction 1/1: the page was split into a server component
+// (app/admin/projects/page.tsx) that derives `ProjectsCapability` from
+// `AuthContext.role` and a client component
+// (app/admin/projects/projects-table-client.tsx) that owns the table.
+// All column headers, button labels and the empty-state copy moved into
+// the client file, so the static guards now read the client file.
+const PROJECTS_PAGE_PATH = join(process.cwd(), 'app/admin/projects/projects-table-client.tsx');
 const EDITOR_SHELL_PATH = join(process.cwd(), 'app/admin/jobs/job-postings/[id]/editor-shell.tsx');
 
 const PROJECTS_SOURCE = readFileSync(PROJECTS_PAGE_PATH, 'utf8');
