@@ -5,18 +5,30 @@
  *
  * Trang quản lý Nhu cầu tuyển dụng (`/admin/staffing-orders/[id]`). Hiển thị:
  *
- *   1. Header: code, title, project, description, deadline, status.
- *   2. Bảng vị trí: mã, tên, số lượng, đã tuyển, còn thiếu, ca, lương/giờ,
- *      địa điểm, thời hạn (validFrom/validTo).
- *   3. Bảng JobOpenings + JobPostings liên kết.
+ *   1. Header: mã, tiêu đề, dự án, mô tả, hạn tuyển, trạng thái.
+ *   2. Bảng vị trí tuyển: mã, tên, cần tuyển, đã tuyển, còn thiếu, ca, lương,
+ *      địa điểm, thời hạn.
+ *   3. Bảng vị trí tuyển nội bộ + Tin tuyển dụng liên kết.
  *   4. Toolbar thao tác: Sửa, Đánh dấu sắp đóng, Mở lại, Đóng, Hủy, Xóa.
- *      Mỗi nút gated bằng capability + state machine.
+ *      Mỗi nút gated bằng capability + state machine. Nút Xóa hiển thị cho
+ *      ADMIN ở MỌI trạng thái; backend dependency guard là authority.
  *   5. Section chuyên viên (existing `RecruiterAssignmentManager`) chỉ thao tác
- *      bởi ADMIN/HR_MANAGER (canAssign); role khác vẫn thấy read-only.
- *   6. Modals: sửa order (EditOrderModal), confirm đóng/hủy (ConfirmDialog).
+ *      bởi ADMIN/HR_MANAGER; vai trò khác vẫn thấy read-only.
+ *   6. Modals: sửa nhu cầu (EditOrderModal), confirm đóng/hủy/xóa.
  *
- * Capability dẫn xuất từ role trên server (`page.tsx`); client chỉ toggle UI
+ * Capability dẫn xuất từ vai trò trên server (`page.tsx`); client chỉ toggle UI
  * theo cờ và kiểm tra lại trước khi gửi request. Backend tự enforce quyền.
+ *
+ * CORRECTION 1/1 (T0, 2026-10-05):
+ *   - Toàn bộ text operator-facing đã Việt hoá sạch:
+ *       order → nhu cầu tuyển dụng
+ *       slot → vị trí tuyển
+ *       JobOpening → vị trí tuyển nội bộ
+ *       JobPosting → tin tuyển dụng
+ *       role → vai trò
+ *       terminal → trạng thái kết thúc
+ *   - Không hiện slotsNeeded/validFrom/CANCELLED (hay enum thô) trong thông báo UI.
+ *   - Enum/identifier nội bộ (StaffingOrder.status, error code, DTO field) giữ nguyên.
  */
 
 import * as React from 'react';
@@ -92,9 +104,9 @@ export interface StaffingOrderCapability {
   canView: boolean;
   /** Có thể Sửa / Đổi trạng thái. ADMIN/HR_MANAGER/SALE. */
   canEdit: boolean;
-  /** Có thể đổi status (status machine transition). Đồng bộ với canEdit. */
+  /** Có thể đổi trạng thái (state machine). Đồng bộ với canEdit. */
   canChangeStatus: boolean;
-  /** Có thể phân công chuyên viên (RecruiterAssignmentManager). ADMIN/HR_MANAGER. */
+  /** Có thể phân công chuyên viên. ADMIN/HR_MANAGER. */
   canAssign: boolean;
   /** Có thể xoá vĩnh viễn. Chỉ ADMIN. */
   canDelete: boolean;
@@ -165,37 +177,42 @@ function formatShift(start: string | null, end: string | null): string {
   return '—';
 }
 
-// ─── ConfirmDialog (close / cancel) ─────────────────────────────────────────
+// ─── ConfirmDialog (close / cancel / closing-soon) ──────────────────────────
 
 type ConfirmKind = 'CLOSING_SOON' | 'CLOSED' | 'CANCELLED' | 'REOPEN';
 
-function describeKind(kind: ConfirmKind): { title: string; body: string; confirmLabel: string; tone: 'primary' | 'danger' } {
+function describeKind(kind: ConfirmKind): {
+  title: string;
+  body: string;
+  confirmLabel: string;
+  tone: 'primary' | 'danger';
+} {
   switch (kind) {
     case 'CLOSING_SOON':
       return {
         title: 'Đánh dấu sắp đóng?',
-        body: 'Order sẽ chuyển sang trạng thái "Sắp đóng". Vẫn nhận hồ sơ nhưng đánh dấu ưu tiên thấp. Có thể mở lại sau.',
+        body: 'Nhu cầu sẽ chuyển sang trạng thái "Sắp đóng". Vẫn nhận hồ sơ nhưng đánh dấu ưu tiên thấp. Có thể mở lại sau.',
         confirmLabel: 'Đánh dấu sắp đóng',
         tone: 'primary',
       };
     case 'CLOSED':
       return {
         title: 'Đóng nhu cầu này?',
-        body: 'Order sẽ chuyển sang trạng thái "Đã đóng". Không nhận thêm hồ sơ mới. KHÔNG thể mở lại — chỉ tạo nhu cầu mới.',
+        body: 'Nhu cầu sẽ chuyển sang trạng thái "Đã đóng". Không nhận thêm hồ sơ mới — đây là trạng thái kết thúc. Nếu cần tuyển tiếp, hãy tạo nhu cầu mới.',
         confirmLabel: 'Đóng nhu cầu',
         tone: 'danger',
       };
     case 'CANCELLED':
       return {
         title: 'Hủy nhu cầu này?',
-        body: 'Order sẽ chuyển sang trạng thái "Đã hủy". Đây là trạng thái terminal — KHÔNG thể mở lại. JobPosting liên kết sẽ bị ẩn khỏi job board công khai.',
+        body: 'Nhu cầu sẽ chuyển sang trạng thái "Đã hủy" — đây là trạng thái kết thúc. Tin tuyển dụng liên kết (nếu có) sẽ bị ẩn khỏi trang việc làm công khai.',
         confirmLabel: 'Hủy nhu cầu',
         tone: 'danger',
       };
     case 'REOPEN':
       return {
         title: 'Mở lại nhu cầu này?',
-        body: 'Order sẽ chuyển về trạng thái "Đang mở" và tiếp tục nhận hồ sơ. JobPosting liên kết (nếu có) sẽ hiện lại trên job board.',
+        body: 'Nhu cầu sẽ chuyển về trạng thái "Đang mở" và tiếp tục nhận hồ sơ. Tin tuyển dụng liên kết (nếu có) sẽ hiện lại trên trang việc làm.',
         confirmLabel: 'Mở lại',
         tone: 'primary',
       };
@@ -324,16 +341,16 @@ function DeleteConfirmDialog({
           Xóa vĩnh viễn nhu cầu này?
         </h2>
         <p style={{ color: 'var(--on-surface)' }} className="mt-2 text-sm">
-          Hành động này <strong>không thể hoàn tác</strong>. Order sẽ bị xóa
-          vĩnh viễn khỏi hệ thống cùng với các vị trí chưa phát sinh nghiệp vụ.
+          Hành động này <strong>không thể hoàn tác</strong>. Nhu cầu sẽ bị xóa
+          vĩnh viễn khỏi hệ thống cùng với các vị trí tuyển chưa phát sinh nghiệp vụ.
         </p>
         <p style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-xs font-mono">
           {orderCode}
         </p>
         <p style={{ color: 'var(--on-surface-variant)' }} className="mt-2 text-xs">
-          Nếu order đã có JobOpening, JobPosting, đơn ứng tuyển, placement hoặc lịch
-          sử phân công, hệ thống sẽ từ chối. Khi đó hãy dùng &quot;Hủy nhu cầu&quot;
-          (CANCELLED) thay thế để giữ lại lịch sử.
+          Nếu nhu cầu đã có vị trí tuyển nội bộ, tin tuyển dụng, đơn ứng tuyển,
+          placement hoặc lịch sử phân công chuyên viên, hệ thống sẽ từ chối.
+          Khi đó hãy dùng &quot;Hủy nhu cầu&quot; thay thế để giữ lại lịch sử.
         </p>
         {error && (
           <p
@@ -392,12 +409,10 @@ export function OrderManagementClient({
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [flash, setFlash] = useState<Flash>(null);
 
-  /** Idempotency key cho mỗi lần PATCH status — mỗi click tạo key mới. */
+  /** Idempotency key cho mỗi lần PATCH trạng thái — mỗi lần mở dialog tạo key mới. */
   const [statusIdemKey, setStatusIdemKey] = useState<string | null>(null);
-  /** Idempotency key cho DELETE. */
-  const [deleteIdemKey] = useState<string | null>(null);
 
-  // Reset flash khi đổi order (navigate giữa các id).
+  // Reset flash khi đổi nhu cầu (navigate giữa các id).
   useEffect(() => {
     setFlash(null);
     setStatusDialog(null);
@@ -411,7 +426,7 @@ export function OrderManagementClient({
     if (!order || !statusDialog) return;
     setStatusPending(true);
     setStatusError(null);
-    // ConfirmKind 'REOPEN' maps to status 'OPEN' when sending to API.
+    // ConfirmKind 'REOPEN' maps to trạng thái 'OPEN' khi gửi tới API.
     const targetStatus = statusDialog === 'REOPEN' ? 'OPEN' : statusDialog;
     const key = statusIdemKey ?? cryptoRandomUuid();
     if (!statusIdemKey) setStatusIdemKey(key);
@@ -432,8 +447,10 @@ export function OrderManagementClient({
       }
       setStatusDialog(null);
       setStatusIdemKey(null);
-      setFlash({ kind: 'success', text: `Đã chuyển trạng thái sang ${staffingOrderStatusLabel(targetStatus)}.` });
-      // Reload trang để lấy lại detail mới — đơn giản và không drift so với cache.
+      setFlash({
+        kind: 'success',
+        text: `Đã chuyển nhu cầu sang ${staffingOrderStatusLabel(targetStatus)}.`,
+      });
       window.location.reload();
     } catch (e) {
       setStatusError(e instanceof Error ? e.message : 'Lỗi kết nối');
@@ -442,22 +459,48 @@ export function OrderManagementClient({
     }
   }, [order, statusDialog, statusIdemKey]);
 
+  /**
+   * DELETE handler với idempotency.
+   *
+   * Khóa `x-idempotency-key` được sinh DUY NHẤT cho mỗi lần mở dialog xoá
+   * (state `deleteIdemKey`). Click xác nhận nhiều lần trong CÙNGUI một
+   * dialog sẽ gửi CÙNG key → server replay cùng response, không tạo request
+   * mới. Mở dialog mới → key mới. Cùng key nhưng khác payload → server trả
+   * 409 IDEMPOTENCY_CONFLICT.
+   */
+  const [deleteIdemKey, setDeleteIdemKey] = useState<string | null>(null);
+
+  const openDeleteDialog = useCallback(() => {
+    setShowDelete(true);
+    setDeleteError(null);
+    setDeleteIdemKey(cryptoRandomUuid());
+  }, []);
+
+  const closeDeleteDialog = useCallback(() => {
+    setShowDelete(false);
+    setDeleteError(null);
+    setDeleteIdemKey(null);
+  }, []);
+
   const handleDelete = useCallback(async () => {
     if (!order) return;
+    if (!deleteIdemKey) {
+      setDeleteError('Thiếu khoá định danh yêu cầu. Hãy mở lại hộp thoại xác nhận.');
+      return;
+    }
     setDeletePending(true);
     setDeleteError(null);
     try {
       const res = await fetch(`/api/staffing/orders/${order.id}`, {
         method: 'DELETE',
         credentials: 'include',
-        headers: { 'x-idempotency-key': deleteIdemKey ?? cryptoRandomUuid() },
+        headers: { 'x-idempotency-key': deleteIdemKey },
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         setDeleteError(data.message ?? `HTTP ${res.status}`);
         return;
       }
-      // Sau khi xóa, điều hướng về list.
       window.location.href = '/admin/staffing';
     } catch (e) {
       setDeleteError(e instanceof Error ? e.message : 'Lỗi kết nối');
@@ -597,7 +640,7 @@ export function OrderManagementClient({
               }}
               className="rounded border px-3 py-2 text-xs"
             >
-              Chế độ chỉ đọc — role {role} có quyền xem nhưng không thể thao tác.
+              Chế độ chỉ đọc — vai trò <span className="font-mono">{role}</span> có quyền xem nhưng không thể thao tác.
             </div>
           )}
         </div>
@@ -638,7 +681,11 @@ export function OrderManagementClient({
             <button
               type="button"
               data-testid="toolbar-closing-soon"
-              onClick={() => { setStatusDialog('CLOSING_SOON'); setStatusError(null); setStatusIdemKey(null); }}
+              onClick={() => {
+                setStatusDialog('CLOSING_SOON');
+                setStatusError(null);
+                setStatusIdemKey(cryptoRandomUuid());
+              }}
               style={{ background: 'var(--surface-container)', color: 'var(--on-surface)' }}
               className="rounded border px-4 py-2 text-sm"
             >
@@ -649,7 +696,11 @@ export function OrderManagementClient({
             <button
               type="button"
               data-testid="toolbar-reopen"
-              onClick={() => { setStatusDialog('REOPEN'); setStatusError(null); setStatusIdemKey(null); }}
+              onClick={() => {
+                setStatusDialog('REOPEN');
+                setStatusError(null);
+                setStatusIdemKey(cryptoRandomUuid());
+              }}
               style={{ background: 'var(--surface-container)', color: 'var(--on-surface)' }}
               className="rounded border px-4 py-2 text-sm"
             >
@@ -660,7 +711,11 @@ export function OrderManagementClient({
             <button
               type="button"
               data-testid="toolbar-close"
-              onClick={() => { setStatusDialog('CLOSED'); setStatusError(null); setStatusIdemKey(null); }}
+              onClick={() => {
+                setStatusDialog('CLOSED');
+                setStatusError(null);
+                setStatusIdemKey(cryptoRandomUuid());
+              }}
               style={{ borderColor: '#c62828', color: '#c62828', background: 'transparent' }}
               className="rounded border px-4 py-2 text-sm"
             >
@@ -671,18 +726,28 @@ export function OrderManagementClient({
             <button
               type="button"
               data-testid="toolbar-cancel"
-              onClick={() => { setStatusDialog('CANCELLED'); setStatusError(null); setStatusIdemKey(null); }}
+              onClick={() => {
+                setStatusDialog('CANCELLED');
+                setStatusError(null);
+                setStatusIdemKey(cryptoRandomUuid());
+              }}
               style={{ borderColor: '#c62828', color: '#c62828', background: 'transparent' }}
               className="rounded border px-4 py-2 text-sm"
             >
               Hủy nhu cầu
             </button>
           )}
-          {capability.canDelete && order.status !== 'CLOSED' && order.status !== 'CANCELLED' && (
+          {/*
+            CORRECTION 1/1 (T0): nút "Xóa vĩnh viễn" hiển thị cho ADMIN ở MỌI
+            trạng thái (kể cả CLOSED/CANCELLED). Backend dependency guard vẫn
+            là authority: nếu order có JobOpening/Submission/Placement/...
+            sẽ trả 409 ORDER_NOT_DELETABLE + guidance "Hủy nhu cầu".
+          */}
+          {capability.canDelete && (
             <button
               type="button"
               data-testid="toolbar-delete"
-              onClick={() => { setShowDelete(true); setDeleteError(null); }}
+              onClick={openDeleteDialog}
               style={{ borderColor: '#c62828', color: '#c62828', background: 'transparent' }}
               className="ml-auto rounded border px-4 py-2 text-sm"
             >
@@ -692,7 +757,7 @@ export function OrderManagementClient({
         </section>
       )}
 
-      {/* Bảng vị trí */}
+      {/* Bảng vị trí tuyển */}
       <section
         aria-labelledby="order-slots-heading"
         className="mb-8"
@@ -714,7 +779,7 @@ export function OrderManagementClient({
             }}
             className="rounded-lg border p-6 text-center text-sm"
           >
-            Nhu cầu này chưa có vị trí nào.
+            Nhu cầu này chưa có vị trí tuyển nào.
           </div>
         ) : (
           <div
@@ -729,17 +794,25 @@ export function OrderManagementClient({
                     borderBottom: '1px solid var(--outline-variant)',
                   }}
                 >
-                  {['Mã', 'Tên vị trí', 'Cần', 'Đã tuyển', 'Còn thiếu', 'Ca làm', 'Lương/giờ', 'Địa điểm', 'Hiệu lực'].map(
-                    (h) => (
-                      <th
-                        key={h}
-                        style={{ color: 'var(--on-surface-variant)' }}
-                        className="px-3 py-2 text-left font-semibold"
-                      >
-                        {h}
-                      </th>
-                    ),
-                  )}
+                  {[
+                    'Mã',
+                    'Tên vị trí',
+                    'Cần',
+                    'Đã tuyển',
+                    'Còn thiếu',
+                    'Ca làm',
+                    'Lương/giờ',
+                    'Địa điểm',
+                    'Hiệu lực',
+                  ].map((h) => (
+                    <th
+                      key={h}
+                      style={{ color: 'var(--on-surface-variant)' }}
+                      className="px-3 py-2 text-left font-semibold"
+                    >
+                      {h}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
@@ -795,7 +868,7 @@ export function OrderManagementClient({
                         {formatDate(s.validFrom)} → {formatDate(s.validTo)}
                         {hasDeps && (
                           <span
-                            title="Slot đã phát sinh JobOpening/Submission/Assignment — không thể xoá"
+                            title="Vị trí đã phát sinh vị trí tuyển nội bộ, đơn ứng tuyển hoặc placement — không thể xoá"
                             data-testid={`order-slot-locked-${s.id}`}
                             style={{ color: '#c62828' }}
                             className="ml-1"
@@ -813,7 +886,7 @@ export function OrderManagementClient({
         )}
       </section>
 
-      {/* Bảng JobOpenings + JobPostings */}
+      {/* Bảng vị trí tuyển nội bộ + Tin tuyển dụng */}
       <section
         aria-labelledby="order-openings-heading"
         className="mb-8"
@@ -824,7 +897,7 @@ export function OrderManagementClient({
           style={{ color: 'var(--on-surface)' }}
           className="mb-3 text-lg font-semibold"
         >
-          JobOpenings &amp; JobPostings ({order.jobOpenings.length})
+          Vị trí tuyển nội bộ &amp; Tin tuyển dụng ({order.jobOpenings.length})
         </h2>
         {order.jobOpenings.length === 0 ? (
           <div
@@ -835,7 +908,7 @@ export function OrderManagementClient({
             }}
             className="rounded-lg border p-6 text-center text-sm"
           >
-            Nhu cầu này chưa có JobOpening nào.
+            Nhu cầu này chưa có vị trí tuyển nội bộ nào.
           </div>
         ) : (
           <div
@@ -854,25 +927,25 @@ export function OrderManagementClient({
                     style={{ color: 'var(--on-surface-variant)' }}
                     className="px-3 py-2 text-left font-semibold"
                   >
-                    JobOpening
+                    Vị trí tuyển nội bộ
                   </th>
                   <th
                     style={{ color: 'var(--on-surface-variant)' }}
                     className="px-3 py-2 text-left font-semibold"
                   >
-                    Trạng thái Opening
+                    Trạng thái vị trí
                   </th>
                   <th
                     style={{ color: 'var(--on-surface-variant)' }}
                     className="px-3 py-2 text-left font-semibold"
                   >
-                    JobPosting
+                    Tin tuyển dụng
                   </th>
                   <th
                     style={{ color: 'var(--on-surface-variant)' }}
                     className="px-3 py-2 text-left font-semibold"
                   >
-                    Trạng thái Posting
+                    Trạng thái tin
                   </th>
                 </tr>
               </thead>
@@ -990,7 +1063,11 @@ export function OrderManagementClient({
           pending={statusPending}
           error={statusError}
           onConfirm={() => void handleConfirmStatus()}
-          onCancel={() => { setStatusDialog(null); setStatusError(null); setStatusIdemKey(null); }}
+          onCancel={() => {
+            setStatusDialog(null);
+            setStatusError(null);
+            setStatusIdemKey(null);
+          }}
         />
       )}
 
@@ -1013,7 +1090,7 @@ export function OrderManagementClient({
           pending={deletePending}
           error={deleteError}
           onConfirm={() => void handleDelete()}
-          onCancel={() => { setShowDelete(false); setDeleteError(null); }}
+          onCancel={closeDeleteDialog}
         />
       )}
     </div>

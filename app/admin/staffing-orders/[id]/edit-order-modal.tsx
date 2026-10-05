@@ -125,13 +125,13 @@ export function EditOrderModal({ order, canEdit, onClose, onSaved }: EditOrderMo
       if (!canEdit) return;
       setErr(null);
 
-      // Client-side guard: slotsNeeded không được giảm xuống dưới slotsFilled.
+      // Client-side guard: số lượng cần tuyển không được giảm xuống dưới số đã tuyển.
       for (const d of drafts) {
         if (d._delete) continue;
         if (d.id) {
           const current = order.slots.find((s) => s.id === d.id);
           if (current && d.slotsNeeded < current.slotsFilled) {
-            setErr(`Vị trí "${current.positionTitle}" đã tuyển ${current.slotsFilled} người; không thể giảm slotsNeeded xuống ${d.slotsNeeded}.`);
+            setErr(`Vị trí "${current.positionTitle}" đã tuyển ${current.slotsFilled} người; không thể giảm số lượng cần tuyển xuống ${d.slotsNeeded}.`);
             return;
           }
         }
@@ -140,17 +140,17 @@ export function EditOrderModal({ order, canEdit, onClose, onSaved }: EditOrderMo
           return;
         }
         if (!Number.isInteger(d.slotsNeeded) || d.slotsNeeded < 0) {
-          setErr('slotsNeeded phải là số nguyên không âm.');
+          setErr('Số lượng cần tuyển phải là số nguyên không âm.');
           return;
         }
         if (!d.validFrom) {
-          setErr('Mỗi vị trí cần có validFrom.');
+          setErr('Mỗi vị trí cần có ngày bắt đầu hiệu lực.');
           return;
         }
       }
 
       if (hasDeletedLocked) {
-        setErr('Một vị trí đang được đánh dấu xoá nhưng đã có JobOpening/đơn ứng tuyển/placement — không thể xoá.');
+        setErr('Một vị trí đang được đánh dấu xoá nhưng đã phát sinh nghiệp vụ (vị trí tuyển nội bộ, đơn ứng tuyển hoặc placement) — không thể xoá.');
         return;
       }
 
@@ -313,7 +313,7 @@ export function EditOrderModal({ order, canEdit, onClose, onSaved }: EditOrderMo
                     <div className="flex items-center gap-2 text-xs">
                       {d.id && d.locked && (
                         <span
-                          title="Slot đã có JobOpening/đơn ứng tuyển/placement — không thể xoá"
+                          title="Vị trí đã phát sinh nghiệp vụ (vị trí tuyển nội bộ, đơn ứng tuyển hoặc placement) — không thể xoá"
                           data-testid={`edit-slot-locked-${idx}`}
                           style={{ color: '#c62828' }}
                         >

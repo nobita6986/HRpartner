@@ -125,11 +125,22 @@ const EXPECTED_HITS = [
   // t1a-staffing-order-management (2026-10-05): getStaffingOrderDetail + updateStaffingOrder
   // thêm `slots.jobOpening` / `slots.neoJobOpenings` (qua include include con) để đếm
   // phụ thuộc cho UI. Line number shift từ 153/179 (cũ) do thêm 2 hàm mới.
-  'src/domains/staffing/order.service.ts:158 project',
-  'src/domains/staffing/order.service.ts:184 project',
-  'src/domains/staffing/order.service.ts:297 project',
-  'src/domains/staffing/order.service.ts:302 jobOpening',
-  'src/domains/staffing/order.service.ts:387 jobOpening',
+  // CORRECTION 1/1 (2026-10-05): updateStaffingOrder + deleteStaffingOrder
+  // thêm advisory lock + re-read. Hai path mới phát sinh hit sweep:
+  //   - `order.service.ts:192` `getStaffingOrder` (detail) — line shift 158
+  //     do thêm `acquireOrderAdvisoryLock` helper + 2 hàm mới. 158 → 192.
+  //   - `order.service.ts:218` `getStaffingOrder` (detail) — line shift 184 → 218.
+  //   - `order.service.ts:331` `getStaffingOrderDetail` — line shift 297 → 331.
+  //   - `order.service.ts:336` `getStaffingOrderDetail` — line shift 302 → 336.
+  //   - `order.service.ts:428` `updateStaffingOrder` re-read slots — line shift 387 → 428.
+  //   - `order.service.ts:459` `updateStaffingOrder` re-read slots.jobOpening
+  //     (thêm mới — sweep phát hiện thêm 1 hit).
+  'src/domains/staffing/order.service.ts:192 project',
+  'src/domains/staffing/order.service.ts:218 project',
+  'src/domains/staffing/order.service.ts:331 project',
+  'src/domains/staffing/order.service.ts:336 jobOpening',
+  'src/domains/staffing/order.service.ts:428 jobOpening',
+  'src/domains/staffing/order.service.ts:459 jobOpening',
   'src/domains/staffing/submission.service.ts:204 project',
   // AFF-04 STEP-04: re-read SourceClaim -> Worker.userId under lock for
   // self-referral classification. Worker is required in schema, so the
@@ -451,7 +462,11 @@ describe('quan hệ BẮT BUỘC trên bảng bị RLS che: tập vị trí sele
     // (2026-10-05): getStaffingOrderDetail + updateStaffingOrder thêm 3
     // entries (project@297, jobOpening@302, jobOpening@387); line shift
     // 153/179 → 158/184. Net +3 entries: 36 → 39 src hits.
-    expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(39);
+    // CORRECTION 1/1 (2026-10-05): updateStaffingOrder re-read thêm 1
+    // entry (jobOpening@459); các entries cũ line shift do thêm 2 hàm
+    // mới (`acquireOrderAdvisoryLock`/`acquireSlotAdvisoryLock` helpers
+    // + 2 hàm delete). Net +1 entry: 39 → 40 src hits.
+    expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(40);
   });
 });
 

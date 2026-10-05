@@ -118,6 +118,12 @@ describe('t1a-staffing-order-management — /admin/staffing-orders/[id] role vis
     expect(CLIENT_SOURCE).toMatch(/canView\s*&&\s*!capability\.canEdit/);
   });
 
+  // CORRECTION 1/1 (T0): banner copy dùng "vai trò" thay vì "role".
+  it('read-only banner dùng "vai trò" (không hiện "role")', () => {
+    expect(CLIENT_SOURCE).toMatch(/vai trò/);
+    expect(CLIENT_SOURCE).not.toMatch(/role \{role\} có quyền xem/);
+  });
+
   // RQ-05: toolbar chỉ render khi canEdit.
   it('toolbar mutate chỉ render khi capability.canEdit', () => {
     expect(CLIENT_SOURCE).toMatch(/capability\.canEdit\s*&&\s*\(/);
@@ -170,10 +176,33 @@ describe('t1a-staffing-order-management — /admin/staffing-orders/[id] role vis
     expect(payloadMatch[1]).not.toMatch(/projectId\s*:/);
   });
 
-  // RQ-07: API DELETE chỉ ADMIN + typed 409 cho order có phụ thuộc.
-  it('API DELETE có typed error ORDER_NOT_DELETABLE + guidance "Hủy nhu cầu"', () => {
+  // RQ-07 + CORRECTION 1/1: API DELETE chỉ ADMIN + typed 409 cho order có
+  // phụ thuộc. Service là source of truth cho error message.
+  it('API DELETE có typed error ORDER_NOT_DELETABLE + service guidance "Hủy nhu cầu"', () => {
     expect(API_ROUTE_SOURCE).toMatch(/ORDER_NOT_DELETABLE/);
-    expect(API_ROUTE_SOURCE).toMatch(/Hủy nhu cầu/);
+    // CORRECTION 1/1: guidance message bây giờ ở service (giữ nguyên enum
+    // error code ở API).
+    expect(SERVICE_SOURCE).toMatch(/Hủy nhu cầu/);
+  });
+
+  it('API DELETE dùng withIdempotency đúng contract (route key DELETE:/api/staffing/orders/:id)', () => {
+    expect(API_ROUTE_SOURCE).toMatch(/DELETE:\/api\/staffing\/orders\/\$\{id\}/);
+    expect(API_ROUTE_SOURCE).toMatch(/IdempotencyConflictError/);
+  });
+
+  it('API DELETE thiếu x-idempotency-key trả 400 VALIDATION_ERROR', () => {
+    expect(API_ROUTE_SOURCE).toMatch(/Thiếu header x-idempotency-key/);
+    expect(API_ROUTE_SOURCE).toMatch(/VALIDATION_ERROR[\s\S]{0,200}x-idempotency-key/);
+  });
+
+  it('API PUT có hourlyRateVnd validation (safe integer, >=0 hoặc null) — typed 400', () => {
+    expect(API_ROUTE_SOURCE).toMatch(/Number\.isSafeInteger/);
+    expect(API_ROUTE_SOURCE).toMatch(/lương\/giờ/);
+  });
+
+  it('API PUT có validFrom/validTo validation (validTo >= validFrom) — typed 400', () => {
+    expect(API_ROUTE_SOURCE).toMatch(/isIsoDateOnly/);
+    expect(API_ROUTE_SOURCE).toMatch(/hiệu lực đến ngày[\s\S]{0,200}\$\{slot\.validTo\}/);
   });
 
   it('API PUT có typed error ORDER_NOT_EDITABLE + SLOT_HAS_DEPENDENCIES', () => {
@@ -193,13 +222,57 @@ describe('t1a-staffing-order-management — /admin/staffing-orders/[id] role vis
 
   it('client render bảng vị trí với cột Mã, Tên, Cần, Đã tuyển, Còn thiếu, Ca, Lương, Địa điểm, Hiệu lực', () => {
     expect(CLIENT_SOURCE).toMatch(/data-testid="order-slots-section"/);
-    const headerArr = CLIENT_SOURCE.match(/\['Mã', 'Tên vị trí', 'Cần', 'Đã tuyển', 'Còn thiếu', 'Ca làm', 'Lương\/giờ', 'Địa điểm', 'Hiệu lực'\]/);
-    expect(headerArr).not.toBeNull();
+    // Header có thể ở 1 dòng (khi source gốc) hoặc multi-line (sau khi tách
+    // dòng cho dễ đọc). Match cả hai shape.
+    const singleLine = CLIENT_SOURCE.match(
+      /\[\s*'Mã',\s*'Tên vị trí',\s*'Cần',\s*'Đã tuyển',\s*'Còn thiếu',\s*'Ca làm',\s*'Lương\/giờ',\s*'Địa điểm',\s*'Hiệu lực'\s*,?\s*\]/,
+    );
+    const multiLine = CLIENT_SOURCE.match(
+      /'Mã',[\s\S]{0,80}'Tên vị trí',[\s\S]{0,80}'Cần',[\s\S]{0,80}'Đã tuyển',[\s\S]{0,80}'Còn thiếu',[\s\S]{0,80}'Ca làm',[\s\S]{0,80}'Lương\/giờ',[\s\S]{0,80}'Địa điểm',[\s\S]{0,80}'Hiệu lực'/,
+    );
+    expect(singleLine ?? multiLine).not.toBeNull();
   });
 
   it('client render bảng JobOpenings & Postings', () => {
     expect(CLIENT_SOURCE).toMatch(/data-testid="order-openings-section"/);
-    expect(CLIENT_SOURCE).toMatch(/JobOpenings &amp; JobPostings/);
+    // CORRECTION 1/1 (T0): toàn bộ text operator-facing Việt hoá sạch.
+    // JobOpening → vị trí tuyển nội bộ; JobPosting → tin tuyển dụng.
+    expect(CLIENT_SOURCE).toMatch(/Vị trí tuyển nội bộ &amp; Tin tuyển dụng/);
+    expect(CLIENT_SOURCE).toMatch(/Vị trí tuyển nội bộ/);
+    expect(CLIENT_SOURCE).toMatch(/Tin tuyển dụng/);
+    // Không hiện raw enum text trong user-facing strings.
+    expect(CLIENT_SOURCE).not.toMatch(/JobOpenings &amp; JobPostings/);
+  });
+
+  // CORRECTION 1/1 (T0): confirm dialog body không hiện "terminal" hay
+  // "JobPosting" thô — dùng "trạng thái kết thúc" / "tin tuyển dụng".
+  it('confirm dialog body dùng "trạng thái kết thúc" + "tin tuyển dụng"', () => {
+    expect(CLIENT_SOURCE).toMatch(/trạng thái kết thúc/);
+    expect(CLIENT_SOURCE).toMatch(/tin tuyển dụng/);
+    expect(CLIENT_SOURCE).not.toMatch(/trạng thái terminal/);
+    expect(CLIENT_SOURCE).not.toMatch(/JobPosting liên kết/);
+  });
+
+  // CORRECTION 1/1 (T0): user-visible strings thay vì raw enum:
+  // "Order" → "Nhu cầu"; "Slot" → "Vị trí".
+  it('confirm dialog body dùng "Nhu cầu" thay vì "Order"', () => {
+    expect(CLIENT_SOURCE).toMatch(/Nhu cầu sẽ chuyển/);
+    // "Order sẽ chuyển" KHÔNG còn trong dialog body
+    expect(CLIENT_SOURCE).not.toMatch(/Order sẽ chuyển/);
+  });
+
+  // CORRECTION 1/1 (T0): nút Xóa vĩnh viễn hiển thị cho ADMIN ở MỌI
+  // trạng thái (kể cả CLOSED/CANCELLED). Backend guard là authority.
+  it('nút "Xóa vĩnh viễn" chỉ phụ thuộc capability.canDelete (không filter theo status)', () => {
+    expect(CLIENT_SOURCE).toMatch(/capability\.canDelete\s*&&/);
+    // KHÔNG có điều kiện order.status !== 'CLOSED' hay !== 'CANCELLED' cho delete
+    const deleteMatch = CLIENT_SOURCE.match(/toolbar-delete[\s\S]{0,400}/);
+    expect(deleteMatch).not.toBeNull();
+    // Trong khối delete button, không có so sánh status CLOSED/CANCELLED.
+    if (deleteMatch) {
+      expect(deleteMatch[0]).not.toMatch(/order\.status\s*!==\s*['"]CLOSED['"]/);
+      expect(deleteMatch[0]).not.toMatch(/order\.status\s*!==\s*['"]CANCELLED['"]/);
+    }
   });
 
   // Encoding & LF-only

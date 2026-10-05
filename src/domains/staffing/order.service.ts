@@ -55,6 +55,40 @@ export class StaffingOrderServiceError extends Error {
   }
 }
 
+// ─── Lock helpers ──────────────────────────────────────────────────────────
+
+/**
+ * Advisory lock cấp-order, transaction-scoped — same hashtext pattern as
+ * `generateOrderCode` / `transfer.service.ts`. Khoá luong serializes mọi
+ * request đụng cùng order trong cùng transaction Postgres ⇒ concurrent
+ * update/delete không thể đọc-dẫn-ghi trên cùng orderId.
+ *
+ * CORRECTION 1/1 (T0): concurrency-safe cho updateStaffingOrder +
+ * deleteStaffingOrder. Caller PHẢI mở transaction trước (qua
+ * `withDbContext` / `$transaction`) — lock tự động được giải phóng khi
+ * transaction COMMIT hoặc ROLLBACK.
+ */
+async function acquireOrderAdvisoryLock(
+  tx: Prisma.TransactionClient,
+  orderId: string,
+): Promise<void> {
+  await tx.$executeRawUnsafe(
+    `SELECT pg_advisory_xact_lock(hashtext($1::text))`,
+    `staffing_order:${orderId}`,
+  );
+}
+
+/** Advisory lock cấp-slot — khoá từng slot khi sửa/delete. */
+async function acquireSlotAdvisoryLock(
+  tx: Prisma.TransactionClient,
+  slotId: string,
+): Promise<void> {
+  await tx.$executeRawUnsafe(
+    `SELECT pg_advisory_xact_lock(hashtext($1::text))`,
+    `staffing_order_slot:${slotId}`,
+  );
+}
+
 // ─── Code generator ─────────────────────────────────────────────────────────
 
 /** Lay ma SO tiep theo: "SO-" + zero-padded sequential integer.
@@ -372,10 +406,17 @@ export async function updateStaffingOrder(
   if (!['ADMIN', 'HR_MANAGER', 'SALE'].includes(ctx.role)) {
     throw new StaffingOrderServiceError(
       'PERMISSION_DENIED',
-      `Role ${ctx.role} không có quyền sửa StaffingOrder`,
+      `Vai trò ${ctx.role} không có quyền sửa nhu cầu tuyển dụng`,
     );
   }
 
+  // CORRECTION 1/1 (T0): concurrency-safe. Khoá advisory cấp-order TRƯỚC
+  // khi đọc, sau đó re-read state phụ thuộc dưới lock. Hai request đồng
+  // thời trên cùng orderId sẽ serialize; request thứ hai đợi request thứ
+  // nhất COMMIT/ROLLBACK rồi mới đọc state mới nhất.
+  await acquireOrderAdvisoryLock(tx, orderId);
+
+  // Phase 1: re-read order + slots + deps DƯỚI lock.
   const existing = await tx.staffingOrder.findFirst({
     where: { id: orderId, ...buildStaffingOrderScope(ctx) },
     include: {
@@ -394,6 +435,34 @@ export async function updateStaffingOrder(
     throw new StaffingOrderServiceError('NOT_FOUND', `StaffingOrder ${orderId} not found or no permission`);
   }
 
+  // Khoá từng slot có trong payload edit để slot-level guard không race
+  // với submission/placement creation chạy song song. Slot mới (không id)
+  // chưa tồn tại nên không cần khoá.
+  if (input.slots !== undefined) {
+    for (const incoming of input.slots) {
+      if (incoming.id) await acquireSlotAdvisoryLock(tx, incoming.id);
+    }
+  }
+
+  // Phase 2: re-read deps dưới lock (lần 2) để bắt writes từ request
+  // concurrent đã COMMIT ngay trước lock acquire. findFirst ở trên là
+  // snapshot đầu; re-read với cùng shape đảm bảo số đếm mới nhất.
+  let existingById = new Map(existing.slots.map((s) => [s.id, s]));
+  if (input.slots !== undefined) {
+    const slotIds = input.slots.filter((s) => s.id).map((s) => s.id as string);
+    if (slotIds.length > 0) {
+      const reloadedSlots = await tx.staffingOrderSlot.findMany({
+        where: { id: { in: slotIds }, staffingOrderId: orderId },
+        include: {
+          _count: { select: { submissions: true, assignments: true } },
+          neoJobOpenings: { select: { id: true } },
+          jobOpening: { select: { id: true } },
+        },
+      });
+      existingById = new Map(reloadedSlots.map((s) => [s.id, s]));
+    }
+  }
+
   const orderData: Prisma.StaffingOrderUpdateInput = {};
   if (input.title !== undefined) orderData.title = input.title.trim();
   if (input.description !== undefined) orderData.description = input.description;
@@ -403,23 +472,21 @@ export async function updateStaffingOrder(
 
   if (input.slots !== undefined) {
     // Phase 1: validate delete guard trước khi thay đổi — không phụ thuộc
-    // thứ tự update. Tập id hiện tại giúp phát hiện slot yêu cầu `_delete=true`
-    // nhưng id không tồn tại trong order.
-    const existingById = new Map(existing.slots.map((s) => [s.id, s]));
+    // thứ tự update. `existingById` đã được re-read dưới lock ở trên.
 
     for (const incoming of input.slots) {
       if (!incoming._delete) continue;
       if (!incoming.id) {
         throw new StaffingOrderServiceError(
           'ORDER_NOT_EDITABLE',
-          'Slot muốn xoá phải có id hợp lệ thuộc order hiện tại.',
+          'Vị trí muốn xoá phải có mã thuộc nhu cầu hiện tại.',
         );
       }
       const current = existingById.get(incoming.id);
       if (!current) {
         throw new StaffingOrderServiceError(
           'ORDER_NOT_EDITABLE',
-          `Slot id=${incoming.id} không tồn tại trong order.`,
+          `Vị trí ${incoming.id} không tồn tại trong nhu cầu.`,
         );
       }
       const deps =
@@ -430,7 +497,7 @@ export async function updateStaffingOrder(
       if (deps > 0) {
         throw new StaffingOrderServiceError(
           'SLOT_HAS_DEPENDENCIES',
-          `Slot "${current.positionTitle}" đã có JobOpening, đơn ứng tuyển hoặc placement; không thể xoá.`,
+          `Vị trí "${current.positionTitle}" đã có vị trí tuyển nội bộ, đơn ứng tuyển hoặc placement; không thể xoá. Hãy dùng "Hủy nhu cầu" thay thế nếu cần đóng cả nhu cầu.`,
         );
       }
     }
@@ -441,7 +508,7 @@ export async function updateStaffingOrder(
       if (!Number.isInteger(incoming.slotsNeeded) || incoming.slotsNeeded < 0) {
         throw new StaffingOrderServiceError(
           'ORDER_NOT_EDITABLE',
-          'slotsNeeded phải là số nguyên không âm.',
+          'Số lượng cần tuyển phải là số nguyên không âm.',
         );
       }
       if (incoming.id) {
@@ -449,13 +516,13 @@ export async function updateStaffingOrder(
         if (!current) {
           throw new StaffingOrderServiceError(
             'ORDER_NOT_EDITABLE',
-            `Slot id=${incoming.id} không tồn tại trong order.`,
+            `Vị trí ${incoming.id} không tồn tại trong nhu cầu.`,
           );
         }
         if (incoming.slotsNeeded < current.slotsFilled) {
           throw new StaffingOrderServiceError(
             'ORDER_NOT_EDITABLE',
-            `Slot "${current.positionTitle}" đã tuyển ${current.slotsFilled} người; không thể giảm slotsNeeded xuống ${incoming.slotsNeeded}.`,
+            `Vị trí "${current.positionTitle}" đã tuyển ${current.slotsFilled} người; không thể giảm số lượng cần tuyển xuống ${incoming.slotsNeeded}.`,
           );
         }
       } else {
@@ -463,7 +530,7 @@ export async function updateStaffingOrder(
         if (incoming.slotsNeeded <= 0) {
           throw new StaffingOrderServiceError(
             'ORDER_NOT_EDITABLE',
-            'Slot mới phải có slotsNeeded > 0.',
+            'Vị trí mới phải có số lượng cần tuyển > 0.',
           );
         }
       }
@@ -545,6 +612,12 @@ export async function deleteStaffingOrder(
     );
   }
 
+  // CORRECTION 1/1 (T0): concurrency-safe. Khoá advisory cấp-order + từng
+  // slot TRƯỚC khi đọc. Re-read deps dưới lock để chắc chắn count mới nhất.
+  // Hai request đồng thời trên cùng orderId sẽ serialize.
+  await acquireOrderAdvisoryLock(tx, orderId);
+
+  // Phase 1: snapshot order dưới lock.
   const existing = await tx.staffingOrder.findFirst({
     where: { id: orderId, ...buildStaffingOrderScope(ctx) },
     include: {
@@ -569,12 +642,48 @@ export async function deleteStaffingOrder(
     throw new StaffingOrderServiceError('NOT_FOUND', `StaffingOrder ${orderId} not found or no permission`);
   }
 
-  const blockingFacts: string[] = [];
-  if (existing._count.jobOpenings > 0) blockingFacts.push('JobOpening');
-  if (existing.jobOpenings.some((o) => o.posting)) blockingFacts.push('JobPosting');
-  if (existing._count.assignments > 0) blockingFacts.push('ProjectAssignment');
-  if (existing._count.recruiterAssignments > 0) blockingFacts.push('StaffingOrderRecruiterAssignment');
+  // Khoá từng slot để chặn submission/placement inserts song song.
   for (const s of existing.slots) {
+    await acquireSlotAdvisoryLock(tx, s.id);
+  }
+
+  // Phase 2: re-read deps DƯỚI lock (lần 2) để bắt writes từ request
+  // concurrent đã COMMIT ngay trước lock acquire. Race-condition an toàn:
+  // nếu có write mới từ concurrent request, write đó phải đợi lock của ta
+  // hoặc đã COMMIT trước lock ta lấy ⇒ re-read sẽ thấy.
+  const [latestOrder, latestJobOpenings, latestSlotDeps] = await Promise.all([
+    tx.staffingOrder.findUnique({
+      where: { id: orderId },
+      select: {
+        _count: {
+          select: {
+            jobOpenings: true,
+            recruiterAssignments: true,
+            assignments: true,
+          },
+        },
+      },
+    }),
+    tx.jobOpening.findMany({
+      where: { staffingOrderId: orderId },
+      select: { id: true, posting: { select: { id: true } } },
+    }),
+    tx.staffingOrderSlot.findMany({
+      where: { staffingOrderId: orderId },
+      select: {
+        id: true,
+        _count: { select: { submissions: true, assignments: true } },
+      },
+    }),
+  ]);
+
+  const blockingFacts: string[] = [];
+  if ((latestOrder?._count.jobOpenings ?? 0) > 0) blockingFacts.push('JobOpening');
+  if (latestJobOpenings.some((o) => o.posting)) blockingFacts.push('JobPosting');
+  if ((latestOrder?._count.assignments ?? 0) > 0) blockingFacts.push('ProjectAssignment');
+  if ((latestOrder?._count.recruiterAssignments ?? 0) > 0)
+    blockingFacts.push('StaffingOrderRecruiterAssignment');
+  for (const s of latestSlotDeps) {
     if (s._count.submissions > 0) blockingFacts.push('CandidateSubmission');
   }
 
@@ -582,7 +691,7 @@ export async function deleteStaffingOrder(
     const uniqueFacts = Array.from(new Set(blockingFacts)).join(', ');
     throw new StaffingOrderServiceError(
       'ORDER_NOT_DELETABLE',
-      `Nhu cầu đã phát sinh: ${uniqueFacts}. Không thể xoá vĩnh viễn. Dùng "Hủy nhu cầu" (CANCELLED) thay thế để giữ lại lịch sử nghiệp vụ.`,
+      `Nhu cầu đã phát sinh nghiệp vụ (${uniqueFacts}). Không thể xoá vĩnh viễn. Dùng "Hủy nhu cầu" thay thế để giữ lại lịch sử.`,
     );
   }
 

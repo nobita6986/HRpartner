@@ -196,34 +196,92 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ error: 'INVALID_BODY', message: 'Body phải là JSON' }, { status: 400 });
   }
 
+  // ─── Validation (CORRECTION 1/1 T0): tất cả 400 không rơi xuống 500 ───
   if (!body || typeof body !== 'object') {
     return NextResponse.json({ error: 'VALIDATION_ERROR', message: 'Body phải là object' }, { status: 400 });
   }
   if (body.title !== undefined && (typeof body.title !== 'string' || !body.title.trim())) {
-    return NextResponse.json({ error: 'VALIDATION_ERROR', message: 'title phải là chuỗi khác rỗng' }, { status: 400 });
+    return NextResponse.json({ error: 'VALIDATION_ERROR', message: 'Tiêu đề phải là chuỗi khác rỗng' }, { status: 400 });
+  }
+  if (body.description !== undefined && body.description !== null && typeof body.description !== 'string') {
+    return NextResponse.json({ error: 'VALIDATION_ERROR', message: 'Mô tả phải là chuỗi hoặc null' }, { status: 400 });
+  }
+  if (body.deadlineDate !== undefined && body.deadlineDate !== null && !isIsoDateOnly(body.deadlineDate)) {
+    return NextResponse.json({ error: 'VALIDATION_ERROR', message: 'Hạn tuyển phải là ngày hợp lệ (YYYY-MM-DD) hoặc null' }, { status: 400 });
   }
   if (body.slots !== undefined && !Array.isArray(body.slots)) {
-    return NextResponse.json({ error: 'VALIDATION_ERROR', message: 'slots phải là mảng' }, { status: 400 });
+    return NextResponse.json({ error: 'VALIDATION_ERROR', message: 'Vị trí tuyển phải là mảng' }, { status: 400 });
   }
   if (body.slots) {
-    for (const slot of body.slots) {
+    for (const [idx, slot] of body.slots.entries()) {
+      if (!slot || typeof slot !== 'object') {
+        return NextResponse.json(
+          { error: 'VALIDATION_ERROR', message: `Vị trí #${idx} không hợp lệ` },
+          { status: 400 },
+        );
+      }
       if (!slot.positionCode?.trim() || !slot.positionTitle?.trim()) {
         return NextResponse.json(
-          { error: 'VALIDATION_ERROR', message: 'Mỗi slot cần positionCode và positionTitle' },
+          { error: 'VALIDATION_ERROR', message: `Vị trí #${idx} cần có mã và tên` },
           { status: 400 },
         );
       }
       if (!Number.isInteger(slot.slotsNeeded) || slot.slotsNeeded < 0) {
         return NextResponse.json(
-          { error: 'VALIDATION_ERROR', message: 'slotsNeeded phải là số nguyên không âm' },
+          { error: 'VALIDATION_ERROR', message: `Vị trí #${idx}: số lượng cần tuyển phải là số nguyên không âm` },
           { status: 400 },
         );
       }
-      if (!slot.validFrom || Number.isNaN(new Date(slot.validFrom).getTime())) {
+      // hourlyRateVnd: safe integer >= 0 hoặc null
+      if (slot.hourlyRateVnd !== undefined && slot.hourlyRateVnd !== null) {
+        if (typeof slot.hourlyRateVnd !== 'number' || !Number.isInteger(slot.hourlyRateVnd) || slot.hourlyRateVnd < 0) {
+          return NextResponse.json(
+            { error: 'VALIDATION_ERROR', message: `Vị trí #${idx}: lương/giờ phải là số nguyên không âm hoặc null` },
+            { status: 400 },
+          );
+        }
+        // JSON.Number.MAX_SAFE_INTEGER = 2^53 - 1
+        if (!Number.isSafeInteger(slot.hourlyRateVnd)) {
+          return NextResponse.json(
+            { error: 'VALIDATION_ERROR', message: `Vị trí #${idx}: lương/giờ vượt quá giá trị an toàn` },
+            { status: 400 },
+          );
+        }
+      }
+      // shiftStart/shiftEnd: HH:mm hoặc null
+      if (slot.shiftStart !== undefined && slot.shiftStart !== null && !isTimeOfDay(slot.shiftStart)) {
         return NextResponse.json(
-          { error: 'VALIDATION_ERROR', message: 'Mỗi slot cần validFrom hợp lệ' },
+          { error: 'VALIDATION_ERROR', message: `Vị trí #${idx}: giờ vào phải là HH:mm hoặc null` },
           { status: 400 },
         );
+      }
+      if (slot.shiftEnd !== undefined && slot.shiftEnd !== null && !isTimeOfDay(slot.shiftEnd)) {
+        return NextResponse.json(
+          { error: 'VALIDATION_ERROR', message: `Vị trí #${idx}: giờ ra phải là HH:mm hoặc null` },
+          { status: 400 },
+        );
+      }
+      // validFrom: bắt buộc, hợp lệ
+      if (!slot.validFrom || !isIsoDateOnly(slot.validFrom)) {
+        return NextResponse.json(
+          { error: 'VALIDATION_ERROR', message: `Vị trí #${idx}: hiệu lực từ ngày phải là ngày hợp lệ (YYYY-MM-DD)` },
+          { status: 400 },
+        );
+      }
+      // validTo: optional, nếu có phải hợp lệ VÀ >= validFrom
+      if (slot.validTo !== undefined && slot.validTo !== null) {
+        if (!isIsoDateOnly(slot.validTo)) {
+          return NextResponse.json(
+            { error: 'VALIDATION_ERROR', message: `Vị trí #${idx}: hiệu lực đến ngày phải là ngày hợp lệ (YYYY-MM-DD) hoặc null` },
+            { status: 400 },
+          );
+        }
+        if (slot.validTo < slot.validFrom) {
+          return NextResponse.json(
+            { error: 'VALIDATION_ERROR', message: `Vị trí #${idx}: hiệu lực đến ngày (${slot.validTo}) phải >= hiệu lực từ ngày` },
+            { status: 400 },
+          );
+        }
       }
     }
   }
@@ -266,10 +324,16 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
  *
  * Xoá vĩnh viễn Nhu cầu tuyển dụng. CHỈ ADMIN.
  *
+ * CORRECTION 1/1 (T0): DELETE dùng `withIdempotency` đúng contract —
+ * cùng `x-idempotency-key` → cùng response (replay); khác key hoặc khác
+ * payload với key đã dùng → 409 IDEMPOTENCY_CONFLICT. Click "Xóa vĩnh viễn"
+ * nhiều lần trong cùng dialog (cùng key) an toàn, không double-delete.
+ *
  * 200: `{ order: { id, deleted: true } }`
+ * 400: VALIDATION_ERROR (thiếu `x-idempotency-key` cho idempotency-safe route)
  * 403: PERMISSION_DENIED (non-ADMIN)
  * 404: NOT_FOUND
- * 409: ORDER_NOT_DELETABLE kèm guidance dùng "Hủy nhu cầu" (CANCELLED)
+ * 409: ORDER_NOT_DELETABLE | IDEMPOTENCY_CONFLICT
  */
 export async function DELETE(req: NextRequest, { params }: RouteParams) {
   let ctx;
@@ -289,11 +353,40 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
 
   const { id } = await params;
   const prisma = getPrisma();
+  const idempotencyKey = getIdempotencyKey(req);
+
+  // CORRECTION 1/1 (T0): DELETE yêu cầu idempotency key để chống double-click
+  // và tuân thủ contract "same key → same response". Không có key → 400.
+  if (!idempotencyKey) {
+    return NextResponse.json(
+      {
+        error: 'VALIDATION_ERROR',
+        message: 'Thiếu header x-idempotency-key cho thao tác xoá vĩnh viễn.',
+      },
+      { status: 400 },
+    );
+  }
 
   try {
-    const result = await withDbContext(prisma, ctx, (tx) => deleteStaffingOrder(tx, ctx, id));
-    return NextResponse.json({ order: result });
+    const result = await withIdempotency({
+      prisma,
+      route: `DELETE:/api/staffing/orders/${id}`,
+      actorId: ctx.userId,
+      key: idempotencyKey,
+      // DELETE không nhận body — requestBody null để cùng key replay cùng response.
+      requestBody: { _delete: true, orderId: id },
+      handler: async () => {
+        const deleted = await withDbContext(prisma, ctx, (tx) =>
+          deleteStaffingOrder(tx, ctx, id),
+        );
+        return { body: { order: deleted }, statusCode: 200 };
+      },
+    });
+    return NextResponse.json(result.body, { status: result.statusCode });
   } catch (e) {
+    if (e instanceof Error && e.name === 'IdempotencyConflictError') {
+      return NextResponse.json({ error: 'IDEMPOTENCY_CONFLICT', message: e.message }, { status: 409 });
+    }
     return mapStaffingOrderEditError(e);
   }
 }
@@ -323,4 +416,24 @@ function mapStaffingOrderEditError(e: unknown): NextResponse {
   }
   console.error('[api/staffing/orders/[id]] error:', e);
   return NextResponse.json({ error: 'INTERNAL', message: 'Failed to process request' }, { status: 500 });
+}
+
+/**
+ * CORRECTION 1/1 (T0): validator helpers cho PUT body.
+ * - isIsoDateOnly: YYYY-MM-DD hợp lệ
+ * - isTimeOfDay: HH:mm (24h) hợp lệ
+ */
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const TIME_OF_DAY_RE = /^([01]\d|2[0-3]):([0-5]\d)$/;
+
+function isIsoDateOnly(value: unknown): value is string {
+  if (typeof value !== 'string' || !ISO_DATE_RE.test(value)) return false;
+  const d = new Date(value + 'T00:00:00Z');
+  if (Number.isNaN(d.getTime())) return false;
+  // Round-trip: đảm bảo Date parse trùng với input (loại bỏ "2026-02-30").
+  return d.toISOString().slice(0, 10) === value;
+}
+
+function isTimeOfDay(value: unknown): value is string {
+  return typeof value === 'string' && TIME_OF_DAY_RE.test(value);
 }

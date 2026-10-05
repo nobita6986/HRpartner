@@ -210,3 +210,4 @@ Tier 1 append sau khi chạy self-review; audit NONE resolve trực tiếp từ 
 |---|---|---|---|
 | `v1.0` | 2026-10-05 | Initial contract | Initial |
 | `v1.0` | 2026-10-05 | Status READY_FOR_EXECUTION → ACCEPTED; Current execution round 0 → 1; Next gate = `/deliver → /resolve` (PR opened, CI monitoring) | Tier 1 self-review passed; all gates GREEN; implementation complete (28 test files + 4349 unit tests passing) |
+| `v1.0` | 2026-10-05 | CORRECTION 1/1 in-flight: Status ACCEPTED → CORRECTING; Execution round 1 → 2 | T0 correction 1/1 PR #108: (1) full Vietnamese UI copy (Order → nhu cầu tuyển dụng, Slot → vị trí tuyển, JobOpening → vị trí tuyển nội bộ, JobPosting → tin tuyển dụng, role → vai trò, terminal → trạng thái kết thúc; no internal field in user-facing copy); (2) concurrent-safe delete/update-slot (FOR UPDATE locks + re-read); (3) DELETE dùng `withIdempotency`; (4) PUT validation (hourlyRateVnd, dates); (5) ADMIN delete visible on CLOSED/CANCELLED |
