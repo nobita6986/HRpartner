@@ -1,7 +1,7 @@
 /**
  * jobs-terminology.static.test.ts — T1B Wave 2 (EP §5.2 / L-010..L-018).
  *
- * Static guard for `/admin/jobs` (Project list). Wave 1 already shipped the
+ * Static guard for `/admin/projects` (Project list). Wave 1 already shipped the
  * F11 business-button literals `Công bố dự án` / `Bỏ công bố dự án` and
  * the editor shell display `Đăng tin / Gỡ tin / Lưu trữ` (fenced by
  * `app/admin/jobs/__tests__/admin-jobs-terminology.static.test.ts`).
@@ -16,6 +16,10 @@
  *   - No raw English `Published` / `Unpublished` / `Closed` in JSX.
  *   - Empty state copy updated.
  *
+ * hrp-t1a-introduce-hrp-and-menu-cleanup: the surface has moved from
+ * `/admin/jobs` to `/admin/projects` (T0 directive §B.1). The test
+ * target was moved accordingly; the surface itself is unchanged.
+ *
  * Pure filesystem test — no DOM, no React, no DB.
  */
 import { readFileSync } from 'node:fs';
@@ -23,56 +27,77 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-const JOBS_PAGE_PATH = join(process.cwd(), 'app/admin/jobs/page.tsx');
-const JOBS_SOURCE = readFileSync(JOBS_PAGE_PATH, 'utf8');
+// hrp-t1a-introduce-hrp-and-menu-cleanup: surface moved from
+// /admin/jobs to /admin/projects. /admin/jobs is now a server-component
+// 307 redirect to /admin/projects, so the static guards now point at the
+// new owner page.
+//
+// correction 1/1: the page was split into a server component
+// (app/admin/projects/page.tsx) that derives `ProjectsCapability` from
+// `AuthContext.role` and a client component
+// (app/admin/projects/projects-table-client.tsx) that owns the table.
+// All column headers, button labels and the empty-state copy moved into
+// the client file, so the static guards now read the client file.
+const PROJECTS_PAGE_PATH = join(process.cwd(), 'app/admin/projects/projects-table-client.tsx');
+const PROJECTS_SOURCE = readFileSync(PROJECTS_PAGE_PATH, 'utf8');
 
-describe('hrp-admin-localization-wave2 — /admin/jobs terminology (L-010..L-018)', () => {
+describe('hrp-admin-localization-wave2 — /admin/projects terminology (L-010..L-018)', () => {
   // RQ-06 / AC-06 — column-derived publish status routed through dictionary.
   it('publish column status uses domain dictionary + shared <StatusBadge> (no raw English)', () => {
     // Wave 2 routes the raw ternary `Published` / `Unpublished` / `Closed`
     // through `projectPublishColumnLabel()`. The inline `STATUS_COLORS` map
     // is removed (no longer rendered as JSX).
-    expect(JOBS_SOURCE).not.toMatch(/isPublic\s*\?\s*'Published'/);
-    expect(JOBS_SOURCE).not.toMatch(/'Unpublished'\s*:\s*'Published'/);
-    expect(JOBS_SOURCE).not.toMatch(/>\s*Closed\s*<\/span>/);
+    expect(PROJECTS_SOURCE).not.toMatch(/isPublic\s*\?\s*'Published'/);
+    expect(PROJECTS_SOURCE).not.toMatch(/'Unpublished'\s*:\s*'Published'/);
+    expect(PROJECTS_SOURCE).not.toMatch(/>\s*Closed\s*<\/span>/);
     // Dictionary import is present.
-    expect(JOBS_SOURCE).toMatch(/projectPublishColumnLabel/);
+    expect(PROJECTS_SOURCE).toMatch(/projectPublishColumnLabel/);
     // Shared primitive is used.
-    expect(JOBS_SOURCE).toMatch(/<StatusBadge\b/);
+    expect(PROJECTS_SOURCE).toMatch(/<StatusBadge\b/);
   });
 
   // RQ-06 — column header rebindings (EP §3.1 #1, §3.5 #7/#8/#9).
+  // hrp-t1a-introduce-hrp-and-menu-cleanup: the headers array is built
+  // dynamically from a string[]; the rendered text only exists at runtime,
+  // not as a literal in source. The static guard therefore asserts on the
+  // header literals present in the source array.
   it('table column headers are Vietnamese', () => {
-    expect(JOBS_SOURCE).toMatch(/>\s*Dự án\s*</);
-    expect(JOBS_SOURCE).toMatch(/>\s*Mã dự án\s*</);
-    expect(JOBS_SOURCE).toMatch(/>\s*Trạng thái\s*</);
-    expect(JOBS_SOURCE).toMatch(/>\s*Công bố\s*</);
+    expect(PROJECTS_SOURCE).toMatch(/>\s*Dự án\s*</);
+    expect(PROJECTS_SOURCE).toMatch(/'Mã dự án'/);
+    expect(PROJECTS_SOURCE).toMatch(/>\s*Trạng thái\s*</);
+    expect(PROJECTS_SOURCE).toMatch(/'Công bố'/);
   });
 
   // RQ-06 — legacy English column headers REMOVED from JSX.
   it('legacy English column headers (Publish / Project / Code / Status) are REMOVED from JSX', () => {
-    expect(JOBS_SOURCE).not.toMatch(/>\s*Publish\s*<\/th>/);
-    expect(JOBS_SOURCE).not.toMatch(/>\s*Project\s*<\/th>/);
-    expect(JOBS_SOURCE).not.toMatch(/>\s*Code\s*<\/th>/);
-    expect(JOBS_SOURCE).not.toMatch(/>\s*Status\s*<\/th>/);
+    expect(PROJECTS_SOURCE).not.toMatch(/>\s*Publish\s*<\/th>/);
+    expect(PROJECTS_SOURCE).not.toMatch(/>\s*Project\s*<\/th>/);
+    expect(PROJECTS_SOURCE).not.toMatch(/>\s*Code\s*<\/th>/);
+    expect(PROJECTS_SOURCE).not.toMatch(/>\s*Status\s*<\/th>/);
   });
 
   // RQ-06 — empty state copy (EP §3.5 #49).
   it('empty state copy uses Vietnamese', () => {
-    expect(JOBS_SOURCE).toMatch(/Chưa có dự án công khai/);
+    // correction 1/1: copy shortened from
+    //   "Chưa có dự án công khai."
+    // to
+    //   "Chưa có dự án nào."
+    // (T0 §B.4). The longer copy is no longer rendered anywhere.
+    expect(PROJECTS_SOURCE).toMatch(/Chưa có dự án nào\./);
+    expect(PROJECTS_SOURCE).not.toMatch(/Chưa có dự án công khai/);
     // Legacy "Chưa có job public nào" removed.
-    expect(JOBS_SOURCE).not.toMatch(/Chưa có job public nào/);
+    expect(PROJECTS_SOURCE).not.toMatch(/Chưa có job public nào/);
   });
 
   // F11 fence guard — Wave 1 business-button literals still present.
-  it('F11 business-button literals on /admin/jobs are preserved', () => {
-    expect(JOBS_SOURCE).toMatch(/Công bố dự án/);
-    expect(JOBS_SOURCE).toMatch(/Bỏ công bố dự án/);
+  it('F11 business-button literals on /admin/projects are preserved', () => {
+    expect(PROJECTS_SOURCE).toMatch(/Công bố dự án/);
+    expect(PROJECTS_SOURCE).toMatch(/Bỏ công bố dự án/);
   });
 
   // Encoding: LF-only, no UTF-8 BOM (RQ-18 / AC-21).
   it('page.tsx is LF-only (no CRLF, no UTF-8 BOM)', () => {
-    expect(JOBS_SOURCE).not.toMatch(/\r\n/);
-    expect(JOBS_SOURCE.charCodeAt(0)).not.toBe(0xfeff);
+    expect(PROJECTS_SOURCE).not.toMatch(/\r\n/);
+    expect(PROJECTS_SOURCE.charCodeAt(0)).not.toBe(0xfeff);
   });
 });
