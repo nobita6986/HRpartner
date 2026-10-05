@@ -12,6 +12,7 @@
  */
 
 import * as React from 'react';
+import Link from 'next/link';
 
 export interface InvalidQueryPanelProps {
   issues: ReadonlyArray<{
@@ -19,11 +20,6 @@ export interface InvalidQueryPanelProps {
     message: string;
     code: string;
   }>;
-}
-
-function formatPath(path: ReadonlyArray<string | number>): string {
-  if (path.length === 0) return '(root)';
-  return path.join('.');
 }
 
 export function InvalidQueryPanel({ issues }: InvalidQueryPanelProps): React.ReactElement {
@@ -34,22 +30,19 @@ export function InvalidQueryPanel({ issues }: InvalidQueryPanelProps): React.Rea
       data-testid="invalid-query-panel"
       className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-amber-900"
     >
-      <h2 className="text-base font-semibold mb-2">Tham số truy vấn không hợp lệ</h2>
+      <h2 className="text-base font-semibold mb-2">Bộ lọc chưa hợp lệ</h2>
       <p className="text-sm mb-4">
-        Tham số URL không khớp schema của E0; hệ thống đã chặn truy vấn DB và không trả
-        dữ liệu để tránh kết quả sai. Hãy điều chỉnh các tham số bên dưới rồi tải lại.
+        {issues.length === 1
+          ? 'Có một bộ lọc không phù hợp với dữ liệu hiện có.'
+          : 'Có một số bộ lọc không phù hợp với dữ liệu hiện có.'}{' '}
+        Hãy xóa bộ lọc và thử lại.
       </p>
-      <ul className="text-sm space-y-1.5" data-testid="invalid-query-issues">
-        {issues.map((issue, idx) => (
-          <li key={`${issue.code}-${idx}`} className="font-mono text-xs">
-            <span className="font-semibold">{formatPath(issue.path)}</span>
-            <span aria-hidden="true"> — </span>
-            <span>{issue.message}</span>
-            <span aria-hidden="true"> </span>
-            <span className="text-amber-700">[{issue.code}]</span>
-          </li>
-        ))}
-      </ul>
+      <Link
+        href="/admin/recruiter-workbench"
+        className="inline-flex min-h-11 items-center rounded-lg bg-amber-900 px-4 py-2 text-sm font-medium text-white underline-offset-4 hover:underline"
+      >
+        Xóa bộ lọc
+      </Link>
     </div>
   );
 }

@@ -64,7 +64,7 @@ export const JOB_POSTING_ACTION_CODES: Readonly<Record<JobPostingActionCode, Act
  * (KEEP_CANONICAL_IDENTIFIER) if the value is missing.
  */
 export function jobPostingStatusLabel(status: string): string {
-  return JOB_POSTING_STATUS_LABELS[status as JobPostingLifecycleStatus] ?? status;
+  return JOB_POSTING_STATUS_LABELS[status as JobPostingLifecycleStatus] ?? 'Không xác định';
 }
 
 export function jobPostingStatusTone(status: string): 'NEUTRAL' | 'SUCCESS' | 'WARN' | 'DANGER' {

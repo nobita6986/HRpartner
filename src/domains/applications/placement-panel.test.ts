@@ -102,7 +102,7 @@ describe('ConflictList', () => {
       ],
     }));
     expect(html).toContain('data-conflict="PROJECT_QUOTA_FULL"');
-    expect(html).toContain('Dự án đã đủ quota');
+    expect(html).toContain('Dự án đã đủ số người cần tuyển');
     expect(html).toContain('data-testid="overridable-REFERRAL_GUARD_BLOCKED"');
     expect(html).not.toContain('overridable-PROJECT_QUOTA_FULL');
   });
@@ -118,9 +118,9 @@ describe('PlacementCounters', () => {
     const html = render(createElement(PlacementCounters, { preview: PREVIEW }));
     expect(html).toContain('Thợ điện (ELECTRICIAN)');
     expect(html).toContain('1/3 — còn 2');
-    expect(html).toContain('SO-001 · OPEN');
+    expect(html).toContain('SO-001 · Mở');
     expect(html).toContain('4/10 — còn 6');
-    expect(html).toContain('PUBLIC · NONE (bỏ qua R2/R3)');
+    expect(html).toContain('Công khai · Đã kiểm tra');
     expect(html).not.toContain('data-testid="active-assignment"');
   });
 
@@ -128,7 +128,9 @@ describe('PlacementCounters', () => {
     const html = render(createElement(PlacementCounters, {
       preview: { ...PREVIEW, existingActiveAssignment: { assignmentId: 'assign-old', projectId: 'project-9' } },
     }));
-    expect(html).toContain('assign-old @ project-9');
+    expect(html).toContain('Người lao động đã được bố trí tại một dự án đang hoạt động.');
+    expect(html).not.toContain('assign-old');
+    expect(html).not.toContain('project-9');
   });
 });
 
@@ -147,7 +149,7 @@ describe('OverrideForm', () => {
       value: { overrideCase: '', reason: '', evidence: '' }, canOverride: false, onChange: noop,
     }));
     expect(html).toContain('data-testid="override-denied"');
-    expect(html).toContain('CAN_OVERRIDE_REFERRAL_GUARD');
+    expect(html).toContain('bạn chưa có quyền thực hiện ngoại lệ');
     expect(html).not.toContain('data-testid="override-form"');
   });
 });
@@ -205,7 +207,7 @@ describe('PlacementPanel — preview → conflicts → override → activate', (
     };
     const empty = activateGate({ preview: blocked, reason: 'r', pending: false, dirtySincePreview: false, override: { overrideCase: '', reason: '' }, canOverride: true });
     expect(empty).toMatchObject({ disabled: true });
-    expect(empty.hint).toContain('S1/S2/S3');
+    expect(empty.hint).toContain('Chọn trường hợp ngoại lệ phù hợp');
 
     const ready = activateGate({ preview: blocked, reason: 'r', pending: false, dirtySincePreview: false, override: { overrideCase: 'S2', reason: 'ok' }, canOverride: true });
     expect(ready).toEqual({ disabled: false, hint: null });
@@ -225,7 +227,7 @@ describe('PlacementPanel — preview → conflicts → override → activate', (
       conflicts: [{ code: 'REFERRAL_GUARD_BLOCKED', message: 'blocked', overridable: true }],
     };
     const gate = activateGate({ preview: blocked, reason: 'r', pending: false, dirtySincePreview: false, override: null, canOverride: false });
-    expect(gate.hint).toContain('không có quyền override');
+    expect(gate.hint).toContain('bạn chưa có quyền thực hiện ngoại lệ');
     const html = render(createElement(PlacementPanel, {
       ...base, preview: blocked, previewGate: previewSubmitGate(FORM, false), activateGateResult: gate,
     }));
@@ -277,9 +279,9 @@ describe('DedupPicker — dedup-aware convert (AC-08)', () => {
     const html = render(createElement(DedupPicker, {
       candidates, selected: null, onSelect: noop, onConfirm: noop, onCancel: noop, pending: false,
     }));
-    expect(html).toContain('Có 2 Worker trùng');
+    expect(html).toContain('Có 2 hồ sơ người lao động trùng');
     expect(html).toContain('data-testid="dedup-worker-1"');
-    expect(html).toContain('CCCD, PHONE');
+    expect(html).toContain('Số CCCD, Số điện thoại');
   });
 
   it('keeps confirm disabled until a candidate is selected', () => {

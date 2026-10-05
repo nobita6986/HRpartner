@@ -53,6 +53,10 @@
  */
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useTransition } from 'react';
+import {
+  jobOpeningServiceModelLabel,
+  jobOpeningStatusLabel,
+} from '@/src/domains/staffing/job-opening-ui';
 
 export type ServiceModel =
   | 'STAFFING_SUPPLY'
@@ -64,10 +68,10 @@ export const SERVICE_MODEL_OPTIONS: ReadonlyArray<{
   value: ServiceModel;
   label: string;
 }> = [
-  { value: 'STAFFING_SUPPLY', label: 'Cung ứng nhân sự (STAFFING_SUPPLY)' },
-  { value: 'LABOR_LEASING', label: 'Cho thuê lại lao động (LABOR_LEASING)' },
-  { value: 'RECRUITMENT_SERVICE', label: 'Tuyển dụng (RECRUITMENT_SERVICE)' },
-  { value: 'REFERRAL_SERVICE', label: 'Giới thiệu ứng viên (REFERRAL_SERVICE)' },
+  { value: 'STAFFING_SUPPLY', label: jobOpeningServiceModelLabel('STAFFING_SUPPLY') },
+  { value: 'LABOR_LEASING', label: jobOpeningServiceModelLabel('LABOR_LEASING') },
+  { value: 'RECRUITMENT_SERVICE', label: jobOpeningServiceModelLabel('RECRUITMENT_SERVICE') },
+  { value: 'REFERRAL_SERVICE', label: jobOpeningServiceModelLabel('REFERRAL_SERVICE') },
 ];
 
 export interface JobOpeningActionsFlags {
@@ -206,7 +210,7 @@ export function JobOpeningActions({ opening, flags }: JobOpeningActionsProps) {
   const submitClassify = () => {
     if (!flags.canClassify) return;
     if (!selectedServiceModel) {
-      setStatus({ kind: 'error', message: 'Vui lòng chọn một ServiceModel' });
+      setStatus({ kind: 'error', message: 'Vui lòng chọn hình thức tuyển dụng.' });
       return;
     }
     const payload = { serviceModel: selectedServiceModel };
@@ -226,25 +230,20 @@ export function JobOpeningActions({ opening, flags }: JobOpeningActionsProps) {
           },
         );
         if (!res.ok) {
-          const body = await res.json().catch(() => ({}));
-          const message =
-            typeof body?.message === 'string'
-              ? body.message
-              : `Phân loại thất bại (HTTP ${res.status})`;
           // Do NOT clear the key on failure — retry should reuse the same key.
-          setStatus({ kind: 'error', message });
+          setStatus({ kind: 'error', message: 'Không thể cập nhật hình thức tuyển dụng. Vui lòng tải lại trang rồi thử lại.' });
           return;
         }
         // Terminal success → clear the retry key so the next click mints
         // a new one.
         clearKey(openingIdRef.current, 'classify', payload);
-        setStatus({ kind: 'success', message: 'Đã phân loại ServiceModel' });
+        setStatus({ kind: 'success', message: 'Đã cập nhật hình thức tuyển dụng.' });
         router.refresh();
-      } catch (err) {
+      } catch {
         // Network error → retry should reuse the same key.
         setStatus({
           kind: 'error',
-          message: err instanceof Error ? err.message : 'Lỗi mạng',
+          message: 'Không thể kết nối máy chủ. Vui lòng thử lại.',
         });
       }
     });
@@ -252,7 +251,7 @@ export function JobOpeningActions({ opening, flags }: JobOpeningActionsProps) {
 
   const submitOpen = () => {
     if (!flags.canOpen) return;
-    setStatus({ kind: 'submitting', label: 'Đang mở JobOpening...' });
+    setStatus({ kind: 'submitting', label: 'Đang mở đợt tuyển dụng...' });
     const idempotencyKey = obtainKey(openingIdRef.current, 'open', null);
     startTransition(async () => {
       try {
@@ -267,21 +266,19 @@ export function JobOpeningActions({ opening, flags }: JobOpeningActionsProps) {
           },
         );
         if (!res.ok) {
-          const body = await res.json().catch(() => ({}));
-          const message =
-            typeof body?.message === 'string'
-              ? body.message
-              : `Mở JobOpening thất bại (HTTP ${res.status})`;
-          setStatus({ kind: 'error', message });
+          setStatus({
+            kind: 'error',
+            message: 'Không thể mở đợt tuyển dụng. Vui lòng kiểm tra các điều kiện và thử lại.',
+          });
           return;
         }
         clearKey(openingIdRef.current, 'open', null);
-        setStatus({ kind: 'success', message: 'Đã mở JobOpening' });
+        setStatus({ kind: 'success', message: 'Đã mở đợt tuyển dụng.' });
         router.refresh();
-      } catch (err) {
+      } catch {
         setStatus({
           kind: 'error',
-          message: err instanceof Error ? err.message : 'Lỗi mạng',
+          message: 'Không thể kết nối máy chủ. Vui lòng thử lại.',
         });
       }
     });
@@ -303,14 +300,14 @@ export function JobOpeningActions({ opening, flags }: JobOpeningActionsProps) {
       style={{ borderColor: 'var(--outline-variant)', backgroundColor: 'var(--surface-container-lowest)' }}
     >
       <h2 className="text-lg font-semibold mb-3" style={{ color: 'var(--on-surface)' }}>
-        Kích hoạt JobOpening
+        Kích hoạt đợt tuyển dụng
       </h2>
 
       {/* ServiceModel selector — visible only when canClassify */}
       {flags.canClassify && (
         <div className="mb-4" data-testid="classify-section">
           <p className="text-sm mb-2" style={{ color: 'var(--on-surface-variant)' }}>
-            Phân loại ServiceModel:
+            Hình thức tuyển dụng:
           </p>
           <div className="flex flex-col gap-2">
             {SERVICE_MODEL_OPTIONS.map((opt) => (
@@ -352,7 +349,7 @@ export function JobOpeningActions({ opening, flags }: JobOpeningActionsProps) {
             style={{ backgroundColor: 'var(--primary)', color: 'var(--on-primary)' }}
             data-testid="open-submit"
           >
-            Mở JobOpening
+            Mở đợt tuyển dụng
           </button>
         ) : (
           <button
@@ -362,7 +359,7 @@ export function JobOpeningActions({ opening, flags }: JobOpeningActionsProps) {
             style={{ backgroundColor: 'var(--surface-container)', color: 'var(--on-surface-variant)' }}
             data-testid="open-disabled"
           >
-            Mở JobOpening
+            Mở đợt tuyển dụng
           </button>
         )}
         {flags.blockedReason && (
@@ -383,9 +380,9 @@ export function JobOpeningActions({ opening, flags }: JobOpeningActionsProps) {
         data-status-kind={status.kind}
       >
         {status.kind === 'idle' && flags.currentServiceModel
-          ? `ServiceModel hiện tại: ${flags.currentServiceModel}`
+          ? `Hình thức tuyển dụng: ${jobOpeningServiceModelLabel(flags.currentServiceModel)}`
           : status.kind === 'idle' && flags.currentStatus
-            ? `Trạng thái: ${flags.currentStatus}`
+            ? `Trạng thái: ${jobOpeningStatusLabel(flags.currentStatus)}`
             : status.kind === 'submitting'
               ? status.label
               : status.kind === 'success'

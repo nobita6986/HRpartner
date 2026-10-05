@@ -52,6 +52,7 @@ export default async function AdminSettingsPage() {
           ctaLabel: null,
           ctaUrl: null,
           dismissible: true,
+          backgroundOpacity: 100,
           textColor: 'on-primary',
           font: 'SANS',
           emphasis: 'BOLD',

@@ -199,6 +199,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
   const [stickyCtaLabel, setStickyCtaLabel] = useState<string>(stickyInitial.ctaLabel ?? '');
   const [stickyCtaUrl, setStickyCtaUrl] = useState<string>(stickyInitial.ctaUrl ?? '');
   const [stickyDismissible, setStickyDismissible] = useState<boolean>(stickyInitial.dismissible);
+  const [stickyBackgroundOpacity, setStickyBackgroundOpacity] = useState<number>(stickyInitial.backgroundOpacity);
   const [stickyTextColor, setStickyTextColor] = useState<StickyTextColor>(stickyInitial.textColor);
   const [stickyFont, setStickyFont] = useState<StickyFont>(stickyInitial.font);
   const [stickyEmphasis, setStickyEmphasis] = useState<StickyEmphasis>(stickyInitial.emphasis);
@@ -216,7 +217,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
   const stickyMessageError =
     stickyMessage.length > 280 ? 'Nội dung thông báo tối đa 280 ký tự.' : null;
   const stickyCtaLabelError =
-    stickyCtaLabel.length > 60 ? 'Nhãn CTA tối đa 60 ký tự.' : null;
+    stickyCtaLabel.length > 60 ? 'Nhãn nút hành động tối đa 60 ký tự.' : null;
   const stickyCtaUrlError = validateCtaUrl(stickyCtaUrl);
   const hasFieldError =
     bestJobsError !== null ||
@@ -240,6 +241,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
     stickyCtaLabel !== (savedSnapshot.stickyAnnouncement.ctaLabel ?? '') ||
     stickyCtaUrl !== (savedSnapshot.stickyAnnouncement.ctaUrl ?? '') ||
     stickyDismissible !== savedSnapshot.stickyAnnouncement.dismissible ||
+    stickyBackgroundOpacity !== savedSnapshot.stickyAnnouncement.backgroundOpacity ||
     stickyTextColor !== savedSnapshot.stickyAnnouncement.textColor ||
     stickyFont !== savedSnapshot.stickyAnnouncement.font ||
     stickyEmphasis !== savedSnapshot.stickyAnnouncement.emphasis ||
@@ -264,6 +266,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
     stickyCtaLabel,
     stickyCtaUrl,
     stickyDismissible,
+    stickyBackgroundOpacity,
     stickyTextColor,
     stickyFont,
     stickyEmphasis,
@@ -290,6 +293,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
             ctaLabel: trimmedCtaLabel.length > 0 ? trimmedCtaLabel : null,
             ctaUrl: trimmedCtaUrl.length > 0 ? trimmedCtaUrl : null,
             dismissible: stickyDismissible,
+            backgroundOpacity: stickyBackgroundOpacity,
             textColor: stickyTextColor,
             font: stickyFont,
             emphasis: stickyEmphasis,
@@ -334,7 +338,11 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
         });
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
-          setError(data.message ?? `Lỗi ${res.status}`);
+          setError(
+            res.status < 500 && typeof data.message === 'string'
+              ? data.message
+              : 'Không thể lưu cài đặt. Vui lòng thử lại.',
+          );
           return;
         }
         const data = await res.json();
@@ -353,6 +361,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
           setStickyCtaLabel(snap.ctaLabel ?? '');
           setStickyCtaUrl(snap.ctaUrl ?? '');
           setStickyDismissible(snap.dismissible);
+          setStickyBackgroundOpacity(snap.backgroundOpacity);
           setStickyTextColor(snap.textColor);
           setStickyFont(snap.font);
           setStickyEmphasis(snap.emphasis);
@@ -361,8 +370,8 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
           setSuccess('Đã lưu cài đặt trang chủ và kênh liên hệ.');
         }
         router.refresh();
-      } catch (e) {
-        setError(e instanceof Error ? e.message : 'Lỗi không xác định.');
+      } catch {
+        setError('Không thể kết nối máy chủ. Vui lòng thử lại.');
       }
     });
   }
@@ -380,6 +389,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
     setStickyCtaLabel(snap.ctaLabel ?? '');
     setStickyCtaUrl(snap.ctaUrl ?? '');
     setStickyDismissible(snap.dismissible);
+    setStickyBackgroundOpacity(snap.backgroundOpacity);
     setStickyTextColor(snap.textColor);
     setStickyFont(snap.font);
     setStickyEmphasis(snap.emphasis);
@@ -436,7 +446,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
               Cài đặt trang chủ
             </h2>
             <p style={{ color: 'var(--on-surface-variant)' }} className="mt-0.5 text-xs">
-              Chỉ có một bản ghi cấu hình (id=&apos;default&apos;). Thay đổi có hiệu lực ngay trên trang chủ.
+              Thay đổi tại đây có hiệu lực trên trang chủ sau khi lưu.
             </p>
           </div>
           <span
@@ -496,6 +506,37 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
                 {bestJobsError}
               </p>
             )}
+          </div>
+
+          <div className="sm:col-span-2">
+            <label htmlFor="stickyBackgroundOpacity" className="mb-1 block text-sm font-medium" style={{ color: 'var(--on-surface)' }}>
+              Độ trong suốt nền
+            </label>
+            <div className="flex items-center gap-4">
+              <input
+                id="stickyBackgroundOpacity"
+                type="range"
+                min={0}
+                max={100}
+                step={1}
+                value={stickyBackgroundOpacity}
+                onChange={(e) => setStickyBackgroundOpacity(Number(e.target.value))}
+                aria-valuetext={`${stickyBackgroundOpacity}%`}
+                className="hrp-focus min-h-11 flex-1 accent-[var(--color-primary)]"
+                data-testid="sticky-background-opacity-input"
+              />
+              <output
+                htmlFor="stickyBackgroundOpacity"
+                className="w-12 text-right text-sm tabular-nums"
+                style={{ color: 'var(--on-surface)' }}
+                data-testid="sticky-background-opacity-value"
+              >
+                {stickyBackgroundOpacity}%
+              </output>
+            </div>
+            <p style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-xs">
+              Chỉ làm trong suốt nền; nội dung và nút vẫn rõ. Mặc định 100%.
+            </p>
           </div>
 
           <div>
@@ -667,7 +708,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
           <div className="mb-3 flex items-center justify-between gap-3">
             <div>
               <h3 style={{ color: 'var(--on-surface)' }} className="text-sm font-semibold">
-                UI2 · Tin tức &amp; Cẩm nang
+                Tin tức &amp; Cẩm nang
               </h3>
               <p style={{ color: 'var(--on-surface-variant)' }} className="mt-0.5 text-xs">
                 Khi tắt, mục &quot;Tin tức&quot; sẽ ẩn khỏi điều hướng và trang chủ. Dữ liệu bài viết vẫn được giữ nguyên.
@@ -677,7 +718,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
               style={{ background: 'var(--primary-container)', color: 'var(--on-primary-container)' }}
               className="rounded-full px-2 py-0.5 text-xs font-medium"
             >
-              UI2 · NỘI DUNG CÔNG KHAI
+              NỘI DUNG TRANG CHỦ
             </span>
           </div>
 
@@ -710,17 +751,17 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
           <div className="mb-3 flex items-center justify-between gap-3">
             <div>
               <h3 style={{ color: 'var(--on-surface)' }} className="text-sm font-semibold">
-                UI2 · Thông báo dính phía dưới
+                Thông báo cuối trang
               </h3>
               <p style={{ color: 'var(--on-surface-variant)' }} className="mt-0.5 text-xs">
-                Thanh thông báo cố định ở cuối màn hình. Đường dẫn CTA chỉ chấp nhận đường dẫn tương đối hoặc URL HTTPS.
+                Thanh thông báo cố định ở cuối màn hình. Nút hành động chỉ hỗ trợ đường dẫn nội bộ hoặc HTTPS.
               </p>
             </div>
             <span
               style={{ background: 'var(--primary-container)', color: 'var(--on-primary-container)' }}
               className="rounded-full px-2 py-0.5 text-xs font-medium"
             >
-              UI2 · THANH THÔNG BÁO CỐ ĐỊNH
+              THÔNG BÁO CỐ ĐỊNH
             </span>
           </div>
 
@@ -738,7 +779,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
                 Bật thanh thông báo
               </span>
               <span style={{ color: 'var(--on-surface-variant)' }} className="mt-0.5 block text-xs">
-                Khi tắt, thanh và nút CTA sẽ không hiển thị trên trang công khai.
+                Khi tắt, thanh thông báo và nút hành động sẽ không hiển thị trên trang công khai.
               </span>
             </span>
           </label>
@@ -767,7 +808,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
                 data-testid="sticky-message-input"
               />
               <p id="stickyMessage-help" style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-xs">
-                Tối đa 280 ký tự. Chỉ nhập văn bản thuần — KHÔNG nhúng HTML hoặc thẻ &lt;marquee&gt;.
+                Tối đa 280 ký tự. Chỉ hỗ trợ văn bản thường, không có định dạng nâng cao.
               </p>
               {stickyMessageError && (
                 <p id="stickyMessage-error" role="alert" style={{ color: 'var(--error)' }} className="mt-1 text-xs font-medium">
@@ -778,7 +819,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
 
             <div>
               <label htmlFor="stickyCtaLabel" className="mb-1 block text-sm font-medium" style={{ color: 'var(--on-surface)' }}>
-                Nhãn nút kêu gọi hành động (CTA)
+                Nhãn nút hành động
               </label>
               <input
                 id="stickyCtaLabel"
@@ -796,7 +837,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
                 data-testid="sticky-cta-label-input"
               />
               <p id="stickyCtaLabel-help" style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-xs">
-                Để trống nếu không cần nút CTA.
+                Để trống nếu không cần nút hành động.
               </p>
               {stickyCtaLabelError && (
                 <p id="stickyCtaLabel-error" role="alert" style={{ color: 'var(--error)' }} className="mt-1 text-xs font-medium">
@@ -807,7 +848,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
 
             <div>
               <label htmlFor="stickyCtaUrl" className="mb-1 block text-sm font-medium" style={{ color: 'var(--on-surface)' }}>
-                Đường dẫn nút CTA
+                Đường dẫn nút hành động
               </label>
               <input
                 id="stickyCtaUrl"
@@ -827,7 +868,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
                 data-testid="sticky-cta-url-input"
               />
               <p id="stickyCtaUrl-help" style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-xs">
-                Dùng đường dẫn nội bộ (ví dụ /viec-lam) hoặc URL HTTPS. Không chấp nhận javascript:, data:, vbscript:, file: hoặc HTTP.
+                Dùng đường dẫn nội bộ (ví dụ /viec-lam) hoặc địa chỉ HTTPS.
               </p>
               {stickyCtaUrlError && (
                 <p id="stickyCtaUrl-error" role="alert" style={{ color: 'var(--error)' }} className="mt-1 text-xs font-medium">
@@ -915,7 +956,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
                 ))}
               </select>
               <p style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-xs">
-                Hiệu ứng nhấp nháy và chạy chữ tự động tắt khi thiết bị bật chế độ giảm chuyển động (prefers-reduced-motion).
+                Hiệu ứng nhấp nháy và chạy chữ tự tắt khi thiết bị bật chế độ giảm chuyển động.
               </p>
             </div>
 
@@ -933,7 +974,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
                     Cho phép người dùng đóng thanh
                   </span>
                   <span style={{ color: 'var(--on-surface-variant)' }} className="mt-0.5 block text-xs">
-                    Phiên bản nội dung (contentRevision) quyết định trạng thái đóng có còn hiệu lực hay không.
+                    Người dùng đã đóng sẽ thấy lại thông báo khi nội dung được đăng lại.
                   </span>
                 </span>
               </label>
@@ -945,12 +986,12 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
                 className="hrp-focus inline-flex items-center gap-2 rounded-lg border border-[var(--outline-variant)] px-3 py-2 text-xs font-semibold disabled:opacity-40"
                 data-testid="sticky-publish-button"
               >
-                Tăng phiên bản nội dung
+                Hiển thị lại thông báo
               </button>
             </div>
 
             <p style={{ color: 'var(--on-surface-variant)' }} className="sm:col-span-2 text-xs">
-              Phiên bản nội dung hiện tại (contentRevision): <span className="font-mono">{stickyContentRevision}</span>
+              Phiên bản thông báo hiện tại
             </p>
           </fieldset>
         </div>
@@ -986,7 +1027,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
         <div className="mt-6 flex flex-wrap items-center justify-end gap-3">
           <p style={{ color: 'var(--on-surface-variant)' }} className="text-xs">
             {unavailableReason
-              ? 'Chưa có dữ liệu cấu hình trên database'
+              ? 'Chưa thể chỉnh sửa vì dữ liệu cài đặt chưa sẵn sàng.'
               : `Cập nhật lần cuối: ${new Date(savedSnapshot.updatedAt).toLocaleString('vi-VN')}`}
           </p>
           <button

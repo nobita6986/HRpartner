@@ -20,6 +20,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { CSSProperties } from 'react';
 import type { StickyAnnouncementDto } from './types';
 import { safeStickyAnnouncement } from './types';
 import { isCurrentlyDismissed } from './revision';
@@ -37,6 +38,10 @@ import {
 import styles from './sticky-announcement.module.css';
 
 const DISMISS_STORAGE_PREFIX = 'hrp.stickyAnnouncement.dismissed/';
+
+type StickyAnnouncementStyle = CSSProperties & {
+  '--sticky-background-opacity': string;
+};
 
 export interface StickyAnnouncementProps {
   /** DTO. Optional for render safety; missing fields fall back to defaults. */
@@ -59,10 +64,10 @@ export function StickyAnnouncement({
   const ctaLabel = normalized.ctaLabel?.trim() ?? '';
   const ctaRequiresLabel = ctaHref !== null;
   const showCta = ctaHref !== null && ctaLabel.length > 0;
-  const showMarqueeTrack = normalized.animation === 'MARQUEE' && message.length > 0;
 
   const [dismissedRevision, setDismissedRevision] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
   // Read the dismissed revision on mount. SSR is always non-dismissed.
   useEffect(() => {
@@ -107,9 +112,7 @@ export function StickyAnnouncement({
     }
   }, [normalized.contentRevision, normalized.dismissible, __testDisablePersistence]);
 
-  // Compute animation class on render. The reduced-motion preference is
-  // read at render time (CSS handles the override too; both layers).
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  // CSS also enforces this preference before the browser state is available.
   useEffect(() => {
     if (typeof window === 'undefined' || !window.matchMedia) return;
     const mql = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -122,10 +125,16 @@ export function StickyAnnouncement({
     return undefined;
   }, []);
 
-  const animationClass = getAnimationClass(normalized.animation, prefersReducedMotion);
+  const showMarqueeTrack =
+    normalized.animation === 'MARQUEE' && message.length > 0 && !prefersReducedMotion;
+  const animationClass = styles[getAnimationClass(normalized.animation, prefersReducedMotion)];
   const emphasisClass = getEmphasisClass(normalized.emphasis);
   const fontClass = getFontClass(normalized.font);
   const textColorVar = getTextColorVar(normalized.textColor);
+  const announcementStyle: StickyAnnouncementStyle = {
+    color: `var(${textColorVar})`,
+    '--sticky-background-opacity': `${normalized.backgroundOpacity}%`,
+  };
 
   // Suppression predicates. Order matters: a missing message is a hard no;
   // a dismissed current revision is a soft no (the bar reappears when the
@@ -155,22 +164,30 @@ export function StickyAnnouncement({
 
   const renderMessage = () => {
     if (showMarqueeTrack) {
-      // Doubled track: render the message twice for a seamless loop. The
-      // CSS animation translates by -50% to wrap without a visible jump.
       return (
-        <>
-          <span className={styles.hrpStickyAnnouncementMessage}>{message}</span>
-          <span
-            className={styles.hrpStickyAnnouncementMessage}
-            aria-hidden="true"
-            data-testid="sticky-announcement-marquee-tail"
-          >
-            {message}
-          </span>
-        </>
+        <div className={styles.hrpStickyAnnouncementViewport} data-testid="sticky-announcement-marquee">
+          <div className={styles.hrpStickyAnnouncementTrack} data-testid="sticky-announcement-marquee-track">
+            <span className={styles.hrpStickyAnnouncementMarqueeGroup}>
+              <span className={styles.hrpStickyAnnouncementMessage}>{message}</span>
+            </span>
+            <span
+              className={styles.hrpStickyAnnouncementMarqueeGroup}
+              aria-hidden="true"
+              data-testid="sticky-announcement-marquee-tail"
+            >
+              <span className={styles.hrpStickyAnnouncementMessage}>{message}</span>
+            </span>
+          </div>
+        </div>
       );
     }
-    return <span className={styles.hrpStickyAnnouncementMessage}>{message}</span>;
+    return (
+      <span
+        className={[styles.hrpStickyAnnouncementViewport, styles.hrpStickyAnnouncementMessage].join(' ')}
+      >
+        {message}
+      </span>
+    );
   };
 
   return (
@@ -185,8 +202,19 @@ export function StickyAnnouncement({
         emphasisClass,
         fontClass,
       ].join(' ')}
-      style={{ color: `var(${textColorVar})` }}
+      style={announcementStyle}
     >
+      {normalized.dismissible ? (
+        <button
+          type="button"
+          onClick={handleDismiss}
+          aria-label="Đóng thông báo"
+          data-testid="sticky-announcement-dismiss"
+          className={styles.hrpStickyAnnouncementDismiss}
+        >
+          ×
+        </button>
+      ) : null}
       {renderMessage()}
       {showCta && safeCtaHref ? (
         <a
@@ -198,17 +226,6 @@ export function StickyAnnouncement({
         >
           {ctaLabel}
         </a>
-      ) : null}
-      {normalized.dismissible ? (
-        <button
-          type="button"
-          onClick={handleDismiss}
-          aria-label="Đóng thông báo"
-          data-testid="sticky-announcement-dismiss"
-          className={styles.hrpStickyAnnouncementDismiss}
-        >
-          ×
-        </button>
       ) : null}
     </div>
   );

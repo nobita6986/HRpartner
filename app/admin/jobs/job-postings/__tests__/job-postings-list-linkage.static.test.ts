@@ -64,9 +64,9 @@ describe('hrp-m2a-operational-ux-debt / F7 — JobPosting list → JobOpening li
 
   // RQ-06 / AC-02 — orphan branch is preserved (no fabricated link).
   it('row markup preserves the orphan plain-text sentinel when openingStaffingOrderCode is null', () => {
-    expect(ROW_MARKUP).toMatch(/\(orphan — JobOpening đã xoá\)/);
+    expect(ROW_MARKUP).toMatch(/\(Chưa liên kết với đợt tuyển dụng\)/);
     // No `<Link>` wraps the orphan branch.
-    expect(ROW_MARKUP).not.toMatch(/<Link[^>]*>\s*<span[^>]*>\s*\(orphan/);
+    expect(ROW_MARKUP).not.toMatch(/<Link[^>]*>\s*<span[^>]*>\s*\(Chưa liên kết/);
   });
 
   // RQ-06 / AC-02 — when jobOpeningId is missing but openingStaffingOrderCode is present,
@@ -98,7 +98,7 @@ describe('hrp-m2a-operational-ux-debt / F7 — JobPosting list → JobOpening li
     expect(linkSlice).not.toBeNull();
     const inner = linkSlice![1]!;
     expect(inner).toMatch(/item\.openingStaffingOrderCode/);
-    expect(inner).toMatch(/JobOpening: \{item\.openingStatus\}/);
+    expect(inner).toMatch(/jobOpeningStatusLabel\(item\.openingStatus\)/);
   });
 
   // RQ-06 / AC-02 — the DTO contract preserves `jobOpeningId` so the UI can

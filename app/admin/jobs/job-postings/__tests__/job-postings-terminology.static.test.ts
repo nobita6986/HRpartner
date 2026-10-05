@@ -8,9 +8,9 @@
  *
  *   - List H1 / breadcrumb: `Tin tuyển dụng — soạn & đăng` (EP §3.5 #47).
  *   - Detail breadcrumb: `Danh sách nhu cầu` / `Tin tuyển dụng — trang xem` (EP §3.5 #46, #48).
- *   - List table column headers: `Đường dẫn tin (slug)` / `Đơn tuyển dụng` /
+ *   - List table column headers: `Đường dẫn công khai` / `Đơn tuyển dụng` /
  *     `Trạng thái` / `Phiên bản chỉnh sửa` / `Ngày cập nhật` (EP §3.5 #1, #2/#3, #9, #16, #4).
- *   - Detail fact labels: `Đường dẫn tin (slug)` / `Phiên bản chỉnh sửa` /
+ *   - Detail fact labels: `Đường dẫn công khai` / `Phiên bản chỉnh sửa` /
  *     `Ngày tạo` / `Ngày cập nhật` / `Ngày đăng` / `Ngày lưu trữ` (EP §3.5 #1-#6).
  *   - Status filter `<option>` text Vietnamese; `<option value>` canonical enum.
  *   - Status badge text routed through `jobPostingStatusLabel()`.
@@ -40,8 +40,8 @@ describe('hrp-admin-localization-wave2 — /admin/jobs/job-postings list (L-019.
   });
 
   it('table column headers are Vietnamese', () => {
-    expect(LIST_SOURCE).toMatch(/>\s*Đường dẫn tin \(slug\)\s*</);
-    expect(LIST_SOURCE).toMatch(/>\s*Đơn tuyển dụng\s*</);
+    expect(LIST_SOURCE).toMatch(/>\s*Đường dẫn công khai\s*</);
+    expect(LIST_SOURCE).toMatch(/>\s*Nhu cầu tuyển dụng\s*</);
     expect(LIST_SOURCE).toMatch(/>\s*Trạng thái\s*</);
     expect(LIST_SOURCE).toMatch(/>\s*Phiên bản chỉnh sửa\s*</);
     expect(LIST_SOURCE).toMatch(/>\s*Ngày cập nhật\s*</);
@@ -86,8 +86,8 @@ describe('hrp-admin-localization-wave2 — /admin/jobs/job-postings/[id] detail 
     expect(DETAIL_SOURCE).not.toMatch(/\{ label: 'JobPosting viewer'/);
   });
 
-  it('Fact labels are Vietnamese (Đường dẫn tin (slug) / Phiên bản chỉnh sửa / Ngày tạo / Ngày cập nhật / Ngày đăng / Ngày lưu trữ)', () => {
-    expect(DETAIL_SOURCE).toMatch(/label="Đường dẫn tin \(slug\)"/);
+  it('Fact labels are Vietnamese (Đường dẫn công khai / Phiên bản chỉnh sửa / Ngày tạo / Ngày cập nhật / Ngày đăng / Ngày lưu trữ)', () => {
+    expect(DETAIL_SOURCE).toMatch(/label="Đường dẫn công khai"/);
     expect(DETAIL_SOURCE).toMatch(/label="Phiên bản chỉnh sửa"/);
     expect(DETAIL_SOURCE).toMatch(/label="Ngày tạo"/);
     expect(DETAIL_SOURCE).toMatch(/label="Ngày cập nhật"/);

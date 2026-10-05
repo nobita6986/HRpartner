@@ -30,11 +30,11 @@ import { useRouter } from 'next/navigation';
 import type { JSONContent } from '@tiptap/core';
 
 import { JobPostingRichTextEditor } from '@/src/shared/ui/editor/JobPostingRichTextEditor';
-import {
-  JOB_POSTING_RICH_TEXT_SCHEMA_VERSION,
-} from '@/src/shared/content/job-posting-rich-text';
+import { JOB_POSTING_RICH_TEXT_SCHEMA_VERSION } from '@/src/shared/content/job-posting-rich-text';
 import type { JobPostingDetailDto } from '@/src/domains/staffing/job-posting-list.service';
 import type { JobPostingLifecycleStatus } from '@/src/domains/staffing/job-posting-authoring.service';
+import { jobOpeningStatusLabel } from '@/src/domains/staffing/job-opening-ui';
+import { jobPostingStatusLabel } from '@/src/domains/staffing/job-posting-ui';
 import {
   summarizeJobPostingApiError,
 } from '@/src/domains/staffing/job-posting-error-map';
@@ -49,7 +49,7 @@ interface JobPostingEditorShellProps {
 type RichFieldKey = 'descriptionJson' | 'requirementsJson' | 'benefitsJson' | 'applicationInstructionsJson';
 
 const RICH_FIELD_LABELS: Record<RichFieldKey, string> = {
-  descriptionJson: 'Mô tả công việc (bắt buộc khi publish)',
+  descriptionJson: 'Mô tả công việc (bắt buộc khi đăng tin)',
   requirementsJson: 'Yêu cầu ứng viên (tuỳ chọn)',
   benefitsJson: 'Phúc lợi (tuỳ chọn)',
   applicationInstructionsJson: 'Hướng dẫn ứng tuyển (tuỳ chọn)',
@@ -243,7 +243,7 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
   // ----- Save (PATCH) ----------------------------------------------------
   const onSave = useCallback(async () => {
     if (!canMutate) {
-      setErrorMessage('Role hiện tại không có quyền ghi JobPosting.');
+      setErrorMessage('Tài khoản hiện tại không có quyền chỉnh sửa tin tuyển dụng.');
       setErrorRecoveryHref(null);
       return;
     }
@@ -315,10 +315,10 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
       setRequirementsJson(initialSnapshotRef.current.requirementsJson);
       setBenefitsJson(initialSnapshotRef.current.benefitsJson);
       setApplicationInstructionsJson(initialSnapshotRef.current.applicationInstructionsJson);
-      setInfoMessage(json.replayed ? 'Đã ghi (idempotent replay).' : `Đã lưu bản nháp v${updated.revision}.`);
+      setInfoMessage(json.replayed ? 'Thay đổi đã được lưu trước đó.' : `Đã lưu bản nháp v${updated.revision}.`);
       setErrorRecoveryHref(null);
-    } catch (e) {
-      setErrorMessage(`Network error: ${(e as Error).message}`);
+    } catch {
+      setErrorMessage('Không thể kết nối máy chủ. Vui lòng thử lại.');
       setErrorRecoveryHref(null);
     } finally {
       setIsSaving(false);
@@ -344,7 +344,7 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
   const runStateMutation = useCallback(
     async (action: 'publish' | 'unpublish' | 'archive') => {
       if (!canMutate) {
-        setErrorMessage('Role hiện tại không có quyền mutate JobPosting.');
+        setErrorMessage('Tài khoản hiện tại không có quyền chỉnh sửa tin tuyển dụng.');
         setErrorRecoveryHref(null);
         return;
       }
@@ -374,14 +374,14 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
         setSavedAt(updated.updatedAt);
         setInfoMessage(
           json.replayed
-            ? `Trạng thái đã cập nhật (idempotent replay).`
+            ? 'Trạng thái đã được cập nhật trước đó.'
             : `Đã ${labelOf(action)} → ${updated.status}.`,
         );
         setErrorRecoveryHref(null);
         // Trigger revalidation so the list page reflects the new state too.
         router.refresh();
-      } catch (e) {
-        setErrorMessage(`Network error: ${(e as Error).message}`);
+      } catch {
+        setErrorMessage('Không thể kết nối máy chủ. Vui lòng thử lại.');
         setErrorRecoveryHref(null);
       } finally {
         setIsSaving(false);
@@ -410,22 +410,22 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
   // Publish is disabled so admin has an actionable next step.
   const publishBlockedReason = useMemo<string | null>(() => {
     if (!canMutate) {
-      return 'Role hiện tại không có quyền publish JobPosting.';
+      return 'Tài khoản hiện tại không có quyền đăng tin tuyển dụng.';
     }
     if (status !== 'DRAFT') {
-      return `JobPosting đang ở trạng thái ${status}; chỉ JobPosting DRAFT mới publish được.`;
+      return `Chỉ có thể đăng tin khi tin đang ở trạng thái bản nháp. Trạng thái hiện tại: ${jobPostingStatusLabel(status)}.`;
     }
     if (title.trim().length === 0) {
-      return 'Tiêu đề JobPosting là bắt buộc trước khi publish.';
+      return 'Cần nhập tiêu đề tin tuyển dụng trước khi đăng.';
     }
     if (descriptionJson === null) {
       return 'Mô tả công việc (description) là bắt buộc trước khi publish.';
     }
     if (initial.opening === null) {
-      return 'JobPosting chưa gắn với JobOpening nào — không thể publish.';
+      return 'Tin tuyển dụng chưa được gắn với đợt tuyển dụng nào.';
     }
     if (initial.opening.status !== 'OPEN') {
-      return `Linked JobOpening ${initial.opening.id.substring(0, 8)}… đang ở trạng thái ${initial.opening.status}; cần OPEN để publish.`;
+      return `Đợt tuyển dụng liên kết đang ở trạng thái ${jobOpeningStatusLabel(initial.opening.status)}; cần mở đợt tuyển dụng trước khi đăng tin.`;
     }
     return null;
   }, [canMutate, status, title, descriptionJson, initial.opening]);
@@ -445,13 +445,9 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
       >
         <div className="flex items-center gap-2">
           <span>
-            Trạng thái: <strong style={{ color: 'var(--on-surface)' }}>{status}</strong>
+            Trạng thái: <strong style={{ color: 'var(--on-surface)' }}>{jobPostingStatusLabel(status)}</strong>
             {' · '}
-            Revision: <strong style={{ color: 'var(--on-surface)' }}>v{revision}</strong>
-            {' · '}
-            Schema: <strong style={{ color: 'var(--on-surface)' }}>
-              v{JOB_POSTING_RICH_TEXT_SCHEMA_VERSION}
-            </strong>
+            Lần chỉnh sửa: <strong style={{ color: 'var(--on-surface)' }}>v{revision}</strong>
             {savedAt && (
               <>
                 {' · '}
@@ -471,7 +467,7 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
             disabled={!canPublish || isSaving}
             onClick={() => runStateMutation('publish')}
             label="Đăng tin"
-            ariaLabel="Publish"
+            ariaLabel="Đăng tin"
             primary
             dataTestid="publish-button"
           />
@@ -479,13 +475,13 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
             disabled={!canMutate || isSaving || status !== 'PUBLISHED'}
             onClick={() => runStateMutation('unpublish')}
             label="Gỡ tin"
-            ariaLabel="Unpublish"
+            ariaLabel="Gỡ tin"
           />
           <ActionButton
             disabled={!canMutate || isSaving || status === 'ARCHIVED'}
             onClick={() => runStateMutation('archive')}
             label="Lưu trữ"
-            ariaLabel="Archive"
+            ariaLabel="Lưu trữ"
             danger
           />
         </div>
@@ -510,7 +506,7 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
           aria-live="polite"
         >
           <div className="font-medium" style={{ color: 'var(--on-surface)' }}>
-            Publish chưa sẵn sàng
+            Chưa thể đăng tin
           </div>
           <p className="mt-1" data-testid="publish-blocked-reason">
             {publishBlockedReason}
@@ -523,7 +519,7 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
                 style={{ color: 'var(--color-primary-dark)' }}
                 data-testid="publish-blocked-link"
               >
-                Mở JobOpening {initial.opening.id.substring(0, 8)}… để chuẩn bị
+                Mở đợt tuyển dụng để tiếp tục
               </a>
             </p>
           )}
@@ -546,7 +542,7 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
                 className="underline"
                 style={{ color: '#8a1c1c' }}
               >
-                Mở JobOpening →
+                Mở đợt tuyển dụng →
               </Link>
             </>
           )}
@@ -565,7 +561,7 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
       {/* Title + salary + stamp toggles */}
       <section className="rounded-xl border p-4" style={{ borderColor: 'var(--outline-variant)', backgroundColor: 'var(--color-surface)' }}>
         <div className="grid gap-3 sm:grid-cols-2">
-          <FieldShell label="Tiêu đề JobPosting (bắt buộc khi publish)">
+          <FieldShell label="Tiêu đề tin tuyển dụng (bắt buộc khi đăng)">
             <input
               type="text"
               value={title}
@@ -577,7 +573,7 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
               placeholder="Ví dụ: Kỹ sư điện công trình — Hà Nội"
             />
           </FieldShell>
-          <FieldShell label="Hiển thị lương (free-form, tuỳ chọn)">
+          <FieldShell label="Mức lương hiển thị (không bắt buộc)">
             <input
               type="text"
               value={salaryDisplay}
@@ -602,11 +598,11 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
             DRAFT-only, lưu cùng PATCH idempotency hash. */}
         <div className="mt-4 flex flex-wrap items-center gap-4 text-sm">
           <span className="font-medium" style={{ color: 'var(--on-surface-variant)' }}>
-            Stamp:
+            Nhãn nổi bật:
           </span>
           <StampToggle
-            label="Hot"
-            ariaLabel="Đánh dấu JobPosting là Hot"
+            label="Nổi bật"
+            ariaLabel="Đánh dấu tin tuyển dụng là nổi bật"
             checked={isHot}
             disabled={!canMutate || isSaving || status !== 'DRAFT'}
             onChange={setIsHot}
@@ -614,7 +610,7 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
           />
           <StampToggle
             label="Tuyển gấp"
-            ariaLabel="Đánh dấu JobPosting là Tuyển gấp"
+            ariaLabel="Đánh dấu tin tuyển dụng là tuyển gấp"
             checked={isUrgent}
             disabled={!canMutate || isSaving || status !== 'DRAFT'}
             onChange={setIsUrgent}
@@ -622,7 +618,7 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
           />
           <StampToggle
             label="Thưởng cao"
-            ariaLabel="Đánh dấu JobPosting có thưởng cao"
+            ariaLabel="Đánh dấu tin tuyển dụng có thưởng cao"
             checked={isHighReward}
             disabled={!canMutate || isSaving || status !== 'DRAFT'}
             onChange={setIsHighReward}
@@ -630,15 +626,14 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
           />
           <StampToggle
             label="Sắp hết hạn"
-            ariaLabel="Đánh dấu JobPosting sắp hết hạn"
+            ariaLabel="Đánh dấu tin tuyển dụng sắp hết hạn"
             checked={isExpiringSoon}
             disabled={!canMutate || isSaving || status !== 'DRAFT'}
             onChange={setIsExpiringSoon}
             testId="stamp-toggle-expiring"
           />
           <span className="ml-auto text-xs italic" style={{ color: 'var(--on-surface-variant)' }}>
-            Public render stamp theo 4 canonical boolean (Hot, Tuyển gấp, Thưởng cao,
-            Sắp hết hạn), không heuristic. Stamp chỉ edit được ở DRAFT.
+            Các nhãn nổi bật không tự động thay đổi. Chỉ chỉnh sửa được khi tin còn là bản nháp.
           </span>
         </div>
       </section>

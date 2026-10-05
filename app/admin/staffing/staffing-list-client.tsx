@@ -411,7 +411,7 @@ export default function StaffingListClient({ canCreate }: StaffingListClientProp
       setOrders(d.orders);
       setTotal(d.total);
     } catch {
-      setError('Không thể tải danh sách Orders.');
+      setError('Không thể tải danh sách nhu cầu tuyển dụng.');
     } finally {
       setLoading(false);
     }
@@ -438,7 +438,7 @@ export default function StaffingListClient({ canCreate }: StaffingListClientProp
             style={{ background: 'var(--primary)', color: 'var(--on-primary)' }}
             className="rounded px-4 py-2 text-sm font-semibold"
           >
-            + Tạo Order
+            + Tạo nhu cầu tuyển dụng
           </button>
         )}
       </div>
@@ -482,7 +482,7 @@ export default function StaffingListClient({ canCreate }: StaffingListClientProp
                 : 'Chưa có đơn tuyển dụng nào trong phạm vi của bạn.'}
           </p>
           {canCreate && (
-            <p className="mt-1 text-xs">Nhấn &quot;Tạo Order&quot; để bắt đầu.</p>
+            <p className="mt-1 text-xs">Nhấn &quot;Tạo nhu cầu tuyển dụng&quot; để bắt đầu.</p>
           )}
         </div>
       ) : (

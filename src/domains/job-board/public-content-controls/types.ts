@@ -60,6 +60,8 @@ export interface StickyAnnouncementDto {
   ctaUrl: string | null;
   /** Whether the user may dismiss the bar. */
   dismissible: boolean;
+  /** Background opacity percentage. Text and controls remain fully opaque. */
+  backgroundOpacity: number;
   /** Text color enum. */
   textColor: StickyTextColor;
   /** Font style enum. */
@@ -106,6 +108,7 @@ export const StickyAnnouncementSchema = z.object({
   ctaLabel: z.string().max(60).nullable(),
   ctaUrl: z.string().max(2048).nullable(),
   dismissible: z.boolean(),
+  backgroundOpacity: z.number().int().min(0).max(100).default(100),
   textColor: z.enum(STICKY_TEXT_COLORS),
   font: z.enum(STICKY_FONTS),
   emphasis: z.enum(STICKY_EMPHASIS),
@@ -133,6 +136,7 @@ export const STICKY_ANNOUNCEMENT_DEFAULTS: Omit<
   ctaLabel: null,
   ctaUrl: null,
   dismissible: true,
+  backgroundOpacity: 100,
   textColor: 'on-primary',
   font: 'SANS',
   emphasis: 'BOLD',

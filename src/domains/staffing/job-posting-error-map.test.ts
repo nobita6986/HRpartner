@@ -49,13 +49,14 @@ describe('JOB_POSTING_ERROR_LABELS — stable code → Vietnamese label', () => 
     expect(Object.keys(JOB_POSTING_ERROR_LABELS).length).toBeGreaterThanOrEqual(11);
   });
 
-  it('every label is in Vietnamese (contains diacritic OR ASCII fallback)', () => {
+  it('every label is Vietnamese and avoids raw domain or implementation terms', () => {
     // Defensive — labels are recovery-oriented Vietnamese phrases. Any
     // accidental insertion of a raw English developer message would stand out
     // because the existing labels all carry diacritics.
     for (const code of Object.keys(JOB_POSTING_ERROR_LABELS)) {
       const label = JOB_POSTING_ERROR_LABELS[code]!;
-      expect(label).toMatch(/[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợỡợùúụủũưừứựửữỳýỷỹđ]|\bJobPosting\b|\bJobOpening\b|\bIdempotency\b/);
+      expect(label).toMatch(/[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợỡợùúụủũưừứựửữỳýỷỹđ]/);
+      expect(label).not.toMatch(/\b(?:JobPosting|JobOpening|OPEN|publish|slug|Idempotency|API)\b/i);
     }
   });
 });
@@ -77,9 +78,7 @@ describe('jobPostingErrorLabel — pure code → label', () => {
   it('returns JOB_OPENING_NOT_OPEN label for the JOB_OPENING_NOT_OPEN code', () => {
     const label = jobPostingErrorLabel('JOB_OPENING_NOT_OPEN');
     expect(label).toBe(JOB_POSTING_ERROR_LABELS.JOB_OPENING_NOT_OPEN);
-    // Case-insensitive — label uses lowercase "mở" mid-sentence.
-    expect(label.toLowerCase()).toContain('mở jobopening');
-    expect(label).toContain('publish JobPosting');
+    expect(label).toContain('mở đợt tuyển dụng');
   });
 
   it('returns INVALID_STATE_TRANSITION label verbatim', () => {
@@ -132,7 +131,7 @@ describe('jobPostingErrorLabel — pure code → label', () => {
       JOB_POSTING_UNKNOWN_ERROR_LABEL,
     );
     expect(
-      jobPostingErrorLabel('JobPosting 0b9864b4-1234-5678-9abc-def012345678 không tồn tại.'),
+      jobPostingErrorLabel('Tin tuyển dụng 0b9864b4-1234-5678-9abc-def012345678 không tồn tại.'),
     ).toBe(JOB_POSTING_UNKNOWN_ERROR_LABEL);
   });
 

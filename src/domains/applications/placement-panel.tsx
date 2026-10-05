@@ -14,16 +14,19 @@ import {
   ACTION_LABELS,
   availableActions,
   conflictLabel,
+  dedupMatchLabel,
   formatCounter,
   isOverridable,
   OVERRIDE_CASE_LABELS,
   OVERRIDE_CASES,
+  SOURCE_LABELS,
   type ActionId,
   type ActionSubject,
   type OverrideCaseId,
   type PlacementFormState,
   type SubmitGate,
 } from './placement-ui';
+import { staffingOrderStatusLabel } from '@/src/domains/staffing/staffing-order-ui';
 
 export interface PreviewConflict {
   code: string;
@@ -117,7 +120,7 @@ export function ConflictList({ conflicts }: { conflicts: PreviewConflict[] }) {
   if (conflicts.length === 0) {
     return (
       <p className='text-sm' data-testid='no-conflicts' style={{ color: 'var(--on-surface-variant)' }}>
-        Không có xung đột — có thể xếp việc.
+        Không có vướng mắc — có thể bố trí việc làm.
       </p>
     );
   }
@@ -126,8 +129,7 @@ export function ConflictList({ conflicts }: { conflicts: PreviewConflict[] }) {
       {conflicts.map((c) => (
         <li key={c.code} data-conflict={c.code} style={{ color: 'var(--error, #dc2626)' }}>
           <strong>{conflictLabel(c.code)}</strong>
-          {isOverridable(c.code) && <span data-testid={`overridable-${c.code}`}> (có thể override)</span>}
-          <span className='block text-xs' style={{ color: 'var(--on-surface-variant)' }}>{c.message}</span>
+          {isOverridable(c.code) && <span data-testid={`overridable-${c.code}`}> (có thể áp dụng ngoại lệ)</span>}
         </li>
       ))}
     </ul>
@@ -144,29 +146,29 @@ export function PlacementCounters({ preview }: { preview: PlacementPreviewDto })
       <dd className='col-span-2' data-testid='slot-position' style={{ color: 'var(--on-surface)' }}>
         {slot ? `${slot.positionTitle} (${slot.positionCode})` : '—'}
       </dd>
-      <dt>Slot</dt>
+      <dt>Số lượng cần tuyển</dt>
       <dd className='col-span-2' data-testid='slot-counter' style={{ color: 'var(--on-surface)' }}>
         {slot ? `${formatCounter(slot.slotsFilled, slot.slotsNeeded)} — còn ${slot.remaining}` : '—'}
       </dd>
-      <dt>Đơn tuyển</dt>
+      <dt>Nhu cầu tuyển dụng</dt>
       <dd className='col-span-2' data-testid='order-status' style={{ color: 'var(--on-surface)' }}>
-        {order ? `${order.code} · ${order.status}` : '—'}
+        {order ? `${order.code} · ${staffingOrderStatusLabel(order.status)}` : '—'}
       </dd>
-      <dt>Quota dự án</dt>
+      <dt>Chỉ tiêu dự án</dt>
       <dd className='col-span-2' data-testid='project-counter' style={{ color: 'var(--on-surface)' }}>
         {project ? `${formatCounter(project.filled, project.quota)} — còn ${project.remaining}` : '—'}
       </dd>
-      <dt>Referral Guard</dt>
+      <dt>Kiểm tra nguồn giới thiệu</dt>
       <dd className='col-span-2' data-testid='guard-status' style={{ color: 'var(--on-surface)' }}>
         {preview.referralGuard
-          ? `${preview.referralGuard.source} · ${preview.referralGuard.blockLabel}${preview.referralGuard.skippedRules.length > 0 ? ` (bỏ qua ${preview.referralGuard.skippedRules.join('/')})` : ''}`
+          ? `${SOURCE_LABELS[preview.referralGuard.source] ?? 'Nguồn khác'} · ${preview.referralGuard.overrideRequired ? 'Cần xác minh' : 'Đã kiểm tra'}`
           : '—'}
       </dd>
       {preview.existingActiveAssignment && (
         <>
-          <dt>Đang ACTIVE</dt>
+          <dt>Bố trí hiện tại</dt>
           <dd className='col-span-2' data-testid='active-assignment' style={{ color: 'var(--error, #dc2626)' }}>
-            {preview.existingActiveAssignment.assignmentId} @ {preview.existingActiveAssignment.projectId}
+            Người lao động đã được bố trí tại một dự án đang hoạt động.
           </dd>
         </>
       )}
@@ -190,13 +192,13 @@ export function OverrideForm({ value, canOverride, onChange }: {
   if (!canOverride) {
     return (
       <p className='text-sm' data-testid='override-denied' role='alert' style={{ color: 'var(--error, #dc2626)' }}>
-        Referral Guard chặn và bạn không có quyền override (CAN_OVERRIDE_REFERRAL_GUARD).
+        Nguồn giới thiệu cần được xác minh và bạn chưa có quyền thực hiện ngoại lệ.
       </p>
     );
   }
   return (
     <div className='rounded-lg p-3 flex flex-col gap-2' data-testid='override-form' style={{ backgroundColor: 'var(--surface-container)' }}>
-      <label className='text-xs' htmlFor='override-case' style={{ color: 'var(--on-surface-variant)' }}>Case override (SOP §9.3.1)</label>
+      <label className='text-xs' htmlFor='override-case' style={{ color: 'var(--on-surface-variant)' }}>Trường hợp ngoại lệ</label>
       <select
         id='override-case'
         data-testid='override-case'
@@ -205,13 +207,13 @@ export function OverrideForm({ value, canOverride, onChange }: {
         className='px-3 py-2 rounded-lg border'
         style={{ borderColor: 'var(--outline)', backgroundColor: 'var(--surface)', color: 'var(--on-surface)' }}
       >
-        <option value=''>— Chọn case —</option>
+        <option value=''>— Chọn trường hợp —</option>
         {OVERRIDE_CASES.map((c: OverrideCaseId) => <option key={c} value={c}>{OVERRIDE_CASE_LABELS[c]}</option>)}
       </select>
       <textarea
         data-testid='override-reason'
-        aria-label='Lý do override'
-        placeholder='Lý do override (bắt buộc)'
+        aria-label='Lý do thực hiện ngoại lệ'
+        placeholder='Lý do thực hiện ngoại lệ (bắt buộc)'
         rows={2}
         value={value.reason}
         onChange={(e: ChangeEvent<HTMLTextAreaElement>) => onChange({ ...value, reason: e.target.value })}
@@ -220,8 +222,8 @@ export function OverrideForm({ value, canOverride, onChange }: {
       />
       <input
         data-testid='override-evidence'
-        aria-label='Bằng chứng override'
-        placeholder='Bằng chứng (tuỳ chọn — mã ticket, email…)'
+        aria-label='Bằng chứng cho ngoại lệ'
+        placeholder='Bằng chứng (không bắt buộc — mã yêu cầu, email…)'
         value={value.evidence}
         onChange={(e: ChangeEvent<HTMLInputElement>) => onChange({ ...value, evidence: e.target.value })}
         className='px-3 py-2 rounded-lg border'
@@ -258,12 +260,12 @@ export function PlacementPanel(props: PlacementPanelProps) {
 
   return (
     <section className='flex flex-col gap-3' data-testid='placement-panel'>
-      <h3 className='text-sm font-semibold' style={{ color: 'var(--on-surface)' }}>Xếp vào slot</h3>
+      <h3 className='text-sm font-semibold' style={{ color: 'var(--on-surface)' }}>Bố trí việc làm</h3>
 
       <input
         data-testid='employee-code'
         aria-label='Mã nhân viên tại dự án'
-        placeholder='Mã NV tại dự án (bắt buộc)'
+        placeholder='Mã nhân viên tại dự án (bắt buộc)'
         value={form.employeeCode}
         onChange={(e: ChangeEvent<HTMLInputElement>) => props.onFormChange({ ...form, employeeCode: e.target.value })}
         className='px-3 py-2 rounded-lg border'
@@ -385,7 +387,7 @@ export function DedupPicker({ candidates, selected, onSelect, onConfirm, onCance
   return (
     <div className='rounded-lg p-3 flex flex-col gap-2' data-testid='dedup-picker' style={{ backgroundColor: 'var(--surface-container)' }}>
       <p className='text-sm' style={{ color: 'var(--on-surface)' }}>
-        Có {candidates.length} Worker trùng. Chọn đúng người để gộp, hoặc huỷ để kiểm tra lại.
+        Có {candidates.length} hồ sơ người lao động trùng. Chọn đúng hồ sơ để gộp, hoặc hủy để kiểm tra lại.
       </p>
       <ul className='flex flex-col gap-1' role='list'>
         {candidates.map((c) => (
@@ -399,8 +401,10 @@ export function DedupPicker({ candidates, selected, onSelect, onConfirm, onCance
                 checked={selected === c.workerId}
                 onChange={() => onSelect(c.workerId)}
               />
-              <span className='font-mono text-xs'>{c.workerId}</span>
-              <span className='text-xs' style={{ color: 'var(--on-surface-variant)' }}>({c.matchedOn.join(', ')})</span>
+              <span className='font-mono text-xs'>Mã hồ sơ: {c.workerId}</span>
+              <span className='text-xs' style={{ color: 'var(--on-surface-variant)' }}>
+                ({c.matchedOn.map(dedupMatchLabel).join(', ')})
+              </span>
             </label>
           </li>
         ))}

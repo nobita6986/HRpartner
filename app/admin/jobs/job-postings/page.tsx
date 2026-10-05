@@ -48,6 +48,7 @@ import {
   jobPostingStatusTone,
   type JobPostingLifecycleStatus,
 } from '@/src/domains/staffing/job-posting-ui';
+import { jobOpeningStatusLabel } from '@/src/domains/staffing/job-opening-ui';
 import { StatusBadge } from '@/src/shared/ui/status-badge';
 import {
   CreateJobPostingForm,
@@ -206,11 +207,8 @@ export default async function AdminJobPostingsListPage({ searchParams }: PagePro
               Tin tuyển dụng — soạn &amp; đăng
             </h1>
             <p className="mt-1 text-sm" style={{ color: 'var(--on-surface-variant)' }}>
-              Chọn một JobPosting để chỉnh nội dung, lưu bản nháp, đăng/gỡ/lưu trữ.
-              Schema JobPosting mở rộng ở P1-A0 với rich content (Tiptap, contentSchemaVersion=1);
-              form tạo/reuse JobOpening từ StaffingOrderSlot đã được dựng ở P1-A0.1 (chỉ
-              CREATE_ROLES thấy). Trang public <code>/viec-lam/[slug]</code> hiện đọc JobPosting
-              PUBLISHED (P1-A1) và anonymous apply RPC bind JobPosting (P1-B) đã nghiệm thu.
+              Soạn và quản lý tin tuyển dụng. Tin đã đăng sẽ xuất hiện trên trang tìm việc;
+              bản nháp chỉ dành cho người có quyền quản lý.
             </p>
           </div>
           <Link
@@ -267,7 +265,7 @@ export default async function AdminJobPostingsListPage({ searchParams }: PagePro
         {CREATE_ROLES.has(session.role) && session.role === 'HR_STAFF' ? (
           <div
             role="note"
-            aria-label="Phạm vi quyền của HR_STAFF trên trang JobPosting"
+            aria-label="Phạm vi vị trí tuyển dụng của bạn"
             data-testid="hr-staff-recruiter-scope-banner"
             className="mb-4 rounded-lg border p-3 text-sm"
             style={{
@@ -276,7 +274,7 @@ export default async function AdminJobPostingsListPage({ searchParams }: PagePro
               color: 'var(--on-surface)',
             }}
           >
-            Bạn chỉ thấy các slot thuộc StaffingOrder bạn được phân công làm recruiter.
+            Bạn chỉ thấy các vị trí thuộc nhu cầu tuyển dụng được phân công cho bạn.
           </div>
         ) : null}
 
@@ -300,10 +298,10 @@ export default async function AdminJobPostingsListPage({ searchParams }: PagePro
             <thead style={{ backgroundColor: 'var(--primary-container)' }}>
               <tr>
                 <th className="px-4 py-3 text-left text-sm font-semibold" style={{ color: 'var(--on-surface)' }}>
-                  Đường dẫn tin (slug)
+                  Đường dẫn công khai
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold" style={{ color: 'var(--on-surface)' }}>
-                  Đơn tuyển dụng
+                  Nhu cầu tuyển dụng
                 </th>
                 <th className="px-4 py-3 text-center text-sm font-semibold" style={{ color: 'var(--on-surface)' }}>
                   Trạng thái
@@ -323,8 +321,8 @@ export default async function AdminJobPostingsListPage({ searchParams }: PagePro
                     <EmptyState
                       title="Chưa có dữ liệu"
                       description={statusFilter
-                        ? `Chưa có JobPosting nào ở trạng thái ${statusFilter}${VIEWER_ROLES.has(session.role) ? '' : ' (role hiện tại không đọc được — xem banner)'}.`
-                        : 'Chưa có JobPosting nào trong hệ thống (hoặc role hiện tại không đọc được — xem banner).'}
+                        ? `Chưa có tin tuyển dụng nào ở trạng thái ${jobPostingStatusLabel(statusFilter)}.`
+                        : 'Chưa có tin tuyển dụng nào.'}
                     />
                   </td>
                 </tr>
@@ -365,7 +363,7 @@ export default async function AdminJobPostingsListPage({ searchParams }: PagePro
                             <span className="font-mono">{item.openingStaffingOrderCode}</span>
                             {item.openingStatus && (
                               <span className="ml-2 text-xs">
-                                (JobOpening: {item.openingStatus})
+                                ({jobOpeningStatusLabel(item.openingStatus)})
                               </span>
                             )}
                           </Link>
@@ -374,13 +372,13 @@ export default async function AdminJobPostingsListPage({ searchParams }: PagePro
                             <span className="font-mono">{item.openingStaffingOrderCode}</span>
                             {item.openingStatus && (
                               <span className="ml-2 text-xs">
-                                (JobOpening: {item.openingStatus})
+                                ({jobOpeningStatusLabel(item.openingStatus)})
                               </span>
                             )}
                           </>
                         )
                       ) : (
-                        <span className="text-xs italic">(orphan — JobOpening đã xoá)</span>
+                        <span className="text-xs italic">(Chưa liên kết với đợt tuyển dụng)</span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-center text-sm">
@@ -409,8 +407,8 @@ export default async function AdminJobPostingsListPage({ searchParams }: PagePro
         {/* Pagination + count */}
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm" style={{ color: 'var(--on-surface-variant)' }}>
           <div>
-            Hiển thị {showingFrom}–{showingTo} / {result.total} JobPosting
-            {statusFilter && ` (lọc: ${statusFilter})`}
+            Hiển thị {showingFrom}–{showingTo} / {result.total} tin tuyển dụng
+            {statusFilter && ` (lọc: ${jobPostingStatusLabel(statusFilter)})`}
           </div>
           <div className="flex items-center gap-2">
             {page > 1 && (
@@ -457,20 +455,15 @@ export default async function AdminJobPostingsListPage({ searchParams }: PagePro
             backgroundColor: 'var(--color-surface-container)',
             color: 'var(--on-surface-variant)',
           }}
-          aria-label="Phần còn hạn chế"
+          aria-label="Tính năng chưa khả dụng"
           data-testid="locked-section-list"
         >
           <h2 className="mb-2 text-sm font-semibold" style={{ color: 'var(--on-surface)' }}>
-            Phần còn hạn chế (đang chờ tích hợp)
+            Tính năng chưa khả dụng
           </h2>
           <ul className="ml-4 list-disc space-y-1">
             <li>
-              <strong>Gallery media</strong> (ảnh đính kèm JobPosting) — JobPosting hiện chỉ mang
-              rich-text content qua 4 field <code>descriptionJson</code> /
-              <code>requirementsJson</code> / <code>benefitsJson</code> /
-              <code>applicationInstructionsJson</code> (validator AC-03..AC-05). Media
-              library integration chưa có; dự kiến sẽ đến sau cùng với AV4 Media
-              Library.
+              Hiện chưa thể đính kèm ảnh vào tin tuyển dụng.
             </li>
           </ul>
         </section>

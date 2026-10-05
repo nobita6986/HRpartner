@@ -117,9 +117,9 @@ describe('JobPostingEditorShell — Publish gating (hrp-t1a-postdeploy-runtime-c
     expect(html).toMatch(
       /href="\/admin\/job-openings\/655909be-65ea-4a6d-bef4-7a63297e2bc6"[\s\S]*?data-testid="publish-blocked-link"/,
     );
-    // Reason explicitly names the JobOpening id prefix + status DRAFT.
+    // The link retains the canonical id while the displayed status is localized.
     expect(html).toContain('655909be');
-    expect(html).toContain('DRAFT');
+    expect(html).toContain('Bản nháp');
   });
 
   it('Test #1b: JobPosting with NO linked JobOpening (orphan) → Publish disabled + reason', () => {
@@ -130,7 +130,7 @@ describe('JobPostingEditorShell — Publish gating (hrp-t1a-postdeploy-runtime-c
     expect(html).toContain('data-testid="publish-button"');
     expect(html).toMatch(/data-testid="publish-button"[\s\S]*?disabled/);
     expect(html).toContain('data-testid="publish-blocked-reason"');
-    expect(html).toContain('JobPosting chưa gắn với JobOpening');
+    expect(html).toContain('Tin tuyển dụng chưa được gắn với đợt tuyển dụng nào.');
     // No bridge link when there's no opening to bridge to.
     expect(html).not.toContain('data-testid="publish-blocked-link"');
   });
@@ -185,7 +185,7 @@ describe('JobPostingEditorShell — Publish gating (hrp-t1a-postdeploy-runtime-c
     );
 
     expect(html).toMatch(/data-testid="publish-button"[\s\S]*?disabled/);
-    expect(html).toContain('FILLED');
+    expect(html).toContain('Đã đủ chỉ tiêu');
   });
 
   it('Test #2c: JobPosting + linked JobOpening CANCELLED → Publish disabled (terminal)', () => {
@@ -205,7 +205,7 @@ describe('JobPostingEditorShell — Publish gating (hrp-t1a-postdeploy-runtime-c
     );
 
     expect(html).toMatch(/data-testid="publish-button"[\s\S]*?disabled/);
-    expect(html).toContain('CANCELLED');
+    expect(html).toContain('Đã hủy');
   });
 
   it('Test #1d: empty title → blocks publish, bridge link still rendered when opening exists', () => {
@@ -229,7 +229,7 @@ describe('JobPostingEditorShell — Publish gating (hrp-t1a-postdeploy-runtime-c
     );
 
     expect(html).toContain('data-testid="publish-blocked-reason"');
-    expect(html).toContain('Tiêu đề JobPosting');
+    expect(html).toContain('Tiêu đề tin tuyển dụng');
     // Bridge link shown (opening exists) so admin still has a clear path.
     expect(html).toContain('data-testid="publish-blocked-link"');
   });

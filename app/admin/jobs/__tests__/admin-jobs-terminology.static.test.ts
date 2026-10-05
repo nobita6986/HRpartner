@@ -61,16 +61,16 @@ describe('hrp-m2a-operational-ux-debt / F11 — terminology on /admin/jobs', () 
   it('header glossary <p data-testid="jobs-terminology-note"> is present and references both surfaces', () => {
     // Match either single- or double-quoted attribute value.
     expect(JOBS_SOURCE).toMatch(/data-testid=("|')jobs-terminology-note\1/);
-    // The glossary MUST mention both surfaces by their actual labels.
+    // The glossary MUST explain both actions without exposing domain enum names.
     const glossarySlice = JOBS_SOURCE.match(
       /<p[^>]*data-testid=("|')jobs-terminology-note\1[^>]*>([\s\S]*?)<\/p>/,
     );
     expect(glossarySlice).not.toBeNull();
     const inner = glossarySlice![2]!;
     expect(inner).toContain('Công bố dự án');
-    expect(inner).toContain('Publish');
-    expect(inner).toContain('JobPosting');
-    expect(inner).toContain('PUBLISHED');
+    expect(inner).toContain('Đăng tin');
+    expect(inner).toContain('tin tuyển dụng');
+    expect(inner).not.toMatch(/JobPosting|PUBLISHED|Publish/);
   });
 
   // RQ-12 / AC-13 — F11 scope clarification §9: editor shell adopts
@@ -83,19 +83,10 @@ describe('hrp-m2a-operational-ux-debt / F11 — terminology on /admin/jobs', () 
     expect(EDITOR_SOURCE).toMatch(/label="Lưu trữ"/);
   });
 
-  it('editor shell preserves canonical lifecycle operation names in aria-label', () => {
-    // The ActionButton accepts `ariaLabel?: string` and renders it via the
-    // React JSX `aria-label={ariaLabel}` expression. We assert that the
-    // canonical operation names appear in the JSX as JSX expression content
-    // OR as string literals (the latter happens if a future call site
-    // passes a literal). Both forms are F11-compliant.
-    expect(EDITOR_SOURCE).toMatch(/ariaLabel="Publish"/);
-    expect(EDITOR_SOURCE).toMatch(/ariaLabel="Unpublish"/);
-    expect(EDITOR_SOURCE).toMatch(/ariaLabel="Archive"/);
-    // And the call sites MUST pass the canonical name.
-    expect(EDITOR_SOURCE).toMatch(/ariaLabel="Publish"/);
-    expect(EDITOR_SOURCE).toMatch(/ariaLabel="Unpublish"/);
-    expect(EDITOR_SOURCE).toMatch(/ariaLabel="Archive"/);
+  it('editor shell localizes accessible lifecycle labels', () => {
+    expect(EDITOR_SOURCE).toMatch(/ariaLabel="Đăng tin"/);
+    expect(EDITOR_SOURCE).toMatch(/ariaLabel="Gỡ tin"/);
+    expect(EDITOR_SOURCE).toMatch(/ariaLabel="Lưu trữ"/);
   });
 
   it('editor shell NEVER renders canonical Publish/Unpublish/Archive as primary button text', () => {

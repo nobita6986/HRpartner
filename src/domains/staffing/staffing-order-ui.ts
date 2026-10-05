@@ -40,7 +40,7 @@ export const STAFFING_ORDER_STATUS_TONES: Readonly<Record<StaffingOrderLifecycle
  * (KEEP_CANONICAL_IDENTIFIER) if the value is missing.
  */
 export function staffingOrderStatusLabel(status: string): string {
-  return STAFFING_ORDER_STATUS_LABELS[status as StaffingOrderLifecycleStatus] ?? status;
+  return STAFFING_ORDER_STATUS_LABELS[status as StaffingOrderLifecycleStatus] ?? 'Không xác định';
 }
 
 export function staffingOrderStatusTone(status: string): 'NEUTRAL' | 'SUCCESS' | 'WARN' | 'DANGER' {
