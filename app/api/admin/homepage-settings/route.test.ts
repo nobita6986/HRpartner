@@ -36,6 +36,7 @@ const stickyAnnouncement = {
   ctaUrl: 'https://hrpartner.vn/about',
   dismissible: true,
   backgroundOpacity: 100,
+  marqueeDurationSeconds: 18,
   textColor: 'on-primary',
   font: 'SANS',
   emphasis: 'BOLD',
@@ -119,6 +120,20 @@ describe('POST /api/admin/homepage-settings — UI2 contract', () => {
     const { POST } = await import('./route');
     const response = await POST(
       request({ stickyAnnouncement: { ...stickyAnnouncement, backgroundOpacity: 101 } }),
+    );
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({ error: 'INVALID_INPUT' });
+    expect(mocks.updateHomepageSettings).not.toHaveBeenCalled();
+    expect(mocks.revalidateTag).not.toHaveBeenCalled();
+  });
+
+  it('returns 400 for marquee duration outside the supported range without writing', async () => {
+    const { POST } = await import('./route');
+    const response = await POST(
+      request({
+        stickyAnnouncement: { ...stickyAnnouncement, animation: 'MARQUEE', marqueeDurationSeconds: 61 },
+      }),
     );
 
     expect(response.status).toBe(400);

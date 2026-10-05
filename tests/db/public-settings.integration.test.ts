@@ -135,6 +135,7 @@ suite('UI2 public HomepageSettings synthetic PostgreSQL integration', () => {
         ctaUrl: 'https://hrpartner.vn/jobs?source=ui2-integration',
         dismissible: true,
         backgroundOpacity: 63,
+        marqueeDurationSeconds: 12,
         textColor: 'on-secondary-container' as const,
         font: 'SERIF' as const,
         emphasis: 'EXTRA_BOLD' as const,

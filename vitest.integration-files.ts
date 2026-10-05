@@ -245,4 +245,13 @@ export const INTEGRATION_TEST_FILES: string[] = [
   // convert. Self-skips khi DATABASE_URL_TEST + DATABASE_URL_ADMIN_TEST absent.
   // Forward-only — không có migration mới; chỉ dùng schema hiện hữu.
   'tests/db/intake-convert-worker-link.integration.test.ts',
+  // t1a-staffing-order-management (CORRECTION 2/1, T0): real PostgreSQL
+  // two-connection race test for the canonical `p1a04:order:` advisory
+  // lock. Three cases: (A) deleteStaffingOrder + concurrent JobOpening
+  // insert on the same order → typed 409 ORDER_NOT_DELETABLE; (B)
+  // updateStaffingOrder slot-delete + concurrent CandidateSubmission on
+  // the same slot → typed 409 SLOT_HAS_DEPENDENCIES; (C) two concurrent
+  // deleteStaffingOrder on the same order → exactly one wins, other
+  // gets NOT_FOUND, never 500. Self-skips khi DB env absent.
+  'tests/db/staffing-order-canonical-lock.integration.test.ts',
 ];

@@ -56,7 +56,31 @@ describe('admin-settings-form.tsx — Phase B / UI2 wiring', () => {
     expect(code).toContain('data-testid="sticky-emphasis-select"');
     expect(code).toContain('data-testid="sticky-animation-select"');
     expect(code).toContain('data-testid="sticky-dismissible-toggle"');
+    expect(code).toContain('data-testid="sticky-background-opacity-input"');
+    expect(code).toContain('data-testid="sticky-marquee-duration-input"');
     expect(code).toContain('data-testid="sticky-publish-button"');
+  });
+
+  it('places both appearance controls inside the sticky settings fieldset', () => {
+    const stickyStart = code.indexOf('data-testid="ui2-sticky-announcement-block"');
+    const fieldsetStart = code.indexOf('<fieldset', stickyStart);
+    const fieldsetEnd = code.indexOf('</fieldset>', fieldsetStart);
+
+    for (const testId of [
+      'data-testid="sticky-background-opacity-input"',
+      'data-testid="sticky-marquee-duration-input"',
+    ]) {
+      const fieldIndex = code.indexOf(testId);
+      expect(fieldIndex).toBeGreaterThan(fieldsetStart);
+      expect(fieldIndex).toBeLessThan(fieldsetEnd);
+    }
+  });
+
+  it('limits marquee duration to 5–60 seconds and disables it outside MARQUEE', () => {
+    expect(code).toContain('min={5}');
+    expect(code).toContain('max={60}');
+    expect(code).toContain("disabled={stickyAnimation !== 'MARQUEE'}");
+    expect(code).toContain('giá trị nhỏ hơn chạy nhanh hơn');
   });
 
   it('does not introduce dangerouslySetInnerHTML or unsafe HTML', () => {

@@ -202,6 +202,49 @@ describe('sticky-announcement.module.css — animation + reduced-motion invarian
     expect(css).toMatch(/@keyframes\s+hrpStickyAnnouncementMarquee/);
   });
 
+  it('applies BLINK opacity to the background pseudo-element, not the container', () => {
+    const css = readText(cssFile!);
+    expect(css).toMatch(/\.hrpStickyAnnouncementAnimBlink::before\s*\{\s*animation:\s*hrpStickyAnnouncementBlink/);
+    expect(css).toMatch(/\.hrpStickyAnnouncementAnimBlink\s*\{\s*animation:\s*none/);
+    expect(css).toMatch(/--sticky-background-opacity/);
+    expect(css).toMatch(/box-shadow:\s*0 -2px 8px color-mix\(in srgb, rgb\(0 0 0 \/ 8%\) var\(--sticky-background-opacity\), transparent\)/);
+    expect(css).toMatch(/animation:\s*hrpStickyAnnouncementMarquee\s+var\(--sticky-marquee-duration,\s*18s\)/);
+    for (const selector of [
+      '.hrpStickyAnnouncement',
+      '.hrpStickyAnnouncementCta',
+      '.hrpStickyAnnouncementDismiss',
+    ]) {
+      const rule = css.match(new RegExp(`${selector.replace('.', '\\.')}\\s*\\{([^}]*)\\}`))?.[1] ?? '';
+      expect(rule).not.toMatch(/\bopacity\s*:/);
+    }
+  });
+
+  it('keeps the visible dismiss control inside the bar while preserving a 44px hit area', () => {
+    const css = readText(cssFile!);
+    const barRule = css.match(/\.hrpStickyAnnouncement\s*\{([^}]*)\}/)?.[1] ?? '';
+    const backgroundRule = css.match(/\.hrpStickyAnnouncement::before\s*\{([^}]*)\}/)?.[1] ?? '';
+    const dismissRule = css.match(/\.hrpStickyAnnouncementDismiss\s*\{([^}]*)\}/)?.[1] ?? '';
+    const hitAreaRule = css.match(/\.hrpStickyAnnouncementDismiss::after\s*\{([^}]*)\}/)?.[1] ?? '';
+
+    const barHeight = Number(barRule.match(/min-height:\s*(\d+)px/)?.[1]);
+    const backgroundInsets = backgroundRule.match(
+      /inset:\s*(\d+)px 0 calc\(env\(safe-area-inset-bottom,\s*0px\)\s*\+\s*(\d+)px\)/,
+    );
+    const buttonWidth = Number(dismissRule.match(/width:\s*(\d+)px/)?.[1]);
+    const buttonHeight = Number(dismissRule.match(/height:\s*(\d+)px/)?.[1]);
+    const touchWidth = Number(hitAreaRule.match(/width:\s*(\d+)px/)?.[1]);
+    const touchHeight = Number(hitAreaRule.match(/height:\s*(\d+)px/)?.[1]);
+
+    expect(backgroundInsets).not.toBeNull();
+    expect(touchWidth).toBeGreaterThanOrEqual(44);
+    expect(touchHeight).toBeGreaterThanOrEqual(44);
+    expect(dismissRule).not.toMatch(/min-(?:width|height)/);
+    expect(buttonHeight).toBeLessThanOrEqual(
+      barHeight - Number(backgroundInsets?.[1]) - Number(backgroundInsets?.[2]),
+    );
+    expect(buttonWidth).toBeLessThanOrEqual(barHeight);
+  });
+
   it('does NOT include `<marquee` in the stylesheet (after stripping comments)', () => {
     // CSS block comments may legitimately mention the legacy element to
     // warn against it. The fence strips them before matching.

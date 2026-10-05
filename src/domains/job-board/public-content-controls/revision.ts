@@ -22,6 +22,8 @@ const REVISION_FIELDS: ReadonlyArray<keyof StickyAnnouncementDto> = [
   'ctaLabel',
   'ctaUrl',
   'dismissible',
+  'backgroundOpacity',
+  'marqueeDurationSeconds',
   'textColor',
   'font',
   'emphasis',
