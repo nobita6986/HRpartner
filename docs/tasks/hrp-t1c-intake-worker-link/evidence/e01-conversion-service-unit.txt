@@ -1,0 +1,18 @@
+node.exe : [33mThe CJS build of Vite's Node API is deprecated. See 
+https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([33mThe CJS bu...e details.[39m:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+ RUN  v2.1.9 C:/CodeApp/HrP-t1c-intake-worker-link
+
+ Γ£ô src/domains/applications/conversion.service.test.ts (27 tests) 39ms
+
+ Test Files  1 passed (1)
+      Tests  27 passed (27)
+   Start at  15:46:14
+   Duration  1.01s (transform 134ms, setup 0ms, collect 190ms, tests 39ms, environment 0ms, prepare 161ms)
+
