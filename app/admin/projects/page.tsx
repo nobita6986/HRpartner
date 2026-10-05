@@ -424,7 +424,7 @@ export default function ProjectsPage() {
 
       {loading ? <p style={{ color: 'var(--on-surface-variant)' }} className="py-12 text-center text-sm">Đang tải…</p>
       : error ? <div style={{ background: 'var(--error-container)', color: 'var(--on-error-container)', borderColor: 'var(--error)' }} className="rounded-lg border p-4 text-sm">{error}</div>
-      : projects.length === 0 ? <div style={{ background: 'var(--surface-container-lowest)', borderColor: 'var(--outline-variant)', color: 'var(--on-surface-variant)' }} className="rounded-lg border p-8 text-center"><p className="text-sm">Chưa có dự án nào.</p></div>
+      : projects.length === 0 ? <div style={{ background: 'var(--surface-container-lowest)', borderColor: 'var(--outline-variant)', color: 'var(--on-surface-variant)' }} className="rounded-lg border p-8 text-center"><p className="text-sm">Chưa có dự án công khai.</p></div>
       : (
         <div className="space-y-4">
           {/* hrp-t1a-introduce-hrp-and-menu-cleanup: dải cảnh báo khi
@@ -459,7 +459,7 @@ export default function ProjectsPage() {
               <tr style={{ background: 'var(--surface-container)', borderBottom: '1px solid var(--outline-variant)' }}>
                 {/* hrp-t1a-introduce-hrp-and-menu-cleanup: thêm 3 cột Slot trống /
                     Trạng thái công bố / Công bố — byte-ported từ /admin/jobs/page.tsx. */}
-                {['Mã', 'Tên dự án', 'Trạng thái', 'Slot trống', 'Trạng thái công bố', 'Ngày bắt đầu', 'Ngày tạo', 'Hành động', 'Công bố'].map(h => (
+                {['Mã dự án', 'Tên dự án', 'Trạng thái', 'Slot trống', 'Trạng thái công bố', 'Ngày bắt đầu', 'Ngày tạo', 'Hành động', 'Công bố'].map(h => (
                   <th key={h} style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-left font-semibold">{h}</th>
                 ))}
               </tr>

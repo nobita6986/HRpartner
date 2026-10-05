@@ -91,7 +91,7 @@ export default function VeChungToiPage() {
       {/* Section 2: Sàn Việc Làm Miền Bắc */}
       <section
         className="w-full"
-        style={{ backgroundColor: 'var(--surface-container-low)' }}
+        style={{ backgroundColor: 'var(--color-surface-container-low)' }}
       >
         <div className="mx-auto w-full max-w-[1080px] px-4 py-10 md:px-6 md:py-14">
           <h2
