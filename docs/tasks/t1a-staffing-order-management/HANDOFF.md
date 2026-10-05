@@ -7,14 +7,16 @@
 | Task slug | `t1a-staffing-order-management` |
 | Delivery protocol | `V2_FAST_FREEZE` |
 | Work type | `MIXED` |
-| Status | `ACCEPTED` |
+| Status | `CORRECTING` → `ACCEPTED` (after CI 4/4 GREEN) |
+| Correction budget | `1` (used) |
 | Baseline | `598feacc456becd450dcdb3942d2046691af3a3b` (`origin/main`) |
 | Branch | `codex/t1a-staffing-order-management` |
 | Worktree | `C:/CodeApp/HrP-worktrees/t1a-staffing-order-management` |
 | Spec version | `v1.0` |
 | Acceptance gate | STANDARD + NONE (T0 pre-authorized) |
-| Next gate | `/deliver → /resolve` (PR opened, CI monitoring, stop before merge) |
-| Closing line | ACCEPTED — all 7 canonical gates GREEN, 28 test files / 4349 unit tests pass; static RLS sweep updated for 3 new required relation selects in `order.service.ts`. |
+| Next gate | `/deliver → /resolve` (PR pushed, CI monitoring, stop before merge) |
+| Implementation SHA | `d94b9a66` (CORRECTION 1/1) |
+| Closing line | CORRECTION 1/1 in flight: all 5 T0 corrections implemented — Vietnamese copy, advisory-lock concurrency, DELETE idempotency, PUT validation, ADMIN delete on CLOSED/CANCELLED. Awaiting CI 4/4 GREEN. |
 
 ## 1. Outcome delivered
 
@@ -57,9 +59,13 @@
 #### 1.5 Permanent delete
 
 - `DELETE /api/staffing/orders/[id]` restricted to `ADMIN`.
+- Requires `x-idempotency-key` header (400 VALIDATION_ERROR if absent).
+- Uses `withIdempotency` (route key `DELETE:/api/staffing/orders/{id}`): same key + same payload → replay cùng response; same key + khác payload → 409 IDEMPOTENCY_CONFLICT.
+- Concurrency-safe: `acquireOrderAdvisoryLock(orderId)` + per-slot lock + re-read deps dưới lock trước khi delete. Hai request đồng thời trên cùng orderId sẽ serialize.
 - Allowed only when no `JobOpening`, `JobPosting`, `ProjectAssignment`, `StaffingOrderRecruiterAssignment`, or `CandidateSubmission` exists for the order.
-- If dependencies exist: typed `409 { code: 'ORDER_NOT_DELETABLE', message: 'Hủy nhu cầu để đóng order thay vì xóa' }`.
+- If dependencies exist: typed `409 { code: 'ORDER_NOT_DELETABLE', message: '...Dùng "Hủy nhu cầu" thay thế...' }`.
 - No cascade deletes; soft-delete via `Hủy nhu cầu` (`CANCELLED`) is the official closure path.
+- **CORRECTION 1/1 (T0):** "Xóa vĩnh viễn" button hiển thị cho ADMIN ở MỌI trạng thái (kể cả CLOSED/CANCELLED). Backend dependency guard vẫn là authority duy nhất.
 
 #### 1.6 Role permissions
 
@@ -166,8 +172,43 @@ No new enum, no new state.
 | Spec version | Date | Change | Reason |
 |---|---|---|---|
 | `v1.0` | 2026-10-05 | Initial contract | V2_FAST_FREEZE STANDARD + NONE |
-| `v1.0` | 2026-10-05 | HANDOFF ACCEPTED | All gates GREEN; PR pending CI 4/4 GREEN |
+| `v1.0` | 2026-10-05 | Status ACCEPTED; PR opened | All gates GREEN; PR pending CI 4/4 GREEN |
+| `v1.0` | 2026-10-05 | CORRECTION 1/1: Implementation SHA `d94b9a66` | T0 5-point correction: Vietnamese copy, advisory-lock concurrency, DELETE idempotency, PUT validation 400, ADMIN delete on CLOSED/CANCELLED; all gates GREEN (4386 unit tests, typecheck, lint, build, encoding, diff-check); awaiting CI 4/4 GREEN |
 
-## 9. Closing
+## 9. Correction 1/1 summary (T0, 2026-10-05)
+
+### 1. Vietnamese UI copy (order-management-client.tsx + edit-order-modal.tsx)
+All operator-facing text per glossary:
+- `Order` → `nhu cầu tuyển dụng` / `nhu cầu`
+- `Slot` → `vị trí tuyển`
+- `JobOpening` → `vị trí tuyển nội bộ`
+- `JobPosting` → `tin tuyển dụng`
+- `role` → `vai trò`
+- `terminal` → `trạng thái kết thúc`
+No `slotsNeeded` / `validFrom` / `CANCELLED` raw enum in user-facing strings.
+Enum/field/error-code unchanged in TS/backend.
+
+### 2. Concurrency-safe delete/update (order.service.ts)
+`acquireOrderAdvisoryLock(tx, 'staffing_order:${orderId}')` + per-slot lock.
+Re-read deps after lock before mutation:
+- `updateStaffingOrder`: locks order → reads → locks slots → re-reads slots → validates → applies.
+- `deleteStaffingOrder`: locks order → reads → locks slots → re-reads counts/openings → validates → deletes.
+Conflict returns typed `409`, never `500`.
+
+### 3. DELETE idempotency (route.ts)
+`DELETE /api/staffing/orders/:id` wrapped in `withIdempotency`.
+Route key: `DELETE:/api/staffing/orders/:id`.
+Requires `x-idempotency-key` header (400 if absent).
+Same key + same payload → replay; same key + different payload → 409.
+
+### 4. PUT validation (route.ts)
+Explicit validators for: `hourlyRateVnd` (safe integer ≥ 0 | null), `deadlineDate` (ISO YYYY-MM-DD), `validFrom` (ISO YYYY-MM-DD), `validTo` (ISO YYYY-MM-DD, must be ≥ `validFrom`), `shiftStart/shiftEnd` (HH:mm).
+All invalid payloads → `400 VALIDATION_ERROR`. Never falls through to `500`.
+
+### 5. ADMIN delete visibility (order-management-client.tsx)
+Nút "Xóa vĩnh viễn" hiển thị cho `capability.canDelete` ở MỌI trạng thái.
+Backend dependency guard vẫn là authority: `409 ORDER_NOT_DELETABLE` nếu có dependencies.
+
+## 10. Closing
 
 ACCEPTED — implementation complete, gates GREEN, waiting on PR CI 4/4 GREEN; stop before merge.
