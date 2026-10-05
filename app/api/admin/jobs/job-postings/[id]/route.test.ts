@@ -150,6 +150,13 @@ describe('C-01 PATCH /api/admin/jobs/job-postings/[id] — actual route handler'
         // hrp-ui-v1-job-card-stamps-brand (T1B): 2 flag mới echo từ input.
         isHighReward: input.isHighReward ?? false,
         isExpiringSoon: input.isExpiringSoon ?? false,
+        // hrp-t1c-jobposting-media-youtube (RQ-01): echo 11-char ID canonical hoá từ input
+        // (chính xác route handler đã gọi extractYouTubeVideoId qua requestBody). Mock ở đây
+        // đơn giản hoá: trả lại chính string input nếu khớp 11-char, hoặc null nếu null/""/undefined.
+        youtubeVideoId:
+          typeof input.youtubeVideoId === 'string' && input.youtubeVideoId.length === 11
+            ? input.youtubeVideoId
+            : null,
         publishedAt: null,
         archivedAt: null,
         createdAt: '2026-09-26T08:00:00.000Z',
@@ -246,13 +253,17 @@ describe('C-01 PATCH /api/admin/jobs/job-postings/[id] — actual route handler'
     await PATCH(patchReq({ ...BASE_BODY, isHot: true, isUrgent: false }), PARAMS);
     // hrp-ui-v1-job-card-stamps-brand (T1B / RQ-10 / AC-09): 4 flag slot thay vì 2.
     // Total array length mở rộng 11 → 13 để bao gồm isHighReward + isExpiringSoon.
-    expect(mocks.capturedRequestBody).toHaveLength(13);
+    // hrp-t1c-jobposting-media-youtube (RQ-02): thêm 1 slot youtubeVideoId ở cuối
+    // → total 14. Cùng key-order convention (cũ → mới) để hash ổn định với client cũ.
+    expect(mocks.capturedRequestBody).toHaveLength(14);
     // Slot 9 + 10 là 2 flag cũ (giữ vị trí cũ để idempotency hash stable).
     expect(mocks.capturedRequestBody[9]).toBe(true);
     expect(mocks.capturedRequestBody[10]).toBe(false);
     // Slot 11 + 12 là 2 flag mới (omitted → null).
     expect(mocks.capturedRequestBody[11]).toBeNull();
     expect(mocks.capturedRequestBody[12]).toBeNull();
+    // Slot 13 là youtubeVideoId (omitted → null).
+    expect(mocks.capturedRequestBody[13]).toBeNull();
   });
 
   it('omitted stamp flag serialises to null (NOT undefined) for stable idempotency hash', async () => {
@@ -265,7 +276,9 @@ describe('C-01 PATCH /api/admin/jobs/job-postings/[id] — actual route handler'
     // Critical: undefined values are serialised as null so JSON.stringify keeps the
     // array length stable. A 9-element array here would mean the hash ignores the
     // flag — exactly the C-01 invariant the bug report called out. T1B tăng lên 13.
-    expect(mocks.capturedRequestBody).toHaveLength(13);
+    // hrp-t1c-jobposting-media-youtube: mở rộng lên 14 cho YouTube slot cuối.
+    expect(mocks.capturedRequestBody).toHaveLength(14);
+    expect(mocks.capturedRequestBody[13]).toBeNull();
   });
 
   // hrp-ui-v1-job-card-stamps-brand (T1B / RQ-10): 2 flag mới có test matrix riêng.
@@ -320,7 +333,9 @@ describe('C-01 PATCH /api/admin/jobs/job-postings/[id] — actual route handler'
       }),
       PARAMS,
     );
-    expect(mocks.capturedRequestBody).toHaveLength(13);
+    // hrp-t1c-jobposting-media-youtube (RQ-02): thêm 1 slot youtubeVideoId ở cuối
+    // → total 14. Cùng key-order convention (cũ → mới) để hash ổn định với client cũ.
+    expect(mocks.capturedRequestBody).toHaveLength(14);
     expect(mocks.capturedRequestBody[9]).toBe(true);
     expect(mocks.capturedRequestBody[10]).toBe(true);
     expect(mocks.capturedRequestBody[11]).toBe(true);
@@ -333,8 +348,9 @@ describe('C-01 PATCH /api/admin/jobs/job-postings/[id] — actual route handler'
     await PATCH(patchReq({ ...BASE_BODY, isHot: false }), PARAMS);
     const afterFlip = [...mocks.capturedRequestBody];
     // hrp-ui-v1-job-card-stamps-brand (T1B): 4 flag slot thay vì 2.
-    expect(beforeFlip).toHaveLength(13);
-    expect(afterFlip).toHaveLength(13);
+    // hrp-t1c-jobposting-media-youtube (RQ-02): mở rộng lên 14 cho slot YouTube.
+    expect(beforeFlip).toHaveLength(14);
+    expect(afterFlip).toHaveLength(14);
     expect(beforeFlip[9]).toBe(true);
     expect(afterFlip[9]).toBe(false);
     expect(afterFlip).not.toEqual(beforeFlip);
@@ -449,5 +465,99 @@ describe('C-01 PATCH /api/admin/jobs/job-postings/[id] — actual route handler'
     const body = (await res.json()) as { error: string; details: { serverRevision: number } };
     expect(body.error).toBe('INVALID_REVISION');
     expect(body.details.serverRevision).toBe(2);
+  });
+
+  // ──────────────────────────────────────────────────────────────────────
+  // (10) hrp-t1c-jobposting-media-youtube (RQ-02, DEC-04) — youtubeVideoId
+  // ──────────────────────────────────────────────────────────────────────
+  describe('youtubeVideoId — type-jail + canonical hoá + idempotency slot', () => {
+    it('valid youtube.com /watch?v=ID → service receives raw input string (service fold trong DB write)', async () => {
+      const res = await PATCH(
+        patchReq({ ...BASE_BODY, youtubeVideoId: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' }),
+        PARAMS,
+      );
+      expect(res.status).toBe(200);
+      const input = mocks.updateDraftContent.mock.calls[0][2] as {
+        youtubeVideoId: string | null | undefined;
+      };
+      expect(input.youtubeVideoId).toBe('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+    });
+
+    it('raw 11-char ID → service receives raw ID (no parsing ở route)', async () => {
+      const res = await PATCH(
+        patchReq({ ...BASE_BODY, youtubeVideoId: 'dQw4w9WgXcQ' }),
+        PARAMS,
+      );
+      expect(res.status).toBe(200);
+      const input = mocks.updateDraftContent.mock.calls[0][2] as {
+        youtubeVideoId: string | null | undefined;
+      };
+      expect(input.youtubeVideoId).toBe('dQw4w9WgXcQ');
+    });
+
+    it('null → service receives null (clear semantic)', async () => {
+      const res = await PATCH(patchReq({ ...BASE_BODY, youtubeVideoId: null }), PARAMS);
+      expect(res.status).toBe(200);
+      const input = mocks.updateDraftContent.mock.calls[0][2] as {
+        youtubeVideoId: string | null | undefined;
+      };
+      expect(input.youtubeVideoId).toBeNull();
+    });
+
+    it('undefined → service receives undefined (bỏ qua, không đổi DB)', async () => {
+      const res = await PATCH(patchReq({ ...BASE_BODY }), PARAMS);
+      expect(res.status).toBe(200);
+      const input = mocks.updateDraftContent.mock.calls[0][2] as {
+        youtubeVideoId: string | null | undefined;
+      };
+      expect(input.youtubeVideoId).toBeUndefined();
+    });
+
+    it.each([
+      { value: 42, label: 'number' },
+      { value: true, label: 'boolean true' },
+      { value: { id: 'dQw4w9WgXcQ' }, label: 'object' },
+      { value: ['dQw4w9WgXcQ'], label: 'array' },
+    ])('non-string/non-null/non-undefined ($label) → 400 INVALID_INPUT (route rejects)', async ({ value }) => {
+      const res = await PATCH(patchReq({ ...BASE_BODY, youtubeVideoId: value }), PARAMS);
+      expect(res.status).toBe(400);
+      const body = (await res.json()) as { error: string; message: string };
+      expect(body.error).toBe('INVALID_INPUT');
+      expect(body.message).toContain('youtubeVideoId');
+      expect(mocks.updateDraftContent).not.toHaveBeenCalled();
+    });
+
+    it('canonical hoá đảm bảo /watch?v= và /embed/ của CÙNG video có cùng idempotency hash slot', async () => {
+      await PATCH(
+        patchReq({ ...BASE_BODY, youtubeVideoId: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' }, 'idem-A'),
+        PARAMS,
+      );
+      await PATCH(
+        patchReq({ ...BASE_BODY, youtubeVideoId: 'https://www.youtube.com/embed/dQw4w9WgXcQ' }, 'idem-B'),
+        PARAMS,
+      );
+      expect(mocks.capturedRequestBody[13]).toBe('dQw4w9WgXcQ');
+    });
+
+    it('ID sai shape (10 char) → hash slot là "__INVALID_YT__" sentinel (service sẽ reject ở đó)', async () => {
+      await PATCH(
+        patchReq({ ...BASE_BODY, youtubeVideoId: 'https://www.youtube.com/watch?v=tooshort' }),
+        PARAMS,
+      );
+      // Route layer không validate chi tiết URL → vẫn pass 200 tới updateDraftContent.
+      // Service `assertYouTubeVideoId` sẽ gọi extractYouTubeVideoId, trả null → throw
+      // AuthoringError(INVALID_INPUT). Test này xác nhận slot idempotency đã được
+      // fold thành sentinel cho cùng bad URL — cùng URL khác key vẫn cùng slot.
+      expect(mocks.capturedRequestBody[13]).toBe('__INVALID_YT__');
+    });
+
+    it('null vs undefined phân biệt được ở idempotency slot (clear ≠ skip)', async () => {
+      // 1) PATCH gửi null (clear)
+      await PATCH(patchReq({ ...BASE_BODY, youtubeVideoId: null }, 'idem-clear'), PARAMS);
+      expect(mocks.capturedRequestBody[13]).toBeNull();
+      // 2) PATCH bỏ qua (skip)
+      await PATCH(patchReq({ ...BASE_BODY }, 'idem-skip'), PARAMS);
+      expect(mocks.capturedRequestBody[13]).toBeNull(); // cùng null sentinel
+    });
   });
 });

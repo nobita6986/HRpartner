@@ -582,6 +582,12 @@ model JobPosting {
   // /api/admin/jobs/job-postings/[id]); default false cho mọi row hiện hữu.
   isHighReward                Boolean   @default(false) @map("is_high_reward")
   isExpiringSoon              Boolean   @default(false) @map("is_expiring_soon")
+  // hrp-t1c-jobposting-media-youtube (RQ-01, DEC-01): raw 11-char YouTube video ID
+  // extracted server-side from a youtube.com / youtu.be URL via
+  // src/domains/media/youtube.ts#extractYouTubeVideoId. Null = no video. Không lưu
+  // URL gốc để chặn drift (URL params, m3u8, /shorts/ → /watch/ …). Embed render qua
+  // `https://www.youtube-nocookie.com/embed/{videoId}?rel=0` ở public detail.
+  youtubeVideoId              String?   @map("youtube_video_id")
   createdAt                   DateTime  @default(now()) @map("created_at")
   updatedAt                   DateTime  @updatedAt @map("updated_at")
 

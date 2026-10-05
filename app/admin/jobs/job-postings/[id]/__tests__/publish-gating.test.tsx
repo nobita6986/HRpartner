@@ -84,6 +84,8 @@ function makeInitial(
     // hrp-ui-v1-job-card-stamps-brand (T1B): 2 flag mới default false.
     isHighReward: false,
     isExpiringSoon: false,
+    // hrp-t1c-jobposting-media-youtube (RQ-02): add thêm 1 field mới — null OK cho DRAFT rows chưa set.
+    youtubeVideoId: null,
     opening,
     ...overrides,
   };
@@ -102,6 +104,7 @@ describe('JobPostingEditorShell — Publish gating (hrp-t1a-postdeploy-runtime-c
           staffingOrderCode: 'SO-1',
           staffingOrderSlotId: 'slot-1',
         })}
+        initialMedia={[]}
         canMutate
       />,
     );
@@ -124,7 +127,7 @@ describe('JobPostingEditorShell — Publish gating (hrp-t1a-postdeploy-runtime-c
 
   it('Test #1b: JobPosting with NO linked JobOpening (orphan) → Publish disabled + reason', () => {
     const html = renderToStaticMarkup(
-      <JobPostingEditorShell initial={makeInitial('DRAFT', null)} canMutate />,
+      <JobPostingEditorShell initial={makeInitial('DRAFT', null)} initialMedia={[]} canMutate />,
     );
 
     expect(html).toContain('data-testid="publish-button"');
@@ -147,6 +150,7 @@ describe('JobPostingEditorShell — Publish gating (hrp-t1a-postdeploy-runtime-c
           staffingOrderCode: 'SO-1',
           staffingOrderSlotId: 'slot-1',
         })}
+        initialMedia={[]}
         canMutate
       />,
     );
@@ -180,6 +184,7 @@ describe('JobPostingEditorShell — Publish gating (hrp-t1a-postdeploy-runtime-c
           staffingOrderCode: 'SO-2',
           staffingOrderSlotId: 'slot-2',
         })}
+        initialMedia={[]}
         canMutate
       />,
     );
@@ -200,6 +205,7 @@ describe('JobPostingEditorShell — Publish gating (hrp-t1a-postdeploy-runtime-c
           staffingOrderCode: 'SO-3',
           staffingOrderSlotId: 'slot-3',
         })}
+        initialMedia={[]}
         canMutate
       />,
     );
@@ -224,6 +230,7 @@ describe('JobPostingEditorShell — Publish gating (hrp-t1a-postdeploy-runtime-c
           },
           { title: '' },
         )}
+        initialMedia={[]}
         canMutate
       />,
     );
@@ -246,6 +253,7 @@ describe('JobPostingEditorShell — Publish gating (hrp-t1a-postdeploy-runtime-c
           staffingOrderCode: 'SO-5',
           staffingOrderSlotId: 'slot-5',
         })}
+        initialMedia={[]}
         canMutate={false}
       />,
     );

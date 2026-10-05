@@ -39,9 +39,20 @@ import {
   summarizeJobPostingApiError,
 } from '@/src/domains/staffing/job-posting-error-map';
 import type { JobPostingApiErrorSummary } from '@/src/domains/staffing/job-posting-error-map';
+// hrp-t1c-jobposting-media-youtube (RQ-05..RQ-09, RQ-02..RQ-04): gallery + YouTube cards.
+// Editor shell pre-loads initial server snapshot qua route handler
+// `/api/admin/jobs/job-postings/[id]/media` để tránh waterfall.
+import { JobPostingMediaCard, type JobPostingMediaAssignment } from './media-card';
+import { JobPostingYouTubeCard } from './youtube-card';
 
 interface JobPostingEditorShellProps {
   initial: JobPostingDetailDto;
+  /**
+   * hrp-t1c-jobposting-media-youtube (RQ-05): server-side pre-fetch của
+   * `listJobPostingMedia` (PUBLIC media, cover-first, order ASC). Tránh
+   * waterfall khi client mount — đã chạy trong Server Component page.
+   */
+  initialMedia: JobPostingMediaAssignment[];
   /** Mutation roles gate (server already enforces; this is just UI affordance). */
   canMutate: boolean;
 }
@@ -142,7 +153,7 @@ export async function readApiErrorSummary(
   return summarizeJobPostingApiError(envelope);
 }
 
-export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorShellProps) {
+export function JobPostingEditorShell({ initial, initialMedia, canMutate }: JobPostingEditorShellProps) {
   const router = useRouter();
 
   // ----- Local form state ------------------------------------------------
@@ -637,6 +648,54 @@ export function JobPostingEditorShell({ initial, canMutate }: JobPostingEditorSh
           </span>
         </div>
       </section>
+
+      {/* hrp-t1c-jobposting-media-youtube (RQ-05..RQ-09, RQ-02..RQ-04):
+          Gallery media + YouTube URL. Server đã load `initialMedia` qua
+          `listJobPostingMedia` trong Server Component page để tránh waterfall.
+          Mỗi card là client component độc lập — chỉ tự gọi API khi user
+          thao tác. Editor shell chỉ nhận `onPatched` callback để sync
+          `revision` (dùng cho dirty tracking nếu cần). */}
+      <JobPostingMediaCard
+        jobPostingId={initial.id}
+        initialItems={initialMedia}
+        canMutate={canMutate}
+        isSaving={isSaving}
+        status={status}
+        onPatched={() => {
+          // Bump revision để dirty tracking & next PATCH không trượt 409.
+          setRevision((prev) => prev + 1);
+        }}
+        onError={(label) => {
+          if (label) {
+            setErrorMessage(label);
+            setErrorRecoveryHref(null);
+          } else {
+            setErrorMessage(null);
+            setErrorRecoveryHref(null);
+          }
+        }}
+      />
+      <JobPostingYouTubeCard
+        jobPostingId={initial.id}
+        initialVideoId={initial.youtubeVideoId ?? null}
+        initialRevision={revision}
+        canMutate={canMutate}
+        isSaving={isSaving}
+        status={status}
+        onPatched={(updated) => {
+          setRevision(updated.revision);
+          setSavedAt(updated.updatedAt);
+        }}
+        onError={(label) => {
+          if (label) {
+            setErrorMessage(label);
+            setErrorRecoveryHref(null);
+          } else {
+            setErrorMessage(null);
+            setErrorRecoveryHref(null);
+          }
+        }}
+      />
 
       {/* Rich content fields */}
       <RichFieldCard

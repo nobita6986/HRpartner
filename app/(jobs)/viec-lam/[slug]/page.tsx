@@ -72,11 +72,12 @@ import {
   publicJobMetaText,
 } from '@/src/domains/job-board/public-detail.meta';
 import { GallerySection } from '@/src/domains/job-board/components/detail/gallery-section';
+import { YouTubeEmbed } from '@/src/domains/job-board/components/detail/youtube-embed';
 import { CtvInfoSection } from '@/src/domains/job-board/components/detail/content-section';
 import { EmployerSidebar } from '@/src/domains/job-board/components/detail/employer-sidebar';
 import { RelatedJobsSection } from '@/src/domains/job-board/components/detail/related-jobs-section';
 import { renderJobPostingRichText } from '@/src/shared/content/job-posting-rich-text';
-import { CtvInfoSectionContent, EmployerSidebarContent, GallerySectionContent } from '@/src/domains/job-board/public-types';
+import { CtvInfoSectionContent, EmployerSidebarContent, GallerySectionContent, MediaItem } from '@/src/domains/job-board/public-types';
 import {
   JobStampOverlay,
 } from '@/src/domains/job-board/components/landing/stamp-overlay';
@@ -267,13 +268,39 @@ function ThrottledNotice() {
  * Skeleton dùng `source: 'INTEGRATION_PENDING'` + data rỗng; demo dùng fixture
  * typed. KHÔNG đổi DTO — chỉ derive thêm trường view-model.
  */
-function buildGallerySection(): GallerySectionContent {
+function buildGallerySection(
+  job: LoadedJob,
+): GallerySectionContent {
+  // hrp-t1c-jobposting-media-youtube (RQ-03, DEC-02): render REAL gallery từ `job.gallery`
+  // (đã sort `[cover DESC, order ASC, createdAt ASC]`, filter `media.status='PUBLIC'`).
+  // `MediaItem.id` được tổng hợp từ URL hash vì public DTO KHÔNG lộ `MediaAssignment.id` /
+  // `Media.id` (no existence oracle).
+  //
+  // `order` synthetic = index 0..N vì DTO không phát `order` cho public (chỉ mapper nội bộ
+  // dùng để render gallery riêng). Cover/Order đã được DTO sort ở service layer.
+  const media: MediaItem[] = job.gallery.map((item, index) => ({
+    id: `g-${index}-${item.url.length}`,
+    url: item.url,
+    alt: item.alt,
+    caption: item.caption,
+    cover: item.cover,
+    order: index,
+  }));
+  if (media.length === 0) {
+    return {
+      id: 'gallery',
+      enabled: false,
+      order: 20,
+      source: 'INTEGRATION_PENDING',
+      media: [],
+    };
+  }
   return {
     id: 'gallery',
     enabled: true,
     order: 20,
-    source: 'INTEGRATION_PENDING',
-    media: [],
+    source: 'REAL',
+    media,
   };
 }
 
@@ -334,7 +361,7 @@ export default async function PublicJobDetailPage({ params }: PageProps) {
   // UI04d D.A: AFF-gated (chưa có role CTV → mặc định false; sau này sẽ đọc từ session).
   const showCtvInfo = false;
 
-  const gallery = buildGallerySection();
+  const gallery = buildGallerySection(job);
   const ctvInfo = buildCtvInfoSection();
   const employerSidebar = buildEmployerSidebar(job);
 
@@ -420,8 +447,11 @@ export default async function PublicJobDetailPage({ params }: PageProps) {
 
         {/* SECTIONS 2..13 — UI04d D.A + hrp-p1-a1 (RQ-02/AC-03..05) */}
         <div className="mt-6 flex flex-col gap-4">
-          {/* GALLERY (skeleton — chờ AV4 Media) */}
+          {/* GALLERY (REAL — T1C) */}
           <GallerySection content={gallery} />
+
+          {/* YOUTUBE EMBED (REAL — T1C). Component return null khi `videoId` rỗng. */}
+          <YouTubeEmbed videoId={job.youtubeVideoId} />
 
           {/* GRID: editorial + sidebar */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">

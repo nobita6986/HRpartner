@@ -29,10 +29,12 @@
  *     production.
  *
  * Còn hạn chế thật sự:
- *   - Gallery media: chưa có; chờ AV4 Media Library integration.
  *   - Slug rename sau first PUBLISHED: schema lock slug immutability ở
  *     PUBLISHED (P1-A0 AC-11). Pre-publish rename route chưa được expose —
  *     vẫn phải tạo JobOpening mới để đổi slug ở trạng thái này.
+ *   - hrp-t1c-jobposting-media-youtube (RQ-01, RQ-05): gallery media + YouTube
+ *     URL đã tích hợp ở T1C — pre-load qua `listJobPostingMedia` (RQ-05) và
+ *     gắn vào JobPostingEditorShell, không còn "AV4 còn chờ" trên UI này.
  */
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
@@ -51,6 +53,13 @@ import {
   jobPostingStatusTone,
 } from '@/src/domains/staffing/job-posting-ui';
 import { jobOpeningStatusLabel } from '@/src/domains/staffing/job-opening-ui';
+// hrp-t1c-jobposting-media-youtube (RQ-05): pre-fetch gallery ở Server Component
+// để tránh waterfall khi client mount. listJobPostingMedia trả JobPostingMediaAssignmentDto
+// (cover-first, order ASC, status='PUBLIC' only).
+import {
+  listJobPostingMedia,
+  type JobPostingMediaAssignmentDto,
+} from '@/src/domains/staffing/job-posting-media.service';
 import type { SystemRole } from '@prisma/client';
 
 import { JobPostingEditorShell } from './editor-shell';
@@ -93,8 +102,17 @@ export default async function AdminJobPostingDetailPage({ params }: PageProps) {
   const { id } = await params;
   const ctx = { userId: session.userId, role: session.role };
   const prisma = getPrisma();
-  const posting = await withDbContext(prisma, ctx, async (tx) => {
-    return getJobPostingForAdmin(tx, id);
+  const { posting, initialMedia } = await withDbContext(prisma, ctx, async (tx) => {
+    const [posting, initialMedia] = await Promise.all([
+      getJobPostingForAdmin(tx, id),
+      // hrp-t1c-jobposting-media-youtube (RQ-05): pre-load gallery. Nếu posting
+      // không tồn tại / không đọc được, listJobPostingMedia sẽ throw NOT_FOUND —
+      // page đã trả notFound ở nhánh dưới nên ta trả mảng rỗng để không mask lỗi.
+      canMutate
+        ? listJobPostingMedia(tx, ctx, id).catch((): JobPostingMediaAssignmentDto[] => [])
+        : Promise.resolve([] as JobPostingMediaAssignmentDto[]),
+    ]);
+    return { posting, initialMedia };
   });
   if (!posting) {
     // Có thể là (a) id không tồn tại, hoặc (b) RLS policy deny (role không
@@ -201,7 +219,7 @@ export default async function AdminJobPostingDetailPage({ params }: PageProps) {
         </header>
 
         {/* Editor shell — P1-A0: real Tiptap wrapper + real persistence API */}
-        <JobPostingEditorShell initial={posting} canMutate={canMutate} />
+        <JobPostingEditorShell initial={posting} initialMedia={initialMedia} canMutate={canMutate} />
 
         {/* Footer note — UI truth baseline (hrp-p1-a0.2 / T1C).
             *
@@ -234,9 +252,6 @@ export default async function AdminJobPostingDetailPage({ params }: PageProps) {
             Tính năng chưa khả dụng
           </h2>
           <ul className="ml-4 list-disc space-y-1">
-            <li>
-              Hiện chưa thể đính kèm ảnh vào tin tuyển dụng.
-            </li>
             <li>
               Sau khi đăng tin, đường dẫn không thể thay đổi. Nếu cần dùng đường dẫn khác,
               hãy tạo một đợt tuyển dụng mới.
