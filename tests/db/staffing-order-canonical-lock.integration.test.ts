@@ -292,11 +292,14 @@ describe.skipIf(!HAS_TEST_DB)('t1a-staffing-order-management — canonical order
       },
     );
 
-    // Connection A: a fresh Prisma client. Calls deleteStaffingOrder
-    // under GUC ADMIN. The lock acquire inside the service blocks until
-    // B commits, so the elapsed deleteMs proves the serialization
-    // (we assert deleteMs >= 250ms = B's pg_sleep + tx roundtrip).
+    // Connection A: a fresh Prisma client. Briefly give B's tx time to
+    // grab the canonical lock first; otherwise A and B race for it and
+    // A could win — the worst-of-both outcomes for this test. With the
+    // 30ms head start, B reliably acquires first; A's lock acquire
+    // then blocks until B's pg_sleep(0.3) + insert + commit, so the
+    // elapsed deleteMs proves the serialization (>=250ms threshold).
     const connA = makeClient(writerUrl);
+    await new Promise((r) => setTimeout(r, 30));
     const deleteStart = Date.now();
     let caught: StaffingOrderServiceError | null = null;
     try {
@@ -360,7 +363,11 @@ describe.skipIf(!HAS_TEST_DB)('t1a-staffing-order-management — canonical order
     // Connection A: calls updateStaffingOrder with slot._delete under
     // GUC ADMIN. Service acquires both the order + slot canonical locks
     // and re-reads deps — sees the new submission → SLOT_HAS_DEPENDENCIES.
+    // Brief head start so B reliably grabs the slot lock first; A's
+    // slot-lock acquire then blocks until B's pg_sleep(0.3) + insert
+    // + commit, so updateMs >= 250ms proves the serialization.
     const connA = makeClient(writerUrl);
+    await new Promise((r) => setTimeout(r, 30));
     const updateStart = Date.now();
     let caught: StaffingOrderServiceError | null = null;
     try {
