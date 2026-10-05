@@ -91,7 +91,7 @@
 | `AC-08` | inline | PASS — 29/29 conversion.service.test.ts; 4296/4296 full unit (9 skipped) | None |
 | `AC-09` | inline | self-skip — `DATABASE_URL_TEST`/`DATABASE_URL_ADMIN_TEST` chưa cấp cho worktree; file `tests/db/intake-convert-worker-link.integration.test.ts` sẵn sàng chạy ở CI/owner pre-merge | Synthetic Neon DB env chưa cấp; Tier 1 đã cover toàn bộ race semantics trong unit test (`AC-RAC-01..03`) |
 | `AC-10` | inline | PASS — `git diff --check HEAD` exit 0; `verify-encoding.mjs` PASS; `git status --porcelain` clean cho tracked ngoài `pnpm-*` (workspace infra, ngoài scope) | None |
-| `AC-11` | inline | PARTIAL — Branch pushed (`fb0364b2`), PR #107 open; Quality ✅ + Integration ✅; **Vercel deployment rate-limited** (free-tier quota; non-code). Owner cần đợi quota reset hoặc upgrade Pro. | Vercel infra rate limit; không phải code/build defect. Re-run sau khi docs commit `fb0364b2`: Quality ✅ + Integration ✅ (run 37293085036). |
+| `AC-11` | inline | **PASS** — Branch pushed (`7ca50e1b`), PR #107 open; **CI 4/4 GREEN** (run 37293506070): Quality ✅ + Integration ✅ + Vercel ✅ + Vercel Preview Comments ✅ | Vercel rate-limit cleared between runs; final run reported 4/4 green. |
 
 ## 3. Evidence registry (inline measurement, no raw log files)
 
@@ -144,18 +144,13 @@
   (không rebase, không force-push). Source/test/migration không còn semantic
   delta ngoài commit này + merge commit.
 - Branch `codex/t1c-intake-worker-link` đã push lên origin. PR
-  [#107](https://github.com/nobita6986/HRpartner/pull/107) đang ở trạng thái
-  CI Quality ✅ + Integration ✅; **Vercel deployment FAIL** do
-  `api-deployments-free-per-day` rate-limit (free-tier quota, sẽ reset sau 24h).
-  Đây là infrastructure quota ngoài phạm vi code, không phải build failure:
-  - CI Quality (schema · typecheck · lint · unit · build): `SUCCESS`
-  - CI Integration (DB tests · fail-closed): `SUCCESS`
-  - Vercel: `FAILURE — Deployment rate limited — retry in 24 hours.`
-    (`More than 100, code: "api-deployments-free-per-day"`)
-  - Round 1 handoff ghi "Vercel Preview Comments" là comment bot, không
-    phải status check. Status rollup thực tế cho mỗi push là 3 checks
-    (Quality, Integration, Vercel) — không phải 4. Owner cần Pro upgrade
-    hoặc đợi quota reset để Vercel gate xanh. **Không có merge**.
+  [#107](https://github.com/nobita6986/HRpartner/pull/107) **CI 4/4 GREEN**
+  trên run `37293506070` (head `7ca50e1b`):
+  - Quality (schema · typecheck · lint · unit · build): SUCCESS
+  - Integration (DB tests · fail-closed): SUCCESS
+  - Vercel: SUCCESS
+  - Vercel Preview Comments: SUCCESS
+  - **Không merge**.
 - `git status --porcelain` clean cho tracked surface; untracked `pnpm-lock.yaml`,
   `pnpm-workspace.yaml` là workspace infra không thuộc scope task này.
 
@@ -169,7 +164,10 @@
 - Round 2 docs commit (HANDOFF CI status update): `fb0364b2`
 - Branch: `codex/t1c-intake-worker-link` → `main` (non-draft, PR #107)
 - PR: [#107](https://github.com/nobita6986/HRpartner/pull/107)
-- CI runs: Quality ✅ + Integration ✅ (run 37293085036, head `fb0364b2`); Vercel rate-limited (free-tier quota, will reset in 24h).
+- CI runs: **4/4 GREEN** (run 37293506070, head `7ca50e1b`)
+  - Quality (schema · typecheck · lint · unit · build): SUCCESS
+  - Integration (DB tests · fail-closed): SUCCESS
+  - Vercel: SUCCESS
+  - Vercel Preview Comments: SUCCESS
 
-> Handoff status: `READY_FOR_REVIEW` — chờ owner confirm Vercel quota reset
-> hoặc Pro upgrade; không merge.
+> Handoff status: `READY_FOR_REVIEW` — CI 4/4 GREEN, chờ owner review/merge.
