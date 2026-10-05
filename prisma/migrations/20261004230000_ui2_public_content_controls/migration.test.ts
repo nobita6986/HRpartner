@@ -46,9 +46,13 @@ function stripSqlComments(sql: string): string {
 describe('UI2 public content controls migration', () => {
   const sql = stripSqlComments(readFileSync(MIGRATION_PATH, 'utf8'));
 
-  it('is the lexicographically latest migration in prisma/migrations/', () => {
+  it('is the current pre-P2 migration in prisma/migrations/ (lexicographically latest at handoff)', () => {
+    // Soft check: just ensure the migration file is registered. The "must be
+    // lexicographically latest" invariant belongs to whichever task is the
+    // current gate (e.g. T1C's jp_youtube_video_id). We don't reassert here
+    // because T1C intentionally adds a later migration.
     const all = listMigrationDirs();
-    expect(all[all.length - 1]).toBe(MIGRATION_NAME);
+    expect(all).toContain(MIGRATION_NAME);
   });
 
   it('adds only the two additive columns to homepage_settings', () => {

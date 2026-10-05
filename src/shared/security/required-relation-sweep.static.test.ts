@@ -105,27 +105,34 @@ const EXPECTED_HITS = [
   // FOUR write/read paths so the scoped-recruiter re-check can derive the
   // order anchor. F9 correction batch 1/1 (2026-10-03): four of these
   // paths now also call `acquireOrderAdvisoryLock` BEFORE the guard. The
-  // existing `publishJobPosting` entry (now at 955 after the F9 line
-  // shift) is preserved; four new entries are added (851 for
-  // `updateDraftContent`, 1082 for `unpublishJobPosting`, 1151 for
-  // `archiveJobPosting`, 1224 for `getJobPostingForAuthoring`). All five
-  // selects are RLS-covered (read-only; `withDbContext` sets the GUC
-  // session role; JobOpening is not a recruiter-gated table on its own).
-  // Net +4 entries: 32 → 36 src hits.
-  'src/domains/staffing/job-posting-authoring.service.ts:1007 jobOpening',
-  'src/domains/staffing/job-posting-authoring.service.ts:1119 jobOpening',
-  'src/domains/staffing/job-posting-authoring.service.ts:1246 jobOpening',
-  'src/domains/staffing/job-posting-authoring.service.ts:1315 jobOpening',
+  // existing `publishJobPosting` entry is preserved; four new entries are
+  // added. All five selects are RLS-covered (read-only; `withDbContext`
+  // sets the GUC session role; JobOpening is not a recruiter-gated table
+  // on its own).
+  // hrp-t1c-jobposting-media-youtube (2026-10-05): updateDraftContent +
+  // YouTube ID validator (`assertYouTubeVideoId`) + DTO `youtubeVideoId`
+  // mapping + `JobPostingModelRow` extension shifted the four F9 lines
+  // further: 1007 → 1070, 1119 → 1192, 1246 → 1319, 1315 → 1388. The
+  // 5th entry (getJobPostingForAuthoring) is now at 1461 (was 1388).
+  'src/domains/staffing/job-posting-authoring.service.ts:1070 jobOpening',
+  'src/domains/staffing/job-posting-authoring.service.ts:1192 jobOpening',
+  'src/domains/staffing/job-posting-authoring.service.ts:1319 jobOpening',
   'src/domains/staffing/job-posting-authoring.service.ts:1388 jobOpening',
+  'src/domains/staffing/job-posting-authoring.service.ts:1461 jobOpening',
   // P1-A0 STEP-03: line numbers in job-posting-list.service.ts shifted because
   // the DTOs grew (added title, salaryDisplay, *Json, contentSchemaVersion,
   // hasContent). The four select-clauses themselves are unchanged.
   // hrp-p1-a0-1 (2026-09-26): line numbers shifted again because DTOs grew
   // (`isHot`, `isUrgent`) and eligibility selector was added.
-  'src/domains/staffing/job-posting-list.service.ts:149 jobOpening',
-  'src/domains/staffing/job-posting-list.service.ts:152 staffingOrder',
-  'src/domains/staffing/job-posting-list.service.ts:245 jobOpening',
-  'src/domains/staffing/job-posting-list.service.ts:253 staffingOrder',
+  // hrp-t1c-jobposting-media-youtube (2026-10-05): `youtubeVideoId` field
+  // added to both `JobPostingListItemDto` and `JobPostingDetailDto`, plus
+  // `listJobPostingsForAdmin` and `getJobPostingForAdmin` mappings — line
+  // numbers shift +6: 149 → 155, 152 → 158, 245 → 259, 253 → 267. The
+  // select-clauses themselves are unchanged.
+  'src/domains/staffing/job-posting-list.service.ts:155 jobOpening',
+  'src/domains/staffing/job-posting-list.service.ts:158 staffingOrder',
+  'src/domains/staffing/job-posting-list.service.ts:259 jobOpening',
+  'src/domains/staffing/job-posting-list.service.ts:267 staffingOrder',
   'src/domains/staffing/order.service.ts:153 project',
   'src/domains/staffing/order.service.ts:179 project',
   'src/domains/staffing/submission.service.ts:204 project',
@@ -138,8 +145,12 @@ const EXPECTED_HITS = [
   // `staffingOrder.slots`. Cả hai là BẮT BUỘC trong schema (không optional, không list) — sweep phải
   // đếm. An toàn vì đã chặn trước bằng `status: 'PUBLISHED'` (JobPosting) + RLS `hrp_project_visible_for`
   // mà MKT thoả khi `Project.is_public=true` (migration s1_rls_project 2026-08-16).
-  'src/domains/job-board/public.service.ts:752 staffingOrder',
-  'src/domains/job-board/public.service.ts:759 project',
+  // hrp-t1c-jobposting-media-youtube (2026-10-05): added `youtubeVideoId` scalar + the
+  // public DTO `gallery`/`PublicJobGalleryItemDto` interface + `toDetailDto` mapping of
+  // gallery — `jobOpening.staffingOrder` / `jobOpening.staffingOrder.project` selects
+  // shifted from 752/759 → 805/812. The select clauses themselves are unchanged.
+  'src/domains/job-board/public.service.ts:805 staffingOrder',
+  'src/domains/job-board/public.service.ts:812 project',
   // hrp-p1-e0 (2026-09-26): Recruiter Workbench read-model cần `fullName`/`phone`/`cccdNumber`/
   // `identityVerification`/`completeness` để build `RecruiterWorkbenchRow.candidate` (§4.3 RQ-02).
   // `LaborProfile` là quan hệ BẮT BUỘC trong schema `placement_case` (không optional, không list) — sweep

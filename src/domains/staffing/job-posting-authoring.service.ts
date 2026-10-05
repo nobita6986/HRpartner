@@ -66,6 +66,7 @@ import {
   RecruiterAssignmentError,
 } from '@/src/domains/talent/recruiter-assignment.service';
 import { eligibleSlotPredicateSql } from './job-posting-list.service';
+import { extractYouTubeVideoId } from '@/src/domains/media/youtube';
 // ─────────────────────────────────────────────────────────────────────────────
 // Errors
 // ─────────────────────────────────────────────────────────────────────────────
@@ -165,6 +166,14 @@ export interface UpdateDraftContentInput {
   isHighReward?: boolean;
   isExpiringSoon?: boolean;
   contentSchemaVersion: number;
+  /**
+   * hrp-t1c-jobposting-media-youtube (RQ-02): raw 11-char YouTube video ID.
+   * `undefined` = bỏ qua (giữ nguyên DB); `null` hoặc chuỗi rỗng sau trim = clear;
+   * string khác = qua `extractYouTubeVideoId` validator — nếu helper trả `null` reject
+   * 400, nếu trả 11-char ID thì lưu ID đó. Input KHÔNG ĐƯỢC lưu nguyên xi; chỉ lưu ID
+   * đã được canonical hoá để chặn URL drift (/shorts/, /embed/, /watch?v=, m3u8, ...).
+   */
+  youtubeVideoId?: string | null;
 }
 
 export interface PublishJobPostingInput {
@@ -204,6 +213,12 @@ export interface JobPostingDto {
    */
   isHighReward: boolean;
   isExpiringSoon: boolean;
+  /**
+   * hrp-t1c-jobposting-media-youtube (RQ-01, RQ-02): raw 11-char YouTube video ID
+   * (canonical hoá từ URL qua `extractYouTubeVideoId`). Null = không có video. Embed
+   * render qua `youtubeEmbedUrl(videoId)` ở public detail. KHÔNG lưu URL gốc.
+   */
+  youtubeVideoId: string | null;
   publishedAt: string | null;
   archivedAt: string | null;
   createdAt: string;
@@ -382,6 +397,48 @@ function assertSalaryDisplay(salaryDisplay: string | null | undefined): void {
   if (salaryDisplay.length > 200) {
     throw new AuthoringError('INVALID_INPUT', 'salaryDisplay tối đa 200 ký tự.', 400);
   }
+}
+
+/**
+ * hrp-t1c-jobposting-media-youtube (RQ-02, DEC-02, DEC-04): validator cho
+ * `youtubeVideoId` PATCH input.
+ *
+ * Semantics:
+ *   - `undefined`         → bỏ qua (giữ nguyên DB), giống `salaryDisplay`/`isHot`.
+ *   - `null`              → clear (set null).
+ *   - `""` (chuỗi rỗng)   → fold thành null (clear).
+ *   - Chuỗi khác rỗng     → qua `extractYouTubeVideoId`. Helper trả `null` → reject 400
+ *                            INVALID_INPUT với message repo-owned (KHÔNG echo raw input).
+ *                            Helper trả 11-char ID → trả ID đó cho write path lưu vào DB.
+ *
+ * Type-jail: mọi non-string/non-null/non-undefined (number/object/array/boolean) → reject.
+ *
+ * Lý do tách validator khỏi updateDraftContent: contract PATCH idempotency hash phải fold
+ * `youtubeVideoId` qua cùng một hàm canonical (xem `requestBody` array ở route handler).
+ */
+function assertYouTubeVideoId(value: unknown): { kind: 'skip' } | { kind: 'clear' } | { kind: 'set'; videoId: string } {
+  if (value === undefined) return { kind: 'skip' };
+  if (value === null) return { kind: 'clear' };
+  if (typeof value !== 'string') {
+    throw new AuthoringError(
+      'INVALID_INPUT',
+      'youtubeVideoId phải là chuỗi (URL/ID), null, hoặc bị bỏ qua.',
+      400,
+      { field: 'youtubeVideoId', receivedType: typeof value },
+    );
+  }
+  const trimmed = value.trim();
+  if (trimmed.length === 0) return { kind: 'clear' };
+  const videoId = extractYouTubeVideoId(trimmed);
+  if (videoId === null) {
+    throw new AuthoringError(
+      'INVALID_INPUT',
+      'youtubeVideoId không phải URL youtube.com / youtu.be hợp lệ hoặc ID 11 ký tự không đúng định dạng.',
+      400,
+      { field: 'youtubeVideoId' },
+    );
+  }
+  return { kind: 'set', videoId };
 }
 
 /**
@@ -967,6 +1024,9 @@ export async function updateDraftContent(
   assertBoolean('isUrgent', input.isUrgent);
   assertBoolean('isHighReward', input.isHighReward);
   assertBoolean('isExpiringSoon', input.isExpiringSoon);
+  // hrp-t1c-jobposting-media-youtube (RQ-02, DEC-04): `skip` | `clear` | `set` decision
+  // để write path không lưu raw URL mà chỉ lưu 11-char ID.
+  const youtubeVideoIdDecision = assertYouTubeVideoId(input.youtubeVideoId);
 
   validateRichContentField('descriptionJson', input.descriptionJson, input.contentSchemaVersion);
   if (input.requirementsJson !== null && input.requirementsJson !== undefined) {
@@ -999,6 +1059,9 @@ export async function updateDraftContent(
       isUrgent: true,
       isHighReward: true,
       isExpiringSoon: true,
+      // hrp-t1c-jobposting-media-youtube (RQ-02): select 11-char video ID để stamp DTO.
+      // Field là nullable Prisma String — null OK.
+      youtubeVideoId: true,
       // hrp-f9-hr-staff-jobposting-scope STEP-05: derive the order anchor
       // for the scoped-recruiter re-check. F9 guard re-reads the assignment
       // table inside the same transaction; the include is required because
@@ -1089,6 +1152,16 @@ export async function updateDraftContent(
       // hrp-ui-v1-job-card-stamps-brand (T1B): 2 stamp flag mới — additive, NOT NULL DEFAULT false.
       isHighReward: nextIsHighReward,
       isExpiringSoon: nextIsExpiringSoon,
+      // hrp-t1c-jobposting-media-youtube (RQ-02, DEC-04): `skip` = giữ DB nguyên;
+              // `clear` = set null; `set` = lưu 11-char ID đã canonical hoá.
+              // Helper `assertYouTubeVideoId` đã gate non-string/non-null/non-undefined
+              // nên ở đây chỉ còn 3 nhánh hợp lệ.
+              youtubeVideoId:
+                youtubeVideoIdDecision.kind === 'set'
+                  ? youtubeVideoIdDecision.videoId
+                  : youtubeVideoIdDecision.kind === 'clear'
+                    ? null
+                    : undefined, // `undefined` ⇒ Prisma bỏ qua field (giữ giá trị hiện tại)
       revision: nextRevision,
     },
   });
@@ -1428,6 +1501,8 @@ interface JobPostingModelRow {
   // hrp-ui-v1-job-card-stamps-brand (T1B): 2 author-selected stamp flag canonical mới.
   isHighReward: boolean;
   isExpiringSoon: boolean;
+  // hrp-t1c-jobposting-media-youtube (RQ-01): raw 11-char YouTube video ID hoặc null.
+  youtubeVideoId: string | null;
   publishedAt: Date | null;
   archivedAt: Date | null;
   createdAt: Date;
@@ -1464,6 +1539,9 @@ function toJobPostingDto(row: JobPostingModelRow): JobPostingDto {
     // hrp-ui-v1-job-card-stamps-brand (T1B): 2 flag mới copy nguyên xi từ row.
     isHighReward: row.isHighReward,
     isExpiringSoon: row.isExpiringSoon,
+    // hrp-t1c-jobposting-media-youtube (RQ-01): copy raw 11-char video ID — embed path chỉ render
+    // khi `!= null` (xem `JobPostingYoutubeEmbed` ở public detail).
+    youtubeVideoId: row.youtubeVideoId,
     publishedAt: row.publishedAt ? row.publishedAt.toISOString() : null,
     archivedAt: row.archivedAt ? row.archivedAt.toISOString() : null,
     createdAt: row.createdAt.toISOString(),

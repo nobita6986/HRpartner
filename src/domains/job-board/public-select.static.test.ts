@@ -80,6 +80,7 @@ describe('public job projection — không select quan hệ bắt buộc bị RL
       'salaryDisplay',
       'slug',
       'title',
+      'youtubeVideoId',
     ]);
   });
 

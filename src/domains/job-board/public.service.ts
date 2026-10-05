@@ -204,6 +204,28 @@ export interface PublicJobDetailDto extends PublicJobDto {
   contentSchemaVersion: number | null;
   /** hrp-p1-a1: text lương hiển thị từ JobPosting.salaryDisplay (string ngắn; KHÔNG phải rich text). */
   salaryDisplay: string | null;
+  /**
+   * hrp-t1c-jobposting-media-youtube (RQ-03, DEC-02): optional YouTube embed. Khi `null`, page
+   * KHÔNG render iframe. Khi có, page render `https://www.youtube-nocookie.com/embed/{id}?rel=0`
+   * qua `<iframe>` responsive (16:9). Server đã canonicalize 11-char ID từ URL `youtube.com` /
+   * `youtu.be` — public DTO KHÔNG bao giờ nhận URL gốc, KHÔNG nhận HTML, KHÔNG nhận iframe code.
+   */
+  youtubeVideoId: string | null;
+  /**
+   * hrp-t1c-jobposting-media-youtube (RQ-03, DEC-02): ordered gallery đã sort
+   * `[cover DESC, order ASC, createdAt ASC]`. Tập rỗng khi JobPosting chưa gán media nào.
+   * Mỗi item là projection công khai của Media (chỉ URL/alt/caption/mimeType, không leak
+   * owner/createdBy của Media row).
+   */
+  gallery: PublicJobGalleryItemDto[];
+}
+
+export interface PublicJobGalleryItemDto {
+  url: string;
+  alt: string;
+  caption: string | null;
+  mimeType: string;
+  cover: boolean;
 }
 
 const VISIBLE_ORDER_STATUSES = ['OPEN', 'CLOSING_SOON'];
@@ -623,6 +645,15 @@ function toDetailDto(
     applicationInstructionsJson: unknown | null;
     contentSchemaVersion: number;
     salaryDisplay: string | null;
+    // hrp-t1c-jobposting-media-youtube (RQ-03, DEC-02): YouTube ID canonicalized.
+    youtubeVideoId: string | null;
+    // hrp-t1c-jobposting-media-youtube (RQ-03, DEC-02): ordered gallery (cover first, then
+    // order asc, then createdAt asc). Public projection chỉ lấy URL/alt/caption/mimeType/cover
+    // — KHÔNG leak `id`/`mediaId`/`ownerId`/`order`/`createdAt` của MediaAssignment.
+    gallery: Array<{
+      cover: boolean;
+      media: { url: string; publicUrl: string; alt: string; caption: string | null; mimeType: string };
+    }>;
   },
   now: Date,
 ): PublicJobDetailDto | null {
@@ -697,6 +728,23 @@ function toDetailDto(
     // hrp-ui-v1-public-card-truth-correction (T1A / RQ-10): salaryDisplay cùng nguồn với list DTO
     // (đã được `toDto` copy). Detail page render trong SUMMARY fact/chip (Mức lương).
     salaryDisplay: rich.salaryDisplay,
+    // hrp-t1c-jobposting-media-youtube (RQ-03, DEC-02): YouTube video ID đã canonicalize từ URL.
+    // Public page render iframe responsive 16:9 dùng `youtube-nocookie.com`/embed/{id}?rel=0.
+    // `null` khi JobPosting không có YouTube — page KHÔNG render iframe.
+    youtubeVideoId: rich.youtubeVideoId,
+    // hrp-t1c-jobposting-media-youtube (RQ-03, DEC-02): ordered gallery — `publicUrl` ưu tiên
+    // trên `url` (CDN-public surface). Mapper copy chứ KHÔNG tính toán để giữ semantics
+    // của `listJobPostingMedia` (DTO.mediaAssignment.url = publicUrl || url).
+    // Default `[]` cho row pre-T1C hoặc test mock chưa setup field — public service đọc
+    // đúng shape `mediaAssignments` (relation từ publicSelect), nhưng vẫn defensive để không
+    // nổ khi chain chưa select (mặc dù mọi caller đều dùng `publicSelect`).
+    gallery: (rich.gallery ?? []).map((g) => ({
+      url: g.media.publicUrl || g.media.url,
+      alt: g.media.alt,
+      caption: g.media.caption,
+      mimeType: g.media.mimeType,
+      cover: g.cover,
+    })),
   };
 }
 
@@ -747,6 +795,11 @@ const publicSelect = Prisma.validator<Prisma.JobPostingSelect>()({
   // ở khối rich-text phía trên (cùng dòng `descriptionJson`/`requirementsJson`/...) cho
   // AC-03..05. KHÔNG khai báo trùng ở đây — Prisma validator object literal không được
   // phép duplicate key và static test fence `public-select.static.test.ts` sẽ FAIL.
+  // hrp-t1c-jobposting-media-youtube (RQ-03, DEC-02): YouTube video ID đã được server-side
+  // canonicalize. Public render dùng `youtubeEmbedUrl(id)` → `https://www.youtube-nocookie.com/embed/{id}?rel=0`.
+  // Scalar `String?` — KHÔNG relation, KHÔNG join, không ảnh hưởng RLS chain (Media table không
+  // vào đường này). `static test fence public-select.static.test.ts` cần cập nhật allowlist top-level.
+  youtubeVideoId: true,
   jobOpening: {
     select: {
       staffingOrder: {
@@ -1020,6 +1073,18 @@ export async function getPublicJobDetail(tx: Prisma.TransactionClient, slug: str
   if (!posting) return null;
   const row = projectRowFromPosting(posting);
   if (!row) return null;
+  // hrp-t1c-jobposting-media-youtube (RQ-03, DEC-02): MediaAssignment không có Prisma relation
+  // ngược về JobPosting (polymorphic FK qua `ownerType`+`ownerId`) nên không select được từ
+  // `publicSelect`. Lấy gallery qua 1 truy vấn song song với filter `status='PUBLIC'`. Sort
+  // `[cover DESC, order ASC, createdAt ASC]` cùng quy ước với `listJobPostingMedia`.
+  const gallery = await tx.mediaAssignment.findMany({
+    where: { ownerType: 'JobPosting', ownerId: posting.id, media: { status: 'PUBLIC' } },
+    orderBy: [{ cover: 'desc' }, { order: 'asc' }, { createdAt: 'asc' }],
+    select: {
+      cover: true,
+      media: { select: { url: true, publicUrl: true, alt: true, caption: true, mimeType: true } },
+    },
+  });
   // hrp-p1-a1: truyền raw rich-text doc từ JobPosting vào DTO; Server Component
   // `app/(jobs)/viec-lam/[slug]/page.tsx` gọi `renderJobPostingRichText` ở request path.
   return toDetailDto(
@@ -1031,6 +1096,9 @@ export async function getPublicJobDetail(tx: Prisma.TransactionClient, slug: str
       applicationInstructionsJson: posting.applicationInstructionsJson,
       contentSchemaVersion: posting.contentSchemaVersion,
       salaryDisplay: posting.salaryDisplay,
+      // hrp-t1c-jobposting-media-youtube (RQ-03, DEC-02): YouTube ID + gallery projections.
+      youtubeVideoId: posting.youtubeVideoId,
+      gallery,
     },
     now,
   );

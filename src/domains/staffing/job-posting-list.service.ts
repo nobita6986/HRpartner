@@ -85,6 +85,12 @@ export interface JobPostingListItemDto {
    */
   isHighReward: boolean;
   isExpiringSoon: boolean;
+  /**
+   * hrp-t1c-jobposting-media-youtube (RQ-01): raw 11-char YouTube video ID.
+   * List hiển thị chip "Có video" khi non-null; null = không có. Editor shell là
+   * nơi chính hiển thị input — list chỉ mang status boolean cho UX scan nhanh.
+   */
+  youtubeVideoId: string | null;
 }
 
 export interface JobPostingListPage {
@@ -183,6 +189,8 @@ export async function listJobPostingsForAdmin(
     // hrp-ui-v1-job-card-stamps-brand (T1B / RQ-12): 2 flag mới copy nguyên xi từ row.
     isHighReward: row.isHighReward,
     isExpiringSoon: row.isExpiringSoon,
+    // hrp-t1c-jobposting-media-youtube (RQ-01): list DTO cũng mang để admin scan nhanh.
+    youtubeVideoId: row.youtubeVideoId,
   }));
 
   return { items, total, take, skip };
@@ -223,6 +231,12 @@ export interface JobPostingDetailDto {
    */
   isHighReward: boolean;
   isExpiringSoon: boolean;
+  /**
+   * hrp-t1c-jobposting-media-youtube (RQ-01): raw 11-char YouTube video ID từ
+   * `JobPosting.youtubeVideoId`. Null = không có video. Editor shell + public detail
+   * đều dùng field này (không bao giờ echo ngược raw URL từ input).
+   */
+  youtubeVideoId: string | null;
   opening: {
     id: string;
     status: string;
@@ -278,6 +292,9 @@ export async function getJobPostingForAdmin(
     // hrp-ui-v1-job-card-stamps-brand (T1B / RQ-12): 2 flag mới copy nguyên xi từ row.
     isHighReward: row.isHighReward,
     isExpiringSoon: row.isExpiringSoon,
+    // hrp-t1c-jobposting-media-youtube (RQ-01): admin editor DTO cần field để shell hiển thị
+    // URL input + save status. Khi null → shell hiển thị input rỗng + nút "Lưu video" enabled.
+    youtubeVideoId: row.youtubeVideoId,
     opening: row.jobOpening
       ? {
           id: row.jobOpening.id,
