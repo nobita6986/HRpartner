@@ -413,6 +413,16 @@ describe.skipIf(!HAS_TEST_DB)('t1a-staffing-order-management — canonical order
   it('Case C: two concurrent deleteStaffingOrder on the same order — exactly one wins, other gets NOT_FOUND, NO 500', async () => {
     const orderId = orderSameLock;
 
+    // Sanity: the order MUST exist before the race. If the previous test
+    // (Case A/B) leaked a write that removed it, that would be a setup
+    // bug — surface it explicitly instead of masking it as a race outcome.
+    const preCheck = await admin.staffingOrder.findUnique({
+      where: { id: orderId },
+      select: { id: true, status: true, _count: { select: { slots: true } } },
+    });
+    console.log('[t1a] Case C precheck: %j', preCheck);
+    expect(preCheck?.id, 'orderSameLock must exist before Case C').toBe(orderId);
+
     const connA = makeClient(writerUrl);
     const connB = makeClient(writerUrl);
 
