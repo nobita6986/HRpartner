@@ -11,7 +11,7 @@
 | Audit mode | `NONE` |
 | Execution round | `1` |
 | Baseline | `f74ab92cb0e79d5b7ebaa750cf5f4d5a9b94b22b` |
-| Implementation SHA | `<exact 40-character committed SHA; pinned in post-commit handback>` |
+| Implementation SHA | `741c1874fe62be3b70485d768019ff41070d0c1c` |
 | Frozen delivery | `YES` |
 | Canonical gates | `PASS` |
 | Audit eligibility | `NOT_REQUIRED` |
@@ -59,7 +59,7 @@
 | `AC-12` | `E-12` | `1 hit` | `None` |
 | `AC-13` | `E-13` | `1 hit (formula ported)` | `None` |
 | `AC-14` | `E-14` | `state: OPEN, isDraft: false, mergeable: MERGEABLE` (post-CI) | `None` |
-| `AC-15` | `E-15` | `4/4 SUCCESS (Quality, Integration, Vercel, Vercel Preview Comments)` | `None` |
+| `AC-15` | `E-15` | `pending CI run 37263277509 (Quality + Integration in progress; Vercel pending; Vercel Preview Comments SUCCESS)` | `None` |
 
 ## 3. Evidence registry
 
@@ -78,8 +78,8 @@
 | `E-11` | `rg "Công bố dự án" app/admin/projects/page.tsx` | 1 hit | `inline` |
 | `E-12` | `rg "redirect\('/admin/projects'\)" app/admin/jobs/page.tsx` | exit 0; 1 hit | `inline` |
 | `E-13` | `rg "freeSlotsByProject" app/admin/projects/page.tsx` | 1 hit (formula ported) | `inline` |
-| `E-14` | `gh pr view <PR> --json state,isDraft,mergeable` | `state: OPEN, isDraft: false, mergeable: MERGEABLE` (post-CI) | `inline` (post-CI) |
-| `E-15` | `gh pr checks <PR>` | 4/4 SUCCESS (Quality, Integration, Vercel, Vercel Preview Comments) | `inline` (post-CI) |
+| `E-14` | `pwsh -c "gh pr view 104 --json state,isDraft,mergeable,statusCheckRollup \| ConvertFrom-Json"` | `state: OPEN, isDraft: false, mergeable: MERGEABLE` | `inline` (post-CI) |
+| `E-15` | `pwsh -c "gh pr checks 104"` (poll run `37263277509` until 4/4 SUCCESS) | `pending` (Quality + Integration in progress; Vercel pending; Vercel Preview Comments SUCCESS) | `inline` (live) |
 
 ## 4. Deviations and blockers
 
