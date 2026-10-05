@@ -82,7 +82,11 @@ const EXPECTED_HITS = [
   // AFF-04 STEP-02: re-read canonical ReferralAttribution via LaborProfile on
   // conversion (server-derived referrer resolution). laborProfile is nullable
   // in schema, but the SELECT shape surfaces it in the RLS sweep.
-  'src/domains/applications/conversion.service.ts:128 laborProfile',
+  // hrp-t1c-intake-worker-link (2026-10-05): line shifted 128 -> 130 because
+  // `linkLaborProfileWorker` helper was inserted between `convertApplication`
+  // and `findDedupCandidates`, adding two comment lines above the AFF-04
+  // select block. Sweep target is unchanged.
+  'src/domains/applications/conversion.service.ts:130 laborProfile',
   'src/domains/crm/client-read.service.ts:80 staffingOrder',
   'src/domains/crm/project-read.service.ts:40 clientCompany',
   // P1-A0.5 STEP-10 (hrp-p1-a0-5-job-opening-readiness): additive DTO fields

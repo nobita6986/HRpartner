@@ -241,4 +241,8 @@ export const INTEGRATION_TEST_FILES: string[] = [
   // the applied migration, HomepageSettings read/write, JSONB constraints,
   // fail-closed validation, and value-equivalent cleanup.
   'tests/db/public-settings.integration.test.ts',
+  // hrp-t1c-intake-worker-link: link LaborProfile.workerId trong transaction
+  // convert. Self-skips khi DATABASE_URL_TEST + DATABASE_URL_ADMIN_TEST absent.
+  // Forward-only — không có migration mới; chỉ dùng schema hiện hữu.
+  'tests/db/intake-convert-worker-link.integration.test.ts',
 ];
