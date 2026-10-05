@@ -468,6 +468,9 @@ describe.skipIf(!HAS_TEST_DB)('t1a-staffing-order-management — canonical order
 
     const [resultA, resultB] = await Promise.all([deleteA, deleteB]);
 
+    // Log first so we see the result codes even when an assert below fails.
+    console.log('[t1a] Case C: resultA=%j, resultB=%j', resultA, resultB);
+
     // Exactly one winner.
     const winners = [resultA, resultB].filter((r) => r.ok);
     const losers = [resultA, resultB].filter((r) => !r.ok);
@@ -479,6 +482,5 @@ describe.skipIf(!HAS_TEST_DB)('t1a-staffing-order-management — canonical order
 
     await connA.$disconnect().catch(() => undefined);
     await connB.$disconnect().catch(() => undefined);
-    console.log('[t1a] Case C: resultA=%j, resultB=%j', resultA, resultB);
   });
 });
