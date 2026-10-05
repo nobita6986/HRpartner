@@ -621,6 +621,17 @@ Binding addenda:
 4. `P2.2` must NOT pull in `P3` Appearance Lite, full Verified Profile, Featured Jobs curation, the full Share Kit, or any `V9` work.
 5. The pre-P2 execution order is owned by `docs/important/HRPARTNER_OPERATIONAL_WORKFLOW_DEBT_EXECUTION_DECISION.md` §D (Mốc 0 → 3). `P2.1` planning or `READY_TO_CODE` contracts do NOT open before Mốc 3 records a disposition.
 
+Current pre-P2 cursor (reconciled 2026-10-05):
+
+| Gate | State |
+| --- | --- |
+| Operational Mốc 0 → 3 | `COMPLETE` — PR #88 / #90 / #92 carry the Mốc 1 → 3 closeouts. |
+| Owner-added runtime gates | `MERGED` — staffing-order management (#108), Bottom Sticky follow-up (#105), JobPosting image gallery + YouTube embed (#109). |
+| `PRE_P2_CLOSEOUT` | `NEXT` — confirm production migration, deploy and smoke for the final merge train. |
+| P2.1 | `NOT_OPEN` until `PRE_P2_CLOSEOUT` passes. |
+
+JobPosting image gallery + YouTube embed is a mandatory pre-P2 gate by Owner/Tier 0 decision dated 2026-10-05; it is no longer an optional P2.1-adjacent capability.
+
 Full binding text — scope, AFF carry-forward matrix, release gate, predecessor regression requirements, production posture, completion vocabulary, boundaries and cross-document consistency: [`docs/important/HRPARTNER_P2_EXECUTION_SPLIT_DECISION.md`](important/HRPARTNER_P2_EXECUTION_SPLIT_DECISION.md).
 
 Historical design (this section is preserved as reference, not reopened):

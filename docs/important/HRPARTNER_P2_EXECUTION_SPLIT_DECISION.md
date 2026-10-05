@@ -6,7 +6,7 @@
 | Status | `BINDING` |
 | Document class | `BINDING EXECUTION DECISION` |
 | Decision date | 2026-10-03 |
-| Effective main baseline | `6015361bb986b920bad6a90f8f9986165a4a99d5` (`origin/main`) |
+| Effective main baseline | `22a9451b83d0bf8a75a5a0b54d609ea32952e623` (`origin/main`, reconciled 2026-10-05) |
 | Branch | `codex/t1c-p2-execution-split-decision` |
 | Companion reconciliation | `docs/HRP_EXECUTION_REALIGNMENT_PLAN.md` §15.3 (new addendum) |
 | Supersedes (planning-level only) | Non-binding rollout suggestions that conflict with this split |
@@ -47,17 +47,18 @@ It is **not**:
 
 Operational milestones are labelled `OP-Mx` to avoid confusion with the product milestones `M0..M5` already defined in `docs/HRP_EXECUTION_REALIGNMENT_PLAN.md` §46. The binding order is:
 
-1. `OP-M0` — JobPosting production flow: **DONE** (binding closeout in [`docs/tasks/hrp-t1a-postdeploy-runtime-correction-2/HANDOFF.md`](../tasks/hrp-t1a-postdeploy-runtime-correction-2/HANDOFF.md); the recovery bridge, publish gating and CTA hint are accepted against `f6100c39` and `8b8e39b` per the operational workflow debt decision §D "Priority 0").
-2. `OP-M1` — `F9` / `F9-B` HR_STAFF write-boundary hardening: **must audit, merge, deploy and verify** before P2.1. This is the binding business rule from `docs/important/HRPARTNER_OPERATIONAL_WORKFLOW_DEBT_EXECUTION_DECISION.md` §D "Priority 1": `HR_STAFF` is a scoped recruiter; selector and server write path both enforce assignment scope. ADMIN/HR_MANAGER behaviour remains unchanged.
+1. `OP-M0` — JobPosting production flow: **COMPLETE** (binding closeout in [`docs/tasks/hrp-t1a-postdeploy-runtime-correction-2/HANDOFF.md`](../tasks/hrp-t1a-postdeploy-runtime-correction-2/HANDOFF.md); the recovery bridge, publish gating and CTA hint are accepted against `f6100c39` and `8b8e39b` per the operational workflow debt decision §D "Priority 0").
+2. `OP-M1` — `F9` / `F9-B` HR_STAFF write-boundary hardening: **COMPLETE / PRODUCTION VERIFIED**. PR #88 true-merged at `09d68a67fe9ab3b30c09e77eea65f042519365e1`; the binding closeout is recorded in [`docs/tasks/hrp-f9b-r2-slot-scope-read-restore/CLOSEOUT.md`](../tasks/hrp-f9b-r2-slot-scope-read-restore/CLOSEOUT.md). `HR_STAFF` remains a scoped recruiter; selector and server write path both enforce assignment scope. ADMIN/HR_MANAGER behaviour remains unchanged.
 3. **UI V1** (canonical stamps, logo/title, homepage Next.js convergence, remove `/ve-chung-toi`; Hotline/Zalo/Messenger excluded) — accepted as part of `P1` closeout at main `0179ef8b18045d1340028669871bc1db492da08d` (PR #73; `docs/tasks/hrp-p1-final-release-safety-closeout/HANDOFF.md`). `P1 Thin Recruitment Value Slice = COMPLETE`; no `P2/P3/P4/P5` work is opened from `P1`.
-4. `OP-M2` — Navigation/recovery debt (binding candidates F2/F3/F7/F8/F11 from operational workflow debt decision §D "Priority 2"). UI/navigation only; lifecycle, auth, RLS and server precondition remain unchanged. Owner may defer this batch in writing.
-5. `OP-M3` — Placement unavailable reason (binding candidate F6; DTO + presentation only). Owner may defer this batch in writing.
-6. `PRE_P2_CLOSEOUT` — production verification that no security/operational blocker remains for P2. This is a thin event, not a new feature.
-7. **P2.1** — `Recruiter Referral Profile & Attribution V1` (this document).
-8. **P2.2** — `Early V8 Workspace & Microsite Completion` (this document).
-9. P3/P4/P5 — kept unchanged from the Realignment Plan.
+4. `OP-M2` — Navigation/recovery debt (F2/F3/F7/F8/F11): **COMPLETE**. PR #90 true-merged at `8382bbc70b74f2fc21471c532b98bd20ab8a1fac`; completion evidence is recorded in [`docs/tasks/hrp-m2a-operational-ux-debt/HANDOFF.md`](../tasks/hrp-m2a-operational-ux-debt/HANDOFF.md).
+5. `OP-M3` — Placement unavailable reason (F6; DTO + presentation only): **COMPLETE**. PR #92 true-merged at `835c833fa4ad5432c1d71d9e3d312c583d40d9ea`; completion evidence is recorded in [`docs/tasks/hrp-m2b-f6-placement-unavailable-reason/HANDOFF.md`](../tasks/hrp-m2b-f6-placement-unavailable-reason/HANDOFF.md).
+6. Owner-added pre-P2 product gates: **MERGED** — staffing-order management (PR #108, `4957fe784dd01fd31dbd363cf5b3966403eb7ea7`), Bottom Sticky settings follow-up (PR #105, `ca41980e342de3a547d09bf70d88a317a42127a6`) and JobPosting image gallery + YouTube embed (PR #109, `22a9451b83d0bf8a75a5a0b54d609ea32952e623`).
+7. `PRE_P2_CLOSEOUT` — verify the final merge train's production migration, deploy and smoke evidence and confirm that no security/operational blocker remains. This is a thin event, not a new feature. **P2 remains unopened until this event passes.**
+8. **P2.1** — `Recruiter Referral Profile & Attribution V1` (this document).
+9. **P2.2** — `Early V8 Workspace & Microsite Completion` (this document).
+10. P3/P4/P5 — kept unchanged from the Realignment Plan.
 
-`JobPosting Media V1` is an optional capability owned by Owner/T0; if Owner does not add it to the P2.1 gate, it is **not** a P2.1 blocker.
+Owner/Tier 0 made JobPosting image gallery + YouTube embed a **mandatory pre-P2 gate** on 2026-10-05. The implementation is merged through PR #109; `PRE_P2_CLOSEOUT` must still confirm its production migration, deploy and smoke evidence before P2.1 may open.
 
 ## D. P2 envelope definitions
 
@@ -293,10 +294,11 @@ Owner / Tier 0 may, after `PRE_P2_CLOSEOUT`, open P2.1 contracts under `docs/HRP
 
 | Concern | Authority / state |
 | --- | --- |
-| Mốc 0 (JobPosting production flow) | `DONE` per `docs/important/HRPARTNER_OPERATIONAL_WORKFLOW_DEBT_EXECUTION_DECISION.md` §D Priority 0. |
-| Mốc 1 / `F9` | `EXECUTE_NOW_AFTER_P0_PASS`; binding business rule closed by Owner 2026-10-03. |
-| Mốc 2 (navigation/recovery) | `AUTHORIZED_NEXT`; Owner may defer in writing. |
-| Mốc 3 (placement unavailable reason) | `AUTHORIZED_AFTER_PRIORITY_2`; Owner may defer in writing. |
+| Mốc 0 (JobPosting production flow) | `COMPLETE`. |
+| Mốc 1 / `F9` | `COMPLETE / PRODUCTION VERIFIED` through PR #88. |
+| Mốc 2 (navigation/recovery) | `COMPLETE` through PR #90. |
+| Mốc 3 (placement unavailable reason) | `COMPLETE` through PR #92. |
+| Owner-added pre-P2 gates | Runtime changes merged through PR #108, PR #105 and PR #109; production closeout of the final merge train remains the next gate. |
 | P2-A / P2-B (legacy) | **Superseded** by `P2.1` / `P2.2` for execution sequencing. Historical design preserved in `docs/HRP_EXECUTION_REALIGNMENT_PLAN.md` §32–§35. |
 | P3 / P4 / P5 | Unchanged. |
 | AFF continuity | `docs/HRP_EXECUTION_REALIGNMENT_PLAN.md` §15.1 + `docs/V6/aff_plan.md` §0.2 remain authoritative for the AFF state table. |
@@ -307,3 +309,4 @@ Owner / Tier 0 may, after `PRE_P2_CLOSEOUT`, open P2.1 contracts under `docs/HRP
 | --- | --- | --- |
 | `v1.0` | 2026-10-03 | Materialize the Owner/Tier 0 split of P2 into P2.1 (`Recruiter Referral Profile & Attribution V1`) and P2.2 (`Early V8 Workspace & Microsite Completion`); lock the AFF carry-forward matrix; lock the P2.1 release gate and predecessor regression requirements; introduce `OP-M0..OP-M3` to disambiguate operational milestones from product `M0..M5`; add companion `§15.3` addendum to `docs/HRP_EXECUTION_REALIGNMENT_PLAN.md`. Docs-only. |
 | `v1.1` | 2026-10-03 | T0 verdict `ACCEPTED_WITH_DOC_CORRECTIONS / PENDING_CI` — three docs-only corrections applied. **(C-01)** §K: replace the `https://www.hrpartner.vn` example with the configured production public origin (currently `https://vieclammienbac.com.vn`); Vercel is repositioned as a secondary preview surface, not a production authority. **(C-02)** New §K.1 separates Tier 1 / Tier 3 / T0 production gate, and new §K.2 binds the `USER_FACING_AND_PRODUCTION_VERIFIED` claim to T0 production closeout on the configured origin; introduces `READY_FOR_PRODUCTION_GATE` as the maximum claim supported by synthetic / preview PASS alone. §H updated to list the interim claim and to point to §K.2. **(C-03)** New §I.1 splits the §I gate into **non-waivable security negative gates** (public PII, candidate-visibility expansion, client-supplied referrer override, cross-user overwrite, duplicate attribution, revoked/inactive creating new attribution, direct/non-AFF Apply regression) and waivable operational lines under written Owner risk acceptance; non-waivable lines may only be relaxed by a forward-only revision of this binding decision, never by a HANDOFF waiver. Docs-only; no source / test / migration / lockfile change. |
+| `v1.2` | 2026-10-05 | Reconcile the live pre-P2 cursor after OP-M1, OP-M2 and OP-M3 completion; record the Owner-added staffing-order, Bottom Sticky and JobPosting media/YouTube gates; make JobPosting media/YouTube mandatory rather than optional; keep P2 unopened until production migration/deploy/smoke closeout passes. Docs-only. |
