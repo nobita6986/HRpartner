@@ -55,31 +55,38 @@ describe('/admin/labor-profiles Wave 3 terminology', () => {
   });
 });
 
-describe('/admin/labor-profiles — T0 T1B HOTFIX UI NGƯỜI LAO ĐỘNG terminology', () => {
-  // T0 directive §3: page title "Hồ sơ tiếp nhận người lao động".
-  it('list page <h1> is "Hồ sơ tiếp nhận người lao động"', () => {
-    expect(CODE.list).toMatch(/<h1[^>]*>\s*Hồ sơ tiếp nhận người lao động\s*<\/h1>/);
+describe('/admin/labor-profiles — T0 T1C PRE-P2 HOTFIX terminology', () => {
+  // T0 T1C §2: page title "Hồ sơ ứng viên" (shorter than the previous
+  // "Hồ sơ tiếp nhận người lao động"). Sidebar uses the same short label.
+  it('list page <h1> is "Hồ sơ ứng viên"', () => {
+    expect(CODE.list).toMatch(/<h1[^>]*>\s*Hồ sơ ứng viên\s*<\/h1>/);
   });
 
-  it('list page Next.js metadata title is "Hồ sơ tiếp nhận người lao động - Quản trị"', () => {
-    expect(CODE.list).toContain("title: 'Hồ sơ tiếp nhận người lao động - Quản trị'");
+  it('list page Next.js metadata title is "Hồ sơ ứng viên - Quản trị"', () => {
+    expect(CODE.list).toContain("title: 'Hồ sơ ứng viên - Quản trị'");
   });
 
-  // T0 directive §3: action button "+ Tiếp nhận người lao động" (the
-  // legacy "Tiếp nhận hồ sơ người lao động" was redundant — simplified).
-  it('intake CTA button reads "+ Tiếp nhận người lao động"', () => {
-    expect(CODE.list).toMatch(/\+\s*Tiếp nhận người lao động/);
+  // T0 T1C §2: action button "+ Tiếp nhận hồ sơ" (the previous
+  // "+ Tiếp nhận người lao động" wording was redundant — simplified to
+  // match the section terminology and keep CTAs concise).
+  it('intake CTA button reads "+ Tiếp nhận hồ sơ"', () => {
+    expect(CODE.list).toMatch(/\+\s*Tiếp nhận hồ sơ/);
   });
 
-  it('does not reintroduce legacy "Hồ sơ NLD" / "Nhân sự" / "NLD" on the list surface', () => {
+  it('does not reintroduce legacy "Hồ sơ NLD" / "Nhân sự" / "NLD" / "Hồ sơ tiếp nhận" on the list surface', () => {
     // Anti-regression fence. The list page is the canonical LaborProfile
-    // surface; it uses the full title "Hồ sơ tiếp nhận người lao động"
-    // and the CTA "+ Tiếp nhận người lao động". Legacy abbreviations
-    // ("Hồ sơ NLD", "NLD") are not applicable here.
+    // surface; it uses the short title "Hồ sơ ứng viên" and the CTA
+    // "+ Tiếp nhận hồ sơ". Legacy abbreviations ("Hồ sơ NLD", "NLD")
+    // and the prior T1B wording ("Hồ sơ tiếp nhận người lao động",
+    // "Hồ sơ tiếp nhận") are not applicable here.
     expect(CODE.list).not.toMatch(/<h1[^>]*>[\s\S]*?Hồ sơ NLD/);
     expect(CODE.list).not.toMatch(/<h1[^>]*>[\s\S]*?NLD/);
+    expect(CODE.list).not.toMatch(/<h1[^>]*>[\s\S]*?Hồ sơ tiếp nhận/);
     expect(CODE.list).not.toContain("'Nhân sự'");
     expect(CODE.list).not.toContain('Tiếp nhận hồ sơ người lao động');
+    expect(CODE.list).not.toContain('Tiếp nhận người lao động');
+    // Empty state must use "hồ sơ ứng viên", not the legacy wording.
+    expect(CODE.list).toContain('Chưa có hồ sơ ứng viên nào.');
   });
 });
 

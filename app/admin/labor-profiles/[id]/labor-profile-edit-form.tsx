@@ -113,7 +113,7 @@ export function LaborProfileEditForm({ profile, role, canSeeSensitive }: LaborPr
       setStatus({
         kind: 'error',
         message:
-          'Bạn không có quyền CAN_VIEW_WORKER_SENSITIVE — không thể sửa Hồ sơ tiếp nhận (tránh submit ngược dữ liệu phone/CCCD đã bị mask).',
+          'Bạn không có quyền CAN_VIEW_WORKER_SENSITIVE — không thể sửa Hồ sơ ứng viên (tránh submit ngược dữ liệu phone/CCCD đã bị mask).',
       });
       return;
     }
@@ -211,7 +211,7 @@ export function LaborProfileEditForm({ profile, role, canSeeSensitive }: LaborPr
         {!canSeeSensitive ? (
           <span
             className="text-xs font-medium px-2 py-1 rounded bg-gray-100 text-gray-600"
-            title="Bạn không có quyền CAN_VIEW_WORKER_SENSITIVE; không thể sửa Hồ sơ tiếp nhận."
+            title="Bạn không có quyền CAN_VIEW_WORKER_SENSITIVE; không thể sửa Hồ sơ ứng viên."
           >
             Không có quyền sửa
           </span>
