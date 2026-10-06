@@ -4,6 +4,7 @@ import { getServerSession } from '@/src/shared/auth/server-session';
 import { getPrisma } from '@/src/lib/db';
 import { withDbContext } from '@/src/shared/auth/with-db-context';
 import { getLaborProfileDetail } from '@/src/domains/talent/labor-profile.read-service';
+import { resolveEffectivePermissions } from '@/src/shared/auth/permission-resolver';
 import { Breadcrumb } from '@/src/shared/ui/navigation/breadcrumb';
 import {
   laborProfileIdentityVerificationLabel,
@@ -20,7 +21,7 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export const metadata = {
-  title: 'Chi tiết hồ sơ người lao động - Quản trị',
+  title: 'Chi tiết hồ sơ tiếp nhận - Quản trị',
 };
 
 const ALLOWED_ROLES = new Set(['ADMIN', 'HR_MANAGER', 'HR_STAFF']);
@@ -41,6 +42,13 @@ export default async function LaborProfileDetailPage({ params }: { params: Promi
     );
   }
 
+  // v1.1 (PR #110 correction 1/3): cần CAN_VIEW_WORKER_SENSITIVE để render
+  // form edit (chống submit masked data). Tính trước khi read detail.
+  const permissions = await resolveEffectivePermissions({
+    userId: session.userId,
+    role: session.role,
+  });
+
   const prisma = getPrisma();
   const data = await withDbContext(prisma, session as any, async (tx) => {
     return getLaborProfileDetail(tx, session as any, resolvedParams.id);
@@ -52,11 +60,15 @@ export default async function LaborProfileDetailPage({ params }: { params: Promi
 
   const isLinked = Boolean(data.workerId);
   const canEdit = !isLinked && WRITER_ROLES.has(session.role);
+  // v1.1 (PR #110 correction 1/3): writer phải có CAN_VIEW_WORKER_SENSITIVE
+  // mới sửa được — chống submit masked data.
+  const canSeeSensitive = permissions.has('CAN_VIEW_WORKER_SENSITIVE');
+  const canEditWithSensitive = canEdit && canSeeSensitive;
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8">
+    <div className="p-10 max-w-7xl mx-auto space-y-8">
       <Breadcrumb
         items={[
-          { label: 'Hồ sơ người lao động', href: '/admin/labor-profiles' },
+          { label: 'Hồ sơ tiếp nhận', href: '/admin/labor-profiles' },
           { label: data.fullName || data.phone || 'Chi tiết hồ sơ' },
         ]}
       />
@@ -96,17 +108,21 @@ export default async function LaborProfileDetailPage({ params }: { params: Promi
           <p className="text-gray-500 mt-1">{data.phone || 'Chưa cập nhật SĐT'}</p>
         </div>
         <div className="flex space-x-3">
-          {!isLinked && !canEdit ? (
+          {!isLinked && !canEditWithSensitive ? (
             <span
               className="bg-gray-100 text-gray-500 px-4 py-2 rounded-lg text-sm font-medium border border-gray-200"
-              title="HR_STAFF chỉ có quyền xem; vui lòng liên hệ ADMIN/HR_MANAGER để chỉnh sửa."
+              title={
+                !canEdit
+                  ? 'HR_STAFF chỉ có quyền xem; vui lòng liên hệ ADMIN/HR_MANAGER để chỉnh sửa.'
+                  : 'Cần quyền CAN_VIEW_WORKER_SENSITIVE để sửa Hồ sơ tiếp nhận.'
+              }
             >
-              Sửa thông tin (chỉ ADMIN/HR_MANAGER)
+              Sửa thông tin (chỉ ADMIN/HR_MANAGER có quyền nhạy cảm)
             </span>
           ) : null}
           {!isLinked && (
             <button disabled className="bg-gray-100 text-gray-400 px-4 py-2 rounded-lg font-medium cursor-not-allowed opacity-70 border border-gray-200" title="Tính năng đang được phát triển">
-              Chuyển đổi thành nhân viên
+              Chuyển thành người lao động
             </button>
           )}
         </div>
@@ -123,10 +139,7 @@ export default async function LaborProfileDetailPage({ params }: { params: Promi
             completeness: data.completeness,
           }}
           role={session.role}
-          onSaved={() => {
-            // server component → cannot call router here. Page-level refresh
-            // happens via window.location.reload in client form.
-          }}
+          canSeeSensitive={canSeeSensitive}
         />
       ) : null}
 

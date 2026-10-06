@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { getPrisma } from '@/src/lib/db';
 import { AuthSessionError, getAuthContext } from '@/src/shared/auth/auth-context';
 import { withDbContext } from '@/src/shared/auth/with-db-context';
+import { resolveEffectivePermissions } from '@/src/shared/auth/permission-resolver';
 import { getLaborProfileDetail } from '@/src/domains/talent/labor-profile.read-service';
 import { updateLaborProfileIntakeProfile } from '@/src/domains/talent/labor-profile.service';
 import { LaborProfileAlreadyLinkedError } from '@/src/domains/talent/labor-profile.types';
@@ -23,6 +24,9 @@ const WRITER_ROLES = new Set(['ADMIN', 'HR_MANAGER']);
  *
  * DEC-P2-03 (b): ít nhất 1 field phải có mặt — PATCH nửa-vời (empty body) trả
  * 400 ngay thay vì 200 no-op (vì service vẫn tốn SELECT/UPDATE/probe vô ích).
+ *
+ * v1.1 (PR #110 correction 1/3): vẫn giữ schema này; masked-input rejection
+ * và CAS-update chuyển xuống service layer.
  */
 const PatchProfileSchema = z
   .object({
@@ -83,6 +87,23 @@ export async function PATCH(
       );
     }
 
+    // v1.1 PR #110 correction 1/3: writer phải có quyền XEM dữ liệu nhạy cảm
+    // (`CAN_VIEW_WORKER_SENSITIVE`). Nếu không, UI sẽ render masked phone/cccd
+    // → writer không thấy giá trị thật, không thể sửa đúng. Reject ở route
+    // layer để chặn trước khi vào service.
+    const effective = await resolveEffectivePermissions({ userId: ctx.userId, role: ctx.role });
+    if (!effective.has('CAN_VIEW_WORKER_SENSITIVE')) {
+      return NextResponse.json(
+        {
+          error: 'FORBIDDEN',
+          message:
+            'Cần quyền CAN_VIEW_WORKER_SENSITIVE để sửa Hồ sơ tiếp nhận ' +
+            '(tránh submit ngược dữ liệu phone/CCCD đã bị mask).',
+        },
+        { status: 403 },
+      );
+    }
+
     let body: unknown;
     try {
       body = await req.json();
@@ -118,6 +139,7 @@ export async function PATCH(
     }
     if (e instanceof LaborProfileAlreadyLinkedError) {
       // DEC-P2-06: profile đã được convert → fail-closed, không cho sửa.
+      // Cũng match v1.1 CAS-lost case: concurrent conversion thắng.
       return NextResponse.json(
         {
           error: e.code,
@@ -127,11 +149,25 @@ export async function PATCH(
         { status: 409 },
       );
     }
-    if (e instanceof Error && (e as Error & { code?: string }).code === 'LABOR_PROFILE_NOT_FOUND') {
-      return NextResponse.json(
-        { error: 'NOT_FOUND', message: 'LaborProfile not found' },
-        { status: 404 },
-      );
+    if (e instanceof Error) {
+      const code = (e as Error & { code?: string }).code;
+      if (code === 'LABOR_PROFILE_NOT_FOUND') {
+        return NextResponse.json(
+          { error: 'NOT_FOUND', message: 'LaborProfile not found' },
+          { status: 404 },
+        );
+      }
+      if (code === 'LABOR_PROFILE_MASKED_INPUT_REJECTED') {
+        // v1.1: chống submit masked-shape input.
+        return NextResponse.json(
+          {
+            error: 'INVALID_INPUT',
+            message:
+              'Field phone hoặc cccdNumber chứa ký tự mask "*" — không thể submit dữ liệu đã bị che vào DB.',
+          },
+          { status: 400 },
+        );
+      }
     }
     console.error('Patch LaborProfile error:', e);
     return NextResponse.json(

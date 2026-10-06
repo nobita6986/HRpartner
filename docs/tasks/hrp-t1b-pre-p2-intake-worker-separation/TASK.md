@@ -7,13 +7,14 @@
 | Task slug | `hrp-t1b-pre-p2-intake-worker-separation` |
 | Work type | `FAST_HOTFIX` (UI/API tightening; no schema; no migration; no Tier 3) |
 | Audit mode | `NONE` (Tier 1 self-review; directive explicitly disables Tier 3 / AUDIT.md) |
-| Spec version | `v1.0` |
-| Status | `READY_TO_CODE` |
+| Spec version | `v1.1` (T0 → PR #110 CORRECTION 1/1) |
+| Status | `READY_TO_CODE` (correction batch) |
 | Baseline | `origin/main @ bbdbe94862dc58c9ec97c3f1627a43d9c0e8ab0b` (PR #107 merged; `LaborProfile.workerId` schema is in place) |
 | Worktree | `C:\CodeApp\HrP-t1b-pre-p2-intake-worker-separation` |
 | Branch | `codex/t1b-pre-p2-intake-worker-separation` |
-| Updated | 2026-10-06 08:20 UTC+7 |
-| Nguồn quyết định | T0 directive `T0 → T1B — PRE-P2 HOTFIX: TÁCH HỒ SƠ TIẾP NHẬN / NGƯỜI LAO ĐỘNG` (issued by Tier 0) |
+| Correction baseline | `2eb74f2d442378b47f7b5ac9d22660137e684eae` (v1.0 implementation on PR #110) |
+| Updated | 2026-10-06 09:05 UTC+7 |
+| Nguồn quyết định | T0 directive `T0 → T1B — PR #110 CORRECTION 1/1` (issued by Tier 0 after CI #110 green) |
 
 ## 1. Outcome
 
@@ -30,6 +31,28 @@ Tách rõ hai mặt của workforce ingestion trong admin portal:
 4. Trang chi tiết LaborProfile vẫn truy cập được qua deep-link; nếu đã chuyển đổi thì read-only với banner "Đã chuyển thành người lao động".
 5. Modal thêm/sửa ở `/admin/workers` không được render raw comment `// T0 T1B …` vào DOM nữa.
 6. Anti-regression tests cho: list separation, role matrix, PATCH 409, modal không leak comment, banner presence, 4 filter chips canonical.
+
+### v1.1 — PR #110 CORRECTION 1/1 (Tier 0 instruction, 2026-10-06 09:05 UTC+7)
+
+Forward-only corrections toàn bộ (giữ PR #110, push thêm 1 commit `correction 1/1`):
+
+7. **Bỏ prop `onSaved` khỏi `<LaborProfileEditForm>`**. Client dùng `useRouter().refresh()` thay cho việc Server Component truyền function xuống (kiến trúc không hợp lệ — RSC không thể là prop cho Client Component). Cùng pattern đang dùng ở `/admin/workers/page.tsx` (gọi `load()` hoặc refresh qua `useState`).
+8. **Chống race với PR #107 conversion flow** (cùng pattern `linkLaborProfileWorker`):
+   - PATCH dùng atomic `tx.laborProfile.updateMany({ where: { id, workerId: null } })`.
+   - Khi `count === 0` → re-read row để phân biệt:
+     - `null` (row đã xoá giữa transaction) → `404 NOT_FOUND`.
+     - `workerId != null` (concurrent conversion thắng) → `409 LABOR_PROFILE_ALREADY_LINKED` với `workerId` hiện tại.
+   - Thêm test `race edit-vs-convert`: mô phỏng concurrent convert link Worker giữa PATCH read → update.
+9. **Chống submit ngược dữ liệu phone/CCCD đã bị mask** (Defense in depth):
+   - **UI**: form track `dirty fields` (so với initial unmasked values từ DB) — chỉ gửi field user thực sự sửa. Field không dirty → KHÔNG gửi.
+   - **UI**: nếu `canSeeSensitive === false` (viewer không có `CAN_VIEW_WORKER_SENSITIVE`) thì nút Lưu bị ẩn hoàn toàn (HR_MANAGER mặc định không có permission này; nếu admin chưa grant thì chỉ xem được, không sửa được).
+   - **API**: route PATCH enforce `CAN_VIEW_WORKER_SENSITIVE` ngoài role check — defense in depth cuối cùng (403 `PERMISSION_DENIED`).
+   - **API**: từ chối masked-shape input (chứa ký tự `*` của `maskPhone`/`maskCccd` window) với 400 `INVALID_INPUT` — fail-closed, không thể vô tình ghi đè giá trị thật bằng chuỗi mask.
+   - Test fence: dirty tracking ở form + masked rejection ở service.
+10. **Copy sweep** (Vietnamese canonical):
+    - `/admin/labor-profiles/[id]/page.tsx` breadcrumb label: `Hồ sơ người lao động` → `Hồ sơ tiếp nhận`.
+    - Button (disabled placeholder): `Chuyển đổi thành nhân viên` → `Chuyển thành người lao động`.
+    - Glossary entries & sibling task docs (`docs/tasks/hrp-admin-portal-vietnamese-localization-audit/**`, `src/shared/i18n/glossary.ts`) UNTOUCHED — directive scopes rõ "trên trang LaborProfile".
 
 ## 2. Scope (allowlist)
 
@@ -175,3 +198,4 @@ Tách rõ hai mặt của workforce ingestion trong admin portal:
 | Spec | Date | Change | Note |
 |------|------|--------|------|
 | `v1.0` | 2026-10-06 | Phát hành từ T0 directive | T1 self-review; baseline `bbdbe9486` |
+| `v1.1` | 2026-10-06 09:05 | T0 → PR #110 CORRECTION 1/1: drop onSaved prop, CAS-updateMany race guard với re-read trên count=0, dirty tracking + masked-rejection, copy sweep breadcrumb + button. Forward-only, single commit, đẩy lên PR #110; không Tier 3. | T1 self-review; correction baseline `2eb74f2d4` |

@@ -350,24 +350,51 @@ export interface UpdateLaborProfileIntakeResult {
 }
 
 /**
+ * Ký tự window của `maskPhone` / `maskCccd` (`src/shared/privacy/mask.ts`).
+ * Nếu PATCH body chứa ký tự này ở field phone hoặc cccdNumber → masked
+ * shape, không thể là input thật → reject với 400 INVALID_INPUT (fail-closed).
+ *
+ * v1.1 (PR #110 correction 1/3): chống submit ngược dữ liệu đã bị mask.
+ */
+const MASK_INPUT_RE = /\*/;
+
+/**
  * PATCH writer (DEC-P2-02..08). Single-row update trên LaborProfile
  * với guards sau:
  *
- *   - 409 typed: nếu `current.workerId != null` (đã liên kết Worker).
+ *   - **409 typed**: nếu `current.workerId != null` (đã liên kết Worker),
+ *     HOẶC CAS-update `where: { id, workerId: null }` thất bại do concurrent
+ *     conversion từ PR #107 `linkLaborProfileWorker` thắng (v1.1).
  *   - Không bao giờ set `workerId` từ payload.
  *   - `normalizedPhone` được derive từ `normalizePhone(phone)`.
  *   - `completeness` được recompute từ full set sau update.
  *   - Post-write: probe profile khác (exclude self) trùng `normalizedPhone`
  *     hoặc `cccdNumber` → typed warning; KHÔNG auto-merge.
  *
- * NOTE: Hàm này KHÔNG throw `LaborProfileAlreadyLinkedError` ra ngoài tx —
- * caller (route layer) catch + map thành 409. Tx rollback tự nhiên vì
- * exception ném ra trước `tx.laborProfile.update`.
+ * v1.1 PR #110 correction:
+ *   - Dùng atomic `updateMany({ where: { id, workerId: null } })` thay cho
+ *     findUnique + update. Trên `count === 0` → re-read row để phân biệt
+ *     404 (row đã xoá) vs 409 (concurrent conversion thắng). Đây cùng
+ *     pattern với `linkLaborProfileWorker` (PR #107).
+ *   - Reject masked-shape input (chứa `*`) trên `phone` / `cccdNumber` → 400.
  */
 export async function updateLaborProfileIntakeProfile(
   tx: Prisma.TransactionClient,
   input: UpdateLaborProfileIntakeInput,
 ): Promise<UpdateLaborProfileIntakeResult> {
+  // 0. v1.1 PR #110 correction: từ chối masked-shape input ngay tại entry —
+  //    fail-closed chống UI/server side truyền nhầm chuỗi đã che vào DB.
+  if (typeof input.phone === 'string' && MASK_INPUT_RE.test(input.phone)) {
+    const err = new Error('LABOR_PROFILE_MASKED_INPUT_REJECTED');
+    (err as Error & { code: string }).code = 'LABOR_PROFILE_MASKED_INPUT_REJECTED';
+    throw err;
+  }
+  if (typeof input.cccdNumber === 'string' && MASK_INPUT_RE.test(input.cccdNumber)) {
+    const err = new Error('LABOR_PROFILE_MASKED_INPUT_REJECTED');
+    (err as Error & { code: string }).code = 'LABOR_PROFILE_MASKED_INPUT_REJECTED';
+    throw err;
+  }
+
   // 1. Read current row (idempotent re-read; 1 lần SELECT).
   const current = await tx.laborProfile.findUnique({
     where: { id: input.id },
@@ -433,11 +460,16 @@ export async function updateLaborProfileIntakeProfile(
     cccdNumber: nextCccd,
   });
 
-  // 4. DEC-P2-03 + DEC-P2-08: update CHỈ 3 field, KHÔNG workerId.
-  //    `prisma.laborProfile.update` KHÔNG có option để set workerId từ input
-  //    — type system Prisma cũng không cho nếu payload không truyền key.
-  const updated = await tx.laborProfile.update({
-    where: { id: input.id },
+  // 4. v1.1 PR #110 correction: dùng atomic `updateMany` với WHERE compound
+  //    `{ id, workerId: null }` — đây cùng pattern với `linkLaborProfileWorker`
+  //    (PR #107). Nếu giữa read → update, một concurrent writer đã link
+  //    Worker thành công, CAS này sẽ match 0 rows.
+  //
+  //    CAS success → trả row updated. CAS lost → re-read + phân biệt:
+  //      - row không tồn tại → 404
+  //      - row đã linked → 409 LABOR_PROFILE_ALREADY_LINKED với workerId mới.
+  const cas = await tx.laborProfile.updateMany({
+    where: { id: input.id, workerId: null },
     data: {
       fullName: nextFullName,
       phone: nextPhone,
@@ -445,6 +477,27 @@ export async function updateLaborProfileIntakeProfile(
       cccdNumber: nextCccd,
       completeness: nextCompleteness,
     },
+  });
+
+  if (cas.count === 0) {
+    // Re-read to distinguish "row gone" vs "concurrent conversion won".
+    const after = await tx.laborProfile.findUnique({
+      where: { id: input.id },
+      select: { id: true, workerId: true },
+    });
+    if (!after) {
+      const err = new Error('LABOR_PROFILE_NOT_FOUND');
+      (err as Error & { code: string }).code = 'LABOR_PROFILE_NOT_FOUND';
+      throw err;
+    }
+    // after.workerId chắc chắn !== null vì count=0 + WHERE compound
+    // `{ id, workerId: null }` không match.
+    throw new LaborProfileAlreadyLinkedError(after.workerId ?? 'unknown');
+  }
+
+  // 5. Re-read full row để lấy post-write state phục vụ duplicate probe.
+  const updated = await tx.laborProfile.findUnique({
+    where: { id: input.id },
     select: {
       id: true,
       fullName: true,
@@ -455,14 +508,21 @@ export async function updateLaborProfileIntakeProfile(
       workerId: true,
     },
   });
-
-  // 5. Post-write duplicate probe (DEC-P2-07).
-  const orClauses: Prisma.LaborProfileWhereInput[] = [];
-  if (nextNormalizedPhone) {
-    orClauses.push({ normalizedPhone: nextNormalizedPhone });
+  // Defensive: không thể xảy ra vừa update xong vì không ai xoá (cascade),
+  // nhưng type system không biết điều đó.
+  if (!updated) {
+    const err = new Error('LABOR_PROFILE_NOT_FOUND');
+    (err as Error & { code: string }).code = 'LABOR_PROFILE_NOT_FOUND';
+    throw err;
   }
-  if (nextCccd) {
-    orClauses.push({ cccdNumber: nextCccd });
+
+  // 6. Post-write duplicate probe (DEC-P2-07).
+  const orClauses: Prisma.LaborProfileWhereInput[] = [];
+  if (updated.normalizedPhone) {
+    orClauses.push({ normalizedPhone: updated.normalizedPhone });
+  }
+  if (updated.cccdNumber) {
+    orClauses.push({ cccdNumber: updated.cccdNumber });
   }
   const warnings: PossibleDuplicateWarning[] = [];
   if (orClauses.length > 0) {
@@ -478,8 +538,8 @@ export async function updateLaborProfileIntakeProfile(
     const phoneIds = new Set<string>();
     const cccdIds = new Set<string>();
     for (const o of others) {
-      if (nextNormalizedPhone && o.normalizedPhone === nextNormalizedPhone) phoneIds.add(o.id);
-      if (nextCccd && o.cccdNumber === nextCccd) cccdIds.add(o.id);
+      if (updated.normalizedPhone && o.normalizedPhone === updated.normalizedPhone) phoneIds.add(o.id);
+      if (updated.cccdNumber && o.cccdNumber === updated.cccdNumber) cccdIds.add(o.id);
     }
     if (phoneIds.size > 0) {
       warnings.push({
