@@ -12,7 +12,7 @@
 | Audit mode (phải khớp TASK) | `NONE` |
 | Execution round | `1` |
 | Baseline | `7f5704123cbe0ae52c897b38c8afdd3f14358c78` |
-| Implementation SHA | `0b85ffa21f212a8c40982fc3408e18324005f411` |
+| Implementation SHA | `b0fff97894c14fd1aff615595f2d601fb2ca5928` |
 | Frozen delivery | `YES` |
 | Canonical gates | `PASS` |
 | Audit eligibility | `NOT_REQUIRED` |
@@ -69,7 +69,7 @@ Dòng đầu là `verify-task`. Mỗi command đăng ký một lần bằng `E-x
 | `E-03` | `psql "$DATABASE_URL_TEST" -c "CREATE POLICY hrp_workers_no_delete ON workers AS RESTRICTIVE FOR DELETE TO app_user_writer, app_user USING (false);"` (seed legacy) → `psql -f migration.sql` (apply new) → `psql -c "SELECT polname, permissive, cmd FROM pg_policy WHERE polrelid='workers'::regclass;"` (introspect) | exit 0 — same final state as AC-01 (AC-02) | inline (test) |
 | `E-04` | role × delete matrix: `psql -c "SELECT set_config('app.role','ADMIN',true);"` (or HR_MANAGER/DIRECTOR/HR_STAFF/WORKER) per role; `npx vitest run tests/db/t1b-pre-p2-worker-delete-rls.integration.test.ts -t "AC-03 role matrix"`; `psql -c "SELECT count(*) FROM workers WHERE id IN (...)"` verify | exit 0 — ADMIN deleted=true; 4 non-admin prismaP2025=true; remainingCount=4 (AC-03) | inline (test) |
 | `E-05` | `psql -f migration.sql` (apply new) 2 lần trên cùng DB; `psql -c "SELECT polname FROM pg_policy WHERE polrelid='workers'::regclass;"` (introspect) | exit 0 — threw=false; state unchanged (AC-04/AC-07) | inline (test) |
-| `E-06` | `psql -c "INSERT INTO labor_profiles (worker_id, ...) VALUES (...);"` setup FK; `psql -c "SELECT set_config('app.role','ADMIN',true);"` + `npx vitest run` integration test AC-05; `psql -c "SELECT count(*) FROM workers WHERE id=...;"` verify both rows unchanged | exit 0 — threw=true, fkViolation=true; both rows unchanged (AC-05) | inline (test) |
+| `E-06` | `psql -c "INSERT INTO labor_profiles (worker_id, ...) VALUES (...);"` setup FK; `psql -c "SELECT set_config('app.role','ADMIN',true);"` + `npx vitest run` integration test AC-05; `psql -c "SELECT count(*) FROM workers WHERE id=...;"` verify FK ON DELETE SET NULL cascade | exit 0 — threw=false (no FK violation; ON DELETE SET NULL cascade), adminDeleted=true (RLS permit); Worker bị xóa, LaborProfile còn với worker_id=NULL (AC-05) | inline (test) |
 | `E-07` | `cat prisma/migrations/20261008000000_t1b_pre_p2_worker_delete_rls/migration.sql`; assert DROP IF EXISTS, AS RESTRICTIVE FOR DELETE, USING hrp_session_role()='ADMIN', IF NOT EXISTS, relforcerowsecurity, RAISE EXCEPTION; NOT match DROP TABLE/RENAME/CREATE FUNCTION/BYPASSRLS | exit 0 — all assertions pass (AC-06) | inline (test) |
 | `E-08` | `npx vitest run --config vitest.unit.config.ts src/domains/workforce/__tests__/worker.service.test.ts` | `exit 0` — 41 passed (AC-08 unit path) | inline |
 | `E-09` | `npx vitest run --config vitest.unit.config.ts app/admin/workers/[id]/__tests__/worker-delete-button.static.test.ts app/api/workers/[id]/__tests__/route-delete-500.static.test.ts src/domains/workforce/__tests__/worker-delete-error-labels.test.ts` | `exit 0` — 17 + 4 + 7 = 28 passed (AC-10) | inline |
@@ -87,7 +87,7 @@ Dòng đầu là `verify-task`. Mỗi command đăng ký một lần bằng `E-x
 
 ## 5. Final status
 
-- READY_FOR_REVIEW: `verify-task.ps1` PASS, full unit suite 4943/4952 pass (post true-forward-merge với PR #116 t1c menu/labor/order hotfix; pre-merge là 4914/4923), typecheck/lint/build/encoding/diff-check all xanh, integration preflight exit 0 với ENV_BLOCKED hợp lệ (DB env chưa provision local — T0 §7 stop point yêu cầu chờ CI xanh), implementation SHA `0b85ffa21f212a8c40982fc3408e18324005f411` (CI correction: pg_policy column names polpermissive/polcmd thay vì permissive/cmd). Forward-merge SHA `d2049da30382b073cd79e609113fb5003bdbab72` (origin/main @ 4a9ddd58 PR #116); t1b RLS semantic base `edb4d7aa0fe709cf90f2beb548735b8c2405bd5e`. PR #116 chỉ thay đổi UI menu + tests liên ngôn ngữ, không chạm schema/RLS/migration nên không có semantic delta mới về RLS.
+- READY_FOR_REVIEW: `verify-task.ps1` PASS, full unit suite 4943/4952 pass (post true-forward-merge với PR #116 t1c menu/labor/order hotfix; pre-merge là 4914/4923), typecheck/lint/build/encoding/diff-check all xanh, integration preflight exit 0 với ENV_BLOCKED hợp lệ (DB env chưa provision local — T0 §7 stop point yêu cầu chờ CI xanh), implementation SHA `b0fff97894c14fd1aff615595f2d601fb2ca5928` (CI correction: pg_policy column names polpermissive/polcmd thay vì permissive/cmd; AC-05 correction: schema `labor_profiles.worker_id_fkey` ON DELETE SET NULL nên direct DB delete của Worker có LaborProfile FK thành công — cascade set worker_id=NULL trên LaborProfile chứ KHÔNG throw FK violation; verify-handoff, AC-03/AC-05 phản xịa đều xanh). Forward-merge SHA `d2049da30382b073cd79e609113fb5003bdbab72` (origin/main @ 4a9ddd58 PR #116); t1b RLS semantic base `edb4d7aa0fe709cf90f2beb548735b8c2405bd5e`. PR #116 chỉ thay đổi UI menu + tests liên ngôn ngữ, không chạm schema/RLS/migration nên không có semantic delta mới về RLS.
 - `git status --porcelain` (post-freeze) sạch về source/test/migration; chỉ còn `docs/tasks/hrp-t1b-pre-p2-worker-delete-rls-hotfix/HANDOFF.md` (docs, post-freeze add được) và `docs/tasks/hrp-t1b-pre-p2-worker-delete-rls-hotfix/TASK.md` đã tracked cùng commit implementation vì cùng atomic change.
 
 > Handoff status: `READY_FOR_REVIEW`
