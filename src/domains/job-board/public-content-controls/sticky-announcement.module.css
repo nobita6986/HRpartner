@@ -150,11 +150,25 @@
 /* ─── Animation: MARQUEE ──────────────────────────────────────────── */
 
 @keyframes hrpStickyAnnouncementMarquee {
+  /*
+   * Single-text seamless-entry (T1C CORRECTION 1/1):
+   *   - 0%   starts the message fully outside the right edge of the
+   *          viewport (translateX(100%) shifts it by one full message
+   *          width to the right).
+   *   - 100% ends the message fully outside the left edge of the
+   *          viewport (translateX(-100%) shifts it by one full message
+   *          width to the left).
+   * There is no clone / no second copy / no track wrapper. Each cycle
+   * runs the message through the viewport exactly once, then there is
+   * a one-cycle gap before the next copy enters from the right. This
+   * is the T0-mandated behavior; the previous double-group / 0% ->
+   * -50% keyframe is the regression that this commit removes.
+   */
   0% {
-    transform: translateX(0%);
+    transform: translateX(100%);
   }
   100% {
-    transform: translateX(-50%);
+    transform: translateX(-100%);
   }
 }
 
@@ -163,66 +177,45 @@
 }
 
 .hrpStickyAnnouncementAnimMarquee .hrpStickyAnnouncementViewport {
-  overflow: hidden;
-}
-
-.hrpStickyAnnouncementTrack {
-  display: flex;
   /*
-   * Track width = 2 × viewport width. Combined with the per-group
-   * `width: 50%` (i.e. one viewport wide) and the keyframe
-   * `translateX(0) → translateX(-50%)`, this guarantees the animation
-   * shifts the track by exactly one group width each cycle, so the
-   * duplicate group enters from the right precisely as the visible group
-   * leaves from the left — no two copies can be on screen at the same
-   * time, no leftover gap, no visible jump on the loop seam. The previous
-   * `width: max-content` shape leaked the trailing padding of the second
-   * group as a 2 rem void between cycles, which was the root cause of
-   * the "bản sao xuất hiện giữa viewport khi bản đầu còn đang chạy"
-   * regression reported on production.
+   * The viewport clips anything that scrolls past its left or right
+   * edge. The message itself is `white-space: nowrap` so the bar can
+   * hold a long string without being truncated; only the part that is
+   * inside the viewport rectangle is rendered.
    */
-  width: 200%;
-  animation: hrpStickyAnnouncementMarquee var(--sticky-marquee-duration, 18s) linear infinite;
-  will-change: transform;
-}
-
-.hrpStickyAnnouncementMarqueeGroup {
-  display: flex;
-  /*
-   * Each group spans one viewport. `width: 50%` is relative to the
-   * track's 200% width, so `50% × 200% = 100%` of the viewport. The
-   * `overflow: hidden` clips messages that exceed the viewport (the
-   * Zod schema caps `message` at 280 characters; admin convention is
-   * to keep the line under ~80 characters so it stays readable on
-   * mobile). Padding-right preserves the 2 rem breathing room between
-   * the duplicate group and the next one.
-   */
-  width: 50%;
-  flex: 0 0 50%;
-  gap: 2rem;
-  padding-right: 2rem;
   overflow: hidden;
+  position: relative;
 }
 
-.hrpStickyAnnouncementMarqueeGroup .hrpStickyAnnouncementMessage {
+.hrpStickyAnnouncementMessageMarquee {
   display: inline-block;
+  /*
+   * `width: max-content` lets the message keep its natural width even
+   * when it exceeds the viewport. The viewport's `overflow: hidden`
+   * is what clips it visually; the DOM element itself is never
+   * truncated. `white-space: nowrap` keeps the message on a single
+   * line. `will-change: transform` hints the compositor to use GPU
+   * layers for smooth animation.
+   */
+  width: max-content;
   white-space: nowrap;
+  flex: 0 0 auto;
+  will-change: transform;
+  animation: hrpStickyAnnouncementMarquee var(--sticky-marquee-duration, 18s) linear infinite;
 }
 
 /* ─── Reduced motion override (must be last) ──────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {
   .hrpStickyAnnouncementAnimBlink::before,
-  .hrpStickyAnnouncementAnimMarquee .hrpStickyAnnouncementTrack {
+  .hrpStickyAnnouncementMessageMarquee {
     animation: none;
   }
   .hrpStickyAnnouncementAnimMarquee .hrpStickyAnnouncementViewport {
     overflow: visible;
   }
-  .hrpStickyAnnouncementAnimMarquee .hrpStickyAnnouncementMarqueeGroup[aria-hidden='true'] {
-    display: none;
-  }
-  .hrpStickyAnnouncementAnimMarquee .hrpStickyAnnouncementMessage {
+  .hrpStickyAnnouncementMessageMarquee {
+    width: auto;
     white-space: normal;
     overflow-wrap: anywhere;
   }

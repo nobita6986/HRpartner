@@ -166,20 +166,37 @@ export function StickyAnnouncement({
 
   const renderMessage = () => {
     if (showMarqueeTrack) {
+      /*
+       * Single-text marquee (T1C CORRECTION 1/1):
+       *   - One copy of the message is rendered, NOT two.
+       *   - The viewport clips overflow; the message itself is never
+       *     truncated and can be longer than the viewport.
+       *   - The CSS keyframe slides the message from `translateX(100%)`
+       *     (fully outside the right edge) to `translateX(-100%)`
+       *     (fully outside the left edge). Each cycle therefore starts
+       *     completely off-screen on the right, runs through the entire
+       *     viewport, and disappears completely on the left before the
+       *     next cycle begins. No duplicate group, no overlap, no jump
+       *     on the loop seam. There is a one-cycle gap between visible
+       *     passes; this is the expected behavior of the single-text
+       *     pattern that T0 explicitly requires.
+       */
       return (
-        <div className={styles.hrpStickyAnnouncementViewport} data-testid="sticky-announcement-marquee">
-          <div className={styles.hrpStickyAnnouncementTrack} data-testid="sticky-announcement-marquee-track">
-            <span className={styles.hrpStickyAnnouncementMarqueeGroup}>
-              <span className={styles.hrpStickyAnnouncementMessage}>{message}</span>
-            </span>
-            <span
-              className={styles.hrpStickyAnnouncementMarqueeGroup}
-              aria-hidden="true"
-              data-testid="sticky-announcement-marquee-tail"
-            >
-              <span className={styles.hrpStickyAnnouncementMessage}>{message}</span>
-            </span>
-          </div>
+        <div
+          className={[
+            styles.hrpStickyAnnouncementViewport,
+            styles.hrpStickyAnnouncementMarquee,
+          ].join(' ')}
+          data-testid="sticky-announcement-marquee"
+        >
+          <span
+            className={[
+              styles.hrpStickyAnnouncementMessage,
+              styles.hrpStickyAnnouncementMessageMarquee,
+            ].join(' ')}
+          >
+            {message}
+          </span>
         </div>
       );
     }

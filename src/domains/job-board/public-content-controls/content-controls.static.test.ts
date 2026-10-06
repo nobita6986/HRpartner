@@ -177,7 +177,10 @@ describe('sticky-announcement.tsx — composition invariants', () => {
     const code = readText(tsxFile!);
     // The message appears inside `<span ...>{message}</span>` or `{message}` text braces.
     // We assert the message prop is interpolated as a value, not concatenated into a string.
-    expect(code).toMatch(/>\{message\}</);
+    // Allow optional whitespace/newlines between `>` and `{message}` and between
+    // `{message}` and `<` so multi-line JSX (used after the T1C CORRECTION 1/1
+    // refactor that promoted the span to a longer-form JSX block) still matches.
+    expect(code).toMatch(/>\s*\{message\}\s*</);
   });
 
   it('does NOT use innerHTML / innerText / outerHTML', () => {
@@ -271,56 +274,95 @@ describe('sticky-announcement.module.css — animation + reduced-motion invarian
   });
 });
 
-describe('sticky-announcement.module.css — MARQUEE seamless-entry invariants (T1C hotfix)', () => {
+describe('sticky-announcement.module.css — MARQUEE single-text entry invariants (T1C CORRECTION 1/1)', () => {
   /*
    * Regression fence for the production bug "bản sao xuất hiện giữa
    * viewport khi bản đầu còn đang chạy" reported on
-   * `vieclammienbac.com.vn` after PR #105. The fix constrains the
-   * track to exactly 2× viewport width and pins each group to one
-   * viewport, so `translateX(-50%)` of the keyframe shifts the track by
-   * exactly one group width each cycle. This locks the math: a future
-   * "small cleanup" that switches the track back to `width: max-content`
-   * — or any drift that breaks the `200% / 50% / 50%` symmetry — must
-   * fail this fence before it can reach production.
+   * `vieclammienbac.com.vn` after PR #105, plus the CORRECTION 1/1
+   * requirement from T0: the marquee must render exactly ONE copy of
+   * the message per cycle, start fully outside the right edge, run
+   * all the way through the viewport, and exit fully off the left
+   * edge before resetting. The previous double-group / 0% → -50%
+   * / width: 200% / width: 50% shape is forbidden; a "small cleanup"
+   * that restores any of those constants must fail this fence before
+   * it can reach production.
    */
 
-  it('track uses `width: 200%` so the keyframe can shift it by one group width per cycle', () => {
+  it('does NOT define a `hrpStickyAnnouncementTrack` rule (single-text has no track wrapper)', () => {
     const css = strip(readText(cssFile!));
-    const trackRule =
-      css.match(/\.hrpStickyAnnouncementTrack\s*\{([^}]*)\}/)?.[1] ?? '';
-    expect(trackRule).toMatch(/width:\s*200%/);
+    expect(css).not.toMatch(/\.hrpStickyAnnouncementTrack\s*\{/);
   });
 
-  it('track does NOT use `width: max-content` (root cause of the production regression)', () => {
+  it('does NOT define a `hrpStickyAnnouncementMarqueeGroup` rule (no clone, no group)', () => {
     const css = strip(readText(cssFile!));
-    const trackRule =
-      css.match(/\.hrpStickyAnnouncementTrack\s*\{([^}]*)\}/)?.[1] ?? '';
-    expect(trackRule).not.toMatch(/width:\s*max-content/);
+    expect(css).not.toMatch(/\.hrpStickyAnnouncementMarqueeGroup\s*\{/);
   });
 
-  it('each group is exactly one viewport wide (`width: 50%; flex: 0 0 50%`)', () => {
+  it('does NOT use the legacy `width: 200%` shape on any selector (forbidden by the CORRECTION 1/1 contract)', () => {
     const css = strip(readText(cssFile!));
-    const groupRule =
-      css.match(/\.hrpStickyAnnouncementMarqueeGroup\s*\{([^}]*)\}/)?.[1] ?? '';
-    expect(groupRule).toMatch(/width:\s*50%/);
-    expect(groupRule).toMatch(/flex:\s*0\s+0\s+50%/);
+    expect(css).not.toMatch(/width:\s*200%/);
   });
 
-  it('each group clips overflowing messages with `overflow: hidden`', () => {
+  it('does NOT use the legacy `width: 50%` shape on any selector (forbidden by the CORRECTION 1/1 contract)', () => {
     const css = strip(readText(cssFile!));
-    const groupRule =
-      css.match(/\.hrpStickyAnnouncementMarqueeGroup\s*\{([^}]*)\}/)?.[1] ?? '';
-    expect(groupRule).toMatch(/overflow:\s*hidden/);
+    expect(css).not.toMatch(/width:\s*50%/);
   });
 
-  it('keyframe still uses `translateX(0) → translateX(-50%)` so the math stays correct', () => {
+  it('keyframe uses `translateX(100%) → translateX(-100%)` so one message sweeps the full viewport per cycle', () => {
     const css = strip(readText(cssFile!));
     const keyframe =
       css.match(
-        /@keyframes\s+hrpStickyAnnouncementMarquee\s*\{([^}]*\{[^}]*\}[^}]*)\}/,
+        /@keyframes\s+hrpStickyAnnouncementMarquee\s*\{([\s\S]*?)\n\}/,
       )?.[1] ?? '';
-    expect(keyframe).toMatch(/0%\s*\{\s*transform:\s*translateX\(0%\)/);
-    expect(keyframe).toMatch(/100%\s*\{\s*transform:\s*translateX\(-50%\)/);
+    expect(keyframe).toMatch(/0%\s*\{\s*transform:\s*translateX\(100%\)/);
+    expect(keyframe).toMatch(/100%\s*\{\s*transform:\s*translateX\(-100%\)/);
+  });
+
+  it('marquee message uses `width: max-content` so a long message is never truncated by its own rule', () => {
+    const css = strip(readText(cssFile!));
+    const rule =
+      css.match(
+        /\.hrpStickyAnnouncementMessageMarquee\s*\{([^}]*)\}/,
+      )?.[1] ?? '';
+    expect(rule).toMatch(/width:\s*max-content/);
+  });
+
+  it('marquee message uses `white-space: nowrap` so a long message stays on one line', () => {
+    const css = strip(readText(cssFile!));
+    const rule =
+      css.match(
+        /\.hrpStickyAnnouncementMessageMarquee\s*\{([^}]*)\}/,
+      )?.[1] ?? '';
+    expect(rule).toMatch(/white-space:\s*nowrap/);
+  });
+
+  it('marquee message is NOT clipped by its own `overflow: hidden` (viewport does the clipping)', () => {
+    const css = strip(readText(cssFile!));
+    const rule =
+      css.match(
+        /\.hrpStickyAnnouncementMessageMarquee\s*\{([^}]*)\}/,
+      )?.[1] ?? '';
+    expect(rule).not.toMatch(/\boverflow:\s*hidden\b/);
+  });
+
+  it('marquee viewport clips overflow so messages longer than the viewport are visually clipped, not truncated', () => {
+    const css = strip(readText(cssFile!));
+    const rule =
+      css.match(
+        /\.hrpStickyAnnouncementAnimMarquee\s+\.hrpStickyAnnouncementViewport\s*\{([^}]*)\}/,
+      )?.[1] ?? '';
+    expect(rule).toMatch(/overflow:\s*hidden/);
+  });
+
+  it('marquee message is animated (animation property is set on the message, not the viewport)', () => {
+    const css = strip(readText(cssFile!));
+    const rule =
+      css.match(
+        /\.hrpStickyAnnouncementMessageMarquee\s*\{([^}]*)\}/,
+      )?.[1] ?? '';
+    expect(rule).toMatch(
+      /animation:\s*hrpStickyAnnouncementMarquee\s+var\(--sticky-marquee-duration,\s*18s\)\s+linear\s+infinite/,
+    );
   });
 });
 
