@@ -12,7 +12,7 @@
 | Audit mode (phải khớp TASK) | `NONE` |
 | Execution round | `1` |
 | Baseline | `7f5704123cbe0ae52c897b38c8afdd3f14358c78` |
-| Implementation SHA | `d2049da30382b073cd79e609113fb5003bdbab72` |
+| Implementation SHA | `0b85ffa21f212a8c40982fc3408e18324005f411` |
 | Frozen delivery | `YES` |
 | Canonical gates | `PASS` |
 | Audit eligibility | `NOT_REQUIRED` |
@@ -87,7 +87,7 @@ Dòng đầu là `verify-task`. Mỗi command đăng ký một lần bằng `E-x
 
 ## 5. Final status
 
-- READY_FOR_REVIEW: `verify-task.ps1` PASS, full unit suite 4943/4952 pass (post true-forward-merge với PR #116 t1c menu/labor/order hotfix; pre-merge là 4914/4923), typecheck/lint/build/encoding/diff-check all xanh, integration preflight exit 0 với ENV_BLOCKED hợp lệ (DB env chưa provision local — T0 §7 stop point yêu cầu chờ CI xanh), implementation SHA `d2049da30382b073cd79e609113fb5003bdbab72` (forward-merge commit; semantic SHA cho t1b RLS work là `edb4d7aa0fe709cf90f2beb548735b8c2405bd5e`; PR #116 chỉ thay đổi UI menu + tests liên ngôn ngữ, không chạm schema/RLS/migration nên không có semantic delta mới).
+- READY_FOR_REVIEW: `verify-task.ps1` PASS, full unit suite 4943/4952 pass (post true-forward-merge với PR #116 t1c menu/labor/order hotfix; pre-merge là 4914/4923), typecheck/lint/build/encoding/diff-check all xanh, integration preflight exit 0 với ENV_BLOCKED hợp lệ (DB env chưa provision local — T0 §7 stop point yêu cầu chờ CI xanh), implementation SHA `0b85ffa21f212a8c40982fc3408e18324005f411` (CI correction: pg_policy column names polpermissive/polcmd thay vì permissive/cmd). Forward-merge SHA `d2049da30382b073cd79e609113fb5003bdbab72` (origin/main @ 4a9ddd58 PR #116); t1b RLS semantic base `edb4d7aa0fe709cf90f2beb548735b8c2405bd5e`. PR #116 chỉ thay đổi UI menu + tests liên ngôn ngữ, không chạm schema/RLS/migration nên không có semantic delta mới về RLS.
 - `git status --porcelain` (post-freeze) sạch về source/test/migration; chỉ còn `docs/tasks/hrp-t1b-pre-p2-worker-delete-rls-hotfix/HANDOFF.md` (docs, post-freeze add được) và `docs/tasks/hrp-t1b-pre-p2-worker-delete-rls-hotfix/TASK.md` đã tracked cùng commit implementation vì cùng atomic change.
 
 > Handoff status: `READY_FOR_REVIEW`
