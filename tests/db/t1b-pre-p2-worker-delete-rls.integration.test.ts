@@ -434,7 +434,15 @@ describeIf('T1B Pre-P2 Worker Delete RLS', () => {
     pseudoRoots.push(staged.pseudoRoot);
     const { dbName: roleDb, url: roleUrl } = createEphemeralDb('role');
     const roleClient = new PrismaClient({ datasources: { db: { url: roleUrl } } });
-    const verifier = new PrismaClient({ datasources: { db: { url: adminUrl } } });
+    // verifier dùng roleUrl (cùng ephemeral DB) để fixture seed và delete attempt
+    // trên cùng database. adminUrl trỏ về `ci_test` (main DB), không phải DB
+    // được apply migrations — sẽ khiến Worker fixture được tạo ở DB khác với
+    // nơi delete attempt chạy → Prisma P2025 zero-row.
+    const verifier = new PrismaClient({ datasources: { db: { url: roleUrl } } });
+    // txClient dùng writerUrl (app_user_writer — runtime writer role) để test RLS
+    // thật (BYPASSRLS = false). roleUrl là postgres/superuser nên BYPASSRLS, không
+    // thực thi RLS — test sẽ không phát hiện policy sai.
+    const writerRoleUrl = deriveDbUrl(writerUrl, roleDb);
     try {
       applyPredecessorMigrations(staged.pseudoRoot, staged.schemaFile, roleUrl);
       applyNewMigrationFile(roleUrl);
@@ -489,8 +497,9 @@ describeIf('T1B Pre-P2 Worker Delete RLS', () => {
         prismaP2025: boolean;
         remainingCount: number;
       }> {
-        // Open a fresh Prisma client mỗi role (simulate role switch).
-        const txClient = new PrismaClient({ datasources: { db: { url: roleUrl } } });
+        // Open a fresh Prisma client mỗi role (simulate role switch) — dùng
+        // writerRoleUrl (app_user_writer) để RLS thực sự áp dụng.
+        const txClient = new PrismaClient({ datasources: { db: { url: writerRoleUrl } } });
         try {
           await txClient.$transaction(async (tx) => {
             // Set GUC: app.user_id, app.role (transaction-local).
@@ -624,7 +633,10 @@ describeIf('T1B Pre-P2 Worker Delete RLS', () => {
     pseudoRoots.push(staged.pseudoRoot);
     const { dbName: depDb, url: depUrl } = createEphemeralDb('dep');
     const depClient = new PrismaClient({ datasources: { db: { url: depUrl } } });
-    const verifier = new PrismaClient({ datasources: { db: { url: adminUrl } } });
+    // verifier dùng depUrl (cùng ephemeral DB) — tương tự AC-03 fix.
+    const verifier = new PrismaClient({ datasources: { db: { url: depUrl } } });
+    // writerRoleUrl (app_user_writer) cho txClient — RLS thực sự áp dụng.
+    const writerRoleUrl = deriveDbUrl(writerUrl, depDb);
     try {
       applyPredecessorMigrations(staged.pseudoRoot, staged.schemaFile, depUrl);
       applyNewMigrationFile(depUrl);
@@ -664,7 +676,8 @@ describeIf('T1B Pre-P2 Worker Delete RLS', () => {
       // Worker — nhưng thực tế schema `labor_profiles` tham chiếu workers nên
       // Worker bị xóa thì LaborProfile cũng bị xóa nếu FK là ON DELETE CASCADE;
       // nếu SET NULL thì LaborProfile còn nhưng worker_id=NULL).
-      const txClient = new PrismaClient({ datasources: { db: { url: depUrl } } });
+      // ADMIN xóa worker qua writerRoleUrl (app_user_writer) để RLS thực sự enforce.
+      const txClient = new PrismaClient({ datasources: { db: { url: writerRoleUrl } } });
       let threw = false;
       let fkViolation = false;
       let adminDeleted = false;
