@@ -102,15 +102,26 @@ describe('StickyAnnouncement — server-side first render', () => {
     }
   });
 
-  it('renders a doubled message track when animation=MARQUEE', () => {
+  it('renders a single-text marquee (no doubled track, no clone) when animation=MARQUEE', () => {
+    /*
+     * T1C CORRECTION 1/1 v1.2: the marquee now renders exactly ONE copy
+     * of the message. The JS effect publishes two px custom properties
+     * on the viewport (shiftStartPx = viewport.width, shiftEndPx =
+     * message.width), and the CSS keyframe translates the message from
+     * shiftStartPx at 0% to -shiftEndPx at 100%. The visible cycle
+     * sweeps the entire viewport (not just one message-width) on both
+     * desktop and mobile, and the message exits fully off the left
+     * edge before the next cycle begins.
+     */
     const html = render({ dto: dto({ animation: 'MARQUEE' }) });
-    // Two occurrences of the message in the rendered tree: the visible one
-    // and the aria-hidden tail.
     const occurrences = (html.match(/Hỗ trợ tư vấn 24\/7/g) ?? []).length;
-    expect(occurrences).toBe(2);
+    expect(occurrences).toBe(1);
     expect(html).toContain(styles.hrpStickyAnnouncementAnimMarquee);
-    expect(html).toContain('data-testid="sticky-announcement-marquee-track"');
-    expect(html).toContain('data-testid="sticky-announcement-marquee-tail"');
+    expect(html).toContain('data-testid="sticky-announcement-marquee"');
+    expect(html).toContain(styles.hrpStickyAnnouncementMessageMarquee);
+    expect(html).not.toContain('data-testid="sticky-announcement-marquee-tail"');
+    expect(html).not.toContain(styles.hrpStickyAnnouncementMarqueeGroup);
+    expect(html).not.toContain(styles.hrpStickyAnnouncementTrack);
   });
 
   it('applies background opacity without reducing foreground opacity', () => {
@@ -122,7 +133,7 @@ describe('StickyAnnouncement — server-side first render', () => {
     expect(opaque).toContain('--sticky-background-opacity:100%');
   });
 
-  it('passes marquee duration to the track without applying opacity to the wrapper', () => {
+  it('passes marquee duration to the message without applying opacity to the wrapper', () => {
     const html = render({
       dto: dto({ animation: 'MARQUEE', marqueeDurationSeconds: 9 }),
     });
@@ -130,11 +141,12 @@ describe('StickyAnnouncement — server-side first render', () => {
     expect(html).not.toMatch(/(?:^|;)\s*opacity:/);
   });
 
-  it('does NOT render a doubled message track for NONE or BLINK', () => {
+  it('renders a single message for NONE or BLINK (no marquee track)', () => {
     for (const animation of ['NONE', 'BLINK'] as const) {
       const html = render({ dto: dto({ animation }) });
       const occurrences = (html.match(/Hỗ trợ tư vấn 24\/7/g) ?? []).length;
       expect(occurrences).toBe(1);
+      expect(html).not.toContain(styles.hrpStickyAnnouncementMessageMarquee);
     }
   });
 

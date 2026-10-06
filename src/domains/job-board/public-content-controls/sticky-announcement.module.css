@@ -150,11 +150,35 @@
 /* ─── Animation: MARQUEE ──────────────────────────────────────────── */
 
 @keyframes hrpStickyAnnouncementMarquee {
+  /*
+   * Single-text viewport-aware entry (T1C CORRECTION 1/1, v1.2):
+   *   - 0%   the message is translated by `--marquee-shift-start` px
+   *          (set in JS = viewport.width). With its natural width `M`,
+   *          the message's right edge sits at `viewport.width` — fully
+   *          outside the right edge.
+   *   - 100% the message is translated by `-1 * --marquee-shift-end` px
+   *          (set in JS = message.width). With its natural width `M`,
+   *          the message's right edge sits at `-message.width` — fully
+   *          outside the left edge.
+   * The two px values are independent: the START is the viewport width
+   * (where the right edge of the message must land), and the END is the
+   * message width (where the message must travel to so its right edge
+   * lands at `0`). The keyframe interpolates linearly, sweeping the entire
+   * viewport regardless of whether the message is shorter or longer than
+   * the viewport.
+   * CSS `translateX(<%>)` is relative to the element's OWN width, so the
+   * previous `translateX(±100%)` keyframe was off by a factor of (message
+   * width / viewport width). v1.2 publishes the px values from a
+   * ResizeObserver in the TSX so the keyframe works for messages shorter
+   * than the viewport (desktop 1440px, mobile 390px) and for messages
+   * longer than the viewport. There is no clone / no second copy / no
+   * track wrapper.
+   */
   0% {
-    transform: translateX(0%);
+    transform: translateX(var(--marquee-shift-start, 0px));
   }
   100% {
-    transform: translateX(-50%);
+    transform: translateX(calc(-1 * var(--marquee-shift-end, 0px)));
   }
 }
 
@@ -163,41 +187,57 @@
 }
 
 .hrpStickyAnnouncementAnimMarquee .hrpStickyAnnouncementViewport {
+  /*
+   * The viewport clips anything that scrolls past its left or right
+   * edge. The message itself is `white-space: nowrap` so the bar can
+   * hold a long string without being truncated; only the part that is
+   * inside the viewport rectangle is rendered. The viewport element
+   * is also the host of the `--marquee-shift-start` and
+   * `--marquee-shift-end` CSS custom properties published by the JS
+   * effect on mount + resize.
+   */
   overflow: hidden;
+  position: relative;
 }
 
-.hrpStickyAnnouncementTrack {
-  display: flex;
-  width: max-content;
-  animation: hrpStickyAnnouncementMarquee var(--sticky-marquee-duration, 18s) linear infinite;
-}
-
-.hrpStickyAnnouncementMarqueeGroup {
-  display: flex;
-  flex: 0 0 auto;
-  gap: 2rem;
-  padding-right: 2rem;
-}
-
-.hrpStickyAnnouncementMarqueeGroup .hrpStickyAnnouncementMessage {
+.hrpStickyAnnouncementMessageMarquee {
   display: inline-block;
+  /*
+   * `width: max-content` lets the message keep its natural width even
+   * when it exceeds the viewport. The viewport's `overflow: hidden`
+   * is what clips it visually; the DOM element itself is never
+   * truncated. `white-space: nowrap` keeps the message on a single
+   * line. `will-change: transform` hints the compositor to use GPU
+   * layers for smooth animation. The `animation` property itself is
+   * NOT declared in CSS — it is applied INLINE by the marquee effect
+   * in `sticky-announcement.tsx` after the px distances have been
+   * measured and the `--marquee-shift-{start,end}` CSS custom
+   * properties have been published on the viewport. Without this
+   * guard, the keyframe would interpolate against the default
+   * `var(--marquee-shift-start, 0px)` for the first frame, painting
+   * the message at its natural position.
+   */
+  width: max-content;
   white-space: nowrap;
+  flex: 0 0 auto;
+  will-change: transform;
 }
 
 /* ─── Reduced motion override (must be last) ──────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {
   .hrpStickyAnnouncementAnimBlink::before,
-  .hrpStickyAnnouncementAnimMarquee .hrpStickyAnnouncementTrack {
+  .hrpStickyAnnouncementMessageMarquee {
     animation: none;
   }
   .hrpStickyAnnouncementAnimMarquee .hrpStickyAnnouncementViewport {
     overflow: visible;
   }
-  .hrpStickyAnnouncementAnimMarquee .hrpStickyAnnouncementMarqueeGroup[aria-hidden='true'] {
-    display: none;
-  }
-  .hrpStickyAnnouncementAnimMarquee .hrpStickyAnnouncementMessage {
+  .hrpStickyAnnouncementMessageMarquee {
+    /* Cancel any off-screen default so the message stays in-viewport
+     * when the keyframe is disabled. */
+    transform: none;
+    width: auto;
     white-space: normal;
     overflow-wrap: anywhere;
   }
