@@ -12,7 +12,7 @@
 | Audit mode (phải khớp TASK) | `NONE` |
 | Execution round | `1` |
 | Baseline | `7f5704123cbe0ae52c897b38c8afdd3f14358c78` |
-| Implementation SHA | `b0fff97894c14fd1aff615595f2d601fb2ca5928` |
+| Implementation SHA | `ee34b723955657d8027b0e5c14bbe7ac76c055e3` |
 | Frozen delivery | `YES` |
 | Canonical gates | `PASS` |
 | Audit eligibility | `NOT_REQUIRED` |
@@ -87,7 +87,7 @@ Dòng đầu là `verify-task`. Mỗi command đăng ký một lần bằng `E-x
 
 ## 5. Final status
 
-- READY_FOR_REVIEW: `verify-task.ps1` PASS, full unit suite 4943/4952 pass (post true-forward-merge với PR #116 t1c menu/labor/order hotfix; pre-merge là 4914/4923), typecheck/lint/build/encoding/diff-check all xanh, integration preflight exit 0 với ENV_BLOCKED hợp lệ (DB env chưa provision local — T0 §7 stop point yêu cầu chờ CI xanh), implementation SHA `b0fff97894c14fd1aff615595f2d601fb2ca5928` (CI correction: pg_policy column names polpermissive/polcmd thay vì permissive/cmd; AC-05 correction: schema `labor_profiles.worker_id_fkey` ON DELETE SET NULL nên direct DB delete của Worker có LaborProfile FK thành công — cascade set worker_id=NULL trên LaborProfile chứ KHÔNG throw FK violation; verify-handoff, AC-03/AC-05 phản xịa đều xanh). Forward-merge SHA `d2049da30382b073cd79e609113fb5003bdbab72` (origin/main @ 4a9ddd58 PR #116); t1b RLS semantic base `edb4d7aa0fe709cf90f2beb548735b8c2405bd5e`. PR #116 chỉ thay đổi UI menu + tests liên ngôn ngữ, không chạm schema/RLS/migration nên không có semantic delta mới về RLS.
+- READY_FOR_REVIEW: `verify-task.ps1` PASS, full unit suite 4943/4952 pass (post true-forward-merge với PR #116 t1c menu/labor/order hotfix; pre-merge là 4914/4923), typecheck/lint/build/encoding/diff-check all xanh, integration preflight exit 0 với ENV_BLOCKED hợp lệ (DB env chưa provision local — T0 §7 stop point yêu cầu chờ CI xanh), implementation SHA `ee34b723955657d8027b0e5c14bbe7ac76c055e3` (CI correction #1: pg_policy column names polpermissive/polcmd thay vì permissive/cmd; CI correction #2: AC-05 FK semantics ON DELETE SET NULL — LaborProfile.worker_id chỉ set NULL, không bị xóa; CI correction #3: AC-03/AC-05 fixture + RLS role wiring — trước đó verifier.seed chạy ở `ci_test` (adminUrl) và txClient.delete ở ephemeral DB → P2025 zero-row; txClient cũng dùng postgres/superuser (BYPASSRLS) nên RLS không thực sự chạy. Fix: verifier → roleUrl/depUrl (postgres trên CÙNG ephemeral DB); txClient → deriveDbUrl(writerUrl, roleDb|depDb) = app_user_writer trên CÙNG ephemeral DB — runtime writer role, BYPASSRLS=false, RLS thực sự áp dụng. Migration + production code KHÔNG đổi.). Forward-merge SHA `d2049da30382b073cd79e609113fb5003bdbab72` (origin/main @ 4a9ddd58 PR #116); t1b RLS semantic base `edb4d7aa0fe709cf90f2beb548735b8c2405bd5e`. PR #116 chỉ thay đổi UI menu + tests liên ngôn ngữ, không chạm schema/RLS/migration nên không có semantic delta mới về RLS.
 - `git status --porcelain` (post-freeze) sạch về source/test/migration; chỉ còn `docs/tasks/hrp-t1b-pre-p2-worker-delete-rls-hotfix/HANDOFF.md` (docs, post-freeze add được) và `docs/tasks/hrp-t1b-pre-p2-worker-delete-rls-hotfix/TASK.md` đã tracked cùng commit implementation vì cùng atomic change.
 
 > Handoff status: `READY_FOR_REVIEW`
