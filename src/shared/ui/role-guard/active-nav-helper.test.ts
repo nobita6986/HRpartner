@@ -238,7 +238,7 @@ describe('getMostSpecificActiveHref — T1C pre-P2 sidebar alias resolution', ()
     ).toBe('/admin/workers');
   });
 
-  it('R-3h — /admin/labor-profiles/{id} highlights Hồ sơ tiếp nhận', () => {
+  it('R-3h — /admin/labor-profiles/{id} highlights Hồ sơ ứng viên', () => {
     expect(
       getMostSpecificActiveHref(
         '/admin/labor-profiles/abc-123',

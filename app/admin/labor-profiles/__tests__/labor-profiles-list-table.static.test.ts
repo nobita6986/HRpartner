@@ -17,9 +17,10 @@
  *      primary identifier cell), not as a row wrapper.
  *   4. The whole row stays clickable — exactly ONE <a> per row, no
  *      nested anchors.
- *   5. Page <h1> uses the canonical title "Hồ sơ tiếp nhận người lao động".
- *   6. The intake CTA reads "+ Tiếp nhận người lao động".
- *   7. No legacy "Nhân sự" / "Hồ sơ NLD" / "NLD" surface strings.
+ *   5. Page <h1> uses the canonical title "Hồ sơ ứng viên" (v1.2).
+ *   6. The intake CTA reads "+ Tiếp nhận hồ sơ" (v1.2).
+ *   7. No legacy "Nhân sự" / "Hồ sơ NLD" / "NLD" / "Hồ sơ tiếp nhận"
+ *      surface strings.
  *
  * Pure static test (no React, no DB, no router).
  */
@@ -138,20 +139,23 @@ describe('app/admin/labor-profiles/page.tsx — T0 T1B HOTFIX UI NGƯỜI LAO Đ
     }
   });
 
-  it('page <h1> is "Hồ sơ tiếp nhận người lao động" (canonical title)', () => {
-    // T0 T1B §3: page title must be "Hồ sơ tiếp nhận người lao động".
-    expect(CODE).toMatch(/<h1[^>]*>\s*Hồ sơ tiếp nhận người lao động\s*<\/h1>/);
+  it('page <h1> is "Hồ sơ ứng viên" (v1.2 T0 T1C canonical title)', () => {
+    // T0 T1C §2: page title must be "Hồ sơ ứng viên" (shorter than the
+    // previous "Hồ sơ tiếp nhận người lao động"). The sidebar slot uses
+    // the same short label.
+    expect(CODE).toMatch(/<h1[^>]*>\s*Hồ sơ ứng viên\s*<\/h1>/);
   });
 
-  it('Next.js metadata.title is "Hồ sơ tiếp nhận người lao động - Quản trị"', () => {
-    expect(CODE).toContain("title: 'Hồ sơ tiếp nhận người lao động - Quản trị'");
+  it('Next.js metadata.title is "Hồ sơ ứng viên - Quản trị"', () => {
+    expect(CODE).toContain("title: 'Hồ sơ ứng viên - Quản trị'");
   });
 
-  it('intake CTA reads "+ Tiếp nhận người lao động"', () => {
-    // T0 T1B §1.4: keep the action button inside the page (since the
-    // dedicated sidebar menu is removed). Button text must use the
-    // canonical wording, not the legacy "Tiếp nhận hồ sơ người lao động".
-    expect(CODE).toMatch(/\+\s*Tiếp nhận người lao động/);
+  it('intake CTA reads "+ Tiếp nhận hồ sơ" (v1.2 T0 T1C)', () => {
+    // T0 T1C §2: keep the action button inside the page (since the
+    // dedicated sidebar menu is removed). Button text uses the new
+    // shorter wording, not the legacy "Tiếp nhận hồ sơ người lao động"
+    // or the previous T1B "+ Tiếp nhận người lao động".
+    expect(CODE).toMatch(/\+\s*Tiếp nhận hồ sơ/);
   });
 
   it('does not interpolate raw enum values into operator-facing <td> text', () => {
@@ -165,14 +169,18 @@ describe('app/admin/labor-profiles/page.tsx — T0 T1B HOTFIX UI NGƯỜI LAO Đ
     }
   });
 
-  it('does not reintroduce legacy "Nhân sự" / "Hồ sơ NLD" / "NLD" surface strings', () => {
-    // Anti-regression fence for the T1B terminology cleanup on the
-    // /admin/labor-profiles surface.
+  it('does not reintroduce legacy "Nhân sự" / "Hồ sơ NLD" / "NLD" / "Hồ sơ tiếp nhận" surface strings', () => {
+    // Anti-regression fence for the T1B terminology cleanup + v1.2
+    // T0 T1C bounded sweep on the /admin/labor-profiles surface.
     expect(CODE).not.toMatch(/<h1[^>]*>[\s\S]*?Nhân sự/);
     expect(CODE).not.toMatch(/<h1[^>]*>[\s\S]*?Hồ sơ NLD/);
     expect(CODE).not.toMatch(/<h1[^>]*>[\s\S]*?NLD/);
+    expect(CODE).not.toMatch(/<h1[^>]*>[\s\S]*?Hồ sơ tiếp nhận/);
     // No "Tiếp nhận hồ sơ người lao động" (old button wording).
     expect(CODE).not.toContain('Tiếp nhận hồ sơ người lao động');
+    // No T1B wording (replaced by v1.2).
+    expect(CODE).not.toContain('+ Tiếp nhận người lao động');
+    expect(CODE).not.toContain('Hồ sơ tiếp nhận người lao động');
   });
 });
 

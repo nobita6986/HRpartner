@@ -17,7 +17,7 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export const metadata = {
-  title: 'Hồ sơ tiếp nhận người lao động - Quản trị',
+  title: 'Hồ sơ ứng viên - Quản trị',
 };
 
 const ALLOWED_ROLES = new Set(['ADMIN', 'HR_MANAGER', 'HR_STAFF']);
@@ -34,7 +34,7 @@ export default async function LaborProfilesPage({
   if (!ALLOWED_ROLES.has(session.role)) {
     return (
       <div className="p-8 text-red-600">
-        Bạn không có quyền truy cập danh sách hồ sơ tiếp nhận người lao động.
+        Bạn không có quyền truy cập danh sách hồ sơ ứng viên.
       </div>
     );
   }
@@ -54,17 +54,17 @@ export default async function LaborProfilesPage({
     <div className="p-8 max-w-7xl mx-auto">
       <div className="flex items-center justify-between mb-8">
         <div>
-          {/* T0 T1B — HOTFIX UI NGƯỜI LAO ĐỘNG: page title is the full
-              operator-facing label "Hồ sơ tiếp nhận người lao động"
-              (the sidebar slot uses the shorter "Hồ sơ tiếp nhận"). */}
-          <h1 className="text-3xl font-bold text-gray-900">Hồ sơ tiếp nhận người lao động</h1>
-          <p className="text-gray-500 mt-2 text-sm">Quản lý hồ sơ tiếp nhận người lao động, nhận diện và đối chiếu trùng lặp.</p>
+          {/* T0 T1C — PRE-P2 HOTFIX: page title = "Hồ sơ ứng viên" (shorter;
+              the sidebar slot uses the same short label, while the metadata
+              title carries the canonical "- Quản trị" suffix). */}
+          <h1 className="text-3xl font-bold text-gray-900">Hồ sơ ứng viên</h1>
+          <p className="text-gray-500 mt-2 text-sm">Quản lý hồ sơ ứng viên, nhận diện và đối chiếu trùng lặp.</p>
         </div>
         <Link 
           href="/admin/labor-profiles/new" 
           className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm transition-colors"
         >
-          + Tiếp nhận người lao động
+          + Tiếp nhận hồ sơ
         </Link>
       </div>
 
@@ -120,7 +120,7 @@ export default async function LaborProfilesPage({
               {data.items.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
-                    Chưa có hồ sơ tiếp nhận người lao động nào.
+                    Chưa có hồ sơ ứng viên nào.
                   </td>
                 </tr>
               ) : (
