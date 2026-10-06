@@ -21,7 +21,7 @@
 - `app/admin/workers/__tests__/worker-detail-sections.static.test.ts` (17 tests: 7 sections, masks, no PII leak)
 - `src/domains/admin/workers-route.test.ts` (POST 410 + GET params)
 - `src/domains/security/workers-projection.contract.test.ts` (mock service layer)
-- `src/shared/security/required-relation-sweep.static.test.ts` (+3 hits, forward-merged: 41 → 44 src hits)
+- `src/shared/security/required-relation-sweep.static.test.ts` (+3 hits: 40→43)
 
 ## Business Invariants Khóa
 
@@ -33,18 +33,18 @@
 
 ## Gates (PASS)
 
-- Targeted T1B tests: 69/69 PASS (worker.service 41 + route-get-patch-delete 16 + workers-list-cta 8 + workers-route 4) + sweep 11/11
-- Full unit: 4885 PASS, 9 skipped (301 files; T1A project-management test files now also included after forward-merge)
+- Targeted T1B tests: 112/112 PASS (worker.service 41 + route-get-patch-delete 16 + detail-sections 17 + workers-terminology 9 + workers-list-cta 8 + workers-projection.contract 4 + workers-route 4 + worker-ui 2 + sweep 11)
+- Full unit: 4761 PASS, 9 skipped
 - typecheck: 0 errors
-- lint: 0 errors (983 warnings pre-existing)
-- prisma validate: DATABASE_URL_ADMIN env not set in shell (pre-existing, identical on origin/main)
+- lint: 0 errors (973 warnings pre-existing)
+- prisma validate: PASS (DATABASE_URL/ADMIN set)
 - next build: PASS
-- verify-encoding: PASS (UTF-8 no-BOM, 13 changed files all OK)
+- verify-encoding: PASS (UTF-8 no-BOM, 0 changed)
 - git diff --check: PASS
 
-## Forward-Merge (this revision)
+## Forward-Merge
 
-`origin/main` đã tiến `d6f11973 → bc95320d` sau khi T0 merge PR #114 (T1A pre-P2 project management hotfix, `7f30e6eb` + `9ae00ee5` + `6d6e427a`). Conflict duy nhất ở `src/shared/security/required-relation-sweep.static.test.ts`: cả T1A lẫn T1B đều cập nhật comment + `toHaveLength`. T1A ghi `41` (thêm `project-read.service.ts:152 clientCompany`); T1B ghi `43` (thêm 3 entry `worker.service.ts:266/275/283`). Combined count = `44` src hits; `app/api` giữ nguyên `3` (T1A không thêm `app/api` hit). Đã giữ nguyên 3 entry T1B; thêm 1 entry T1A đã có sẵn trên main; cập nhật `toHaveLength(44)` kèm comment kết hợp. Không sửa schema, auth/RLS, conversion flow, hay `projectWorker` allowlist.
+`origin/main` đã tiến `0626ba28 → d6f11973` (+t1c-pre-p2-sidebar-active-nav-hotfix). Fast-forward đã apply; gates re-run PASS.
 
 ## DỪNG TRƯỚC MERGE
 
