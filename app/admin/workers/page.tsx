@@ -71,11 +71,14 @@ function Modal({ onClose, onSuccess, editData }: { onClose: () => void; onSucces
   return (
     <div style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} className="fixed inset-0 z-50 flex items-center justify-center" onClick={onClose}>
       <div style={{ background: 'var(--surface-container-lowest)' }} className="w-full max-w-md rounded-lg border p-6 shadow-xl" onClick={ev => ev.stopPropagation()}>
+        {/* T0 T1B — HOTFIX UI NGƯỜI LAO ĐỘNG: workforce surface label
+            "Nhân viên" (line-worker) → "Người lao động" per canonical operator
+            terminology. Modal title, button text, empty-state, and footer renamed.
+            Backend field names (userId, fullName, cccdNumber) are unchanged.
+            NOTE: T1B Pre-P2 hotfix sửa bug comment render — comment này TỪNG
+            nằm giữa `<h2>...</h2>` (gây leak raw text ra DOM); đã chuyển ra JSX
+            wrapper, giữ semantic giải thích mà không pollute DOM. */}
         <h2 style={{ color: 'var(--on-surface)' }} className="mb-4 text-lg font-semibold">
-  // T0 T1B — HOTFIX UI NGƯỜI LAO ĐỘNG: workforce surface label
-  // "Nhân viên" (line-worker) → "Người lao động" per canonical operator
-  // terminology. Modal title, button text, empty-state, and footer renamed.
-  // Backend field names (userId, fullName, cccdNumber) are unchanged.
           {isEdit ? 'Sửa người lao động' : 'Thêm người lao động mới'}
         </h2>
         <form onSubmit={submit} className="space-y-4">

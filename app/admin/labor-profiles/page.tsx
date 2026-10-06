@@ -69,13 +69,22 @@ export default async function LaborProfilesPage({
       </div>
 
       <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6 flex gap-2 overflow-x-auto">
+        {/* DEC-P2-09: chỉ giữ 4 filter chips canonical.
+            - '': Tất cả (mặc định)
+            - 'INCOMPLETE': Chưa hoàn thiện (completeness = MINIMAL)
+            - 'UNVERIFIED': Cần đối chiếu (identityVerification = UNVERIFIED)
+            - 'COMPANY_POOL': Kho chung (không có handlingAssignment ACTIVE)
+            3 chip cũ (NEVER_WORKED | WORKING | TERMINATED) đã bỏ vì:
+              - Profiles đã chuyển thành Worker (`workerId != null`) đã bị
+                `getLaborProfilesList` filter mặc định ra khỏi intake list
+                (DEC-P2-01). Nếu họ "Đang làm" thì thuộc `/admin/workers`.
+              - Episode status không còn là tín hiệu intake-scope nữa.
+        */}
         {[
           { label: 'Tất cả', value: '' },
           { label: 'Chưa hoàn thiện', value: 'INCOMPLETE' },
           { label: 'Cần đối chiếu', value: 'UNVERIFIED' },
-          { label: 'Chưa từng làm', value: 'NEVER_WORKED' },
-          { label: 'Đang làm', value: 'WORKING' },
-          { label: 'Đã nghỉ', value: 'TERMINATED' },
+          { label: 'Kho chung', value: 'COMPANY_POOL' },
         ].map(f => (
           <Link
             key={f.value}
@@ -98,14 +107,19 @@ export default async function LaborProfilesPage({
                 <th className="px-6 py-4">Số điện thoại</th>
                 <th className="px-6 py-4">Xác minh danh tính</th>
                 <th className="px-6 py-4">Độ hoàn thiện</th>
-                <th className="px-6 py-4">Liên kết nhân viên</th>
                 <th className="px-6 py-4 text-right">Ngày tạo</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
+              {/* DEC-P2-10: bỏ cột "Liên kết nhân viên" → colSpan 6 → 5.
+                  Mọi row trong list mặc định là unlinked (DEC-P2-01); cột
+                  này luôn "Chưa liên kết" → thừa, bỏ để giảm nhiễu.
+                  NOTE: comment đặt NGOÀI cấu trúc <tr>...</tr> vì nếu đặt
+                  giữa sẽ tạo "{}" rỗng giữa <tr> và <td> sau khi strip
+                  comment → phá regex trong static test. */}
               {data.items.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
                     Chưa có hồ sơ tiếp nhận người lao động nào.
                   </td>
                 </tr>
@@ -157,13 +171,6 @@ export default async function LaborProfilesPage({
                       >
                         {laborProfileCompletenessLabel(profile.completeness)}
                       </StatusBadge>
-                    </td>
-                    <td className="px-6 py-4">
-                      {profile.workerId ? (
-                        <span className="text-green-600 font-medium">Đã liên kết</span>
-                      ) : (
-                        <span className="text-gray-400">Chưa liên kết</span>
-                      )}
                     </td>
                     <td className="px-6 py-4 text-right">
                       {new Date(profile.createdAt).toLocaleDateString('vi-VN')}
