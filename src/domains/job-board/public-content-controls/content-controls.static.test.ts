@@ -211,7 +211,9 @@ describe('sticky-announcement.module.css — animation + reduced-motion invarian
     expect(css).toMatch(/\.hrpStickyAnnouncementAnimBlink\s*\{\s*animation:\s*none/);
     expect(css).toMatch(/--sticky-background-opacity/);
     expect(css).toMatch(/box-shadow:\s*0 -2px 8px color-mix\(in srgb, rgb\(0 0 0 \/ 8%\) var\(--sticky-background-opacity\), transparent\)/);
-    expect(css).toMatch(/animation:\s*hrpStickyAnnouncementMarquee\s+var\(--sticky-marquee-duration,\s*18s\)/);
+    // The marquee `animation` declaration is NOT in CSS — it is applied
+    // inline by the marquee effect after the px distances are measured.
+    // v1.2 fence for this contract lives below in the v1.2 describe block.
     for (const selector of [
       '.hrpStickyAnnouncement',
       '.hrpStickyAnnouncementCta',
@@ -274,18 +276,21 @@ describe('sticky-announcement.module.css — animation + reduced-motion invarian
   });
 });
 
-describe('sticky-announcement.module.css — MARQUEE single-text entry invariants (T1C CORRECTION 1/1)', () => {
+describe('sticky-announcement.module.css — MARQUEE viewport-aware single-text entry invariants (T1C CORRECTION 1/1, v1.2)', () => {
   /*
-   * Regression fence for the production bug "bản sao xuất hiện giữa
+   * v1.2 regression fence for the production bug "bản sao xuất hiện giữa
    * viewport khi bản đầu còn đang chạy" reported on
-   * `vieclammienbac.com.vn` after PR #105, plus the CORRECTION 1/1
-   * requirement from T0: the marquee must render exactly ONE copy of
-   * the message per cycle, start fully outside the right edge, run
-   * all the way through the viewport, and exit fully off the left
-   * edge before resetting. The previous double-group / 0% → -50%
-   * / width: 200% / width: 50% shape is forbidden; a "small cleanup"
-   * that restores any of those constants must fail this fence before
-   * it can reach production.
+   * `vieclammienbac.com.vn` after PR #105. The v1.0 double-group /
+   * `width: 200%` / `width: 50%` shape and the v1.1 `translateX(±100%)`
+   * shape are BOTH forbidden: the v1.1 shape measured the keyframe
+   * distance against the MESSAGE width (CSS `translateX(<%>)` is
+   * relative to the element's own width), so a 600px message on a
+   * 1440px desktop viewport only traveled ±600px instead of ±1440px,
+   * never starting fully outside the right edge. v1.2 publishes
+   * `--marquee-shift = viewport.width + message.width` (px) from a
+   * ResizeObserver in the TSX, and the keyframe consumes it as
+   * `translateX(calc(-1 * var(--marquee-shift)))`. The single-text
+   * invariants (no track, no clone, no group) are kept from v1.1.
    */
 
   it('does NOT define a `hrpStickyAnnouncementTrack` rule (single-text has no track wrapper)', () => {
@@ -308,17 +313,58 @@ describe('sticky-announcement.module.css — MARQUEE single-text entry invariant
     expect(css).not.toMatch(/width:\s*50%/);
   });
 
-  it('keyframe uses `translateX(100%) → translateX(-100%)` so one message sweeps the full viewport per cycle', () => {
+  it('does NOT use `translateX(100%)` on the marquee message (was a v1.1 bug — % is relative to message width, not viewport)', () => {
+    const css = strip(readText(cssFile!));
+    const rule =
+      css.match(
+        /\.hrpStickyAnnouncementMessageMarquee\s*\{([^}]*)\}/,
+      )?.[1] ?? '';
+    // `translateX(100%)` on a `width: max-content` element shifts by one
+    // full message width, which is NOT the viewport width. That is the
+    // exact bug v1.2 fixes. The pre-mount SSR fallback is
+    // `transform: translateX(100%)` (still % of message width, but only
+    // painted before the keyframe / JS effect kicks in — the keyframe
+    // runs from `translateX(0)` and the JS publishes `--marquee-shift`
+    // so the 100% stop is pixel-accurate against the viewport).
+    expect(rule).not.toMatch(/translateX\(\s*100%\s*\)/);
+  });
+
+  it('does NOT use `translateX(-100%)` in the keyframe (was a v1.1 bug — % is relative to message width, not viewport)', () => {
     const css = strip(readText(cssFile!));
     const keyframe =
       css.match(
         /@keyframes\s+hrpStickyAnnouncementMarquee\s*\{([\s\S]*?)\n\}/,
       )?.[1] ?? '';
-    expect(keyframe).toMatch(/0%\s*\{\s*transform:\s*translateX\(100%\)/);
-    expect(keyframe).toMatch(/100%\s*\{\s*transform:\s*translateX\(-100%\)/);
+    expect(keyframe).not.toMatch(/translateX\(\s*-100%\s*\)/);
   });
 
-  it('marquee message uses `width: max-content` so a long message is never truncated by its own rule', () => {
+  it('keyframe starts at `translateX(var(--marquee-shift-start))` and ends at `translateX(calc(-1 * var(--marquee-shift-end)))` — the v1.2 viewport-aware contract', () => {
+    const css = strip(readText(cssFile!));
+    const keyframe =
+      css.match(
+        /@keyframes\s+hrpStickyAnnouncementMarquee\s*\{([\s\S]*?)\n\}/,
+      )?.[1] ?? '';
+    // Chrome normalizes `translateX(0)` to `translateX(0px)` when the rule is
+    // serialized via `CSSKeyframesRule.cssRules`, but the source CSS uses
+    // `0` (no unit). The fence accepts both forms.
+    expect(keyframe).toMatch(
+      /0%\s*\{[\s\S]*?transform:\s*translateX\(\s*var\(\s*--marquee-shift-start\s*,\s*0px\s*\)\s*\)/,
+    );
+    expect(keyframe).toMatch(
+      /100%\s*\{[\s\S]*?transform:\s*translateX\(\s*calc\(\s*-1\s*\*\s*var\(\s*--marquee-shift-end\s*,\s*0px\s*\)\s*\)/,
+    );
+  });
+
+  it('forbids the legacy single-var `--marquee-shift` keyframe shape (v1.1 used it; v1.2 splits into start/end)', () => {
+    const css = strip(readText(cssFile!));
+    const keyframe =
+      css.match(
+        /@keyframes\s+hrpStickyAnnouncementMarquee\s*\{([\s\S]*?)\n\}/,
+      )?.[1] ?? '';
+    expect(keyframe).not.toMatch(/var\(\s*--marquee-shift\s*,\s*0px\s*\)/);
+  });
+
+  it('marquee message has `width: max-content` so a long message is never truncated by its own rule', () => {
     const css = strip(readText(cssFile!));
     const rule =
       css.match(
@@ -327,7 +373,7 @@ describe('sticky-announcement.module.css — MARQUEE single-text entry invariant
     expect(rule).toMatch(/width:\s*max-content/);
   });
 
-  it('marquee message uses `white-space: nowrap` so a long message stays on one line', () => {
+  it('marquee message has `white-space: nowrap` so a long message stays on one line', () => {
     const css = strip(readText(cssFile!));
     const rule =
       css.match(
@@ -354,15 +400,13 @@ describe('sticky-announcement.module.css — MARQUEE single-text entry invariant
     expect(rule).toMatch(/overflow:\s*hidden/);
   });
 
-  it('marquee message is animated (animation property is set on the message, not the viewport)', () => {
+  it('marquee animation is armed inline by the JS effect — the `animation` property is NOT declared in CSS so the keyframe does not start before `--marquee-shift-{start,end}` are published', () => {
     const css = strip(readText(cssFile!));
-    const rule =
+    const baseRule =
       css.match(
         /\.hrpStickyAnnouncementMessageMarquee\s*\{([^}]*)\}/,
       )?.[1] ?? '';
-    expect(rule).toMatch(
-      /animation:\s*hrpStickyAnnouncementMarquee\s+var\(--sticky-marquee-duration,\s*18s\)\s+linear\s+infinite/,
-    );
+    expect(baseRule).not.toMatch(/\banimation:\s*hrpStickyAnnouncementMarquee\b/);
   });
 });
 

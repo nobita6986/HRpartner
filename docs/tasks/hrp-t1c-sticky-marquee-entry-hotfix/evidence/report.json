@@ -29,12 +29,27 @@
     {
       "id": "[desktop-1440x900].kf-0",
       "ok": true,
-      "detail": "0% { transform: translateX(100%); }"
+      "detail": "0% { transform: translateX(var(--marquee-shift-start,0)); }"
     },
     {
       "id": "[desktop-1440x900].kf-100",
       "ok": true,
-      "detail": "100% { transform: translateX(-100%); }"
+      "detail": "100% { transform: translateX(calc(-1 * var(--marquee-shift-end, 0px))); }"
+    },
+    {
+      "id": "[desktop-1440x900].marquee-shift-start",
+      "ok": true,
+      "detail": "--marquee-shift-start=1428px"
+    },
+    {
+      "id": "[desktop-1440x900].marquee-shift-end",
+      "ok": true,
+      "detail": "--marquee-shift-end=349px"
+    },
+    {
+      "id": "[desktop-1440x900].marquee-shift-start-positive",
+      "ok": true,
+      "detail": "--marquee-shift-start=1428px"
     },
     {
       "id": "[desktop-1440x900].msg-white-space",
@@ -47,9 +62,24 @@
       "detail": "overflow=visible"
     },
     {
+      "id": "[desktop-1440x900].seek-start",
+      "ok": true,
+      "detail": "raw={\"left\":1440,\"right\":1777.078125,\"width\":337.078125,\"viewportWidth\":1440,\"animationDurationMs\":4000}"
+    },
+    {
+      "id": "[desktop-1440x900].seek-mid",
+      "ok": true,
+      "detail": "raw={\"left\":551.5,\"right\":888.578125,\"width\":337.078125,\"viewportWidth\":1440,\"animationDurationMs\":4000}"
+    },
+    {
+      "id": "[desktop-1440x900].seek-end",
+      "ok": true,
+      "detail": "raw={\"left\":-336.9995422363281,\"right\":0.078582763671875,\"width\":337.078125,\"viewportWidth\":1440,\"animationDurationMs\":4000}"
+    },
+    {
       "id": "[desktop-1440x900].leftward",
       "ok": true,
-      "detail": "[325.835,230.345,134.833]"
+      "detail": "[1428,946.732,465.534]"
     },
     {
       "id": "[mobile-390x844].single-text",
@@ -69,12 +99,27 @@
     {
       "id": "[mobile-390x844].kf-0",
       "ok": true,
-      "detail": "0% { transform: translateX(100%); }"
+      "detail": "0% { transform: translateX(var(--marquee-shift-start,0)); }"
     },
     {
       "id": "[mobile-390x844].kf-100",
       "ok": true,
-      "detail": "100% { transform: translateX(-100%); }"
+      "detail": "100% { transform: translateX(calc(-1 * var(--marquee-shift-end, 0px))); }"
+    },
+    {
+      "id": "[mobile-390x844].marquee-shift-start",
+      "ok": true,
+      "detail": "--marquee-shift-start=378px"
+    },
+    {
+      "id": "[mobile-390x844].marquee-shift-end",
+      "ok": true,
+      "detail": "--marquee-shift-end=349px"
+    },
+    {
+      "id": "[mobile-390x844].marquee-shift-start-positive",
+      "ok": true,
+      "detail": "--marquee-shift-start=378px"
     },
     {
       "id": "[mobile-390x844].msg-white-space",
@@ -87,9 +132,24 @@
       "detail": "overflow=visible"
     },
     {
+      "id": "[mobile-390x844].seek-start",
+      "ok": true,
+      "detail": "raw={\"left\":390,\"right\":727.078125,\"width\":337.078125,\"viewportWidth\":390,\"animationDurationMs\":4000}"
+    },
+    {
+      "id": "[mobile-390x844].seek-mid",
+      "ok": true,
+      "detail": "raw={\"left\":26.5,\"right\":363.578125,\"width\":337.078125,\"viewportWidth\":390,\"animationDurationMs\":4000}"
+    },
+    {
+      "id": "[mobile-390x844].seek-end",
+      "ok": true,
+      "detail": "raw={\"left\":-336.99981689453125,\"right\":0.07830810546875,\"width\":337.078125,\"viewportWidth\":390,\"animationDurationMs\":4000}"
+    },
+    {
       "id": "[mobile-390x844].leftward",
       "ok": true,
-      "detail": "[334.258,241.588,143.268]"
+      "detail": "[378,181.108,-9.72964]"
     }
   ]
 }

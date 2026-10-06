@@ -1,13 +1,20 @@
 <!DOCTYPE html>
 <!--
-  T1C single-text marquee browser-check fixture.
+  T1C viewport-aware single-text marquee browser-check fixture (v1.2).
+
   This file mirrors the DOM that sticky-announcement.tsx renders when
   animation=MARQUEE, using the EXACT hashed class names emitted by the
-  Next.js CSS Modules compiler. The CSS file linked below is the one
-  produced by `next build` for the v1.1 commit e777267528e95caca0bd5c979aff2083847a2aa5
-  (the original class names are preserved in
-  src/domains/job-board/public-content-controls/sticky-announcement.module.css
-  so a reviewer can diff against the source).
+  Next.js CSS Modules compiler. The CSS file linked below is the
+  v1.2 stylesheet (`@keyframes hrpStickyAnnouncementMarquee` uses
+  `translateX(0)` → `translateX(calc(-1 * var(--marquee-shift, 0px)))`).
+
+  v1.2 publishes `--marquee-shift = window.innerWidth + message.width`
+  in pixels from a small inline `<script>` below. This mirrors what
+  the live `sticky-announcement.tsx` does in its `useEffect` so the
+  offline fixture behaves the same way as the live component once
+  React has mounted. The Puppeteer-core browser-check waits for the
+  custom property to be set before running the start/mid/end seek
+  invariants (see scripts/ops/t1c-marquee-browser-check.mjs).
 
   The full browser-check that runs against the live Vercel Preview
   URL is gated on the Vercel SSO cookie being available to the agent
@@ -16,9 +23,11 @@
   /api/public/homepage-settings). This fixture is the
   offline-equivalent: it ships the production CSS verbatim, mounts
   the production DOM shape, and runs the same Puppeteer-core checks
-  (single-text DOM, computed keyframe, monotonic leftward transform,
-  no leftover tail testid). See HANDOFF.md §E-14 + §DEV-02 for the
-  exact Vercel-access limitation and the resolution.
+  (single-text DOM, --marquee-shift published, computed keyframe,
+  forced start/mid/end boundingClientRect viewport-bound checks,
+  monotonic leftward transform after releasing the seek). See
+  HANDOFF.md §E-14 + §DEV-02 for the exact Vercel-access limitation
+  and the resolution.
 -->
 <html lang="vi">
   <head>
@@ -57,5 +66,62 @@
         </span>
       </div>
     </div>
+    <script>
+      // Mirror of the marquee effect in src/domains/job-board/public-content-controls/sticky-announcement.tsx (v1.2).
+      // Two-step publish: measure the natural (pre-transform) rect, set the
+      // px values on the viewport element, then arm the animation INLINE on
+      // the message element (the CSS keyframe is not inlined because it
+      // depends on CSS Modules hashing for the @keyframes rule name; we
+      // resolve the hashed keyframe name from the loaded stylesheet instead).
+      (function () {
+        var viewport = document.querySelector('[data-testid="sticky-announcement-marquee"]');
+        var message = viewport ? viewport.querySelector('span') : null;
+        if (!viewport || !message) return;
+        function resolveKeyframeName() {
+          for (var i = 0; i < document.styleSheets.length; i++) {
+            var sheet = document.styleSheets[i];
+            var rules;
+            try { rules = sheet.cssRules || []; } catch (_) { rules = []; }
+            for (var j = 0; j < rules.length; j++) {
+              var rule = rules[j];
+              if (rule && /hrpStickyAnnouncementMarquee/.test(rule.name || '')) {
+                return rule.name;
+              }
+            }
+          }
+          return 'hrpStickyAnnouncementMarquee';
+        }
+        function arm() {
+          var parentRect = viewport.getBoundingClientRect();
+          var naturalLeft = parentRect.left + message.offsetLeft;
+          var messageWidth = message.offsetWidth;
+          var viewportWidth = window.innerWidth;
+          viewport.style.setProperty('--marquee-shift-start', (viewportWidth - naturalLeft) + 'px');
+          viewport.style.setProperty('--marquee-shift-end', (naturalLeft + messageWidth) + 'px');
+          var keyframeName = resolveKeyframeName();
+          message.style.animation = keyframeName + ' 4s linear infinite';
+        }
+        function disarm() {
+          message.style.animation = 'none';
+        }
+        requestAnimationFrame(function () {
+          arm();
+        });
+        if (typeof ResizeObserver === 'function') {
+          new ResizeObserver(function () {
+            disarm();
+            requestAnimationFrame(function () {
+              arm();
+            });
+          }).observe(message);
+        }
+        window.addEventListener('resize', function () {
+          disarm();
+          requestAnimationFrame(function () {
+            arm();
+          });
+        });
+      })();
+    </script>
   </body>
 </html>

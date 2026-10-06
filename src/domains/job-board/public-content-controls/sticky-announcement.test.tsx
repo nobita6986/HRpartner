@@ -104,11 +104,14 @@ describe('StickyAnnouncement — server-side first render', () => {
 
   it('renders a single-text marquee (no doubled track, no clone) when animation=MARQUEE', () => {
     /*
-     * T1C CORRECTION 1/1: the marquee now renders exactly ONE copy of
-     * the message. The keyframe slides that single copy from
-     * `translateX(100%)` (fully outside the right edge) to
-     * `translateX(-100%)` (fully outside the left edge) — the visible
-     * cycle is the entire viewport sweep and nothing else.
+     * T1C CORRECTION 1/1 v1.2: the marquee now renders exactly ONE copy
+     * of the message. The keyframe starts at `translateX(0)` and ends at
+     * `translateX(calc(-1 * var(--marquee-shift)))`, where
+     * `--marquee-shift = viewport.width + message.width` (px) is published
+     * by a ResizeObserver in the TSX. The visible cycle sweeps the entire
+     * viewport (not just one message-width) on both desktop and mobile,
+     * and the message exits fully off the left edge before the next cycle
+     * begins.
      */
     const html = render({ dto: dto({ animation: 'MARQUEE' }) });
     const occurrences = (html.match(/Hỗ trợ tư vấn 24\/7/g) ?? []).length;
