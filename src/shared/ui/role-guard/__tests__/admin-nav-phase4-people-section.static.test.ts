@@ -1,31 +1,29 @@
 /**
- * admin-nav-phase4-people-section.static.test.ts — hrp-m2a-operational-ux-debt / F2+F3.
+ * admin-nav-phase4-people-section.static.test.ts — hrp-m2a-operational-ux-debt / F2+F3
+ * + v1.2 T0 T1C PRE-P2 HOTFIX (Hồ sơ ứng viên → Người lao động).
  *
- * Static guard for the F2/F3 fix that adds `Hồ sơ tiếp nhận` (formerly
- * `Hồ sơ NLD`) to `ADMIN_NAV_PHASE4` under `section: 'people'`, and the T0
- * T1B follow-up that:
- *  - RENAME `/admin/workers` label `Nhân sự` → `Người lao động` (the
- *    workforce roster is "người lao động" — people being managed — not
- *    "nhân sự" which is HR staff).
- *  - REMOVE the dedicated `/admin/labor-profiles/new` sidebar entry
- *    (the route remains reachable via the list-page CTA and direct URL;
- *    the sidebar slot is consolidated so the section has one fewer
- *    duplicate destination).
- *  - RENAME the people-group header from "Nhân sự" → "NGƯỜI LAO ĐỘNG".
+ * Static guard for the F2/F3 fix that adds the intake list to
+ * `ADMIN_NAV_PHASE4` under `section: 'people'`, the T0 T1B follow-up, and
+ * the v1.2 T0 T1C PRE-P2 HOTFIX (reorder + relabel + section header).
+ *
+ * The expanded v1.2 sweep (bounded terminations, banner body, fake-button
+ * removal, etc.) lives in `admin-nav-phase4-menu-labor-order.static.test.ts`.
+ * This file keeps the F2/F3 + T1B + T1C narrow guard focused on
+ * ADMIN_NAV_PHASE4 entry-level invariants.
  *
  * The test enforces:
  *  (a) The /admin/labor-profiles entry exists with exact href / label /
  *      roles / icon, and its roles byte-mirror
- *      `app/admin/labor-profiles/page.tsx:16` `ALLOWED_ROLES` — no widening
- *      and no shrinking.
- *  (b) The /admin/labor-profiles/new entry is NOT in the sidebar array
- *      (the dedicated intake menu is removed; the route itself is
- *      unchanged and the page is still reachable via the in-page CTA).
- *  (c) Both workforce entries live under `section: 'people'` so the
- *      renderer puts them under the "NGƯỜI LAO ĐỘNG" sidebar header.
+ *      `app/admin/labor-profiles/page.tsx:18` `ALLOWED_ROLES` — no widening.
+ *  (b) The /admin/labor-profiles/new entry is NOT in the sidebar array.
+ *  (c) Both workforce entries live under `section: 'people'`.
  *  (d) The /admin/workers entry label is exactly "Người lao động".
- *  (e) No accidental role drift to a forbidden role (HR_MANAGER / ADMIN /
- *      HR_STAFF only — no PM / SALE / DIRECTOR / ACCOUNTANT).
+ *  (e) The /admin/labor-profiles entry label is exactly "Hồ sơ ứng viên"
+ *      (v1.2 — was "Hồ sơ tiếp nhận" in T1B).
+ *  (f) The /admin/labor-profiles entry is positioned BEFORE /admin/workers
+ *      (v1.2 — was AFTER in T1B).
+ *  (g) No accidental role drift to a forbidden role (HR_MANAGER / ADMIN /
+ *      HR_STAFF only).
  *
  * Implementation note: `ADMIN_NAV_PHASE4` is a typed literal in source —
  * parsing it via regex keeps this guard a pure static test (no React, no DB).
@@ -63,7 +61,6 @@ function extractAdminNavEntries(source: string): NavEntrySpec[] {
     throw new Error('ADMIN_NAV_PHASE4 literal not found in role-guard-layout.tsx');
   }
   const body = arrayMatch[1]!;
-  // Match each object literal in the array (greedy per object, terminated by `},`).
   const entries: NavEntrySpec[] = [];
   const objectRx = /\{([^{}]*)\}/g;
   let match: RegExpExecArray | null;
@@ -91,31 +88,29 @@ function findEntry(predicate: (entry: NavEntrySpec) => boolean): NavEntrySpec | 
 }
 
 describe('hrp-m2a-operational-ux-debt / F2+F3 — sidebar people-section entries', () => {
-  // RQ-01 / AC-01 — the /admin/labor-profiles entry exists with the new
-  // operator-facing label "Hồ sơ tiếp nhận" (T0 T1B rename of the old
-  // "Hồ sơ NLD" label).
+  // v1.2 T0 T1C: the /admin/labor-profiles entry exists with the new
+  // operator-facing label "Hồ sơ ứng viên" (T0 T1C §2 — was "Hồ sơ
+  // tiếp nhận" in T1B).
   it('ADMIN_NAV_PHASE4 carries a /admin/labor-profiles entry under section="people"', () => {
     const entry = findEntry((e) => e.href === '/admin/labor-profiles');
     expect(entry, '/admin/labor-profiles entry missing').toBeDefined();
-    expect(entry!.label).toBe('Hồ sơ tiếp nhận');
+    expect(entry!.label).toBe('Hồ sơ ứng viên');
     expect(entry!.section).toBe('people');
     expect(entry!.icon).toBe('UserRoundCheck');
   });
 
-  // T0 T1B — HOTFIX UI NGƯỜI LAO ĐỘNG §1.3: the dedicated
-  // /admin/labor-profiles/new sidebar entry is removed. The route is still
-  // routable — only the sidebar slot is dropped.
+  // T0 T1B §1.3 + v1.2 T0 T1C: the dedicated /admin/labor-profiles/new
+  // sidebar entry is removed. The route is still routable — only the
+  // sidebar slot is dropped.
   it('ADMIN_NAV_PHASE4 does NOT carry a dedicated /admin/labor-profiles/new entry', () => {
     const entry = findEntry((e) => e.href === '/admin/labor-profiles/new');
     expect(entry, '/admin/labor-profiles/new should be removed from sidebar').toBeUndefined();
   });
 
-  // RQ-01 / RQ-09 / AC-01 — roles set-equal the ALLOWED_ROLES in the page
-  // (the existing sidebar roles array uses a slightly different order; the
-  // page gate's order is irrelevant to authorization — what matters is
-  // membership).
+  // Roles set-equal the ALLOWED_ROLES in the page (the existing sidebar
+  // roles array uses a slightly different order; the page gate's order
+  // is irrelevant to authorization — what matters is membership).
   it('roles set-equal app/admin/labor-profiles/page.tsx ALLOWED_ROLES', () => {
-    // Sanity check: ALLOWED_ROLES constant exists in the page source.
     expect(LABOR_PROFILES_SOURCE).toMatch(
       /ALLOWED_ROLES\s*=\s*new Set\(\[\s*['"]ADMIN['"]\s*,\s*['"]HR_MANAGER['"]\s*,\s*['"]HR_STAFF['"]\s*\]\)/,
     );
@@ -126,25 +121,23 @@ describe('hrp-m2a-operational-ux-debt / F2+F3 — sidebar people-section entries
     expect(listSorted).toEqual(expectedSorted);
   });
 
-  // RISK-04 / AC-01 — no forbidden role drift.
+  // No forbidden role drift.
   it.each(FORBIDDEN_DRIFT_ROLES)('does NOT include forbidden role "%s" on the /admin/labor-profiles entry', (role) => {
     const listEntry = findEntry((e) => e.href === '/admin/labor-profiles');
     expect(listEntry!.roles).not.toContain(role);
   });
 
-  // RQ-09 / AC-01 — the /admin/labor-profiles entry is non-disabled (the
-  // page exists and is reachable). The T1B fix does not gate it behind the
+  // /admin/labor-profiles entry is non-disabled (the page exists and is
+  // reachable). The T1B + v1.2 T0 T1C fixes do not gate it behind the
   // Đang phát triển block.
   it('/admin/labor-profiles entry is NOT disabled (the canonical page is reachable)', () => {
-    // Source regex does not capture `disabled`; verify by string scan of the
-    // exact object literal.
     const listSlice = ROLE_GUARD_SOURCE.match(/\{[^}]*href:\s*'\/admin\/labor-profiles'[^}]*\}/);
     expect(listSlice).not.toBeNull();
     expect(listSlice![0]).not.toMatch(/\bdisabled:\s*true\b/);
   });
 
-  // T0 T1B — HOTFIX UI NGƯỜI LAO ĐỘNG §1.1: the workforce roster entry is
-  // now "Người lao động" (people being managed), not "Nhân sự" (HR staff).
+  // Workforce roster entry: "Người lao động" (people being managed), not
+  // "Nhân sự" (HR staff).
   it('preserves the /admin/workers entry under section="people" with label "Người lao động"', () => {
     const workers = findEntry((e) => e.href === '/admin/workers');
     expect(workers, '/admin/workers entry missing').toBeDefined();
@@ -152,25 +145,28 @@ describe('hrp-m2a-operational-ux-debt / F2+F3 — sidebar people-section entries
     expect(workers!.section).toBe('people');
   });
 
-  // T0 T1B — HOTFIX UI NGƯỜI LAO ĐỘNG: visual order unchanged. The /admin/
-  // labor-profiles entry sits AFTER /admin/workers (workforce roster first,
-  // then candidate-side intake list).
-  it('/admin/labor-profiles is positioned AFTER /admin/workers in ADMIN_NAV_PHASE4', () => {
+  // v1.2 T0 T1C §1: visual order inverted — /admin/labor-profiles now
+  // sits BEFORE /admin/workers to reflect the operational flow
+  // (Ứng viên → Người lao động).
+  it('/admin/labor-profiles is positioned BEFORE /admin/workers in ADMIN_NAV_PHASE4 (T0 T1C §1)', () => {
     const workersIdx = entries.findIndex((e) => e.href === '/admin/workers');
     const listIdx = entries.findIndex((e) => e.href === '/admin/labor-profiles');
     expect(workersIdx).toBeGreaterThanOrEqual(0);
-    expect(listIdx).toBeGreaterThan(workersIdx);
+    expect(listIdx).toBeGreaterThanOrEqual(0);
+    expect(listIdx, 'profiles must be positioned BEFORE workers (T0 T1C §1)').toBeLessThan(workersIdx);
   });
 
-  // T0 T1B — HOTFIX UI NGƯỜI LAO ĐỘNG: anti-regression fence. None of the
-  // legacy labels is reintroduced anywhere in the sidebar source.
-  it('does not reintroduce the legacy "Nhân sự" / "Hồ sơ NLD" / "Tiếp nhận NLD" labels', () => {
+  // Anti-regression fence. None of the legacy labels is reintroduced
+  // anywhere in the sidebar source. The T1B "Hồ sơ tiếp nhận" sidebar
+  // label is also gone (replaced by "Hồ sơ ứng viên" per v1.2 T0 T1C §2).
+  it('does not reintroduce the legacy "Nhân sự" / "Hồ sơ NLD" / "Tiếp nhận NLD" / "Hồ sơ tiếp nhận" labels', () => {
     expect(ROLE_GUARD_SOURCE).not.toMatch(/label:\s*'Nhân sự'/);
     expect(ROLE_GUARD_SOURCE).not.toMatch(/label:\s*'Hồ sơ NLD'/);
     expect(ROLE_GUARD_SOURCE).not.toMatch(/label:\s*'Tiếp nhận NLD'/);
+    expect(ROLE_GUARD_SOURCE).not.toMatch(/label:\s*'Hồ sơ tiếp nhận'/);
   });
 
-  // RQ-01 / AC-09 — encoding of the file is LF only (no CRLF, no BOM).
+  // Encoding hygiene: LF only, no UTF-8 BOM.
   it('role-guard-layout.tsx is LF-only (no CRLF)', () => {
     expect(ROLE_GUARD_SOURCE).not.toMatch(/\r\n/);
     expect(ROLE_GUARD_SOURCE.charCodeAt(0)).not.toBe(0xfeff); // no UTF-8 BOM

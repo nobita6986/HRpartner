@@ -19,6 +19,11 @@
  *  10. v1.1: copy sweep — breadcrumb `Hồ sơ tiếp nhận` (KHÔNG `Hồ sơ người
  *      lao động`), button `Chuyển thành người lao động` (KHÔNG `Chuyển đổi
  *      thành nhân viên`).
+ *  11. v1.2 T0 T1C: list <h1> = `Hồ sơ ứng viên`; CTA = `+ Tiếp nhận hồ sơ`;
+ *      detail breadcrumb first item = `Hồ sơ ứng viên`; metadata.title =
+ *      `Chi tiết hồ sơ ứng viên - Quản trị`; banner body = `Hồ sơ này đã
+ *      được liên kết với người lao động.`; KHÔNG còn nút disabled
+ *      `Chuyển thành người lao động` + `title="Tính năng đang được phát triển"`.
  *
  * Pure static test (no React, no DB, no router). Tất cả fence sử dụng
  * regex over source code, với comment-strip helper để comment giải thích
@@ -101,11 +106,12 @@ describe('/admin/labor-profiles list page — T1B Pre-P2 table column drop (DEC-
 });
 
 describe('/admin/labor-profiles list page — T1B Pre-P2 terminology fence', () => {
-  it('keeps canonical page <h1> "Hồ sơ tiếp nhận người lao động"', () => {
-    expect(CODE.list).toMatch(/<h1[^>]*>\s*Hồ sơ tiếp nhận người lao động\s*<\/h1>/);
+  // v1.2 T0 T1C: page title is the operator-facing "Hồ sơ ứng viên".
+  it('keeps canonical page <h1> "Hồ sơ ứng viên"', () => {
+    expect(CODE.list).toMatch(/<h1[^>]*>\s*Hồ sơ ứng viên\s*<\/h1>/);
   });
-  it('keeps the CTA button "+ Tiếp nhận người lao động"', () => {
-    expect(CODE.list).toMatch(/\+\s*Tiếp nhận người lao động/);
+  it('keeps the CTA button "+ Tiếp nhận hồ sơ"', () => {
+    expect(CODE.list).toMatch(/\+\s*Tiếp nhận hồ sơ/);
   });
 });
 
@@ -118,6 +124,32 @@ describe('/admin/labor-profiles/[id] — T1B Pre-P2 read-only banner (DEC-P2-11)
 
   it('hides the "Sửa thông tin" button when profile is linked (read-only)', () => {
     expect(CODE.detail).not.toMatch(/<button[^>]*>\s*Sửa thông tin\s*<\/button>/);
+  });
+});
+
+describe('/admin/labor-profiles/[id] — v1.2 T0 T1C PRE-P2 HOTFIX (no fake button)', () => {
+  // v1.2 T0 T1C §3: the disabled fake button "Chuyển thành người lao động"
+  // (with title="Tính năng đang được phát triển") is REMOVED. The detail
+  // page now renders a static non-interactive note instead.
+  it('does NOT render the fake disabled "Chuyển thành người lao động" button', () => {
+    // The fake button was: <button disabled ... title="Tính năng đang được phát triển">Chuyển thành người lao động</button>
+    expect(CODE.detail).not.toMatch(/<button[^>]*disabled[^>]*>[\s\S]*?Chuyển thành người lao động[\s\S]*?<\/button>/);
+    expect(CODE.detail).not.toContain('Chuyển thành người lao động');
+    expect(CODE.detail).not.toContain('Tính năng đang được phát triển');
+  });
+
+  it('renders the static non-clickable worker-formation note', () => {
+    // T0 T1C §3 verbatim: "Người lao động được tạo hoặc liên kết khi hoàn
+    // tất quy trình tuyển dụng phù hợp." The note is a <p>, not a button.
+    expect(CODE.detail).toContain(
+      'Người lao động được tạo hoặc liên kết khi hoàn tất quy trình tuyển dụng phù hợp.',
+    );
+    expect(CODE.detail).toContain('data-testid="labor-profile-worker-formation-note"');
+  });
+
+  it('banner body uses "Hồ sơ này đã được liên kết với người lao động" (T0 T1C §2)', () => {
+    expect(CODE.detail).toContain('Hồ sơ này đã được liên kết với người lao động');
+    expect(CODE.detail).not.toContain('Hồ sơ tiếp nhận này đã được liên kết');
   });
 });
 
@@ -136,7 +168,7 @@ describe('/admin/labor-profiles/[id] — T1B Pre-P2 edit form mount (DEC-P2-12)'
 });
 
 describe('/admin/labor-profiles/[id] — v1.1 PR #110 correction 1/4 copy sweep', () => {
-  it('breadcrumb label là "Hồ sơ tiếp nhận" (KHÔNG "Hồ sơ người lao động")', () => {
+  it('breadcrumb first item label là "Hồ sơ ứng viên" (T0 T1C §2)', () => {
     // Find the Breadcrumb items array literal; verify the first entry label.
     const breadcrumbMatch = CODE.detail.match(/Breadcrumb[\s\S]*?items=\{\s*\[([\s\S]*?)\]/);
     expect(breadcrumbMatch, 'Breadcrumb items not found').toBeTruthy();
@@ -144,17 +176,22 @@ describe('/admin/labor-profiles/[id] — v1.1 PR #110 correction 1/4 copy sweep'
     // First entry label.
     const firstLabelMatch = itemsBlock.match(/label:\s*['"]([^'"]+)['"]/);
     expect(firstLabelMatch, 'first label chip not found').toBeTruthy();
-    expect(firstLabelMatch![1]).toBe('Hồ sơ tiếp nhận');
+    expect(firstLabelMatch![1]).toBe('Hồ sơ ứng viên');
     // Defensive: legacy "Hồ sơ người lao động" KHÔNG còn trong detail page.
     expect(CODE.detail).not.toContain("label: 'Hồ sơ người lao động'");
+    // Defensive: legacy "Hồ sơ tiếp nhận" KHÔNG còn trong detail page.
+    expect(CODE.detail).not.toContain("label: 'Hồ sơ tiếp nhận'");
   });
 
-  it('page metadata title là "Chi tiết hồ sơ tiếp nhận"', () => {
-    expect(CODE.detail).toMatch(/metadata[\s\S]*?title:\s*['"]Chi tiết hồ sơ tiếp nhận/);
+  it('page metadata title là "Chi tiết hồ sơ ứng viên - Quản trị" (T0 T1C §2)', () => {
+    expect(CODE.detail).toMatch(/metadata[\s\S]*?title:\s*['"]Chi tiết hồ sơ ứng viên/);
+    expect(CODE.detail).not.toMatch(/metadata[\s\S]*?title:\s*['"]Chi tiết hồ sơ tiếp nhận/);
   });
 
-  it('convert-button copy là "Chuyển thành người lao động" (KHÔNG legacy "Chuyển đổi thành nhân viên")', () => {
-    expect(CODE.detail).toContain('Chuyển thành người lao động');
+  it('convert-button copy "Chuyển thành người lao động" đã bị xoá (T0 T1C §3)', () => {
+    // The fake disabled button is REMOVED entirely; the operator-facing
+    // flow is taken over by the static note + P1-F task (DEC-01..06).
+    expect(CODE.detail).not.toContain('Chuyển thành người lao động');
     expect(CODE.detail).not.toContain('Chuyển đổi thành nhân viên');
   });
 });

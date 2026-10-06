@@ -170,8 +170,17 @@ export const ADMIN_NAV_PHASE4: NavItem[] = [
   //   confuses operators. The route /admin/labor-profiles/new remains
   //   routable (no route change, no role-matrix change) — only the sidebar
   //   item is removed.
+  // T0 T1C — PRE-P2 HOTFIX: HỒ SƠ ỨNG VIÊN → NGƯỜI LAO ĐỘNG
+  // - REORDER: `Hồ sơ ứng viên` (intake) đặt TRƯỚC `Người lao động` (roster)
+  //   để phản ánh đúng trình tự nghiệp vụ: ứng viên tiếp nhận trước, sau khi
+  //   hoàn tất tuyển dụng (HRP_MANAGED outcome) thì mới liên kết / tạo Worker.
+  // - RENAME: LaborProfile list label 'Hồ sơ tiếp nhận' → 'Hồ sơ ứng viên'
+  //   (the full page title remains on the page <h1> and metadata).
+  // - KHÔNG đổi route, role matrix, icon, hoặc active-nav contract (PR #112).
+  // - Worker creation thuộc task nghiệp vụ P1-F completion/correction;
+  //   KHÔNG triển khai trong vòng này.
+  { href: '/admin/labor-profiles', label: 'Hồ sơ ứng viên', icon: UserRoundCheck, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER'], section: 'people' },
   { href: '/admin/workers', label: 'Người lao động', icon: Users, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER'], section: 'people' },
-  { href: '/admin/labor-profiles', label: 'Hồ sơ tiếp nhận', icon: UserRoundCheck, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER'], section: 'people' },
 
   // Đối tác (partners) — T1C: nhóm mới. Khách hàng / Nhà cung cấp là dữ
   // liệu đối tác bên ngoài, không thuộc workforce nội bộ.
@@ -361,10 +370,12 @@ export function RoleGuardLayout({
             
             {portal === 'admin' && peopleNav.length > 0 && (
               <>
-                {/* T0 T1B — HOTFIX UI NGƯỜI LAO ĐỘNG: group header is the
-                    section title in UPPERCASE tracking; matches the directive
-                    naming "NGƯỜI LAO ĐỘNG". Visual style unchanged. */}
-                <div className="mt-4 mb-1 px-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">NGƯỜI LAO ĐỘNG</div>
+                {/* T0 T1C — PRE-P2 HOTFIX: section header đổi từ
+                    "NGƯỜI LAO ĐỘNG" → "QUẢN LÝ LAO ĐỘNG" để phản ánh đúng
+                    phạm vi nhóm (cả intake lẫn roster), đồng thời khớp với
+                    ngữ nghĩa "quản trị lao động" thay vì "lao động đang
+                    quản lý". Visual style (UPPERCASE tracking) giữ nguyên. */}
+                <div className="mt-4 mb-1 px-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">QUẢN LÝ LAO ĐỘNG</div>
                 {peopleNav.map(item => renderNavItem(item))}
               </>
             )}

@@ -21,7 +21,7 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export const metadata = {
-  title: 'Chi tiết hồ sơ tiếp nhận - Quản trị',
+  title: 'Chi tiết hồ sơ ứng viên - Quản trị',
 };
 
 const ALLOWED_ROLES = new Set(['ADMIN', 'HR_MANAGER', 'HR_STAFF']);
@@ -68,7 +68,7 @@ export default async function LaborProfileDetailPage({ params }: { params: Promi
     <div className="p-10 max-w-7xl mx-auto space-y-8">
       <Breadcrumb
         items={[
-          { label: 'Hồ sơ tiếp nhận', href: '/admin/labor-profiles' },
+          { label: 'Hồ sơ ứng viên', href: '/admin/labor-profiles' },
           { label: data.fullName || data.phone || 'Chi tiết hồ sơ' },
         ]}
       />
@@ -89,7 +89,7 @@ export default async function LaborProfileDetailPage({ params }: { params: Promi
           <div>
             <p className="font-semibold text-sm">Đã chuyển thành người lao động</p>
             <p className="text-xs mt-0.5">
-              Hồ sơ tiếp nhận này đã được liên kết với một người lao động. Mọi thao tác chỉnh sửa phải thực hiện trên hồ sơ người lao động.
+              Hồ sơ này đã được liên kết với người lao động. Mọi thao tác chỉnh sửa phải thực hiện trên hồ sơ người lao động.
             </p>
           </div>
           <Link
@@ -114,16 +114,28 @@ export default async function LaborProfileDetailPage({ params }: { params: Promi
               title={
                 !canEdit
                   ? 'HR_STAFF chỉ có quyền xem; vui lòng liên hệ ADMIN/HR_MANAGER để chỉnh sửa.'
-                  : 'Cần quyền CAN_VIEW_WORKER_SENSITIVE để sửa Hồ sơ tiếp nhận.'
+                  : 'Cần quyền CAN_VIEW_WORKER_SENSITIVE để sửa Hồ sơ ứng viên.'
               }
             >
               Sửa thông tin (chỉ ADMIN/HR_MANAGER có quyền nhạy cảm)
             </span>
           ) : null}
+          {/* T0 T1C — PRE-P2 HOTFIX: Xoá nút disabled "Chuyển thành người lao
+              động" + title "Tính năng đang được phát triển" (đã xoá — xem git
+              diff trong PR). Thay bằng ghi chú static không click để tránh
+              UX giả (operator nghĩ hồ sơ thiếu điều kiện):
+                "Người lao động được tạo hoặc liên kết khi hoàn tất quy trình
+                 tuyển dụng phù hợp."
+              Worker creation thuộc task nghiệp vụ P1-F completion/correction
+              (mở task riêng). KHÔNG triển khai trong vòng này. */}
           {!isLinked && (
-            <button disabled className="bg-gray-100 text-gray-400 px-4 py-2 rounded-lg font-medium cursor-not-allowed opacity-70 border border-gray-200" title="Tính năng đang được phát triển">
-              Chuyển thành người lao động
-            </button>
+            <p
+              className="text-xs text-gray-500 italic max-w-md text-right"
+              data-testid="labor-profile-worker-formation-note"
+              role="note"
+            >
+              Người lao động được tạo hoặc liên kết khi hoàn tất quy trình tuyển dụng phù hợp.
+            </p>
           )}
         </div>
       </div>
