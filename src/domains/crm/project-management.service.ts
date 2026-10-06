@@ -161,14 +161,16 @@ async function acquireProjectAdvisoryLock(
 }
 
 /** Tập relation mà Project bị chặn xoá. Mỗi relation đại diện cho 1 phụ thuộc
- * nghiệp vụ KHÔNG ĐƯỢC cascade theo RQ-05. `Placement.projectId` có onDelete
- * SetNull — KHÔNG block deletion, NHƯNG vẫn quét để audit (sẽ tự nullify sau
- * khi project xoá). */
+ * nghiệp vụ KHÔNG ĐƯỢC cascade theo RQ-05. Service-level guard: kể cả khi
+ * schema có `onDelete: SetNull` (ví dụ `Placement.project`), ta vẫn chặn xoá
+ * để KHÔNG bảo giờ tự ý rỗng liên kết — operator phải đóng dự án (COMPLETED)
+ * hoặc huỷ (CANCELLED) thay thế để giữ nguyên lịch sử placement. */
 const DELETION_BLOCKING_RELATIONS = [
   'staffingOrders',
   'submissions',
   'assignments',
   'sites',
+  'placements',
 ] as const;
 
 export interface ProjectDependencyReport {
@@ -176,6 +178,8 @@ export interface ProjectDependencyReport {
   candidateSubmissionCount: number;
   projectAssignmentCount: number;
   siteCount: number;
+  /** Blocking từ `Placement.projectId` (giữ liên kết, không SetNull ngầm). */
+  placementsCount: number;
 }
 
 /**
@@ -184,14 +188,15 @@ export interface ProjectDependencyReport {
  *
  * Returns counts per relation. Mọi count > 0 ⇒ PROJECT_NOT_DELETABLE.
  *
- * `Placement.projectId` SetNull ⇒ KHÔNG nằm trong blocking set; tuy nhiên ta
- * vẫn scan (`placementsCount`) để cung cấp audit info cho operator-facing
- * message khi cần.
+ * Lưu ý: `Placement.project` có `onDelete: SetNull` ở schema, NHƯNG service
+ * vẫn block deletion khi `placementsCount > 0` (chính sách "giữ nguyên liên
+ * kết placement" — không tự ý rỗng FK ở service-level trước khi operator
+ * đồng ý đóng dự án).
  */
 export async function scanProjectDependencies(
   tx: Prisma.TransactionClient,
   projectId: string,
-): Promise<ProjectDependencyReport & { placementsCount: number }> {
+): Promise<ProjectDependencyReport> {
   const [staffingOrderCount, candidateSubmissionCount, projectAssignmentCount, siteCount, placementsCount] =
     await Promise.all([
       tx.staffingOrder.count({ where: { projectId } }),
@@ -209,12 +214,15 @@ export async function scanProjectDependencies(
   };
 }
 
-/** Tên phụ thuộc đã phát sinh (tiếng Việt) — operator-facing guidance. */
+/** Tên phụ thuộc đã phát sinh (tiếng Việt) — operator-facing guidance.
+ * VI label "Bố trí việc làm" (placement) là canonical theo
+ * `src/shared/i18n/glossary.ts` (placement). */
 const DEPENDENCY_LABEL_VI: Readonly<Record<keyof ProjectDependencyReport, string>> = {
   staffingOrderCount: 'nhu cầu tuyển dụng',
   candidateSubmissionCount: 'đơn ứng tuyển',
   projectAssignmentCount: 'phân công người lao động',
   siteCount: 'địa điểm công trường',
+  placementsCount: 'bố trí việc làm',
 };
 
 export function describeBlockingDependencies(
@@ -284,8 +292,11 @@ export async function deleteProject(
     );
   }
 
-  // Phase 3: thực thi xoá. `Placement.projectId` SetNull tự nullify sau;
-  // không cần set-null ở service (DB tự lo).
+  // Phase 3: thực thi xoá. Toàn bộ 5 relation blocking (StaffingOrder,
+  // CandidateSubmission, ProjectAssignment, Site, Placement) đã được verify
+  // = 0 ở Phase 2; KHÔNG cần ép SetNull từng nơi vì đã không có relation.
+  // `Placement.project` schema `onDelete: SetNull` chỉ là fallback defense
+  // — service chặn trước nên không bao giờ chạm tới cascade.
   await tx.project.delete({ where: { id: projectId } });
 
   return { id: existing.id, deleted: true };

@@ -121,6 +121,7 @@ describe('project-management.service — describeBlockingDependencies', () => {
       candidateSubmissionCount: 0,
       projectAssignmentCount: 0,
       siteCount: 0,
+      placementsCount: 0,
     })).toEqual([]);
   });
 
@@ -130,6 +131,7 @@ describe('project-management.service — describeBlockingDependencies', () => {
       candidateSubmissionCount: 5,
       projectAssignmentCount: 1,
       siteCount: 3,
+      placementsCount: 0,
     });
     expect(facts).toContain('2 nhu cầu tuyển dụng');
     expect(facts).toContain('5 đơn ứng tuyển');
@@ -137,10 +139,39 @@ describe('project-management.service — describeBlockingDependencies', () => {
     expect(facts).toContain('3 địa điểm công trường');
     expect(facts).toHaveLength(4);
   });
+
+  it('placementsCount > 0 ⇒ "bố trí việc làm" xuất hiện (canonical VI theo glossary)', () => {
+    // Correction #1: placement là blocking thật (giữ nguyên liên kết),
+    // KHÔNG còn là "audit only". Đảm bảo VI label khớp glossary canonical.
+    const facts = describeBlockingDependencies({
+      staffingOrderCount: 0,
+      candidateSubmissionCount: 0,
+      projectAssignmentCount: 0,
+      siteCount: 0,
+      placementsCount: 4,
+    });
+    expect(facts).toContain('4 bố trí việc làm');
+    expect(facts).toHaveLength(1);
+  });
+
+  it('mixed (nhiều relation > 0) — placement label đứng cùng các blocking khác', () => {
+    const facts = describeBlockingDependencies({
+      staffingOrderCount: 1,
+      candidateSubmissionCount: 2,
+      projectAssignmentCount: 0,
+      siteCount: 0,
+      placementsCount: 3,
+    });
+    expect(facts).toEqual([
+      '1 nhu cầu tuyển dụng',
+      '2 đơn ứng tuyển',
+      '3 bố trí việc làm',
+    ]);
+  });
 });
 
 describe('project-management.service — scanProjectDependencies', () => {
-  it('trả về counts đầy đủ từ 4 relation blocking + placements (audit only)', async () => {
+  it('trả về counts đầy đủ từ 5 relation blocking', async () => {
     const tx = makeTx({
       counts: {
         staffingOrders: 1,
@@ -296,6 +327,116 @@ describe('project-management.service — deleteProject', () => {
     await expect(deleteProject(tx, adminCtx(), 'p1')).rejects.toMatchObject({
       code: 'PROJECT_NOT_DELETABLE',
     });
+  });
+
+  // Correction #1 (T0 directive, budget 1): placement phải block deletion
+  // để giữ nguyên liên kết — KHÔNG cho phép SetNull ngầm qua DB cascade.
+  it('CORR1: placementsCount > 0 ⇒ PROJECT_NOT_DELETABLE + VI "bố trí việc làm"', async () => {
+    const tx = makeTx({
+      projectRow: { id: 'p1', code: 'PRJ-1', status: 'ACTIVE' },
+      counts: { placements: 3 },
+    });
+    let caught: ProjectManagementServiceError | null = null;
+    try {
+      await deleteProject(tx, adminCtx(), 'p1');
+    } catch (e) {
+      caught = e as ProjectManagementServiceError;
+    }
+    expect(caught).not.toBeNull();
+    expect(caught!.code).toBe('PROJECT_NOT_DELETABLE');
+    expect(caught!.message).toMatch(/3 bố trí việc làm/);
+    expect(caught!.message).toMatch(/Hoàn thành dự án|Huỷ dự án/);
+    // KHÔNG gọi project.delete; KHÔNG SetNull ở placement.
+    expect(tx.project.delete).not.toHaveBeenCalled();
+    // Vẫn scan placements (audit trail đầy đủ + block dựa trên count).
+    expect(tx.placement.count).toHaveBeenCalledWith({ where: { projectId: 'p1' } });
+  });
+
+  it('CORR1: placementsCount > 0 + các relation khác = 0 ⇒ vẫn PROJECT_NOT_DELETABLE', async () => {
+    // Đảm bảo placement MỘT MÌNH đã block (không cần relation khác đi kèm).
+    const tx = makeTx({
+      projectRow: { id: 'p1', code: 'PRJ-1', status: 'ACTIVE' },
+      counts: {
+        staffingOrders: 0,
+        candidateSubmissions: 0,
+        projectAssignments: 0,
+        sites: 0,
+        placements: 1,
+      },
+    });
+    await expect(deleteProject(tx, adminCtx(), 'p1')).rejects.toMatchObject({
+      code: 'PROJECT_NOT_DELETABLE',
+    });
+    expect(tx.project.delete).not.toHaveBeenCalled();
+  });
+
+  it('CORR1: orphan (placements = 0 + 4 relation kia = 0) ⇒ vẫn delete được', async () => {
+    // Regression: khi placementsCount = 0, KHÔNG cản trở orphan delete path.
+    const tx = makeTx({
+      projectRow: { id: 'p1', code: 'PRJ-1', status: 'DRAFT' },
+      counts: {
+        staffingOrders: 0,
+        candidateSubmissions: 0,
+        projectAssignments: 0,
+        sites: 0,
+        placements: 0,
+      },
+    });
+    const result = await deleteProject(tx, adminCtx(), 'p1');
+    expect(result).toEqual({ id: 'p1', deleted: true });
+    expect(tx.project.delete).toHaveBeenCalledWith({ where: { id: 'p1' } });
+  });
+
+  it('CORR1: RACE — placementsCount 0 ở snapshot nhưng > 0 sau re-read ⇒ PROJECT_NOT_DELETABLE', async () => {
+    // Phase 1: lock → findUnique(project) → re-read counts (sau lock) →
+    // placementsCount bỗng dưng > 0 do concurrent inserter đã COMMIT ngay
+    // trước khi ta acquire lock ⇒ typed 409.
+    const tx = makeTx({
+      projectRow: { id: 'p1', code: 'PRJ-1', status: 'DRAFT' },
+      counts: {
+        staffingOrders: 0,
+        candidateSubmissions: 0,
+        projectAssignments: 0,
+        sites: 0,
+        placements: 0,
+      },
+    });
+    tx.placement.count.mockResolvedValueOnce(2);
+    await expect(deleteProject(tx, adminCtx(), 'p1')).rejects.toMatchObject({
+      code: 'PROJECT_NOT_DELETABLE',
+    });
+    expect(tx.project.delete).not.toHaveBeenCalled();
+  });
+
+  it('CORR1: placement count nằm DƯỚI advisory lock (sau findUnique)', async () => {
+    // lockSequence đảm bảo placement count được gọi SAU findUnique (dưới lock)
+    // — chống race-condition. Nếu thứ tự sai, scan có thể bị race với
+    // concurrent inserter đã bypass lock.
+    const order: string[] = [];
+    const tx = makeTx({
+      projectRow: { id: 'p1', code: 'PRJ-1', status: 'DRAFT' },
+      counts: {
+        staffingOrders: 0,
+        candidateSubmissions: 0,
+        projectAssignments: 0,
+        sites: 0,
+        placements: 0,
+      },
+    });
+    tx.$executeRawUnsafe.mockImplementation(() => {
+      order.push('lock');
+      return Promise.resolve(1);
+    });
+    tx.project.findUnique.mockImplementation(() => {
+      order.push('findUnique');
+      return Promise.resolve({ id: 'p1', code: 'PRJ-1', status: 'DRAFT' });
+    });
+    tx.placement.count.mockImplementation(() => {
+      order.push('placement.count');
+      return Promise.resolve(0);
+    });
+    await deleteProject(tx, adminCtx(), 'p1');
+    expect(order).toEqual(['lock', 'findUnique', 'placement.count']);
   });
 
   it('project không tồn tại ⇒ NOT_FOUND', async () => {
