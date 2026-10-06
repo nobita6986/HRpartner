@@ -249,7 +249,7 @@ async function introspectWorkerPolicies(
     permissive: boolean;
     cmd: string | null;
   }>>(
-    `SELECT p.polname, p.permissive, p.cmd
+    `SELECT p.polname, p.polpermissive AS permissive, p.polcmd AS cmd
        FROM pg_policy p
        JOIN pg_class c ON c.oid = p.polrelid
        JOIN pg_namespace n ON n.oid = c.relnamespace

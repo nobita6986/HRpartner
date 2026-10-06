@@ -164,8 +164,8 @@ BEGIN
    WHERE n.nspname = 'public'
      AND c.relname = 'workers'
      AND p.polname = 'hrp_workers_delete_admin'
-     AND p.permissive = false
-     AND p.cmd = 'd';
+     AND p.polpermissive = false
+     AND p.polcmd = 'd';
   IF v_new_count <> 1 THEN
     RAISE EXCEPTION 't1b-pre-p2-worker-delete-rls assertion failed: hrp_workers_delete_admin must be exactly one RESTRICTIVE DELETE policy on public.workers (count=%). Migration rolled back.', v_new_count;
   END IF;
