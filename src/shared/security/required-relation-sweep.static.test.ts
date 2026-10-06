@@ -89,6 +89,15 @@ const EXPECTED_HITS = [
   'src/domains/applications/conversion.service.ts:130 laborProfile',
   'src/domains/crm/client-read.service.ts:80 staffingOrder',
   'src/domains/crm/project-read.service.ts:40 clientCompany',
+  // T1A PRE-P2 PROJECT MANAGEMENT HOTFIX (2026-10-06): `getProjectForManagement`
+  // thêm `clientCompany` select (mirror pattern của `getProjectDetail`) để
+  // render tên khách hàng trên header trang quản trị. Line shift từ
+  // original `40` (đã có ở getProjectDetail) sang `152` (vị trí mới trong
+  // getProjectForManagement, sau khi bổ sung `isPublic` select field). Quan
+  // hệ BẮT BUỘC trong schema `Project` — sweep đếm là đúng, an toàn vì RLS
+  // `hrp_client_company_visible_for` đã lọc theo role khi đi qua
+  // `withDbContext` (ADMIN/HR_MANAGER/HR_STAFF/PM đều thoả).
+  'src/domains/crm/project-read.service.ts:152 clientCompany',
   // P1-A0.5 STEP-10 (hrp-p1-a0-5-job-opening-readiness): additive DTO fields
   // (`serviceModel`, `placementCount`, order status/deadline, slot validTo/capacity).
   // Line numbers shifted 41 → 86 and 46 → 94 because the new fields were added
@@ -501,14 +510,15 @@ describe('quan hệ BẮT BUỘC trên bảng bị RLS che: tập vị trí sele
     // `hashtext($1::text)` cũ). Body dài hơn ⇒ line shift 6 entries
     // order.service.ts: 192/218/331/336/428/459 → 207/233/346/351/443/474.
     // Tổng entries KHÔNG đổi (40); chỉ line literals shift.
-    // T1B — PRE-P2 HOTFIX worker management (2026-10-06): worker.service.ts
-    // `getWorkerDetail` adds 3 new danger hits (laborProfile@266, project@275,
-    // owner@283) to project the "Phân công dự án hiện hành" + "Quản lý /
-    // phụ trách" sections of the detail surface. RLS chain already covers
-    // (LaborProfile via `hrp_labor_profile_visible_for`; ProjectAssignment
-    // /User are not RLS-gated but the worker scope filter narrows the row
-    // before the select). Net: 40 → 43 src hits.
-    expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(43);
+    // T1A PRE-P2 PROJECT MANAGEMENT HOTFIX (2026-10-06): `getProjectForManagement`
+    // thêm 1 entry mới (`project-read.service.ts:152 clientCompany`). Tổng src = 41.
+    // T1B PRE-P2 WORKER MANAGEMENT HOTFIX (2026-10-06, forward-merge): `getWorkerDetail`
+    // thêm 3 entry mới (`worker.service.ts:266 laborProfile`, `:275 project`,
+    // `:283 owner`) để project "Phân công dự án hiện hành" + "Quản lý / phụ trách"
+    // sections. LaborProfile qua RLS `hrp_labor_profile_visible_for`; ProjectAssignment
+    // /User không RLS-gated nhưng call site đã enforce worker scope (`assignedToId` /
+    // project.PM / role) trước khi tới select. PII mask qua `projectWorker`. Tổng src = 44.
+    expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(44);
   });
 });
 
