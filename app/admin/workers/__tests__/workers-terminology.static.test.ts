@@ -28,10 +28,12 @@ describe('/admin/workers Wave 3 terminology', () => {
   });
 
   it('does not expose English table labels or raw status values', () => {
-    expect(SOURCE).toContain("'Mã người dùng'");
-    expect(SOURCE).toContain("'Thao tác'");
-    expect(SOURCE).not.toMatch(/>\s*User ID\s*</);
-    expect(SOURCE).not.toMatch(/>\s*\{w\.employmentStatus\}\s*</);
+    // T1B: column header shortened từ "Mã người dùng" → "Mã" cho gọn
+    // (đã có fullName làm nhãn rõ ràng).
+    expect(CODE).toContain("'Mã'");
+    expect(CODE).toContain("'Thao tác'");
+    expect(CODE).not.toMatch(/>\s*User ID\s*</);
+    expect(CODE).not.toMatch(/>\s*\{w\.employmentStatus\}\s*</);
   });
 });
 
@@ -71,21 +73,25 @@ describe('/admin/workers — T0 T1B HOTFIX UI NGƯỜI LAO ĐỘNG terminology',
   });
 
   it('uses canonical "Người lao động" throughout the workforce surface', () => {
-    // Positive check: the canonical term is present and used consistently.
-    // The visible text uses lowercase "người lao động" (sentence-cased
-    // inside JSX text nodes like "Danh sách người lao động" and
-    // "Thêm người lao động mới"). The capitalised form "Người lao động"
-    // only appears in the new explanatory comment block, which is
-    // stripped by the test harness — so the visible-text assertion uses
-    // the lowercase form.
+    // T1B: CTA đổi từ "Thêm người lao động" (POST thẳng) sang
+    // "Tiếp nhận người lao động" (link sang /admin/labor-profiles/new).
+    // Row click mở detail; không còn modal edit/create inline.
     expect(CODE).toContain('người lao động');
-    // Modal titles use "Thêm người lao động mới" / "Sửa người lao động".
-    expect(CODE).toContain('Thêm người lao động mới');
-    expect(CODE).toContain('Sửa người lao động');
-    // Footer count uses "Tổng: {total} người lao động".
+    // CTA wording phải là "Tiếp nhận người lao động".
+    expect(CODE).toContain('Tiếp nhận người lao động');
+    // Footer count.
     expect(CODE).toMatch(/Tổng:\s*\{total\}\s*người lao động/);
-    // Page <h1> uses "Danh sách người lao động".
+    // Page <h1>.
     expect(CODE).toContain('Danh sách người lao động');
+  });
+
+  it('does NOT POST /api/workers from the list surface (T1B invariant)', () => {
+    // T1B invariant: Người chưa chuyển đổi vẫn là Hồ sơ tiếp nhận, không
+    // phải Worker. CTA không được POST trực tiếp Worker. CTA phải là
+    // <Link> sang /admin/labor-profiles/new.
+    expect(CODE).toContain("href=\"/admin/labor-profiles/new\"");
+    expect(CODE).not.toMatch(/fetch\(\s*['"`]\/api\/workers['"`]/);
+    expect(CODE).not.toMatch(/method:\s*['"]POST['"]/);
   });
 });
 
