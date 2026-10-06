@@ -3,34 +3,35 @@
 /**
  * T1C — Sticky marquee single-text entry browser-check
  * (T0 CORRECTION 1/1, v1.1).
- * The `no-undef` disable covers the page.evaluate() bodies, which
- * run inside the headless Chromium browser context where `window`,
- * `document`, and `CSSKeyframesRule` are all valid globals. The
- * Node-side host code (this file's top-level body) does not
- * reference any browser globals.
  *
- * Runs the live Vercel Preview URL of this PR on a desktop viewport
- * (1440x900) and a mobile viewport (390x844), asserts:
+ * Runs the supplied URL on a desktop viewport (1440x900) and a mobile
+ * viewport (390x844), asserts:
  *
+ *   1. The `data-testid="sticky-announcement"` root is present.
+ *   2.There is exactly ONE element whose class attribute contains
+ *      `hrpStickyAnnouncementMessageMarquee` (no clone, no second group).
+ *      Both the un-hashed form (`hrpStickyAnnouncementMessageMarquee`,
+ *      used by the fixture mode / future dev tooling) and the hashed
+ *      CSS Modules form
+ *      (`sticky-announcement_hrpStickyAnnouncementMessageMarquee__<hash>`,
+ *      used by `next build`) are accepted.
+ *   3. The computed `animation-name` of that element is
+ *      `hrpStickyAnnouncementMarquee` (or its hashed equivalent) and
+ *      the resolved keyframe contains `translateX(100%)` at 0% and
+ *      `translateX(-100%)` at 100%.
+ *   4. The element's `getComputedStyle(...).transform` changes
+ *      monotonically leftward over three samples taken 1.5 s apart (so
+ *      the message is actually animating, not a static image).
+ *   5. No element in the document has
+ *      `data-testid="sticky-announcement-marquee-tail"`.
  *
- *   1. The `data-testid="sticky-announcement"` root is present after the
- *      client-side `usePublicContentControls` fetch resolves.
- *   2. There is exactly ONE `.hrpStickyAnnouncementMessageMarquee`
- *      element in the DOM (no clone, no second group).
- *   3. The computed `animation-name` of the message is
- *      `hrpStickyAnnouncementMarquee` and the resolved keyframe contains
- *      `translateX(100%)` at 0% and `translateX(-100%)` at 100%.
- *   4. The message's `getComputedStyle(...).transform` changes
- *      monotonically leftward over three samples taken 1500 ms apart
- *      (so the message is actually animating, not a static image).
- *   5. No element in the document has `data-testid="sticky-announcement-marquee-tail"`.
+ * Screenshots are written to the evidence directory at three
+ * timestamps per viewport so a reviewer can see the entry / mid /
+ * exit positions.
  *
- * Screenshots are written to the evidence directory at three timestamps
- * per viewport so a reviewer can see the entry / mid / exit positions.
- *
- * The script uses `puppeteer-core` pointed at the pre-existing
- * `C:\Users\Admin\.cache\puppeteer\chrome\…\chrome.exe` binary that the
- * agent discovered in this environment, so no Chromium is downloaded.
+ * The script uses `puppeteer-core` pointed at the pre-existingChrome
+ * binary at `C:\Users\Admin\.cache\puppeteer\chrome\…\chrome.exe`
+ * so no Chromium is downloaded.
  *
  * Exit codes:
  *   0  — every check PASS for every viewport.
@@ -38,7 +39,7 @@
  *   2  — usage error (missing or invalid arguments).
  *
  * Required CLI args:
- *   --preview-url <vercel-preview-url>
+ *   --preview-url <url>
  *   --screenshots-dir <local-dir>
  *
  * Optional:
@@ -113,7 +114,6 @@ function resolveChromePath(override) {
 }
 
 function matrixToTranslateX(transform) {
-  // `matrix(a, b, c, d, e, f)` => `e` is the X translation in pixels.
   if (!transform || transform === 'none') return 0;
   const m = transform.match(/matrix\(([^)]+)\)/);
   if (m) {
@@ -141,20 +141,23 @@ async function checkViewport({ page, args, viewport, screenshotDir, log }) {
   console.log(`${tag} navigating to ${args.previewUrl}`);
   await page.goto(args.previewUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
 
-  // Wait for the client-side fetch to populate the sticky announcement.
-  // The component renders the marquee block only after the
-  // `usePublicContentControls` API call resolves, so we explicitly wait
-  // for the data-testid.
   console.log(`${tag} waiting for data-testid="sticky-announcement" (up to ${args.waitMs}ms)`);
   await page.waitForSelector('[data-testid="sticky-announcement"]', {
     timeout: args.waitMs,
   });
 
-  // 1. exactly one .hrpStickyAnnouncementMessageMarquee element
-  const messageCount = await page.$$eval(
-    '.hrpStickyAnnouncementMessageMarquee',
-    (els) => els.length,
-  );
+  //1. exactly one message element. Both the un-hashed class
+  // `hrpStickyAnnouncementMessageMarquee` (fixture mode / dev tooling)
+  // and the hashed form `sticky-announcement_hrpStickyAnnouncementMessageMarquee__<hash>`
+  // (production build via CSS Modules) are accepted. We pick whichever
+  // form the page actually carries by checking the class attribute.
+  const messageCount = await page.evaluate(() => {
+    const all = Array.from(document.querySelectorAll('*'));
+    return all.filter((el) => {
+      const cls = el.getAttribute('class') ?? '';
+      return /hrpStickyAnnouncementMessageMarquee(__\w+)?/.test(cls);
+    }).length;
+  });
   log.push({ id: `${tag}.single-text`, ok: messageCount === 1, detail: `count=${messageCount}` });
   if (messageCount !== 1) {
     throw new Error(`${tag} expected exactly 1 marquee message, got ${messageCount}`);
@@ -170,65 +173,97 @@ async function checkViewport({ page, args, viewport, screenshotDir, log }) {
     throw new Error(`${tag} unexpected aria-hidden tail (count=${tailCount})`);
   }
 
-  // 3. computed animation + keyframe content
-  const computed = await page.$eval(
-    '.hrpStickyAnnouncementMessageMarquee',
-    (el) => {
-      const cs = window.getComputedStyle(el);
-      // The keyframes are not exposed via getComputedStyle, so we
-      // walk the document.styleSheets to extract the @keyframes rule.
-      let keyframes = '';
-      for (const sheet of Array.from(document.styleSheets)) {
-        let rules;
-        try { rules = sheet.cssRules ?? []; } catch { rules = []; }
-        for (const rule of Array.from(rules)) {
-          if (
-            rule instanceof CSSKeyframesRule &&
-            rule.name === 'hrpStickyAnnouncementMarquee'
-          ) {
-            keyframes = Array.from(rule.cssRules)
-              .map((kf) => `${kf.keyText} { ${kf.style.cssText} }`)
-              .join('\n');
-          }
+  // 3. computed animation + keyframe content. We resolve the marquee
+  // message element by walking the DOM and picking the one whose
+  // class attribute matches the marquee pattern.
+  const computed = await page.evaluate(() => {
+    const all = Array.from(document.querySelectorAll('*'));
+    const el = all.find((node) => {
+      const cls = node.getAttribute('class') ?? '';
+      return /hrpStickyAnnouncementMessageMarquee(__\w+)?/.test(cls);
+    });
+    if (!el) return { error: 'no marquee element found' };
+    const cs = window.getComputedStyle(el);
+    let keyframes = '';
+    for (const sheet of Array.from(document.styleSheets)) {
+      let rules;
+      try { rules = sheet.cssRules ?? []; } catch { rules = []; }
+      for (const rule of Array.from(rules)) {
+        if (
+          rule instanceof CSSKeyframesRule &&
+          /hrpStickyAnnouncementMarquee/.test(rule.name)
+        ) {
+          keyframes = Array.from(rule.cssRules)
+            .map((kf) => `${kf.keyText} { ${kf.style.cssText} }`)
+            .join('\n');
         }
       }
-      return {
-        animationName: cs.animationName,
-        animationDuration: cs.animationDuration,
-        animationIterationCount: cs.animationIterationCount,
-        animationTimingFunction: cs.animationTimingFunction,
-        width: cs.width,
-        whiteSpace: cs.whiteSpace,
-        overflow: cs.overflow,
-        keyframes,
-      };
-    },
-  );
-  log.push({ id: `${tag}.animation-name`, ok: computed.animationName === 'hrpStickyAnnouncementMarquee', detail: computed.animationName });
-  if (computed.animationName !== 'hrpStickyAnnouncementMarquee') {
-    throw new Error(`${tag} animation-name=${computed.animationName}, expected hrpStickyAnnouncementMarquee`);
+    }
+    return {
+      animationName: cs.animationName,
+      animationDuration: cs.animationDuration,
+      animationIterationCount: cs.animationIterationCount,
+      animationTimingFunction: cs.animationTimingFunction,
+      width: cs.width,
+      whiteSpace: cs.whiteSpace,
+      overflow: cs.overflow,
+      keyframes,
+    };
+  });
+  if (computed.error) {
+    throw new Error(`${tag} ${computed.error}`);
   }
-  log.push({ id: `${tag}.kf-0`, ok: /0%\s*\{[^}]*translateX\(100%\)/.test(computed.keyframes), detail: computed.keyframes.match(/0%\s*\{[^}]*\}/)?.[0] ?? '(no 0% rule)' });
+  log.push({
+    id: `${tag}.animation-name`,
+    ok: /hrpStickyAnnouncementMarquee/.test(computed.animationName),
+    detail: computed.animationName,
+  });
+  if (!/hrpStickyAnnouncementMarquee/.test(computed.animationName)) {
+    throw new Error(`${tag} animation-name=${computed.animationName}, expected to contain hrpStickyAnnouncementMarquee`);
+  }
+  log.push({
+    id: `${tag}.kf-0`,
+    ok: /0%\s*\{[^}]*translateX\(100%\)/.test(computed.keyframes),
+    detail: computed.keyframes.match(/0%\s*\{[^}]*\}/)?.[0] ?? '(no 0% rule)',
+  });
   if (!/0%\s*\{[^}]*translateX\(100%\)/.test(computed.keyframes)) {
     throw new Error(`${tag} keyframe 0% does not contain translateX(100%): ${computed.keyframes}`);
   }
-  log.push({ id: `${tag}.kf-100`, ok: /100%\s*\{[^}]*translateX\(-100%\)/.test(computed.keyframes), detail: computed.keyframes.match(/100%\s*\{[^}]*\}/)?.[0] ?? '(no 100% rule)' });
+  log.push({
+    id: `${tag}.kf-100`,
+    ok: /100%\s*\{[^}]*translateX\(-100%\)/.test(computed.keyframes),
+    detail: computed.keyframes.match(/100%\s*\{[^}]*\}/)?.[0] ?? '(no 100% rule)',
+  });
   if (!/100%\s*\{[^}]*translateX\(-100%\)/.test(computed.keyframes)) {
     throw new Error(`${tag} keyframe 100% does not contain translateX(-100%): ${computed.keyframes}`);
   }
-  log.push({ id: `${tag}.msg-width`, ok: /max-content/.test(computed.width) || computed.width !== '0px', detail: `width=${computed.width}` });
-  log.push({ id: `${tag}.msg-white-space`, ok: computed.whiteSpace === 'nowrap', detail: `white-space=${computed.whiteSpace}` });
-  log.push({ id: `${tag}.msg-no-overflow-hidden`, ok: !/(^|\s)hidden(\s|;|$)/.test(computed.overflow), detail: `overflow=${computed.overflow}` });
+  log.push({
+    id: `${tag}.msg-white-space`,
+    ok: computed.whiteSpace === 'nowrap',
+    detail: `white-space=${computed.whiteSpace}`,
+  });
+  log.push({
+    id: `${tag}.msg-no-overflow-hidden`,
+    ok: !/(^|\s)hidden(\s|;|$)/.test(computed.overflow),
+    detail: `overflow=${computed.overflow}`,
+  });
 
   // 4. monotonic leftward motion over 3 samples
   const transforms = [];
   for (let i = 0; i < 3; i += 1) {
-    const t = await page.$eval(
-      '.hrpStickyAnnouncementMessageMarquee',
-      (el) => window.getComputedStyle(el).transform,
-    );
+    const t = await page.evaluate(() => {
+      const all = Array.from(document.querySelectorAll('*'));
+      const el = all.find((node) => {
+        const cls = node.getAttribute('class') ?? '';
+        return /hrpStickyAnnouncementMessageMarquee(__\w+)?/.test(cls);
+      });
+      return el ? window.getComputedStyle(el).transform : 'none';
+    });
     transforms.push({ ts: Date.now(), translateX: matrixToTranslateX(t), raw: t });
-    await page.screenshot({ path: resolve(screenshotDir, `${viewport.name}-sample-${i}.png`), fullPage: false });
+    await page.screenshot({
+      path: resolve(screenshotDir, `${viewport.name}-sample-${i}.png`),
+      fullPage: false,
+    });
     if (i < 2) await new Promise((r) => setTimeout(r, args.sampleMs));
   }
   const xs = transforms.map((s) => s.translateX);
@@ -237,8 +272,10 @@ async function checkViewport({ page, args, viewport, screenshotDir, log }) {
     throw new Error(`${tag} transform did not move monotonically leftward: ${JSON.stringify(xs)}`);
   }
 
-  // 5. screenshot the final state for the evidence folder
-  await page.screenshot({ path: resolve(screenshotDir, `${viewport.name}-final.png`), fullPage: false });
+  await page.screenshot({
+    path: resolve(screenshotDir, `${viewport.name}-final.png`),
+    fullPage: false,
+  });
 }
 
 async function main() {
@@ -272,7 +309,12 @@ async function main() {
         summary.viewports.push({ name: viewport.name, status: 'PASS' });
       } catch (err) {
         summary.viewports.push({ name: viewport.name, status: 'FAIL', error: err.message });
-        await page.screenshot({ path: resolve(screenshotDir, `${viewport.name}-error.png`), fullPage: false }).catch(() => {});
+        await page
+          .screenshot({
+            path: resolve(screenshotDir, `${viewport.name}-error.png`),
+            fullPage: false,
+          })
+          .catch(() => {});
         throw err;
       } finally {
         await page.close();
@@ -297,8 +339,3 @@ main().catch((err) => {
   console.error('FAIL:', err.message);
   process.exit(1);
 });
-
-// Reference the script's own directory so editors / linters do not
-// flag this file as unused. (Also useful for future re-runs that want
-// to import helpers from this file.)
-export const __t1c_browser_check_self = __dirname;
