@@ -241,6 +241,20 @@ const EXPECTED_HITS = [
   // → `withDbContext(role=HR_STAFF)` nên RLS chain đã lọc theo role/handler
   // pool. An toàn.
   'src/domains/talent/recruiter-placement.adapter.ts:279 jobOpening',
+  // T1B — PRE-P2 HOTFIX worker management (2026-10-06): worker.service.ts
+  // `getWorkerDetail` selects the linked LaborProfile (nullable) and the current
+  // ProjectAssignment (list, ordered by startedAt desc) to project the
+  // "Phân công dự án hiện hành" section, plus owner/assignedTo/manager user
+  // refs for "Quản lý / phụ trách". LaborProfile is RLS-covered via
+  // `hrp_labor_profile_visible_for` (ADMIN/HR_MANAGER row scope through
+  // `withDbContext`); ProjectAssignment and User are not RLS-gated but the
+  // call site already enforces the worker scope (`assignedToId` for
+  // HR_STAFF, project.PM for PM, etc.) before reaching the select. PII
+  // (`phone`/`cccdNumber`) is masked when caller lacks
+  // `CAN_VIEW_WORKER_SENSITIVE` per `projectWorker` projection.
+  'src/domains/workforce/worker.service.ts:266 laborProfile',
+  'src/domains/workforce/worker.service.ts:275 project',
+  'src/domains/workforce/worker.service.ts:283 owner',
 ] as const;
 
 interface SourceEntry {
@@ -496,9 +510,15 @@ describe('quan hệ BẮT BUỘC trên bảng bị RLS che: tập vị trí sele
     // `hashtext($1::text)` cũ). Body dài hơn ⇒ line shift 6 entries
     // order.service.ts: 192/218/331/336/428/459 → 207/233/346/351/443/474.
     // Tổng entries KHÔNG đổi (40); chỉ line literals shift.
-    // T1A PRE-P2 PROJECT MANAGEMENT HOTFIX (2026-10-06): `getProjectForManagement`
-    // thêm 1 entry mới (`project-read.service.ts:150 clientCompany`). Tổng src = 41.
-    expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(41);
+// T1A PRE-P2 PROJECT MANAGEMENT HOTFIX (2026-10-06): `getProjectForManagement`
+    // thêm 1 entry mới (`project-read.service.ts:152 clientCompany`). Tổng src = 41.
+    // T1B — PRE-P2 WORKER MANAGEMENT HOTFIX (2026-10-06, forward-merge tại đây): `getWorkerDetail`
+    // thêm 3 entry mới (`worker.service.ts:266 laborProfile`, `:275 project`, `:283 owner`)
+    // để project "Phân công dự án hiện hành" + "Quản lý / phụ trách" sections.
+    // LaborProfile qua RLS `hrp_labor_profile_visible_for`; ProjectAssignment/User không
+    // RLS-gated nhưng call site đã enforce worker scope (`assignedToId` / project.PM /
+    // role) trước khi tới select. PII mask qua `projectWorker`. Tổng src = 44.
+    expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(44);
   });
 });
 

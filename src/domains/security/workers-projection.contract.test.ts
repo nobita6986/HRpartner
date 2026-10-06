@@ -18,6 +18,9 @@ const mocks = vi.hoisted(() => {
       create: vi.fn(),
       update: vi.fn(),
     },
+    serviceGetWorkerDetail: vi.fn(),
+    serviceUpdateWorkerProfile: vi.fn(),
+    serviceDeleteWorker: vi.fn(),
   };
 });
 
@@ -42,6 +45,29 @@ vi.mock('@/src/shared/auth/with-db-context', () => ({
   withDbContext: (_prisma: unknown, _ctx: unknown, cb: (tx: unknown) => unknown) =>
     cb({ worker: mocks.worker }),
 }));
+// T1B: [id] route dùng service layer (`getWorkerDetail` / `updateWorkerProfile` /
+// `deleteWorker`) thay vì gọi thẳng Prisma. Mock service để giữ unit lane.
+vi.mock('@/src/domains/workforce/worker.service', () => ({
+  WorkerServiceError: class WorkerServiceError extends Error {
+    constructor(
+      public readonly code: string,
+      message: string,
+      public readonly details?: unknown,
+    ) {
+      super(message);
+      this.name = 'WorkerServiceError';
+    }
+  },
+  getWorkerDetail: mocks.serviceGetWorkerDetail,
+  updateWorkerProfile: mocks.serviceUpdateWorkerProfile,
+  deleteWorker: mocks.serviceDeleteWorker,
+}));
+vi.mock('@/src/shared/integrity/idempotency', () => ({
+  withIdempotency: async ({ handler }: { handler: () => Promise<unknown> }) => {
+    const r = (await handler()) as { body: unknown };
+    return { body: r.body, statusCode: 200, replayed: false };
+  },
+}));
 
 import { GET } from '@/app/api/workers/route';
 import { PUT } from '@/app/api/workers/[id]/route';
@@ -62,6 +88,14 @@ describe('worker route projections', () => {
     mocks.worker.count.mockResolvedValue(1);
     mocks.worker.update.mockResolvedValue(rawWorker);
     mocks.resolveEffectivePermissions.mockResolvedValue(new Set());
+    // T1B: [id] route đi qua service. Mock trả về row rawWorker khi gọi
+    // getWorkerDetail / updateWorkerProfile.
+    mocks.serviceGetWorkerDetail.mockResolvedValue(rawWorker);
+    mocks.serviceUpdateWorkerProfile.mockResolvedValue({
+      id: 'worker-1',
+      updatedAt: new Date('2026-01-01T00:00:00Z'),
+      updatedFields: ['fullName'],
+    });
   });
 
   it('masks CCCD and bank fields from SALE list responses', async () => {
