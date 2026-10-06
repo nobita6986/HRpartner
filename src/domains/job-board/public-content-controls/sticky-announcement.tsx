@@ -45,14 +45,12 @@ type StickyAnnouncementStyle = CSSProperties & {
   /**
    * Two px CSS custom properties published by the marquee effect in
    * `sticky-announcement.tsx`:
-   *   --marquee-shift-start = viewport.width  (px)
-   *   --marquee-shift-end   = message.width   (px)
-   * The keyframe consumes them as
-   *   0%   translateX(var(--marquee-shift-start, 0px))
-   *   100% translateX(calc(-1 * var(--marquee-shift-end, 0px)))
-   * so the message starts fully outside the right edge and exits fully
-   * off the left edge. The props are optional because they are only
-   * published at runtime by a ResizeObserver, not on the SSR pass.
+   *   marqueeShiftStartPx = viewport.width  (px)
+   *   marqueeShiftEndPx   = message.width   (px)
+   * The keyframe consumes them so the message starts fully outside the
+   * right edge and exits fully off the left edge. The props are optional
+   * because they are only published at runtime by a ResizeObserver, not
+   * on the SSR pass.
    */
   '--marquee-shift-start'?: string;
   '--marquee-shift-end'?: string;
@@ -150,14 +148,13 @@ export function StickyAnnouncement({
 
   // T1C CORRECTION 1/1 (v1.2): the marquee message must start fully outside
   // the right edge of the viewport and exit fully off the left edge. The
-  // keyframe is `translateX(var(--marquee-shift-start, 0px))` at 0% and
-  // `translateX(calc(-1 * var(--marquee-shift-end, 0px)))` at 100%, where
-  // the two px values are computed at mount / on resize as the px
-  // translations needed to put the message's left edge at the right edge
-  // of the viewport (start) and the message's right edge at 0 (end). The
-  // pre-transform measurement uses `messageEl.offsetLeft` + the parent's
-  // bounding rect (offsetLeft is unaffected by transforms), so the
-  // measurement is NOT contaminated by the animation that has already
+  // keyframe consumes two px CSS custom properties (declared inline by the
+  // CSS module) at 0% and 100%; the px values are computed at mount / on
+  // resize as the translations needed to put the message's left edge at the
+  // right edge of the viewport (start) and the message's right edge at 0
+  // (end). The pre-transform measurement uses `messageEl.offsetLeft` + the
+  // parent's bounding rect (offsetLeft is unaffected by transforms), so
+  // the measurement is NOT contaminated by the animation that has already
   // applied a translation. The animation is applied INLINE on the message
   // element (via `style.animation`) instead of via a CSS class — this
   // sidesteps CSS Modules class-name hashing so the browser-check can
@@ -308,15 +305,16 @@ export function StickyAnnouncement({
        *   - One copy of the message is rendered, NOT two.
        *   - The viewport clips overflow; the message itself is never
        *     truncated and can be longer than the viewport.
-       *   - The JS effect above publishes `--marquee-shift = viewport.width
-       *     + message.width` in px. The CSS keyframe translates the message
-       *     from `translateX(0)` (left edge at +message.width — fully outside
-       *     the right edge) to `translateX(calc(-1 * var(--marquee-shift)))`
-       *     (right edge at 0 — fully outside the left edge). Each cycle
-       *     therefore starts completely off-screen on the right, runs through
-       *     the entire viewport, and disappears completely on the left before
-       *     the next cycle begins. The px distance is measured against the
-       *     ACTUAL viewport, so the same code path is correct for messages
+       *   - The JS effect above publishes two px CSS custom properties on
+       *     the viewport: shiftStartPx = viewport.width  (so the message's
+       *     left edge lands at the right edge of the viewport) and
+       *     shiftEndPx = message.width  (so the message's right edge lands
+       *     at 0). The CSS keyframe translates the message by shiftStartPx
+       *     at 0% and by -shiftEndPx at 100%. Each cycle therefore starts
+       *     completely off-screen on the right, runs through the entire
+       *     viewport, and disappears completely on the left before the next
+       *     cycle begins. The px distance is measured against the ACTUAL
+       *     viewport, so the same code path is correct for messages
        *     shorter than the viewport (desktop 1440px, mobile 390px) and
        *     for messages longer than the viewport. No duplicate group, no
        *     overlap, no jump on the loop seam.

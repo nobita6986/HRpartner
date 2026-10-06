@@ -286,11 +286,12 @@ describe('sticky-announcement.module.css — MARQUEE viewport-aware single-text 
    * distance against the MESSAGE width (CSS `translateX(<%>)` is
    * relative to the element's own width), so a 600px message on a
    * 1440px desktop viewport only traveled ±600px instead of ±1440px,
-   * never starting fully outside the right edge. v1.2 publishes
-   * `--marquee-shift = viewport.width + message.width` (px) from a
-   * ResizeObserver in the TSX, and the keyframe consumes it as
-   * `translateX(calc(-1 * var(--marquee-shift)))`. The single-text
-   * invariants (no track, no clone, no group) are kept from v1.1.
+   * never starting fully outside the right edge. v1.2 publishes two
+   * px custom properties from a ResizeObserver in the TSX
+   * (shiftStartPx = viewport.width, shiftEndPx = message.width), and
+   * the keyframe consumes them as the px translation at 0% and 100%.
+   * The single-text invariants (no track, no clone, no group) are kept
+   * from v1.1.
    */
 
   it('does NOT define a `hrpStickyAnnouncementTrack` rule (single-text has no track wrapper)', () => {
@@ -321,11 +322,11 @@ describe('sticky-announcement.module.css — MARQUEE viewport-aware single-text 
       )?.[1] ?? '';
     // `translateX(100%)` on a `width: max-content` element shifts by one
     // full message width, which is NOT the viewport width. That is the
-    // exact bug v1.2 fixes. The pre-mount SSR fallback is
-    // `transform: translateX(100%)` (still % of message width, but only
-    // painted before the keyframe / JS effect kicks in — the keyframe
-    // runs from `translateX(0)` and the JS publishes `--marquee-shift`
-    // so the 100% stop is pixel-accurate against the viewport).
+    // exact bug v1.2 fixes. The pre-mount SSR fallback uses a percentage
+    // translation (still % of message width, but only painted before
+    // the keyframe / JS effect kicks in — the keyframe runs against
+    // the JS-published px shifts so the start of the cycle is
+    // pixel-accurate against the viewport).
     expect(rule).not.toMatch(/translateX\(\s*100%\s*\)/);
   });
 
@@ -338,7 +339,7 @@ describe('sticky-announcement.module.css — MARQUEE viewport-aware single-text 
     expect(keyframe).not.toMatch(/translateX\(\s*-100%\s*\)/);
   });
 
-  it('keyframe starts at `translateX(var(--marquee-shift-start))` and ends at `translateX(calc(-1 * var(--marquee-shift-end)))` — the v1.2 viewport-aware contract', () => {
+  it('keyframe starts at the v1.2 viewport-aware shiftStart and ends at the inverse shiftEnd (px custom properties, NOT %)', () => {
     const css = strip(readText(cssFile!));
     const keyframe =
       css.match(
@@ -355,7 +356,7 @@ describe('sticky-announcement.module.css — MARQUEE viewport-aware single-text 
     );
   });
 
-  it('forbids the legacy single-var `--marquee-shift` keyframe shape (v1.1 used it; v1.2 splits into start/end)', () => {
+  it('forbids the legacy single-shift v1.1 keyframe shape (v1.2 splits the shift into start/end)', () => {
     const css = strip(readText(cssFile!));
     const keyframe =
       css.match(
@@ -400,7 +401,7 @@ describe('sticky-announcement.module.css — MARQUEE viewport-aware single-text 
     expect(rule).toMatch(/overflow:\s*hidden/);
   });
 
-  it('marquee animation is armed inline by the JS effect — the `animation` property is NOT declared in CSS so the keyframe does not start before `--marquee-shift-{start,end}` are published', () => {
+  it('marquee animation is armed inline by the JS effect — the `animation` property is NOT declared in CSS so the keyframe does not start before the shift-start/shift-end px custom properties are published', () => {
     const css = strip(readText(cssFile!));
     const baseRule =
       css.match(
