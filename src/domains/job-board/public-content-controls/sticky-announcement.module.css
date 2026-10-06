@@ -168,15 +168,40 @@
 
 .hrpStickyAnnouncementTrack {
   display: flex;
-  width: max-content;
+  /*
+   * Track width = 2 × viewport width. Combined with the per-group
+   * `width: 50%` (i.e. one viewport wide) and the keyframe
+   * `translateX(0) → translateX(-50%)`, this guarantees the animation
+   * shifts the track by exactly one group width each cycle, so the
+   * duplicate group enters from the right precisely as the visible group
+   * leaves from the left — no two copies can be on screen at the same
+   * time, no leftover gap, no visible jump on the loop seam. The previous
+   * `width: max-content` shape leaked the trailing padding of the second
+   * group as a 2 rem void between cycles, which was the root cause of
+   * the "bản sao xuất hiện giữa viewport khi bản đầu còn đang chạy"
+   * regression reported on production.
+   */
+  width: 200%;
   animation: hrpStickyAnnouncementMarquee var(--sticky-marquee-duration, 18s) linear infinite;
+  will-change: transform;
 }
 
 .hrpStickyAnnouncementMarqueeGroup {
   display: flex;
-  flex: 0 0 auto;
+  /*
+   * Each group spans one viewport. `width: 50%` is relative to the
+   * track's 200% width, so `50% × 200% = 100%` of the viewport. The
+   * `overflow: hidden` clips messages that exceed the viewport (the
+   * Zod schema caps `message` at 280 characters; admin convention is
+   * to keep the line under ~80 characters so it stays readable on
+   * mobile). Padding-right preserves the 2 rem breathing room between
+   * the duplicate group and the next one.
+   */
+  width: 50%;
+  flex: 0 0 50%;
   gap: 2rem;
   padding-right: 2rem;
+  overflow: hidden;
 }
 
 .hrpStickyAnnouncementMarqueeGroup .hrpStickyAnnouncementMessage {

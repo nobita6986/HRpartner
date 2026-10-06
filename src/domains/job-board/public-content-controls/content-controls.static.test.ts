@@ -271,6 +271,59 @@ describe('sticky-announcement.module.css — animation + reduced-motion invarian
   });
 });
 
+describe('sticky-announcement.module.css — MARQUEE seamless-entry invariants (T1C hotfix)', () => {
+  /*
+   * Regression fence for the production bug "bản sao xuất hiện giữa
+   * viewport khi bản đầu còn đang chạy" reported on
+   * `vieclammienbac.com.vn` after PR #105. The fix constrains the
+   * track to exactly 2× viewport width and pins each group to one
+   * viewport, so `translateX(-50%)` of the keyframe shifts the track by
+   * exactly one group width each cycle. This locks the math: a future
+   * "small cleanup" that switches the track back to `width: max-content`
+   * — or any drift that breaks the `200% / 50% / 50%` symmetry — must
+   * fail this fence before it can reach production.
+   */
+
+  it('track uses `width: 200%` so the keyframe can shift it by one group width per cycle', () => {
+    const css = strip(readText(cssFile!));
+    const trackRule =
+      css.match(/\.hrpStickyAnnouncementTrack\s*\{([^}]*)\}/)?.[1] ?? '';
+    expect(trackRule).toMatch(/width:\s*200%/);
+  });
+
+  it('track does NOT use `width: max-content` (root cause of the production regression)', () => {
+    const css = strip(readText(cssFile!));
+    const trackRule =
+      css.match(/\.hrpStickyAnnouncementTrack\s*\{([^}]*)\}/)?.[1] ?? '';
+    expect(trackRule).not.toMatch(/width:\s*max-content/);
+  });
+
+  it('each group is exactly one viewport wide (`width: 50%; flex: 0 0 50%`)', () => {
+    const css = strip(readText(cssFile!));
+    const groupRule =
+      css.match(/\.hrpStickyAnnouncementMarqueeGroup\s*\{([^}]*)\}/)?.[1] ?? '';
+    expect(groupRule).toMatch(/width:\s*50%/);
+    expect(groupRule).toMatch(/flex:\s*0\s+0\s+50%/);
+  });
+
+  it('each group clips overflowing messages with `overflow: hidden`', () => {
+    const css = strip(readText(cssFile!));
+    const groupRule =
+      css.match(/\.hrpStickyAnnouncementMarqueeGroup\s*\{([^}]*)\}/)?.[1] ?? '';
+    expect(groupRule).toMatch(/overflow:\s*hidden/);
+  });
+
+  it('keyframe still uses `translateX(0) → translateX(-50%)` so the math stays correct', () => {
+    const css = strip(readText(cssFile!));
+    const keyframe =
+      css.match(
+        /@keyframes\s+hrpStickyAnnouncementMarquee\s*\{([^}]*\{[^}]*\}[^}]*)\}/,
+      )?.[1] ?? '';
+    expect(keyframe).toMatch(/0%\s*\{\s*transform:\s*translateX\(0%\)/);
+    expect(keyframe).toMatch(/100%\s*\{\s*transform:\s*translateX\(-50%\)/);
+  });
+});
+
 describe('index.ts — public surface re-exports', () => {
   it('re-exports the StickyAnnouncement component', () => {
     const code = readText(indexFile!);
