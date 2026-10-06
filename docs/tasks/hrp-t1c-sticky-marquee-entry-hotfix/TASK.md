@@ -12,12 +12,12 @@
 | Assurance lane | `STANDARD` |
 | Audit mode | `NONE` |
 | Audit reason | `Bug chỉ ở CSS keyframe/layout của sticky marquee; không thuộc authorization/RLS, schema, business rule. Owner chấp nhận self-review top 3 risks. Không tạo AUDIT.md.` |
-| Spec version | `v1.0` |
+| Spec version | `v1.1` (CORRECTION 1/1) |
 | Status | `READY_FOR_EXECUTION` |
 | Planner | `Tier 1` |
 | Baseline | `bbdbe94862dc58c9ec97c3f1627a43d9c0e8ab0b` |
 | Baseline origin | `bbdbe948… = origin/main @ takeover` |
-| Implementation SHA | `e7772675` (v1.1 semantic commit) |
+| Implementation SHA | `e777267528e95caca0bd5c979aff2083847a2aa5` (v1.1 semantic commit) |
 | Contract gate | `READY_TO_CODE` |
 | Decision state | `CLOSED` |
 | Test environment | `READY` |
