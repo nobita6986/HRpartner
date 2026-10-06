@@ -12,7 +12,7 @@
 | Audit mode (phải khớp TASK) | `NONE` |
 | Execution round | `1` |
 | Baseline | `7f5704123cbe0ae52c897b38c8afdd3f14358c78` |
-| Implementation SHA | `edb4d7aa0fe709cf90f2beb548735b8c2405bd5e` |
+| Implementation SHA | `d2049da30382b073cd79e609113fb5003bdbab72` |
 | Frozen delivery | `YES` |
 | Canonical gates | `PASS` |
 | Audit eligibility | `NOT_REQUIRED` |
@@ -73,7 +73,7 @@ Dòng đầu là `verify-task`. Mỗi command đăng ký một lần bằng `E-x
 | `E-07` | `cat prisma/migrations/20261008000000_t1b_pre_p2_worker_delete_rls/migration.sql`; assert DROP IF EXISTS, AS RESTRICTIVE FOR DELETE, USING hrp_session_role()='ADMIN', IF NOT EXISTS, relforcerowsecurity, RAISE EXCEPTION; NOT match DROP TABLE/RENAME/CREATE FUNCTION/BYPASSRLS | exit 0 — all assertions pass (AC-06) | inline (test) |
 | `E-08` | `npx vitest run --config vitest.unit.config.ts src/domains/workforce/__tests__/worker.service.test.ts` | `exit 0` — 41 passed (AC-08 unit path) | inline |
 | `E-09` | `npx vitest run --config vitest.unit.config.ts app/admin/workers/[id]/__tests__/worker-delete-button.static.test.ts app/api/workers/[id]/__tests__/route-delete-500.static.test.ts src/domains/workforce/__tests__/worker-delete-error-labels.test.ts` | `exit 0` — 17 + 4 + 7 = 28 passed (AC-10) | inline |
-| `E-10` | `npm run test:unit` | `exit 0` — 4914 passed, 9 skipped, 0 failed (AC-11) | inline |
+| `E-10` | `npm run test:unit` | `exit 0` — 4943 passed, 9 skipped, 0 failed (post-merge; AC-11) | inline |
 | `E-11` | `npm run typecheck && npm run lint && npm run build && node .ai-pipeline/scripts/verify-encoding.mjs && git diff --cached --check` | `exit 0` — typecheck/lint/build OK; verify-encoding RESULT: PASS 5/5; diff --check exit 0 (AC-12) | inline |
 | `E-12` | `npm run test:integration` | `exit 0` — `ENV_BLOCKED` (DATABASE_URL_TEST not set locally); CI provisioning unblocks the lane (AC-13) | inline |
 | `E-13` | `grep t1b-pre-p2-worker-delete vitest.integration-files.ts` | `exit 0` — 1 match line present (AC-14) | inline |
@@ -87,7 +87,7 @@ Dòng đầu là `verify-task`. Mỗi command đăng ký một lần bằng `E-x
 
 ## 5. Final status
 
-- READY_FOR_REVIEW: `verify-task.ps1` PASS, full unit suite 4914/4923 pass, typecheck/lint/build/encoding/diff-check all xanh, integration preflight exit 0 với ENV_BLOCKED hợp lệ (DB env chưa provision local — T0 §7 stop point yêu cầu chờ CI xanh), implementation SHA `edb4d7aa0fe709cf90f2beb548735b8c2405bd5e` đã frozen, không có semantic delta sau freeze.
+- READY_FOR_REVIEW: `verify-task.ps1` PASS, full unit suite 4943/4952 pass (post true-forward-merge với PR #116 t1c menu/labor/order hotfix; pre-merge là 4914/4923), typecheck/lint/build/encoding/diff-check all xanh, integration preflight exit 0 với ENV_BLOCKED hợp lệ (DB env chưa provision local — T0 §7 stop point yêu cầu chờ CI xanh), implementation SHA `d2049da30382b073cd79e609113fb5003bdbab72` (forward-merge commit; semantic SHA cho t1b RLS work là `edb4d7aa0fe709cf90f2beb548735b8c2405bd5e`; PR #116 chỉ thay đổi UI menu + tests liên ngôn ngữ, không chạm schema/RLS/migration nên không có semantic delta mới).
 - `git status --porcelain` (post-freeze) sạch về source/test/migration; chỉ còn `docs/tasks/hrp-t1b-pre-p2-worker-delete-rls-hotfix/HANDOFF.md` (docs, post-freeze add được) và `docs/tasks/hrp-t1b-pre-p2-worker-delete-rls-hotfix/TASK.md` đã tracked cùng commit implementation vì cùng atomic change.
 
 > Handoff status: `READY_FOR_REVIEW`
