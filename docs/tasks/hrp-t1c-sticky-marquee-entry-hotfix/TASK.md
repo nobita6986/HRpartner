@@ -17,7 +17,7 @@
 | Planner | `Tier 1` |
 | Baseline | `bbdbe94862dc58c9ec97c3f1627a43d9c0e8ab0b` |
 | Baseline origin | `bbdbe948… = origin/main @ takeover` |
-| Implementation SHA | `e777267528e95caca0bd5c979aff2083847a2aa5` (v1.1 semantic commit) |
+| Implementation SHA | `04e046e91a7808f6a5bf7580147d7948f9e9e869` (v1.1 semantic commit; e7772675 was the original v1.1 commit that pinned only the source/test files; 04e046e9 is the v1.1 commit that also pins the browser-check + fixture-server scripts per the Vercel-SSO substitution in HANDOFF DEV-07) |
 | Contract gate | `READY_TO_CODE` |
 | Decision state | `CLOSED` |
 | Test environment | `READY` |
@@ -166,6 +166,7 @@
 |---|---|---|---|
 | `v1.0` | `2026-10-06` | Initial contract; CSS-only hotfix for sticky marquee entry, base `bbdbe948`, Audit mode NONE | T0 directive to fix marquee entry bug surviving #105 |
 | `v1.1` | `2026-10-06` | **CORRECTION 1/1** — pivot from `width: 200% / group width: 50%` (double-text seamless) to **single-text marquee**: drop the duplicate `aria-hidden="true"` group from `sticky-announcement.tsx`, drop `.hrpStickyAnnouncementTrack` + `.hrpStickyAnnouncementMarqueeGroup` rules from the stylesheet, animate the message itself with `translateX(100%) → translateX(-100%)` so the message starts fully off the right edge, runs through the viewport, and exits fully off the left edge before the next cycle begins. Update the static fence to assert the new contract and to forbid the `200% / 50%` constants. Add a Puppeteer-core browser-check that runs the live Vercel Preview on a desktop (1440×900) and a mobile (390×844) viewport to assert exactly one `.hrpStickyAnnouncementMessageMarquee` element is visible at a time. | T0 rejected the previous attempt and required: (1) exactly one copy of the message per cycle; (2) start fully outside the right edge; (3) run through the entire viewport and exit fully off the left; (4) no second clone; (5) viewport clips but the message is not internally truncated; (6) markup AND keyframe are allowed to change. |
+| `v1.1.b` | `2026-10-06` | Re-pin Implementation SHA from `e7772675` to `04e046e9`: the v1.1 implementation commit (`e7772675`) only carries the source/test pair; the second v1.1 implementation commit (`04e046e9`) extends the same semantic change to `scripts/ops/t1c-marquee-browser-check.mjs` (NUL-byte cleanup) and adds `scripts/ops/t1c-fixture-server.mjs` (the offline fixture server). HANDOFF §4 DEV-07 documents the Vercel-SSO substitution; the offline fixture runs the same Puppeteer-core invariants against the verbatim production-compiled CSS. | The H-16 frozen-delivery gate requires every `scripts/` commit to land in the Implementation SHA; bumping the SHA rather than amending keeps the original v1.1 source/test commit visible in the branch history so a reviewer can diff between rounds. |
 
 ## 11. CORRECTION 1/1 — Single-Text Marquee (T0 mandated pivot)
 
