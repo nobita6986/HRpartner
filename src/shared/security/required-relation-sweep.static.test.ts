@@ -89,6 +89,15 @@ const EXPECTED_HITS = [
   'src/domains/applications/conversion.service.ts:130 laborProfile',
   'src/domains/crm/client-read.service.ts:80 staffingOrder',
   'src/domains/crm/project-read.service.ts:40 clientCompany',
+  // T1A PRE-P2 PROJECT MANAGEMENT HOTFIX (2026-10-06): `getProjectForManagement`
+  // thêm `clientCompany` select (mirror pattern của `getProjectDetail`) để
+  // render tên khách hàng trên header trang quản trị. Line shift từ
+  // original `40` (đã có ở getProjectDetail) sang `152` (vị trí mới trong
+  // getProjectForManagement, sau khi bổ sung `isPublic` select field). Quan
+  // hệ BẮT BUỘC trong schema `Project` — sweep đếm là đúng, an toàn vì RLS
+  // `hrp_client_company_visible_for` đã lọc theo role khi đi qua
+  // `withDbContext` (ADMIN/HR_MANAGER/HR_STAFF/PM đều thoả).
+  'src/domains/crm/project-read.service.ts:152 clientCompany',
   // P1-A0.5 STEP-10 (hrp-p1-a0-5-job-opening-readiness): additive DTO fields
   // (`serviceModel`, `placementCount`, order status/deadline, slot validTo/capacity).
   // Line numbers shifted 41 → 86 and 46 → 94 because the new fields were added
@@ -487,7 +496,9 @@ describe('quan hệ BẮT BUỘC trên bảng bị RLS che: tập vị trí sele
     // `hashtext($1::text)` cũ). Body dài hơn ⇒ line shift 6 entries
     // order.service.ts: 192/218/331/336/428/459 → 207/233/346/351/443/474.
     // Tổng entries KHÔNG đổi (40); chỉ line literals shift.
-    expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(40);
+    // T1A PRE-P2 PROJECT MANAGEMENT HOTFIX (2026-10-06): `getProjectForManagement`
+    // thêm 1 entry mới (`project-read.service.ts:150 clientCompany`). Tổng src = 41.
+    expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(41);
   });
 });
 
