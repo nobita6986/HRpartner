@@ -370,4 +370,21 @@ describe('DELETE /api/workers/[id]', () => {
     // withIdempotency đã wrap; handler chỉ chạy 1 lần (mock implement như
     // thật — chạy 1 lần rồi replay).
   });
+
+  it('non-WorkerServiceError (Prisma) → 500 với message chung tiếng Việt, KHÔNG leak e.message', async () => {
+    mocks.serviceDeleteWorker.mockImplementation(() => {
+      throw new Error('P2002: Unique constraint failed on the fields: (`userId`)');
+    });
+    const req = new NextRequest('http://localhost/api/workers/w1', {
+      method: 'DELETE',
+      body: JSON.stringify({ reason: 'r' }),
+    });
+    const res = await DELETE(req, { params: params() });
+    expect(res.status).toBe(500);
+    const data = await res.json();
+    expect(data.error).toBe('INTERNAL');
+    expect(data.message).toContain('Hệ thống gặp sự cố');
+    expect(data.message).not.toContain('P2002');
+    expect(data.message).not.toContain('Unique constraint');
+  });
 });

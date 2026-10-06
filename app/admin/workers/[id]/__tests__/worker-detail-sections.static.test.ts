@@ -119,7 +119,8 @@ describe('/admin/workers/[id] — 7 section surface', () => {
   it('delete button is in dialog flow (open/close + confirm) — phòng click nhầm', () => {
     expect(DELETE).toContain('setOpen(true)');
     expect(DELETE).toContain('Xóa vĩnh viễn');
-    expect(DELETE).toContain('cleanup test row');
+    // Audit reason placeholder tiếng Việt (T1B Wave 2 — modal xóa Worker).
+    expect(DELETE).toContain('dọn dẹp bản ghi thử nghiệm');
   });
 
   it('delete button shows blocking facts list on 409', () => {
