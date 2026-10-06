@@ -281,3 +281,230 @@ export async function createOrMatchLaborProfile(
     signalsProvided,
   };
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Pre-P2 hotfix (T1B) — LaborProfile edit surface (DEC-P2-02..08).
+//
+// `updateLaborProfileIntakeProfile` là PATCH writer DUY NHẤT trên LaborProfile
+// mà admin portal exposed. Nó:
+//   1. Từ chối typed nếu row đã có `workerId` (DEC-P2-06; CAS-conversion ở
+//      PR #107 là đường duy nhất ghi `workerId`).
+//   2. Tự `normalizePhone` + `deriveCompleteness` (DEC-P2-04, DEC-P2-05).
+//   3. KHÔNG bao giờ chấp nhận `workerId` từ input (zod `.strict()` ở route
+//      layer bảo vệ thêm 1 lớp).
+//   4. Probe duplicate post-write (cùng signal với `createOrMatchLaborProfile`
+//      DEC-04: typed warning, KHÔNG auto-merge).
+//
+// Hàm pure `deriveCompleteness` tách riêng để unit test không cần DB.
+// ═══════════════════════════════════════════════════════════════════════════
+
+import {
+  LaborProfileAlreadyLinkedError,
+  type LaborProfileEditableFields,
+  type LaborProfileCompletenessLevel,
+  type PossibleDuplicateWarning,
+} from './labor-profile.types';
+
+/**
+ * DEC-P2-05 — Pure server-side completeness recompute.
+ *
+ * Quy tắc (input lấy từ LaborProfile row + edit payload, sau khi đã chuẩn hoá):
+ *   - Có `fullName` (non-null, non-empty) AND có phone (`phone` hoặc
+ *     `normalizedPhone` non-null, non-empty) AND có `cccdNumber` (non-null,
+ *     non-empty) → 'COMPLETE' (alias 'FULL' trong dictionary hiện có).
+ *   - Ngược lại → 'MINIMAL'.
+ *
+ * Hàm pure: không phụ thuộc DB, không phụ thuộc thời gian; test trực tiếp.
+ * Caller (PATCH route) dùng giá trị này để ghi `completeness` xuống DB; UI
+ * đọc qua `laborProfileCompletenessLabel` (đã alias COMPLETE/FULL → "Đầy đủ").
+ */
+export function deriveCompleteness(input: {
+  fullName: string | null | undefined;
+  phone: string | null | undefined;
+  normalizedPhone: string | null | undefined;
+  cccdNumber: string | null | undefined;
+}): LaborProfileCompletenessLevel {
+  const nameOk = typeof input.fullName === 'string' && input.fullName.trim().length > 0;
+  const phoneOk =
+    (typeof input.phone === 'string' && input.phone.trim().length > 0) ||
+    (typeof input.normalizedPhone === 'string' && input.normalizedPhone.trim().length > 0);
+  const cccdOk = typeof input.cccdNumber === 'string' && input.cccdNumber.trim().length > 0;
+  if (nameOk && phoneOk && cccdOk) return 'COMPLETE';
+  return 'MINIMAL';
+}
+
+export interface UpdateLaborProfileIntakeInput extends LaborProfileEditableFields {
+  id: string;
+  actorId: string;
+}
+
+export interface UpdateLaborProfileIntakeResult {
+  id: string;
+  fullName: string | null;
+  phone: string | null;
+  normalizedPhone: string | null;
+  cccdNumber: string | null;
+  completeness: LaborProfileCompletenessLevel;
+  workerId: string | null;
+  warnings: PossibleDuplicateWarning[];
+}
+
+/**
+ * PATCH writer (DEC-P2-02..08). Single-row update trên LaborProfile
+ * với guards sau:
+ *
+ *   - 409 typed: nếu `current.workerId != null` (đã liên kết Worker).
+ *   - Không bao giờ set `workerId` từ payload.
+ *   - `normalizedPhone` được derive từ `normalizePhone(phone)`.
+ *   - `completeness` được recompute từ full set sau update.
+ *   - Post-write: probe profile khác (exclude self) trùng `normalizedPhone`
+ *     hoặc `cccdNumber` → typed warning; KHÔNG auto-merge.
+ *
+ * NOTE: Hàm này KHÔNG throw `LaborProfileAlreadyLinkedError` ra ngoài tx —
+ * caller (route layer) catch + map thành 409. Tx rollback tự nhiên vì
+ * exception ném ra trước `tx.laborProfile.update`.
+ */
+export async function updateLaborProfileIntakeProfile(
+  tx: Prisma.TransactionClient,
+  input: UpdateLaborProfileIntakeInput,
+): Promise<UpdateLaborProfileIntakeResult> {
+  // 1. Read current row (idempotent re-read; 1 lần SELECT).
+  const current = await tx.laborProfile.findUnique({
+    where: { id: input.id },
+    select: {
+      id: true,
+      fullName: true,
+      phone: true,
+      normalizedPhone: true,
+      cccdNumber: true,
+      workerId: true,
+    },
+  });
+  if (!current) {
+    const err = new Error('LABOR_PROFILE_NOT_FOUND');
+    (err as Error & { code: string }).code = 'LABOR_PROFILE_NOT_FOUND';
+    throw err;
+  }
+
+  // 2. DEC-P2-06: lock nếu đã liên kết Worker.
+  if (current.workerId) {
+    throw new LaborProfileAlreadyLinkedError(current.workerId);
+  }
+
+  // 3. Compose the post-update value set.
+  //    Nếu caller không truyền field nào → giữ nguyên; nếu truyền null
+  //    (cccdNumber) → set null; nếu truyền string rỗng → set null.
+  const nextFullName =
+    input.fullName !== undefined
+      ? input.fullName.trim().length > 0
+        ? input.fullName.trim()
+        : null
+      : current.fullName;
+
+  // DEC-P2-04: phone normalization cùng helper intake writer đang dùng.
+  let nextPhone: string | null;
+  let nextNormalizedPhone: string | null;
+  if (input.phone !== undefined) {
+    const trimmed = input.phone.trim();
+    if (!trimmed) {
+      nextPhone = null;
+      nextNormalizedPhone = null;
+    } else {
+      nextPhone = trimmed;
+      const norm = normalizePhone(trimmed);
+      nextNormalizedPhone = norm.length > 0 ? norm : null;
+    }
+  } else {
+    nextPhone = current.phone;
+    nextNormalizedPhone = current.normalizedPhone;
+  }
+
+  const nextCccd =
+    input.cccdNumber !== undefined
+      ? input.cccdNumber !== null && input.cccdNumber.trim().length > 0
+        ? input.cccdNumber.trim()
+        : null
+      : current.cccdNumber;
+
+  const nextCompleteness = deriveCompleteness({
+    fullName: nextFullName,
+    phone: nextPhone,
+    normalizedPhone: nextNormalizedPhone,
+    cccdNumber: nextCccd,
+  });
+
+  // 4. DEC-P2-03 + DEC-P2-08: update CHỈ 3 field, KHÔNG workerId.
+  //    `prisma.laborProfile.update` KHÔNG có option để set workerId từ input
+  //    — type system Prisma cũng không cho nếu payload không truyền key.
+  const updated = await tx.laborProfile.update({
+    where: { id: input.id },
+    data: {
+      fullName: nextFullName,
+      phone: nextPhone,
+      normalizedPhone: nextNormalizedPhone,
+      cccdNumber: nextCccd,
+      completeness: nextCompleteness,
+    },
+    select: {
+      id: true,
+      fullName: true,
+      phone: true,
+      normalizedPhone: true,
+      cccdNumber: true,
+      completeness: true,
+      workerId: true,
+    },
+  });
+
+  // 5. Post-write duplicate probe (DEC-P2-07).
+  const orClauses: Prisma.LaborProfileWhereInput[] = [];
+  if (nextNormalizedPhone) {
+    orClauses.push({ normalizedPhone: nextNormalizedPhone });
+  }
+  if (nextCccd) {
+    orClauses.push({ cccdNumber: nextCccd });
+  }
+  const warnings: PossibleDuplicateWarning[] = [];
+  if (orClauses.length > 0) {
+    const others = await tx.laborProfile.findMany({
+      where: {
+        id: { not: input.id },
+        workerId: null, // chỉ probe trong intake list (intake-only dedup hint)
+        OR: orClauses,
+      },
+      select: { id: true, normalizedPhone: true, cccdNumber: true },
+      take: 25, // safety cap
+    });
+    const phoneIds = new Set<string>();
+    const cccdIds = new Set<string>();
+    for (const o of others) {
+      if (nextNormalizedPhone && o.normalizedPhone === nextNormalizedPhone) phoneIds.add(o.id);
+      if (nextCccd && o.cccdNumber === nextCccd) cccdIds.add(o.id);
+    }
+    if (phoneIds.size > 0) {
+      warnings.push({
+        kind: 'POSSIBLE_DUPLICATE',
+        signal: 'normalizedPhone',
+        laborProfileIds: Array.from(phoneIds),
+      });
+    }
+    if (cccdIds.size > 0) {
+      warnings.push({
+        kind: 'POSSIBLE_DUPLICATE',
+        signal: 'cccdNumber',
+        laborProfileIds: Array.from(cccdIds),
+      });
+    }
+  }
+
+  return {
+    id: updated.id,
+    fullName: updated.fullName,
+    phone: updated.phone,
+    normalizedPhone: updated.normalizedPhone,
+    cccdNumber: updated.cccdNumber,
+    completeness: updated.completeness as LaborProfileCompletenessLevel,
+    workerId: updated.workerId,
+    warnings,
+  };
+}

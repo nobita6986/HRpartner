@@ -169,4 +169,29 @@ describe('LaborProfile Read Service', () => {
       });
     });
   });
+
+  // T1B Pre-P2 hotfix (DEC-P2-01): default filter `workerId: null`.
+  describe('Intake-list default filter (T1B Pre-P2)', () => {
+    it('applies workerId: null by default (intake list excludes already-linked profiles)', async () => {
+      await getLaborProfilesList(mockTx, adminCtx, {});
+      expect(mockFindMany).toHaveBeenCalledWith(expect.objectContaining({
+        where: expect.objectContaining({ workerId: null }),
+      }));
+    });
+
+    it('also applies workerId: null when explicit `includeLinked` is false', async () => {
+      await getLaborProfilesList(mockTx, adminCtx, { includeLinked: false });
+      expect(mockFindMany).toHaveBeenCalledWith(expect.objectContaining({
+        where: expect.objectContaining({ workerId: null }),
+      }));
+    });
+
+    it('omits the workerId filter when `includeLinked: true` (e.g. PATCH route guard)', async () => {
+      await getLaborProfilesList(mockTx, adminCtx, { includeLinked: true });
+      const lastCall = mockFindMany.mock.calls.at(-1)?.[0] as { where: Record<string, unknown> };
+      expect(lastCall).toBeTruthy();
+      // The `where` must NOT contain `workerId: null` — admin tool needs to see linked rows.
+      expect(lastCall.where).not.toHaveProperty('workerId');
+    });
+  });
 });

@@ -1,4 +1,5 @@
 import { notFound, redirect } from 'next/navigation';
+import Link from 'next/link';
 import { getServerSession } from '@/src/shared/auth/server-session';
 import { getPrisma } from '@/src/lib/db';
 import { withDbContext } from '@/src/shared/auth/with-db-context';
@@ -13,6 +14,7 @@ import {
 } from '@/src/domains/labor-profile/labor-profile-ui';
 import { StatusBadge } from '@/src/shared/ui/status-badge';
 import { HandlingAssignmentManager } from './handling-assignment-manager';
+import { LaborProfileEditForm } from './labor-profile-edit-form';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -22,6 +24,8 @@ export const metadata = {
 };
 
 const ALLOWED_ROLES = new Set(['ADMIN', 'HR_MANAGER', 'HR_STAFF']);
+// DEC-P2-02: chỉ ADMIN + HR_MANAGER mới được sửa; HR_STAFF chỉ xem.
+const WRITER_ROLES = new Set(['ADMIN', 'HR_MANAGER']);
 
 export default async function LaborProfileDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
@@ -46,6 +50,8 @@ export default async function LaborProfileDetailPage({ params }: { params: Promi
     notFound();
   }
 
+  const isLinked = Boolean(data.workerId);
+  const canEdit = !isLinked && WRITER_ROLES.has(session.role);
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8">
       <Breadcrumb
@@ -55,6 +61,34 @@ export default async function LaborProfileDetailPage({ params }: { params: Promi
         ]}
       />
 
+      {/* DEC-P2-11: nếu profile đã chuyển thành Worker, banner read-only
+          nổi bật + nút link sang /admin/workers. Đây là UX cho deep-link
+          truy cập row đã linked từ /admin/labor-profiles (vd từ search
+          cũ). Bản chất: LaborProfile linked = hồ sơ "đã ra khỏi" intake
+          và thuộc về /admin/workers; chỉ đọc là đúng nghiệp vụ. */}
+      {isLinked ? (
+        <div
+          className="bg-amber-50 border border-amber-300 text-amber-900 px-5 py-4 rounded-xl flex items-center justify-between gap-4"
+          data-testid="linked-readonly-banner"
+          data-labor-profile-id={data.id}
+          data-worker-id={data.workerId ?? ''}
+          role="alert"
+        >
+          <div>
+            <p className="font-semibold text-sm">Đã chuyển thành người lao động</p>
+            <p className="text-xs mt-0.5">
+              Hồ sơ tiếp nhận này đã được liên kết với một người lao động. Mọi thao tác chỉnh sửa phải thực hiện trên hồ sơ người lao động.
+            </p>
+          </div>
+          <Link
+            href="/admin/workers"
+            className="shrink-0 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm"
+          >
+            Xem người lao động
+          </Link>
+        </div>
+      ) : null}
+
       {/* Block 8: Hành động theo trạng thái */}
       <div className="flex items-center justify-between">
         <div>
@@ -62,16 +96,39 @@ export default async function LaborProfileDetailPage({ params }: { params: Promi
           <p className="text-gray-500 mt-1">{data.phone || 'Chưa cập nhật SĐT'}</p>
         </div>
         <div className="flex space-x-3">
-          {!data.workerId && (
+          {!isLinked && !canEdit ? (
+            <span
+              className="bg-gray-100 text-gray-500 px-4 py-2 rounded-lg text-sm font-medium border border-gray-200"
+              title="HR_STAFF chỉ có quyền xem; vui lòng liên hệ ADMIN/HR_MANAGER để chỉnh sửa."
+            >
+              Sửa thông tin (chỉ ADMIN/HR_MANAGER)
+            </span>
+          ) : null}
+          {!isLinked && (
             <button disabled className="bg-gray-100 text-gray-400 px-4 py-2 rounded-lg font-medium cursor-not-allowed opacity-70 border border-gray-200" title="Tính năng đang được phát triển">
               Chuyển đổi thành nhân viên
             </button>
           )}
-          <button className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium shadow-sm hover:bg-blue-700">
-            Sửa thông tin
-          </button>
         </div>
       </div>
+
+      {canEdit ? (
+        <LaborProfileEditForm
+          profile={{
+            id: data.id,
+            fullName: data.fullName,
+            phone: data.phone,
+            cccdNumber: data.cccdNumber,
+            workerId: data.workerId,
+            completeness: data.completeness,
+          }}
+          role={session.role}
+          onSaved={() => {
+            // server component → cannot call router here. Page-level refresh
+            // happens via window.location.reload in client form.
+          }}
+        />
+      ) : null}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Block 1: Nhận diện & độ tin cậy match */}
@@ -140,9 +197,9 @@ export default async function LaborProfileDetailPage({ params }: { params: Promi
         </div>
 
         {/* Block 4: Người phụ trách */}
-        <HandlingAssignmentManager 
-          laborProfileId={data.id} 
-          activeAssignment={data.activeHandlingAssignment} 
+        <HandlingAssignmentManager
+          laborProfileId={data.id}
+          activeAssignment={data.activeHandlingAssignment}
         />
 
         {/* Block 5: Quyền hưởng hoa hồng (Placeholder N2-5) */}

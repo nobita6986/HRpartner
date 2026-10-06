@@ -94,3 +94,57 @@ export interface ExistingLaborProfile {
   normalizedPhone: string | null;
   cccdNumber: string | null;
 }
+
+// ════════════════════════════════════════════════════════════════════════
+// Pre-P2 hotfix (T1B) — LaborProfile edit surface types.
+// ════════════════════════════════════════════════════════════════════════
+
+/**
+ * Field set mà admin LaborProfile edit PATCH cho phép.
+ *
+ * DEC-P2-03: `workerId` KHÔNG thuộc editable set. Conversion flow từ PR #107
+ * (`linkLaborProfileWorker`, CAS-update trên `where: { id, workerId: null }`)
+ * là đường duy nhất set `workerId`; route PATCH chỉ chỉnh intake fields
+ * thuần. `consentAt`, `identityVerification`, `completeness` cũng không
+ * thuộc editable set — completeness được server derive lại từ input.
+ */
+export interface LaborProfileEditableFields {
+  fullName?: string;
+  phone?: string;
+  cccdNumber?: string | null;
+}
+
+/**
+ * Server-derived completeness levels.
+ *
+ * DEC-P2-05: pure; nguồn là `{ fullName, phone | normalizedPhone, cccdNumber }`.
+ * LaborProfile schema hiện có hai label hợp lệ `MINIMAL` và `COMPLETE`
+ * (dictionary `laborProfile-ui.ts` alias `COMPLETE → "Đầy đủ"`, `FULL → "Đầy đủ"`
+ * để tương thích ngược với row cũ).
+ */
+export type LaborProfileCompletenessLevel = 'MINIMAL' | 'COMPLETE' | 'FULL';
+
+/**
+ * Typed warning PATCH trả về khi probe thấy profile khác trùng tín hiệu
+ * nhận dạng. Caller quyết định merge hay không — server KHÔNG auto-merge
+ * (cùng DEC-04 với `createOrMatchLaborProfile`).
+ */
+export type PossibleDuplicateWarning = {
+  kind: 'POSSIBLE_DUPLICATE';
+  signal: 'normalizedPhone' | 'cccdNumber';
+  laborProfileIds: string[];
+};
+
+/**
+ * Lỗi fail-closed khi cố sửa LaborProfile đã được liên kết Worker.
+ *
+ * DEC-P2-06: chỉ `linkLaborProfileWorker` (PR #107) mới được ghi
+ * `workerId`. PATCH endpoint phải abort typed trước khi UPDATE.
+ */
+export class LaborProfileAlreadyLinkedError extends Error {
+  public readonly code = 'LABOR_PROFILE_ALREADY_LINKED' as const;
+  constructor(public readonly workerId: string) {
+    super('LaborProfile is already linked to a Worker; edit is locked');
+    this.name = 'LaborProfileAlreadyLinkedError';
+  }
+}
