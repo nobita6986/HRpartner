@@ -9,12 +9,13 @@
 | Audit mode | `NONE` (Tier 1 self-review per directive) |
 | Spec version | `v1.1` (T0 → PR #110 CORRECTION 1/1) |
 | Status | `READY_FOR_REVIEW` |
-| Baseline | `origin/main @ bbdbe94862dc58c9ec97c3f1627a43d9c0e8ab0b` |
+| Baseline | `origin/main @ f1bf3f2a1900b6f1826f03eb063c4b9079292969` (forward-merged 2026-10-06 12:35 UTC+7) |
 | Worktree | `C:\CodeApp\HrP-t1b-pre-p2-intake-worker-separation` |
 | Branch | `codex/t1b-pre-p2-intake-worker-separation` |
 | Correction baseline (v1.0 impl SHA) | `2eb74f2d442378b47f7b5ac9d22660137e684eae` |
-| Forward-only correction SHA | (to be filled by commit — `git rev-parse HEAD` after commit) |
-| Updated | 2026-10-06 09:15 UTC+7 |
+| v1.1 forward-only correction SHA | `2af3f9fd0bf03fd3b948797cc358adf6a6c7eb0b` |
+| Forward-merge commit (v1.2) | `67dab3e148fbd598ee7814885f32fe9fa0457d83` (`merge: forward-merge origin/main @ f1bf3f2a into PR #110 branch`) |
+| Updated | 2026-10-06 12:43 UTC+7 |
 
 ## 1. Outcome recap (v1.0 → v1.1)
 
@@ -207,3 +208,4 @@ No files outside allowlist. No `prisma/schema.prisma`. No `prisma/migrations/**`
 |------|------|--------|------|
 | `v1.0` | 2026-10-06 | Phát hành từ T0 directive; baseline `bbdbe9486` | T1 self-review; PR #110 CI 4/4 GREEN |
 | `v1.1` | 2026-10-06 09:15 | T0 → PR #110 CORRECTION 1/1: drop onSaved prop, CAS-updateMany race guard với re-read trên count=0, dirty tracking + masked rejection (4 lớp defense), copy sweep breadcrumb + button. Forward-only, single commit, đẩy lên PR #110; không Tier 3. | T1 self-review; correction baseline `2eb74f2d4` |
+| `v1.2` | 2026-10-06 12:35 | Forward-merge origin/main `@ f1bf3f2a` vào branch PR #110 (1 commit merge `--no-ff`, không rebase/reset/amend/force-push). New baseline `f1bf3f2a` (advance: 1 commit sticky-marquee). LaborProfile separation/edit scope UNTOUCHED. CI Quality + Vercel 3/4 GREEN; Integration exit 1 do Vitest tinypool "Worker exited unexpectedly" sau 45/46 file ✓ / 734 tests ✓ / 0 assertion failed — flake infra (cùng pattern f1bf3f2a trên main cũng từng xuất hiện khi test file cuối leak Postgres connection). | T1B directive; merge commit `67dab3e1` |
