@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<!--
+  T1C single-text marquee browser-check fixture.
+  This file mirrors the DOM that sticky-announcement.tsx renders when
+  animation=MARQUEE, using the EXACT hashed class names emitted by the
+  Next.js CSS Modules compiler. The CSS file linked below is the one
+  produced by `next build` for the v1.1 commit e777267528e95caca0bd5c979aff2083847a2aa5
+  (the original class names are preserved in
+  src/domains/job-board/public-content-controls/sticky-announcement.module.css
+  so a reviewer can diff against the source).
+
+  The full browser-check that runs against the live Vercel Preview
+  URL is gated on the Vercel SSO cookie being available to the agent
+  (the current Vercel Preview deployment sits behind a Vercel
+  Authentication barrier, so the headless Chrome cannot reach
+  /api/public/homepage-settings). This fixture is the
+  offline-equivalent: it ships the production CSS verbatim, mounts
+  the production DOM shape, and runs the same Puppeteer-core checks
+  (single-text DOM, computed keyframe, monotonic leftward transform,
+  no leftover tail testid). See HANDOFF.md §E-14 + §DEV-02 for the
+  exact Vercel-access limitation and the resolution.
+-->
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <title>T1C marquee fixture</title>
+    <link rel="stylesheet" href="./0b1237131f449bdc.css" />
+    <style>
+      :root {
+        --color-on-primary: #ffffff;
+        --color-primary: #1d4ed8;
+        --sticky-background-opacity: 100%;
+        --sticky-marquee-duration: 4s;
+      }
+      body { margin: 0; padding: 0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+      .page-filler { min-height: 1500px; padding: 1rem; }
+    </style>
+  </head>
+  <body>
+    <div class="page-filler">T1C browser-check fixture page (filler, scrollable).</div>
+    <div
+      role="region"
+      aria-label="Thông báo"
+      aria-live="polite"
+      data-testid="sticky-announcement"
+      class="sticky-announcement_hrpStickyAnnouncement__2IrTD sticky-announcement_hrpStickyAnnouncementAnimMarquee__B18V6"
+      style="--sticky-marquee-duration:4s"
+    >
+      <div
+        class="sticky-announcement_hrpStickyAnnouncementViewport__zSGKR"
+        data-testid="sticky-announcement-marquee"
+      >
+        <span
+          class="sticky-announcement_hrpStickyAnnouncementMessage__Bczbb sticky-announcement_hrpStickyAnnouncementMessageMarquee__Dnpj3"
+        >
+          Hỗ trợ tư vấn 24/7 — Liên hệ ngay để được hỗ trợ
+        </span>
+      </div>
+    </div>
+  </body>
+</html>

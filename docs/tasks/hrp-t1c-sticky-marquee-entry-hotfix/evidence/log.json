@@ -1,0 +1,82 @@
+[
+  {
+    "id": "[desktop-1440x900].single-text",
+    "ok": true,
+    "detail": "count=1"
+  },
+  {
+    "id": "[desktop-1440x900].no-tail",
+    "ok": true,
+    "detail": "tailCount=0"
+  },
+  {
+    "id": "[desktop-1440x900].animation-name",
+    "ok": true,
+    "detail": "sticky-announcement_hrpStickyAnnouncementMarquee__0pucR"
+  },
+  {
+    "id": "[desktop-1440x900].kf-0",
+    "ok": true,
+    "detail": "0% { transform: translateX(100%); }"
+  },
+  {
+    "id": "[desktop-1440x900].kf-100",
+    "ok": true,
+    "detail": "100% { transform: translateX(-100%); }"
+  },
+  {
+    "id": "[desktop-1440x900].msg-white-space",
+    "ok": true,
+    "detail": "white-space=nowrap"
+  },
+  {
+    "id": "[desktop-1440x900].msg-no-overflow-hidden",
+    "ok": true,
+    "detail": "overflow=visible"
+  },
+  {
+    "id": "[desktop-1440x900].leftward",
+    "ok": true,
+    "detail": "[328.65,227.53,132.03]"
+  },
+  {
+    "id": "[mobile-390x844].single-text",
+    "ok": true,
+    "detail": "count=1"
+  },
+  {
+    "id": "[mobile-390x844].no-tail",
+    "ok": true,
+    "detail": "tailCount=0"
+  },
+  {
+    "id": "[mobile-390x844].animation-name",
+    "ok": true,
+    "detail": "sticky-announcement_hrpStickyAnnouncementMarquee__0pucR"
+  },
+  {
+    "id": "[mobile-390x844].kf-0",
+    "ok": true,
+    "detail": "0% { transform: translateX(100%); }"
+  },
+  {
+    "id": "[mobile-390x844].kf-100",
+    "ok": true,
+    "detail": "100% { transform: translateX(-100%); }"
+  },
+  {
+    "id": "[mobile-390x844].msg-white-space",
+    "ok": true,
+    "detail": "white-space=nowrap"
+  },
+  {
+    "id": "[mobile-390x844].msg-no-overflow-hidden",
+    "ok": true,
+    "detail": "overflow=visible"
+  },
+  {
+    "id": "[mobile-390x844].leftward",
+    "ok": true,
+    "detail": "[334.259,241.561,151.69]"
+  }
+]
