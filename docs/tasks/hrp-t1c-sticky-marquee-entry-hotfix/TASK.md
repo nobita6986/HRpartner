@@ -12,12 +12,12 @@
 | Assurance lane | `STANDARD` |
 | Audit mode | `NONE` |
 | Audit reason | `Bug chỉ ở CSS keyframe/layout của sticky marquee; không thuộc authorization/RLS, schema, business rule. Owner chấp nhận self-review top 3 risks. Không tạo AUDIT.md.` |
-| Spec version | `v1.1` (CORRECTION 1/1) |
+| Spec version | `v1.2` (CORRECTION 2/2) |
 | Status | `READY_FOR_EXECUTION` |
 | Planner | `Tier 1` |
 | Baseline | `bbdbe94862dc58c9ec97c3f1627a43d9c0e8ab0b` |
 | Baseline origin | `bbdbe948… = origin/main @ takeover` |
-| Implementation SHA | `04e046e91a7808f6a5bf7580147d7948f9e9e869` (v1.1 semantic commit; e7772675 was the original v1.1 commit that pinned only the source/test files; 04e046e9 is the v1.1 commit that also pins the browser-check + fixture-server scripts per the Vercel-SSO substitution in HANDOFF DEV-07) |
+| Implementation SHA | `2aaca4249924b1da429b6d2cb097ae8b28d5adf0` (v1.2 semantic commit) |
 | Contract gate | `READY_TO_CODE` |
 | Decision state | `CLOSED` |
 | Test environment | `READY` |
@@ -167,6 +167,7 @@
 | `v1.0` | `2026-10-06` | Initial contract; CSS-only hotfix for sticky marquee entry, base `bbdbe948`, Audit mode NONE | T0 directive to fix marquee entry bug surviving #105 |
 | `v1.1` | `2026-10-06` | **CORRECTION 1/1** — pivot from `width: 200% / group width: 50%` (double-text seamless) to **single-text marquee**: drop the duplicate `aria-hidden="true"` group from `sticky-announcement.tsx`, drop `.hrpStickyAnnouncementTrack` + `.hrpStickyAnnouncementMarqueeGroup` rules from the stylesheet, animate the message itself with `translateX(100%) → translateX(-100%)` so the message starts fully off the right edge, runs through the viewport, and exits fully off the left edge before the next cycle begins. Update the static fence to assert the new contract and to forbid the `200% / 50%` constants. Add a Puppeteer-core browser-check that runs the live Vercel Preview on a desktop (1440×900) and a mobile (390×844) viewport to assert exactly one `.hrpStickyAnnouncementMessageMarquee` element is visible at a time. | T0 rejected the previous attempt and required: (1) exactly one copy of the message per cycle; (2) start fully outside the right edge; (3) run through the entire viewport and exit fully off the left; (4) no second clone; (5) viewport clips but the message is not internally truncated; (6) markup AND keyframe are allowed to change. |
 | `v1.1.b` | `2026-10-06` | Re-pin Implementation SHA from `e7772675` to `04e046e9`: the v1.1 implementation commit (`e7772675`) only carries the source/test pair; the second v1.1 implementation commit (`04e046e9`) extends the same semantic change to `scripts/ops/t1c-marquee-browser-check.mjs` (NUL-byte cleanup) and adds `scripts/ops/t1c-fixture-server.mjs` (the offline fixture server). HANDOFF §4 DEV-07 documents the Vercel-SSO substitution; the offline fixture runs the same Puppeteer-core invariants against the verbatim production-compiled CSS. | The H-16 frozen-delivery gate requires every `scripts/` commit to land in the Implementation SHA; bumping the SHA rather than amending keeps the original v1.1 source/test commit visible in the branch history so a reviewer can diff between rounds. |
+| `v1.2` | `2026-10-06` | **CORRECTION 2/2 — viewport-aware translation distance.** v1.1's keyframe was `translateX(0) → translateX(calc(-1 * var(--marquee-shift, 0px)))` where `--marquee-shift` was a single px value derived from `viewport.width + message.width`. This is mathematically wrong: CSS `translateX(<%>)` is relative to the element's OWN width, not the viewport, so a single "shift" cannot represent both the start offset (= viewport.width) and the end offset (= message.width) without ambiguity. v1.2 publishes TWO independent CSS custom properties from a `useEffect` armed on mount / resize: `--marquee-shift-start = viewport.width − messageRect.left` (px translation so the message's left edge lands at the viewport's right edge) and `--marquee-shift-end = messageRect.left + messageRect.width` (px translation so the message's right edge lands at 0). The keyframe becomes `0% { translateX(var(--marquee-shift-start, 0px)); } 100% { translateX(calc(-1 * var(--marquee-shift-end, 0px))); }`. The `animation` property is applied inline on the message via `style.animation = '<hashed keyframe name> <duration>s linear infinite'` (resolved at runtime from `CSSKeyframesRule.name` to sidestep CSS Modules hashing) AFTER the variables are measured, so the keyframe does not start against the `0px` fallback. The natural (pre-transform) measurement uses `messageEl.offsetLeft + parentRect.left` because `getBoundingClientRect()` returns the post-transform rect and would feed the feedback loop. ResizeObserver + `resize` listener re-arms the animation. Browser-check now seeks to t=0/t=duration/2/t=duration−ε and asserts `boundingClientRect` invariants at each position: start `rect.left ≥ viewportWidth`, mid intersects viewport, end `rect.right ≤ 0` (≤ 2px for compositor tolerance). | T0 required: (1) keep one DOM copy — confirm (T0 §4); (2) start fully outside the right edge — confirm (T0 §2, viewport-correct); (3) exit fully off the left — confirm (T0 §3); (4) measure `boundingClientRect` at start/mid/end — added to browser-check (T0 §3); (5) viewport distance, not message width — fixed (T0 §2); (6) keep 5–60s duration, opacity, CTA, dismiss, reduced-motion — preserved. |
 
 ## 11. CORRECTION 1/1 — Single-Text Marquee (T0 mandated pivot)
 
@@ -234,4 +235,41 @@ binary that the agent already discovered in this environment. The script:
 If the Vercel Preview is unreachable or the marquee is not yet served on
 the preview, the script reports a structured `BLOCKER` line to the
 HANDOFF and the run is treated as a blocking failure (T0 point 8).
+
+## 12. CORRECTION 2/2 — Viewport-Aware Translation Distance (T0 mandated pivot)
+
+### 12.1 Why v1.1 was rejected
+
+The v1.1 single-text keyframe was `translateX(0) → translateX(calc(-1 * var(--marquee-shift, 0px)))` where `--marquee-shift` was a single px value = `viewport.width + message.width`. This looks like the message travels the full viewport, but it is mathematically wrong because **CSS `translateX(<%>)` is relative to the element's OWN width, not the viewport**. A `%`-valued translation cannot represent "shift by exactly the viewport width" without ambiguity, and a single `--marquee-shift` px value can only represent one of the two required offsets:
+
+- the **start** offset (= viewport.width, so the message's right edge lands at `viewport.width` = outside the right edge); OR
+- the **end** offset (= message.width, so the message's right edge lands at `0` = outside the left edge).
+
+The v1.1 form combined them by computing `viewport.width + message.width` and using that as the 100% translation, then starting at `translateX(0)` (= the natural position, inside the viewport). The message therefore began the cycle *inside* the viewport, not outside the right edge.
+
+T0's correction mandates that the keyframe be measured against the **viewport**, not against the message, and that the browser-check verify `boundingClientRect` at the three positions.
+
+### 12.2 New contract (v1.2)
+
+| ID | Contract |
+|---|---|
+| `CQ-07` | Exactly TWO CSS custom properties are published on the marquee viewport element by a `useEffect` armed on mount / on resize: `--marquee-shift-start = window.innerWidth − message.getBoundingClientRect().left` (px translation so the message's left edge lands at `window.innerWidth`) and `--marquee-shift-end = message.getBoundingClientRect().left + message.getBoundingClientRect().right` (px translation so the message's right edge lands at `0`). |
+| `CQ-08` | The keyframe is `0% { transform: translateX(var(--marquee-shift-start, 0px)); } 100% { transform: translateX(calc(-1 * var(--marquee-shift-end, 0px))); }`. |
+| `CQ-09` | The natural measurement uses `messageEl.offsetLeft + parentRect.left` (offsetLeft is unaffected by transforms), not `getBoundingClientRect()`, so the measurement is not contaminated by the animation that has already been applied. This breaks the resize-loop feedback where the measurement reads the post-transform rect and computes `0px` as the shift. |
+| `CQ-10` | The `animation` property is applied INLINE on the message via `style.animation = '<hashed keyframe name> <duration>s linear infinite'` (the keyframe name is resolved at runtime from `CSSKeyframesRule.name`) AFTER the px variables are set. The CSS rule for `.hrpStickyAnnouncementMessageMarquee` does NOT declare `animation`, so the keyframe never starts against the `0px` fallback of the variables. |
+| `CQ-11` | Browser-check seeks `Animation.currentTime` to `0` (start), `duration / 2` (mid), `duration − 0.001ms` (end — the epsilon avoids the wrap to the next iteration that an infinite animation does at `currentTime === duration`) and asserts `getBoundingClientRect` at each position. The monotonic-leftward wall-clock check resets `currentTime = 0` and samples inside a single cycle (`duration / 4` between samples) so the test does not span an iteration boundary. |
+
+### 12.3 Files changed in v1.2
+
+| Path | Change |
+|---|---|
+| `src/domains/job-board/public-content-controls/sticky-announcement.tsx` | New `useEffect` adds `marqueeViewportRef` and `marqueeMessageRef` refs, publishes `--marquee-shift-start` and `--marquee-shift-end` on the viewport element, resolves the hashed keyframe name from `CSSKeyframesRule.name`, applies the animation inline via `style.animation`, and re-arms on `ResizeObserver` (message) and `resize` (viewport) events. |
+| `src/domains/job-board/public-content-controls/sticky-announcement.module.css` | Keyframe rewritten to consume two px variables. `animation` declaration removed from `.hrpStickyAnnouncementMessageMarquee` (now applied inline). Reduced-motion override retained. |
+| `src/domains/job-board/public-content-controls/content-controls.static.test.ts` | v1.2 fences added: forbid `translateX(±100%)` and `--marquee-shift` (singular) in CSS; require keyframe consumes `--marquee-shift-start` at 0% and `--marquee-shift-end` at 100%; require `animation` is NOT declared in CSS on the message rule (so the keyframe cannot start before JS publishes the variables). The legacy `applies BLINK opacity` fence's assertion of the old CSS-declared marquee animation is removed. |
+| `src/domains/job-board/public-content-controls/sticky-announcement.test.tsx` | Updated JSDoc + comment block for the single-text marquee test to point to the v1.2 viewport-aware contract. |
+| `scripts/ops/t1c-marquee-browser-check.mjs` | Rewritten: wait for BOTH `--marquee-shift-start` and `--marquee-shift-end` to be published as px values; seek the marquee animation to t=0 / duration/2 / duration−ε; assert `rect.left ≥ viewportWidth` (start), `rect intersects viewport` (mid), `rect.right ≤ 2` (end, allowing 2px compositor tolerance); release the seek (reset to t=0, play), then take 3 wall-clock samples inside one cycle (`duration / 4` apart) and confirm the `transform` is monotonically leftward. `SEEK_PROBE` is a real function (not a string template), so puppeteer's serializer round-trips it correctly. |
+| `scripts/ops/t1c-fixture-server.mjs` | Untouched (the same offline fixture server). |
+| `docs/tasks/hrp-t1c-sticky-marquee-entry-hotfix/evidence/fixture.html` | Inline `<script>` rewritten to mirror the v1.2 effect: measures `parentRect.left + message.offsetLeft`, publishes the two variables, resolves the hashed keyframe name from `CSSKeyframesRule.name`, applies the animation inline, re-arms on `ResizeObserver` and `resize`. |
+| `docs/tasks/hrp-t1c-sticky-marquee-entry-hotfix/evidence/0b1237131f449bdc.css` | Re-extracted verbatim from `next build`'s hashed output for the v1.2 source commit (SHA256 matches the compiled `.next/static/css/<hash>.css` byte-for-byte). The keyframe in this file is `@keyframes sticky-announcement_hrpStickyAnnouncementMarquee__0pucR{0%{transform:translateX(var(--marquee-shift-start,0))}to{transform:translateX(calc(-1 * var(--marquee-shift-end, 0px)))}}`. |
+| `docs/tasks/hrp-t1c-sticky-marquee-entry-hotfix/evidence/report.json` | Re-recorded from the v1.2 browser-check: 28/28 invariants PASS across both desktop and mobile. `seek-start` desktop: `rect.left=1440 ≥ viewportWidth=1440`. `seek-end` desktop: `rect.right=0.08 ≤ 2`. `seek-start` mobile: `rect.left=390 ≥ viewportWidth=390` (message LONGER than the viewport, contract still holds). `seek-end` mobile: `rect.right=0.08 ≤ 2`. |
 
