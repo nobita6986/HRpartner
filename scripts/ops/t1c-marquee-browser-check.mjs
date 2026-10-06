@@ -1,11 +1,17 @@
 #!/usr/bin/env node
-/* eslint-disable no-console */
+/* eslint-disable no-undef */
 /**
  * T1C — Sticky marquee single-text entry browser-check
  * (T0 CORRECTION 1/1, v1.1).
+ * The `no-undef` disable covers the page.evaluate() bodies, which
+ * run inside the headless Chromium browser context where `window`,
+ * `document`, and `CSSKeyframesRule` are all valid globals. The
+ * Node-side host code (this file's top-level body) does not
+ * reference any browser globals.
  *
  * Runs the live Vercel Preview URL of this PR on a desktop viewport
  * (1440x900) and a mobile viewport (390x844), asserts:
+ *
  *
  *   1. The `data-testid="sticky-announcement"` root is present after the
  *      client-side `usePublicContentControls` fetch resolves.
