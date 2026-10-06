@@ -46,6 +46,14 @@
 
 `origin/main` đã tiến `d6f11973 → bc95320d` sau khi T0 merge PR #114 (T1A pre-P2 project management hotfix, `7f30e6eb` + `9ae00ee5` + `6d6e427a`). Conflict duy nhất ở `src/shared/security/required-relation-sweep.static.test.ts`: cả T1A lẫn T1B đều cập nhật comment + `toHaveLength`. T1A ghi `41` (thêm `project-read.service.ts:152 clientCompany`); T1B ghi `43` (thêm 3 entry `worker.service.ts:266/275/283`). Combined count = `44` src hits; `app/api` giữ nguyên `3` (T1A không thêm `app/api` hit). Đã giữ nguyên 3 entry T1B; thêm 1 entry T1A đã có sẵn trên main; cập nhật `toHaveLength(44)` kèm comment kết hợp. Không sửa schema, auth/RLS, conversion flow, hay `projectWorker` allowlist.
 
+Quá trình forward-merge phát sinh 2 commit: (1) `f83c7db2` chore forward-merge + conflict resolution, (2) `eb5550a9` fix-restore — trong commit (1) do index/working-tree lệch giữa `checkout origin/main` (prisma-validate test) và `stash pop`, 4 file T1A (`app/api/projects/[id]/route.ts`, `app/admin/projects/[id]/page.tsx`, `src/domains/crm/project-read.service.ts`, T1B HANDOFF) không được auto-merge đúng cách. Commit (2) restore byte-for-byte nội dung T1A cho 3 file `.ts/.tsx` (giống `origin/main`) và làm mới HANDOFF theo số liệu mới. Cả 2 commit là forward-only (không amend/force-push).
+
+## CI (workflow_dispatch on `eb5550a9`)
+
+- Run `37482751147` (3/3 dispatch jobs success): Quality 3m12s ✓, Integration 1m47s ✓.
+- Vercel 2/2 ✓ (preview deployment + comments).
+- Total CI: 4/4 GREEN.
+
 ## DỪNG TRƯỚC MERGE
 
 Branch: `codex/t1b-pre-p2-worker-management-hotfix` đẩy tới remote; chờ CI 4/4 GREEN; không merge, không deploy.
