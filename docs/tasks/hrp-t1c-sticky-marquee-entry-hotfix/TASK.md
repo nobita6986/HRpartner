@@ -17,7 +17,7 @@
 | Planner | `Tier 1` |
 | Baseline | `bbdbe94862dc58c9ec97c3f1627a43d9c0e8ab0b` |
 | Baseline origin | `bbdbe948… = origin/main @ takeover` |
-| Implementation SHA | `802ab2ebef84db52633c8353a141477827ae2ecc` |
+| Implementation SHA | `e7772675` (v1.1 semantic commit) |
 | Contract gate | `READY_TO_CODE` |
 | Decision state | `CLOSED` |
 | Test environment | `READY` |
@@ -25,10 +25,10 @@
 | Frozen delivery | `YES` |
 | Canonical gates | `PASS` |
 | Audit eligibility | `NOT_REQUIRED` |
-| In-scope roots | `src/domains/job-board/public-content-controls/sticky-announcement.module.css`; `src/domains/job-board/public-content-controls/content-controls.static.test.ts`; `docs/tasks/hrp-t1c-sticky-marquee-entry-hotfix/**` |
-| Forbidden paths | `Prisma schema/migrations; auth/RLS; API payload names, enum values, IDs, domain invariants; production DB; unrelated admin UI; other CSS keyframe/animation files` |
-| Required gates | `targeted Vitest (sticky-announcement); npm run test:unit; npm run typecheck; npm run lint; npm run build; encoding verification; git diff --check` |
-| Current execution round | `1` |
+| In-scope roots | `src/domains/job-board/public-content-controls/sticky-announcement.tsx`; `src/domains/job-board/public-content-controls/sticky-announcement.module.css`; `src/domains/job-board/public-content-controls/sticky-announcement.test.tsx`; `src/domains/job-board/public-content-controls/content-controls.static.test.ts`; `scripts/ops/t1c-marquee-browser-check.mjs`; `docs/tasks/hrp-t1c-sticky-marquee-entry-hotfix/**` |
+| Forbidden paths | `Prisma schema/migrations; auth/RLS; API payload names, enum values, IDs, domain invariants; production DB; unrelated admin UI; other CSS keyframe/animation files; package.json (no new runtime dependency added — see HANDOFF §DEV-06)` |
+| Required gates | `targeted Vitest (sticky-announcement); npm run test:unit; npm run typecheck; npm run lint; npm run build; encoding verification; prisma validate; git diff --check; t1c-marquee-browser-check (Puppeteer-core on Vercel Preview, desktop 1440x900 + mobile 390x844)` |
+| Current execution round | `2` |
 | Current audit round | `0` |
 | Next gate | `PUSH_PR_CI_GREEN` (Tier 1 dừng trước merge) |
 
@@ -165,3 +165,72 @@
 | Spec version | Date | Change | Reason |
 |---|---|---|---|
 | `v1.0` | `2026-10-06` | Initial contract; CSS-only hotfix for sticky marquee entry, base `bbdbe948`, Audit mode NONE | T0 directive to fix marquee entry bug surviving #105 |
+| `v1.1` | `2026-10-06` | **CORRECTION 1/1** — pivot from `width: 200% / group width: 50%` (double-text seamless) to **single-text marquee**: drop the duplicate `aria-hidden="true"` group from `sticky-announcement.tsx`, drop `.hrpStickyAnnouncementTrack` + `.hrpStickyAnnouncementMarqueeGroup` rules from the stylesheet, animate the message itself with `translateX(100%) → translateX(-100%)` so the message starts fully off the right edge, runs through the viewport, and exits fully off the left edge before the next cycle begins. Update the static fence to assert the new contract and to forbid the `200% / 50%` constants. Add a Puppeteer-core browser-check that runs the live Vercel Preview on a desktop (1440×900) and a mobile (390×844) viewport to assert exactly one `.hrpStickyAnnouncementMessageMarquee` element is visible at a time. | T0 rejected the previous attempt and required: (1) exactly one copy of the message per cycle; (2) start fully outside the right edge; (3) run through the entire viewport and exit fully off the left; (4) no second clone; (5) viewport clips but the message is not internally truncated; (6) markup AND keyframe are allowed to change. |
+
+## 11. CORRECTION 1/1 — Single-Text Marquee (T0 mandated pivot)
+
+### 11.1 Why the previous shape was rejected
+
+The first execution round kept the legacy `width: 200%` track with two
+`width: 50%` group copies and the legacy `translateX(0) → translateX(-50%)`
+keyframe, with a T0 explanation of "mathematically seamless". T0 rejected
+that approach for the following reasons:
+
+- **Two copies are explicitly forbidden.** T0 point 4: "Không dùng bản sao
+  thứ hai chen vào để tạo seamless loop." The `200% / 50% / 50%` shape
+  exists *only* to support a second clone of the message that scrolls
+  in from the right as the first one scrolls out on the left. That is
+  exactly the shape T0 forbade.
+- **Message truncation.** With `overflow: hidden` on each group, a
+  message whose natural width exceeds the viewport is clipped on both
+  edges. T0 point 5: "bản thân message không bị cắt khi dài." The
+  `overflow: hidden` belongs on the viewport, not on the group.
+- **Constraint was lifted.** T0 point 6: "Được sửa markup/keyframe —
+  bỏ constraint 'markup và 0→-50% không đổi'." The previous contract
+  locked both the JSX and the keyframe, which is why the first attempt
+  had to attempt a duplicate-clone pattern at all. Both are now free
+  to change.
+
+### 11.2 New contract
+
+| ID | Contract |
+|---|---|
+| `CQ-01` | Exactly one SPAN element with class `hrpStickyAnnouncementMessageMarquee` is rendered in the DOM. No `aria-hidden="true"` clone, no track wrapper, no second group. |
+| `CQ-02` | The keyframe is `0% { transform: translateX(100%); } 100% { transform: translateX(-100%); }`. The single message starts fully outside the right edge of the viewport, runs through the entire viewport, and exits fully off the left edge before the next cycle begins. |
+| `CQ-03` | The viewport has `overflow: hidden`. The message itself has `white-space: nowrap` and `width: max-content`; the message is never truncated by its own `overflow`. |
+| `CQ-04` | The marquee duration is still bound to `var(--sticky-marquee-duration, 18s)` (5–60s as set by the admin), and the marquee message class is animated `linear infinite`. Reduced-motion override collapses to `animation: none` and `white-space: normal`. |
+| `CQ-05` | All previously preserved affordances still hold: opacity stays on the `::before` background, the CTA `sticky-announcement-cta` is unchanged, the dismiss `sticky-announcement-dismiss` button is unchanged, and the component still imports / re-exports through the public barrel. |
+| `CQ-06` | Browser-check is mandatory: a Puppeteer-core script runs the live Vercel Preview URL on (a) desktop 1440×900 and (b) mobile 390×844, asserts exactly one `.hrpStickyAnnouncementMessageMarquee` element is in the DOM, asserts the computed keyframe is `translateX(100%) → translateX(-100%)`, and takes a screenshot of the marquee at three timestamps (start, mid, end of one cycle). |
+
+### 11.3 Files changed in v1.1
+
+| Path | Change |
+|---|---|
+| `src/domains/job-board/public-content-controls/sticky-announcement.tsx` | Drop the `aria-hidden="true"` clone group. Render exactly one SPAN with classes `hrpStickyAnnouncementMessage` and `hrpStickyAnnouncementMessageMarquee` inside the marquee viewport. |
+| `src/domains/job-board/public-content-controls/sticky-announcement.module.css` | Drop `.hrpStickyAnnouncementTrack` and `.hrpStickyAnnouncementMarqueeGroup` rules. Rewrite `@keyframes hrpStickyAnnouncementMarquee` to `0% { translateX(100%); } 100% { translateX(-100%); }`. Move the `animation: …marquee…` declaration from the track onto the new `.hrpStickyAnnouncementMessageMarquee` class. The viewport keeps `overflow: hidden`; the message keeps `width: max-content; white-space: nowrap; will-change: transform`. Reduced-motion override is rewritten to address the new class names. |
+| `src/domains/job-board/public-content-controls/sticky-announcement.test.tsx` | Update the "MARQUEE" component test to assert exactly one occurrence of the message in the rendered HTML, the presence of the new `hrpStickyAnnouncementMessageMarquee` class, the absence of `data-testid="sticky-announcement-marquee-tail"`, and the absence of the `hrpStickyAnnouncementMarqueeGroup` / `hrpStickyAnnouncementTrack` classes. |
+| `src/domains/job-board/public-content-controls/content-controls.static.test.ts` | Replace the previous `width: 200%` / `width: 50%` seamless-entry fence with a single-text entry fence: assert the keyframe is `translateX(100%) → translateX(-100%)`, the message rule is `width: max-content; white-space: nowrap`, the message rule does NOT contain `overflow: hidden`, the viewport rule has `overflow: hidden`, the animation property is set on the message, and the legacy `200%` / `50%` constants are forbidden anywhere in the stylesheet. Allow whitespace around `{message}` in the JSX interpolation fence. |
+
+### 11.4 Browser-check evidence requirement
+
+The browser-check script lives at
+`scripts/ops/t1c-marquee-browser-check.mjs` and uses `puppeteer-core`
+pointed at the existing `C:\Users\Admin\.cache\puppeteer\chrome\…\chrome.exe`
+binary that the agent already discovered in this environment. The script:
+
+1. Connects to the Vercel Preview URL of this PR.
+2. Waits for `data-testid="sticky-announcement"` to appear (the component
+   only renders after the client-side `usePublicContentControls` fetch).
+3. Counts `document.querySelectorAll('.hrpStickyAnnouncementMessageMarquee').length`
+   — must be exactly `1`.
+4. Captures `getComputedStyle(...).animation` and `getComputedStyle(...).transform`
+   at three timestamps separated by 1.5 s, confirming the message moves
+   monotonically leftward and the keyframe is `translateX(100%)` → `translateX(-100%)`.
+5. Repeats the same flow on a 390×844 mobile viewport.
+6. Writes screenshots to `docs/tasks/hrp-t1c-sticky-marquee-entry-hotfix/evidence/`.
+7. Exits non-zero on any failure so CI / gate wrappers can fail loud.
+
+If the Vercel Preview is unreachable or the marquee is not yet served on
+the preview, the script reports a structured `BLOCKER` line to the
+HANDOFF and the run is treated as a blocking failure (T0 point 8).
+
