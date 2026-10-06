@@ -392,9 +392,20 @@ describe('deleteWorker', () => {
       });
       tx.worker.findUnique.mockResolvedValue({ id: 'w1' });
       tx[modelKey].count.mockResolvedValue(1);
-      await expect(
-        deleteWorker(asPrismaTx(), ADMIN_CTX, 'w1', { actorId: 'admin-1', reason: 'r' }),
-      ).rejects.toMatchObject({ code: 'WORKER_NOT_DELETABLE', details: { blockingFacts: [kind] } });
+      let thrown: unknown;
+      try {
+        await deleteWorker(asPrismaTx(), ADMIN_CTX, 'w1', { actorId: 'admin-1', reason: 'r' });
+      } catch (e) {
+        thrown = e;
+      }
+      expect(thrown).toBeInstanceOf(WorkerServiceError);
+      const wse = thrown as InstanceType<typeof WorkerServiceError>;
+      expect(wse.code).toBe('WORKER_NOT_DELETABLE');
+      expect(wse.details?.blockingFacts).toEqual([kind]);
+      // Message phải tiếng Việt; chứa tên kind (UI dùng để hiển thị) + hướng xử lý.
+      expect(wse.message).toContain(kind);
+      expect(wse.message).toContain('Không thể xóa vĩnh viễn');
+      expect(wse.message).not.toMatch(/^[\x20-\x7e]+$/); // không phải ASCII thuần
       expect(tx.worker.delete).not.toHaveBeenCalled();
     });
   }

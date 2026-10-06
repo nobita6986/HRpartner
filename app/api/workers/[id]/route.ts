@@ -270,6 +270,13 @@ export async function DELETE(
       );
     }
     console.error('[api/workers/[id] DELETE] error:', e);
-    return NextResponse.json({ error: 'INTERNAL', message: 'Failed to delete worker' }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: 'INTERNAL',
+        message:
+          'Hệ thống gặp sự cố khi xóa người lao động. Vui lòng thử lại hoặc liên hệ quản trị viên.',
+      },
+      { status: 500 },
+    );
   }
 }

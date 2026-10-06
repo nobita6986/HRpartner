@@ -3,6 +3,11 @@
 import * as React from 'react';
 import { useState } from 'react';
 
+import {
+  dependencyLabel,
+  dependencyLabelWithHint,
+} from '@/src/domains/workforce/worker-delete-error-labels';
+
 interface DeleteButtonProps {
   workerId: string;
   workerName: string | null;
@@ -12,11 +17,14 @@ interface DeleteButtonProps {
  * T1B Worker permanent delete (ADMIN-only).
  *
  * Quy tắc nghiệp vụ:
- *   - 409 WORKER_NOT_DELETABLE nếu còn LaborProfile/Assignment/Ticket/...
- *   - Chỉ xóa "Worker rác / orphan" (service quét 15 dependency bảng).
+ *   - 409 WORKER_NOT_DELETABLE nếu còn phụ thuộc (15 bảng quét bởi service).
+ *   - Chỉ xóa Worker rác / orphan (service quét 15 dependency bảng).
  *   - TERMINATED Worker vẫn phải dùng endpoint này — service KHÔNG cascade.
  *   - Idempotent theo `x-idempotency-key`.
  *   - Sau khi xóa, redirect về /admin/workers.
+ *   - Tất cả copy tiếng Việt; blocking facts render nhãn tiếng Việt từ
+ *     `worker-delete-error-labels.ts` (không leak raw enum).
+ *   - Lỗi 500 hiển thị thông báo chung — server đã log chi tiết.
  */
 export function WorkerDeleteButton({ workerId, workerName }: DeleteButtonProps) {
   const [open, setOpen] = useState(false);
@@ -41,7 +49,25 @@ export function WorkerDeleteButton({ workerId, workerName }: DeleteButtonProps) 
       });
       if (!r.ok) {
         const d = await r.json().catch(() => ({}));
-        setErr(d.message ?? `Lỗi ${r.status}`);
+        // Phân loại phản hồi lỗi: 409 (nghiệp vụ chặn) vs 5xx (lỗi hệ thống).
+        // KHÔNG hiển thị `d.message` thô khi là lỗi 5xx — server chỉ trả
+        // message chung, không leak chi tiết nội bộ.
+        const code = typeof d?.error === 'string' ? d.error : '';
+        if (code === 'WORKER_NOT_DELETABLE') {
+          setErr(
+            'Người lao động đang có phụ thuộc nghiệp vụ. Hãy hoàn tất hoặc hủy các mục liên quan trước khi xóa.',
+          );
+        } else if (code === 'NOT_FOUND') {
+          setErr('Không tìm thấy người lao động hoặc đã bị xóa trước đó.');
+        } else if (code === 'PERMISSION_DENIED') {
+          setErr('Bạn không có quyền xóa người lao động.');
+        } else if (r.status >= 500) {
+          setErr(
+            'Hệ thống gặp sự cố khi xóa. Vui lòng thử lại hoặc liên hệ quản trị viên.',
+          );
+        } else {
+          setErr(d.message ?? `Lỗi ${r.status}`);
+        }
         if (Array.isArray(d.details?.blockingFacts)) {
           setDetails(d.details.blockingFacts);
         }
@@ -50,7 +76,7 @@ export function WorkerDeleteButton({ workerId, workerName }: DeleteButtonProps) 
       // Success → redirect về list.
       window.location.href = '/admin/workers';
     } catch {
-      setErr('Lỗi kết nối server.');
+      setErr('Lỗi kết nối máy chủ. Vui lòng thử lại.');
     } finally {
       setSubmitting(false);
     }
@@ -82,18 +108,20 @@ export function WorkerDeleteButton({ workerId, workerName }: DeleteButtonProps) 
               Xóa vĩnh viễn người lao động?
             </h2>
             <p className="text-sm text-[var(--on-surface-variant)] mb-3">
-              <strong>{workerName ?? workerId}</strong>. Hành động này CHỈ dành cho Worker rác /
-              orphan (không có LaborProfile link, không có phân công dự án, không có Ticket,
-              attendance, payroll, history, submission, placement). Service sẽ từ chối nếu
-              còn phụ thuộc. Không có cascade, không thể hoàn tác.
+              <strong>{workerName ?? workerId}</strong>. Hành động này chỉ dành cho
+              Worker rác / orphan (không còn hồ sơ NLĐ liên kết, không còn phân
+              công dự án, không còn yêu cầu hỗ trợ, dữ liệu chấm công, bảng
+              công, lịch sử quan hệ lao động, đơn ứng tuyển hay bố trí việc
+              làm). Hệ thống sẽ từ chối nếu còn phụ thuộc. Không có cascade,
+              không thể hoàn tác.
             </p>
             <label className="block text-xs font-medium text-[var(--on-surface-variant)] mb-1">
-              Lý do (audit)
+              Lý do (bắt buộc, lưu vào nhật ký kiểm toán)
             </label>
             <input
               value={reason}
               onChange={e => setReason(e.target.value)}
-              placeholder="vd: cleanup test row, orphan record…"
+              placeholder="vd: dọn dẹp bản ghi thử nghiệm, bản ghi mồ côi…"
               className="w-full rounded border px-3 py-2 text-sm"
               style={{
                 borderColor: 'var(--outline)',
@@ -107,7 +135,9 @@ export function WorkerDeleteButton({ workerId, workerName }: DeleteButtonProps) 
                 {details && details.length > 0 && (
                   <ul className="mt-2 list-inside list-disc text-xs text-[var(--error)]">
                     {details.map(d => (
-                      <li key={d}>{d}</li>
+                      <li key={d} title={dependencyLabelWithHint(d as never)}>
+                        {dependencyLabel(d as never)}
+                      </li>
                     ))}
                   </ul>
                 )}
