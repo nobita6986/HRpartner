@@ -7,7 +7,8 @@
  * - Pass vào MediaLibraryClient (UI stateful)
  *
  * Client (`media-library-client.tsx`):
- * - Folder sidebar + grid + upload modal + edit modal
+ * - Grid + upload modal + edit modal (folder UI bỏ theo
+ *   hrp-t1c-media-global-pool-bulk-upload-hotfix RQ-12)
  * - Gọi /api/admin/media/* để CRUD
  */
 import { redirect } from 'next/navigation';
@@ -26,7 +27,10 @@ export const metadata = {
 };
 
 interface PageProps {
-  searchParams: Promise<{ folder?: string; status?: string; search?: string; page?: string }>;
+  // hrp-t1c-media-global-pool-bulk-upload-hotfix (RQ-11): folder không còn là param
+  // nghiệp vụ. URL cũ `/admin/media?folder=homepage` vẫn render kho chung (folder
+  // param bị ignore ở route + service).
+  searchParams: Promise<{ status?: string; search?: string; page?: string; folder?: string }>;
 }
 
 export default async function AdminMediaPage({ searchParams }: PageProps) {
@@ -47,6 +51,7 @@ export default async function AdminMediaPage({ searchParams }: PageProps) {
 
   const prisma = getPrisma();
   const result = await listMedia(prisma, {
+    // folder bị ignore ở service (RQ-10); truyền xuống chỉ để type stable.
     folder: params.folder,
     status: params.status === 'PUBLIC' || params.status === 'INTERNAL' ? params.status : undefined,
     search: params.search,
@@ -63,7 +68,7 @@ export default async function AdminMediaPage({ searchParams }: PageProps) {
       total={result.total}
       take={result.take}
       page={page}
-      folderFilter={params.folder ?? ''}
+      folderFilter=""  // hằng số — không filter ở client (RQ-12)
       statusFilter={params.status ?? ''}
       searchFilter={params.search ?? ''}
     />

@@ -3,17 +3,17 @@
 /**
  * MediaLibraryClient — Client component cho /admin/media.
  *
- * UI scope (MVP):
- * - Folder sidebar (filter)
- * - Search input
- * - Grid 4-col responsive + pagination
- * - Card mỗi item: thumbnail + alt + caption + actions
- * - Upload modal: drag-drop + alt input + folder selector
- * - Edit modal: alt + caption + folder + tags + status + cover
+ * UI scope (sau hrp-t1c-media-global-pool-bulk-upload-hotfix):
+ * - KHÔNG còn sidebar/filter/selector "Thư mục" — toàn bộ media là một kho chung.
+ * - KHÔNG hiển thị tên folder trên Media card.
+ * - Search + status filter (PUBLIC/INTERNAL) giữ nguyên.
+ * - Grid 4-col responsive + pagination.
+ * - UploadModal → MediaBulkUpload (multiple files, bounded concurrency, partial success).
+ * - EditModal: chỉ PATCH alt/caption/status/cover (bỏ folder).
  *
  * Out of scope (defer):
- * - Bulk actions, multi-select
- * - Drag-reorder trong library (chỉ reorder assignment khi picker dùng ở AV2/AV6)
+ * - Bulk actions khác (multi-select delete, etc.)
+ * - Drag-reorder trong library
  * - Image transformation (DEC-02)
  */
 import * as React from 'react';
@@ -27,43 +27,34 @@ import {
   Plus,
   Search,
   Trash2,
-  Upload,
   X,
 } from 'lucide-react';
 import type {
   MediaItemDto,
   MediaStatusEnum,
 } from '@/src/domains/media/media.types';
-import {
-  MEDIA_DEFAULT_FOLDERS,
-  MAX_UPLOAD_BYTES,
-  MEDIA_ALLOWED_MIME_TYPES,
-} from '@/src/domains/media/media.types';
-import { mediaFolderLabel, mediaStatusLabel } from '@/src/domains/media/media-ui';
+import { mediaStatusLabel } from '@/src/domains/media/media-ui';
 import { actionLabel } from '@/src/shared/i18n/action-dictionary';
 import { formLabel } from '@/src/shared/i18n/form-dictionary';
+import { MediaBulkUpload } from './media-bulk-upload';
 
 interface MediaLibraryClientProps {
   initialItems: MediaItemDto[];
   total: number;
   take: number;
   page: number;
+  /** hrp-t1c-media-global-pool-bulk-upload-hotfix: luôn rỗng; giữ prop để type stable. */
   folderFilter: string;
   statusFilter: string;
   searchFilter: string;
 }
-
-const FOLDERS = [
-  { value: '', label: 'Tất cả' },
-  ...MEDIA_DEFAULT_FOLDERS.map((value) => ({ value, label: mediaFolderLabel(value) })),
-];
 
 export function MediaLibraryClient({
   initialItems,
   total,
   take,
   page,
-  folderFilter,
+  folderFilter: _folderFilter,
   statusFilter,
   searchFilter,
 }: MediaLibraryClientProps) {
@@ -83,13 +74,12 @@ export function MediaLibraryClient({
 
   const totalPages = Math.ceil(total / take);
 
-  function navigate(next: { folder?: string; status?: string; search?: string; page?: string }) {
+  function navigate(next: { status?: string; search?: string; page?: string }) {
     const params = new URLSearchParams();
-    const f = next.folder ?? folderFilter;
+    // folder bị bỏ — không truyền vào URL nữa (RQ-12)
     const s = next.status ?? statusFilter;
     const q = next.search ?? searchFilter;
     const p = next.page ?? '1';
-    if (f) params.set('folder', f);
     if (s) params.set('status', s);
     if (q) params.set('search', q);
     if (p !== '1') params.set('page', p);
@@ -125,12 +115,13 @@ export function MediaLibraryClient({
             Thư viện tệp và ảnh
           </h1>
           <p className="text-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
-            {total} tệp — Tải lên qua Vercel Blob, dùng cho tin tuyển dụng, trang chủ và tin tức.
+            {total} tệp — Kho Media dùng chung; tải lên hàng loạt qua Vercel Blob.
           </p>
         </div>
         <button
           type="button"
           onClick={() => setShowUpload(true)}
+          data-testid="media-library-upload-button"
           className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold"
           style={{ backgroundColor: 'var(--color-primary-dark)', color: 'var(--color-on-primary)' }}
         >
@@ -139,125 +130,94 @@ export function MediaLibraryClient({
         </button>
       </header>
 
-      {/* Folder sidebar + filters */}
-      <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-3 sm:gap-4">
-        <aside
-          className="rounded-xl border p-3 sm:p-4 space-y-3 md:sticky md:top-4 md:self-start"
-          style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-outline-variant)' }}
-        >
-          <h2 className="text-xs font-bold uppercase" style={{ color: 'var(--color-on-surface-variant)' }}>
-            Thư mục
-          </h2>
-          <ul className="space-y-1">
-            {FOLDERS.map((f) => (
-              <li key={f.value || 'all'}>
-                <button
-                  type="button"
-                  onClick={() => navigate({ folder: f.value, page: '1' })}
-                  className="w-full text-left rounded px-2 py-1 text-sm"
-                  style={{
-                    backgroundColor: folderFilter === f.value ? 'var(--color-primary-soft)' : 'transparent',
-                    color: folderFilter === f.value ? 'var(--color-primary-dark)' : 'var(--color-on-surface)',
-                    fontWeight: folderFilter === f.value ? 600 : 400,
-                  }}
-                >
-                  {f.label}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </aside>
+      <div className="space-y-3">
+        <form onSubmit={onSearch} className="flex flex-col sm:flex-row sm:items-center gap-2">
+          <div
+            className="flex flex-1 items-center gap-2 rounded-lg border px-3 py-2 min-w-0"
+            style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-outline-variant)' }}
+          >
+            <Search className="h-4 w-4" aria-hidden style={{ color: 'var(--color-on-surface-variant)' }} />
+            <input
+              type="search"
+              placeholder="Tìm theo tên tệp / văn bản thay thế / chú thích…"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="flex-1 bg-transparent text-sm focus:outline-none"
+              style={{ color: 'var(--color-on-surface)' }}
+            />
+          </div>
+          <select
+            value={statusFilter}
+            onChange={(e) => navigate({ status: e.target.value, page: '1' })}
+            data-testid="media-library-status-filter"
+            className="rounded-lg border px-3 py-2 text-sm"
+            style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-outline-variant)', color: 'var(--color-on-surface)' }}
+          >
+            <option value="">Tất cả trạng thái</option>
+            <option value="PUBLIC">{mediaStatusLabel('PUBLIC')}</option>
+            <option value="INTERNAL">{mediaStatusLabel('INTERNAL')}</option>
+          </select>
+          <button type="submit" className="rounded-lg px-3 py-2 text-sm font-medium" style={{ backgroundColor: 'var(--color-surface-container-high)', color: 'var(--color-on-surface)' }}>
+            {formLabel('search')}
+          </button>
+        </form>
 
-        <div className="space-y-3">
-          <form onSubmit={onSearch} className="flex flex-col sm:flex-row sm:items-center gap-2">
-            <div
-              className="flex flex-1 items-center gap-2 rounded-lg border px-3 py-2 min-w-0"
-              style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-outline-variant)' }}
-            >
-              <Search className="h-4 w-4" aria-hidden style={{ color: 'var(--color-on-surface-variant)' }} />
-              <input
-                type="search"
-                placeholder="Tìm theo tên tệp / văn bản thay thế / chú thích…"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1 bg-transparent text-sm focus:outline-none"
-                style={{ color: 'var(--color-on-surface)' }}
+        {items.length === 0 ? (
+          <div
+            className="rounded-xl border p-8 text-center"
+            style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-outline-variant)' }}
+          >
+            <ImageIcon className="h-10 w-10 mx-auto mb-2" aria-hidden style={{ color: 'var(--color-on-surface-variant)' }} />
+            <p className="text-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
+              Chưa có tệp nào trong thư viện. Hãy tải tệp lên để bắt đầu.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
+            {items.map((item) => (
+              <MediaCard
+                key={item.id}
+                item={item}
+                onEdit={() => setEditing(item)}
+                onDelete={() => setDeleting(item)}
               />
-            </div>
-            <select
-              value={statusFilter}
-              onChange={(e) => navigate({ status: e.target.value, page: '1' })}
-              className="rounded-lg border px-3 py-2 text-sm"
-              style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-outline-variant)', color: 'var(--color-on-surface)' }}
+            ))}
+          </div>
+        )}
+
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between pt-2">
+            <button
+              type="button"
+              disabled={pageState <= 1}
+              onClick={() => navigate({ page: String(pageState - 1) })}
+              className="rounded px-3 py-1 text-sm disabled:opacity-50"
+              style={{ backgroundColor: 'var(--color-surface-container-high)', color: 'var(--color-on-surface)' }}
             >
-              <option value="">Tất cả trạng thái</option>
-              <option value="PUBLIC">{mediaStatusLabel('PUBLIC')}</option>
-              <option value="INTERNAL">{mediaStatusLabel('INTERNAL')}</option>
-            </select>
-            <button type="submit" className="rounded-lg px-3 py-2 text-sm font-medium" style={{ backgroundColor: 'var(--color-surface-container-high)', color: 'var(--color-on-surface)' }}>
-              {formLabel('search')}
+              ← Trước
             </button>
-          </form>
-
-          {/* Grid */}
-          {items.length === 0 ? (
-            <div
-              className="rounded-xl border p-8 text-center"
-              style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-outline-variant)' }}
+            <span className="text-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
+              Trang {pageState} / {totalPages}
+            </span>
+            <button
+              type="button"
+              disabled={pageState >= totalPages}
+              onClick={() => navigate({ page: String(pageState + 1) })}
+              className="rounded px-3 py-1 text-sm disabled:opacity-50"
+              style={{ backgroundColor: 'var(--color-surface-container-high)', color: 'var(--color-on-surface)' }}
             >
-              <ImageIcon className="h-10 w-10 mx-auto mb-2" aria-hidden style={{ color: 'var(--color-on-surface-variant)' }} />
-              <p className="text-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
-                Chưa có tệp nào trong thư mục này. Hãy tải tệp lên để bắt đầu.
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
-              {items.map((item) => (
-                <MediaCard
-                  key={item.id}
-                  item={item}
-                  onEdit={() => setEditing(item)}
-                  onDelete={() => setDeleting(item)}
-                />
-              ))}
-            </div>
-          )}
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between pt-2">
-              <button
-                type="button"
-                disabled={pageState <= 1}
-                onClick={() => navigate({ page: String(pageState - 1) })}
-                className="rounded px-3 py-1 text-sm disabled:opacity-50"
-                style={{ backgroundColor: 'var(--color-surface-container-high)', color: 'var(--color-on-surface)' }}
-              >
-                ← Trước
-              </button>
-              <span className="text-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
-                Trang {pageState} / {totalPages}
-              </span>
-              <button
-                type="button"
-                disabled={pageState >= totalPages}
-                onClick={() => navigate({ page: String(pageState + 1) })}
-                className="rounded px-3 py-1 text-sm disabled:opacity-50"
-                style={{ backgroundColor: 'var(--color-surface-container-high)', color: 'var(--color-on-surface)' }}
-              >
-                Sau →
-              </button>
-            </div>
-          )}
-        </div>
+              Sau →
+            </button>
+          </div>
+        )}
       </div>
 
       {showUpload && (
-        <UploadModal
-          defaultFolder={folderFilter || 'uncategorized'}
-          onClose={() => setShowUpload(false)}
+        <MediaBulkUpload
           onUploaded={(created) => {
             setItems((prev) => [created, ...prev]);
+          }}
+          onClose={() => {
             setShowUpload(false);
             router.refresh();
           }}
@@ -339,8 +299,9 @@ function MediaCard({
           </p>
         )}
         <div className="flex items-center justify-between pt-1">
+          {/* hrp-t1c-media-global-pool-bulk-upload-hotfix (RQ-12): bỏ tên folder; chỉ hiển thị assignmentCount */}
           <span className="text-[10px]" style={{ color: 'var(--color-on-surface-variant)' }}>
-            {mediaFolderLabel(item.folder)} · {item.assignmentCount} liên kết
+            {item.assignmentCount} liên kết
           </span>
           <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
             <button
@@ -366,214 +327,7 @@ function MediaCard({
   );
 }
 
-/* ─── UploadModal ─────────────────────────────────────────────────────── */
-
-function UploadModal({
-  defaultFolder,
-  onClose,
-  onUploaded,
-}: {
-  defaultFolder: string;
-  onClose: () => void;
-  onUploaded: (item: MediaItemDto) => void;
-}) {
-  const [file, setFile] = React.useState<File | null>(null);
-  const [alt, setAlt] = React.useState('');
-  const [caption, setCaption] = React.useState('');
-  const [folder, setFolder] = React.useState(defaultFolder);
-  const [status, setStatus] = React.useState<MediaStatusEnum>('PUBLIC');
-  const [busy, setBusy] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
-
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    if (!file) {
-      setError('Chưa chọn file.');
-      return;
-    }
-    if (status === 'PUBLIC' && !alt.trim()) {
-      setError('Văn bản thay thế là bắt buộc khi trạng thái là Công khai (hỗ trợ khả năng tiếp cận).');
-      return;
-    }
-
-    setBusy(true);
-    try {
-      // Step 1: upload lên Vercel Blob qua /api/admin/media/upload-url
-      const fd = new FormData();
-      fd.append('file', file);
-      fd.append('folder', folder);
-      const uploadRes = await fetch('/api/admin/media/upload-url', { method: 'POST', body: fd });
-      if (!uploadRes.ok) {
-        const err = await uploadRes.json().catch(() => ({}));
-        throw new Error(`Tải tệp lên Vercel Blob thất bại: ${err.message ?? uploadRes.statusText}`);
-      }
-      const uploaded = (await uploadRes.json()) as { blobUrl: string; pathname: string; size: number; mimeType: string };
-
-      // Step 2: confirm Media record
-      const confirmRes = await fetch('/api/admin/media/confirm', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          blobUrl: uploaded.blobUrl,
-          alt,
-          caption: caption || null,
-          folder,
-          tags: [],
-          status,
-          cover: false,
-          mimeType: uploaded.mimeType,
-          size: uploaded.size,
-        }),
-      });
-      if (!confirmRes.ok) {
-        const err = await confirmRes.json().catch(() => ({}));
-        throw new Error(`Không thể lưu thông tin tệp: ${err.message ?? confirmRes.statusText}`);
-      }
-      const created = (await confirmRes.json()) as MediaItemDto;
-      onUploaded(created);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Tải tệp lên thất bại.');
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ backgroundColor: 'rgba(0, 0, 0, 0.4)' }}
-      onClick={onClose}
-    >
-      <form
-        onSubmit={submit}
-        onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg rounded-xl border p-5 space-y-4"
-        style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-outline-variant)' }}
-      >
-        <header className="flex items-center justify-between">
-          <h3 className="text-base font-semibold" style={{ color: 'var(--color-on-surface)' }}>
-            Tải tệp mới
-          </h3>
-          <button type="button" onClick={onClose} aria-label="Đóng">
-            <X className="h-5 w-5" aria-hidden />
-          </button>
-        </header>
-
-        {error && (
-          <div
-            className="rounded-lg border p-3 text-sm flex items-start gap-2"
-            style={{ backgroundColor: 'var(--color-surface-container-high)', borderColor: 'var(--color-outline-variant)', color: 'var(--color-on-surface)' }}
-          >
-            <AlertTriangle className="h-4 w-4 flex-shrink-0 mt-0.5" aria-hidden />
-            {error}
-          </div>
-        )}
-
-        <div>
-          <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-on-surface)' }}>
-            Tệp hình ảnh
-          </label>
-          <input
-            type="file"
-            accept={MEDIA_ALLOWED_MIME_TYPES.join(',')}
-            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-            className="block w-full text-sm"
-            required
-          />
-          <p className="text-xs mt-1" style={{ color: 'var(--color-on-surface-variant)' }}>
-            JPEG/PNG/WebP/GIF — tối đa {Math.round(MAX_UPLOAD_BYTES / 1024 / 1024)}MB.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-on-surface)' }}>
-              Thư mục
-            </label>
-            <select
-              value={folder}
-              onChange={(e) => setFolder(e.target.value)}
-              className="w-full rounded border px-2 py-1.5 text-sm"
-              style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-outline-variant)', color: 'var(--color-on-surface)' }}
-            >
-              {MEDIA_DEFAULT_FOLDERS.map((f) => (
-                <option key={f} value={f}>
-                  {mediaFolderLabel(f)}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-on-surface)' }}>
-              {formLabel('status')}
-            </label>
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value as MediaStatusEnum)}
-              className="w-full rounded border px-2 py-1.5 text-sm"
-              style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-outline-variant)', color: 'var(--color-on-surface)' }}
-            >
-              <option value="PUBLIC">{mediaStatusLabel('PUBLIC')}</option>
-              <option value="INTERNAL">{mediaStatusLabel('INTERNAL')}</option>
-            </select>
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-on-surface)' }}>
-            Văn bản thay thế (alt text) {status === 'PUBLIC' && <span className="text-red-600">*</span>}
-          </label>
-          <input
-            type="text"
-            value={alt}
-            onChange={(e) => setAlt(e.target.value)}
-            maxLength={500}
-            placeholder="Mô tả ngắn về ảnh để hỗ trợ khả năng tiếp cận"
-            className="w-full rounded border px-2 py-1.5 text-sm"
-            style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-outline-variant)', color: 'var(--color-on-surface)' }}
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-on-surface)' }}>
-            Chú thích (không bắt buộc)
-          </label>
-          <input
-            type="text"
-            value={caption}
-            onChange={(e) => setCaption(e.target.value)}
-            className="w-full rounded border px-2 py-1.5 text-sm"
-            style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-outline-variant)', color: 'var(--color-on-surface)' }}
-          />
-        </div>
-
-        <footer className="flex justify-end gap-2 pt-2">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={busy}
-            className="rounded px-3 py-2 text-sm font-medium"
-            style={{ backgroundColor: 'var(--color-surface-container-high)', color: 'var(--color-on-surface)' }}
-          >
-            {formLabel('cancel')}
-          </button>
-          <button
-            type="submit"
-            disabled={busy}
-            className="inline-flex items-center gap-1 rounded px-3 py-2 text-sm font-semibold disabled:opacity-60"
-            style={{ backgroundColor: 'var(--color-primary-dark)', color: 'var(--color-on-primary)' }}
-          >
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Upload className="h-4 w-4" aria-hidden />}
-            {busy ? 'Đang tải lên…' : 'Tải lên'}
-          </button>
-        </footer>
-      </form>
-    </div>
-  );
-}
-
-/* ─── EditModal ───────────────────────────────────────────────────────── */
+/* ─── EditModal (folder bỏ — chỉ alt/caption/status/cover) ─────────── */
 
 function EditModal({
   item,
@@ -586,7 +340,6 @@ function EditModal({
 }) {
   const [alt, setAlt] = React.useState(item.alt);
   const [caption, setCaption] = React.useState(item.caption ?? '');
-  const [folder, setFolder] = React.useState(item.folder);
   const [status, setStatus] = React.useState<MediaStatusEnum>(item.status);
   const [cover, setCover] = React.useState(item.cover);
   const [busy, setBusy] = React.useState(false);
@@ -601,13 +354,13 @@ function EditModal({
     }
     setBusy(true);
     try {
+      // hrp-t1c-media-global-pool-bulk-upload-hotfix: PATCH không còn folder
       const res = await fetch(`/api/admin/media/${item.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           alt,
           caption: caption || null,
-          folder,
           status,
           cover,
         }),
@@ -656,36 +409,20 @@ function EditModal({
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-on-surface)' }}>
-              Thư mục
-            </label>
-            <select
-              value={folder}
-              onChange={(e) => setFolder(e.target.value)}
-              className="w-full rounded border px-2 py-1.5 text-sm"
-              style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-outline-variant)', color: 'var(--color-on-surface)' }}
-            >
-              {MEDIA_DEFAULT_FOLDERS.map((f) => (
-                <option key={f} value={f}>{mediaFolderLabel(f)}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-on-surface)' }}>
-              {formLabel('status')}
-            </label>
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value as MediaStatusEnum)}
-              className="w-full rounded border px-2 py-1.5 text-sm"
-              style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-outline-variant)', color: 'var(--color-on-surface)' }}
-            >
-              <option value="PUBLIC">{mediaStatusLabel('PUBLIC')}</option>
-              <option value="INTERNAL">{mediaStatusLabel('INTERNAL')}</option>
-            </select>
-          </div>
+        <div>
+          <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-on-surface)' }}>
+            {formLabel('status')}
+          </label>
+          <select
+            value={status}
+            onChange={(e) => setStatus(e.target.value as MediaStatusEnum)}
+            data-testid="media-edit-status"
+            className="w-full rounded border px-2 py-1.5 text-sm"
+            style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-outline-variant)', color: 'var(--color-on-surface)' }}
+          >
+            <option value="PUBLIC">{mediaStatusLabel('PUBLIC')}</option>
+            <option value="INTERNAL">{mediaStatusLabel('INTERNAL')}</option>
+          </select>
         </div>
 
         <div>
@@ -697,6 +434,7 @@ function EditModal({
             value={alt}
             onChange={(e) => setAlt(e.target.value)}
             maxLength={500}
+            data-testid="media-edit-alt"
             className="w-full rounded border px-2 py-1.5 text-sm"
             style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-outline-variant)', color: 'var(--color-on-surface)' }}
           />
