@@ -23,6 +23,10 @@ import type { Prisma as PrismaTypes } from '@prisma/client';
 import {
   BEST_JOBS_PAGE_SIZE_DEFAULT,
   LISTING_PAGE_SIZE_DEFAULT,
+  HERO_SLIDES_COUNT,
+  HeroSlidesSchema,
+  type HeroSlidePublic,
+  type HeroSlideInput,
   clampListingPageSize,
   normalizeBestJobsPageSize,
   type HomepageSettingsDto,
@@ -79,6 +83,13 @@ type SettingsRow = {
    */
   heroImageMediaId: string | null;
   heroImage?: HeroMediaRow | null;
+  /**
+   * hrp-t1c-t2-public-site-hero-slides-ctv-layout (T2 hotfix / STEP-02):
+   * JSON cột nullable chứa mảng 5 slide `{mediaId, title, desc}`. NULL
+   * = giữ hardcoded array hiện tại ở `RecruitmentHighlight`. Service tự
+   * parse qua Zod schema; nếu parse fail (DB corrupted) → length 0 fallback.
+   */
+  heroSlides: Prisma.JsonValue | null;
   updatedAt: Date;
 };
 
@@ -94,7 +105,7 @@ function withHomepageSettingsHero(
 }
 
 /** Map a Prisma row to the public DTO. Pure function — safe for tests. */
-export function toHomepageSettingsDto(row: SettingsRow): HomepageSettingsDto {
+export function toHomepageSettingsDto(row: SettingsRow): Omit<HomepageSettingsDto, 'heroSlides'> {
   return {
     id: 'default',
     bestJobsPageSize: normalizeBestJobsPageSize(row.bestJobsPageSize),
@@ -120,6 +131,60 @@ export function toHomepageSettingsDto(row: SettingsRow): HomepageSettingsDto {
 }
 
 /**
+ * hrp-t1c-t2-public-site-hero-slides-ctv-layout (T2 hotfix / STEP-02):
+ * Parse + join Media rows cho 5 slide. Pure ngoài việc gọi `media.findMany`
+ * qua `prisma`. Trả `[]` khi column null OR parse fail (fallback về hardcoded
+ * array ở component `RecruitmentHighlight`).
+ */
+export async function buildHeroSlidesPublic(
+  rawJson: Prisma.JsonValue | null,
+  // hrp-t1c-t2-public-site-hero-slides-ctv-layout (T2 hotfix / STEP-02):
+  // accept `SettingsClient` (Prisma delegate) hoặc unit-test mock. Loose
+  // shape — function body cast `(prisma as unknown as { media: ... })` để
+  // truy cập media.findMany (settings table đã có sẵn media delegate ở
+  // Prisma client runtime, chỉ TS subset không include).
+  prisma:
+    | SettingsClient
+    | { media: { findMany: (a: unknown) => Promise<HeroMediaRow[]> } },
+): Promise<HeroSlidePublic[]> {
+  if (rawJson === null || rawJson === undefined) return [];
+  const parsed = HeroSlidesSchema.safeParse(rawJson);
+  if (!parsed.success) {
+    console.warn(
+      '[public-settings] hero_slides JSON parse fail; fallback [] — ',
+      parsed.error.issues[0]?.message,
+    );
+    return [];
+  }
+  const inputs = parsed.data;
+  // Collect non-null mediaIds (1..5 slots, deduplicate; 1 row lookup cho mỗi id).
+  const mediaIds = Array.from(
+    new Set(inputs.map((s) => s.mediaId).filter((id): id is string => id !== null)),
+  );
+  const mediaMap = new Map<string, HeroMediaRow>();
+  if (mediaIds.length > 0) {
+    const rows = await (prisma as unknown as {
+      media: { findMany: (a: unknown) => Promise<HeroMediaRow[]> };
+    }).media.findMany({
+      where: { id: { in: mediaIds } },
+      select: { id: true, url: true, alt: true, caption: true },
+    });
+    for (const row of rows) mediaMap.set(row.id, row);
+  }
+  return inputs.map((input, i) => {
+    const media = input.mediaId !== null ? mediaMap.get(input.mediaId) ?? null : null;
+    return {
+      index: i + 1,
+      mediaId: input.mediaId,
+      url: media?.url ?? null,
+      alt: media?.alt ?? '',
+      title: input.title,
+      desc: input.desc,
+    };
+  });
+}
+
+/**
  * Read the singleton settings row. If missing, bootstrap it with defaults.
  *
  * Idempotent — concurrent callers will all read the same row. The `upsert`
@@ -136,18 +201,11 @@ export async function getHomepageSettings(prisma: SettingsClient): Promise<Homep
   });
 
   if (existing) {
-    if (existing.heroImageMediaId) {
-      // hrp-t2-public-site-hotfix (T2 / STEP-02): chỉ JOIN khi cần — tránh
-      // tải media row cho mỗi public request mà không có Hero configured.
-      const hero = await (prisma as unknown as {
-        media: { findUnique: (a: unknown) => Promise<HeroMediaRow | null> };
-      }).media.findUnique({
-        where: { id: existing.heroImageMediaId },
-        select: { id: true, url: true, alt: true, caption: true },
-      });
-      return toHomepageSettingsDto(withHomepageSettingsHero(existing, hero));
-    }
-    return toHomepageSettingsDto(withHomepageSettingsHero(existing, null));
+    const base = toHomepageSettingsDto(withHomepageSettingsHero(existing, await loadHeroImage(existing, prisma)));
+    // hrp-t1c-t2-public-site-hero-slides-ctv-layout (T2 hotfix / STEP-02):
+    // parse + join 5 slide media rows. Khi column null → `[]` (fallback hardcoded).
+    const heroSlides = await buildHeroSlidesPublic(existing.heroSlides, prisma);
+    return { ...base, heroSlides };
   }
 
   // Step 2: bootstrap with defaults. Upsert handles concurrent calls safely.
@@ -163,7 +221,25 @@ export async function getHomepageSettings(prisma: SettingsClient): Promise<Homep
     update: {}, // no-op when row already exists
   });
 
-  return toHomepageSettingsDto(withHomepageSettingsHero(bootstrapped, null));
+  const base = toHomepageSettingsDto(withHomepageSettingsHero(bootstrapped, null));
+  return { ...base, heroSlides: [] };
+}
+
+/**
+ * hrp-t2-public-site-hotfix (T2 / STEP-02): helper load heroImage row (chỉ
+ * khi `heroImageMediaId` non-null). Trả null khi skip / media missing.
+ */
+async function loadHeroImage(
+  row: { heroImageMediaId: string | null },
+  prisma: SettingsClient,
+): Promise<HeroMediaRow | null> {
+  if (!row.heroImageMediaId) return null;
+  return (prisma as unknown as {
+    media: { findUnique: (a: unknown) => Promise<HeroMediaRow | null> };
+  }).media.findUnique({
+    where: { id: row.heroImageMediaId },
+    select: { id: true, url: true, alt: true, caption: true },
+  });
 }
 
 /** Input shape for admin write. All fields optional; omitted fields are unchanged. */
@@ -193,6 +269,15 @@ export interface UpdateHomepageSettingsInput {
    *                    xử (không cần admin dọn).
    */
   heroImageMediaId?: string | null;
+  /**
+   * hrp-t1c-t2-public-site-hero-slides-ctv-layout (T2 hotfix / STEP-03): 5 slide
+   * payload cho Hero carousel bên phải trang chủ.
+   *   - `undefined` → cột `hero_slides` JSONB giữ nguyên.
+   *   - `null`      → xoá payload (clear toàn bộ slide custom → fallback hardcoded).
+   *   - array       → đã được `HeroSlidesSchema` validate ở API layer; lưu
+   *                   thẳng vào cột JSONB. Length luôn = HERO_SLIDES_COUNT (5).
+   */
+  heroSlides?: HeroSlideInput[] | null;
 }
 
 /** Result type for admin write — returns the post-write DTO. */
@@ -242,6 +327,8 @@ export async function updateHomepageSettings(
     stickyAnnouncement?: Prisma.InputJsonValue | Prisma.JsonNullValueInput;
     /** hrp-t2-public-site-hotfix (T2 / STEP-02): cột Hero image FK. */
     heroImageMediaId?: string | null;
+    /** hrp-t1c-t2-public-site-hero-slides-ctv-layout (T2 hotfix / STEP-03): cột JSONB 5 slide. */
+    heroSlides?: Prisma.InputJsonValue | Prisma.JsonNullValueInput;
     updatedById: string | null;
   } = { updatedById: actorId };
 
@@ -295,6 +382,15 @@ export async function updateHomepageSettings(
       data.heroImageMediaId = input.heroImageMediaId.trim();
     }
   }
+  // hrp-t1c-t2-public-site-hero-slides-ctv-layout (T2 hotfix / STEP-03):
+  // ghi trực tiếp mảng 5 slide (đã validate ở API layer) hoặc JsonNull khi clear.
+  if (input.heroSlides !== undefined) {
+    if (input.heroSlides === null) {
+      data.heroSlides = Prisma.JsonNull;
+    } else {
+      data.heroSlides = input.heroSlides as unknown as Prisma.InputJsonValue;
+    }
+  }
 
   const updated = await prisma.homepageSettings.update({
     where: { id: HOMEPAGE_SETTINGS_SINGLETON_ID },
@@ -303,17 +399,13 @@ export async function updateHomepageSettings(
 
   // hrp-t2-public-site-hotfix (T2 / STEP-02): re-join hero để DTO phản ánh
   // media row mới nhất (FK SET NULL nếu media bị xoá giữa đường).
-  let hero: HeroMediaRow | null = null;
-  if (updated.heroImageMediaId) {
-    hero = await (prisma as unknown as {
-      media: { findUnique: (a: unknown) => Promise<HeroMediaRow | null> };
-    }).media.findUnique({
-      where: { id: updated.heroImageMediaId },
-      select: { id: true, url: true, alt: true, caption: true },
-    });
-  }
+  const hero = await loadHeroImage(updated, prisma);
+  const heroSlidesPublic = await buildHeroSlidesPublic(updated.heroSlides, prisma);
   return {
-    settings: toHomepageSettingsDto(withHomepageSettingsHero(updated, hero)),
+    settings: {
+      ...toHomepageSettingsDto(withHomepageSettingsHero(updated, hero)),
+      heroSlides: heroSlidesPublic,
+    },
     actorId,
   };
 }

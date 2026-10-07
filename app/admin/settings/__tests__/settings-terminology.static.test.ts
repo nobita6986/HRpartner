@@ -4,6 +4,10 @@ import { describe, expect, it } from 'vitest';
 
 const SOURCE = readFileSync(join(process.cwd(), 'app/admin/settings/admin-settings-form.tsx'), 'utf8');
 const PAGE_SOURCE = readFileSync(join(process.cwd(), 'app/admin/settings/page.tsx'), 'utf8');
+const SLIDES_COMPONENT = readFileSync(
+  join(process.cwd(), 'app/admin/settings/_components/hero-slides-editor.tsx'),
+  'utf8',
+);
 
 describe('/admin/settings terminology', () => {
   it('keeps canonical sticky values while rendering Vietnamese labels', () => {
@@ -18,6 +22,17 @@ describe('/admin/settings terminology', () => {
     expect(SOURCE).toContain("BLINK: 'Nhấp nháy'");
     expect(SOURCE).toContain("MARQUEE: 'Chạy chữ'");
     expect(SOURCE).toContain("EXTRA_BOLD: 'Rất đậm'");
+  });
+
+  // hrp-t1c-t2-public-site-hero-slides-ctv-layout (T2 hotfix / STEP-10):
+  // Fence — editor block có mặt, 5 slot giữ cứng (không cho phép add/remove).
+  it('renders the 5-slot Hero slides editor block', () => {
+    expect(SOURCE).toContain('data-testid="ui2-hero-slides-block"');
+    expect(SOURCE).toContain('data-testid="hero-slides-reset-button"');
+    expect(SLIDES_COMPONENT).toContain('data-testid="hero-slides-editor"');
+    expect(SLIDES_COMPONENT).toContain('SLOT {idx + 1}/5');
+    expect(SLIDES_COMPONENT).toContain('HERO_SLIDE_TITLE_MAX');
+    expect(SLIDES_COMPONENT).toContain('HERO_SLIDE_DESC_MAX');
   });
 
   it('does not leave known English settings labels or helper copy', () => {

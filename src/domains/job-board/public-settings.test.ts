@@ -153,6 +153,9 @@ describe('toHomepageSettingsDto', () => {
       stickyAnnouncement: null,
       // hrp-t2-public-site-hotfix (T2 / STEP-09): fence test bổ sung FK.
       heroImageMediaId: null,
+      // hrp-t1c-t2-public-site-hero-slides-ctv-layout (T2 hotfix / STEP-09):
+      // fence test — column null → service fallback mảng rỗng.
+      heroSlides: null,
       updatedAt: new Date('2026-09-11T14:00:00.000Z'),
     };
     const dto = toHomepageSettingsDto(row);
@@ -176,6 +179,7 @@ describe('toHomepageSettingsDto', () => {
       newsSectionEnabled: true,
       stickyAnnouncement: null,
       heroImageMediaId: null,
+      heroSlides: null,
       updatedAt: new Date(),
     };
     expect(toHomepageSettingsDto(row).listingPageSize).toBe(LISTING_PAGE_SIZE_MAX);
@@ -192,6 +196,7 @@ describe('toHomepageSettingsDto', () => {
       newsSectionEnabled: true,
       stickyAnnouncement: null,
       heroImageMediaId: null,
+      heroSlides: null,
       updatedAt: new Date(),
     };
     expect(toHomepageSettingsDto(row).bestJobsPageSize).toBe(9);
@@ -403,6 +408,9 @@ describe('toHomepageSettingsView', () => {
       },
       // hrp-t2-public-site-hotfix (T2 / STEP-09): fence test thêm heroImage.
       heroImage: null,
+      // hrp-t1c-t2-public-site-hero-slides-ctv-layout (T2 hotfix / STEP-09):
+      // fence test thêm heroSlides rỗng.
+      heroSlides: [],
       updatedAt: '2026-09-11T14:00:00.000Z',
     };
     const view = toHomepageSettingsView(dto);
@@ -500,6 +508,7 @@ describe('Phase B / UI2 - toHomepageSettingsDto with new fields', () => {
       newsSectionEnabled: undefined as unknown as boolean,
       stickyAnnouncement: null,
       heroImageMediaId: null,
+      heroSlides: null,
       updatedAt: new Date(),
     };
     const dto = toHomepageSettingsDto(row);
@@ -531,6 +540,7 @@ describe('Phase B / UI2 - toHomepageSettingsDto with new fields', () => {
         contentRevision: 'rev-2026-10-04',
       },
       heroImageMediaId: null,
+      heroSlides: null,
       updatedAt: new Date('2026-10-04T16:00:00.000Z'),
     };
     const dto = toHomepageSettingsDto(row);

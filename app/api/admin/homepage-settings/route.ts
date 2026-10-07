@@ -29,6 +29,7 @@ import {
 } from '@/src/domains/job-board/chat-links';
 import { normalizeCtaUrl, InvalidCtaUrlError } from '@/src/domains/job-board/public-content-controls/url-safety';
 import { StickyAnnouncementSchema } from '@/src/domains/job-board/public-content-controls/types';
+import { HeroSlidesSchema } from '@/src/domains/job-board/public-types';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -45,6 +46,13 @@ interface AdminSettingsBody {
   stickyAnnouncement?: unknown;
   /** hrp-t2-public-site-hotfix (T2 / STEP-02): Hero image media id. */
   heroImageMediaId?: string | null;
+  /**
+   * hrp-t1c-t2-public-site-hero-slides-ctv-layout (T2 hotfix / STEP-04):
+   * mảng 5 slide cho Hero carousel bên phải trang chủ. Validate qua
+   * `HeroSlidesSchema` (length = 5, title ≤ 120, desc ≤ 280, mediaId string|null).
+   * `null` xoá payload về fallback hardcoded.
+   */
+  heroSlides?: unknown;
 }
 
 function badRequest(message: string): NextResponse {
@@ -106,6 +114,19 @@ function validateBody(body: AdminSettingsBody): string | null {
         if (error instanceof InvalidCtaUrlError) return `ctaUrl không hợp lệ: ${error.message}`;
         return 'ctaUrl không hợp lệ.';
       }
+    }
+  }
+  // hrp-t1c-t2-public-site-hero-slides-ctv-layout (T2 hotfix / STEP-04):
+  // validate độ dài mảng + title/desc bound qua HeroSlidesSchema. Mảng 5 phần tử
+  // (length locked) — null hợp lệ để clear payload.
+  if (body.heroSlides !== undefined && body.heroSlides !== null) {
+    if (!Array.isArray(body.heroSlides)) {
+      return 'heroSlides phải là mảng 5 slide hoặc null.';
+    }
+    const parsed = HeroSlidesSchema.safeParse(body.heroSlides);
+    if (!parsed.success) {
+      const first = parsed.error.issues[0];
+      return first ? `heroSlides không hợp lệ: ${first.message}` : 'heroSlides không hợp lệ.';
     }
   }
   return null;
@@ -185,6 +206,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         return badRequest('stickyAnnouncement phải là object hoặc null.');
       }
     }
+    // hrp-t1c-t2-public-site-hero-slides-ctv-layout (T2 hotfix / STEP-04):
+    // heroSlides — mảng 5 slide hoặc null. Loại object/primitive ngoài array.
+    if (Object.prototype.hasOwnProperty.call(raw, 'heroSlides')) {
+      const v = raw.heroSlides;
+      if (v !== null && !Array.isArray(v)) {
+        return badRequest('heroSlides phải là mảng 5 slide hoặc null.');
+      }
+    }
     body = {
       bestJobsPageSize: typeof raw.bestJobsPageSize === 'number' ? raw.bestJobsPageSize : undefined,
       listingPageSize: typeof raw.listingPageSize === 'number' ? raw.listingPageSize : undefined,
@@ -206,6 +235,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       heroImageMediaId: Object.prototype.hasOwnProperty.call(raw, 'heroImageMediaId')
         ? (raw.heroImageMediaId as string | null)
         : undefined,
+      heroSlides: Object.prototype.hasOwnProperty.call(raw, 'heroSlides')
+        ? (raw.heroSlides as unknown)
+        : undefined,
     };
   } catch {
     return badRequest('Body không phải JSON hợp lệ.');
@@ -222,7 +254,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     body.phoneCallNumber === undefined &&
     body.newsSectionEnabled === undefined &&
     body.stickyAnnouncement === undefined &&
-    body.heroImageMediaId === undefined
+    body.heroImageMediaId === undefined &&
+    body.heroSlides === undefined
   ) {
     return badRequest(
       'Phải cung cấp ít nhất một trường cài đặt homepage, kênh liên hệ, hoặc UI2.',
@@ -249,6 +282,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         updateInput.stickyAnnouncement = StickyAnnouncementSchema.parse(body.stickyAnnouncement);
       }
     }
+    // hrp-t1c-t2-public-site-hero-slides-ctv-layout (T2 hotfix / STEP-04):
+    // truyền mảng đã validate hoặc null xuống service layer.
+    if (body.heroSlides !== undefined) {
+      if (body.heroSlides === null) {
+        updateInput.heroSlides = null;
+      } else {
+        updateInput.heroSlides = HeroSlidesSchema.parse(body.heroSlides);
+      }
+    }
     const result = await updateHomepageSettings(prisma, updateInput, ctx.userId ?? null);
     // Invalidate the public projection cache so the next read sees the new value.
     revalidateTag('homepage-settings');
@@ -265,8 +307,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
     if (e instanceof ZodError) {
       const first = e.issues[0];
-      const message = first ? `${first.path.join('.') || 'stickyAnnouncement'}: ${first.message}` : 'stickyAnnouncement không hợp lệ.';
-      return badRequest(`stickyAnnouncement không hợp lệ: ${message}`);
+      const path = first?.path?.join('.') ?? '';
+      const message = first
+        ? `${path ? `path "${path}": ` : ''}${first.message}`
+        : 'payload không hợp lệ.';
+      return badRequest(`payload không hợp lệ: ${message}`);
     }
     console.error('[admin/homepage-settings POST] error:', e);
     return NextResponse.json(
