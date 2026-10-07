@@ -24,9 +24,9 @@ The integration harness is `vitest.integration.config.ts` / `scripts/ci/integrat
 
 ## Delta audit
 
-- Corrected frozen implementation SHA: `4d2a4d9b800390d5ba59f93e26fb9e963ffb541b`.
-- Local evidence: full unit 320 files / 5,112 passed / 9 skipped before the final fixture-only edit; typecheck PASS and targeted ESLint PASS after it; targeted integration file self-skips locally because test DB URLs are absent; verify-encoding PASS and `git diff --check` PASS.
+- Corrected frozen implementation SHA: `95872fd44a4ef181403ba1515eef0923b5cc1540`.
+- Local evidence: full unit 320 files / 5,112 passed / 9 skipped before the final fixture-only edits; typecheck PASS and targeted ESLint PASS after them; targeted integration file self-skips locally because test DB URLs are absent; verify-encoding PASS and `git diff --check` PASS.
 - PostgreSQL concurrency test is registered in the CI integration inventory. It is skipped locally because neither `DATABASE_URL_TEST` nor `DATABASE_URL_ADMIN_TEST` is configured; no non-test database was used.
-- CI status: prior run `37591166920` failed only because the original fixture expected zero seeded active admins; that run was superseded. Rerun on the corrected final head is pending.
+- CI status: run `37591926075` executed the concurrency test after fixture isolation but failed because the rejection surfaced as Prisma `P2010`, not the expected `P2034` / `LAST_ADMIN_PROTECTED`. The run did not print Prisma `message/meta`; the test now includes those diagnostics in assertion output. No error code was accepted or safety assertion weakened. CI rerun on this diagnostic head is pending.
 - T3 DELTA verdict: pending review of that exact SHA.
 - Merge gate: do not merge PR #119 until T3 accepts the delta and all required CI checks are green on that SHA.
