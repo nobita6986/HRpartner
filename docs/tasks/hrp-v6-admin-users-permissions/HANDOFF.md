@@ -7,7 +7,7 @@
 | Task slug | `hrp-v6-admin-users-permissions` |
 | Spec version | `v1.0` |
 | Delivery protocol | `V2_FAST_FREEZE` |
-| Implementation SHA | `152b649689337805a5ea7ab5e2dd33d6f74f77fd` |
+| Implementation SHA | `096f02fccb89c2255c3236be128d28677b341b61` |
 | Frozen delivery | `YES` |
 | Canonical gates | `PASS` |
 | Audit eligibility | `ELIGIBLE` |
@@ -145,7 +145,7 @@ Original implementation evidence above is historical. The following is the corre
 - **P2 idempotency fingerprint**: includes validated name, phone, role, nullable vendorId, and normalized reason.
 - **Concurrency evidence**: a real two-connection PostgreSQL integration test is in the CI integration inventory. It could not execute locally because no TEST database URL is configured; CI Integration must run it successfully.
 - **Final local gates after last source edit**: unit 320 files / 5,114 passed / 9 skipped; typecheck exit 0; changed-file ESLint 0 errors; build exit 0; verify-encoding PASS; `git diff --check` clean.
-- **Frozen source commit**: `152b649689337805a5ea7ab5e2dd33d6f74f77fd` (includes SQLSTATE-specific serialization mapping and test coverage).
+- **Frozen source commit**: `096f02fccb89c2255c3236be128d28677b341b61` (includes SQLSTATE-specific serialization mapping and DB-boundary assertion).
 - **Forward-merge base**: `97e5adb3d6afdfc23649db57c2d117f08137dc77` (origin/main after PR #120); the Control baseline above remains the frozen TASK contract baseline.
 - **CI status**: pending on the latest PR head; AUDIT.md records exact run and delta verdict when available.
 - **Merge gate**: do not merge until corrected head CI is 4/4 green and T3 accepts DELTA audit of the exact frozen source SHA.

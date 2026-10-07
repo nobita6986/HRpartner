@@ -24,10 +24,11 @@ The integration harness is `vitest.integration.config.ts` / `scripts/ci/integrat
 
 ## Delta audit
 
-- Corrected frozen implementation SHA: `152b649689337805a5ea7ab5e2dd33d6f74f77fd`.
+- Corrected frozen implementation SHA: `096f02fccb89c2255c3236be128d28677b341b61`.
 - Root cause confirmed by T3 from the failing CI rejection: Prisma `P2010` wraps PostgreSQL SQLSTATE `40001` (`could not serialize access due to concurrent update`) raised by the raw `SELECT ... FOR UPDATE`. The service now maps only `P2010` with `meta.code === '40001'` (and Prisma `P2034`) to retryable 409; other P2010 codes remain false/unclassified.
+- The DB integration test now accepts only `P2010` with SQLSTATE `40001` (or the direct `P2034` / `LAST_ADMIN_PROTECTED` service outcomes), then always asserts exactly one active admin remains. The API route test separately proves the exact `P2010`/`40001` shape maps to HTTP 409.
 - Local evidence after the latest source edit: targeted service/routes 51/51; full unit 320 files / 5,114 passed / 9 skipped; typecheck PASS; changed-file ESLint 0 errors; build PASS; targeted DB test self-skips because TEST DB URLs are absent; verify-encoding and `git diff --check` PASS.
 - PostgreSQL concurrency test is registered in the CI integration inventory. It is skipped locally because neither `DATABASE_URL_TEST` nor `DATABASE_URL_ADMIN_TEST` is configured; no non-test database was used.
-- CI status: run `37591926075` executed the concurrency test after fixture isolation and failed because P2010/SQLSTATE 40001 was not yet mapped. The narrow mapper correction is in the current frozen source SHA; rerun the full Integration suite on the final PR head before merge.
+- CI status: prior run `37591926075` failed on the seeded-admin fixture, and `37592487974` confirmed the race surfaces as P2010/SQLSTATE 40001. A subsequent run on the mapper but before the DB-boundary assertion adjustment is superseded. Rerun the full Integration suite on the final PR head before merge.
 - T3 DELTA verdict: pending review of that exact SHA.
 - Merge gate: do not merge PR #119 until T3 accepts the delta and all required CI checks are green on that SHA.
