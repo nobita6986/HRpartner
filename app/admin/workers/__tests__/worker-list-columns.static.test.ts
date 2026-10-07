@@ -1,9 +1,9 @@
 /**
- * worker-list-columns.static.test.ts — T1C admin-ux-hotfix 2 — DEC-03/04.
+ * worker-list-columns.static.test.ts — merged T1B-OPS + T1C admin UX.
  *
  * Lock:
- *   - Bảng /admin/workers có 4 cột vận hành mới: Dự án/Job đang làm, Ngày làm
- *     đầu tiên, Quản lý dự án, Người hưởng hoa hồng.
+ *   - Bảng /admin/workers có đủ 6 cột vận hành theo T1B-OPS: dự án, ngày làm
+ *     đầu tiên, quản lý, người phụ trách, người giới thiệu, người hưởng hoa hồng.
  *   - KHÔNG còn cột "Thao tác" và cell "Xem". Click hàng vẫn vào detail.
  *   - Subhead copy = "Quản lý thông tin và trạng thái người lao động.".
  *   - KHÔNG còn "Phân hệ M5" / "Phân hệ M*" trong operator-visible copy.
@@ -23,25 +23,29 @@ function stripComments(source: string): string {
 
 const CODE = stripComments(SOURCE);
 
-describe('/admin/workers — T1C admin-ux-hotfix 2 — new operational columns', () => {
-  it('renders the 4 new columns in the header row', () => {
-    expect(CODE).toContain("'Dự án/Job đang làm'");
+describe('/admin/workers — merged operational columns', () => {
+  it('renders the six operational columns in the header row', () => {
+    expect(CODE).toContain("'Dự án đang làm'");
     expect(CODE).toContain("'Ngày làm đầu tiên'");
     expect(CODE).toContain("'Quản lý dự án'");
+    expect(CODE).toContain("'Người phụ trách'");
+    expect(CODE).toContain("'Người giới thiệu'");
     expect(CODE).toContain("'Người hưởng hoa hồng'");
   });
 
   it('renders enrichment fields with placeholder when null', () => {
-    expect(CODE).toMatch(/e\??\.currentJob/);
-    expect(CODE).toMatch(/e\??\.firstJobStartedAt/);
-    expect(CODE).toMatch(/e\??\.pmName/);
-    expect(CODE).toMatch(/e\??\.commissionBeneficiary/);
+    expect(CODE).toMatch(/w\.currentProject/);
+    expect(CODE).toMatch(/w\.firstWorkDate/);
+    expect(CODE).toMatch(/w\.currentProjectManager/);
+    expect(CODE).toMatch(/w\.handler/);
+    expect(CODE).toMatch(/w\.referrer/);
+    expect(CODE).toMatch(/w\.commissionBeneficiary/);
   });
 
   it('does NOT use Worker.createdAt as fallback for first job date', () => {
     // DEC-09: KHÔNG suy diễn "ngày làm đầu tiên" từ Worker.createdAt.
-    expect(CODE).not.toMatch(/\.createdAt.*firstJob|firstJob.*createdAt/);
-    expect(CODE).not.toMatch(/firstJobStartedAt.*new Date\(w\.createdAt/);
+    expect(CODE).not.toMatch(/\.createdAt.*firstWorkDate|firstWorkDate.*createdAt/);
+    expect(CODE).not.toMatch(/firstWorkDate.*new Date\(w\.createdAt/);
   });
 });
 
@@ -54,7 +58,7 @@ describe('/admin/workers — T1C admin-ux-hotfix 2 — drop "Xem" cell', () => {
   });
 
   it('row click navigates to /admin/workers/[id]', () => {
-    expect(CODE).toMatch(/router\.push\(`\/admin\/workers\/\$\{w\.id\}`\)/);
+    expect(CODE).toMatch(/window\.location\.href\s*=\s*`\/admin\/workers\/\$\{w\.id\}`/);
   });
 });
 

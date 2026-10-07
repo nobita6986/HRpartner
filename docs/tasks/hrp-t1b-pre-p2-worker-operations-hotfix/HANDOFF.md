@@ -39,10 +39,9 @@
 
 - **NEW**: `src/domains/audit/audit-logs.read-service.test.ts` (17), `api-admin-audit-logs.test.ts` (6).
 - **UPDATED**: `workers-list-cta.test.tsx` (9) — 6 op cols + copy sạch;
-  `workers-terminology.static.test.ts` (10) — bỏ "Phân hệ M5";
-  `workers-projection.contract.test.ts` (4) — mock `listWorkersForAdmin`;
-  `required-relation-sweep.static.test.ts` (11) — `EXPECTED_HITS` 50 entry (line shift 793→796).
-- **PASS**: 14 test files / 163 tests (sweep + audit + workers + LP + design-tokens).
+  merged-layout/delete-confirmation static tests pin #118 history link + #120 banner/audit link;
+  `required-relation-sweep.static.test.ts` (11) — exact 53 hits (50 `src/` + 3 `app/api/`).
+- **PASS before merge**: full unit 316 files / 5,047 passed / 9 skipped; typecheck, lint (0 errors), build.
 
 ## Files
 
@@ -68,10 +67,15 @@
 
 - Branch: `codex/t1b-pre-p2-worker-operations`
 - Title: `T1B-OPS: worker delete confirm + audit viewer + 6 op cols each list`
-- Status: CI pending, chờ xanh rồi dừng trước merge/deploy.
+- Forward-merge: `0f08ad2b` merges `origin/main @ 101b0ac8` (which includes PR #118); resolved
+  overlap keeps #120's six worker fields, five-column LaborProfile layout and query-based success
+  banner, while retaining #118's `/admin/workers/delete-history` entry point.
+- Status: final CI pending; no production deploy or migration applied.
 
 ## Evidence
 
 - typecheck: PASS
-- unit tests: 307 test files / 4968 tests pass (full suite)
+- unit tests: 316 test files / 5,047 passed / 9 skipped (full suite after forward-merge)
+- lint: PASS (0 errors; existing warnings)
+- build: PASS (optional homepage-settings reads logged missing local `DATABASE_URL`; build completed)
 - UTF-8 no-BOM gate: PASS

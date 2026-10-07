@@ -175,8 +175,8 @@ const EXPECTED_HITS = [
   // public DTO `gallery`/`PublicJobGalleryItemDto` interface + `toDetailDto` mapping of
   // gallery — `jobOpening.staffingOrder` / `jobOpening.staffingOrder.project` selects
   // shifted from 752/759 → 805/812. The select clauses themselves are unchanged.
-  'src/domains/job-board/public.service.ts:805 staffingOrder',
-  'src/domains/job-board/public.service.ts:812 project',
+  'src/domains/job-board/public.service.ts:806 staffingOrder',
+  'src/domains/job-board/public.service.ts:813 project',
   // hrp-p1-e0 (2026-09-26): Recruiter Workbench read-model cần `fullName`/`phone`/`cccdNumber`/
   // `identityVerification`/`completeness` để build `RecruiterWorkbenchRow.candidate` (§4.3 RQ-02).
   // `LaborProfile` là quan hệ BẮT BUỘC trong schema `placement_case` (không optional, không list) — sweep

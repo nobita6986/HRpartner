@@ -1,11 +1,9 @@
 /**
- * worker-delete-toast.static.test.ts — T1C admin-ux-hotfix 2 — DEC-01.
+ * worker-delete-toast.static.test.ts — merged T1B-OPS delete confirmation.
  *
  * Lock:
- *   - Sau khi DELETE /api/workers/[id] thành công, hiển thị banner xác nhận
- *     với role="status" và testid worker-delete-success-toast.
- *   - Sau ~2.5s, redirect về /admin/workers (router.push).
- *   - Banner phải show userId (không suy diễn).
+ *   - DELETE success redirects with worker id/name; list page shows success
+ *     status, audit-log deep link, and separate delete-history entry point.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -18,6 +16,7 @@ const SOURCE = readFileSync(
   ),
   'utf8',
 );
+const LIST_SOURCE = readFileSync(join(process.cwd(), 'app/admin/workers/page.tsx'), 'utf8');
 
 function stripComments(source: string): string {
   let out = source.replace(/\/\*[\s\S]*?\*\//g, '');
@@ -27,20 +26,23 @@ function stripComments(source: string): string {
 
 const CODE = stripComments(SOURCE);
 
-describe('WorkerDeleteButton — T1C admin-ux-hotfix 2 — success confirmation', () => {
-  it('declares a success state holding userId + fullName', () => {
-    expect(CODE).toMatch(/const \[success, setSuccess\] = useState/);
-    expect(CODE).toMatch(/setSuccess\([\s\S]*userId:\s*workerId/);
+describe('WorkerDeleteButton — merged T1B-OPS success confirmation', () => {
+  it('redirects with deleted worker id and URL-encoded name after API success', () => {
+    expect(CODE).toContain('new URLSearchParams({ deleted: workerId })');
+    expect(CODE).toContain("params.set('name', workerName)");
+    expect(CODE).toContain('window.location.href = `/admin/workers?${params.toString()}`');
   });
 
-  it('renders the success toast banner with role="status" and testid', () => {
-    expect(CODE).toContain('data-testid="worker-delete-success-toast"');
-    expect(CODE).toContain('role="status"');
+  it('list page confirms deletion and links directly to the audit record', () => {
+    expect(LIST_SOURCE).toContain('role="status"');
+    expect(LIST_SOURCE).toContain('Đã xóa người lao động');
+    expect(LIST_SOURCE).toContain('/admin/audit-logs?entityType=Worker&entityId=');
+    expect(LIST_SOURCE).toContain('WORKER_PERMANENT_DELETE');
   });
 
-  it('schedules a 2500ms redirect to /admin/workers when success appears', () => {
-    expect(CODE).toMatch(/2500/);
-    expect(CODE).toMatch(/router\.push\(['"]\/admin\/workers['"]\)/);
+  it('keeps the dedicated delete-history page reachable from the workers list', () => {
+    expect(LIST_SOURCE).toContain('href="/admin/workers/delete-history"');
+    expect(LIST_SOURCE).toContain('Lịch sử xóa');
   });
 });
 
