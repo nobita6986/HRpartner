@@ -421,8 +421,8 @@ export default async function WorkerDeleteHistoryPage({ searchParams }: PageProp
               currentPage <= 1 ? 'pointer-events-none opacity-50' : ''
             }`}
             style={{
-              background: 'var(--surface-container-high)',
-              color: 'var(--on-surface)',
+              background: 'var(--color-surface-container-high)',
+              color: 'var(--color-on-surface)',
             }}
           >
             ← Trước
@@ -437,8 +437,8 @@ export default async function WorkerDeleteHistoryPage({ searchParams }: PageProp
               currentPage >= totalPages ? 'pointer-events-none opacity-50' : ''
             }`}
             style={{
-              background: 'var(--surface-container-high)',
-              color: 'var(--on-surface)',
+              background: 'var(--color-surface-container-high)',
+              color: 'var(--color-on-surface)',
             }}
           >
             Sau →
