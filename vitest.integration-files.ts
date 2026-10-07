@@ -189,4 +189,81 @@ export const INTEGRATION_TEST_FILES: string[] = [
   // Self-skips via describe.skipIf when DATABASE_URL_TEST + DATABASE_URL_ADMIN_TEST
   // are absent (ENV_BLOCKED).
   'tests/db/p1a05-job-opening-readiness.integration.test.ts',
+  // hrp-f9-hr-staff-jobposting-scope: synthetic DB proof for the
+  // dual-boundary guard on the JobPosting authoring surface. Covers
+  // AC-01..AC-10, AC-12, AC-13, AC-17 of the F9 V2 contract v1.0
+  // (selector narrowing for HR_STAFF, server-write-boundary
+  // `assertHrStaffRecruiterScope` in `assertSlotEligibleForNewJobPosting`
+  // and the four write/read paths, revoke race, cross-order
+  // ADMIN/HR_MANAGER bypass, canonical-safe error envelope, zero-residue
+  // teardown). Self-skips via describe.skipIf when DATABASE_URL_TEST +
+  // DATABASE_URL_ADMIN_TEST are absent (ENV_BLOCKED — awaits T0
+  // authorization of the `ep-empty-forest-azlhfyo9-*` Neon writer/admin
+  // pair).
+  'tests/db/p1a05-f9-hr-staff-jobposting-scope.integration.test.ts',
+  // hrp-f9b-jobposting-write-boundary-hardening: forward-only corrective
+  // migration replaces the broad `hrp_f9_slots_staff_update` policy with a
+  // narrow SECURITY DEFINER primitive `hrp_f9b_bind_slot_to_opening`.
+  // Synthetic DB proof covers B-01/B-02/B-03 closure:
+  //   - Happy path + idempotent replay.
+  //   - Direct DB negative proof (HR_STAFF cannot mutate arbitrary
+  //     `staffing_order_slots` columns; cannot rebind/cross-slot/cross-order;
+  //     PUBLIC cannot EXECUTE the primitive).
+  //   - True two-connection revoke-before-create race using the shared
+  //     `tests/db/p1a06-f9b-race-helper.ts` (overlap observed via pg_locks;
+  //     post-lock re-check throws NO_ACTIVE_ORDER_ASSIGNMENT (403)).
+  //   - Policy/function live posture (function exists, fixed search_path,
+  //     PUBLIC no EXECUTE, intended writer grants only, broad UPDATE policy
+  //     dropped).
+  //   - Hardened `hrp_f9_openings_staff_insert` (cross-slot insert fails).
+  //   - Zero residue + FK-safe teardown.
+  // Self-skips via describe.skipIf when DATABASE_URL_TEST +
+  // DATABASE_URL_ADMIN_TEST are absent (ENV_BLOCKED).
+  'tests/db/p1a06-f9b-jobposting-write-boundary.integration.test.ts',
+  // hrp-f9b-r2-slot-scope-read-restore (F9-B correction batch 1/1):
+  // restore canonical SELECT scope for `staffing_order_slots` after
+  // the F9-B round-1 migration's narrow manager-only SELECT policy
+  // (hrp_f9b_slots_manager_select) broke every non-manager role
+  // that legitimately needs to read slot rows through
+  // `hrp_project_visible_for(so.project_id)`. R2 introduces
+  // `hrp_f9b_slots_project_select` (project-visible SELECT) while
+  // retaining `hrp_sora_order_slots_staff_select` (assigned HR_STAFF)
+  // and the manager INSERT/UPDATE policies + the SECURITY DEFINER
+  // `hrp_f9b_bind_slot_to_opening` primitive. Covers role-matrix
+  // visibility (MKT, PM, sub-PM, ADMIN, HR_MANAGER, DIRECTOR, SALE,
+  // WORKER, VENDOR_*, CTV), assigned/unassigned/revoked HR_STAFF,
+  // HR_STAFF direct UPDATE/INSERT/DELETE fail-closed posture, and
+  // PUBLIC cannot EXECUTE the primitive. Self-skips via
+  // describe.skipIf when DATABASE_URL_TEST + DATABASE_URL_ADMIN_TEST
+  // are absent (ENV_BLOCKED).
+  'tests/db/p1a07-f9b-r2-role-scope.integration.test.ts',
+  // hrp-ui2-public-content-controls-sticky: real synthetic-Postgres proof for
+  // the applied migration, HomepageSettings read/write, JSONB constraints,
+  // fail-closed validation, and value-equivalent cleanup.
+  'tests/db/public-settings.integration.test.ts',
+  // hrp-t1c-intake-worker-link: link LaborProfile.workerId trong transaction
+  // convert. Self-skips khi DATABASE_URL_TEST + DATABASE_URL_ADMIN_TEST absent.
+  // Forward-only — không có migration mới; chỉ dùng schema hiện hữu.
+  'tests/db/intake-convert-worker-link.integration.test.ts',
+  // hrp-t1b-pre-p2-worker-delete-rls-hotfix: forward-only RLS policy replacement
+  // for `workers` table — DROP `hrp_workers_no_delete` (RESTRICTIVE FOR DELETE
+  // USING false) + CREATE `hrp_workers_delete_admin` (RESTRICTIVE FOR DELETE
+  // USING hrp_session_role() = 'ADMIN'). Migration idempotent/convergent cho
+  // cả clean install và legacy DB. Covers AC-01 clean chain + AC-02 legacy
+  // convergence (seed hrp_workers_no_delete USING false thủ công) + AC-03
+  // role × delete matrix (ADMIN xóa OK; HR_MANAGER/DIRECTOR/HR_STAFF/WORKER
+  // deny Prisma P2025) + AC-04 idempotent re-apply + AC-05 dependency sweep
+  // (FK + service 409 WORKER_NOT_DELETABLE) + AC-06 file structural
+  // assertion. Self-skip when DATABASE_URL_TEST + DATABASE_URL_ADMIN_TEST
+  // absent (ENV_BLOCKED).
+  'tests/db/t1b-pre-p2-worker-delete-rls.integration.test.ts',
+  // t1a-staffing-order-management (CORRECTION 2/1, T0): real PostgreSQL
+  // two-connection race test for the canonical `p1a04:order:` advisory
+  // lock. Three cases: (A) deleteStaffingOrder + concurrent JobOpening
+  // insert on the same order → typed 409 ORDER_NOT_DELETABLE; (B)
+  // updateStaffingOrder slot-delete + concurrent CandidateSubmission on
+  // the same slot → typed 409 SLOT_HAS_DEPENDENCIES; (C) two concurrent
+  // deleteStaffingOrder on the same order → exactly one wins, other
+  // gets NOT_FOUND, never 500. Self-skips khi DB env absent.
+  'tests/db/staffing-order-canonical-lock.integration.test.ts',
 ];

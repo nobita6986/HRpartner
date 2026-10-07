@@ -28,43 +28,95 @@ import {
   type HomepageSettingsDto,
 } from '@/src/domains/job-board/public-types';
 import {
+  STICKY_ANIMATIONS,
+  STICKY_EMPHASIS,
+  STICKY_FONTS,
+  STICKY_TEXT_COLORS,
+  safeStickyAnnouncement,
+  type StickyAnimation,
+  type StickyEmphasis,
+  type StickyFont,
+  type StickyTextColor,
+} from '@/src/domains/job-board/public-content-controls/types';
+import { InvalidCtaUrlError, normalizeCtaUrl } from '@/src/domains/job-board/public-content-controls/url-safety';
+import {
   InvalidChatUrlError,
   InvalidPhoneNumberError,
   normalizeChatUrl,
   normalizePhoneNumber,
 } from '@/src/domains/job-board/chat-links';
+import { buildHomepageSettingsPatch } from './homepage-settings-patch';
+import { actionLabel } from '@/src/shared/i18n/action-dictionary';
+import { HeroImagePicker } from './_components/hero-image-picker';
+import { AccountTabPanel, SettingsTabs, type SettingsTabId } from './_components/settings-tabs';
 
-const PLACEHOLDER_GROUPS = [
+const STICKY_TEXT_COLOR_LABELS: Readonly<Record<StickyTextColor, string>> = {
+  'on-primary': 'Trên nền màu chính',
+  'on-surface': 'Trên nền nội dung',
+  'on-secondary-container': 'Trên nền màu phụ',
+};
+
+const STICKY_FONT_LABELS: Readonly<Record<StickyFont, string>> = {
+  SANS: 'Không chân (Sans-serif)',
+  SERIF: 'Có chân (Serif)',
+};
+
+const STICKY_EMPHASIS_LABELS: Readonly<Record<StickyEmphasis, string>> = {
+  NORMAL: 'Thông thường',
+  BOLD: 'Đậm',
+  EXTRA_BOLD: 'Rất đậm',
+};
+
+const STICKY_ANIMATION_LABELS: Readonly<Record<StickyAnimation, string>> = {
+  NONE: 'Không có',
+  BLINK: 'Nhấp nháy',
+  MARQUEE: 'Chạy chữ',
+};
+
+const SYSTEM_TAB_ITEMS = [
   {
-    title: 'Bảo mật',
-    items: [
-      { label: 'Đổi mật khẩu', description: 'Thay đổi mật khẩu tài khoản' },
-      { label: 'Xác thực hai yếu tố (2FA)', description: 'Bật/tắt xác thực 2 lớp' },
-      { label: 'Lịch sử đăng nhập', description: 'Xem các phiên đăng nhập gần đây' },
-    ],
+    label: 'Đổi mật khẩu',
+    description: 'Thay đổi mật khẩu tài khoản',
   },
   {
-    title: 'Thông báo',
-    items: [
-      { label: 'Email thông báo', description: 'Cấu hình email nhận thông báo' },
-      { label: 'SMS / Zalo', description: 'Cấu hình kênh SMS và Zalo OA' },
-      { label: 'App Push', description: 'Bật/tắt thông báo trên ứng dụng' },
-    ],
+    label: 'Xác thực hai yếu tố (2FA)',
+    description: 'Bật/tắt xác thực 2 lớp',
   },
   {
-    title: 'Tích hợp',
-    items: [
-      { label: 'API Keys', description: 'Quản lý API keys cho bên thứ ba' },
-      { label: 'Webhook', description: 'Cấu hình webhook nhận sự kiện' },
-      { label: 'Single Sign-On (SSO)', description: 'Kết nối LDAP / SAML / OAuth' },
-    ],
+    label: 'Lịch sử đăng nhập',
+    description: 'Xem các phiên đăng nhập gần đây',
   },
   {
-    title: 'Nhật ký hệ thống',
-    items: [
-      { label: 'Audit Log', description: 'Xem lịch sử thay đổi quan trọng' },
-      { label: 'Error Log', description: 'Các lỗi hệ thống gần đây' },
-    ],
+    label: 'Email thông báo',
+    description: 'Cấu hình email nhận thông báo',
+  },
+  {
+    label: 'SMS / Zalo',
+    description: 'Cấu hình kênh SMS và Zalo OA',
+  },
+  {
+    label: 'Thông báo đẩy',
+    description: 'Bật hoặc tắt thông báo trên ứng dụng',
+  },
+  {
+    label: 'Khóa API',
+    description: 'Quản lý khóa API dùng cho dịch vụ bên thứ ba',
+  },
+  {
+    label: 'Webhook',
+    description: 'Cấu hình webhook để nhận sự kiện',
+  },
+  {
+    label: 'Đăng nhập một lần (SSO)',
+    description: 'Kết nối LDAP / SAML / OAuth',
+  },
+  {
+    label: 'Nhật ký kiểm toán',
+    description: 'Xem lịch sử các thay đổi quan trọng',
+  },
+  {
+    label: 'Nhật ký lỗi',
+    description: 'Xem các lỗi hệ thống gần đây',
   },
 ];
 
@@ -112,9 +164,41 @@ function validatePhoneNumber(value: string): string | null {
   }
 }
 
+/**
+ * Compute a new, monotonic contentRevision from the prior one.
+ *
+ * The DB row keeps a `{ contentRevision, ... }` JSON; the prior counter is the
+ * last token after `rev-`. We bump it by 1 and keep the prefix stable. Falls
+ * back to a fresh timestamp-derived id if the prior value is malformed.
+ */
+function nextContentRevision(prior: string): string {
+  const match = /^rev-(\d+)$/.exec(prior);
+  if (match) {
+    const n = Number.parseInt(match[1]!, 10);
+    return `rev-${n + 1}`;
+  }
+  return `rev-${Date.now()}`;
+}
+
+function validateCtaUrl(value: string): string | null {
+  const trimmed = value.trim();
+  if (trimmed.length === 0) return null;
+  try {
+    normalizeCtaUrl(trimmed);
+    return null;
+  } catch (error) {
+    if (error instanceof InvalidCtaUrlError) return error.message;
+    return 'URL không hợp lệ.';
+  }
+}
+
 export default function AdminSettingsForm({ initialSettings, unavailableReason }: AdminSettingsFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+
+  // hrp-t2-public-site-hotfix (T2 / STEP-07): state tab — mặc định 'interface'.
+  // KHÔNG đồng bộ URL (giữ /admin/settings sạch cho redirect admin/users khi cần).
+  const [activeTab, setActiveTab] = useState<SettingsTabId>('interface');
 
   // Track last-saved snapshot so Reset can revert + "updated at" shows the latest.
   const [savedSnapshot, setSavedSnapshot] = useState<HomepageSettingsDto>(initialSettings);
@@ -123,6 +207,48 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
   const [zaloChatUrl, setZaloChatUrl] = useState(initialSettings.zaloChatUrl ?? '');
   const [messengerChatUrl, setMessengerChatUrl] = useState(initialSettings.messengerChatUrl ?? '');
   const [phoneCallNumber, setPhoneCallNumber] = useState(initialSettings.phoneCallNumber ?? '');
+
+  // hrp-t2-public-site-hotfix (T2 / STEP-07): Hero image — lưu media id thay
+  // vì URL để admin có thể đổi alt ở Media Library mà vẫn giữ chọn. Khi id
+  // null → giữ gradient (v1).
+  const initialHeroId = initialSettings.heroImage?.mediaId ?? null;
+  const [heroImageMediaId, setHeroImageMediaId] = useState<string | null>(initialHeroId);
+  const [heroImageSelected, setHeroImageSelected] = useState<{
+    id: string;
+    url: string;
+    alt: string;
+    caption: string | null;
+  } | null>(
+    initialSettings.heroImage === null
+      ? null
+      : {
+          id: initialSettings.heroImage.mediaId,
+          url: initialSettings.heroImage.url,
+          alt: initialSettings.heroImage.alt,
+          caption: initialSettings.heroImage.caption,
+        },
+  );
+
+  // ── UI2 / Phase B state ────────────────────────────────────────────────
+  // Pull initial values from `initialSettings.stickyAnnouncement` (already
+  // projected through `safeStickyAnnouncement` server-side).
+  const stickyInitial = safeStickyAnnouncement(initialSettings.stickyAnnouncement ?? null);
+  const [newsSectionEnabled, setNewsSectionEnabled] = useState<boolean>(initialSettings.newsSectionEnabled);
+  const [stickyEnabled, setStickyEnabled] = useState<boolean>(stickyInitial.enabled);
+  const [stickyMessage, setStickyMessage] = useState<string>(stickyInitial.message);
+  const [stickyCtaLabel, setStickyCtaLabel] = useState<string>(stickyInitial.ctaLabel ?? '');
+  const [stickyCtaUrl, setStickyCtaUrl] = useState<string>(stickyInitial.ctaUrl ?? '');
+  const [stickyDismissible, setStickyDismissible] = useState<boolean>(stickyInitial.dismissible);
+  const [stickyBackgroundOpacity, setStickyBackgroundOpacity] = useState<number>(stickyInitial.backgroundOpacity);
+  const [stickyMarqueeDurationSeconds, setStickyMarqueeDurationSeconds] = useState<number>(
+    stickyInitial.marqueeDurationSeconds,
+  );
+  const [stickyTextColor, setStickyTextColor] = useState<StickyTextColor>(stickyInitial.textColor);
+  const [stickyFont, setStickyFont] = useState<StickyFont>(stickyInitial.font);
+  const [stickyEmphasis, setStickyEmphasis] = useState<StickyEmphasis>(stickyInitial.emphasis);
+  const [stickyAnimation, setStickyAnimation] = useState<StickyAnimation>(stickyInitial.animation);
+  const [stickyContentRevision, setStickyContentRevision] = useState<string>(stickyInitial.contentRevision);
+
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -131,19 +257,49 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
   const zaloChatUrlError = validateChatUrl(zaloChatUrl, 'zalo');
   const messengerChatUrlError = validateChatUrl(messengerChatUrl, 'messenger');
   const phoneCallNumberError = validatePhoneNumber(phoneCallNumber);
+  const stickyMessageError =
+    stickyMessage.length > 280 ? 'Nội dung thông báo tối đa 280 ký tự.' : null;
+  const stickyCtaLabelError =
+    stickyCtaLabel.length > 60 ? 'Nhãn nút hành động tối đa 60 ký tự.' : null;
+  const stickyCtaUrlError = validateCtaUrl(stickyCtaUrl);
+  const stickyMarqueeDurationError =
+    Number.isInteger(stickyMarqueeDurationSeconds) &&
+    stickyMarqueeDurationSeconds >= 5 &&
+    stickyMarqueeDurationSeconds <= 60
+      ? null
+      : 'Tốc độ chạy chữ phải từ 5 đến 60 giây mỗi vòng.';
   const hasFieldError =
     bestJobsError !== null ||
     listingError !== null ||
     zaloChatUrlError !== null ||
     messengerChatUrlError !== null ||
-    phoneCallNumberError !== null;
+    phoneCallNumberError !== null ||
+    stickyMessageError !== null ||
+    stickyCtaLabelError !== null ||
+    stickyCtaUrlError !== null ||
+    stickyMarqueeDurationError !== null;
 
   const hasChanges =
     bestJobsPageSize !== savedSnapshot.bestJobsPageSize ||
     listingPageSize !== savedSnapshot.listingPageSize ||
     zaloChatUrl !== (savedSnapshot.zaloChatUrl ?? '') ||
     messengerChatUrl !== (savedSnapshot.messengerChatUrl ?? '') ||
-    phoneCallNumber !== (savedSnapshot.phoneCallNumber ?? '');
+    phoneCallNumber !== (savedSnapshot.phoneCallNumber ?? '') ||
+    newsSectionEnabled !== savedSnapshot.newsSectionEnabled ||
+    stickyEnabled !== savedSnapshot.stickyAnnouncement.enabled ||
+    stickyMessage !== savedSnapshot.stickyAnnouncement.message ||
+    stickyCtaLabel !== (savedSnapshot.stickyAnnouncement.ctaLabel ?? '') ||
+    stickyCtaUrl !== (savedSnapshot.stickyAnnouncement.ctaUrl ?? '') ||
+    stickyDismissible !== savedSnapshot.stickyAnnouncement.dismissible ||
+    stickyBackgroundOpacity !== savedSnapshot.stickyAnnouncement.backgroundOpacity ||
+    stickyMarqueeDurationSeconds !== savedSnapshot.stickyAnnouncement.marqueeDurationSeconds ||
+    stickyTextColor !== savedSnapshot.stickyAnnouncement.textColor ||
+    stickyFont !== savedSnapshot.stickyAnnouncement.font ||
+    stickyEmphasis !== savedSnapshot.stickyAnnouncement.emphasis ||
+    stickyAnimation !== savedSnapshot.stickyAnnouncement.animation ||
+    stickyContentRevision !== savedSnapshot.stickyAnnouncement.contentRevision ||
+    // hrp-t2-public-site-hotfix (T2 / STEP-07): Hero image — track media id.
+    heroImageMediaId !== (savedSnapshot.heroImage?.mediaId ?? null);
 
   // Clear stale success/error when user edits again.
   useEffect(() => {
@@ -157,9 +313,53 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
     zaloChatUrl,
     messengerChatUrl,
     phoneCallNumber,
+    newsSectionEnabled,
+    stickyEnabled,
+    stickyMessage,
+    stickyCtaLabel,
+    stickyCtaUrl,
+    stickyDismissible,
+    stickyBackgroundOpacity,
+    stickyMarqueeDurationSeconds,
+    stickyTextColor,
+    stickyFont,
+    stickyEmphasis,
+    stickyAnimation,
+    stickyContentRevision,
     success,
     error,
   ]);
+
+  function buildPayload(): Record<string, unknown> {
+    const trimmedCtaUrl = stickyCtaUrl.trim();
+    const trimmedCtaLabel = stickyCtaLabel.trim();
+    return buildHomepageSettingsPatch({
+      bestJobsPageSize,
+      listingPageSize,
+      zaloChatUrl,
+      messengerChatUrl,
+      phoneCallNumber,
+      newsSectionEnabled,
+      stickyAnnouncement: stickyEnabled
+        ? {
+            enabled: true,
+            message: stickyMessage,
+            ctaLabel: trimmedCtaLabel.length > 0 ? trimmedCtaLabel : null,
+            ctaUrl: trimmedCtaUrl.length > 0 ? trimmedCtaUrl : null,
+            dismissible: stickyDismissible,
+            backgroundOpacity: stickyBackgroundOpacity,
+            marqueeDurationSeconds: stickyMarqueeDurationSeconds,
+            textColor: stickyTextColor,
+            font: stickyFont,
+            emphasis: stickyEmphasis,
+            animation: stickyAnimation,
+            contentRevision: stickyContentRevision,
+          }
+        : null,
+      // hrp-t2-public-site-hotfix (T2 / STEP-07): Hero image media id.
+      heroImageMediaId,
+    }, savedSnapshot);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -178,6 +378,10 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
           zaloChatUrlError ??
           messengerChatUrlError ??
           phoneCallNumberError ??
+          stickyMessageError ??
+          stickyCtaLabelError ??
+          stickyCtaUrlError ??
+          stickyMarqueeDurationError ??
           'Có trường chưa hợp lệ.',
       );
       return;
@@ -188,17 +392,15 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
         const res = await fetch('/api/admin/homepage-settings', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            bestJobsPageSize,
-            listingPageSize,
-            zaloChatUrl,
-            messengerChatUrl,
-            phoneCallNumber,
-          }),
+          body: JSON.stringify(buildPayload()),
         });
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
-          setError(data.message ?? `Lỗi ${res.status}`);
+          setError(
+            res.status < 500 && typeof data.message === 'string'
+              ? data.message
+              : 'Không thể lưu cài đặt. Vui lòng thử lại.',
+          );
           return;
         }
         const data = await res.json();
@@ -210,11 +412,39 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
           setZaloChatUrl(data.settings.zaloChatUrl ?? '');
           setMessengerChatUrl(data.settings.messengerChatUrl ?? '');
           setPhoneCallNumber(data.settings.phoneCallNumber ?? '');
-          setSuccess('Đã lưu cài đặt homepage và kênh liên hệ.');
+          setNewsSectionEnabled(data.settings.newsSectionEnabled);
+          const snap = safeStickyAnnouncement(data.settings.stickyAnnouncement ?? null);
+          setStickyEnabled(snap.enabled);
+          setStickyMessage(snap.message);
+          setStickyCtaLabel(snap.ctaLabel ?? '');
+          setStickyCtaUrl(snap.ctaUrl ?? '');
+          setStickyDismissible(snap.dismissible);
+          setStickyBackgroundOpacity(snap.backgroundOpacity);
+          setStickyMarqueeDurationSeconds(snap.marqueeDurationSeconds);
+          setStickyTextColor(snap.textColor);
+          setStickyFont(snap.font);
+          setStickyEmphasis(snap.emphasis);
+          setStickyAnimation(snap.animation);
+          setStickyContentRevision(snap.contentRevision);
+          // hrp-t2-public-site-hotfix (T2 / STEP-07): sync Hero image từ
+          // snapshot (server join media đã cập nhật).
+          const savedHero = data.settings.heroImage ?? null;
+          setHeroImageMediaId(savedHero?.mediaId ?? null);
+          setHeroImageSelected(
+            savedHero === null
+              ? null
+              : {
+                  id: savedHero.mediaId,
+                  url: savedHero.url,
+                  alt: savedHero.alt,
+                  caption: savedHero.caption,
+                },
+          );
+          setSuccess('Đã lưu cài đặt trang chủ và kênh liên hệ.');
         }
         router.refresh();
-      } catch (e) {
-        setError(e instanceof Error ? e.message : 'Lỗi không xác định.');
+      } catch {
+        setError('Không thể kết nối máy chủ. Vui lòng thử lại.');
       }
     });
   }
@@ -225,8 +455,41 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
     setZaloChatUrl(savedSnapshot.zaloChatUrl ?? '');
     setMessengerChatUrl(savedSnapshot.messengerChatUrl ?? '');
     setPhoneCallNumber(savedSnapshot.phoneCallNumber ?? '');
+    setNewsSectionEnabled(savedSnapshot.newsSectionEnabled);
+    const snap = safeStickyAnnouncement(savedSnapshot.stickyAnnouncement ?? null);
+    setStickyEnabled(snap.enabled);
+    setStickyMessage(snap.message);
+    setStickyCtaLabel(snap.ctaLabel ?? '');
+    setStickyCtaUrl(snap.ctaUrl ?? '');
+    setStickyDismissible(snap.dismissible);
+    setStickyBackgroundOpacity(snap.backgroundOpacity);
+    setStickyMarqueeDurationSeconds(snap.marqueeDurationSeconds);
+    setStickyTextColor(snap.textColor);
+    setStickyFont(snap.font);
+    setStickyEmphasis(snap.emphasis);
+    setStickyAnimation(snap.animation);
+    setStickyContentRevision(snap.contentRevision);
+    // hrp-t2-public-site-hotfix (T2 / STEP-07): reset Hero image từ snapshot.
+    const resetHero = savedSnapshot.heroImage ?? null;
+    setHeroImageMediaId(resetHero?.mediaId ?? null);
+    setHeroImageSelected(
+      resetHero === null
+        ? null
+        : {
+            id: resetHero.mediaId,
+            url: resetHero.url,
+            alt: resetHero.alt,
+            caption: resetHero.caption,
+          },
+    );
     setError(null);
     setSuccess(null);
+  }
+
+  function handlePublish() {
+    // Bump the content revision so prior user dismissals no longer suppress
+    // the new bar. The server stores the new value on next save.
+    setStickyContentRevision((prev) => nextContentRevision(prev));
   }
 
   return (
@@ -236,7 +499,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
           Cài đặt
         </h1>
         <p style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-sm">
-          Cấu hình hệ thống. Nhóm AV1 bên dưới đã có hiệu lực; các nhóm khác đang liệt kê để biết sẽ có gì.
+          Cấu hình hệ thống. Nhóm cài đặt trang chủ bên dưới đã có hiệu lực; các nhóm khác sẽ sớm khả dụng.
         </p>
       </div>
 
@@ -267,10 +530,10 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
             <h2 style={{ color: 'var(--on-surface)' }} className="text-base font-semibold">
-              Homepage Settings
+              Cài đặt trang chủ
             </h2>
             <p style={{ color: 'var(--on-surface-variant)' }} className="mt-0.5 text-xs">
-              Singleton — chỉ một row id=&apos;default&apos;. Cập nhật ảnh hưởng homepage ngay lập tức.
+              Thay đổi tại đây có hiệu lực trên trang chủ sau khi lưu.
             </p>
           </div>
           <span
@@ -280,10 +543,20 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
             }}
             className="rounded-full px-2 py-0.5 text-xs font-medium"
           >
-            AV1 · ACTIVE
+            AV1 · ĐANG HOẠT ĐỘNG
           </span>
         </div>
 
+        {/* hrp-t2-public-site-hotfix (T2 / STEP-07): Tabs điều hướng nhóm
+            cài đặt (interface / contact / system / account). Render nội
+            dung cặn bên dưới theo `activeTab` để không phá UX sẵn có. */}
+        <SettingsTabs
+          active={activeTab}
+          onChange={setActiveTab}
+        />
+
+        {activeTab === 'interface' ? (
+        <>
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <div>
             <label
@@ -381,6 +654,41 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
         <div
           className="mt-6 border-t pt-6"
           style={{ borderColor: 'var(--outline-variant)' }}
+          data-testid="ui2-hero-image-block"
+        >
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <h3 style={{ color: 'var(--on-surface)' }} className="text-sm font-semibold">
+                Ảnh nền trang chủ (Hero)
+              </h3>
+              <p style={{ color: 'var(--on-surface-variant)' }} className="mt-0.5 text-xs">
+                Chọn ảnh từ Thư viện Media hoặc bỏ chọn để trở về gradient mặc định. Không ảnh hưởng carousel &amp; tin tức.
+              </p>
+            </div>
+            <span
+              style={{ background: 'var(--primary-container)', color: 'var(--on-primary-container)' }}
+              className="rounded-full px-2 py-0.5 text-xs font-medium"
+            >
+              GIAO DIỆN
+            </span>
+          </div>
+          <HeroImagePicker
+            selected={heroImageSelected}
+            onSelect={(next) => {
+              setHeroImageSelected(next);
+              setHeroImageMediaId(next?.id ?? null);
+            }}
+            disabled={Boolean(unavailableReason) || isPending}
+          />
+        </div>
+        </>
+        ) : null}
+
+        {activeTab === 'contact' && (
+        <div
+          className="mt-6 border-t pt-6"
+          style={{ borderColor: 'var(--outline-variant)' }}
+          data-testid="ui2-contact-channels-block"
         >
           <div className="mb-4">
             <h3 style={{ color: 'var(--on-surface)' }} className="text-sm font-semibold">
@@ -459,7 +767,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
 
             <div>
               <label htmlFor="messengerChatUrl" className="mb-1 block text-sm font-medium" style={{ color: 'var(--on-surface)' }}>
-                URL Messenger Page
+                URL Trang Messenger
               </label>
               <input
                 id="messengerChatUrl"
@@ -491,6 +799,376 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
             </div>
           </div>
         </div>
+        )}
+
+        {/* hrp-t2-public-site-hotfix (T2 / STEP-07): Tab Giao diện còn chứa
+            news toggle + sticky announcement. (Đặt chung với block
+            pagesizes + Hero image đã render phía trên.) */}
+        {/* ── UI2 / Phase B — News section toggle ───────────────────────── */}
+        <div
+          className="mt-6 border-t pt-6"
+          style={{ borderColor: 'var(--outline-variant)' }}
+          data-testid="ui2-news-section-block"
+        >
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <h3 style={{ color: 'var(--on-surface)' }} className="text-sm font-semibold">
+                Tin tức &amp; Cẩm nang
+              </h3>
+              <p style={{ color: 'var(--on-surface-variant)' }} className="mt-0.5 text-xs">
+                Khi tắt, mục &quot;Tin tức&quot; sẽ ẩn khỏi điều hướng và trang chủ. Dữ liệu bài viết vẫn được giữ nguyên.
+              </p>
+            </div>
+            <span
+              style={{ background: 'var(--primary-container)', color: 'var(--on-primary-container)' }}
+              className="rounded-full px-2 py-0.5 text-xs font-medium"
+            >
+              NỘI DUNG TRANG CHỦ
+            </span>
+          </div>
+
+          <label className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              checked={newsSectionEnabled}
+              onChange={(e) => setNewsSectionEnabled(e.target.checked)}
+              disabled={Boolean(unavailableReason)}
+              className="hrp-focus mt-1 h-4 w-4 rounded border"
+              data-testid="news-section-toggle"
+            />
+            <span>
+              <span style={{ color: 'var(--on-surface)' }} className="block text-sm font-medium">
+                Hiển thị &quot;Tin tức &amp; Cẩm nang&quot; trên trang chủ công khai
+              </span>
+              <span style={{ color: 'var(--on-surface-variant)' }} className="mt-0.5 block text-xs">
+                Mặc định BẬT để giữ nguyên hành vi hiện tại.
+              </span>
+            </span>
+          </label>
+        </div>
+
+        {/* ── UI2 / Phase B — Sticky bottom announcement ────────────────── */}
+        <div
+          className="mt-6 border-t pt-6"
+          style={{ borderColor: 'var(--outline-variant)' }}
+          data-testid="ui2-sticky-announcement-block"
+        >
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <h3 style={{ color: 'var(--on-surface)' }} className="text-sm font-semibold">
+                Thông báo cuối trang
+              </h3>
+              <p style={{ color: 'var(--on-surface-variant)' }} className="mt-0.5 text-xs">
+                Thanh thông báo cố định ở cuối màn hình. Nút hành động chỉ hỗ trợ đường dẫn nội bộ hoặc HTTPS.
+              </p>
+            </div>
+            <span
+              style={{ background: 'var(--primary-container)', color: 'var(--on-primary-container)' }}
+              className="rounded-full px-2 py-0.5 text-xs font-medium"
+            >
+              THÔNG BÁO CỐ ĐỊNH
+            </span>
+          </div>
+
+          <label className="mb-4 flex items-start gap-3">
+            <input
+              type="checkbox"
+              checked={stickyEnabled}
+              onChange={(e) => setStickyEnabled(e.target.checked)}
+              disabled={Boolean(unavailableReason)}
+              className="hrp-focus mt-1 h-4 w-4 rounded border"
+              data-testid="sticky-enabled-toggle"
+            />
+            <span>
+              <span style={{ color: 'var(--on-surface)' }} className="block text-sm font-medium">
+                Bật thanh thông báo
+              </span>
+              <span style={{ color: 'var(--on-surface-variant)' }} className="mt-0.5 block text-xs">
+                Khi tắt, thanh thông báo và nút hành động sẽ không hiển thị trên trang công khai.
+              </span>
+            </span>
+          </label>
+
+          <fieldset
+            disabled={!stickyEnabled || Boolean(unavailableReason)}
+            className="grid grid-cols-1 gap-6 sm:grid-cols-2"
+          >
+            <div className="sm:col-span-2">
+              <label htmlFor="stickyMessage" className="mb-1 block text-sm font-medium" style={{ color: 'var(--on-surface)' }}>
+                Nội dung thông báo
+              </label>
+              <textarea
+                id="stickyMessage"
+                rows={2}
+                maxLength={280}
+                value={stickyMessage}
+                onChange={(e) => setStickyMessage(e.target.value)}
+                aria-invalid={stickyMessageError !== null}
+                aria-describedby="stickyMessage-help stickyMessage-error"
+                className="hrp-focus w-full rounded-lg border bg-white px-3 py-2 text-sm min-h-11"
+                style={{
+                  borderColor: stickyMessageError ? 'var(--error)' : 'var(--outline-variant)',
+                  color: 'var(--on-surface)',
+                }}
+                data-testid="sticky-message-input"
+              />
+              <p id="stickyMessage-help" style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-xs">
+                Tối đa 280 ký tự. Chỉ hỗ trợ văn bản thường, không có định dạng nâng cao.
+              </p>
+              {stickyMessageError && (
+                <p id="stickyMessage-error" role="alert" style={{ color: 'var(--error)' }} className="mt-1 text-xs font-medium">
+                  {stickyMessageError}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="stickyCtaLabel" className="mb-1 block text-sm font-medium" style={{ color: 'var(--on-surface)' }}>
+                Nhãn nút hành động
+              </label>
+              <input
+                id="stickyCtaLabel"
+                type="text"
+                maxLength={60}
+                value={stickyCtaLabel}
+                onChange={(e) => setStickyCtaLabel(e.target.value)}
+                aria-invalid={stickyCtaLabelError !== null}
+                aria-describedby="stickyCtaLabel-help stickyCtaLabel-error"
+                className="hrp-focus w-full rounded-lg border bg-white px-3 py-2 text-sm min-h-11"
+                style={{
+                  borderColor: stickyCtaLabelError ? 'var(--error)' : 'var(--outline-variant)',
+                  color: 'var(--on-surface)',
+                }}
+                data-testid="sticky-cta-label-input"
+              />
+              <p id="stickyCtaLabel-help" style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-xs">
+                Để trống nếu không cần nút hành động.
+              </p>
+              {stickyCtaLabelError && (
+                <p id="stickyCtaLabel-error" role="alert" style={{ color: 'var(--error)' }} className="mt-1 text-xs font-medium">
+                  {stickyCtaLabelError}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="stickyCtaUrl" className="mb-1 block text-sm font-medium" style={{ color: 'var(--on-surface)' }}>
+                Đường dẫn nút hành động
+              </label>
+              <input
+                id="stickyCtaUrl"
+                type="url"
+                inputMode="url"
+                autoCapitalize="none"
+                autoCorrect="off"
+                value={stickyCtaUrl}
+                onChange={(e) => setStickyCtaUrl(e.target.value)}
+                aria-invalid={stickyCtaUrlError !== null}
+                aria-describedby="stickyCtaUrl-help stickyCtaUrl-error"
+                className="hrp-focus w-full rounded-lg border bg-white px-3 py-2 text-sm min-h-11"
+                style={{
+                  borderColor: stickyCtaUrlError ? 'var(--error)' : 'var(--outline-variant)',
+                  color: 'var(--on-surface)',
+                }}
+                data-testid="sticky-cta-url-input"
+              />
+              <p id="stickyCtaUrl-help" style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-xs">
+                Dùng đường dẫn nội bộ (ví dụ /viec-lam) hoặc địa chỉ HTTPS.
+              </p>
+              {stickyCtaUrlError && (
+                <p id="stickyCtaUrl-error" role="alert" style={{ color: 'var(--error)' }} className="mt-1 text-xs font-medium">
+                  {stickyCtaUrlError}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="stickyTextColor" className="mb-1 block text-sm font-medium" style={{ color: 'var(--on-surface)' }}>
+                Màu chữ
+              </label>
+              <select
+                id="stickyTextColor"
+                value={stickyTextColor}
+                onChange={(e) => setStickyTextColor(e.target.value as StickyTextColor)}
+                className="hrp-focus w-full rounded-lg border bg-white px-3 py-2 text-sm min-h-11"
+                style={{ borderColor: 'var(--outline-variant)', color: 'var(--on-surface)' }}
+                data-testid="sticky-text-color-select"
+              >
+                {STICKY_TEXT_COLORS.map((c) => (
+                  <option key={c} value={c}>
+                    {STICKY_TEXT_COLOR_LABELS[c]}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="stickyFont" className="mb-1 block text-sm font-medium" style={{ color: 'var(--on-surface)' }}>
+                Kiểu chữ
+              </label>
+              <select
+                id="stickyFont"
+                value={stickyFont}
+                onChange={(e) => setStickyFont(e.target.value as StickyFont)}
+                className="hrp-focus w-full rounded-lg border bg-white px-3 py-2 text-sm min-h-11"
+                style={{ borderColor: 'var(--outline-variant)', color: 'var(--on-surface)' }}
+                data-testid="sticky-font-select"
+              >
+                {STICKY_FONTS.map((f) => (
+                  <option key={f} value={f}>
+                    {STICKY_FONT_LABELS[f]}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="stickyEmphasis" className="mb-1 block text-sm font-medium" style={{ color: 'var(--on-surface)' }}>
+                Độ đậm
+              </label>
+              <select
+                id="stickyEmphasis"
+                value={stickyEmphasis}
+                onChange={(e) => setStickyEmphasis(e.target.value as StickyEmphasis)}
+                className="hrp-focus w-full rounded-lg border bg-white px-3 py-2 text-sm min-h-11"
+                style={{ borderColor: 'var(--outline-variant)', color: 'var(--on-surface)' }}
+                data-testid="sticky-emphasis-select"
+              >
+                {STICKY_EMPHASIS.map((em) => (
+                  <option key={em} value={em}>
+                    {STICKY_EMPHASIS_LABELS[em]}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="stickyAnimation" className="mb-1 block text-sm font-medium" style={{ color: 'var(--on-surface)' }}>
+                Hiệu ứng
+              </label>
+              <select
+                id="stickyAnimation"
+                value={stickyAnimation}
+                onChange={(e) => setStickyAnimation(e.target.value as StickyAnimation)}
+                className="hrp-focus w-full rounded-lg border bg-white px-3 py-2 text-sm min-h-11"
+                style={{ borderColor: 'var(--outline-variant)', color: 'var(--on-surface)' }}
+                data-testid="sticky-animation-select"
+              >
+                {STICKY_ANIMATIONS.map((a) => (
+                  <option key={a} value={a}>
+                    {STICKY_ANIMATION_LABELS[a]}
+                  </option>
+                ))}
+              </select>
+              <p style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-xs">
+                Hiệu ứng nhấp nháy và chạy chữ tự tắt khi thiết bị bật chế độ giảm chuyển động.
+              </p>
+            </div>
+
+            <div>
+              <label htmlFor="stickyMarqueeDurationSeconds" className="mb-1 block text-sm font-medium" style={{ color: 'var(--on-surface)' }}>
+                Tốc độ chạy chữ
+              </label>
+              <div className="flex items-center gap-4">
+                <input
+                  id="stickyMarqueeDurationSeconds"
+                  type="range"
+                  min={5}
+                  max={60}
+                  step={1}
+                  value={stickyMarqueeDurationSeconds}
+                  onChange={(e) => setStickyMarqueeDurationSeconds(Number(e.target.value))}
+                  disabled={stickyAnimation !== 'MARQUEE'}
+                  aria-valuetext={`${stickyMarqueeDurationSeconds} giây mỗi vòng`}
+                  aria-describedby="stickyMarqueeDurationSeconds-help"
+                  className="hrp-focus min-h-11 flex-1 accent-[var(--color-primary)]"
+                  data-testid="sticky-marquee-duration-input"
+                />
+                <output
+                  htmlFor="stickyMarqueeDurationSeconds"
+                  className="w-20 text-right text-sm tabular-nums"
+                  style={{ color: 'var(--on-surface)' }}
+                  data-testid="sticky-marquee-duration-value"
+                >
+                  {stickyMarqueeDurationSeconds} giây
+                </output>
+              </div>
+              <p id="stickyMarqueeDurationSeconds-help" style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-xs">
+                Một vòng mất 5–60 giây; giá trị nhỏ hơn chạy nhanh hơn. Chỉ áp dụng khi chọn Chạy chữ; mặc định 18 giây.
+              </p>
+              {stickyMarqueeDurationError && (
+                <p role="alert" style={{ color: 'var(--error)' }} className="mt-1 text-xs font-medium">
+                  {stickyMarqueeDurationError}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="stickyBackgroundOpacity" className="mb-1 block text-sm font-medium" style={{ color: 'var(--on-surface)' }}>
+                Độ trong suốt nền
+              </label>
+              <div className="flex items-center gap-4">
+                <input
+                  id="stickyBackgroundOpacity"
+                  type="range"
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={stickyBackgroundOpacity}
+                  onChange={(e) => setStickyBackgroundOpacity(Number(e.target.value))}
+                  aria-valuetext={`${stickyBackgroundOpacity}%`}
+                  className="hrp-focus min-h-11 flex-1 accent-[var(--color-primary)]"
+                  data-testid="sticky-background-opacity-input"
+                />
+                <output
+                  htmlFor="stickyBackgroundOpacity"
+                  className="w-12 text-right text-sm tabular-nums"
+                  style={{ color: 'var(--on-surface)' }}
+                  data-testid="sticky-background-opacity-value"
+                >
+                  {stickyBackgroundOpacity}%
+                </output>
+              </div>
+              <p style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-xs">
+                Chỉ làm trong suốt nền; nội dung và nút vẫn rõ. Mặc định 100%.
+              </p>
+            </div>
+
+            <div className="sm:col-span-2 flex flex-wrap items-center justify-between gap-3">
+              <label className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  checked={stickyDismissible}
+                  onChange={(e) => setStickyDismissible(e.target.checked)}
+                  className="hrp-focus mt-1 h-4 w-4 rounded border"
+                  data-testid="sticky-dismissible-toggle"
+                />
+                <span>
+                  <span style={{ color: 'var(--on-surface)' }} className="block text-sm font-medium">
+                    Cho phép người dùng đóng thanh
+                  </span>
+                  <span style={{ color: 'var(--on-surface-variant)' }} className="mt-0.5 block text-xs">
+                    Người dùng đã đóng sẽ thấy lại thông báo khi nội dung được đăng lại.
+                  </span>
+                </span>
+              </label>
+              <button
+                type="button"
+                onClick={handlePublish}
+                disabled={!stickyEnabled || Boolean(unavailableReason)}
+                style={{ background: 'var(--surface-container)', color: 'var(--on-surface)' }}
+                className="hrp-focus inline-flex items-center gap-2 rounded-lg border border-[var(--outline-variant)] px-3 py-2 text-xs font-semibold disabled:opacity-40"
+                data-testid="sticky-publish-button"
+              >
+                Hiển thị lại thông báo
+              </button>
+            </div>
+
+            <p style={{ color: 'var(--on-surface-variant)' }} className="sm:col-span-2 text-xs">
+              Phiên bản thông báo hiện tại
+            </p>
+          </fieldset>
+        </div>
 
         {error && (
           <div
@@ -520,10 +1198,11 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
           </div>
         )}
 
+        {(activeTab === 'interface' || activeTab === 'contact') && (
         <div className="mt-6 flex flex-wrap items-center justify-end gap-3">
           <p style={{ color: 'var(--on-surface-variant)' }} className="text-xs">
             {unavailableReason
-              ? 'Chưa có dữ liệu cấu hình trên database'
+              ? 'Chưa thể chỉnh sửa vì dữ liệu cài đặt chưa sẵn sàng.'
               : `Cập nhật lần cuối: ${new Date(savedSnapshot.updatedAt).toLocaleString('vi-VN')}`}
           </p>
           <button
@@ -544,50 +1223,40 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
             data-testid="settings-save-button"
           >
             {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            Lưu thay đổi
+            {actionLabel('save')}
           </button>
         </div>
+        )}
       </form>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {PLACEHOLDER_GROUPS.map((group) => (
-          <div
-            key={group.title}
-            style={{ background: 'var(--surface-container-lowest)', borderColor: 'var(--outline-variant)' }}
-            className="rounded-lg border"
-          >
-            <div
-              style={{ background: 'var(--surface-container)', borderBottom: '1px solid var(--outline-variant)' }}
-              className="flex items-center justify-between gap-3 px-4 py-3"
-            >
-              <h2 style={{ color: 'var(--on-surface)' }} className="text-sm font-semibold">{group.title}</h2>
-              <span
-                style={{ background: 'var(--surface-container-highest)', color: 'var(--on-surface-variant)' }}
-                className="rounded-full px-2 py-0.5 text-xs font-medium"
-              >
-                Chưa khả dụng
-              </span>
-            </div>
-            <div className="divide-y divide-solid" style={{ borderColor: 'var(--outline-variant)' }}>
-              {group.items.map((item) => (
-                <div key={item.label} className="block px-4 py-3 opacity-60">
-                  <div style={{ color: 'var(--on-surface)' }} className="text-sm font-medium">{item.label}</div>
-                  <div style={{ color: 'var(--on-surface-variant)' }} className="text-xs mt-0.5">{item.description}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
+      {/* hrp-t2-public-site-hotfix (T2 / STEP-07): Tab "Hệ thống" — nơi dự
+          kiến cho cài đặt nền (rate-limit, feature flags, jobs queue...) chưa
+          khả dụng trong T2. Render placeholder đồng nhất với UX cũ. */}
+      {activeTab === 'system' && (
+        <div
+          className="mt-8 rounded-lg border p-6"
+          style={{
+            background: 'var(--surface-container-lowest)',
+            borderColor: 'var(--outline-variant)',
+          }}
+          data-testid="settings-system-placeholder"
+        >
+          <h2 style={{ color: 'var(--on-surface)' }} className="text-base font-semibold">
+            Cài đặt hệ thống
+          </h2>
+          <p style={{ color: 'var(--on-surface-variant)' }} className="mt-2 text-sm">
+            Các tùy chọn này đang được chuẩn hoá trong task UI-3 và sẽ khả dụng trong bản phát hành kế tiếp.
+          </p>
+        </div>
+      )}
 
-      <div
-        style={{ background: 'var(--surface-container)', borderColor: 'var(--outline-variant)' }}
-        className="mt-8 rounded-lg border p-4 text-center"
-      >
-        <p style={{ color: 'var(--on-surface-variant)' }} className="text-sm">
-          Phiên bản hệ thống HRP <span className="font-mono text-xs">v1.0.0</span> — Các module cài đặt chi tiết đang được phát triển.
-        </p>
-      </div>
+      {/* hrp-t2-public-site-hotfix (T2 / STEP-07): Tab "Tài khoản / Quyền"
+          chỉ điều hướng sang Users & Permissions. Không xây CRUD tài khoản ở
+          task T2 để tránh chồng chéo với hotfix Admin UI. */}
+      {activeTab === 'account' && (
+        <AccountTabPanel />
+      )}
+
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect, useCallback } from 'react';
+import { usePublicContentControls } from '@/src/domains/job-board/public-content-controls';
 
 interface AuthUser {
   userId: string;
@@ -17,11 +18,27 @@ async function logout() {
   }
 }
 
-const navLinks: Array<{ href: string; label: string; type: 'route' | 'disabled' }> = [
+type NavLinkType = 'route' | 'disabled';
+
+interface NavLink {
+  href: string;
+  label: string;
+  type: NavLinkType;
+  /** Phase B / UI2 — when present, the entry is gated on this control name. */
+  gate?: 'newsSectionEnabled';
+}
+
+const navLinks: NavLink[] = [
   { href: '/', label: 'Việc làm', type: 'route' },
-  { href: '#', label: 'Công ty', type: 'disabled' },
-  { href: '/ve-chung-toi', label: 'Về HRP Việt Nam', type: 'route' },
-  { href: '#', label: 'Tin tức', type: 'disabled' },
+  // hrp-t1a-introduce-hrp-and-menu-cleanup: "Công ty" → "Giới thiệu".
+  // Route re-created at `app/(portal)/ve-chung-toi/page.tsx` (was deleted
+  // before this task's baseline). Type flipped from 'disabled' to 'route'.
+  { href: '/ve-chung-toi', label: 'Giới thiệu', type: 'route' },
+  // Phase B / UI2: the "Tin tức" entry is now a route link to the news
+  // anchor on the homepage. It is hidden when the admin has set
+  // `newsSectionEnabled === false` (the gate is read at render time via the
+  // public-content-controls hook).
+  { href: '/#hrp-news-heading', label: 'Tin tức', type: 'route', gate: 'newsSectionEnabled' },
   { href: '/ctv-portal', label: 'Cộng tác viên', type: 'route' },
 ];
 
@@ -61,6 +78,14 @@ export function GlobalNavbar() {
   const [authLoading, setAuthLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+
+  // Phase B / UI2 — gate-aware nav filtering. The "Tin tức" entry is hidden
+  // when the admin has disabled the news section.
+  const { newsSectionEnabled } = usePublicContentControls();
+  const visibleNavLinks: NavLink[] = navLinks.filter((link) => {
+    if (link.gate === 'newsSectionEnabled') return newsSectionEnabled;
+    return true;
+  });
 
   const checkAuth = useCallback(async () => {
     setAuthLoading(true);
@@ -117,13 +142,13 @@ export function GlobalNavbar() {
             {/* Logo */}
             <div className="flex-shrink-0">
               <Link href="/" className="flex items-center gap-2">
-                <img src="/logo.png" alt="HRP Logo" style={{ height: '40px', width: 'auto' }} />
+                <img src="/hrp-logo.webp" alt="HRP — Việc làm miền Bắc" style={{ height: '40px', width: 'auto' }} />
               </Link>
             </div>
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center space-x-6">
-              {navLinks.map((link) => {
+              {visibleNavLinks.map((link) => {
                 // ui-03 / RQ-08: link disabled dùng button element với attributes
                 // type=button, aria-disabled=true, title="Đang phát triển", tabindex=-1.
                 const isActive =
@@ -294,7 +319,7 @@ export function GlobalNavbar() {
             className="md:hidden py-4 space-y-1"
             style={{ borderTop: '1px solid var(--color-line)' }}
           >
-            {navLinks.map((link) => {
+            {visibleNavLinks.map((link) => {
               const isActive = link.type === 'route' && link.href === activeHref;
               if (link.type === 'disabled') {
                 return (

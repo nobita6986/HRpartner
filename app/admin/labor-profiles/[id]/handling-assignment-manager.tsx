@@ -2,6 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import {
+  handlingAssignmentSourceLabel,
+  handlingAssignmentStatusLabel,
+} from '@/src/domains/labor-profile/labor-profile-ui';
+import { roleLabel } from '@/src/shared/i18n/role-labels';
 
 export function HandlingAssignmentManager({
   laborProfileId,
@@ -87,15 +92,6 @@ export function HandlingAssignmentManager({
     }
   };
 
-  const getSourceLabel = (src: string) => {
-    switch (src) {
-      case 'AFF_INITIAL': return 'Giao ban đầu (Affiliate)';
-      case 'MANAGER_ASSIGNMENT': return 'Quản lý giao';
-      case 'CASE_RESOLUTION': return 'Độ phân giải Case';
-      default: return src;
-    }
-  };
-
   const [history, setHistory] = useState<Record<string, any>[] | null | undefined>(null);
   const [showHistory, setShowHistory] = useState(false);
 
@@ -120,16 +116,16 @@ export function HandlingAssignmentManager({
     <div className={`bg-white p-6 rounded-xl shadow-sm border ${isCompanyPool ? 'border-gray-300' : 'border-l-4 border-l-blue-500'}`}>
       <div className="flex justify-between items-start mb-4">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">Người phụ trách (Handling)</h2>
+          <h2 className="text-lg font-semibold text-gray-900">Người phụ trách</h2>
           {isCompanyPool ? (
             <div className="mt-2 text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded inline-block font-medium">
-              Kho chung (Company Pool)
+              Kho chung
               {isExpired && ' - Hết hạn'}
             </div>
           ) : (
             <div className="mt-2 text-sm text-gray-900">
               <span className="font-semibold">{activeAssignment.assigneeName || 'Không có quyền xem'}</span>
-              <span className="text-gray-500 ml-2">({getSourceLabel(activeAssignment.source)})</span>
+              <span className="text-gray-500 ml-2">({handlingAssignmentSourceLabel(activeAssignment.source)})</span>
             </div>
           )}
         </div>
@@ -173,10 +169,10 @@ export function HandlingAssignmentManager({
                 <li key={h.id} className="text-sm border-b border-gray-200 pb-2 last:border-0 last:pb-0">
                   <div className="flex justify-between font-medium">
                     <span>{h.assigneeUser?.name || 'Không rõ'}</span>
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${h.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>{h.status}</span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${h.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>{handlingAssignmentStatusLabel(h.status)}</span>
                   </div>
                   <div className="text-xs text-gray-500 mt-1">
-                    Nguồn: {getSourceLabel(h.source)} | Ngày: {new Date(h.createdAt).toLocaleDateString('vi-VN')}
+                    Nguồn: {handlingAssignmentSourceLabel(h.source)} | Ngày: {new Date(h.createdAt).toLocaleDateString('vi-VN')}
                   </div>
                   {h.reason && <div className="text-xs text-gray-600 mt-1 italic">"{h.reason}"</div>}
                 </li>
@@ -199,7 +195,7 @@ export function HandlingAssignmentManager({
               >
                 <option value="">-- Chọn người phụ trách --</option>
                 {assignableUsers.map(u => (
-                  <option key={u.id} value={u.id}>{u.name || 'Không có tên'} ({u.role})</option>
+                  <option key={u.id} value={u.id}>{u.name || 'Không có tên'} ({roleLabel(u.role)})</option>
                 ))}
               </select>
             </div>

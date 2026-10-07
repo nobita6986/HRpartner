@@ -1,4 +1,5 @@
 import { Prisma } from '@prisma/client';
+import type { SalaryBucket } from './public-listing.params';
 
 /**
  * Projection công khai của một việc làm — allow-list, deny-by-default (go-live-05 / RQ-10, DEC-10).
@@ -61,6 +62,23 @@ export interface PublicJobDto {
   isHot: boolean;
   /** hrp-p1-a0-1 (DEC-05): stamp flag "Tuyển gấp" — canonical boolean từ `JobPosting.isUrgent`. */
   isUrgent: boolean;
+  /**
+   * hrp-ui-v1-job-card-stamps-brand (T1B / RQ-13): stamp flag "Thưởng cao" — canonical
+   * boolean từ `JobPosting.isHighReward`. Author-selected, KHÔNG heuristic.
+   */
+  isHighReward: boolean;
+  /**
+   * hrp-ui-v1-job-card-stamps-brand (T1B / RQ-13): stamp flag "Sắp hết hạn" — canonical
+   * boolean từ `JobPosting.isExpiringSoon`. Author-selected, KHÔNG heuristic.
+   */
+  isExpiringSoon: boolean;
+  /**
+   * hrp-ui-v1-public-card-truth-correction (T1A / RQ-10): author-entered lương text
+   * từ `JobPosting.salaryDisplay` — string ngắn do người soạn nhập, KHÔNG phải rich text.
+   * Khi trim() non-empty, card render nguyên văn (precedence 1 trong `formatPublicSalary`).
+   * Khi null/rỗng, card dùng hourly fallback (`salaryMinVnd`/`salaryMaxVnd`).
+   */
+  salaryDisplay: string | null;
   /** go-live-09 / RQ-02 — ISO của `createdAt` ĐƠN còn hiệu lực mới nhất; trục sắp của `overview.newest`. */
   postedAt: string | null;
   /**
@@ -187,6 +205,28 @@ export interface PublicJobDetailDto extends PublicJobDto {
   contentSchemaVersion: number | null;
   /** hrp-p1-a1: text lương hiển thị từ JobPosting.salaryDisplay (string ngắn; KHÔNG phải rich text). */
   salaryDisplay: string | null;
+  /**
+   * hrp-t1c-jobposting-media-youtube (RQ-03, DEC-02): optional YouTube embed. Khi `null`, page
+   * KHÔNG render iframe. Khi có, page render `https://www.youtube-nocookie.com/embed/{id}?rel=0`
+   * qua `<iframe>` responsive (16:9). Server đã canonicalize 11-char ID từ URL `youtube.com` /
+   * `youtu.be` — public DTO KHÔNG bao giờ nhận URL gốc, KHÔNG nhận HTML, KHÔNG nhận iframe code.
+   */
+  youtubeVideoId: string | null;
+  /**
+   * hrp-t1c-jobposting-media-youtube (RQ-03, DEC-02): ordered gallery đã sort
+   * `[cover DESC, order ASC, createdAt ASC]`. Tập rỗng khi JobPosting chưa gán media nào.
+   * Mỗi item là projection công khai của Media (chỉ URL/alt/caption/mimeType, không leak
+   * owner/createdBy của Media row).
+   */
+  gallery: PublicJobGalleryItemDto[];
+}
+
+export interface PublicJobGalleryItemDto {
+  url: string;
+  alt: string;
+  caption: string | null;
+  mimeType: string;
+  cover: boolean;
 }
 
 const VISIBLE_ORDER_STATUSES = ['OPEN', 'CLOSING_SOON'];
@@ -294,6 +334,17 @@ type PublicProjectRow = {
    */
   isHot: boolean;
   isUrgent: boolean;
+  /**
+   * hrp-ui-v1-job-card-stamps-brand (T1B / RQ-13): 2 author-selected flag canonical mới —
+   * cùng semantics với isHot/isUrgent (mapper `toDto` / `toDetailDto` copy vào output).
+   */
+  isHighReward: boolean;
+  isExpiringSoon: boolean;
+  /**
+   * hrp-ui-v1-public-card-truth-correction (T1A / RQ-10): author-entered salaryDisplay text
+   * từ `JobPosting.salaryDisplay` — internal field, mapper `toDto` / `toDetailDto` copy ra DTO.
+   */
+  salaryDisplay: string | null;
 };
 
 /**
@@ -320,6 +371,9 @@ type PublicJobPostingSelectPayload = {
   // hrp-p1-a0-1: canonical stamp flags từ JobPosting row (DEC-05 / DEC-06).
   isHot: boolean;
   isUrgent: boolean;
+  // hrp-ui-v1-job-card-stamps-brand (T1B / RQ-13): 2 flag mới từ JobPosting row.
+  isHighReward: boolean;
+  isExpiringSoon: boolean;
   jobOpening: {
     staffingOrder: PublicOrderRowRaw & {
       project: { code: string; siteAddress: string | null; clientCompanyName: string | null };
@@ -562,6 +616,12 @@ function toDto(project: PublicProjectRow, now: Date): PublicJobDto | null {
     // hrp-p1-a0-1 (DEC-05): stamp flags từ JobPosting canonical row.
     isHot: project.isHot,
     isUrgent: project.isUrgent,
+    // hrp-ui-v1-job-card-stamps-brand (T1B / RQ-13): 2 author-selected flag mới.
+    isHighReward: project.isHighReward,
+    isExpiringSoon: project.isExpiringSoon,
+    // hrp-ui-v1-public-card-truth-correction (T1A / RQ-10): author-entered salaryDisplay
+    // text — truyền nguyên văn xuống DTO; resolver `formatPublicSalary` quyết định render path.
+    salaryDisplay: project.salaryDisplay,
   };
 }
 
@@ -586,6 +646,15 @@ function toDetailDto(
     applicationInstructionsJson: unknown | null;
     contentSchemaVersion: number;
     salaryDisplay: string | null;
+    // hrp-t1c-jobposting-media-youtube (RQ-03, DEC-02): YouTube ID canonicalized.
+    youtubeVideoId: string | null;
+    // hrp-t1c-jobposting-media-youtube (RQ-03, DEC-02): ordered gallery (cover first, then
+    // order asc, then createdAt asc). Public projection chỉ lấy URL/alt/caption/mimeType/cover
+    // — KHÔNG leak `id`/`mediaId`/`ownerId`/`order`/`createdAt` của MediaAssignment.
+    gallery: Array<{
+      cover: boolean;
+      media: { url: string; publicUrl: string; alt: string; caption: string | null; mimeType: string };
+    }>;
   },
   now: Date,
 ): PublicJobDetailDto | null {
@@ -650,11 +719,33 @@ function toDetailDto(
     benefits: rich.benefitsJson,
     applicationSteps: rich.applicationInstructionsJson,
     contentSchemaVersion: rich.contentSchemaVersion,
-    salaryDisplay: rich.salaryDisplay,
     // hrp-p1-a0-1 (DEC-05): stamp flags từ JobPosting canonical row (override sau spread `...jobHeadline`
     // để đảm bảo cùng nguồn `project.isHot` / `project.isUrgent` cho cả card và detail).
     isHot: project.isHot,
     isUrgent: project.isUrgent,
+    // hrp-ui-v1-job-card-stamps-brand (T1B / RQ-13): 2 flag mới — cùng convention.
+    isHighReward: project.isHighReward,
+    isExpiringSoon: project.isExpiringSoon,
+    // hrp-ui-v1-public-card-truth-correction (T1A / RQ-10): salaryDisplay cùng nguồn với list DTO
+    // (đã được `toDto` copy). Detail page render trong SUMMARY fact/chip (Mức lương).
+    salaryDisplay: rich.salaryDisplay,
+    // hrp-t1c-jobposting-media-youtube (RQ-03, DEC-02): YouTube video ID đã canonicalize từ URL.
+    // Public page render iframe responsive 16:9 dùng `youtube-nocookie.com`/embed/{id}?rel=0.
+    // `null` khi JobPosting không có YouTube — page KHÔNG render iframe.
+    youtubeVideoId: rich.youtubeVideoId,
+    // hrp-t1c-jobposting-media-youtube (RQ-03, DEC-02): ordered gallery — `publicUrl` ưu tiên
+    // trên `url` (CDN-public surface). Mapper copy chứ KHÔNG tính toán để giữ semantics
+    // của `listJobPostingMedia` (DTO.mediaAssignment.url = publicUrl || url).
+    // Default `[]` cho row pre-T1C hoặc test mock chưa setup field — public service đọc
+    // đúng shape `mediaAssignments` (relation từ publicSelect), nhưng vẫn defensive để không
+    // nổ khi chain chưa select (mặc dù mọi caller đều dùng `publicSelect`).
+    gallery: (rich.gallery ?? []).map((g) => ({
+      url: g.media.publicUrl || g.media.url,
+      alt: g.media.alt,
+      caption: g.media.caption,
+      mimeType: g.media.mimeType,
+      cover: g.cover,
+    })),
   };
 }
 
@@ -691,12 +782,25 @@ const publicSelect = Prisma.validator<Prisma.JobPostingSelect>()({
   benefitsJson: true,
   applicationInstructionsJson: true,
   contentSchemaVersion: true,
-  // hrp-p1-a0-1 (DEC-05 / DEC-06 / T0 §2): canonical stamp flags. Public projection
+  // hrp-p1-a0-1 (DEC-05): canonical stamp flags từ JobPosting row. Public projection
   // chỉ đọc boolean — KHÔNG suy từ Project legacy, urgency, salary, postedAt hay hash.
   // Static test fence ở `public-select.static.test.ts` allowlist top-level keys;
   // thêm field ở đây phải cập nhật allowlist MỘT CÁCH CÓ Ý THỨC.
   isHot: true,
   isUrgent: true,
+  // hrp-ui-v1-job-card-stamps-brand (T1B / RQ-13): 2 author-selected flag mới.
+  // Cùng semantics — additive, default false, KHÔNG heuristic.
+  isHighReward: true,
+  isExpiringSoon: true,
+  // hrp-ui-v1-public-card-truth-correction (T1A / RQ-10): `salaryDisplay` đã được select
+  // ở khối rich-text phía trên (cùng dòng `descriptionJson`/`requirementsJson`/...) cho
+  // AC-03..05. KHÔNG khai báo trùng ở đây — Prisma validator object literal không được
+  // phép duplicate key và static test fence `public-select.static.test.ts` sẽ FAIL.
+  // hrp-t1c-jobposting-media-youtube (RQ-03, DEC-02): YouTube video ID đã được server-side
+  // canonicalize. Public render dùng `youtubeEmbedUrl(id)` → `https://www.youtube-nocookie.com/embed/{id}?rel=0`.
+  // Scalar `String?` — KHÔNG relation, KHÔNG join, không ảnh hưởng RLS chain (Media table không
+  // vào đường này). `static test fence public-select.static.test.ts` cần cập nhật allowlist top-level.
+  youtubeVideoId: true,
   jobOpening: {
     select: {
       staffingOrder: {
@@ -773,6 +877,13 @@ function projectRowFromPosting(posting: PublicJobPostingSelectPayload): PublicPr
     // postedAt / hash. Default false cho row pre-P1-A0.1 (migration backfilled via DEFAULT).
     isHot: posting.isHot,
     isUrgent: posting.isUrgent,
+    // hrp-ui-v1-job-card-stamps-brand (T1B / RQ-13): 2 flag mới — cùng convention.
+    isHighReward: posting.isHighReward,
+    isExpiringSoon: posting.isExpiringSoon,
+    // hrp-ui-v1-public-card-truth-correction (T1A / RQ-10): author-entered salaryDisplay
+    // text — internal field; mapper `toDto` / `toDetailDto` copy ra DTO. Card render theo
+    // precedence 1→2→3 trong `formatPublicSalary` ở `public-listing.labels.ts`.
+    salaryDisplay: posting.salaryDisplay,
   };
 }
 
@@ -806,7 +917,23 @@ function areaHaystack(row: PublicProjectRow, job: PublicJobDto): string {
 
 export async function listPublicJobProjection(
   tx: Prisma.TransactionClient,
-  opts: { q?: string; area?: string; shift?: string; shiftTypes?: string[]; jobTypes?: string[]; offset?: number; limit?: number; urgency?: 'URGENT' } = {},
+  opts: {
+    q?: string;
+    area?: string;
+    shift?: string;
+    /**
+     * hrp-t2-public-site-hotfix (T2 / STEP-04): salary bucket filter. Khi
+     * set, loại bỏ job có `salaryMinVnd === null` (lương thương lượng) — đó
+     * là DEC-03 cũ của `topPaid`: `"Lương thương lượng"` không xếp được vào
+     * dải lọc cụ thể. Khi undefined, filter không áp dụng.
+     */
+    salary?: SalaryBucket;
+    shiftTypes?: string[];
+    jobTypes?: string[];
+    offset?: number;
+    limit?: number;
+    urgency?: 'URGENT';
+  } = {},
 ): Promise<PublicJobListResult> {
   const offset = Math.max(0, opts.offset ?? 0);
   const limit = Math.min(50, Math.max(1, opts.limit ?? 20));
@@ -903,6 +1030,38 @@ export async function listPublicJobProjection(
   const area = opts.area?.trim();
   const shift = opts.shift?.trim();
 
+  /**
+   * hrp-t2-public-site-hotfix (T2 / STEP-04): salary bucket predicate.
+   * Đơn vị tiền DTO là VND/tháng (1.000.000 = 1 triệu). Bucket `<5` /
+   * `>30` là mở một đầu; bucket `5-10` / `10-15` / ... đóng cả hai đầu
+   * `salaryMinVnd/1e6 ≤ upper` (chú ý: KHÔNG bao gồm upper, tức
+   * `[lower, upper)` — nhưng thực tế chỉ cần đúng rằng `10-15` chứa mọi đơn
+   * có `salaryMinVnd ≤ 15 triệu` để người dùng chọn được dải mong muốn).
+   * `null` job (`salaryMinVnd === null`) bị loại khi bucket được set.
+   */
+  const salary = opts.salary;
+  const matchesSalary = (job: { salaryMinVnd: number | null }): boolean => {
+    if (!salary) return true;
+    if (job.salaryMinVnd === null) return false;
+    const million = job.salaryMinVnd / 1_000_000;
+    switch (salary) {
+      case '<5':
+        return million < 5;
+      case '5-10':
+        return million >= 5 && million < 10;
+      case '10-15':
+        return million >= 10 && million < 15;
+      case '15-20':
+        return million >= 15 && million < 20;
+      case '20-30':
+        return million >= 20 && million < 30;
+      case '>30':
+        return million >= 30;
+      default:
+        return false;
+    }
+  };
+
   // hrp-p1-a1 (correction batch 1/1, C-06) — lọc legacy `PRJ-xxx` ở listing:
   //   Khi `q` khớp chính xác shape mã dự án (chỉ chữ cái ASCII không dấu, chữ số, gạch dưới,
   //   gạch ngang; phải có ít nhất một gạch ngang/gạch dưới; bắt đầu bằng chữ HOA), so CHÍNH XÁC
@@ -928,6 +1087,9 @@ export async function listPublicJobProjection(
     .filter(({ job }) => !shift || job.shifts.some((label) => label.includes(shift)))
     .filter(({ job }) => !opts.shiftTypes?.length || (job.shiftType !== null && opts.shiftTypes.includes(job.shiftType)))
     .filter(({ job }) => !opts.jobTypes?.length || opts.jobTypes.includes(job.jobType))
+    // hrp-t2-public-site-hotfix (T2 / STEP-04): salary bucket. Áp dụng
+    // trước pagination để total/nextOffset mô tả cùng tập đã lọc.
+    .filter(({ job }) => matchesSalary(job))
     // DEC-02: filter URGENT BEFORE pagination — total and nextOffset describe the filtered set
     .filter(({ job }) => !opts.urgency || job.urgency === 'URGENT');
 
@@ -963,6 +1125,18 @@ export async function getPublicJobDetail(tx: Prisma.TransactionClient, slug: str
   if (!posting) return null;
   const row = projectRowFromPosting(posting);
   if (!row) return null;
+  // hrp-t1c-jobposting-media-youtube (RQ-03, DEC-02): MediaAssignment không có Prisma relation
+  // ngược về JobPosting (polymorphic FK qua `ownerType`+`ownerId`) nên không select được từ
+  // `publicSelect`. Lấy gallery qua 1 truy vấn song song với filter `status='PUBLIC'`. Sort
+  // `[cover DESC, order ASC, createdAt ASC]` cùng quy ước với `listJobPostingMedia`.
+  const gallery = await tx.mediaAssignment.findMany({
+    where: { ownerType: 'JobPosting', ownerId: posting.id, media: { status: 'PUBLIC' } },
+    orderBy: [{ cover: 'desc' }, { order: 'asc' }, { createdAt: 'asc' }],
+    select: {
+      cover: true,
+      media: { select: { url: true, publicUrl: true, alt: true, caption: true, mimeType: true } },
+    },
+  });
   // hrp-p1-a1: truyền raw rich-text doc từ JobPosting vào DTO; Server Component
   // `app/(jobs)/viec-lam/[slug]/page.tsx` gọi `renderJobPostingRichText` ở request path.
   return toDetailDto(
@@ -974,6 +1148,9 @@ export async function getPublicJobDetail(tx: Prisma.TransactionClient, slug: str
       applicationInstructionsJson: posting.applicationInstructionsJson,
       contentSchemaVersion: posting.contentSchemaVersion,
       salaryDisplay: posting.salaryDisplay,
+      // hrp-t1c-jobposting-media-youtube (RQ-03, DEC-02): YouTube ID + gallery projections.
+      youtubeVideoId: posting.youtubeVideoId,
+      gallery,
     },
     now,
   );

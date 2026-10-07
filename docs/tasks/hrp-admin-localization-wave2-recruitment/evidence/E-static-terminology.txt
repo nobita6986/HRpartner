@@ -1,0 +1,22 @@
+corepack : [33mThe CJS build of Vite's Node API is deprecated. See 
+https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+At C:\Users\Admin\AppData\Local\Temp\ps-script-0a3e13bf-bf59-451b-93ff-72880ab9e693.ps1:84 char:73
++ ... cruitment"; corepack pnpm exec vitest run --config vitest.unit.config ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([33mThe CJS bu...e details.[39m:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+ RUN  v2.1.9 C:/CodeApp/HrP-worktrees/t1b-admin-localization-wave2-recruitment
+
+ Γ£ô app/admin/jobs/__tests__/admin-jobs-terminology.static.test.ts (9 tests) 5ms
+ Γ£ô app/admin/jobs/job-postings/__tests__/job-postings-terminology.static.test.ts (13 tests) 5ms
+ Γ£ô app/admin/staffing/__tests__/staffing-terminology.static.test.ts (9 tests) 4ms
+ Γ£ô app/admin/jobs/__tests__/jobs-terminology.static.test.ts (6 tests) 4ms
+ Γ£ô app/admin/job-openings/__tests__/job-openings-terminology.static.test.ts (10 tests) 4ms
+
+ Test Files  5 passed (5)
+      Tests  47 passed (47)
+   Start at  18:40:16
+   Duration  1.43s (transform 52ms, setup 0ms, collect 97ms, tests 22ms, environment 1ms, prepare 442ms)
+

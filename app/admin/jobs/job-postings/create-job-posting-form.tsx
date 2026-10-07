@@ -22,6 +22,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { staffingOrderStatusLabel } from '@/src/domains/staffing/staffing-order-ui';
 
 /**
  * hrp-p1-a0-1 (DEC-02): danh sách eligible slot được Server Component load qua service canonical
@@ -119,8 +120,8 @@ export function CreateJobPostingForm({ eligibleSlots, actionUrl, loadError }: Cr
 
   const submitDisabledReason = useMemo(() => {
     if (isBusy) return 'Đang xử lý...';
-    if (eligibleSlots.length === 0) return 'Chưa có StaffingOrderSlot đủ điều kiện';
-    if (!selectedSlotId) return 'Vui lòng chọn một slot';
+    if (eligibleSlots.length === 0) return 'Chưa có vị trí tuyển dụng phù hợp';
+    if (!selectedSlotId) return 'Vui lòng chọn vị trí cần tuyển';
     return null;
   }, [isBusy, eligibleSlots.length, selectedSlotId]);
 
@@ -145,7 +146,6 @@ export function CreateJobPostingForm({ eligibleSlots, actionUrl, loadError }: Cr
 
       const data = await response.json().catch(() => ({} as Record<string, unknown>));
       if (!response.ok) {
-        const errCode = typeof data.error === 'string' ? data.error : 'UNKNOWN_ERROR';
         // C-04 (correction batch 1/1):
         //   - 4xx (client-side correction): reset key — user đang sửa payload.
         //   - 5xx (server-side / unknown): giữ key — retry phải reuse cùng key để
@@ -155,20 +155,18 @@ export function CreateJobPostingForm({ eligibleSlots, actionUrl, loadError }: Cr
         if (isClientError) {
           idempotencyKeyRef.current = '';
         }
-        // C-04: KHÔNG hiển thị raw message từ server (có thể chứa stack trace, SQL error,
-        // PII). Render một safe generic message thay thế. Code giữ lại để user copy-paste
-        // cho support, nhưng message hiển thị qua lưới an toàn.
+        // Do not expose server details in the operator-facing form.
         const safeMessage = isClientError
-          ? `Yêu cầu không hợp lệ (${errCode}). Vui lòng kiểm tra lại lựa chọn và thử lại.`
-          : `Máy chủ tạm thời không phản hồi (HTTP ${response.status}). Có thể retry với cùng Idempotency-Key.`;
-        setSubmit({ kind: 'error', message: `[${errCode}] ${safeMessage}` });
+          ? 'Không thể tạo tin tuyển dụng. Vui lòng kiểm tra vị trí đã chọn.'
+          : 'Hệ thống chưa thể xử lý yêu cầu. Vui lòng thử lại sau.';
+        setSubmit({ kind: 'error', message: safeMessage });
         return;
       }
 
       const body = data as { jobPosting?: { id?: string } };
       const jobPostingId = body.jobPosting?.id;
       if (typeof jobPostingId !== 'string' || jobPostingId.length === 0) {
-        setSubmit({ kind: 'error', message: 'Server không trả jobPosting.id — không thể redirect.' });
+        setSubmit({ kind: 'error', message: 'Không thể mở tin tuyển dụng vừa tạo. Vui lòng tải lại trang.' });
         // 4xx-equivalent: bad payload from server. Reset key để user retry sạch.
         idempotencyKeyRef.current = '';
         return;
@@ -183,7 +181,7 @@ export function CreateJobPostingForm({ eligibleSlots, actionUrl, loadError }: Cr
       setSubmit({
         kind: 'error',
         message:
-          'Mất kết nối tới máy chủ. Có thể retry với cùng Idempotency-Key.',
+          'Mất kết nối tới máy chủ. Vui lòng thử lại.',
       });
     }
   }
@@ -198,21 +196,14 @@ export function CreateJobPostingForm({ eligibleSlots, actionUrl, loadError }: Cr
           backgroundColor: 'var(--color-surface-container)',
           color: 'var(--on-surface-variant)',
         }}
-        aria-label="Form tạo JobPosting — không khả dụng"
+        aria-label="Không thể tạo tin tuyển dụng"
         data-testid="create-job-posting-load-error"
       >
         <h2 className="mb-2 text-sm font-semibold" style={{ color: 'var(--on-surface)' }}>
-          Tạo JobPosting mới
+          Tạo tin tuyển dụng
         </h2>
         <p>
-          Không thể tải danh sách StaffingOrderSlot đủ điều kiện: [{loadError.code}]{' '}
-          {loadError.message}
-        </p>
-        <p className="mt-1 text-xs italic">
-          Selector này chỉ là gợi ý client-side. Ngay cả khi không load được, một POST với{' '}
-          <code>slotId</code> hợp lệ vẫn được write-path kiểm tra lại trong transaction qua{' '}
-          <code>assertSlotEligibleForNewJobPosting</code>. Nếu vẫn thấy lỗi này, kiểm tra
-          kết nối DB / RLS context.
+          Không thể tải danh sách vị trí đang cần tuyển. Vui lòng tải lại trang sau.
         </p>
       </section>
     );
@@ -227,10 +218,10 @@ export function CreateJobPostingForm({ eligibleSlots, actionUrl, loadError }: Cr
           backgroundColor: 'var(--color-surface-container)',
           color: 'var(--on-surface-variant)',
         }}
-        aria-label="Tạo JobPosting — thành công"
+        aria-label="Tạo tin tuyển dụng — thành công"
       >
         <p style={{ color: 'var(--color-primary-dark)' }}>
-          Tạo JobPosting thành công. Đang chuyển tới editor...
+          Tin tuyển dụng đã được tạo. Đang chuyển tới trang chỉnh sửa...
         </p>
       </section>
     );
@@ -244,46 +235,40 @@ export function CreateJobPostingForm({ eligibleSlots, actionUrl, loadError }: Cr
         borderColor: 'var(--outline)',
         backgroundColor: 'var(--color-surface-container)',
       }}
-      aria-label="Tạo JobPosting mới"
+      aria-label="Tạo tin tuyển dụng mới"
       data-testid="create-job-posting-form"
     >
       <h2 className="mb-3 text-base font-semibold" style={{ color: 'var(--on-surface)' }}>
-        Tạo JobPosting mới
+        Tạo tin tuyển dụng mới
       </h2>
 
       {eligibleSlots.length === 0 ? (
         <div className="rounded border border-dashed p-3 text-sm" style={{ borderColor: 'var(--outline)' }}>
           <p style={{ color: 'var(--on-surface-variant)' }}>
-            <strong>Chưa có StaffingOrderSlot đủ điều kiện.</strong> Một slot đủ điều kiện phải thoả đồng
-            thời 4 điều kiện (predicate canonical <code>eligibleSlotPredicateSql(now)</code> ở
-            <code>job-posting-list.service.ts</code>, dùng chung cho selector và write-path):
+            <strong>Chưa có vị trí tuyển dụng phù hợp.</strong> Vị trí cần còn hạn tuyển và còn chỉ tiêu:
           </p>
           <ul className="ml-4 mt-1 list-disc space-y-0.5 text-xs" style={{ color: 'var(--on-surface-variant)' }}>
             <li>
-              StaffingOrder.status ∈ <code>OPEN</code> | <code>CLOSING_SOON</code>
+              Đợt tuyển dụng đang mở hoặc sắp đóng
             </li>
             <li>
-              <code>deadline_date</code> chưa hết (hoặc <code>NULL</code>) và{' '}
-              <code>s.valid_to</code> chưa hết (hoặc <code>NULL</code>)
+              Thời hạn tuyển dụng và thời hạn nhận hồ sơ chưa kết thúc
             </li>
             <li>
-              <code>s.slots_filled &lt; s.slots_needed</code>
+              Vẫn còn vị trí cần tuyển
             </li>
             <li>
-              Chưa có JobOpening / JobPosting canonical gắn với slot này
+              Chưa có tin tuyển dụng gắn với vị trí này
             </li>
           </ul>
           <p className="mt-2 text-xs" style={{ color: 'var(--on-surface-variant)' }}>
-            Gợi ý: hãy kiểm tra lại <code>StaffingOrder</code> (còn trong hạn, status mở)
-            hoặc tạo một JobOpening mới trước khi quay lại trang này. Selector client chỉ
-            hiển thị gợi ý — quyền quyết định eligibility vẫn nằm ở
-            <code> assertSlotEligibleForNewJobPosting</code> trong transaction write.
+            Hãy kiểm tra lại thời hạn và số vị trí còn tuyển trong nhu cầu tuyển dụng.
           </p>
         </div>
       ) : (
         <>
           <label htmlFor="slot-select" className="mb-1 block text-sm font-medium" style={{ color: 'var(--on-surface)' }}>
-            Chọn StaffingOrderSlot:
+            Chọn vị trí cần tuyển:
           </label>
           <select
             id="slot-select"
@@ -299,12 +284,12 @@ export function CreateJobPostingForm({ eligibleSlots, actionUrl, loadError }: Cr
             className="mb-3 w-full rounded border px-3 py-2 text-sm"
             style={{ borderColor: 'var(--outline)', backgroundColor: 'var(--surface)' }}
           >
-            <option value="">— Chọn slot —</option>
+            <option value="">— Chọn vị trí —</option>
             {eligibleSlots.map((slot) => (
               <option key={slot.slotId} value={slot.slotId}>
                 {slot.staffingOrderCode} · {slot.positionTitle}
                 {slot.location ? ` · ${slot.location}` : ''}
-                {` · còn ${slot.slotsAvailable} chỗ · ${slot.orderStatus}`}
+                {` · còn ${slot.slotsAvailable} chỗ · ${staffingOrderStatusLabel(slot.orderStatus)}`}
               </option>
             ))}
           </select>
@@ -320,7 +305,7 @@ export function CreateJobPostingForm({ eligibleSlots, actionUrl, loadError }: Cr
               cursor: submitDisabledReason === null ? 'pointer' : 'not-allowed',
             }}
           >
-            {isBusy ? 'Đang tạo...' : 'Tạo JobPosting DRAFT'}
+            {isBusy ? 'Đang tạo...' : 'Tạo tin tuyển dụng'}
           </button>
         </>
       )}

@@ -12,6 +12,16 @@ export interface LaborProfileListFilter {
   view?: 'INCOMPLETE' | 'UNVERIFIED' | 'NEVER_WORKED' | 'WORKING' | 'TERMINATED' | 'COMPANY_POOL';
   skip?: number;
   take?: number;
+  /**
+   * DEC-P2-01 — `/admin/labor-profiles` mặc định chỉ liệt kê intake candidates
+   * (chưa liên kết Worker, `workerId: null`). Hồ sơ đã chuyển đổi thuộc về
+   * `/admin/workers` và KHÔNG xuất hiện lại ở intake list.
+   *
+   * Callers hợp lệ duy nhất để truyền `includeLinked: true` là những nơi cần
+   * đọc cả row đã linked (vd: PATCH route cần guard 409 trước khi UPDATE).
+   * Default: false.
+   */
+  includeLinked?: boolean;
 }
 
 export interface LaborProfileListDto {
@@ -38,7 +48,14 @@ export async function getLaborProfilesList(
   const canSeeSensitive = permissions.has('CAN_VIEW_WORKER_SENSITIVE');
 
   const where: Prisma.LaborProfileWhereInput = {};
-  
+
+  // DEC-P2-01: mặc định loại bỏ hồ sơ đã chuyển thành Worker khỏi intake list.
+  // Hồ sơ linked vẫn tồn tại và truy cập được qua deep-link `/admin/labor-profiles/[id]`,
+  // nhưng không nằm trong danh sách `/admin/labor-profiles` mặc định.
+  if (filter.includeLinked !== true) {
+    where.workerId = null;
+  }
+
   if (filter.search) {
     const searchOr: Prisma.LaborProfileWhereInput[] = [
       { fullName: { contains: filter.search, mode: 'insensitive' } },

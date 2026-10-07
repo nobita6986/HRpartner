@@ -23,13 +23,52 @@ export const STATUS_LABELS: Readonly<Record<string, string>> = {
   REJECTED: 'Từ chối', WITHDRAWN: 'Đã rút', CONVERTED: 'Đã nhận', MERGED: 'Đã gộp',
 };
 
-export const SOURCE_LABELS: Readonly<Record<string, string>> = {
-  PUBLIC: 'Công khai', VENDOR: 'NCC', CTV: 'CTV',
+export function applicationStatusLabel(status: string): string {
+  return STATUS_LABELS[status] ?? 'Không xác định';
+}
+
+export function applicationHistoryReasonLabel(reason: string): string {
+  if (reason === 'PUBLIC_APPLY') return 'Ứng tuyển qua trang công khai';
+  return /^[A-Z][A-Z0-9_]*$/.test(reason) ? 'Cập nhật trạng thái' : reason;
+}
+
+const ASSIGNMENT_STATUS_LABELS: Readonly<Record<string, string>> = {
+  ACTIVE: 'Đang hiệu lực',
+  ENDED: 'Đã kết thúc',
+  CANCELLED: 'Đã hủy',
 };
+
+export function assignmentStatusLabel(status: string): string {
+  return ASSIGNMENT_STATUS_LABELS[status] ?? 'Không xác định';
+}
+
+const EMPLOYMENT_TYPE_LABELS: Readonly<Record<string, string>> = {
+  HRP_EMPLOYED: 'Nhân sự HRP',
+  OUTSOURCED: 'Thuê ngoài',
+  REFERRED_OUT: 'Giới thiệu ra ngoài',
+};
+
+export function employmentTypeLabel(type: string): string {
+  return EMPLOYMENT_TYPE_LABELS[type] ?? 'Không xác định';
+}
+
+export const SOURCE_LABELS: Readonly<Record<string, string>> = {
+  PUBLIC: 'Công khai', VENDOR: 'Nhà cung cấp', CTV: 'Cộng tác viên',
+};
+
+const DEDUP_MATCH_LABELS: Readonly<Record<string, string>> = {
+  CCCD: 'Số CCCD',
+  PHONE: 'Số điện thoại',
+  DEDUP_HINT: 'Thông tin liên quan',
+};
+
+export function dedupMatchLabel(field: string): string {
+  return DEDUP_MATCH_LABELS[field] ?? 'Thông tin liên quan';
+}
 
 export const ACTION_LABELS: Readonly<Record<ActionId, string>> = {
   screen: 'Bắt đầu xét', qualify: 'Đánh giá đạt', reject: 'Từ chối',
-  convert: 'Nhận vào (tạo Worker)', placement: 'Xếp vào slot',
+  convert: 'Tiếp nhận ứng viên', placement: 'Bố trí việc làm',
 };
 
 const ACTION_ROLES: Readonly<Record<ActionId, readonly string[]>> = {
@@ -78,28 +117,28 @@ export function canReadQueue(role: string): boolean {
 // ─── Conflict presentation ───────────────────────────────────────────────────
 
 export const CONFLICT_LABELS: Readonly<Record<string, string>> = {
-  CONVERSION_INVARIANT_BROKEN: 'Hồ sơ chưa đủ điều kiện xếp việc (chưa nhận vào / thiếu slot / thiếu nguồn)',
-  ASSIGNMENT_EXISTS: 'Hồ sơ này đã được xếp việc',
-  ACTIVE_ASSIGNMENT_CONFLICT: 'Người này đang có assignment ACTIVE — cần dùng luồng chuyển dự án',
-  SLOT_UNAVAILABLE: 'Slot không nhận được người (đóng / hết hạn / đã đủ)',
-  PROJECT_QUOTA_FULL: 'Dự án đã đủ quota',
-  EMPLOYEE_CODE_CONFLICT: 'Mã nhân viên đã dùng trong dự án này',
-  REFERRAL_GUARD_BLOCKED: 'Referral Guard chặn — cần override S1/S2/S3 nếu có quyền',
-  IDEMPOTENCY_REQUIRED: 'Thiếu Idempotency-Key',
-  IDEMPOTENCY_CONFLICT: 'Cùng Idempotency-Key nhưng payload khác — hãy tạo lại preview',
-  OVERRIDE_DENIED: 'Không được phép override',
-  ASSIGNMENT_CONFLICT: 'Có thao tác song song — hãy tạo lại preview',
+  CONVERSION_INVARIANT_BROKEN: 'Hồ sơ chưa đủ điều kiện bố trí việc làm. Hãy kiểm tra trạng thái tiếp nhận, vị trí và thông tin nguồn.',
+  ASSIGNMENT_EXISTS: 'Hồ sơ này đã được bố trí việc làm',
+  ACTIVE_ASSIGNMENT_CONFLICT: 'Người lao động đang được bố trí tại dự án khác; cần dùng luồng chuyển dự án',
+  SLOT_UNAVAILABLE: 'Vị trí cần tuyển không còn nhận hồ sơ (đã đóng, hết hạn hoặc đủ chỉ tiêu)',
+  PROJECT_QUOTA_FULL: 'Dự án đã đủ số người cần tuyển',
+  EMPLOYEE_CODE_CONFLICT: 'Mã nhân viên đã được dùng trong dự án này',
+  REFERRAL_GUARD_BLOCKED: 'Nguồn giới thiệu cần được xác minh trước khi tiếp tục',
+  IDEMPOTENCY_REQUIRED: 'Không thể xử lý yêu cầu này. Vui lòng thử lại',
+  IDEMPOTENCY_CONFLICT: 'Thông tin đã thay đổi. Vui lòng tạo bản xem trước mới',
+  OVERRIDE_DENIED: 'Bạn không có quyền thực hiện thao tác ngoại lệ',
+  ASSIGNMENT_CONFLICT: 'Có thay đổi đồng thời. Vui lòng tạo bản xem trước mới',
   FORBIDDEN: 'Không có quyền thực hiện',
   NOT_FOUND: 'Không tìm thấy hồ sơ',
   VALIDATION: 'Dữ liệu nhập chưa hợp lệ',
-  DEDUP_REVIEW_REQUIRED: 'Có Worker trùng — cần HR xác nhận chọn đúng người',
-  DEDUP_SELECTION_INVALID: 'Worker đã chọn không nằm trong danh sách trùng',
-  STALE_VERSION: 'Hồ sơ vừa bị thay đổi — hãy tải lại',
+  DEDUP_REVIEW_REQUIRED: 'Có hồ sơ người lao động trùng — cần xác nhận hồ sơ chính xác',
+  DEDUP_SELECTION_INVALID: 'Hồ sơ đã chọn không nằm trong danh sách trùng',
+  STALE_VERSION: 'Hồ sơ vừa được cập nhật — vui lòng tải lại',
 };
 
 export function conflictLabel(code: string | null | undefined): string {
-  if (!code) return 'Lỗi không xác định';
-  return CONFLICT_LABELS[code] ?? code;
+  if (!code) return 'Không thể hoàn tất thao tác. Vui lòng thử lại.';
+  return CONFLICT_LABELS[code] ?? 'Không thể hoàn tất thao tác. Vui lòng thử lại.';
 }
 
 /** Codes that a permitted S1/S2/S3 override can clear. */
@@ -111,9 +150,9 @@ export const OVERRIDE_CASES = ['S1', 'S2', 'S3'] as const;
 export type OverrideCaseId = (typeof OVERRIDE_CASES)[number];
 
 export const OVERRIDE_CASE_LABELS: Readonly<Record<OverrideCaseId, string>> = {
-  S1: 'S1 — NCC xác nhận nhường nguồn',
-  S2: 'S2 — Khách hàng/PM xác nhận',
-  S3: 'S3 — Ban giám đốc phê duyệt',
+  S1: 'Nhà cung cấp xác nhận nhường quyền giới thiệu',
+  S2: 'Khách hàng hoặc quản lý dự án xác nhận',
+  S3: 'Ban giám đốc phê duyệt',
 };
 
 // ─── Submit gating (RQ-09: no double-submit, no stale success) ───────────────
@@ -158,7 +197,7 @@ export interface ActivateGateInput {
  */
 export function activateGate(input: ActivateGateInput): SubmitGate {
   if (input.pending) return { disabled: true, hint: 'Đang xử lý…' };
-  if (!input.preview) return { disabled: true, hint: 'Hãy xem trước (preview) trước khi xếp việc.' };
+  if (!input.preview) return { disabled: true, hint: 'Hãy xem trước thông tin trước khi bố trí việc làm.' };
   if (input.dirtySincePreview) return { disabled: true, hint: 'Thông tin đã đổi — hãy xem trước lại.' };
   if (!input.reason.trim()) return { disabled: true, hint: 'Nhập lý do xếp việc.' };
 
@@ -166,9 +205,9 @@ export function activateGate(input: ActivateGateInput): SubmitGate {
     const codes = input.preview.conflicts.map((c) => c.code);
     const onlyGuardBlocks = codes.length > 0 && codes.every(isOverridable);
     if (!onlyGuardBlocks) return { disabled: true, hint: 'Còn xung đột chưa xử lý được.' };
-    if (!input.canOverride) return { disabled: true, hint: 'Referral Guard chặn và bạn không có quyền override.' };
-    if (!input.override?.overrideCase) return { disabled: true, hint: 'Chọn case override S1/S2/S3.' };
-    if (!input.override.reason.trim()) return { disabled: true, hint: 'Nhập lý do override.' };
+    if (!input.canOverride) return { disabled: true, hint: 'Nguồn giới thiệu cần được xác minh và bạn chưa có quyền thực hiện ngoại lệ.' };
+    if (!input.override?.overrideCase) return { disabled: true, hint: 'Chọn trường hợp ngoại lệ phù hợp.' };
+    if (!input.override.reason.trim()) return { disabled: true, hint: 'Nhập lý do thực hiện ngoại lệ.' };
   }
   return { disabled: false, hint: null };
 }

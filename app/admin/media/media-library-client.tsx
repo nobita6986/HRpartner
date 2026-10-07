@@ -35,9 +35,13 @@ import type {
   MediaStatusEnum,
 } from '@/src/domains/media/media.types';
 import {
+  MEDIA_DEFAULT_FOLDERS,
   MAX_UPLOAD_BYTES,
   MEDIA_ALLOWED_MIME_TYPES,
 } from '@/src/domains/media/media.types';
+import { mediaFolderLabel, mediaStatusLabel } from '@/src/domains/media/media-ui';
+import { actionLabel } from '@/src/shared/i18n/action-dictionary';
+import { formLabel } from '@/src/shared/i18n/form-dictionary';
 
 interface MediaLibraryClientProps {
   initialItems: MediaItemDto[];
@@ -51,19 +55,7 @@ interface MediaLibraryClientProps {
 
 const FOLDERS = [
   { value: '', label: 'Tất cả' },
-  { value: 'uncategorized', label: 'Chưa phân loại' },
-  { value: 'job-postings', label: 'Job Postings' },
-  { value: 'homepage', label: 'Homepage' },
-  { value: 'news', label: 'Tin tức' },
-  { value: 'banners', label: 'Banner' },
-] as const;
-
-const FOLDER_OPTIONS = [
-  'uncategorized',
-  'job-postings',
-  'homepage',
-  'news',
-  'banners',
+  ...MEDIA_DEFAULT_FOLDERS.map((value) => ({ value, label: mediaFolderLabel(value) })),
 ];
 
 export function MediaLibraryClient({
@@ -111,7 +103,7 @@ export function MediaLibraryClient({
   }
 
   async function onDelete(item: MediaItemDto) {
-    if (!confirm(`Xóa ${item.filename}? Hành động này xóa cả trên Vercel Blob và assignments.`)) {
+    if (!confirm(`Xóa ${item.filename}? Thao tác này cũng xóa tệp trên Vercel Blob và ${item.assignmentCount} liên kết.`)) {
       return;
     }
     const res = await fetch(`/api/admin/media/${item.id}`, { method: 'DELETE' });
@@ -130,10 +122,10 @@ export function MediaLibraryClient({
       <header className="flex flex-wrap items-end justify-between gap-2">
         <div>
           <h1 className="text-2xl font-bold" style={{ color: 'var(--color-on-surface)' }}>
-            Thư viện Media
+            Thư viện tệp và ảnh
           </h1>
           <p className="text-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
-            {total} asset{total === 1 ? '' : 's'} — Upload qua Vercel Blob, dùng cho Job Postings, Homepage, News.
+            {total} tệp — Tải lên qua Vercel Blob, dùng cho tin tuyển dụng, trang chủ và tin tức.
           </p>
         </div>
         <button
@@ -143,7 +135,7 @@ export function MediaLibraryClient({
           style={{ backgroundColor: 'var(--color-primary-dark)', color: 'var(--color-on-primary)' }}
         >
           <Plus className="h-4 w-4" aria-hidden />
-          Upload mới
+          Tải lên tệp mới
         </button>
       </header>
 
@@ -154,7 +146,7 @@ export function MediaLibraryClient({
           style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-outline-variant)' }}
         >
           <h2 className="text-xs font-bold uppercase" style={{ color: 'var(--color-on-surface-variant)' }}>
-            Folder
+            Thư mục
           </h2>
           <ul className="space-y-1">
             {FOLDERS.map((f) => (
@@ -185,7 +177,7 @@ export function MediaLibraryClient({
               <Search className="h-4 w-4" aria-hidden style={{ color: 'var(--color-on-surface-variant)' }} />
               <input
                 type="search"
-                placeholder="Tìm filename / alt / caption…"
+                placeholder="Tìm theo tên tệp / văn bản thay thế / chú thích…"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="flex-1 bg-transparent text-sm focus:outline-none"
@@ -199,11 +191,11 @@ export function MediaLibraryClient({
               style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-outline-variant)', color: 'var(--color-on-surface)' }}
             >
               <option value="">Tất cả trạng thái</option>
-              <option value="PUBLIC">PUBLIC</option>
-              <option value="INTERNAL">INTERNAL</option>
+              <option value="PUBLIC">{mediaStatusLabel('PUBLIC')}</option>
+              <option value="INTERNAL">{mediaStatusLabel('INTERNAL')}</option>
             </select>
             <button type="submit" className="rounded-lg px-3 py-2 text-sm font-medium" style={{ backgroundColor: 'var(--color-surface-container-high)', color: 'var(--color-on-surface)' }}>
-              Tìm
+              {formLabel('search')}
             </button>
           </form>
 
@@ -215,7 +207,7 @@ export function MediaLibraryClient({
             >
               <ImageIcon className="h-10 w-10 mx-auto mb-2" aria-hidden style={{ color: 'var(--color-on-surface-variant)' }} />
               <p className="text-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
-                Chưa có media nào trong folder này. Upload để bắt đầu.
+                Chưa có tệp nào trong thư mục này. Hãy tải tệp lên để bắt đầu.
               </p>
             </div>
           ) : (
@@ -323,7 +315,7 @@ function MediaCard({
             className="absolute top-1 left-1 rounded-full px-1.5 py-0.5 text-[10px] font-bold"
             style={{ backgroundColor: 'var(--color-primary-dark)', color: 'var(--color-on-primary)' }}
           >
-            Cover
+            Ảnh bìa
           </span>
         )}
         <span
@@ -334,7 +326,7 @@ function MediaCard({
               : { backgroundColor: 'var(--color-surface-container-high)', color: 'var(--color-on-surface-variant)' }
           }
         >
-          {item.status}
+          {mediaStatusLabel(item.status)}
         </span>
       </div>
       <div className="p-3 space-y-1">
@@ -348,7 +340,7 @@ function MediaCard({
         )}
         <div className="flex items-center justify-between pt-1">
           <span className="text-[10px]" style={{ color: 'var(--color-on-surface-variant)' }}>
-            {item.folder} · {item.assignmentCount} gán
+            {mediaFolderLabel(item.folder)} · {item.assignmentCount} liên kết
           </span>
           <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
             <button
@@ -401,7 +393,7 @@ function UploadModal({
       return;
     }
     if (status === 'PUBLIC' && !alt.trim()) {
-      setError('Alt text là bắt buộc khi status = PUBLIC (accessibility).');
+      setError('Văn bản thay thế là bắt buộc khi trạng thái là Công khai (hỗ trợ khả năng tiếp cận).');
       return;
     }
 
@@ -414,7 +406,7 @@ function UploadModal({
       const uploadRes = await fetch('/api/admin/media/upload-url', { method: 'POST', body: fd });
       if (!uploadRes.ok) {
         const err = await uploadRes.json().catch(() => ({}));
-        throw new Error(`Upload Blob fail: ${err.message ?? uploadRes.statusText}`);
+        throw new Error(`Tải tệp lên Vercel Blob thất bại: ${err.message ?? uploadRes.statusText}`);
       }
       const uploaded = (await uploadRes.json()) as { blobUrl: string; pathname: string; size: number; mimeType: string };
 
@@ -436,12 +428,12 @@ function UploadModal({
       });
       if (!confirmRes.ok) {
         const err = await confirmRes.json().catch(() => ({}));
-        throw new Error(`Confirm fail: ${err.message ?? confirmRes.statusText}`);
+        throw new Error(`Không thể lưu thông tin tệp: ${err.message ?? confirmRes.statusText}`);
       }
       const created = (await confirmRes.json()) as MediaItemDto;
       onUploaded(created);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Upload thất bại.');
+      setError(err instanceof Error ? err.message : 'Tải tệp lên thất bại.');
     } finally {
       setBusy(false);
     }
@@ -461,7 +453,7 @@ function UploadModal({
       >
         <header className="flex items-center justify-between">
           <h3 className="text-base font-semibold" style={{ color: 'var(--color-on-surface)' }}>
-            Upload media mới
+            Tải tệp mới
           </h3>
           <button type="button" onClick={onClose} aria-label="Đóng">
             <X className="h-5 w-5" aria-hidden />
@@ -480,7 +472,7 @@ function UploadModal({
 
         <div>
           <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-on-surface)' }}>
-            File (image)
+            Tệp hình ảnh
           </label>
           <input
             type="file"
@@ -497,7 +489,7 @@ function UploadModal({
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-on-surface)' }}>
-              Folder
+              Thư mục
             </label>
             <select
               value={folder}
@@ -505,16 +497,16 @@ function UploadModal({
               className="w-full rounded border px-2 py-1.5 text-sm"
               style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-outline-variant)', color: 'var(--color-on-surface)' }}
             >
-              {FOLDER_OPTIONS.map((f) => (
+              {MEDIA_DEFAULT_FOLDERS.map((f) => (
                 <option key={f} value={f}>
-                  {f}
+                  {mediaFolderLabel(f)}
                 </option>
               ))}
             </select>
           </div>
           <div>
             <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-on-surface)' }}>
-              Status
+              {formLabel('status')}
             </label>
             <select
               value={status}
@@ -522,22 +514,22 @@ function UploadModal({
               className="w-full rounded border px-2 py-1.5 text-sm"
               style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-outline-variant)', color: 'var(--color-on-surface)' }}
             >
-              <option value="PUBLIC">PUBLIC</option>
-              <option value="INTERNAL">INTERNAL</option>
+              <option value="PUBLIC">{mediaStatusLabel('PUBLIC')}</option>
+              <option value="INTERNAL">{mediaStatusLabel('INTERNAL')}</option>
             </select>
           </div>
         </div>
 
         <div>
           <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-on-surface)' }}>
-            Alt text {status === 'PUBLIC' && <span className="text-red-600">*</span>}
+            Văn bản thay thế (alt text) {status === 'PUBLIC' && <span className="text-red-600">*</span>}
           </label>
           <input
             type="text"
             value={alt}
             onChange={(e) => setAlt(e.target.value)}
             maxLength={500}
-            placeholder="Mô tả ngắn cho ảnh (accessibility)"
+            placeholder="Mô tả ngắn về ảnh để hỗ trợ khả năng tiếp cận"
             className="w-full rounded border px-2 py-1.5 text-sm"
             style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-outline-variant)', color: 'var(--color-on-surface)' }}
           />
@@ -545,7 +537,7 @@ function UploadModal({
 
         <div>
           <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-on-surface)' }}>
-            Caption (optional)
+            Chú thích (không bắt buộc)
           </label>
           <input
             type="text"
@@ -564,7 +556,7 @@ function UploadModal({
             className="rounded px-3 py-2 text-sm font-medium"
             style={{ backgroundColor: 'var(--color-surface-container-high)', color: 'var(--color-on-surface)' }}
           >
-            Hủy
+            {formLabel('cancel')}
           </button>
           <button
             type="submit"
@@ -573,7 +565,7 @@ function UploadModal({
             style={{ backgroundColor: 'var(--color-primary-dark)', color: 'var(--color-on-primary)' }}
           >
             {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Upload className="h-4 w-4" aria-hidden />}
-            {busy ? 'Đang upload…' : 'Upload'}
+            {busy ? 'Đang tải lên…' : 'Tải lên'}
           </button>
         </footer>
       </form>
@@ -604,7 +596,7 @@ function EditModal({
     e.preventDefault();
     setError(null);
     if (status === 'PUBLIC' && !alt.trim()) {
-      setError('Alt text là bắt buộc khi status = PUBLIC.');
+      setError('Văn bản thay thế là bắt buộc khi trạng thái là Công khai.');
       return;
     }
     setBusy(true);
@@ -667,7 +659,7 @@ function EditModal({
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-on-surface)' }}>
-              Folder
+              Thư mục
             </label>
             <select
               value={folder}
@@ -675,14 +667,14 @@ function EditModal({
               className="w-full rounded border px-2 py-1.5 text-sm"
               style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-outline-variant)', color: 'var(--color-on-surface)' }}
             >
-              {FOLDER_OPTIONS.map((f) => (
-                <option key={f} value={f}>{f}</option>
+              {MEDIA_DEFAULT_FOLDERS.map((f) => (
+                <option key={f} value={f}>{mediaFolderLabel(f)}</option>
               ))}
             </select>
           </div>
           <div>
             <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-on-surface)' }}>
-              Status
+              {formLabel('status')}
             </label>
             <select
               value={status}
@@ -690,15 +682,15 @@ function EditModal({
               className="w-full rounded border px-2 py-1.5 text-sm"
               style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-outline-variant)', color: 'var(--color-on-surface)' }}
             >
-              <option value="PUBLIC">PUBLIC</option>
-              <option value="INTERNAL">INTERNAL</option>
+              <option value="PUBLIC">{mediaStatusLabel('PUBLIC')}</option>
+              <option value="INTERNAL">{mediaStatusLabel('INTERNAL')}</option>
             </select>
           </div>
         </div>
 
         <div>
           <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-on-surface)' }}>
-            Alt text {status === 'PUBLIC' && <span className="text-red-600">*</span>}
+            Văn bản thay thế (alt text) {status === 'PUBLIC' && <span className="text-red-600">*</span>}
           </label>
           <input
             type="text"
@@ -712,7 +704,7 @@ function EditModal({
 
         <div>
           <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-on-surface)' }}>
-            Caption
+            Chú thích
           </label>
           <input
             type="text"
@@ -725,7 +717,7 @@ function EditModal({
 
         <label className="flex items-center gap-2 text-sm" style={{ color: 'var(--color-on-surface)' }}>
           <input type="checkbox" checked={cover} onChange={(e) => setCover(e.target.checked)} />
-          Đánh dấu là cover
+          Đánh dấu làm ảnh bìa
         </label>
 
         <footer className="flex justify-end gap-2 pt-2">
@@ -736,7 +728,7 @@ function EditModal({
             className="rounded px-3 py-2 text-sm font-medium"
             style={{ backgroundColor: 'var(--color-surface-container-high)', color: 'var(--color-on-surface)' }}
           >
-            Hủy
+            {formLabel('cancel')}
           </button>
           <button
             type="submit"
@@ -745,7 +737,7 @@ function EditModal({
             style={{ backgroundColor: 'var(--color-primary-dark)', color: 'var(--color-on-primary)' }}
           >
             {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <CheckCircle2 className="h-4 w-4" aria-hidden />}
-            {busy ? 'Đang lưu…' : 'Lưu'}
+            {busy ? 'Đang lưu…' : actionLabel('save')}
           </button>
         </footer>
       </form>
@@ -777,14 +769,14 @@ function DeleteConfirm({
       >
         <header className="flex items-center justify-between">
           <h3 className="text-base font-semibold" style={{ color: 'var(--color-on-surface)' }}>
-            Xóa media?
+            Xóa tệp?
           </h3>
           <button type="button" onClick={onClose} aria-label="Đóng">
             <X className="h-5 w-5" aria-hidden />
           </button>
         </header>
         <p className="text-sm" style={{ color: 'var(--color-on-surface-variant)' }}>
-          Xóa <strong>{item.filename}</strong> sẽ xóa cả trên Vercel Blob và {item.assignmentCount} assignment.
+          Xóa <strong>{item.filename}</strong> sẽ xóa tệp trên Vercel Blob và {item.assignmentCount} liên kết.
         </p>
         <footer className="flex justify-end gap-2">
           <button
@@ -793,7 +785,7 @@ function DeleteConfirm({
             className="rounded px-3 py-2 text-sm font-medium"
             style={{ backgroundColor: 'var(--color-surface-container-high)', color: 'var(--color-on-surface)' }}
           >
-            Hủy
+            {formLabel('cancel')}
           </button>
           <button
             type="button"

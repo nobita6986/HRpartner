@@ -28,6 +28,10 @@ import {
   newIdempotencyKey,
   previewSubmitGate,
   SOURCE_LABELS,
+  applicationHistoryReasonLabel,
+  applicationStatusLabel,
+  assignmentStatusLabel,
+  employmentTypeLabel,
   STATUS_LABELS,
   toIsoOrEmpty,
   type ActionId,
@@ -94,9 +98,8 @@ function fmt(iso: string | null): string {
 /* Prefer a server message; otherwise translate the stable error code to Vietnamese. */
 function messageOf(data: unknown): string {
   const d = (data ?? {}) as { message?: unknown; error?: unknown };
-  if (typeof d.message === 'string' && d.message) return d.message;
   if (typeof d.error === 'string' && d.error) return conflictLabel(d.error);
-  return 'Có lỗi xảy ra.';
+  return 'Không thể hoàn tất thao tác. Vui lòng thử lại.';
 }
 
 export default function AdminApplicationsPage() {
@@ -141,7 +144,7 @@ export default function AdminApplicationsPage() {
         if (cancelled) return;
         if (res.status === 403) { setForbidden(true); setRows([]); setTotal(0); return; }
         const data = await res.json().catch(() => ({} as Record<string, unknown>));
-        if (!res.ok) { setError(typeof data?.message === 'string' ? data.message : 'Không tải được danh sách.'); return; }
+        if (!res.ok) { setError('Không thể tải danh sách hồ sơ. Vui lòng thử lại.'); return; }
         setRows((data.applications as Row[]) ?? []); setTotal((data.total as number) ?? 0);
       } catch {
         if (!cancelled) setError('Không thể kết nối máy chủ.');
@@ -215,8 +218,8 @@ export default function AdminApplicationsPage() {
                   <td className='px-3 py-2'>{r.fullName}</td>
                   <td className='px-3 py-2'>{r.phone}</td>
                   <td className='px-3 py-2'>{r.projectName ?? '—'}</td>
-                  <td className='px-3 py-2'>{SOURCE_LABELS[r.source] ?? r.source}</td>
-                  <td className='px-3 py-2'>{STATUS_LABELS[r.status] ?? r.status}</td>
+                  <td className='px-3 py-2'>{SOURCE_LABELS[r.source] ?? 'Nguồn khác'}</td>
+                  <td className='px-3 py-2'>{applicationStatusLabel(r.status)}</td>
                   <td className='px-3 py-2 font-mono text-xs'>{r.publicTrackingCode ?? '—'}</td>
                   <td className='px-3 py-2 whitespace-nowrap'>{fmt(r.createdAt)}</td>
                 </tr>
@@ -319,7 +322,7 @@ function DetailPanel({ detail, role, onClose, onChanged }: {
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
         setDedup(null); setDedupSelected(null); setActionReason('');
-        setPanelSuccess('Đã nhận vào — tạo Worker.'); onChanged(); return;
+        setPanelSuccess('Đã tiếp nhận và tạo hồ sơ người lao động.'); onChanged(); return;
       }
       if (data?.error === 'DEDUP_REVIEW_REQUIRED' || data?.error === 'DEDUP_SELECTION_INVALID') {
         setDedup((data?.details?.candidates ?? []) as DedupCandidateDto[]);
@@ -391,10 +394,9 @@ function DetailPanel({ detail, role, onClose, onChanged }: {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) { setPanelError(messageOf(data)); return; }
-      const asg = data.assignment as { assignmentId?: string } | undefined;
       idemKey.current = newIdempotencyKey(); // next attempt is a new activation
       setShowPlacement(false); setPreview(null);
-      setPanelSuccess(`Đã xếp việc: ${asg?.assignmentId ?? ''}${data.replayed ? ' (đã ghi trước đó)' : ''}`);
+      setPanelSuccess(data.replayed ? 'Thông tin bố trí đã được ghi nhận trước đó.' : 'Đã bố trí việc làm thành công.');
       onChanged();
     } catch { setPanelError('Không thể kết nối máy chủ.'); }
     finally { setActivating(false); }
@@ -410,17 +412,17 @@ function DetailPanel({ detail, role, onClose, onChanged }: {
 
         <dl className='text-sm grid grid-cols-3 gap-y-2' style={{ color: 'var(--on-surface-variant)' }}>
           <dt>SĐT</dt><dd className='col-span-2' style={{ color: 'var(--on-surface)' }}>{detail.phone}</dd>
-          <dt>CCCD</dt><dd className='col-span-2' style={{ color: 'var(--on-surface)' }}>{detail.cccdNumber ?? '—'}</dd>
+          <dt>Số CCCD</dt><dd className='col-span-2' style={{ color: 'var(--on-surface)' }}>{detail.cccdNumber ?? '—'}</dd>
           <dt>Dự án</dt><dd className='col-span-2' style={{ color: 'var(--on-surface)' }}>{detail.projectName ?? '—'}</dd>
-          <dt>Nguồn</dt><dd className='col-span-2' style={{ color: 'var(--on-surface)' }}>{SOURCE_LABELS[detail.source] ?? detail.source}</dd>
+          <dt>Nguồn</dt><dd className='col-span-2' style={{ color: 'var(--on-surface)' }}>{SOURCE_LABELS[detail.source] ?? 'Nguồn khác'}</dd>
           <dt>CV</dt><dd className='col-span-2' style={{ color: 'var(--on-surface)' }}>{detail.cvFileName ?? '—'}</dd>
-          <dt>Trạng thái</dt><dd className='col-span-2' style={{ color: 'var(--on-surface)' }}>{STATUS_LABELS[detail.status] ?? detail.status} · v{detail.version}</dd>
-          <dt>Worker</dt><dd className='col-span-2 font-mono text-xs' style={{ color: 'var(--on-surface)' }}>{detail.workerId ?? '—'}</dd>
+          <dt>Trạng thái</dt><dd className='col-span-2' style={{ color: 'var(--on-surface)' }}>{applicationStatusLabel(detail.status)} · v{detail.version}</dd>
+          <dt>Người lao động</dt><dd className='col-span-2 font-mono text-xs' style={{ color: 'var(--on-surface)' }}>{detail.workerId ? 'Đã liên kết hồ sơ' : '—'}</dd>
           {detail.assignment && (
             <>
               <dt>Xếp việc</dt>
               <dd className='col-span-2 text-xs' data-testid='detail-assignment' style={{ color: 'var(--on-surface)' }}>
-                {detail.assignment.employeeCode} · {STATUS_LABELS[detail.assignment.status] ?? detail.assignment.status} · {detail.assignment.employmentType}
+                {detail.assignment.employeeCode} · {assignmentStatusLabel(detail.assignment.status)} · {employmentTypeLabel(detail.assignment.employmentType)}
               </dd>
             </>
           )}
@@ -432,7 +434,7 @@ function DetailPanel({ detail, role, onClose, onChanged }: {
             {detail.statusHistory.length === 0 && <li>—</li>}
             {detail.statusHistory.map((h) => (
               <li key={h.id}>
-                {fmt(h.createdAt)}: {h.fromStatus ? (STATUS_LABELS[h.fromStatus] ?? h.fromStatus) : '∅'} → {STATUS_LABELS[h.toStatus] ?? h.toStatus}{h.reason ? ` — ${h.reason}` : ''}
+                {fmt(h.createdAt)}: {h.fromStatus ? applicationStatusLabel(h.fromStatus) : 'Chưa có'} → {applicationStatusLabel(h.toStatus)}{h.reason ? ` — ${applicationHistoryReasonLabel(h.reason)}` : ''}
               </li>
             ))}
           </ul>

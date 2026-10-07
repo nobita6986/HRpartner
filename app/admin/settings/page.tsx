@@ -45,10 +45,28 @@ export default async function AdminSettingsPage() {
         zaloChatUrl: null,
         messengerChatUrl: null,
         phoneCallNumber: null,
+        newsSectionEnabled: true,
+        stickyAnnouncement: {
+          enabled: false,
+          message: '',
+          ctaLabel: null,
+          ctaUrl: null,
+          dismissible: true,
+          backgroundOpacity: 100,
+          marqueeDurationSeconds: 18,
+          textColor: 'on-primary',
+          font: 'SANS',
+          emphasis: 'BOLD',
+          animation: 'NONE',
+          contentRevision: 'rev-0',
+        },
+        // hrp-t2-public-site-hotfix (T2 / STEP-02): Hero image fallback null
+        // khi schema DB chưa sẵn sàng — Hero render gradient (hành vi v1).
+        heroImage: null,
         updatedAt: new Date(0).toISOString(),
       };
       unavailableReason =
-        'Cấu hình trang chủ đang tạm khóa vì migration HomepageSettings chưa được áp dụng trên cơ sở dữ liệu.';
+        'Cài đặt trang chủ tạm thời không thể chỉnh sửa vì cơ sở dữ liệu chưa được cập nhật cấu trúc cần thiết.';
     } else {
       throw error;
     }

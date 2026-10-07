@@ -29,21 +29,37 @@
  *     production.
  *
  * Còn hạn chế thật sự:
- *   - Gallery media: chưa có; chờ AV4 Media Library integration.
  *   - Slug rename sau first PUBLISHED: schema lock slug immutability ở
  *     PUBLISHED (P1-A0 AC-11). Pre-publish rename route chưa được expose —
  *     vẫn phải tạo JobOpening mới để đổi slug ở trạng thái này.
+ *   - hrp-t1c-jobposting-media-youtube (RQ-01, RQ-05): gallery media + YouTube
+ *     URL đã tích hợp ở T1C — pre-load qua `listJobPostingMedia` (RQ-05) và
+ *     gắn vào JobPostingEditorShell, không còn "AV4 còn chờ" trên UI này.
  */
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 
 import { Breadcrumb } from '@/src/shared/ui/navigation/breadcrumb';
 import { RelatedObjects } from '@/src/shared/ui/data-display/related-objects';
+import { StatusBadge } from '@/src/shared/ui/status-badge';
 
 import { getServerSession } from '@/src/shared/auth/server-session';
 import { getPrisma } from '@/src/lib/db';
 import { withDbContext } from '@/src/shared/auth/with-db-context';
 import { getJobPostingForAdmin } from '@/src/domains/staffing/job-posting-list.service';
+import {
+  JOB_POSTING_MODULE,
+  jobPostingStatusLabel,
+  jobPostingStatusTone,
+} from '@/src/domains/staffing/job-posting-ui';
+import { jobOpeningStatusLabel } from '@/src/domains/staffing/job-opening-ui';
+// hrp-t1c-jobposting-media-youtube (RQ-05): pre-fetch gallery ở Server Component
+// để tránh waterfall khi client mount. listJobPostingMedia trả JobPostingMediaAssignmentDto
+// (cover-first, order ASC, status='PUBLIC' only).
+import {
+  listJobPostingMedia,
+  type JobPostingMediaAssignmentDto,
+} from '@/src/domains/staffing/job-posting-media.service';
 import type { SystemRole } from '@prisma/client';
 
 import { JobPostingEditorShell } from './editor-shell';
@@ -52,7 +68,8 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export const metadata = {
-  title: 'JobPosting viewer — Admin',
+  // EP §3.5 #47 — breadcrumb + H1 binding.
+  title: 'Tin tuyển dụng — trang xem — Admin',
 };
 
 const MUTATION_ROLES: ReadonlySet<SystemRole> = new Set([
@@ -85,8 +102,17 @@ export default async function AdminJobPostingDetailPage({ params }: PageProps) {
   const { id } = await params;
   const ctx = { userId: session.userId, role: session.role };
   const prisma = getPrisma();
-  const posting = await withDbContext(prisma, ctx, async (tx) => {
-    return getJobPostingForAdmin(tx, id);
+  const { posting, initialMedia } = await withDbContext(prisma, ctx, async (tx) => {
+    const [posting, initialMedia] = await Promise.all([
+      getJobPostingForAdmin(tx, id),
+      // hrp-t1c-jobposting-media-youtube (RQ-05): pre-load gallery. Nếu posting
+      // không tồn tại / không đọc được, listJobPostingMedia sẽ throw NOT_FOUND —
+      // page đã trả notFound ở nhánh dưới nên ta trả mảng rỗng để không mask lỗi.
+      canMutate
+        ? listJobPostingMedia(tx, ctx, id).catch((): JobPostingMediaAssignmentDto[] => [])
+        : Promise.resolve([] as JobPostingMediaAssignmentDto[]),
+    ]);
+    return { posting, initialMedia };
   });
   if (!posting) {
     // Có thể là (a) id không tồn tại, hoặc (b) RLS policy deny (role không
@@ -100,13 +126,13 @@ export default async function AdminJobPostingDetailPage({ params }: PageProps) {
   return (
     <div className="min-h-screen p-6" style={{ backgroundColor: 'var(--surface)' }}>
       <div className="max-w-7xl mx-auto">
-        {/* Breadcrumb */}
+        {/* Breadcrumb — EP §3.5 #46/#47/#48 binding */}
         <div className="mb-4">
           <Breadcrumb
             items={[
-              { label: 'Admin Jobs', href: '/admin/jobs' },
-              { label: 'JobPosting viewer', href: '/admin/jobs/job-postings' },
-              { label: posting.slug },
+              { label: 'Danh sách nhu cầu', href: '/admin/jobs' },
+              { label: 'Tin tuyển dụng — trang xem', href: '/admin/jobs/job-postings' },
+              { label: 'Tin tuyển dụng' },
             ]}
           />
         </div>
@@ -116,40 +142,64 @@ export default async function AdminJobPostingDetailPage({ params }: PageProps) {
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
               <h1 className="text-xl font-bold" style={{ color: 'var(--on-surface)' }}>
-                {posting.slug}
+                {posting.title || 'Tin tuyển dụng'}
               </h1>
-              <p className="mt-1 text-xs" style={{ color: 'var(--on-surface-variant)' }}>
-                ID: <span className="font-mono">{posting.id}</span>
-              </p>
             </div>
-            <StatusBadge status={posting.status} />
+            <StatusBadge
+              module={JOB_POSTING_MODULE}
+              status={posting.status}
+              tone={jobPostingStatusTone(posting.status)}
+              testId={`job-posting-detail-status-${posting.id}`}
+            >
+              {jobPostingStatusLabel(posting.status)}
+            </StatusBadge>
           </div>
 
           <dl className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <Fact label="Slug" value={posting.slug} mono />
-            <Fact label="Revision" value={`v${posting.revision}`} />
-            <Fact label="Created" value={new Date(posting.createdAt).toLocaleString('vi-VN')} />
-            <Fact label="Updated" value={new Date(posting.updatedAt).toLocaleString('vi-VN')} />
+            <Fact label="Đường dẫn công khai" value={posting.slug} mono />
+            <Fact label="Phiên bản chỉnh sửa" value={`v${posting.revision}`} />
+            <Fact label="Ngày tạo" value={new Date(posting.createdAt).toLocaleString('vi-VN')} />
+            <Fact label="Ngày cập nhật" value={new Date(posting.updatedAt).toLocaleString('vi-VN')} />
             <Fact
-              label="Published at"
+              label="Ngày đăng"
               value={posting.publishedAt ? new Date(posting.publishedAt).toLocaleString('vi-VN') : '—'}
             />
             <Fact
-              label="Archived at"
+              label="Ngày lưu trữ"
               value={posting.archivedAt ? new Date(posting.archivedAt).toLocaleString('vi-VN') : '—'}
             />
           </dl>
 
           <div className="mt-6">
             <RelatedObjects
-              title="Job Opening"
+              title="Đợt tuyển dụng"
               items={posting.opening ? [{
-                id: posting.opening.staffingOrderCode,
-                title: <span className="font-mono">{posting.opening.staffingOrderCode}</span>,
-                statusLabel: posting.opening.status,
+                // hrp-t1a-postdeploy-runtime-correction-2 (round 2):
+                // wire JobOpening UUID as the React key + add href so the
+                // card deep-links into /admin/job-openings/[id] (was missing).
+                id: posting.opening.id,
+                title: <span className="flex flex-wrap items-center gap-2"><span className="font-mono">{posting.opening.staffingOrderCode}</span><span className="text-xs" style={{ color: 'var(--on-surface-variant)' }} data-testid="opening-subtitle">{jobOpeningStatusLabel(posting.opening.status)}</span></span>,
+                statusLabel: jobOpeningStatusLabel(posting.opening.status),
+                href: `/admin/job-openings/${posting.opening.id}`,
               }] : []}
-              emptyState="Chưa được gắn với JobOpening nào (orphan)."
+              emptyState="Chưa được gắn với đợt tuyển dụng nào."
             />
+
+            {/* hrp-t1a-postdeploy-runtime-correction-2 (round 2):
+                Server publish route is fail-closed — POST /publish returns
+                409 JOB_OPENING_NOT_OPEN until linked JobOpening reaches OPEN.
+                Show a one-line hint on the JobPosting page so admin sees
+                the next-step bridge before clicking Publish (which is
+                disabled with a reason on the editor shell itself). */}
+            {posting.opening && posting.opening.status !== 'OPEN' && (
+              <p
+                className="mt-2 text-xs italic"
+                style={{ color: 'var(--on-surface-variant)' }}
+                data-testid="opening-cta-hint"
+              >
+                Có thể đăng tin sau khi đợt tuyển dụng được mở. Mở đợt tuyển dụng qua liên kết ở trên để tiếp tục.
+              </p>
+            )}
           </div>
 
           <div className="mt-5 flex flex-wrap items-center gap-2">
@@ -169,7 +219,7 @@ export default async function AdminJobPostingDetailPage({ params }: PageProps) {
         </header>
 
         {/* Editor shell — P1-A0: real Tiptap wrapper + real persistence API */}
-        <JobPostingEditorShell initial={posting} canMutate={canMutate} />
+        <JobPostingEditorShell initial={posting} initialMedia={initialMedia} canMutate={canMutate} />
 
         {/* Footer note — UI truth baseline (hrp-p1-a0.2 / T1C).
             *
@@ -195,25 +245,16 @@ export default async function AdminJobPostingDetailPage({ params }: PageProps) {
             backgroundColor: 'var(--color-surface-container)',
             color: 'var(--on-surface-variant)',
           }}
-          aria-label="Phần còn hạn chế"
+          aria-label="Tính năng chưa khả dụng"
           data-testid="locked-section-detail"
         >
           <h2 className="mb-2 text-sm font-semibold" style={{ color: 'var(--on-surface)' }}>
-            Phần còn hạn chế (đang chờ tích hợp)
+            Tính năng chưa khả dụng
           </h2>
           <ul className="ml-4 list-disc space-y-1">
             <li>
-              <strong>Gallery media</strong> (ảnh đính kèm JobPosting) — JobPosting hiện chỉ mang
-              rich-text content qua 4 field <code>descriptionJson</code> /
-              <code>requirementsJson</code> / <code>benefitsJson</code> /
-              <code>applicationInstructionsJson</code>. Media library integration chưa có;
-              dự kiến đến cùng với AV4 Media Library.
-            </li>
-            <li>
-              <strong>Sửa slug trước publish</strong> — schema khóa slug sau lần
-              publish đầu tiên (P1-A0 AC-11: published slug immutable). Hiện chưa
-              expose route rename slug pre-publish; cần tạo JobOpening mới để đổi
-              slug. Đây là schema-level invariant, không phải khóa tạm thời.
+              Sau khi đăng tin, đường dẫn không thể thay đổi. Nếu cần dùng đường dẫn khác,
+              hãy tạo một đợt tuyển dụng mới.
             </li>
           </ul>
         </section>
@@ -222,22 +263,12 @@ export default async function AdminJobPostingDetailPage({ params }: PageProps) {
   );
 }
 
-function StatusBadge({ status }: { status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED' }) {
-  const colorMap: Record<string, { bg: string; fg: string }> = {
-    DRAFT: { bg: 'var(--color-surface-container-high)', fg: 'var(--on-surface-variant)' },
-    PUBLISHED: { bg: 'var(--color-primary-soft)', fg: 'var(--color-primary-dark)' },
-    ARCHIVED: { bg: 'var(--color-surface-container)', fg: 'var(--on-surface-variant)' },
-  };
-  const c = colorMap[status] ?? colorMap.DRAFT;
-  return (
-    <span
-      className="inline-block whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-bold"
-      style={{ backgroundColor: c.bg, color: c.fg }}
-    >
-      {status}
-    </span>
-  );
-}
+// T1B Wave 2 (EP §3.2.3): the inline `colorMap` + local `StatusBadge`
+// component previously at the bottom of this file is replaced by the
+// shared `<StatusBadge module={JOB_POSTING_MODULE}>` primitive + the
+// domain-owned `jobPostingStatusLabel()` / `jobPostingStatusTone()`
+// helpers from `src/domains/staffing/job-posting-ui.ts`. There is no
+// local StatusBadge or colorMap in this file anymore.
 
 function Fact({
   label,

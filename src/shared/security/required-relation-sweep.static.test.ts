@@ -82,9 +82,22 @@ const EXPECTED_HITS = [
   // AFF-04 STEP-02: re-read canonical ReferralAttribution via LaborProfile on
   // conversion (server-derived referrer resolution). laborProfile is nullable
   // in schema, but the SELECT shape surfaces it in the RLS sweep.
-  'src/domains/applications/conversion.service.ts:128 laborProfile',
+  // hrp-t1c-intake-worker-link (2026-10-05): line shifted 128 -> 130 because
+  // `linkLaborProfileWorker` helper was inserted between `convertApplication`
+  // and `findDedupCandidates`, adding two comment lines above the AFF-04
+  // select block. Sweep target is unchanged.
+  'src/domains/applications/conversion.service.ts:130 laborProfile',
   'src/domains/crm/client-read.service.ts:80 staffingOrder',
   'src/domains/crm/project-read.service.ts:40 clientCompany',
+  // T1A PRE-P2 PROJECT MANAGEMENT HOTFIX (2026-10-06): `getProjectForManagement`
+  // thêm `clientCompany` select (mirror pattern của `getProjectDetail`) để
+  // render tên khách hàng trên header trang quản trị. Line shift từ
+  // original `40` (đã có ở getProjectDetail) sang `152` (vị trí mới trong
+  // getProjectForManagement, sau khi bổ sung `isPublic` select field). Quan
+  // hệ BẮT BUỘC trong schema `Project` — sweep đếm là đúng, an toàn vì RLS
+  // `hrp_client_company_visible_for` đã lọc theo role khi đi qua
+  // `withDbContext` (ADMIN/HR_MANAGER/HR_STAFF/PM đều thoả).
+  'src/domains/crm/project-read.service.ts:152 clientCompany',
   // P1-A0.5 STEP-10 (hrp-p1-a0-5-job-opening-readiness): additive DTO fields
   // (`serviceModel`, `placementCount`, order status/deadline, slot validTo/capacity).
   // Line numbers shifted 41 → 86 and 46 → 94 because the new fields were added
@@ -96,18 +109,58 @@ const EXPECTED_HITS = [
   // hrp-p1-a0-1 (2026-09-26): line number shifted to 787 because updateDraftContent
   // added `isHot`/`isUrgent` branches, eligibility guard was added, and DTO mapper
   // extended.
-  'src/domains/staffing/job-posting-authoring.service.ts:787 jobOpening',
+  // hrp-f9-hr-staff-jobposting-scope (2026-10-03): F9 STEP-05 extends the
+  // `include: { jobOpening: { select: { id, staffingOrderId } } }` shape on
+  // FOUR write/read paths so the scoped-recruiter re-check can derive the
+  // order anchor. F9 correction batch 1/1 (2026-10-03): four of these
+  // paths now also call `acquireOrderAdvisoryLock` BEFORE the guard. The
+  // existing `publishJobPosting` entry is preserved; four new entries are
+  // added. All five selects are RLS-covered (read-only; `withDbContext`
+  // sets the GUC session role; JobOpening is not a recruiter-gated table
+  // on its own).
+  // hrp-t1c-jobposting-media-youtube (2026-10-05): updateDraftContent +
+  // YouTube ID validator (`assertYouTubeVideoId`) + DTO `youtubeVideoId`
+  // mapping + `JobPostingModelRow` extension shifted the four F9 lines
+  // further: 1007 → 1070, 1119 → 1192, 1246 → 1319, 1315 → 1388. The
+  // 5th entry (getJobPostingForAuthoring) is now at 1461 (was 1388).
+  'src/domains/staffing/job-posting-authoring.service.ts:1070 jobOpening',
+  'src/domains/staffing/job-posting-authoring.service.ts:1192 jobOpening',
+  'src/domains/staffing/job-posting-authoring.service.ts:1319 jobOpening',
+  'src/domains/staffing/job-posting-authoring.service.ts:1388 jobOpening',
+  'src/domains/staffing/job-posting-authoring.service.ts:1461 jobOpening',
   // P1-A0 STEP-03: line numbers in job-posting-list.service.ts shifted because
   // the DTOs grew (added title, salaryDisplay, *Json, contentSchemaVersion,
   // hasContent). The four select-clauses themselves are unchanged.
   // hrp-p1-a0-1 (2026-09-26): line numbers shifted again because DTOs grew
   // (`isHot`, `isUrgent`) and eligibility selector was added.
-  'src/domains/staffing/job-posting-list.service.ts:143 jobOpening',
-  'src/domains/staffing/job-posting-list.service.ts:146 staffingOrder',
-  'src/domains/staffing/job-posting-list.service.ts:230 jobOpening',
-  'src/domains/staffing/job-posting-list.service.ts:238 staffingOrder',
-  'src/domains/staffing/order.service.ts:153 project',
-  'src/domains/staffing/order.service.ts:179 project',
+  // hrp-t1c-jobposting-media-youtube (2026-10-05): `youtubeVideoId` field
+  // added to both `JobPostingListItemDto` and `JobPostingDetailDto`, plus
+  // `listJobPostingsForAdmin` and `getJobPostingForAdmin` mappings — line
+  // numbers shift +6: 149 → 155, 152 → 158, 245 → 259, 253 → 267. The
+  // select-clauses themselves are unchanged.
+  'src/domains/staffing/job-posting-list.service.ts:155 jobOpening',
+  'src/domains/staffing/job-posting-list.service.ts:158 staffingOrder',
+  'src/domains/staffing/job-posting-list.service.ts:259 jobOpening',
+  'src/domains/staffing/job-posting-list.service.ts:267 staffingOrder',
+  // t1a-staffing-order-management (2026-10-05): getStaffingOrderDetail + updateStaffingOrder
+  // thêm `slots.jobOpening` / `slots.neoJobOpenings` (qua include include con) để đếm
+  // phụ thuộc cho UI. Line number shift từ 153/179 (cũ) do thêm 2 hàm mới.
+  // CORRECTION 1/1 (2026-10-05): updateStaffingOrder + deleteStaffingOrder
+  // thêm advisory lock + re-read. Hai path mới phát sinh hit sweep:
+  //   - `order.service.ts:192` `getStaffingOrder` (detail) — line shift 158
+  //     do thêm `acquireOrderAdvisoryLock` helper + 2 hàm mới. 158 → 192.
+  //   - `order.service.ts:218` `getStaffingOrder` (detail) — line shift 184 → 218.
+  //   - `order.service.ts:331` `getStaffingOrderDetail` — line shift 297 → 331.
+  //   - `order.service.ts:336` `getStaffingOrderDetail` — line shift 302 → 336.
+  //   - `order.service.ts:428` `updateStaffingOrder` re-read slots — line shift 387 → 428.
+  //   - `order.service.ts:459` `updateStaffingOrder` re-read slots.jobOpening
+  //     (thêm mới — sweep phát hiện thêm 1 hit).
+  'src/domains/staffing/order.service.ts:207 project',
+  'src/domains/staffing/order.service.ts:233 project',
+  'src/domains/staffing/order.service.ts:346 project',
+  'src/domains/staffing/order.service.ts:351 jobOpening',
+  'src/domains/staffing/order.service.ts:443 jobOpening',
+  'src/domains/staffing/order.service.ts:474 jobOpening',
   'src/domains/staffing/submission.service.ts:204 project',
   // AFF-04 STEP-04: re-read SourceClaim -> Worker.userId under lock for
   // self-referral classification. Worker is required in schema, so the
@@ -118,8 +171,15 @@ const EXPECTED_HITS = [
   // `staffingOrder.slots`. Cả hai là BẮT BUỘC trong schema (không optional, không list) — sweep phải
   // đếm. An toàn vì đã chặn trước bằng `status: 'PUBLISHED'` (JobPosting) + RLS `hrp_project_visible_for`
   // mà MKT thoả khi `Project.is_public=true` (migration s1_rls_project 2026-08-16).
-  'src/domains/job-board/public.service.ts:702 staffingOrder',
-  'src/domains/job-board/public.service.ts:709 project',
+  // hrp-t1c-jobposting-media-youtube (2026-10-05): added `youtubeVideoId` scalar + the
+  // public DTO `gallery`/`PublicJobGalleryItemDto` interface + `toDetailDto` mapping of
+  // gallery — `jobOpening.staffingOrder` / `jobOpening.staffingOrder.project` selects
+  // shifted from 752/759 → 805/812. The select clauses themselves are unchanged.
+  // hrp-t2-public-site-hotfix (T2 / STEP-02): added `homepageSettings: { select: { heroImageMediaId: true } }`
+  // join — chỉ đọc FK, KHÔNG phải quan hệ BẮT BUỘC với bảng RLS (HomepageSettings không có RLS);
+  // nên sweep KHÔNG đếm hit mới. Line shift +1 do thêm dòng `homepageSettings: ...`.
+  'src/domains/job-board/public.service.ts:806 staffingOrder',
+  'src/domains/job-board/public.service.ts:813 project',
   // hrp-p1-e0 (2026-09-26): Recruiter Workbench read-model cần `fullName`/`phone`/`cccdNumber`/
   // `identityVerification`/`completeness` để build `RecruiterWorkbenchRow.candidate` (§4.3 RQ-02).
   // `LaborProfile` là quan hệ BẮT BUỘC trong schema `placement_case` (không optional, không list) — sweep
@@ -184,6 +244,20 @@ const EXPECTED_HITS = [
   // → `withDbContext(role=HR_STAFF)` nên RLS chain đã lọc theo role/handler
   // pool. An toàn.
   'src/domains/talent/recruiter-placement.adapter.ts:279 jobOpening',
+  // T1B — PRE-P2 HOTFIX worker management (2026-10-06): worker.service.ts
+  // `getWorkerDetail` selects the linked LaborProfile (nullable) and the current
+  // ProjectAssignment (list, ordered by startedAt desc) to project the
+  // "Phân công dự án hiện hành" section, plus owner/assignedTo/manager user
+  // refs for "Quản lý / phụ trách". LaborProfile is RLS-covered via
+  // `hrp_labor_profile_visible_for` (ADMIN/HR_MANAGER row scope through
+  // `withDbContext`); ProjectAssignment and User are not RLS-gated but the
+  // call site already enforces the worker scope (`assignedToId` for
+  // HR_STAFF, project.PM for PM, etc.) before reaching the select. PII
+  // (`phone`/`cccdNumber`) is masked when caller lacks
+  // `CAN_VIEW_WORKER_SENSITIVE` per `projectWorker` projection.
+  'src/domains/workforce/worker.service.ts:266 laborProfile',
+  'src/domains/workforce/worker.service.ts:275 project',
+  'src/domains/workforce/worker.service.ts:283 owner',
 ] as const;
 
 interface SourceEntry {
@@ -410,7 +484,44 @@ describe('quan hệ BẮT BUỘC trên bảng bị RLS che: tập vị trí sele
     // Sau P1-A04 B-08 (2026-09-29): recruiter-placement.adapter.ts derivePlacementAnchors
     // chọn `placement.jobOpening.staffingOrderId` để compute canonical order advisory lock.
     // +1 dòng ở src/. Tổng src = 31 + 1 = 32, tổng all = 34 + 1 = 35.
-    expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(32);
+    // Sau hrp-f9-hr-staff-jobposting-scope STEP-05/STEP-06 (2026-10-03): F9
+    // STEP-05 extends the `include: { jobOpening: { select: { id,
+    // staffingOrderId } } }` shape on FOUR additional paths in
+    // `job-posting-authoring.service.ts` (updateDraftContent +
+    // unpublishJobPosting + archiveJobPosting + getJobPostingForAuthoring)
+    // so the scoped-recruiter re-check can derive the order anchor. The
+    // pre-existing `publishJobPosting` entry shifts 787 → 955 (F9 added
+    // ~168 lines of new code above it: guard re-ordering, advisory lock,
+    // INSERT policies migration, NOT_FOUND envelope fix). Net +4
+    // entries: 32 → 36 src hits. F9 correction batch 1/1 (2026-10-03)
+    // also adds `acquireOrderAdvisoryLock` BEFORE the guard on each
+    // path; the lock is re-entrant within the same transaction and does
+    // not add a new lock namespace. All five selects are RLS-covered
+    // (read-only; `withDbContext` sets the GUC session role; JobOpening
+    // is not a recruiter-gated table on its own — the scope is the
+    // order, not the opening). t1a-staffing-order-management
+    // (2026-10-05): getStaffingOrderDetail + updateStaffingOrder thêm 3
+    // entries (project@297, jobOpening@302, jobOpening@387); line shift
+    // 153/179 → 158/184. Net +3 entries: 36 → 39 src hits.
+    // CORRECTION 1/1 (2026-10-05): updateStaffingOrder re-read thêm 1
+    // entry (jobOpening@459); các entries cũ line shift do thêm 2 hàm
+    // mới (`acquireOrderAdvisoryLock`/`acquireSlotAdvisoryLock` helpers
+    // + 2 hàm delete). Net +1 entry: 39 → 40 src hits.
+    // CORRECTION 2/1 (2026-10-05): advisory lock đổi sang canonical
+    // `p1a04:order:` / `p1a04:slot:` với bit-masked signature (thêm
+    // `(hashtext($1)::bigint) & 9223372036854775807::bigint` so với
+    // `hashtext($1::text)` cũ). Body dài hơn ⇒ line shift 6 entries
+    // order.service.ts: 192/218/331/336/428/459 → 207/233/346/351/443/474.
+    // Tổng entries KHÔNG đổi (40); chỉ line literals shift.
+// T1A PRE-P2 PROJECT MANAGEMENT HOTFIX (2026-10-06): `getProjectForManagement`
+    // thêm 1 entry mới (`project-read.service.ts:152 clientCompany`). Tổng src = 41.
+    // T1B — PRE-P2 WORKER MANAGEMENT HOTFIX (2026-10-06, forward-merge tại đây): `getWorkerDetail`
+    // thêm 3 entry mới (`worker.service.ts:266 laborProfile`, `:275 project`, `:283 owner`)
+    // để project "Phân công dự án hiện hành" + "Quản lý / phụ trách" sections.
+    // LaborProfile qua RLS `hrp_labor_profile_visible_for`; ProjectAssignment/User không
+    // RLS-gated nhưng call site đã enforce worker scope (`assignedToId` / project.PM /
+    // role) trước khi tới select. PII mask qua `projectWorker`. Tổng src = 44.
+    expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(44);
   });
 });
 

@@ -75,17 +75,18 @@ describe('GET /api/workers', () => {
   });
 });
 
-describe('POST /api/workers', () => {
-  it('does not send or write fake status field', async () => {
-    mocks.create.mockResolvedValue({ id: 'w1', userId: 'usr1', fullName: 'Test' });
+describe('POST /api/workers — T1B legacy closure', () => {
+  it('returns 410 WORKER_LEGACY_CREATE_DISABLED with redirectTo /admin/labor-profiles/new', async () => {
     const req = new NextRequest('http://localhost/api/workers', {
       method: 'POST',
-      body: JSON.stringify({ userId: 'usr1', fullName: 'Test Worker', status: 'ACTIVE' }),
+      body: JSON.stringify({ userId: 'usr1', fullName: 'Test Worker' }),
     });
-    await POST(req);
-    
-    const createData = mocks.create.mock.calls[0][0].data;
-    expect(createData).not.toHaveProperty('status');
-    expect(createData.fullName).toBe('Test Worker');
+    const res = await POST(req);
+    expect(res.status).toBe(410);
+    const data = await res.json();
+    expect(data.error).toBe('WORKER_LEGACY_CREATE_DISABLED');
+    expect(data.details.redirectTo).toBe('/admin/labor-profiles/new');
+    // POST KHÔNG được phép gọi worker.create — invariant chống tạo Worker rời rạc.
+    expect(mocks.create).not.toHaveBeenCalled();
   });
 });

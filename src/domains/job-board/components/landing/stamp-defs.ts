@@ -6,9 +6,9 @@
  */
 
 import type { LucideIcon } from 'lucide-react';
-import { Flame, Star, Gift, Sparkles } from 'lucide-react';
+import { Flame, Star, Gift, Sparkles, Clock } from 'lucide-react';
 
-export type StampKey = 'tuyen-gap' | 'hot' | 'thuong-cao' | 'moi';
+export type StampKey = 'tuyen-gap' | 'hot' | 'sap-het-han' | 'thuong-cao' | 'moi';
 
 export interface StampDef {
   key: StampKey;
@@ -63,6 +63,20 @@ export const STAMPS: Record<StampKey, StampDef> = {
     Icon: Gift,
     ariaLabel: 'Thưởng cao',
   },
+  // hrp-ui-v1-job-card-stamps-brand (T1B / DEC-02): author-selected flag mới — SẮP HẾT HẠN.
+  // Tone ấm (orange-red) phù hợp urgency; icon Clock (đã có sẵn trong lucide-react 0.468.0).
+  // KHÔNG heuristic — derive thẳng từ JobPosting.isExpiringSoon.
+  'sap-het-han': {
+    key: 'sap-het-han',
+    label: 'SẮP HẾT HẠN',
+    bgClass: 'bg-orange-600',
+    fgClass: 'text-white',
+    borderClass: 'border-orange-300',
+    ringClass: 'ring-orange-600',
+    rotateDeg: -10,
+    Icon: Clock,
+    ariaLabel: 'Sắp hết hạn',
+  },
   'moi': {
     key: 'moi',
     label: 'MỚI',
@@ -76,18 +90,20 @@ export const STAMPS: Record<StampKey, StampDef> = {
   },
 };
 
-export const STAMP_KEYS: StampKey[] = ['tuyen-gap', 'hot', 'thuong-cao', 'moi'];
+export const STAMP_KEYS: StampKey[] = ['tuyen-gap', 'hot', 'sap-het-han', 'thuong-cao', 'moi'];
 
 /** Render order: stamp quan trọng nhất ở trên cùng. */
 export const STAMP_RANK: Record<StampKey, number> = {
   'tuyen-gap': 0,
   'hot': 1,
-  'thuong-cao': 2,
-  'moi': 3,
+  'sap-het-han': 2,
+  'thuong-cao': 3,
+  'moi': 4,
 };
 
 /**
- * hrp-p1-a0-1 (DEC-05, T0 §1.4): derive stamps TỪ canonical boolean `isHot`/`isUrgent`.
+ * hrp-p1-a0-1 (DEC-05, T0 §1.4) + hrp-ui-v1-job-card-stamps-brand (T1B / DEC-04):
+ * derive stamps TỪ canonical boolean `isHot` / `isUrgent` / `isHighReward` / `isExpiringSoon`.
  * KHÔNG heuristic từ urgency, salary, postedAt, hash, hay metadata khác.
  *
  * Multi-stamp layout sort theo STAMP_RANK (`tuyen-gap` trước `hot`) để stamp quan trọng
@@ -98,17 +114,22 @@ export const STAMP_RANK: Record<StampKey, number> = {
  * điểm: `app/(jobs)/viec-lam/page.tsx`, `app/(jobs)/viec-lam/[slug]/page.tsx`, và
  * `app/(portal)/page.tsx`. Giờ đây chỉ một.
  *
- * Stamp type: `tuyen-gap` <-> `isUrgent=true`; `hot` <-> `isHot=true`.
- * Stamp `thuong-cao` / `moi` giữ lại trong registry (cho legacy callers) nhưng
- * predicate hiện không sinh chúng — chúng là feature flag cho tương lai.
+ * Stamp type: `tuyen-gap` <-> `isUrgent=true`; `hot` <-> `isHot=true`;
+ * `thuong-cao` <-> `isHighReward=true`; `sap-het-han` <-> `isExpiringSoon=true`.
+ * Stamp `moi` legacy giữ lại trong registry (cho legacy callers) nhưng predicate
+ * hiện không sinh nó — đó là feature flag cho tương lai.
  */
 export function deriveStampsFromFlags(
   isHot: boolean,
   isUrgent: boolean,
+  isHighReward: boolean = false,
+  isExpiringSoon: boolean = false,
 ): StampKey[] {
   const out: StampKey[] = [];
   if (isUrgent) out.push('tuyen-gap');
   if (isHot) out.push('hot');
+  if (isExpiringSoon) out.push('sap-het-han');
+  if (isHighReward) out.push('thuong-cao');
   out.sort((a, b) => STAMP_RANK[a] - STAMP_RANK[b]);
   return out;
 }

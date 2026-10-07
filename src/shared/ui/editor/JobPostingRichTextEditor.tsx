@@ -9,13 +9,24 @@
  *     orderedList, listItem
  *   - marks: bold, italic, link
  *
- * All StarterKit defaults outside the approved profile are DISABLED:
- *   - Heading → restricted to levels {2, 3} via configureHeading({levels: [2,3]})
- *   - code, codeBlock, blockquote, strike, horizontalRule, hardBreak, history,
- *     bold/italic/list/etc. outside the allowlist are removed explicitly via
- *     `StarterKit.configure({...}).setExtensions([...])` — the configure keys
- *     strip the corresponding extension from StarterKit, and we re-add only
- *     the ones we want via the explicit list below.
+ * Extension assembly happens once at module load (synchronous static imports —
+ * no `await import(...)`). This guarantees `useEditor` always receives a
+ * non-empty extension list on the very first render and ProseMirror's
+ * `Schema` constructor is given a node marked `topNode: 'doc'`. The previous
+ * async dynamic-import path was the source of the runtime error
+ * `Schema is missing its top node type ('doc')` seen on
+ * `app/admin/jobs/job-postings/[id]` (T1A hotfix, branch
+ * `codex/t1a-jobposting-editor-schema-hotfix`).
+ *
+ * StarterKit owns Document / Paragraph / Text — those are NOT disabled and
+ * NOT re-added as standalone extensions (re-registering would throw
+ * `RangeError: Duplicate node names`). StarterKit defaults outside the
+ * approved profile are DISABLED:
+ *   - code, codeBlock, blockquote, strike, horizontalRule, hardBreak,
+ *     underline, undoRedo, dropcursor, gapcursor, trailingNode, listKeymap
+ *   - bold / italic / list extensions → re-added individually with explicit
+ *     configuration so they remain in the schema with the right options.
+ *   - Heading → restricted to levels {2, 3} via configure({levels: [2,3]}).
  *
  * IMPORTANT: This is the ONLY client component allowed to import
  * `@tiptap/react` directly. Domain services / routes must use the SHARED
@@ -24,7 +35,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useEditor, EditorContent, type Editor } from '@tiptap/react';
-import type { JSONContent } from '@tiptap/core';
+import type { JSONContent, AnyExtension } from '@tiptap/core';
+import { StarterKit } from '@tiptap/starter-kit';
 
 import {
   JOB_POSTING_RICH_TEXT_ALLOWED_HEADING_LEVELS,
@@ -38,84 +50,59 @@ import {
 const ALLOWED_HEADING_LEVELS = [...JOB_POSTING_RICH_TEXT_ALLOWED_HEADING_LEVELS];
 
 /**
- * Build a Tiptap extension set that matches the approved profile.
- * `StarterKit.configure({...})` removes defaults we don't want, then we
- * re-add the approved subset via `extensions` so the allowlist is explicit.
+ * Approved extension set for the JobPosting rich-text editor.
  *
- * Loaded via `loadApprovedExtensions()` below — kept async so we never
- * block the editor's first paint and we can code-split if needed.
+ * Synchronously assembled at module load (no dynamic `import()`) so the
+ * extensions array is non-empty on the very first call to `useEditor`. This
+ * guarantees ProseMirror's `Schema` constructor always receives a node marked
+ * `topNode: 'doc'` and prevents the runtime error
+ * `Schema is missing its top node type ('doc')`.
+ *
+ * StarterKit owns every extension we need: Document, Paragraph, Text,
+ * Heading (with `levels`), Bold, Italic, BulletList, OrderedList, ListItem,
+ * Link, plus the curated-disallowed ones (Code, CodeBlock, Blockquote,
+ * Strike, Underline, HorizontalRule, HardBreak, UndoRedo, Dropcursor,
+ * Gapcursor, TrailingNode, ListKeymap). We disable the disallowed ones in
+ * `StarterKit.configure({...})` and tune the allowed ones via the same
+ * config. No extension is re-registered outside StarterKit, which avoids
+ * the `RangeError: Duplicate node names` trap.
+ *
+ * IMPORTANT: This is the ONLY client component allowed to import
+ * `@tiptap/react` directly. Domain services / routes must use the SHARED
+ * PROFILE in `src/shared/content/job-posting-rich-text/**` instead.
  */
+const APPROVED_EXTENSIONS: ReadonlyArray<AnyExtension> = [
+  StarterKit.configure({
+    heading: { levels: ALLOWED_HEADING_LEVELS },
+    code: false,
+    codeBlock: false,
+    blockquote: false,
+    hardBreak: false,
+    horizontalRule: false,
+    strike: false,
+    underline: false,
+    undoRedo: false,
+    dropcursor: false,
+    gapcursor: false,
+    trailingNode: false,
+    listKeymap: false,
+    link: {
+      openOnClick: false,
+      autolink: true,
+      protocols: ['https'],
+      HTMLAttributes: { rel: 'noopener noreferrer', target: '_blank' },
+    },
+  }),
+];
 
-let cachedExtensionsPromise: Promise<unknown[]> | null = null;
-
-/** Lazily load the approved extension set. Cached after first load. */
-function loadApprovedExtensions(): Promise<unknown[]> {
-  if (cachedExtensionsPromise) return cachedExtensionsPromise;
-  cachedExtensionsPromise = (async () => {
-    const [StarterKitMod, DocumentMod, ParagraphMod, TextMod, HeadingMod, BulletListMod, OrderedListMod, ListItemMod, BoldMod, ItalicMod, LinkMod] =
-      await Promise.all([
-        import('@tiptap/starter-kit'),
-        import('@tiptap/extension-document'),
-        import('@tiptap/extension-paragraph'),
-        import('@tiptap/extension-text'),
-        import('@tiptap/extension-heading'),
-        import('@tiptap/extension-bullet-list'),
-        import('@tiptap/extension-ordered-list'),
-        import('@tiptap/extension-list-item'),
-        import('@tiptap/extension-bold'),
-        import('@tiptap/extension-italic'),
-        import('@tiptap/extension-link'),
-      ]);
-
-    // Strip every StarterKit extension we do not allow. Tiptap 3.31 uses
-    // `undoRedo` (not `history`); `history` is no longer a valid option key.
-    const stripped = StarterKitMod.default.configure({
-      heading: false,
-      bold: false,
-      italic: false,
-      bulletList: false,
-      orderedList: false,
-      listItem: false,
-      paragraph: false,
-      document: false,
-      text: false,
-      code: false,
-      codeBlock: false,
-      blockquote: false,
-      hardBreak: false,
-      horizontalRule: false,
-      strike: false,
-      underline: false,
-      undoRedo: false,
-      dropcursor: false,
-      gapcursor: false,
-      trailingNode: false,
-      listKeymap: false,
-      link: false,
-    });
-
-    return [
-      stripped,
-      DocumentMod.default,
-      ParagraphMod.default,
-      TextMod.default,
-      HeadingMod.default.configure({
-        levels: ALLOWED_HEADING_LEVELS,
-      }),
-      BulletListMod.default,
-      OrderedListMod.default,
-      ListItemMod.default,
-      BoldMod.default,
-      ItalicMod.default,
-      LinkMod.default.configure({
-        openOnClick: false,
-        autolink: true,
-        protocols: ['https'],
-        HTMLAttributes: { rel: 'noopener noreferrer', target: '_blank' },
-      }),
-    ];
-  })();
-  return cachedExtensionsPromise;
+/**
+ * Exposed for the regression test. Not part of the public domain surface —
+ * consumers must go through `JobPostingRichTextEditor`. The export keeps
+ * the file self-contained so the test can build a Schema directly from the
+ * approved extensions without mounting React.
+ */
+export function getApprovedExtensions(): ReadonlyArray<AnyExtension> {
+  return APPROVED_EXTENSIONS;
 }
 
 export interface JobPostingRichTextEditorProps {
@@ -283,29 +270,14 @@ export function JobPostingRichTextEditor({
   disabled,
   ariaLabel,
 }: JobPostingRichTextEditorProps) {
-  const [extensions, setExtensions] = useState<unknown[] | null>(null);
   const [limitMessage, setLimitMessage] = useState<string | null>(null);
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
 
-  useEffect(() => {
-    let cancelled = false;
-    void loadApprovedExtensions().then((ext) => {
-      if (!cancelled) setExtensions(ext);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
   const editor = useEditor({
-    extensions: (extensions ?? []) as Parameters<typeof useEditor>[0] extends infer O
-      ? O extends { extensions?: infer E }
-        ? E
-        : never
-      : never,
+    extensions: APPROVED_EXTENSIONS as unknown as Parameters<typeof useEditor>[0]['extensions'],
     content: initialContent ?? { type: 'doc', content: [{ type: 'paragraph' }] },
-    editable: !disabled && extensions !== null,
+    editable: !disabled,
     immediatelyRender: false,
     onUpdate({ editor }) {
       const doc = editor.getJSON();

@@ -1,0 +1,20 @@
+$ corepack pnpm exec vitest run --config vitest.unit.config.ts \
+    src/shared/i18n/__tests__/glossary.static.test.ts \
+    src/shared/i18n/__tests__/action-dictionary.static.test.ts \
+    src/shared/i18n/__tests__/form-dictionary.static.test.ts \
+    src/shared/i18n/__tests__/role-labels.static.test.ts \
+    src/shared/ui/status-badge/status-badge.test.tsx \
+    src/shared/ui/internal-contrast.static.test.ts \
+    src/domains/job-board/public-ui-premium.static.test.ts \
+    src/domains/job-board/public-ui-token-parity.static.test.ts \
+    src/shared/security/required-relation-sweep.static.test.ts \
+    src/shared/toolchain/vitest-default-lane.static.test.ts
+exit: 0
+
+Test Files  10 passed (10)
+     Tests  155 passed (155)
+  Duration  4.50s
+
+==> SUMMARY <==
+Wave 1 shared i18n + status primitive + public-card regression: 10/10 files,
+155/155 tests PASS. Wave 1 surface intact post-merge.

@@ -19,6 +19,17 @@
  */
 
 import type { EnrichedJob } from '@/app/(portal)/page';
+import type { StickyAnnouncementDto } from './public-content-controls/types';
+import { safeStickyAnnouncement } from './public-content-controls/types';
+
+/**
+ * Public projection of the admin-managed news toggle. Default TRUE preserves
+ * the current public-render state when the column is missing (Phase A
+ * pre-migration) or when the row was just bootstrapped.
+ */
+export interface NewsSectionTogglePublic {
+  newsSectionEnabled: boolean;
+}
 
 export type SectionSource = 'REAL' | 'DEMO' | 'INTEGRATION_PENDING';
 
@@ -104,8 +115,47 @@ export interface HomepageSettingsDto {
   messengerChatUrl: string | null;
   /** Optional public telephone destination in canonical dialable form. */
   phoneCallNumber: string | null;
+  /**
+   * Public news-section toggle. Default TRUE preserves the current public
+   * rendering of the "Tin tức & Cẩm nang" section and its matching
+   * navbar entry.
+   */
+  newsSectionEnabled: boolean;
+  /**
+   * Sticky bottom announcement DTO. `null` when the column is null (i.e.
+   * the admin has not configured the bar). When the column is a non-null
+   * JSON object, this is the Phase A `StickyAnnouncementDto` projection,
+   * with safe defaults applied.
+   */
+  stickyAnnouncement: StickyAnnouncementDto;
+  /**
+   * hrp-t2-public-site-hotfix (T2 / STEP-02): ảnh nền Hero trang chủ — Admin
+   * chọn từ Media Library. `null` khi chưa chọn hoặc media row đã xoá (FK
+   * SET NULL). Khi non-null, public surface render `<img>` overlay; null →
+   * render gradient-only (giữ hành vi v1).
+   */
+  heroImage: HomepageHeroImageDto | null;
   /** ISO string of last update. */
   updatedAt: string;
+}
+
+/**
+ * hrp-t2-public-site-hotfix (T2 / STEP-02): Hero image payload — chỉ chứa
+ * thông tin cần cho public render, không leak `ownerId` / `createdBy` của
+ * Media. Service join `Media` row khi `heroImageMediaId` set, fallback `null`
+ * khi row deleted.
+ *
+ * Bao gồm `mediaId` để Admin Settings form dùng cho picker (giữ chọn sau
+ * khi reload); không leak ra ngoài public surface (Hero component dùng
+ * `url` + `alt`).
+ */
+export interface HomepageHeroImageDto {
+  /** Media row id — opaque; chỉ dùng nội bộ Admin. */
+  mediaId: string;
+  /** URL public Vercel Blob (https://...). */
+  url: string;
+  alt: string;
+  caption: string | null;
 }
 
 /**

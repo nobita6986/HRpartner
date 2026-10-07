@@ -576,6 +576,18 @@ model JobPosting {
   // KHÔNG heuristic backfill từ Project.isPublic / urgency / salary / postedAt / hash.
   isHot                       Boolean   @default(false) @map("is_hot")
   isUrgent                    Boolean   @default(false) @map("is_urgent")
+  // hrp-ui-v1-job-card-stamps-brand (T1B): 2 stamp flag canonical mới do author JobPosting
+  // tự chọn — KHÔNG heuristic từ salary / deadlineDate / postedAt / hash.
+  // Stamp "Thưởng cao" + "Sắp hết hạn" lưu cùng draft update authority (PATCH
+  // /api/admin/jobs/job-postings/[id]); default false cho mọi row hiện hữu.
+  isHighReward                Boolean   @default(false) @map("is_high_reward")
+  isExpiringSoon              Boolean   @default(false) @map("is_expiring_soon")
+  // hrp-t1c-jobposting-media-youtube (RQ-01, DEC-01): raw 11-char YouTube video ID
+  // extracted server-side from a youtube.com / youtu.be URL via
+  // src/domains/media/youtube.ts#extractYouTubeVideoId. Null = no video. Không lưu
+  // URL gốc để chặn drift (URL params, m3u8, /shorts/ → /watch/ …). Embed render qua
+  // `https://www.youtube-nocookie.com/embed/{videoId}?rel=0` ở public detail.
+  youtubeVideoId              String?   @map("youtube_video_id")
   createdAt                   DateTime  @default(now()) @map("created_at")
   updatedAt                   DateTime  @updatedAt @map("updated_at")
 
@@ -1726,6 +1738,13 @@ model HomepageSettings {
   zaloChatUrl      String?  @map("zalo_chat_url")
   messengerChatUrl String?  @map("messenger_chat_url")
   phoneCallNumber  String?  @map("phone_call_number")
+  newsSectionEnabled Boolean  @default(true) @map("news_section_enabled")
+  stickyAnnouncement Json?    @map("sticky_announcement")
+  // hrp-t2-public-site-hotfix (2026-10-07): Admin có thể chọn ảnh nền Hero trang chủ
+  // từ Media Library. NULL = giữ gradient (hành vi v1). FK ON DELETE SET NULL —
+  // xoá media row sẽ tự fallback gradient, không crash public.
+  heroImageMediaId String?  @map("hero_image_media_id")
+  heroImage        Media?   @relation("HomepageSettingsHeroImage", fields: [heroImageMediaId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt    @map("updated_at")
   updatedById      String?  @map("updated_by_id")
@@ -1778,6 +1797,10 @@ model Media {
 
   // Relations
   assignments MediaAssignment[]
+  // hrp-t2-public-site-hotfix (2026-10-07): reverse relation từ HomepageSettings.heroImage
+  // (Media là target của FK nullable ON DELETE SET NULL). Đặt named relation để phân biệt
+  // với `MediaCreatedBy` ở trên.
+  homepageSettingsAsHero HomepageSettings[] @relation("HomepageSettingsHeroImage")
 
   @@index([ownerId])
   @@index([folder])

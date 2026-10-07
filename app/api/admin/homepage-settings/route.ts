@@ -5,9 +5,16 @@
  * Validates + clamps input via `updateHomepageSettings`, then
  * `revalidateTag('homepage-settings')` so the public projection cache
  * is invalidated.
+ *
+ * Phase B / UI2 — the body also accepts:
+ *   - `newsSectionEnabled: boolean` — admin-managed news-section toggle.
+ *   - `stickyAnnouncement: object | null` — Phase A `StickyAnnouncementSchema`
+ *     payload, or `null` to clear. URL safety is enforced server-side
+ *     through `normalizeCtaUrl`; any unsafe URL yields 400.
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidateTag } from 'next/cache';
+import { ZodError } from 'zod';
 import { getPrisma } from '@/src/lib/db';
 import { AuthSessionError, getAuthContext } from '@/src/shared/auth/auth-context';
 import {
@@ -20,6 +27,8 @@ import {
   normalizeChatUrl,
   normalizePhoneNumber,
 } from '@/src/domains/job-board/chat-links';
+import { normalizeCtaUrl, InvalidCtaUrlError } from '@/src/domains/job-board/public-content-controls/url-safety';
+import { StickyAnnouncementSchema } from '@/src/domains/job-board/public-content-controls/types';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -32,6 +41,10 @@ interface AdminSettingsBody {
   zaloChatUrl?: string | null;
   messengerChatUrl?: string | null;
   phoneCallNumber?: string | null;
+  newsSectionEnabled?: boolean;
+  stickyAnnouncement?: unknown;
+  /** hrp-t2-public-site-hotfix (T2 / STEP-02): Hero image media id. */
+  heroImageMediaId?: string | null;
 }
 
 function badRequest(message: string): NextResponse {
@@ -66,6 +79,34 @@ function validateBody(body: AdminSettingsBody): string | null {
     if (error instanceof InvalidChatUrlError) return error.message;
     if (error instanceof InvalidPhoneNumberError) return error.message;
     return 'URL kênh chat không hợp lệ.';
+  }
+  if (body.newsSectionEnabled !== undefined && typeof body.newsSectionEnabled !== 'boolean') {
+    return 'newsSectionEnabled phải là boolean.';
+  }
+  if (body.heroImageMediaId !== undefined && body.heroImageMediaId !== null) {
+    // hrp-t2-public-site-hotfix (T2 / STEP-02): Hero image id — chuỗi khác rỗng
+    // hoặc null để clear. FK existence do Prisma kiểm tra ở runtime (P2003).
+    if (typeof body.heroImageMediaId !== 'string' || body.heroImageMediaId.trim() === '') {
+      return 'heroImageMediaId phải là chuỗi khác rỗng hoặc null.';
+    }
+  }
+  if (body.stickyAnnouncement !== undefined && body.stickyAnnouncement !== null) {
+    if (typeof body.stickyAnnouncement !== 'object' || Array.isArray(body.stickyAnnouncement)) {
+      return 'stickyAnnouncement phải là object hoặc null.';
+    }
+    const parsed = StickyAnnouncementSchema.safeParse(body.stickyAnnouncement);
+    if (!parsed.success) {
+      const first = parsed.error.issues[0];
+      return first ? `stickyAnnouncement không hợp lệ: ${first.message}` : 'stickyAnnouncement không hợp lệ.';
+    }
+    if (parsed.data.ctaUrl) {
+      try {
+        normalizeCtaUrl(parsed.data.ctaUrl);
+      } catch (error) {
+        if (error instanceof InvalidCtaUrlError) return `ctaUrl không hợp lệ: ${error.message}`;
+        return 'ctaUrl không hợp lệ.';
+      }
+    }
   }
   return null;
 }
@@ -124,6 +165,26 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     ) {
       return badRequest('phoneCallNumber phải là chuỗi hoặc null.');
     }
+    if (
+      Object.prototype.hasOwnProperty.call(raw, 'newsSectionEnabled') &&
+      typeof raw.newsSectionEnabled !== 'boolean'
+    ) {
+      return badRequest('newsSectionEnabled phải là boolean.');
+    }
+    // hrp-t2-public-site-hotfix (T2 / STEP-02): Hero image — accept string
+    // hoặc null; loại rỗng/array/object vì id phải là scalar.
+    if (Object.prototype.hasOwnProperty.call(raw, 'heroImageMediaId')) {
+      const v = raw.heroImageMediaId;
+      if (v !== null && typeof v !== 'string') {
+        return badRequest('heroImageMediaId phải là chuỗi hoặc null.');
+      }
+    }
+    if (Object.prototype.hasOwnProperty.call(raw, 'stickyAnnouncement')) {
+      const v = raw.stickyAnnouncement;
+      if (v !== null && (typeof v !== 'object' || Array.isArray(v))) {
+        return badRequest('stickyAnnouncement phải là object hoặc null.');
+      }
+    }
     body = {
       bestJobsPageSize: typeof raw.bestJobsPageSize === 'number' ? raw.bestJobsPageSize : undefined,
       listingPageSize: typeof raw.listingPageSize === 'number' ? raw.listingPageSize : undefined,
@@ -135,6 +196,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         : undefined,
       phoneCallNumber: Object.prototype.hasOwnProperty.call(raw, 'phoneCallNumber')
         ? (raw.phoneCallNumber as string | null)
+        : undefined,
+      newsSectionEnabled: Object.prototype.hasOwnProperty.call(raw, 'newsSectionEnabled')
+        ? (raw.newsSectionEnabled as boolean)
+        : undefined,
+      stickyAnnouncement: Object.prototype.hasOwnProperty.call(raw, 'stickyAnnouncement')
+        ? (raw.stickyAnnouncement as unknown)
+        : undefined,
+      heroImageMediaId: Object.prototype.hasOwnProperty.call(raw, 'heroImageMediaId')
+        ? (raw.heroImageMediaId as string | null)
         : undefined,
     };
   } catch {
@@ -149,16 +219,37 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     body.listingPageSize === undefined &&
     body.zaloChatUrl === undefined &&
     body.messengerChatUrl === undefined &&
-    body.phoneCallNumber === undefined
+    body.phoneCallNumber === undefined &&
+    body.newsSectionEnabled === undefined &&
+    body.stickyAnnouncement === undefined &&
+    body.heroImageMediaId === undefined
   ) {
     return badRequest(
-      'Phải cung cấp ít nhất một trường cài đặt homepage hoặc kênh liên hệ.',
+      'Phải cung cấp ít nhất một trường cài đặt homepage, kênh liên hệ, hoặc UI2.',
     );
   }
 
   const prisma = getPrisma();
   try {
-    const result = await updateHomepageSettings(prisma, body, ctx.userId ?? null);
+    // Validate the new fields through Zod (StickyAnnouncementSchema already
+    // ran inside validateBody). For TypeScript narrowing we re-parse here:
+    const updateInput: Parameters<typeof updateHomepageSettings>[1] = {
+      bestJobsPageSize: body.bestJobsPageSize,
+      listingPageSize: body.listingPageSize,
+      zaloChatUrl: body.zaloChatUrl,
+      messengerChatUrl: body.messengerChatUrl,
+      phoneCallNumber: body.phoneCallNumber,
+      newsSectionEnabled: body.newsSectionEnabled,
+      heroImageMediaId: body.heroImageMediaId,
+    };
+    if (body.stickyAnnouncement !== undefined) {
+      if (body.stickyAnnouncement === null) {
+        updateInput.stickyAnnouncement = null;
+      } else {
+        updateInput.stickyAnnouncement = StickyAnnouncementSchema.parse(body.stickyAnnouncement);
+      }
+    }
+    const result = await updateHomepageSettings(prisma, updateInput, ctx.userId ?? null);
     // Invalidate the public projection cache so the next read sees the new value.
     revalidateTag('homepage-settings');
     return NextResponse.json(
@@ -171,6 +262,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         { error: 'SETTINGS_ROW_MISSING', message: 'Settings row chưa tồn tại. Gọi GET để bootstrap.' },
         { status: 409, headers: { 'Cache-Control': 'no-store' } },
       );
+    }
+    if (e instanceof ZodError) {
+      const first = e.issues[0];
+      const message = first ? `${first.path.join('.') || 'stickyAnnouncement'}: ${first.message}` : 'stickyAnnouncement không hợp lệ.';
+      return badRequest(`stickyAnnouncement không hợp lệ: ${message}`);
     }
     console.error('[admin/homepage-settings POST] error:', e);
     return NextResponse.json(

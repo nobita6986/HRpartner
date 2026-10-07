@@ -6,6 +6,9 @@ import { getClientDetail } from '@/src/domains/crm/client-read.service';
 import { Breadcrumb } from '@/src/shared/ui/navigation/breadcrumb';
 import { RelatedObjects } from '@/src/shared/ui/data-display/related-objects';
 import { EmptyState } from '@/src/shared/ui/data-display/empty-state';
+import { projectStatusLabel } from '@/src/domains/projects/project-ui';
+import { StatusBadge } from '@/src/shared/ui/status-badge';
+import { clientStatusLabel, clientStatusTone } from '../client-ui';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -37,7 +40,7 @@ export default async function ClientDetailPage(props: { params: Promise<{ id: st
     id: p.id,
     title: p.name,
     subtitle: `Mã: ${p.code}`,
-    statusLabel: p.status,
+    statusLabel: projectStatusLabel(p.status),
     href: `/admin/projects/${p.id}`,
   }));
 
@@ -45,7 +48,7 @@ export default async function ClientDetailPage(props: { params: Promise<{ id: st
     <div className="px-6 py-8 lg:px-8 lg:py-10" style={{ background: 'var(--surface)' }}>
       <header className="mb-8">
         <Breadcrumb items={[
-          { label: 'Admin', href: '/admin' },
+          { label: 'Quản trị', href: '/admin' },
           { label: 'Khách hàng', href: '/admin/clients' },
           { label: client.name, href: `/admin/clients/${client.id}` },
         ]} />
@@ -56,17 +59,17 @@ export default async function ClientDetailPage(props: { params: Promise<{ id: st
           <span>Mã KH: {client.code}</span>
           {client.taxCode && <span>MST: {client.taxCode}</span>}
           {client.industry && <span>Ngành: {client.industry}</span>}
-          <span className="font-medium px-2 py-0.5 rounded" style={{ backgroundColor: 'var(--surface-container)' }}>
-            {client.status}
-          </span>
+          <StatusBadge module="client" status={client.status} tone={clientStatusTone(client.status)}>
+            {clientStatusLabel(client.status)}
+          </StatusBadge>
         </div>
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <MetricCard label="Staffing Orders" value={client.metrics.ordersCount} />
-        <MetricCard label="Slots" value={client.metrics.slotsCount} />
-        <MetricCard label="Job Openings" value={client.metrics.openingsCount} />
-        <MetricCard label="Assignments" value={client.metrics.assignmentsCount} />
+        <MetricCard label="Đơn tuyển dụng" value={client.metrics.ordersCount} />
+        <MetricCard label="Vị trí cần tuyển" value={client.metrics.slotsCount} />
+        <MetricCard label="Đợt tuyển dụng" value={client.metrics.openingsCount} />
+        <MetricCard label="Phân công" value={client.metrics.assignmentsCount} />
       </div>
 
       <section aria-labelledby="client-projects">
