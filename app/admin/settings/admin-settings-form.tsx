@@ -47,6 +47,8 @@ import {
 } from '@/src/domains/job-board/chat-links';
 import { buildHomepageSettingsPatch } from './homepage-settings-patch';
 import { actionLabel } from '@/src/shared/i18n/action-dictionary';
+import { HeroImagePicker } from './_components/hero-image-picker';
+import { AccountTabPanel, SettingsTabs, type SettingsTabId } from './_components/settings-tabs';
 
 const STICKY_TEXT_COLOR_LABELS: Readonly<Record<StickyTextColor, string>> = {
   'on-primary': 'Trên nền màu chính',
@@ -71,37 +73,50 @@ const STICKY_ANIMATION_LABELS: Readonly<Record<StickyAnimation, string>> = {
   MARQUEE: 'Chạy chữ',
 };
 
-const PLACEHOLDER_GROUPS = [
+const SYSTEM_TAB_ITEMS = [
   {
-    title: 'Bảo mật',
-    items: [
-      { label: 'Đổi mật khẩu', description: 'Thay đổi mật khẩu tài khoản' },
-      { label: 'Xác thực hai yếu tố (2FA)', description: 'Bật/tắt xác thực 2 lớp' },
-      { label: 'Lịch sử đăng nhập', description: 'Xem các phiên đăng nhập gần đây' },
-    ],
+    label: 'Đổi mật khẩu',
+    description: 'Thay đổi mật khẩu tài khoản',
   },
   {
-    title: 'Thông báo',
-    items: [
-      { label: 'Email thông báo', description: 'Cấu hình email nhận thông báo' },
-      { label: 'SMS / Zalo', description: 'Cấu hình kênh SMS và Zalo OA' },
-      { label: 'Thông báo đẩy', description: 'Bật hoặc tắt thông báo trên ứng dụng' },
-    ],
+    label: 'Xác thực hai yếu tố (2FA)',
+    description: 'Bật/tắt xác thực 2 lớp',
   },
   {
-    title: 'Tích hợp',
-    items: [
-      { label: 'Khóa API', description: 'Quản lý khóa API dùng cho dịch vụ bên thứ ba' },
-      { label: 'Webhook', description: 'Cấu hình webhook để nhận sự kiện' },
-      { label: 'Đăng nhập một lần (SSO)', description: 'Kết nối LDAP / SAML / OAuth' },
-    ],
+    label: 'Lịch sử đăng nhập',
+    description: 'Xem các phiên đăng nhập gần đây',
   },
   {
-    title: 'Nhật ký hệ thống',
-    items: [
-      { label: 'Nhật ký kiểm toán', description: 'Xem lịch sử các thay đổi quan trọng' },
-      { label: 'Nhật ký lỗi', description: 'Xem các lỗi hệ thống gần đây' },
-    ],
+    label: 'Email thông báo',
+    description: 'Cấu hình email nhận thông báo',
+  },
+  {
+    label: 'SMS / Zalo',
+    description: 'Cấu hình kênh SMS và Zalo OA',
+  },
+  {
+    label: 'Thông báo đẩy',
+    description: 'Bật hoặc tắt thông báo trên ứng dụng',
+  },
+  {
+    label: 'Khóa API',
+    description: 'Quản lý khóa API dùng cho dịch vụ bên thứ ba',
+  },
+  {
+    label: 'Webhook',
+    description: 'Cấu hình webhook để nhận sự kiện',
+  },
+  {
+    label: 'Đăng nhập một lần (SSO)',
+    description: 'Kết nối LDAP / SAML / OAuth',
+  },
+  {
+    label: 'Nhật ký kiểm toán',
+    description: 'Xem lịch sử các thay đổi quan trọng',
+  },
+  {
+    label: 'Nhật ký lỗi',
+    description: 'Xem các lỗi hệ thống gần đây',
   },
 ];
 
@@ -181,6 +196,10 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
+  // hrp-t2-public-site-hotfix (T2 / STEP-07): state tab — mặc định 'interface'.
+  // KHÔNG đồng bộ URL (giữ /admin/settings sạch cho redirect admin/users khi cần).
+  const [activeTab, setActiveTab] = useState<SettingsTabId>('interface');
+
   // Track last-saved snapshot so Reset can revert + "updated at" shows the latest.
   const [savedSnapshot, setSavedSnapshot] = useState<HomepageSettingsDto>(initialSettings);
   const [bestJobsPageSize, setBestJobsPageSize] = useState<number>(initialSettings.bestJobsPageSize);
@@ -188,6 +207,27 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
   const [zaloChatUrl, setZaloChatUrl] = useState(initialSettings.zaloChatUrl ?? '');
   const [messengerChatUrl, setMessengerChatUrl] = useState(initialSettings.messengerChatUrl ?? '');
   const [phoneCallNumber, setPhoneCallNumber] = useState(initialSettings.phoneCallNumber ?? '');
+
+  // hrp-t2-public-site-hotfix (T2 / STEP-07): Hero image — lưu media id thay
+  // vì URL để admin có thể đổi alt ở Media Library mà vẫn giữ chọn. Khi id
+  // null → giữ gradient (v1).
+  const initialHeroId = initialSettings.heroImage?.mediaId ?? null;
+  const [heroImageMediaId, setHeroImageMediaId] = useState<string | null>(initialHeroId);
+  const [heroImageSelected, setHeroImageSelected] = useState<{
+    id: string;
+    url: string;
+    alt: string;
+    caption: string | null;
+  } | null>(
+    initialSettings.heroImage === null
+      ? null
+      : {
+          id: initialSettings.heroImage.mediaId,
+          url: initialSettings.heroImage.url,
+          alt: initialSettings.heroImage.alt,
+          caption: initialSettings.heroImage.caption,
+        },
+  );
 
   // ── UI2 / Phase B state ────────────────────────────────────────────────
   // Pull initial values from `initialSettings.stickyAnnouncement` (already
@@ -257,7 +297,9 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
     stickyFont !== savedSnapshot.stickyAnnouncement.font ||
     stickyEmphasis !== savedSnapshot.stickyAnnouncement.emphasis ||
     stickyAnimation !== savedSnapshot.stickyAnnouncement.animation ||
-    stickyContentRevision !== savedSnapshot.stickyAnnouncement.contentRevision;
+    stickyContentRevision !== savedSnapshot.stickyAnnouncement.contentRevision ||
+    // hrp-t2-public-site-hotfix (T2 / STEP-07): Hero image — track media id.
+    heroImageMediaId !== (savedSnapshot.heroImage?.mediaId ?? null);
 
   // Clear stale success/error when user edits again.
   useEffect(() => {
@@ -314,6 +356,8 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
             contentRevision: stickyContentRevision,
           }
         : null,
+      // hrp-t2-public-site-hotfix (T2 / STEP-07): Hero image media id.
+      heroImageMediaId,
     }, savedSnapshot);
   }
 
@@ -382,6 +426,20 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
           setStickyEmphasis(snap.emphasis);
           setStickyAnimation(snap.animation);
           setStickyContentRevision(snap.contentRevision);
+          // hrp-t2-public-site-hotfix (T2 / STEP-07): sync Hero image từ
+          // snapshot (server join media đã cập nhật).
+          const savedHero = data.settings.heroImage ?? null;
+          setHeroImageMediaId(savedHero?.mediaId ?? null);
+          setHeroImageSelected(
+            savedHero === null
+              ? null
+              : {
+                  id: savedHero.mediaId,
+                  url: savedHero.url,
+                  alt: savedHero.alt,
+                  caption: savedHero.caption,
+                },
+          );
           setSuccess('Đã lưu cài đặt trang chủ và kênh liên hệ.');
         }
         router.refresh();
@@ -411,6 +469,19 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
     setStickyEmphasis(snap.emphasis);
     setStickyAnimation(snap.animation);
     setStickyContentRevision(snap.contentRevision);
+    // hrp-t2-public-site-hotfix (T2 / STEP-07): reset Hero image từ snapshot.
+    const resetHero = savedSnapshot.heroImage ?? null;
+    setHeroImageMediaId(resetHero?.mediaId ?? null);
+    setHeroImageSelected(
+      resetHero === null
+        ? null
+        : {
+            id: resetHero.mediaId,
+            url: resetHero.url,
+            alt: resetHero.alt,
+            caption: resetHero.caption,
+          },
+    );
     setError(null);
     setSuccess(null);
   }
@@ -476,6 +547,16 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
           </span>
         </div>
 
+        {/* hrp-t2-public-site-hotfix (T2 / STEP-07): Tabs điều hướng nhóm
+            cài đặt (interface / contact / system / account). Render nội
+            dung cặn bên dưới theo `activeTab` để không phá UX sẵn có. */}
+        <SettingsTabs
+          active={activeTab}
+          onChange={setActiveTab}
+        />
+
+        {activeTab === 'interface' ? (
+        <>
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <div>
             <label
@@ -573,6 +654,41 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
         <div
           className="mt-6 border-t pt-6"
           style={{ borderColor: 'var(--outline-variant)' }}
+          data-testid="ui2-hero-image-block"
+        >
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <h3 style={{ color: 'var(--on-surface)' }} className="text-sm font-semibold">
+                Ảnh nền trang chủ (Hero)
+              </h3>
+              <p style={{ color: 'var(--on-surface-variant)' }} className="mt-0.5 text-xs">
+                Chọn ảnh từ Thư viện Media hoặc bỏ chọn để trở về gradient mặc định. Không ảnh hưởng carousel &amp; tin tức.
+              </p>
+            </div>
+            <span
+              style={{ background: 'var(--primary-container)', color: 'var(--on-primary-container)' }}
+              className="rounded-full px-2 py-0.5 text-xs font-medium"
+            >
+              GIAO DIỆN
+            </span>
+          </div>
+          <HeroImagePicker
+            selected={heroImageSelected}
+            onSelect={(next) => {
+              setHeroImageSelected(next);
+              setHeroImageMediaId(next?.id ?? null);
+            }}
+            disabled={Boolean(unavailableReason) || isPending}
+          />
+        </div>
+        </>
+        ) : null}
+
+        {activeTab === 'contact' && (
+        <div
+          className="mt-6 border-t pt-6"
+          style={{ borderColor: 'var(--outline-variant)' }}
+          data-testid="ui2-contact-channels-block"
         >
           <div className="mb-4">
             <h3 style={{ color: 'var(--on-surface)' }} className="text-sm font-semibold">
@@ -683,7 +799,11 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
             </div>
           </div>
         </div>
+        )}
 
+        {/* hrp-t2-public-site-hotfix (T2 / STEP-07): Tab Giao diện còn chứa
+            news toggle + sticky announcement. (Đặt chung với block
+            pagesizes + Hero image đã render phía trên.) */}
         {/* ── UI2 / Phase B — News section toggle ───────────────────────── */}
         <div
           className="mt-6 border-t pt-6"
@@ -1078,6 +1198,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
           </div>
         )}
 
+        {(activeTab === 'interface' || activeTab === 'contact') && (
         <div className="mt-6 flex flex-wrap items-center justify-end gap-3">
           <p style={{ color: 'var(--on-surface-variant)' }} className="text-xs">
             {unavailableReason
@@ -1105,47 +1226,37 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
             {actionLabel('save')}
           </button>
         </div>
+        )}
       </form>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {PLACEHOLDER_GROUPS.map((group) => (
-          <div
-            key={group.title}
-            style={{ background: 'var(--surface-container-lowest)', borderColor: 'var(--outline-variant)' }}
-            className="rounded-lg border"
-          >
-            <div
-              style={{ background: 'var(--surface-container)', borderBottom: '1px solid var(--outline-variant)' }}
-              className="flex items-center justify-between gap-3 px-4 py-3"
-            >
-              <h2 style={{ color: 'var(--on-surface)' }} className="text-sm font-semibold">{group.title}</h2>
-              <span
-                style={{ background: 'var(--surface-container-highest)', color: 'var(--on-surface-variant)' }}
-                className="rounded-full px-2 py-0.5 text-xs font-medium"
-              >
-                Chưa khả dụng
-              </span>
-            </div>
-            <div className="divide-y divide-solid" style={{ borderColor: 'var(--outline-variant)' }}>
-              {group.items.map((item) => (
-                <div key={item.label} className="block px-4 py-3 opacity-60">
-                  <div style={{ color: 'var(--on-surface)' }} className="text-sm font-medium">{item.label}</div>
-                  <div style={{ color: 'var(--on-surface-variant)' }} className="text-xs mt-0.5">{item.description}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
+      {/* hrp-t2-public-site-hotfix (T2 / STEP-07): Tab "Hệ thống" — nơi dự
+          kiến cho cài đặt nền (rate-limit, feature flags, jobs queue...) chưa
+          khả dụng trong T2. Render placeholder đồng nhất với UX cũ. */}
+      {activeTab === 'system' && (
+        <div
+          className="mt-8 rounded-lg border p-6"
+          style={{
+            background: 'var(--surface-container-lowest)',
+            borderColor: 'var(--outline-variant)',
+          }}
+          data-testid="settings-system-placeholder"
+        >
+          <h2 style={{ color: 'var(--on-surface)' }} className="text-base font-semibold">
+            Cài đặt hệ thống
+          </h2>
+          <p style={{ color: 'var(--on-surface-variant)' }} className="mt-2 text-sm">
+            Các tùy chọn này đang được chuẩn hoá trong task UI-3 và sẽ khả dụng trong bản phát hành kế tiếp.
+          </p>
+        </div>
+      )}
 
-      <div
-        style={{ background: 'var(--surface-container)', borderColor: 'var(--outline-variant)' }}
-        className="mt-8 rounded-lg border p-4 text-center"
-      >
-        <p style={{ color: 'var(--on-surface-variant)' }} className="text-sm">
-          Phiên bản hệ thống HRP <span className="font-mono text-xs">v1.0.0</span> — Các nhóm cài đặt chi tiết khác đang được phát triển.
-        </p>
-      </div>
+      {/* hrp-t2-public-site-hotfix (T2 / STEP-07): Tab "Tài khoản / Quyền"
+          chỉ điều hướng sang Users & Permissions. Không xây CRUD tài khoản ở
+          task T2 để tránh chồng chéo với hotfix Admin UI. */}
+      {activeTab === 'account' && (
+        <AccountTabPanel />
+      )}
+
     </div>
   );
 }

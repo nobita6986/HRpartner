@@ -128,8 +128,34 @@ export interface HomepageSettingsDto {
    * with safe defaults applied.
    */
   stickyAnnouncement: StickyAnnouncementDto;
+  /**
+   * hrp-t2-public-site-hotfix (T2 / STEP-02): ảnh nền Hero trang chủ — Admin
+   * chọn từ Media Library. `null` khi chưa chọn hoặc media row đã xoá (FK
+   * SET NULL). Khi non-null, public surface render `<img>` overlay; null →
+   * render gradient-only (giữ hành vi v1).
+   */
+  heroImage: HomepageHeroImageDto | null;
   /** ISO string of last update. */
   updatedAt: string;
+}
+
+/**
+ * hrp-t2-public-site-hotfix (T2 / STEP-02): Hero image payload — chỉ chứa
+ * thông tin cần cho public render, không leak `ownerId` / `createdBy` của
+ * Media. Service join `Media` row khi `heroImageMediaId` set, fallback `null`
+ * khi row deleted.
+ *
+ * Bao gồm `mediaId` để Admin Settings form dùng cho picker (giữ chọn sau
+ * khi reload); không leak ra ngoài public surface (Hero component dùng
+ * `url` + `alt`).
+ */
+export interface HomepageHeroImageDto {
+  /** Media row id — opaque; chỉ dùng nội bộ Admin. */
+  mediaId: string;
+  /** URL public Vercel Blob (https://...). */
+  url: string;
+  alt: string;
+  caption: string | null;
 }
 
 /**

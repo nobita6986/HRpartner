@@ -9,6 +9,8 @@ export interface HomepageSettingsDraft {
   phoneCallNumber: string;
   newsSectionEnabled: boolean;
   stickyAnnouncement: StickyAnnouncementDto | null;
+  /** hrp-t2-public-site-hotfix (T2 / STEP-07): media id của ảnh Hero. null = clear. */
+  heroImageMediaId: string | null;
 }
 
 export type HomepageSettingsPatch = Partial<
@@ -21,7 +23,11 @@ export type HomepageSettingsPatch = Partial<
     | 'phoneCallNumber'
     | 'newsSectionEnabled'
   >
-> & { stickyAnnouncement?: StickyAnnouncementDto | null };
+> & {
+  stickyAnnouncement?: StickyAnnouncementDto | null;
+  /** hrp-t2-public-site-hotfix (T2 / STEP-07): Hero image FK. */
+  heroImageMediaId?: string | null;
+};
 
 function stickyAnnouncementsEqual(
   left: StickyAnnouncementDto,
@@ -73,6 +79,13 @@ export function buildHomepageSettingsPatch(
     if (saved.stickyAnnouncement.enabled) patch.stickyAnnouncement = null;
   } else if (!stickyAnnouncementsEqual(draft.stickyAnnouncement, saved.stickyAnnouncement)) {
     patch.stickyAnnouncement = draft.stickyAnnouncement;
+  }
+
+  // hrp-t2-public-site-hotfix (T2 / STEP-07): Hero image — track media id,
+  // không track URL (mô tả cho media.url đến từ media row sau khi join).
+  const savedHeroId = saved.heroImage?.mediaId ?? null;
+  if (draft.heroImageMediaId !== savedHeroId) {
+    patch.heroImageMediaId = draft.heroImageMediaId;
   }
 
   return patch;

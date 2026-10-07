@@ -1,4 +1,5 @@
 import { Prisma } from '@prisma/client';
+import type { SalaryBucket } from './public-listing.params';
 
 /**
  * Projection công khai của một việc làm — allow-list, deny-by-default (go-live-05 / RQ-10, DEC-10).
@@ -916,7 +917,23 @@ function areaHaystack(row: PublicProjectRow, job: PublicJobDto): string {
 
 export async function listPublicJobProjection(
   tx: Prisma.TransactionClient,
-  opts: { q?: string; area?: string; shift?: string; shiftTypes?: string[]; jobTypes?: string[]; offset?: number; limit?: number; urgency?: 'URGENT' } = {},
+  opts: {
+    q?: string;
+    area?: string;
+    shift?: string;
+    /**
+     * hrp-t2-public-site-hotfix (T2 / STEP-04): salary bucket filter. Khi
+     * set, loại bỏ job có `salaryMinVnd === null` (lương thương lượng) — đó
+     * là DEC-03 cũ của `topPaid`: `"Lương thương lượng"` không xếp được vào
+     * dải lọc cụ thể. Khi undefined, filter không áp dụng.
+     */
+    salary?: SalaryBucket;
+    shiftTypes?: string[];
+    jobTypes?: string[];
+    offset?: number;
+    limit?: number;
+    urgency?: 'URGENT';
+  } = {},
 ): Promise<PublicJobListResult> {
   const offset = Math.max(0, opts.offset ?? 0);
   const limit = Math.min(50, Math.max(1, opts.limit ?? 20));
@@ -1013,6 +1030,38 @@ export async function listPublicJobProjection(
   const area = opts.area?.trim();
   const shift = opts.shift?.trim();
 
+  /**
+   * hrp-t2-public-site-hotfix (T2 / STEP-04): salary bucket predicate.
+   * Đơn vị tiền DTO là VND/tháng (1.000.000 = 1 triệu). Bucket `<5` /
+   * `>30` là mở một đầu; bucket `5-10` / `10-15` / ... đóng cả hai đầu
+   * `salaryMinVnd/1e6 ≤ upper` (chú ý: KHÔNG bao gồm upper, tức
+   * `[lower, upper)` — nhưng thực tế chỉ cần đúng rằng `10-15` chứa mọi đơn
+   * có `salaryMinVnd ≤ 15 triệu` để người dùng chọn được dải mong muốn).
+   * `null` job (`salaryMinVnd === null`) bị loại khi bucket được set.
+   */
+  const salary = opts.salary;
+  const matchesSalary = (job: { salaryMinVnd: number | null }): boolean => {
+    if (!salary) return true;
+    if (job.salaryMinVnd === null) return false;
+    const million = job.salaryMinVnd / 1_000_000;
+    switch (salary) {
+      case '<5':
+        return million < 5;
+      case '5-10':
+        return million >= 5 && million < 10;
+      case '10-15':
+        return million >= 10 && million < 15;
+      case '15-20':
+        return million >= 15 && million < 20;
+      case '20-30':
+        return million >= 20 && million < 30;
+      case '>30':
+        return million >= 30;
+      default:
+        return false;
+    }
+  };
+
   // hrp-p1-a1 (correction batch 1/1, C-06) — lọc legacy `PRJ-xxx` ở listing:
   //   Khi `q` khớp chính xác shape mã dự án (chỉ chữ cái ASCII không dấu, chữ số, gạch dưới,
   //   gạch ngang; phải có ít nhất một gạch ngang/gạch dưới; bắt đầu bằng chữ HOA), so CHÍNH XÁC
@@ -1038,6 +1087,9 @@ export async function listPublicJobProjection(
     .filter(({ job }) => !shift || job.shifts.some((label) => label.includes(shift)))
     .filter(({ job }) => !opts.shiftTypes?.length || (job.shiftType !== null && opts.shiftTypes.includes(job.shiftType)))
     .filter(({ job }) => !opts.jobTypes?.length || opts.jobTypes.includes(job.jobType))
+    // hrp-t2-public-site-hotfix (T2 / STEP-04): salary bucket. Áp dụng
+    // trước pagination để total/nextOffset mô tả cùng tập đã lọc.
+    .filter(({ job }) => matchesSalary(job))
     // DEC-02: filter URGENT BEFORE pagination — total and nextOffset describe the filtered set
     .filter(({ job }) => !opts.urgency || job.urgency === 'URGENT');
 

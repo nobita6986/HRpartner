@@ -3,7 +3,17 @@ import { HrMonogram } from './hr-monogram';
 
 interface RecruitingProject {
   id: string;
-  title: string;
+  /**
+   * hrp-t2-public-site-hotfix (T2 / STEP-08): Tên dự án / công ty
+   * (JobPosting.companyName, fallback null nếu job gốc không có). Render
+   * làm TIÊU ĐỀ CHÍNH của card — bug cũ là dùng `title` (tên vị trí
+   * "Thợ điện") làm tiêu đề khiến mọi card trông giống nhau và sai
+   * semantic "Dự án đang tuyển".
+   */
+  companyName: string | null;
+  /** Tên vị trí — hiển thị phụ dưới tiêu đề dự án. */
+  positionTitle: string;
+  /** Số lượng cần tuyển — dòng riêng "Cần tuyển N người". */
   availableSlots: number;
 }
 
@@ -12,10 +22,11 @@ interface RecruitingProjectsSectionProps {
   buildHref: (jobId: string) => string;
 }
 
-/** Y10.2/UI04f: derive 2-letter monogram từ title project (vd "Yên Phong 3" -> "YP", "Khổng Tiên" -> "KT"). */
-function deriveMonogram(title: string): string {
+/** Y10.2/UI04f: derive 2-letter monogram từ tên dự án (fallback khi
+   `companyName` null thì dùng positionTitle). */
+function deriveMonogram(input: string): string {
   // Lấy chữ cái đầu của mỗi từ, loại bỏ ký tự không phải chữ, lấy 2 ký tự đầu viết hoa.
-  const words = title.split(/\s+/).filter(Boolean);
+  const words = input.split(/\s+/).filter(Boolean);
   const initials = words
     .map((w) => w.replace(/[^A-Za-zÀ-ỹ]/g, '').charAt(0))
     .filter(Boolean)
@@ -92,27 +103,47 @@ export function RecruitingProjectsSection({ jobs, buildHref }: RecruitingProject
             đã đủ đa dạng cho 4 cards; 8 cards sẽ lặp ảnh xấu. */}
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           {jobs.slice(0, 4).map((job, index) => {
-            // Y10.8+: Strip prefix "Tuyển ..." khỏi title để card gọn.
-            const displayTitle = job.title.replace(/^(tuyển\s*(gấp|dụng)?\s*)/i, '').trim() || job.title;
+            // hrp-t2-public-site-hotfix (T2 / STEP-08): Tiêu đề = tên dự án /
+            // công ty (canonical). Fallback sang vị trí nếu job không có
+            // companyName để tránh card rỗng. Vị trí giữ vai trò phụ.
+            const projectTitle = (job.companyName ?? '').trim() || job.positionTitle;
+            const monogramSource = projectTitle;
+            // Y10.8+: Strip prefix "Tuyển ..." khỏi positionTitle để subtitle gọn.
+            const subtitle = job.positionTitle
+              .replace(/^(tuyển\s*(gấp|dụng)?\s*)/i, '')
+              .trim() || job.positionTitle;
             return (
             <Link
               key={job.id}
               href={buildHref(job.id)}
               data-testid={`recruiting-card-${job.id}`}
-              className="hrp-focus group relative flex h-full flex-col items-center gap-3 rounded-xl border border-outline-variant p-4 text-center shadow-card transition hover:-translate-y-0.5 hover:border-primary-container pb-10 overflow-hidden bg-cover bg-center bg-no-repeat"
+              className="hrp-focus group relative flex h-full flex-col items-center gap-2 rounded-xl border border-outline-variant p-4 text-center shadow-card transition hover:-translate-y-0.5 hover:border-primary-container pb-10 overflow-hidden bg-cover bg-center bg-no-repeat"
               /* v1.12 (11/09/2026): overlay đen 70-75% → overlay trắng 40% (rgba(255,255,255,0.40)) để giữ tone sáng. */
               style={{ backgroundImage: `linear-gradient(rgba(255,255,255,0.40), rgba(255,255,255,0.45)), url('${pickCardImage(index)}')` }}
             >
               {/* Y10.5/UI04i: monogram 64×64 overlay trên ảnh nền.
-                  v1.12: border + bg đổi sang dark/translucent để nổi trên tone sáng. */}
+                  v1.12: border + bg đổi sang dark/translucent để nổi trên tone sáng.
+                  hrp-t2-public-site-hotfix (T2 / STEP-08): monogram theo project. */}
               <HrMonogram
                 size={64}
-                label={deriveMonogram(displayTitle)}
+                label={deriveMonogram(monogramSource)}
                 className="w-16 h-16 rounded-xl border border-outline bg-surface-container-high shrink-0"
               />
-              {/* v1.12: title đổi từ text-white → text-on-surface (đậm) để đọc rõ trên nền sáng. */}
-              <p className="font-head text-headline-md font-bold text-on-surface leading-tight min-h-[3.2em]">
-                {displayTitle}
+              {/* hrp-t2-public-site-hotfix (T2 / STEP-08): TIÊU ĐỀ CHÍNH là tên dự án
+                  (companyName) — fix bug "Thợ điện" hiển thị làm tên dự án. */}
+              <p
+                className="font-head text-headline-md font-bold text-on-surface leading-tight min-h-[2.4em]"
+                data-testid="recruiting-card-title"
+              >
+                {projectTitle}
+              </p>
+              {/* hrp-t2-public-site-hotfix (T2 / STEP-08): Subtitle là tên vị trí —
+                  phân biệt rõ với tiêu đề dự án, tránh trùng hiển thị. */}
+              <p
+                className="font-label text-label-sm text-on-surface-variant"
+                data-testid="recruiting-card-subtitle"
+              >
+                {subtitle}
               </p>
               {/* v1.12: "Cần tuyển {n} người" đổi từ text-white → text-on-surface-variant. */}
               <p className="absolute bottom-3 left-0 right-0 font-label text-label-md text-on-surface-variant font-bold">

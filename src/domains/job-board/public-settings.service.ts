@@ -48,6 +48,18 @@ type SettingsClient =
 
 export { toStickyAnnouncementDto };
 
+/**
+ * hrp-t2-public-site-hotfix (T2 / STEP-02): hình dạng row Media khi join
+ * Hero image. Chỉ 4 cột cần cho public projection; service chọn subset để
+ * tránh truy nguyên owner_id hay created_by_id (không xuất ra public DTO).
+ */
+type HeroMediaRow = {
+  id: string;
+  url: string;
+  alt: string;
+  caption: string | null;
+};
+
 /** Internal row shape from Prisma (matches schema.prisma `HomepageSettings`). */
 type SettingsRow = {
   id: string;
@@ -58,8 +70,28 @@ type SettingsRow = {
   phoneCallNumber: string | null;
   newsSectionEnabled: boolean;
   stickyAnnouncement: Prisma.JsonValue | null;
+  /**
+   * hrp-t2-public-site-hotfix (T2 / STEP-02): FK tới Media.id (nullable).
+   * Service KHÔNG include heroImage trong DTO read mặc định — caller phải
+   * pass `includeHeroImage: true` (qua `withHomepageSettings(row, true)`)
+   * hoặc đi qua path join để nhận Hero. Lý do: trang chỉ đọc page sizes /
+   * contact URLs / sticky 99% thời gian — không cần query media mỗi r.
+   */
+  heroImageMediaId: string | null;
+  heroImage?: HeroMediaRow | null;
   updatedAt: Date;
 };
+
+/**
+ * hrp-t2-public-site-hotfix (T2 / STEP-02): attach joined Hero image (or
+ * clear null) vào row đã đọc về. Pure — không I/O. Trả row mới (immutable).
+ */
+function withHomepageSettingsHero(
+  row: SettingsRow,
+  hero: HeroMediaRow | null,
+): SettingsRow {
+  return { ...row, heroImage: hero };
+}
 
 /** Map a Prisma row to the public DTO. Pure function — safe for tests. */
 export function toHomepageSettingsDto(row: SettingsRow): HomepageSettingsDto {
@@ -72,6 +104,17 @@ export function toHomepageSettingsDto(row: SettingsRow): HomepageSettingsDto {
     phoneCallNumber: resolvePhoneNumber(row.phoneCallNumber),
     newsSectionEnabled: row.newsSectionEnabled ?? true,
     stickyAnnouncement: toStickyAnnouncementDto(row.stickyAnnouncement),
+    // hrp-t2-public-site-hotfix (T2 / STEP-02): Hero image projection — null
+    // khi `heroImageMediaId` null HOẶC joined media row absent (FK SET NULL).
+    heroImage:
+      row.heroImage === undefined || row.heroImage === null
+        ? null
+        : {
+            mediaId: row.heroImage.id,
+            url: row.heroImage.url,
+            alt: row.heroImage.alt,
+            caption: row.heroImage.caption,
+          },
     updatedAt: row.updatedAt.toISOString(),
   };
 }
@@ -81,15 +124,30 @@ export function toHomepageSettingsDto(row: SettingsRow): HomepageSettingsDto {
  *
  * Idempotent — concurrent callers will all read the same row. The `upsert`
  * pattern is safe because the table has a singleton CHECK constraint.
+ *
+ * hrp-t2-public-site-hotfix (T2 / STEP-02): joins `media` row for Hero image
+ * only when `heroImageMediaId` is non-null; null FK or absent row → `null` heroImage
+ * trong DTO. Khi bootstrap, `heroImageMediaId` mặc định null → không có join.
  */
 export async function getHomepageSettings(prisma: SettingsClient): Promise<HomepageSettingsDto> {
-  // Step 1: try to read the existing row.
+  // Step 1: try to read the existing row (without hero join — 99% path).
   const existing = await prisma.homepageSettings.findUnique({
     where: { id: HOMEPAGE_SETTINGS_SINGLETON_ID },
   });
 
   if (existing) {
-    return toHomepageSettingsDto(existing);
+    if (existing.heroImageMediaId) {
+      // hrp-t2-public-site-hotfix (T2 / STEP-02): chỉ JOIN khi cần — tránh
+      // tải media row cho mỗi public request mà không có Hero configured.
+      const hero = await (prisma as unknown as {
+        media: { findUnique: (a: unknown) => Promise<HeroMediaRow | null> };
+      }).media.findUnique({
+        where: { id: existing.heroImageMediaId },
+        select: { id: true, url: true, alt: true, caption: true },
+      });
+      return toHomepageSettingsDto(withHomepageSettingsHero(existing, hero));
+    }
+    return toHomepageSettingsDto(withHomepageSettingsHero(existing, null));
   }
 
   // Step 2: bootstrap with defaults. Upsert handles concurrent calls safely.
@@ -105,7 +163,7 @@ export async function getHomepageSettings(prisma: SettingsClient): Promise<Homep
     update: {}, // no-op when row already exists
   });
 
-  return toHomepageSettingsDto(bootstrapped);
+  return toHomepageSettingsDto(withHomepageSettingsHero(bootstrapped, null));
 }
 
 /** Input shape for admin write. All fields optional; omitted fields are unchanged. */
@@ -126,6 +184,15 @@ export interface UpdateHomepageSettingsInput {
    *                   Throws `ZodError` on schema failure.
    */
   stickyAnnouncement?: StickyAnnouncementDto | null;
+  /**
+   * hrp-t2-public-site-hotfix (T2 / STEP-02): Hero image media id.
+   *   - `undefined` → column unchanged.
+   *   - `null`      → clear Hero (admin xoá chọn ảnh).
+   *   - string      → FK tới media.id. Prisma sẽ tự reject nếu id không tồn
+   *                    tại (P2003); nếu media row xoá sau đó, FK SET NULL tự
+   *                    xử (không cần admin dọn).
+   */
+  heroImageMediaId?: string | null;
 }
 
 /** Result type for admin write — returns the post-write DTO. */
@@ -173,6 +240,8 @@ export async function updateHomepageSettings(
     phoneCallNumber?: string | null;
     newsSectionEnabled?: boolean;
     stickyAnnouncement?: Prisma.InputJsonValue | Prisma.JsonNullValueInput;
+    /** hrp-t2-public-site-hotfix (T2 / STEP-02): cột Hero image FK. */
+    heroImageMediaId?: string | null;
     updatedById: string | null;
   } = { updatedById: actorId };
 
@@ -214,14 +283,37 @@ export async function updateHomepageSettings(
       data.stickyAnnouncement = parsed as unknown as Prisma.InputJsonValue;
     }
   }
+  // hrp-t2-public-site-hotfix (T2 / STEP-02): chấp nhận string id hoặc null
+  // để clear. Validate cú pháp (string non-empty) — FK existence do DB layer
+  // xử (P2003).
+  if (input.heroImageMediaId !== undefined) {
+    if (input.heroImageMediaId === null) {
+      data.heroImageMediaId = null;
+    } else if (typeof input.heroImageMediaId !== 'string' || input.heroImageMediaId.trim() === '') {
+      throw new Error('heroImageMediaId phải là chuỗi khác rỗng hoặc null.');
+    } else {
+      data.heroImageMediaId = input.heroImageMediaId.trim();
+    }
+  }
 
   const updated = await prisma.homepageSettings.update({
     where: { id: HOMEPAGE_SETTINGS_SINGLETON_ID },
     data,
   });
 
+  // hrp-t2-public-site-hotfix (T2 / STEP-02): re-join hero để DTO phản ánh
+  // media row mới nhất (FK SET NULL nếu media bị xoá giữa đường).
+  let hero: HeroMediaRow | null = null;
+  if (updated.heroImageMediaId) {
+    hero = await (prisma as unknown as {
+      media: { findUnique: (a: unknown) => Promise<HeroMediaRow | null> };
+    }).media.findUnique({
+      where: { id: updated.heroImageMediaId },
+      select: { id: true, url: true, alt: true, caption: true },
+    });
+  }
   return {
-    settings: toHomepageSettingsDto(updated),
+    settings: toHomepageSettingsDto(withHomepageSettingsHero(updated, hero)),
     actorId,
   };
 }

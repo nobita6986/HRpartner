@@ -1740,6 +1740,11 @@ model HomepageSettings {
   phoneCallNumber  String?  @map("phone_call_number")
   newsSectionEnabled Boolean  @default(true) @map("news_section_enabled")
   stickyAnnouncement Json?    @map("sticky_announcement")
+  // hrp-t2-public-site-hotfix (2026-10-07): Admin có thể chọn ảnh nền Hero trang chủ
+  // từ Media Library. NULL = giữ gradient (hành vi v1). FK ON DELETE SET NULL —
+  // xoá media row sẽ tự fallback gradient, không crash public.
+  heroImageMediaId String?  @map("hero_image_media_id")
+  heroImage        Media?   @relation("HomepageSettingsHeroImage", fields: [heroImageMediaId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt    @map("updated_at")
   updatedById      String?  @map("updated_by_id")
@@ -1792,6 +1797,10 @@ model Media {
 
   // Relations
   assignments MediaAssignment[]
+  // hrp-t2-public-site-hotfix (2026-10-07): reverse relation từ HomepageSettings.heroImage
+  // (Media là target của FK nullable ON DELETE SET NULL). Đặt named relation để phân biệt
+  // với `MediaCreatedBy` ở trên.
+  homepageSettingsAsHero HomepageSettings[] @relation("HomepageSettingsHeroImage")
 
   @@index([ownerId])
   @@index([folder])

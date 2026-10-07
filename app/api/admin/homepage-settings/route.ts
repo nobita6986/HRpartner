@@ -43,6 +43,8 @@ interface AdminSettingsBody {
   phoneCallNumber?: string | null;
   newsSectionEnabled?: boolean;
   stickyAnnouncement?: unknown;
+  /** hrp-t2-public-site-hotfix (T2 / STEP-02): Hero image media id. */
+  heroImageMediaId?: string | null;
 }
 
 function badRequest(message: string): NextResponse {
@@ -80,6 +82,13 @@ function validateBody(body: AdminSettingsBody): string | null {
   }
   if (body.newsSectionEnabled !== undefined && typeof body.newsSectionEnabled !== 'boolean') {
     return 'newsSectionEnabled phải là boolean.';
+  }
+  if (body.heroImageMediaId !== undefined && body.heroImageMediaId !== null) {
+    // hrp-t2-public-site-hotfix (T2 / STEP-02): Hero image id — chuỗi khác rỗng
+    // hoặc null để clear. FK existence do Prisma kiểm tra ở runtime (P2003).
+    if (typeof body.heroImageMediaId !== 'string' || body.heroImageMediaId.trim() === '') {
+      return 'heroImageMediaId phải là chuỗi khác rỗng hoặc null.';
+    }
   }
   if (body.stickyAnnouncement !== undefined && body.stickyAnnouncement !== null) {
     if (typeof body.stickyAnnouncement !== 'object' || Array.isArray(body.stickyAnnouncement)) {
@@ -162,6 +171,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     ) {
       return badRequest('newsSectionEnabled phải là boolean.');
     }
+    // hrp-t2-public-site-hotfix (T2 / STEP-02): Hero image — accept string
+    // hoặc null; loại rỗng/array/object vì id phải là scalar.
+    if (Object.prototype.hasOwnProperty.call(raw, 'heroImageMediaId')) {
+      const v = raw.heroImageMediaId;
+      if (v !== null && typeof v !== 'string') {
+        return badRequest('heroImageMediaId phải là chuỗi hoặc null.');
+      }
+    }
     if (Object.prototype.hasOwnProperty.call(raw, 'stickyAnnouncement')) {
       const v = raw.stickyAnnouncement;
       if (v !== null && (typeof v !== 'object' || Array.isArray(v))) {
@@ -186,6 +203,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       stickyAnnouncement: Object.prototype.hasOwnProperty.call(raw, 'stickyAnnouncement')
         ? (raw.stickyAnnouncement as unknown)
         : undefined,
+      heroImageMediaId: Object.prototype.hasOwnProperty.call(raw, 'heroImageMediaId')
+        ? (raw.heroImageMediaId as string | null)
+        : undefined,
     };
   } catch {
     return badRequest('Body không phải JSON hợp lệ.');
@@ -201,7 +221,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     body.messengerChatUrl === undefined &&
     body.phoneCallNumber === undefined &&
     body.newsSectionEnabled === undefined &&
-    body.stickyAnnouncement === undefined
+    body.stickyAnnouncement === undefined &&
+    body.heroImageMediaId === undefined
   ) {
     return badRequest(
       'Phải cung cấp ít nhất một trường cài đặt homepage, kênh liên hệ, hoặc UI2.',
@@ -219,6 +240,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       messengerChatUrl: body.messengerChatUrl,
       phoneCallNumber: body.phoneCallNumber,
       newsSectionEnabled: body.newsSectionEnabled,
+      heroImageMediaId: body.heroImageMediaId,
     };
     if (body.stickyAnnouncement !== undefined) {
       if (body.stickyAnnouncement === null) {
