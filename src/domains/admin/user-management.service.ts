@@ -27,11 +27,12 @@
 
 import { randomBytes } from 'node:crypto';
 
-import type { Prisma, SystemRole } from '@prisma/client';
+import { Prisma, type PrismaClient, type SystemRole } from '@prisma/client';
 
 import { hashPassword } from '@/src/shared/auth/password';
 import { writeAuditLog } from '@/src/shared/integrity/audit';
 import type { AuthContext } from '@/src/shared/auth/auth-context';
+import { applyRlsContext } from '@/src/shared/auth/rls-context';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Public types
@@ -44,7 +45,7 @@ export interface CreateUserInput {
   role: SystemRole;
   vendorId?: string | null;
   /** Lý do tạo tài khoản (ghi vào audit_log.reason). */
-  reason?: string | null;
+  reason: string;
 }
 
 /** Input cập nhật user — partial, chỉ set field nào có. */
@@ -55,7 +56,7 @@ export interface UpdateUserInput {
   vendorId?: string | null;
   isActive?: boolean;
   /** Lý do thay đổi (audit_log.reason). */
-  reason?: string | null;
+  reason: string;
 }
 
 /** User public (không có passwordHash). */
@@ -215,6 +216,52 @@ function assertAdmin(ctx: AuthContext): void {
   }
 }
 
+/** Validate and normalize the mandatory forensic reason before any mutation. */
+function requireAuditReason(reason: string | null | undefined): string {
+  if (typeof reason !== 'string' || !reason.trim() || reason.trim().length > 500) {
+    throw new UserManagementServiceError(
+      'VALIDATION',
+      'Lý do thao tác là bắt buộc và không được vượt quá 500 ký tự.',
+    );
+  }
+  return reason.trim();
+}
+
+/**
+ * Run user mutations in a serializable RLS-bound transaction. Serialization
+ * failures are deliberately not retried here: the API maps P2034 to a retryable
+ * 409 so a client cannot unknowingly repeat a sensitive mutation.
+ */
+export async function withSerializableUserManagementDb<T>(
+  prisma: PrismaClient,
+  ctx: AuthContext,
+  callback: (tx: Prisma.TransactionClient) => Promise<T>,
+): Promise<T> {
+  return prisma.$transaction(
+    async (tx) => {
+      await applyRlsContext(tx, ctx);
+      return callback(tx);
+    },
+    { isolationLevel: 'Serializable' },
+  );
+}
+
+/** PostgreSQL SSI conflict (Prisma P2034): caller should return retryable 409. */
+export function isUserMutationSerializationConflict(error: unknown): boolean {
+  return Boolean(error && typeof error === 'object' && 'code' in error && error.code === 'P2034');
+}
+
+/** Lock the complete active-admin set in stable order before the last-admin count. */
+async function lockActiveAdmins(tx: Prisma.TransactionClient): Promise<void> {
+  await tx.$queryRaw<Array<{ id: string }>>(Prisma.sql`
+    SELECT id
+    FROM public.users
+    WHERE role::text = 'ADMIN' AND is_active = TRUE
+    ORDER BY id
+    FOR UPDATE
+  `);
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // createUser
 // ═══════════════════════════════════════════════════════════════════════════
@@ -233,6 +280,7 @@ export async function createUser(
   meta: { ipAddress?: string | null; userAgent?: string | null } = {},
 ): Promise<CreateUserResult> {
   assertAdmin(ctx);
+  const reason = requireAuditReason(input.reason);
 
   const temporaryPassword = generateTemporaryPassword();
   const passwordHash = await hashPassword(temporaryPassword);
@@ -285,7 +333,7 @@ export async function createUser(
     entityId: created.id,
     action: USER_AUDIT_ACTIONS.CREATE,
     diff: publicDiff(null, toPublicUser(created)),
-    reason: input.reason ?? null,
+    reason,
     metadata: { actorRole: ctx.role, role: input.role },
   });
 
@@ -319,12 +367,10 @@ export async function updateUser(
   meta: { ipAddress?: string | null; userAgent?: string | null } = {},
 ): Promise<{ user: UserPublic; auditId: string }> {
   assertAdmin(ctx);
+  const reason = requireAuditReason(patch.reason);
 
   const isSelf = ctx.userId === targetUserId;
 
-  // Đọc row hiện tại (SELECT ... FOR UPDATE thông qua advisory lock — Phase 2
-  // chưa có advisory lock cho User; tạm thời dùng row lock tự nhiên qua transaction
-  // — concurrent update sẽ rơi vào last-admin count chính xác).
   const existing = await tx.user.findUnique({
     where: { id: targetUserId },
     select: {
@@ -377,6 +423,8 @@ export async function updateUser(
   // Last-admin guard: nếu target là admin active và sắp deactivate/demote,
   // đếm số admin active khác — phải ≥ 1.
   if (existing.role === 'ADMIN' && existing.isActive && (willDeactivate || willDemote)) {
+    // Lock only on a guard-relevant mutation to avoid serializing ordinary profile edits.
+    await lockActiveAdmins(tx);
     const remaining = await countActiveAdmins(tx, existing.id);
     if (remaining < 1) {
       throw new UserManagementServiceError(
@@ -447,7 +495,7 @@ export async function updateUser(
     entityId: updated.id,
     action: USER_AUDIT_ACTIONS.UPDATE,
     diff: publicDiff(toPublicUser(existing), toPublicUser(updated)),
-    reason: patch.reason ?? null,
+    reason,
     metadata: { actorRole: ctx.role, fields: Object.keys(data) },
   });
 
@@ -465,10 +513,11 @@ export async function deactivateUser(
   tx: Prisma.TransactionClient,
   ctx: AuthContext,
   targetUserId: string,
-  reason: string | null = null,
+  reason: string,
   meta: { ipAddress?: string | null; userAgent?: string | null } = {},
 ): Promise<{ user: UserPublic; auditId: string }> {
   assertAdmin(ctx);
+  const auditReason = requireAuditReason(reason);
 
   if (ctx.userId === targetUserId) {
     throw new UserManagementServiceError(
@@ -510,7 +559,7 @@ export async function deactivateUser(
       entityId: existing.id,
       action: USER_AUDIT_ACTIONS.DEACTIVATE,
       diff: publicDiff(toPublicUser(existing), toPublicUser(existing)),
-      reason: reason ?? null,
+      reason: auditReason,
       metadata: { actorRole: ctx.role, idempotent: true },
     });
     return { user: toPublicUser(existing), auditId: audit.id };
@@ -518,6 +567,7 @@ export async function deactivateUser(
 
   // Last-admin guard.
   if (existing.role === 'ADMIN') {
+    await lockActiveAdmins(tx);
     const remaining = await countActiveAdmins(tx, existing.id);
     if (remaining < 1) {
       throw new UserManagementServiceError(
@@ -555,7 +605,7 @@ export async function deactivateUser(
     entityId: updated.id,
     action: USER_AUDIT_ACTIONS.DEACTIVATE,
     diff: publicDiff(toPublicUser(existing), toPublicUser(updated)),
-    reason: reason ?? null,
+    reason: auditReason,
     metadata: { actorRole: ctx.role },
   });
 
@@ -570,10 +620,11 @@ export async function reactivateUser(
   tx: Prisma.TransactionClient,
   ctx: AuthContext,
   targetUserId: string,
-  reason: string | null = null,
+  reason: string,
   meta: { ipAddress?: string | null; userAgent?: string | null } = {},
 ): Promise<{ user: UserPublic; auditId: string }> {
   assertAdmin(ctx);
+  const auditReason = requireAuditReason(reason);
 
   const existing = await tx.user.findUnique({
     where: { id: targetUserId },
@@ -628,7 +679,7 @@ export async function reactivateUser(
     entityId: updated.id,
     action: USER_AUDIT_ACTIONS.REACTIVATE,
     diff: publicDiff(toPublicUser(existing), toPublicUser(updated)),
-    reason: reason ?? null,
+    reason: auditReason,
     metadata: { actorRole: ctx.role },
   });
 

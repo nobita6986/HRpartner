@@ -81,6 +81,8 @@ function friendlyError(code: string, message: string): string {
       return 'Bạn không có quyền thực hiện thao tác này.';
     case 'IDEMPOTENCY_CONFLICT':
       return 'Yêu cầu trùng lặp với khóa idempotency đã dùng cho payload khác.';
+    case 'CONCURRENT_MODIFICATION':
+      return 'Dữ liệu vừa được thay đổi bởi thao tác khác. Vui lòng tải lại và thử lại.';
     default:
       return message || 'Đã xảy ra lỗi, vui lòng thử lại.';
   }
@@ -163,7 +165,7 @@ export default function UserManagementClient() {
     setRevealedPassword(null);
   };
 
-  const submitCreate = async (form: { name: string; phone: string; role: string; reason?: string }) => {
+  const submitCreate = async (form: { name: string; phone: string; role: string; reason: string }) => {
     setModalLoading(true);
     setModalError('');
     try {
@@ -199,7 +201,7 @@ export default function UserManagementClient() {
     setModalError('');
     setModalLoading(false);
   };
-  const submitEdit = async (form: { name: string; phone: string; role: string; isActive: boolean; reason?: string }) => {
+  const submitEdit = async (form: { name: string; phone: string; role: string; isActive: boolean; reason: string }) => {
     if (!editing) return;
     setModalLoading(true);
     setModalError('');
@@ -569,7 +571,7 @@ function CreateUserModal({
   loading: boolean;
   error: string;
   revealedPassword: string | null;
-  onSubmit: (form: { name: string; phone: string; role: string; reason?: string }) => Promise<void>;
+  onSubmit: (form: { name: string; phone: string; role: string; reason: string }) => Promise<void>;
   onClose: () => void;
 }) {
   const [name, setName] = useState('');
@@ -625,7 +627,7 @@ function CreateUserModal({
       <form
         onSubmit={async (e) => {
           e.preventDefault();
-          await onSubmit({ name, phone, role, reason: reason || undefined });
+          await onSubmit({ name, phone, role, reason: reason.trim() });
         }}
         className="space-y-3"
       >
@@ -663,10 +665,12 @@ function CreateUserModal({
             ))}
           </select>
         </Field>
-        <Field label="Lý do tạo (tùy chọn)">
+        <Field label="Lý do tạo" required>
           <input
             value={reason}
             onChange={(e) => setReason(e.target.value)}
+            required
+            pattern=".*\\S.*"
             maxLength={500}
             style={{ borderColor: 'var(--outline)', background: 'var(--surface-container)' }}
             className="w-full rounded border px-3 py-2 text-sm"
@@ -719,7 +723,7 @@ function EditUserModal({
   user: UserRow;
   loading: boolean;
   error: string;
-  onSubmit: (form: { name: string; phone: string; role: string; isActive: boolean; reason?: string }) => Promise<void>;
+  onSubmit: (form: { name: string; phone: string; role: string; isActive: boolean; reason: string }) => Promise<void>;
   onClose: () => void;
 }) {
   const [name, setName] = useState(user.name ?? '');
@@ -734,7 +738,7 @@ function EditUserModal({
       <form
         onSubmit={async (e) => {
           e.preventDefault();
-          await onSubmit({ name, phone, role, isActive, reason: reason || undefined });
+          await onSubmit({ name, phone, role, isActive, reason: reason.trim() });
         }}
         className="space-y-3"
       >
@@ -784,10 +788,12 @@ function EditUserModal({
             </span>
           </label>
         </Field>
-        <Field label="Lý do thay đổi (tùy chọn)">
+        <Field label="Lý do thay đổi" required>
           <input
             value={reason}
             onChange={(e) => setReason(e.target.value)}
+            required
+            pattern=".*\\S.*"
             maxLength={500}
             style={{ borderColor: 'var(--outline)', background: 'var(--surface-container)' }}
             className="w-full rounded border px-3 py-2 text-sm"
@@ -852,10 +858,12 @@ function ConfirmStatusModal({
           ? `Bạn sắp vô hiệu hóa tài khoản ${user.name ?? user.id}. Tài khoản này sẽ không thể đăng nhập.`
           : `Bạn sắp kích hoạt lại tài khoản ${user.name ?? user.id}.`}
       </p>
-      <Field label="Lý do (tùy chọn)">
+      <Field label="Lý do" required>
         <input
           value={reason}
           onChange={(e) => setReason(e.target.value)}
+          required
+          pattern=".*\\S.*"
           maxLength={500}
           style={{ borderColor: 'var(--outline)', background: 'var(--surface-container)' }}
           className="w-full rounded border px-3 py-2 text-sm"
@@ -885,7 +893,7 @@ function ConfirmStatusModal({
         <button
           type="button"
           onClick={() => onSubmit(reason)}
-          disabled={loading}
+          disabled={loading || !reason.trim()}
           style={{
             background: isDeactivate ? 'var(--error)' : 'var(--primary)',
             color: 'var(--on-primary)',

@@ -14,14 +14,15 @@
  *   - Plaintext password CHỉ có trong `temporaryPassword` (return value của createUser).
  *   - Idempotency cache (sanitize) đã cover ở test idempotency.test.ts.
  *
- * Concurrency: race 2 admin cùng deactivate admin cuối cùng — count phải
- * chính xác (mock simulate transactional isolation).
+ * Unit race coverage asserts active-admin row locks precede the count. The
+ * real two-connection PostgreSQL race proof lives in tests/db/.
  *
  * Vitest unit lane (DB fail-closed). Mock toàn bộ `tx`.
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SystemRole } from '@prisma/client';
+import { applyRlsContext } from '@/src/shared/auth/rls-context';
 
 import {
   USER_AUDIT_ACTIONS,
@@ -31,6 +32,7 @@ import {
   getUserWithGrants,
   reactivateUser,
   updateUser,
+  withSerializableUserManagementDb,
   type CreateUserInput,
   type UpdateUserInput,
 } from './user-management.service';
@@ -41,6 +43,9 @@ import {
 
 vi.mock('@/src/shared/auth/password', () => ({
   hashPassword: vi.fn(async (plain: string) => `HASH::${plain}`),
+}));
+vi.mock('@/src/shared/auth/rls-context', () => ({
+  applyRlsContext: vi.fn(async () => undefined),
 }));
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -88,6 +93,7 @@ function makeTx(opts: {
   }
 
   const tx: any = {
+    $queryRaw: vi.fn().mockResolvedValue([]),
     user: {
       findUnique: vi.fn().mockImplementation((args: any) => {
         const id = args?.where?.id;
@@ -165,8 +171,26 @@ describe('user-management.service — non-ADMIN guards', () => {
   it('non-ADMIN gọi deactivateUser → PERMISSION_DENIED', async () => {
     const tx = makeTx();
     await expect(
-      deactivateUser(tx, HR_AUTH, BASE_USER.id, null),
+      deactivateUser(tx, HR_AUTH, BASE_USER.id, 'Not authorized'),
     ).rejects.toMatchObject({ code: 'PERMISSION_DENIED' });
+  });
+});
+
+describe('user-management serializable transaction boundary', () => {
+  it('binds RLS context inside PostgreSQL SERIALIZABLE transaction without blind retry', async () => {
+    const tx = {};
+    const callback = vi.fn(async () => 'committed');
+    const prisma = {
+      $transaction: vi.fn(async (run: (value: unknown) => Promise<unknown>, options: unknown) => {
+        expect(options).toEqual({ isolationLevel: 'Serializable' });
+        return run(tx);
+      }),
+    };
+
+    await expect(withSerializableUserManagementDb(prisma as never, ADMIN_AUTH, callback)).resolves.toBe('committed');
+    expect(applyRlsContext).toHaveBeenCalledWith(tx, ADMIN_AUTH);
+    expect(callback).toHaveBeenCalledWith(tx);
+    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -182,6 +206,7 @@ describe('user-management.service — createUser', () => {
       name: 'Nguyen Van A',
       phone: '+84987654321',
       role: 'HR_STAFF',
+      reason: 'Provision approved account',
     });
     expect(hashPassword).toHaveBeenCalledTimes(1);
     const [plain] = (hashPassword as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
@@ -203,6 +228,7 @@ describe('user-management.service — createUser', () => {
       name: 'A',
       phone: '+84000000001',
       role: 'HR_STAFF',
+      reason: 'Provision test account',
     });
     // Audit diff KHÔNG chứa temporaryPassword hoặc passwordHash.
     const auditCall = tx.auditLog.create.mock.calls[0][0];
@@ -221,6 +247,7 @@ describe('user-management.service — createUser', () => {
       name: 'A',
       phone: '+84000000002',
       role: 'HR_STAFF',
+      reason: 'Provision test account',
     });
     const auditCall = tx.auditLog.create.mock.calls[0][0];
     expect(auditCall.data.action).toBe(USER_AUDIT_ACTIONS.CREATE);
@@ -236,6 +263,7 @@ describe('user-management.service — createUser', () => {
         name: 'A',
         phone: '+84000000003',
         role: 'HR_STAFF',
+        reason: 'Provision test account',
       }),
     ).rejects.toMatchObject({ code: 'PHONE_TAKEN' });
   });
@@ -250,7 +278,7 @@ describe('user-management.service — updateUser self-modification', () => {
     const selfAuth = { userId: 'admin-self', role: 'ADMIN' as SystemRole };
     const tx = makeTx({ activeAdminCount: 2 });
     await expect(
-      updateUser(tx, selfAuth, 'admin-self', { role: 'HR_MANAGER' }),
+      updateUser(tx, selfAuth, 'admin-self', { role: 'HR_MANAGER', reason: 'Correct role' }),
     ).rejects.toMatchObject({ code: 'SELF_DEMOTION_BLOCKED' });
   });
 
@@ -258,7 +286,7 @@ describe('user-management.service — updateUser self-modification', () => {
     const selfAuth = { userId: 'admin-self', role: 'ADMIN' as SystemRole };
     const tx = makeTx({ activeAdminCount: 2 });
     await expect(
-      updateUser(tx, selfAuth, 'admin-self', { isActive: false }),
+      updateUser(tx, selfAuth, 'admin-self', { isActive: false, reason: 'Correct status' }),
     ).rejects.toMatchObject({ code: 'SELF_DEACTIVATION_BLOCKED' });
   });
 
@@ -273,7 +301,7 @@ describe('user-management.service — updateUser self-modification', () => {
     // self block, rơi NO_OP. Thay vào đó test admin tự đổi role về role khác:
     // đã cover ở test trên (SELF_DEMOTION_BLOCKED).
     await expect(
-      updateUser(tx, selfAuth, 'admin-self', { isActive: true }),
+      updateUser(tx, selfAuth, 'admin-self', { isActive: true, reason: 'Confirm status' }),
     ).rejects.toMatchObject({ code: 'NO_OP' });
   });
 
@@ -281,7 +309,7 @@ describe('user-management.service — updateUser self-modification', () => {
     // Self path CHỈ chặn role/isActive. Đổi name/phone được phép.
     const selfAuth = { userId: 'admin-self', role: 'ADMIN' as SystemRole };
     const tx = makeTx({ activeAdminCount: 2 });
-    const result = await updateUser(tx, selfAuth, 'admin-self', { name: 'New Name' });
+    const result = await updateUser(tx, selfAuth, 'admin-self', { name: 'New Name', reason: 'Correct profile' });
     expect(result.user.id).toBe('admin-self');
     expect(tx.user.update).toHaveBeenCalled();
   });
@@ -302,7 +330,7 @@ describe('user-management.service — updateUser last-admin guard', () => {
         tx,
         { userId: 'admin-1', role: 'ADMIN' },
         'admin-2',
-        { role: 'HR_MANAGER' },
+        { role: 'HR_MANAGER', reason: 'Correct role' },
       ),
     ).rejects.toMatchObject({ code: 'LAST_ADMIN_PROTECTED' });
   });
@@ -316,7 +344,7 @@ describe('user-management.service — updateUser last-admin guard', () => {
       tx,
       { userId: 'admin-1', role: 'ADMIN' },
       'admin-2',
-      { role: 'HR_MANAGER' },
+        { role: 'HR_MANAGER', reason: 'Correct role' },
     );
     expect(result.user.id).toBe('admin-2');
     expect(tx.user.update).toHaveBeenCalled();
@@ -331,7 +359,7 @@ describe('user-management.service — updateUser last-admin guard', () => {
       tx,
       { userId: 'admin-1', role: 'ADMIN' },
       'admin-2',
-      { role: 'HR_MANAGER' },
+        { role: 'HR_MANAGER', reason: 'Correct role' },
     );
     expect(result.user.id).toBe('admin-2');
   });
@@ -339,7 +367,7 @@ describe('user-management.service — updateUser last-admin guard', () => {
   it('deactivate user non-admin khi count admin = 0 → KHÔNG trigger guard', async () => {
     // last-admin guard chỉ áp dụng cho target có role=ADMIN.
     const tx = makeTx({ activeAdminCount: 0 });
-    const result = await updateUser(tx, ADMIN_AUTH, BASE_USER.id, { isActive: false });
+    const result = await updateUser(tx, ADMIN_AUTH, BASE_USER.id, { isActive: false, reason: 'Correct status' });
     expect(result.user.id).toBe(BASE_USER.id);
   });
 });
@@ -350,7 +378,7 @@ describe('user-management.service — updateUser last-admin guard', () => {
 
 describe('user-management.service — race condition', () => {
   it('2 admin cùng deactivate admin cuối: 1 thắng, 1 thua LAST_ADMIN_PROTECTED', async () => {
-    // Simulate: cả 2 actor thấy count=0 tại thời điểm gọi (tx isolation giả lập).
+    // The mocked count models the post-serialization state; assert lock-before-count below.
     const tx = makeTx({
       activeAdminCount: 0,
       extraUsers: [{ id: 'admin-2', role: 'ADMIN', isActive: true }],
@@ -360,9 +388,21 @@ describe('user-management.service — race condition', () => {
         tx,
         { userId: 'admin-1', role: 'ADMIN' },
         'admin-2',
-        { isActive: false },
+        { isActive: false, reason: 'Correct status' },
       ),
     ).rejects.toMatchObject({ code: 'LAST_ADMIN_PROTECTED' });
+    expect(tx.$queryRaw).toHaveBeenCalledTimes(1);
+    expect(tx.$queryRaw.mock.invocationCallOrder[0]).toBeLessThan(tx.user.count.mock.invocationCallOrder[0]);
+  });
+});
+
+describe('user-management.service — audit reason required', () => {
+  it('rejects a blank reason before mutating', async () => {
+    const tx = makeTx();
+    await expect(createUser(tx, ADMIN_AUTH, {
+      name: 'A', phone: '+84000000004', role: 'HR_STAFF', reason: '   ',
+    })).rejects.toMatchObject({ code: 'VALIDATION' });
+    expect(tx.user.create).not.toHaveBeenCalled();
   });
 });
 
@@ -373,7 +413,7 @@ describe('user-management.service — race condition', () => {
 describe('user-management.service — updateUser happy path', () => {
   it('đổi name → audit diff có before/after; KHÔNG chứa passwordHash', async () => {
     const tx = makeTx({ activeAdminCount: 1 });
-    const result = await updateUser(tx, ADMIN_AUTH, BASE_USER.id, { name: 'New Name' });
+    const result = await updateUser(tx, ADMIN_AUTH, BASE_USER.id, { name: 'New Name', reason: 'Correct profile' });
     expect(result.user.name).toBe('New Name');
     const auditCall = tx.auditLog.create.mock.calls[0][0];
     expect(auditCall.data.action).toBe(USER_AUDIT_ACTIONS.UPDATE);
@@ -387,7 +427,7 @@ describe('user-management.service — updateUser happy path', () => {
   it('patch rỗng (không đổi) → NO_OP', async () => {
     const tx = makeTx({ activeAdminCount: 1 });
     await expect(
-      updateUser(tx, ADMIN_AUTH, BASE_USER.id, { name: BASE_USER.name }),
+      updateUser(tx, ADMIN_AUTH, BASE_USER.id, { name: BASE_USER.name, reason: 'Confirm profile' }),
     ).rejects.toMatchObject({ code: 'NO_OP' });
     expect(tx.user.update).not.toHaveBeenCalled();
   });
@@ -395,7 +435,7 @@ describe('user-management.service — updateUser happy path', () => {
   it('user không tồn tại → NOT_FOUND', async () => {
     const tx = makeTx({ activeAdminCount: 1 });
     await expect(
-      updateUser(tx, ADMIN_AUTH, 'no-such-id', { name: 'X' }),
+      updateUser(tx, ADMIN_AUTH, 'no-such-id', { name: 'X', reason: 'Correct profile' }),
     ).rejects.toMatchObject({ code: 'NOT_FOUND' });
   });
 });
@@ -423,7 +463,7 @@ describe('user-management.service — deactivateUser', () => {
     const selfAuth = { userId: 'admin-self', role: 'ADMIN' as SystemRole };
     const tx = makeTx({ activeAdminCount: 2 });
     await expect(
-      deactivateUser(tx, selfAuth, 'admin-self'),
+      deactivateUser(tx, selfAuth, 'admin-self', 'Correct status'),
     ).rejects.toMatchObject({ code: 'SELF_DEACTIVATION_BLOCKED' });
   });
 
@@ -433,7 +473,7 @@ describe('user-management.service — deactivateUser', () => {
       extraUsers: [{ id: 'admin-2', role: 'ADMIN', isActive: true }],
     });
     await expect(
-      deactivateUser(tx, { userId: 'admin-1', role: 'ADMIN' }, 'admin-2'),
+      deactivateUser(tx, { userId: 'admin-1', role: 'ADMIN' }, 'admin-2', 'Correct status'),
     ).rejects.toMatchObject({ code: 'LAST_ADMIN_PROTECTED' });
   });
 
@@ -442,7 +482,7 @@ describe('user-management.service — deactivateUser', () => {
       activeAdminCount: 1,
       extraUsers: [{ id: BASE_USER.id, isActive: false }],
     });
-    const result = await deactivateUser(tx, ADMIN_AUTH, BASE_USER.id);
+    const result = await deactivateUser(tx, ADMIN_AUTH, BASE_USER.id, 'Confirm existing status');
     expect(result.user.isActive).toBe(false);
     const auditCall = tx.auditLog.create.mock.calls[0][0];
     expect(auditCall.data.metadata).toMatchObject({ idempotent: true });
@@ -455,7 +495,7 @@ describe('user-management.service — reactivateUser', () => {
       activeAdminCount: 1,
       extraUsers: [{ id: BASE_USER.id, isActive: false }],
     });
-    const result = await reactivateUser(tx, ADMIN_AUTH, BASE_USER.id);
+    const result = await reactivateUser(tx, ADMIN_AUTH, BASE_USER.id, 'Restore access');
     expect(result.user.isActive).toBe(true);
     const auditCall = tx.auditLog.create.mock.calls[0][0];
     expect(auditCall.data.action).toBe(USER_AUDIT_ACTIONS.REACTIVATE);
@@ -464,7 +504,7 @@ describe('user-management.service — reactivateUser', () => {
   it('reactivate user đã active → NO_OP', async () => {
     const tx = makeTx({ activeAdminCount: 1 });
     await expect(
-      reactivateUser(tx, ADMIN_AUTH, BASE_USER.id),
+      reactivateUser(tx, ADMIN_AUTH, BASE_USER.id, 'Confirm active status'),
     ).rejects.toMatchObject({ code: 'NO_OP' });
   });
 });

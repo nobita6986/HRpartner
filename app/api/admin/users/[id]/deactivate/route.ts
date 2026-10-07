@@ -13,16 +13,19 @@ import { SystemRole } from '@prisma/client';
 
 import { getPrisma } from '@/src/lib/db';
 import { AuthSessionError, getAuthContext } from '@/src/shared/auth/auth-context';
-import { withDbContext } from '@/src/shared/auth/with-db-context';
+import { z } from 'zod';
 import {
   deactivateUser,
+  isUserMutationSerializationConflict,
   UserManagementServiceError,
+  withSerializableUserManagementDb,
 } from '@/src/domains/admin/user-management.service';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 const ADMIN_ROLES = new Set<SystemRole>([SystemRole.ADMIN]);
+const ReasonSchema = z.object({ reason: z.string().trim().min(1, 'Lý do thao tác là bắt buộc').max(500) });
 
 function mapServiceError(e: UserManagementServiceError): NextResponse {
   const status: Record<string, number> = {
@@ -34,6 +37,7 @@ function mapServiceError(e: UserManagementServiceError): NextResponse {
     SELF_DEACTIVATION_BLOCKED: 409,
     SELF_MODIFICATION_BLOCKED: 409,
     NO_OP: 400,
+    VALIDATION: 400,
   };
   return NextResponse.json(
     { error: e.code, message: e.message, ...(e.details ? { details: e.details } : {}) },
@@ -66,22 +70,25 @@ export async function POST(
     return NextResponse.json({ error: 'INVALID_ID', message: 'Missing user id' }, { status: 400 });
   }
 
-  let reason: string | null = null;
+  let body: unknown;
   try {
-    const text = await req.text();
-    if (text) {
-      const parsed = JSON.parse(text) as { reason?: unknown };
-      if (typeof parsed.reason === 'string') reason = parsed.reason.slice(0, 500);
-    }
+    body = await req.json();
   } catch {
-    // ignore malformed body — reason=null is fine
+    return NextResponse.json({ error: 'INVALID_BODY', message: 'Body phải là JSON hợp lệ' }, { status: 400 });
+  }
+  const parsed = ReasonSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'VALIDATION_ERROR', message: 'Lý do thao tác là bắt buộc.', details: parsed.error.flatten() }, { status: 400 });
   }
 
   try {
-    const result = await withDbContext(getPrisma(), ctx, (tx) => deactivateUser(tx, ctx, id, reason));
+    const result = await withSerializableUserManagementDb(getPrisma(), ctx, (tx) => deactivateUser(tx, ctx, id, parsed.data.reason));
     return NextResponse.json(result);
   } catch (e) {
     if (e instanceof UserManagementServiceError) return mapServiceError(e);
+    if (isUserMutationSerializationConflict(e)) {
+      return NextResponse.json({ error: 'CONCURRENT_MODIFICATION', message: 'Dữ liệu người dùng vừa thay đổi; vui lòng tải lại và thử lại.' }, { status: 409 });
+    }
     console.error('[api/admin/users/[id]/deactivate] error:', e);
     return NextResponse.json({ error: 'INTERNAL', message: 'Failed to deactivate user' }, { status: 500 });
   }

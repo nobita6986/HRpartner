@@ -23,6 +23,7 @@ const mocks = vi.hoisted(() => ({
   getAuthContext: vi.fn(),
   getPrisma: vi.fn(),
   withDbContext: vi.fn(),
+  withSerializableUserManagementDb: vi.fn(),
   withAuthorizedDb: vi.fn(),
   withIdempotency: vi.fn(),
   createUser: vi.fn(),
@@ -30,6 +31,7 @@ const mocks = vi.hoisted(() => ({
   deactivateUser: vi.fn(),
   reactivateUser: vi.fn(),
   getUserWithGrants: vi.fn(),
+  isUserMutationSerializationConflict: vi.fn((error: unknown) => Boolean(error && typeof error === 'object' && 'code' in error && error.code === 'P2034')),
 }));
 
 vi.mock('@/src/lib/db', () => ({ getPrisma: mocks.getPrisma }));
@@ -57,6 +59,8 @@ vi.mock('@/src/domains/admin/user-management.service', () => ({
   deactivateUser: mocks.deactivateUser,
   reactivateUser: mocks.reactivateUser,
   getUserWithGrants: mocks.getUserWithGrants,
+  withSerializableUserManagementDb: mocks.withSerializableUserManagementDb,
+  isUserMutationSerializationConflict: mocks.isUserMutationSerializationConflict,
   UserManagementServiceError: class UserManagementServiceError extends Error {
     constructor(
       public readonly code:
@@ -105,6 +109,9 @@ function setPrismaTx(passthrough = true) {
     mocks.withDbContext.mockImplementation(
       (_p: unknown, _c: unknown, cb: (tx: unknown) => unknown) => cb({}),
     );
+    mocks.withSerializableUserManagementDb.mockImplementation(
+      (_p: unknown, _c: unknown, cb: (tx: unknown) => unknown) => cb({}),
+    );
     mocks.withAuthorizedDb.mockImplementation(
       (_p: unknown, _c: unknown, cb: (tx: unknown) => unknown) => cb({}),
     );
@@ -145,7 +152,7 @@ describe('POST /api/admin/users', () => {
     const res = await POSTUsers(
       new NextRequest('http://localhost/api/admin/users', {
         method: 'POST',
-        body: JSON.stringify({ name: 'A', phone: '+84000000001', role: 'HR_STAFF' }),
+        body: JSON.stringify({ name: 'A', phone: '+84000000001', role: 'HR_STAFF', reason: 'Approved account' }),
       }),
     );
     expect(res.status).toBe(403);
@@ -176,6 +183,16 @@ describe('POST /api/admin/users', () => {
     expect(res.status).toBe(400);
   });
 
+  it('400 khi thiếu hoặc chỉ có khoảng trắng ở lý do kiểm toán', async () => {
+    setAuth('ADMIN');
+    const res = await POSTUsers(new NextRequest('http://localhost/api/admin/users', {
+      method: 'POST',
+      body: JSON.stringify({ name: 'A', phone: '+84000000001', role: 'HR_STAFF', reason: '   ' }),
+    }));
+    expect(res.status).toBe(400);
+    expect(mocks.createUser).not.toHaveBeenCalled();
+  });
+
   it('201 khi tạo thành công, response có temporaryPassword', async () => {
     setAuth('ADMIN');
     mocks.createUser.mockResolvedValue({
@@ -186,7 +203,7 @@ describe('POST /api/admin/users', () => {
     const res = await POSTUsers(
       new NextRequest('http://localhost/api/admin/users', {
         method: 'POST',
-        body: JSON.stringify({ name: 'A', phone: '+84000000001', role: 'HR_STAFF' }),
+        body: JSON.stringify({ name: 'A', phone: '+84000000001', role: 'HR_STAFF', reason: 'Approved account' }),
       }),
     );
     expect(res.status).toBe(201);
@@ -205,7 +222,7 @@ describe('POST /api/admin/users', () => {
     const res = await POSTUsers(
       new NextRequest('http://localhost/api/admin/users', {
         method: 'POST',
-        body: JSON.stringify({ name: 'A', phone: '+84000000001', role: 'HR_STAFF' }),
+        body: JSON.stringify({ name: 'A', phone: '+84000000001', role: 'HR_STAFF', reason: 'Approved account' }),
       }),
     );
     expect(res.status).toBe(409);
@@ -218,7 +235,9 @@ describe('POST /api/admin/users', () => {
     // Lưu in-memory: lần 1 lưu body ĐÃ SANITIZE; lần 2 replay trả về body đã lưu.
     const stored = new Map<string, { response: any; statusCode: number }>();
 
+    let capturedRequestBody: Record<string, unknown> | undefined;
     setIdempotency(async (opts: any) => {
+      capturedRequestBody = opts.requestBody;
       const k = `${opts.actorId}|${opts.route}|${opts.key}`;
       const reqHash = JSON.stringify(opts.requestBody);
       // Tính hash nhanh để mô phỏng requestHash check
@@ -247,7 +266,7 @@ describe('POST /api/admin/users', () => {
           'content-type': 'application/json',
           'idempotency-key': 'idem-1',
         },
-        body: JSON.stringify({ name: 'A', phone: '+84000000001', role: 'HR_STAFF' }),
+        body: JSON.stringify({ name: 'A', phone: '+84000000001', role: 'HR_STAFF', vendorId: 'vendor-1', reason: 'Approved account' }),
       });
 
     const r1 = await POSTUsers(makeReq());
@@ -268,6 +287,7 @@ describe('POST /api/admin/users', () => {
 
     // Handler chỉ chạy 1 lần.
     expect(mocks.createUser).toHaveBeenCalledTimes(1);
+    expect(capturedRequestBody).toEqual({ name: 'A', phone: '+84000000001', role: 'HR_STAFF', vendorId: 'vendor-1', reason: 'Approved account' });
 
     // Cache đã lưu body KHÔNG chứa password.
     const cached = stored.get('admin-1|POST:/api/admin/users|idem-1');
@@ -288,12 +308,24 @@ describe('POST /api/admin/users', () => {
       new NextRequest('http://localhost/api/admin/users', {
         method: 'POST',
         headers: { 'idempotency-key': 'idem-2' },
-        body: JSON.stringify({ name: 'A', phone: '+84000000001', role: 'HR_STAFF' }),
+        body: JSON.stringify({ name: 'A', phone: '+84000000001', role: 'HR_STAFF', reason: 'Approved account' }),
       }),
     );
     expect(res.status).toBe(409);
     const data = await res.json();
     expect(data.error).toBe('IDEMPOTENCY_CONFLICT');
+  });
+
+  it('409 CONCURRENT_MODIFICATION khi PostgreSQL báo serialization conflict', async () => {
+    setAuth('ADMIN');
+    const error = Object.assign(new Error('serialization failure'), { code: 'P2034' });
+    mocks.withSerializableUserManagementDb.mockRejectedValue(error);
+    const res = await POSTUsers(new NextRequest('http://localhost/api/admin/users', {
+      method: 'POST',
+      body: JSON.stringify({ name: 'A', phone: '+84000000001', role: 'HR_STAFF', reason: 'Approved account' }),
+    }));
+    expect(res.status).toBe(409);
+    expect((await res.json()).error).toBe('CONCURRENT_MODIFICATION');
   });
 });
 
@@ -355,7 +387,7 @@ describe('PATCH /api/admin/users/[id]', () => {
     const res = await PATCHUserId(
       new NextRequest('http://localhost/api/admin/users/u1', {
         method: 'PATCH',
-        body: JSON.stringify({ name: 'New' }),
+        body: JSON.stringify({ name: 'New', reason: 'Correct profile' }),
       }),
       { params: Promise.resolve({ id: 'u1' }) },
     );
@@ -376,7 +408,7 @@ describe('PATCH /api/admin/users/[id]', () => {
     const res = await PATCHUserId(
       new NextRequest('http://localhost/api/admin/users/admin-2', {
         method: 'PATCH',
-        body: JSON.stringify({ role: 'HR_MANAGER' }),
+        body: JSON.stringify({ role: 'HR_MANAGER', reason: 'Correct role' }),
       }),
       { params: Promise.resolve({ id: 'admin-2' }) },
     );
@@ -396,7 +428,7 @@ describe('PATCH /api/admin/users/[id]', () => {
     const res = await PATCHUserId(
       new NextRequest('http://localhost/api/admin/users/admin-1', {
         method: 'PATCH',
-        body: JSON.stringify({ role: 'HR_MANAGER' }),
+        body: JSON.stringify({ role: 'HR_MANAGER', reason: 'Correct role' }),
       }),
       { params: Promise.resolve({ id: 'admin-1' }) },
     );
@@ -411,6 +443,15 @@ describe('PATCH /api/admin/users/[id]', () => {
 // ═══════════════════════════════════════════════════════════════════════════
 
 describe('POST /api/admin/users/[id]/deactivate', () => {
+  it('400 khi reason thiếu hoặc rỗng', async () => {
+    setAuth('ADMIN');
+    const res = await POSTDeactivate(
+      new NextRequest('http://localhost/api/admin/users/u1/deactivate', { method: 'POST', body: JSON.stringify({ reason: ' ' }) }),
+      { params: Promise.resolve({ id: 'u1' }) },
+    );
+    expect(res.status).toBe(400);
+    expect(mocks.deactivateUser).not.toHaveBeenCalled();
+  });
   it('409 SELF_DEACTIVATION_BLOCKED khi admin tự deactivate', async () => {
     setAuth('ADMIN');
     const { UserManagementServiceError } = await import(
@@ -462,6 +503,7 @@ describe('POST /api/admin/users/[id]/reactivate', () => {
     const res = await POSTReactivate(
       new NextRequest('http://localhost/api/admin/users/u1/reactivate', {
         method: 'POST',
+        body: JSON.stringify({ reason: 'Confirm active status' }),
       }),
       { params: Promise.resolve({ id: 'u1' }) },
     );

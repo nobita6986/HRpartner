@@ -23,9 +23,11 @@ import { AuthSessionError, getAuthContext } from '@/src/shared/auth/auth-context
 import { withDbContext } from '@/src/shared/auth/with-db-context';
 import {
   getUserWithGrants,
+  isUserMutationSerializationConflict,
   updateUser,
   UserManagementServiceError,
   type UpdateUserInput,
+  withSerializableUserManagementDb,
 } from '@/src/domains/admin/user-management.service';
 import { z } from 'zod';
 
@@ -46,7 +48,7 @@ const UpdateUserSchema = z
     role: z.nativeEnum(SystemRole).optional(),
     vendorId: z.string().min(1).nullable().optional(),
     isActive: z.boolean().optional(),
-    reason: z.string().max(500).nullable().optional(),
+    reason: z.string().trim().min(1, 'Lý do thao tác là bắt buộc').max(500),
   })
   .refine((data) => Object.keys(data).length > 0, {
     message: 'Phải có ít nhất một trường để cập nhật',
@@ -63,6 +65,7 @@ function mapServiceError(e: UserManagementServiceError): NextResponse {
     SELF_DEACTIVATION_BLOCKED: 409,
     SELF_MODIFICATION_BLOCKED: 409,
     NO_OP: 400,
+    VALIDATION: 400,
   };
   return NextResponse.json(
     { error: e.code, message: e.message, ...(e.details ? { details: e.details } : {}) },
@@ -151,10 +154,13 @@ export async function PATCH(
   };
 
   try {
-    const result = await withDbContext(getPrisma(), ctx, (tx) => updateUser(tx, ctx, id, input));
+    const result = await withSerializableUserManagementDb(getPrisma(), ctx, (tx) => updateUser(tx, ctx, id, input));
     return NextResponse.json(result);
   } catch (e) {
     if (e instanceof UserManagementServiceError) return mapServiceError(e);
+    if (isUserMutationSerializationConflict(e)) {
+      return NextResponse.json({ error: 'CONCURRENT_MODIFICATION', message: 'Dữ liệu người dùng vừa thay đổi; vui lòng tải lại và thử lại.' }, { status: 409 });
+    }
     console.error('[api/admin/users/[id] PATCH] error:', e);
     return NextResponse.json({ error: 'INTERNAL', message: 'Failed to update user' }, { status: 500 });
   }

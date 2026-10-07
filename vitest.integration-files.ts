@@ -23,6 +23,9 @@
  * Re-derive after adding DB tests: run the sentinel classification again (see HANDOFF ops notes).
  */
 export const INTEGRATION_TEST_FILES: string[] = [
+  // PR #119 audit correction: run first against the fresh migrated container;
+  // this real-Postgres race proof requires the active-admin set to start empty.
+  'tests/db/admin-user-last-admin-concurrency.integration.test.ts',
   'src/shared/auth/rls-context.test.ts',
   'src/shared/auth/matrix-scope.test.ts',
   'src/domains/security/security-matrix.integration.test.ts',

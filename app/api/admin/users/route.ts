@@ -24,7 +24,6 @@ import { SystemRole } from '@prisma/client';
 import { getPrisma } from '@/src/lib/db';
 import { AuthSessionError, getAuthContext } from '@/src/shared/auth/auth-context';
 import { withAuthorizedDb } from '@/src/shared/auth/with-authorized-db';
-import { withDbContext } from '@/src/shared/auth/with-db-context';
 import {
   IdempotencyConflictError,
   withIdempotency,
@@ -32,8 +31,10 @@ import {
 import { z } from 'zod';
 import {
   createUser,
+  isUserMutationSerializationConflict,
   UserManagementServiceError,
   type CreateUserInput,
+  withSerializableUserManagementDb,
 } from '@/src/domains/admin/user-management.service';
 
 export const dynamic = 'force-dynamic';
@@ -52,7 +53,7 @@ const CreateUserSchema = z.object({
     .regex(/^[0-9+\-()\s]+$/, 'Số điện thoại chỉ chứa chữ số và ký tự + - ( ) khoảng trắng'),
   role: z.nativeEnum(SystemRole, { errorMap: () => ({ message: 'Vai trò không hợp lệ' }) }),
   vendorId: z.string().min(1).nullable().optional(),
-  reason: z.string().max(500).nullable().optional(),
+  reason: z.string().trim().min(1, 'Lý do thao tác là bắt buộc').max(500),
 });
 
 function getIdempotencyKey(req: NextRequest): string | undefined {
@@ -75,6 +76,8 @@ function mapServiceError(e: UserManagementServiceError): NextResponse {
           ? 404
           : e.code === 'NO_OP'
             ? 400
+            : e.code === 'VALIDATION'
+              ? 400
             : 500;
   return NextResponse.json(
     { error: e.code, message: e.message, ...(e.details ? { details: e.details } : {}) },
@@ -174,7 +177,7 @@ export async function POST(req: NextRequest) {
     phone: parsed.data.phone,
     role: parsed.data.role,
     vendorId: parsed.data.vendorId ?? null,
-    reason: parsed.data.reason ?? null,
+    reason: parsed.data.reason,
   };
 
   const idempotencyKey = getIdempotencyKey(req);
@@ -183,10 +186,13 @@ export async function POST(req: NextRequest) {
   // Không có idempotency key → chạy trực tiếp, response vẫn bao gồm password.
   if (!idempotencyKey) {
     try {
-      const result = await withDbContext(prisma, ctx, (tx) => createUser(tx, ctx, input));
+      const result = await withSerializableUserManagementDb(prisma, ctx, (tx) => createUser(tx, ctx, input));
       return NextResponse.json(bigintSafe(result), { status: 201 });
     } catch (e) {
       if (e instanceof UserManagementServiceError) return mapServiceError(e);
+      if (isUserMutationSerializationConflict(e)) {
+        return NextResponse.json({ error: 'CONCURRENT_MODIFICATION', message: 'Dữ liệu người dùng vừa thay đổi; vui lòng tải lại và thử lại.' }, { status: 409 });
+      }
       console.error('[api/admin/users POST] error:', e);
       return NextResponse.json({ error: 'INTERNAL', message: 'Failed to create user' }, { status: 500 });
     }
@@ -199,9 +205,9 @@ export async function POST(req: NextRequest) {
       route: ROUTE_KEY,
       actorId: ctx.userId,
       key: idempotencyKey,
-      requestBody: { name: input.name, phone: input.phone, role: input.role },
+      requestBody: { name: input.name, phone: input.phone, role: input.role, vendorId: input.vendorId ?? null, reason: input.reason },
       handler: async () => {
-        const result = await withDbContext(prisma, ctx, (tx) => createUser(tx, ctx, input));
+        const result = await withSerializableUserManagementDb(prisma, ctx, (tx) => createUser(tx, ctx, input));
         return { body: result, statusCode: 201 };
       },
       // SECURITY (PHASE_KHOAHOC DoD): mật khẩu tạm chỉ hiển thị 1 lần ở response đầu
@@ -224,6 +230,9 @@ export async function POST(req: NextRequest) {
       );
     }
     if (e instanceof UserManagementServiceError) return mapServiceError(e);
+    if (isUserMutationSerializationConflict(e)) {
+      return NextResponse.json({ error: 'CONCURRENT_MODIFICATION', message: 'Dữ liệu người dùng vừa thay đổi; vui lòng tải lại và thử lại.' }, { status: 409 });
+    }
     console.error('[api/admin/users POST idempotency] error:', e);
     return NextResponse.json({ error: 'INTERNAL', message: 'Failed to create user' }, { status: 500 });
   }
