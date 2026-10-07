@@ -32,9 +32,9 @@ const APP_DIR = resolve(REPO_ROOT, 'app');
 const FAVICON = resolve(APP_DIR, 'favicon.ico');
 const LAYOUT = resolve(APP_DIR, 'layout.tsx');
 
-// Owner-supplied file at C:\Users\Admin\Downloads\favicon.ico. Pinned to the
-// byte-for-byte contract; the test fails if either side drifts.
-const OWNER_SOURCE_PATH = 'C:/Users/Admin/Downloads/favicon.ico';
+// Digest captured from the Owner-supplied file when the asset was approved.
+// Pinning the trusted digest keeps this test portable in CI (the Owner's local
+// Downloads directory is not available on hosted runners).
 const OWNER_SOURCE_SHA256 = '042ebc6a9fcffcd0d4df27b26ed0467af6db00d85c7ae0e7e3621dd1bdab40ed';
 const OWNER_SOURCE_SIZE = 15086;
 
@@ -116,16 +116,9 @@ describe('favicon asset hotfix — app/favicon.ico contract', () => {
     expect(p.totalBytes).toBe(OWNER_SOURCE_SIZE);
   });
 
-  it('app/favicon.ico SHA-256 matches the Owner-supplied source (byte-for-byte copy)', () => {
-    // Cross-checks the test against the source file on the dev box. If the source
-    // is missing or has been re-bottled, the test fails here with a clear
-    // message — operators must NOT regenerate favicon.ico from a different source.
-    expect(existsSync(OWNER_SOURCE_PATH), `Owner-supplied source missing at ${OWNER_SOURCE_PATH}`).toBe(true);
-    const srcHash = sha256Hex(OWNER_SOURCE_PATH);
+  it('app/favicon.ico SHA-256 matches the approved Owner-supplied asset', () => {
     const dstHash = sha256Hex(FAVICON);
-    expect(srcHash).toBe(OWNER_SOURCE_SHA256);
     expect(dstHash).toBe(OWNER_SOURCE_SHA256);
-    expect(dstHash).toBe(srcHash);
   });
 
   it('app/favicon.ico is a valid ICO (ICONDIR sig 00 00 01 00, type=1, count≥1)', () => {

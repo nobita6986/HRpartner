@@ -140,7 +140,7 @@ Sau hotfix:
 | `RQ-06` | `public/logo.png` và `public/hrp-logo.webp` không bị thay đổi (brand assets; byte-identical với baseline). |
 | `RQ-07` | `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml` không bị thay đổi (không thêm dependency). |
 | `RQ-08` | `prisma/schema.prisma` và `prisma/migrations/**` không bị thay đổi (không schema, không migration). |
-| `RQ-09` | Test mới `src/pwa/favicon-asset.test.ts` đọc `app/favicon.ico` + `app/layout.tsx` từ disk và assert RQ-01 (SHA-256 match file Owner), RQ-02 (ICO header hợp lệ, 16×16 ở entry 0), RQ-03 (layout reference `/favicon.ico`). Test fail nếu bất kỳ điều kiện nào bị vi phạm. |
+| `RQ-09` | Test mới `src/pwa/favicon-asset.test.ts` đọc `app/favicon.ico` + `app/layout.tsx` từ disk và assert RQ-01 (SHA-256 khớp digest đã ghi nhận từ file Owner), RQ-02 (ICO header hợp lệ, 16×16 ở entry 0), RQ-03 (layout reference `/favicon.ico`). Test phải portable trong CI, không phụ thuộc đường dẫn file local của Owner. |
 | `RQ-10` | `pnpm exec vitest run --config vitest.unit.config.ts src/pwa/favicon-asset.test.ts` exit 0. |
 | `RQ-11` | `pnpm exec vitest run --config vitest.unit.config.ts` (full unit suite) exit 0. |
 | `RQ-12` | `node .ai-pipeline/scripts/verify-encoding.mjs` (hoặc `pwsh .ai-pipeline/scripts/verify-encoding.ps1`) trên changed surface báo `RESULT: PASS`. ICO là binary, không nằm trong text-extension list của script, nên file sẽ tự skip. Surface text duy nhất là file test mới + TASK.md + HANDOFF.md — cả 3 đều UTF-8 no-BOM. |
@@ -194,7 +194,7 @@ Sau hotfix:
 
 | AC | Pass condition | Verification method |
 |---|---|---|
-| `AC-01` | `app/favicon.ico` tồn tại ở implementation SHA, là bản sao byte-for-byte của `C:\Users\Admin\Downloads\favicon.ico`. | `Test-Path` (Node `fs.existsSync`) + SHA-256 so sánh với file nguồn. Cả hai cùng digest hex. |
+| `AC-01` | `app/favicon.ico` tồn tại ở implementation SHA và là bản sao byte-for-byte của file Owner đã duyệt. | Chạy `node -e "const c=require('crypto'),fs=require('fs');console.log(c.createHash('sha256').update(fs.readFileSync('app/favicon.ico')).digest('hex'))"`; kết quả phải bằng digest đã ghi nhận khi đối chiếu file nguồn Owner: `042ebc6a9fcffcd0d4df27b26ed0467af6db00d85c7ae0e7e3621dd1bdab40ed`. CI không cần truy cập file nguồn local. |
 | `AC-02` | `app/favicon.ico` là ICO hợp lệ: ICONDIR `00 00 01 00`, type=1, count≥1, entry 0 width=16, height=16. | `favicon-asset.test.ts` đọc 22 bytes đầu và assert. |
 | `AC-03` | `app/layout.tsx` vẫn reference `/favicon.ico` ở `icons.icon`. | `favicon-asset.test.ts` đọc file và regex match `icons:\s*{[^}]*icon:\s*['"]/favicon\.ico['"]`. |
 | `AC-04` | `public/manifest.json` byte-identical với baseline `cdde6cef`. | `git diff cdde6cef..HEAD -- public/manifest.json` exit 0, output rỗng. |
@@ -259,3 +259,4 @@ Tier 1 append sau review/audit. Audit `NONE` resolve trực tiếp từ HANDOFF;
 | Spec version | Date | Change | Reason |
 |---|---|---|---|
 | `v1.0` | `2026-10-07` | Initial contract | Initial |
+| `v1.1` | `2026-10-07` | AC-01/RQ-09 verify the recorded approved digest rather than opening the Owner's local source path | Make the verification portable on hosted CI without weakening byte-identity against the source digest |
