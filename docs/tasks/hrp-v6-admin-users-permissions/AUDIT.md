@@ -20,13 +20,13 @@
 
 `prisma/schema.prisma` maps `User` to table `users`, `isActive` to `is_active`, and `role` to the PostgreSQL `SystemRole` enum. The lock query casts `role::text` to avoid coupling the SQL literal to enum type naming. No schema or migration changed.
 
-The integration harness is `vitest.integration.config.ts` / `scripts/ci/integration-preflight.mjs`; the new test is first in `vitest.integration-files.ts` and requires the fresh migrated CI container to start with zero active ADMIN rows. This worktree has neither `DATABASE_URL_TEST` nor `DATABASE_URL_ADMIN_TEST`, so the targeted local invocation is explicitly skipped; PR CI Integration must execute it before merge. Do not substitute development or production database URLs.
+The integration harness is `vitest.integration.config.ts` / `scripts/ci/integration-preflight.mjs`; the test is first in `vitest.integration-files.ts`. The first CI run showed that the fresh migrated container includes one seeded active ADMIN, invalidating the test's initial empty-set assumption before the concurrency assertions ran. The fixture now snapshots active ADMIN IDs using `DATABASE_URL_ADMIN_TEST`, temporarily deactivates them in the disposable CI DB, creates the two test admins, and restores prior active states in `afterAll` even when assertions fail. No production/non-test URL is used. The worktree has neither `DATABASE_URL_TEST` nor `DATABASE_URL_ADMIN_TEST`, so local execution is skipped; rerun CI Integration on the final head is mandatory.
 
 ## Delta audit
 
-- Corrected frozen implementation SHA: `54e8b22eedcec5d478ad05f420848cf089970668`.
-- Local evidence after the final source edit: full unit 320 files / 5,112 passed / 9 skipped; typecheck PASS; changed-file ESLint 0 errors (17 warnings); build PASS; verify-encoding PASS (11 changed text files); `git diff --check` PASS.
+- Corrected frozen implementation SHA: `4d2a4d9b800390d5ba59f93e26fb9e963ffb541b`.
+- Local evidence: full unit 320 files / 5,112 passed / 9 skipped before the final fixture-only edit; typecheck PASS and targeted ESLint PASS after it; targeted integration file self-skips locally because test DB URLs are absent; verify-encoding PASS and `git diff --check` PASS.
 - PostgreSQL concurrency test is registered in the CI integration inventory. It is skipped locally because neither `DATABASE_URL_TEST` nor `DATABASE_URL_ADMIN_TEST` is configured; no non-test database was used.
-- CI status: pending on the corrected PR head.
+- CI status: prior run `37591166920` failed only because the original fixture expected zero seeded active admins; that run was superseded. Rerun on the corrected final head is pending.
 - T3 DELTA verdict: pending review of that exact SHA.
 - Merge gate: do not merge PR #119 until T3 accepts the delta and all required CI checks are green on that SHA.
