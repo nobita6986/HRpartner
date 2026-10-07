@@ -11,11 +11,20 @@
  * Race condition handling: UNIQUE constraint DB quyết. Bên thua bắt P2002, đọc row
  * cũ, trả về response replay — KHÔNG chạy handler 2 lần.
  *
+ * Sanitize trước khi lưu (hrp-v6-admin-users-permissions — DEC-02):
+ *   Truyền `sanitizeResponseForStorage(body)` để strip secret (vd password tạm)
+ *   TRƯỚC khi ghi vào `idempotency_keys.response`. Retry (replay) sẽ trả về
+ *   phiên bản đã sanitize — KHÔNG bao giờ leak secret qua cache idempotency.
+ *
  * Usage:
  *   const { body, replayed } = await withIdempotency({
  *     prisma, route: 'POST:/api/tickets', actorId, key, requestBody,
  *     handler: () => service.createTicket(input, actor),
  *     ttlMs: 24 * 60 * 60 * 1000,
+ *     sanitizeResponseForStorage: (b) => {
+ *       const { temporaryPassword, ...rest } = (b ?? {}) as Record<string, unknown>;
+ *       return rest;
+ *     },
  *   });
  */
 import { createHash } from 'node:crypto';
@@ -39,6 +48,15 @@ export interface IdempotencyOptions<TBody> {
   handler: () => Promise<{ body: unknown; statusCode?: number }>;
   /** TTL mặc định 24h (DEC-02). */
   ttlMs?: number;
+  /**
+   * Sanitize body trước khi lưu vào `idempotency_keys.response` (PHASE_KHOAHOC DoD —
+   * secret chỉ hiển thị một lần). Khi retry, body replay = phiên-bản đã sanitize
+   * (KHÔNG có secret). Optional — không truyền → giữ nguyên hành vi cũ (lưu full body).
+   *
+   * Ví dụ: `(body) => { const { temporaryPassword, ...rest } = body ?? {}; return rest; }`.
+   * Phải pure (không mutate input). Trả về object JSON-serializable.
+   */
+  sanitizeResponseForStorage?: (body: unknown) => unknown;
 }
 
 export interface IdempotencyResult {
@@ -102,6 +120,13 @@ export async function withIdempotency<TBody>(opts: IdempotencyOptions<TBody>): P
   const result = await opts.handler();
   const statusCode = result.statusCode ?? 200;
 
+  // Sanitize body trước khi lưu để secret (vd password tạm) không bao giờ nằm trong
+  // bảng `idempotency_keys`. Khi retry, caller nhận lại body đã sanitize — KHÔNG có
+  // secret. Hành vi cũ (không truyền sanitize) giữ nguyên: lưu full body.
+  const persistableBody = opts.sanitizeResponseForStorage
+    ? opts.sanitizeResponseForStorage(result.body)
+    : result.body;
+
   // 3. Lưu row mới. Nếu race thua (P2002) → đọc row cũ và replay.
   try {
     await opts.prisma.idempotencyKey.create({
@@ -110,7 +135,7 @@ export async function withIdempotency<TBody>(opts: IdempotencyOptions<TBody>): P
         route: opts.route,
         key: opts.key,
         requestHash,
-        response: result.body as Prisma.JsonObject,
+        response: persistableBody as Prisma.JsonObject,
         statusCode,
         expiresAt,
       },
