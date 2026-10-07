@@ -60,6 +60,9 @@ export default async function AdminSettingsPage() {
           animation: 'NONE',
           contentRevision: 'rev-0',
         },
+        // hrp-t2-public-site-hotfix (T2 / STEP-02): Hero image fallback null
+        // khi schema DB chưa sẵn sàng — Hero render gradient (hành vi v1).
+        heroImage: null,
         updatedAt: new Date(0).toISOString(),
       };
       unavailableReason =

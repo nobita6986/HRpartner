@@ -175,8 +175,11 @@ const EXPECTED_HITS = [
   // public DTO `gallery`/`PublicJobGalleryItemDto` interface + `toDetailDto` mapping of
   // gallery — `jobOpening.staffingOrder` / `jobOpening.staffingOrder.project` selects
   // shifted from 752/759 → 805/812. The select clauses themselves are unchanged.
-  'src/domains/job-board/public.service.ts:805 staffingOrder',
-  'src/domains/job-board/public.service.ts:812 project',
+  // hrp-t2-public-site-hotfix (T2 / STEP-02): added `homepageSettings: { select: { heroImageMediaId: true } }`
+  // join — chỉ đọc FK, KHÔNG phải quan hệ BẮT BUỘC với bảng RLS (HomepageSettings không có RLS);
+  // nên sweep KHÔNG đếm hit mới. Line shift +1 do thêm dòng `homepageSettings: ...`.
+  'src/domains/job-board/public.service.ts:806 staffingOrder',
+  'src/domains/job-board/public.service.ts:813 project',
   // hrp-p1-e0 (2026-09-26): Recruiter Workbench read-model cần `fullName`/`phone`/`cccdNumber`/
   // `identityVerification`/`completeness` để build `RecruiterWorkbenchRow.candidate` (§4.3 RQ-02).
   // `LaborProfile` là quan hệ BẮT BUỘC trong schema `placement_case` (không optional, không list) — sweep

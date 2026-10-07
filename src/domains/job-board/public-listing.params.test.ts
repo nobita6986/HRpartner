@@ -27,8 +27,10 @@ import {
   listingIsIndexable,
 } from './public-listing.params';
 
-/** Bốn tên tham số mà `RQ-03` cấm phát ra, kể cả khi người dùng tự gõ vào URL. */
-const BANNED_PARAMS = ['salary', 'limit', 'shiftType', 'jobType'] as const;
+/** Bốn tên tham số mà `RQ-03` cấm phát ra, kể cả khi người dùng tự gõ vào URL.
+ *  hrp-t2-public-site-hotfix (T2 / STEP-09): `salary` được kích hoạt như
+ *  search-param hợp lệ, nên KHÔNG còn nằm trong danh sách cấm. */
+const BANNED_PARAMS = ['limit', 'shiftType', 'jobType'] as const;
 
 describe('mục 4.4 — hai hằng số là nguồn duy nhất', () => {
   it('PAGE_SIZE bằng 20 và LISTING_PATH bằng /viec-lam', () => {
@@ -105,9 +107,12 @@ describe('RQ-02/AC-03 — parseListingSearchParams làm sạch bốn trường',
 });
 
 describe('RQ-03/AC-04 — mọi khoá ngoài bốn tên bị bỏ qua trong im lặng', () => {
-  it('parse trả về ĐÚNG bốn khoá, không mang theo khoá lạ nào', () => {
+  it('parse trả về ĐÚNG năm khoá, không mang theo khoá lạ nào', () => {
     const params = parseListingSearchParams({
       q: 'bao ve',
+      // '10000000' (VND number) KHÔNG nằm trong whitelist bucket name
+      // (`<5`, `5-10`, `10-15`, `15-20`, `20-30`, `>30`), nên parser kẹp
+      // về undefined — đó là hành vi đúng của `cleanSalary`.
       salary: '10000000',
       limit: '999',
       shiftType: 'dem',
@@ -115,8 +120,17 @@ describe('RQ-03/AC-04 — mọi khoá ngoài bốn tên bị bỏ qua trong im l
       industry: 'nha_hang',
       page: '3',
     });
-    expect(Object.keys(params).sort()).toEqual(['area', 'offset', 'q', 'shift']);
+    // hrp-t2-public-site-hotfix (T2 / STEP-09): fence test — `salary` được
+    // thêm vào hợp đồng public-listing (5 tham số chính). Năm khoá còn
+    // lại (limit, shiftType, jobType, industry, page) bị parser bỏ qua.
+    expect(Object.keys(params).sort()).toEqual(['area', 'offset', 'q', 'salary', 'shift']);
     expect(params.q).toBe('bao ve');
+    expect(params.salary).toBeUndefined();
+  });
+
+  it('parse salary bucket hợp lệ `10-15` được giữ nguyên', () => {
+    const params = parseListingSearchParams({ salary: '10-15' });
+    expect(params.salary).toBe('10-15');
   });
 
   it('buildListingHref không bao giờ phát ra bốn tên bị cấm, kể cả khi input mang chúng', () => {
@@ -243,14 +257,17 @@ describe('DEC-08 — listingIsIndexable chỉ true khi cả bốn trường ở 
   });
 });
 
-describe('mục 4.4 — bề mặt export đúng NĂM thứ, không hơn', () => {
-  it('module export đúng năm tên đã ghi trong hợp đồng', () => {
+describe('mục 4.4 — bề mặt export đúng sáu thứ, không hơn', () => {
+  it('module export đúng sáu tên đã ghi trong hợp đồng', () => {
     // Đo bằng chính bề mặt runtime của module, không bằng grep chuỗi `export` trên nguồn: một
     // `export type` không sinh giá trị runtime nên grep sẽ đếm lệch, còn `Object.keys` trên
     // namespace thì đếm đúng thứ hợp đồng gọi là "thứ được export".
+    // hrp-t2-public-site-hotfix (T2 / STEP-09): thêm `SALARY_BUCKETS` và
+    // `SalaryBucket` (type — không tính runtime), tổng cộng sáu export runtime.
     expect(Object.keys(listingParamsModule).sort()).toEqual([
       'LISTING_PATH',
       'PAGE_SIZE',
+      'SALARY_BUCKETS',
       'buildListingHref',
       'listingIsIndexable',
       'parseListingSearchParams',

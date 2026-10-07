@@ -52,11 +52,13 @@ import { formatDeadlineDate, publicJobDetailPath } from '@/src/domains/job-board
 import {
   LISTING_PATH,
   PAGE_SIZE as _LISTING_PATH_PAGE_SIZE,
+  SALARY_BUCKETS,
   buildListingHref,
   listingIsIndexable,
   parseListingSearchParams,
+  type SalaryBucket,
 } from '@/src/domains/job-board/public-listing.params';
-import { summaryLabel } from '@/src/domains/job-board/public-listing.labels';
+import { salaryBucketLabel, summaryLabel } from '@/src/domains/job-board/public-listing.labels';
 import { JobStampOverlay } from '@/src/domains/job-board/components/landing/stamp-overlay';
 import { formatPublicSalary } from '@/src/domains/job-board/public-listing.labels';
 
@@ -94,6 +96,7 @@ type ListingLoad =
 const loadListing = cache(
   async (
     q: string | undefined,
+    salary: SalaryBucket | undefined,
     area: string | undefined,
     shift: string | undefined,
     offset: number,
@@ -122,8 +125,9 @@ const loadListing = cache(
     if (outcome.kind !== 'allowed') return { kind: 'throttled' };
     // AV1: `listingPageSize` injected from HomepageSettings singleton — passed explicitly
     // to the service so pagination arithmetic stays consistent with the actual page size.
+    // hrp-t2-public-site-hotfix (T2 / STEP-05): thêm `salary` vào filter chain.
     const data = await withPublicDb(getPrisma(), (tx) =>
-      listPublicJobProjection(tx, { q, area, shift, offset, limit: listingPageSize }),
+      listPublicJobProjection(tx, { q, salary, area, shift, offset, limit: listingPageSize }),
     );
     return { kind: 'ok', data, listingPageSize };
   },
@@ -260,9 +264,40 @@ function FilterForm({ params, facets }: { params: ListingParams; facets: Listing
           ))}
         </select>
       </div>
+      {/* hrp-t2-public-site-hotfix (T2 / STEP-05): Mức lương — bucket cố định.
+          Trước đây là placeholder "Mức lương — sắp có" ở hero; nay đã có dữ liệ
+          chuẩn (`salaryMinVnd`) nên đưa xuống filter form làm việc thật. */}
+      <div className="flex flex-col gap-1">
+        <label
+          htmlFor="listing-salary"
+          className="text-sm font-medium"
+          style={{ color: 'var(--color-on-surface)' }}
+        >
+          Mức lương
+        </label>
+        <select
+          id="listing-salary"
+          name="salary"
+          defaultValue={params.salary ?? ''}
+          className="hrp-focus min-h-11 w-full rounded-lg border px-3 text-base"
+          style={{
+            backgroundColor: 'var(--color-surface)',
+            borderColor: 'var(--color-outline-variant)',
+            color: 'var(--color-on-surface)',
+          }}
+          data-testid="listing-salary-select"
+        >
+          <option value="">Mọi mức lương</option>
+          {SALARY_BUCKETS.map((bucket) => (
+            <option key={bucket} value={bucket}>
+              {salaryBucketLabel(bucket)}
+            </option>
+          ))}
+        </select>
+      </div>
       <button
         type="submit"
-        className="hrp-btn-primary hrp-focus min-h-11 w-full rounded-lg px-4 text-base font-semibold lg:col-span-4 lg:w-auto lg:justify-self-start"
+        className="hrp-btn-primary hrp-focus min-h-11 w-full rounded-lg px-4 text-base font-semibold sm:col-span-2 lg:col-span-4 lg:w-auto lg:justify-self-start"
       >
         Tìm việc làm
       </button>
@@ -379,13 +414,16 @@ function JobCard({ job }: { job: ListingJob }) {
 
 export default async function PublicJobListingPage({ searchParams }: ListingPageProps) {
   const params = parseListingSearchParams(await searchParams);
-  const loaded = await loadListing(params.q, params.area, params.shift, params.offset);
+  const loaded = await loadListing(params.q, params.salary, params.area, params.shift, params.offset);
   if (loaded.kind === 'throttled') return <ThrottledNotice />;
 
   const { jobs, facets, total, nextOffset } = loaded.data;
   const listingPageSize = loaded.listingPageSize;
   const hasFilter =
-    params.q !== undefined || params.area !== undefined || params.shift !== undefined;
+    params.q !== undefined ||
+    params.salary !== undefined ||
+    params.area !== undefined ||
+    params.shift !== undefined;
 
   /**
    * `RQ-02` liệt kê ba ca `offset` phải về 0, và ca "vượt `total`" là ca DUY NHẤT parser không đo

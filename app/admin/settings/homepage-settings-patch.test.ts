@@ -25,6 +25,8 @@ const saved: HomepageSettingsDto = {
     animation: 'NONE',
     contentRevision: 'rev-1',
   },
+  // hrp-t2-public-site-hotfix (T2 / STEP-09): fence test thêm heroImage null.
+  heroImage: null,
   updatedAt: '2026-10-04T00:00:00.000Z',
 };
 
@@ -37,6 +39,8 @@ function draft(overrides: Partial<HomepageSettingsDraft> = {}): HomepageSettings
     phoneCallNumber: saved.phoneCallNumber ?? '',
     newsSectionEnabled: saved.newsSectionEnabled,
     stickyAnnouncement: saved.stickyAnnouncement,
+    // hrp-t2-public-site-hotfix (T2 / STEP-09): draft giờ có thêm heroImageMediaId.
+    heroImageMediaId: saved.heroImage?.mediaId ?? null,
     ...overrides,
   };
 }
@@ -105,5 +109,44 @@ describe('buildHomepageSettingsPatch', () => {
     };
 
     expect(buildHomepageSettingsPatch(draft({ stickyAnnouncement: null }), disabledSaved)).toEqual({});
+  });
+
+  // hrp-t2-public-site-hotfix (T2 / STEP-09): Hero image — patch emit id
+  // khi admin đổi ảnh, không patch gì khi id không đổi, clear về null khi
+  // admin bỏ chọn.
+  it('emits heroImageMediaId when admin picks a new image', () => {
+    expect(
+      buildHomepageSettingsPatch(draft({ heroImageMediaId: 'media-abc' }), saved),
+    ).toEqual({ heroImageMediaId: 'media-abc' });
+  });
+
+  it('does not resend heroImageMediaId when it matches saved', () => {
+    const savedWithHero: HomepageSettingsDto = {
+      ...saved,
+      heroImage: {
+        mediaId: 'media-abc',
+        url: 'https://example.com/hero.jpg',
+        alt: 'Hero',
+        caption: null,
+      },
+    };
+    expect(
+      buildHomepageSettingsPatch(draft({ heroImageMediaId: 'media-abc' }), savedWithHero),
+    ).toEqual({});
+  });
+
+  it('emits null heroImageMediaId when admin clears selection', () => {
+    const savedWithHero: HomepageSettingsDto = {
+      ...saved,
+      heroImage: {
+        mediaId: 'media-abc',
+        url: 'https://example.com/hero.jpg',
+        alt: 'Hero',
+        caption: null,
+      },
+    };
+    expect(
+      buildHomepageSettingsPatch(draft({ heroImageMediaId: null }), savedWithHero),
+    ).toEqual({ heroImageMediaId: null });
   });
 });
