@@ -42,7 +42,8 @@
 
 ## INSPECTION
 
-- Implementation SHA: `f1821055`.
+- Implementation SHA: `5f12f1ec` (final; `f1821055` was the implementation commit).
+- Implementation commit (code): `f1821055`.
 - Baseline: `2495239535d4326a36a617ce8d7694c6867f7164`.
 - Worktree: `HrP-t2-public-site-hotfix` (branch `codex/t2-public-site-hotfix`).
 - PR: https://github.com/nobita6986/HRpartner/pull/122
