@@ -23,7 +23,7 @@
 | Status | `READY_FOR_EXECUTION` |
 | Planner | `Tier 1` |
 | Baseline | `8f93178a81c9f35c6f9be1e016bc4377928db185` (`origin/main`) |
-| Implementation SHA | (set after commit) |
+| Implementation SHA | `f1dffefa7a4eefb825567477b63154fa06a18ae9` |
 | Contract gate | `READY_TO_CODE` |
 | Decision state | `CLOSED` |
 | Test environment | `READY` |

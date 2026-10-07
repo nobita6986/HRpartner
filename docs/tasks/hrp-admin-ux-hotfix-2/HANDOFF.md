@@ -11,7 +11,7 @@
 |---|---|
 | Branch | `codex/t1c-admin-ux-hotfix2` |
 | Baseline | `8f93178a81c9f35c6f9be1e016bc4377928db185` (origin/main) |
-| Implementation SHA | (set after commit) |
+| Implementation SHA | `f1dffefa7a4eefb825567477b63154fa06a18ae9` |
 | Frozen delivery | YES |
 
 ## In-scope surfaces (20 files, +1757 / −143)
