@@ -89,9 +89,13 @@ describeWithDb('user management last-admin concurrency (PostgreSQL)', () => {
     if (rejected?.status === 'rejected') {
       const error = rejected.reason as { code?: string; message?: string; meta?: unknown };
       const diagnostic = JSON.stringify({ code: error.code, message: error.message, meta: error.meta });
-      expect(['P2034', 'LAST_ADMIN_PROTECTED'], `Unexpected mutation rejection: ${diagnostic}`).toContain(
-        error.code,
-      );
+      if (error.code === 'P2010') {
+        expect((error.meta as { code?: string } | undefined)?.code, diagnostic).toBe('40001');
+      } else {
+        expect(['P2034', 'LAST_ADMIN_PROTECTED'], `Unexpected mutation rejection: ${diagnostic}`).toContain(
+          error.code,
+        );
+      }
     }
 
     const activeAdmins = await admin.user.count({ where: { role: SystemRole.ADMIN, isActive: true } });
