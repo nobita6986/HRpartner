@@ -586,11 +586,12 @@ export function JobPostingMediaCard({
         </div>
       )}
 
+      {/* hrp-t1c-media-global-pool-bulk-upload-hotfix: picker đọc chung toàn bộ
+          kho Media; bỏ defaultFolder cũ (RQ-12). */}
       <MediaPicker
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
         onPick={(mediaId) => void onPick(mediaId)}
-        defaultFolder="job-postings"
       />
     </section>
   );

@@ -1,15 +1,18 @@
 'use client';
 
 /**
- * hero-slides-editor.tsx — hrp-t1c-t2-public-site-hero-slides-ctv-layout (T2 hotfix / STEP-05).
+ * hero-slides-editor.tsx — hrp-t1c-t2-public-site-hero-slides-ctv-layout
+ *                          (T2 hotfix / STEP-05) +
+ *                          hrp-t1c-media-global-pool-bulk-upload-hotfix (RQ-12).
  *
  * Editor cho 5 slide của Hero carousel bên phải trang chủ
  * (`RecruitmentHighlight`). Mỗi slot mang `mediaId` (nullable, từ Media
  * Library) + `title` (≤ 120 ký tự) + `desc` (≤ 280 ký tự).
  *
  * Thin client: picker cho ảnh mirror `HeroImagePicker` UX — gọi
- * `/api/admin/media?folder=homepage`. KHÔNG inline-upload (giữ đồng nhất với
- * Hero image picker; admin upload ở `/admin/media`).
+ * `/api/admin/media?take=24` (KHÔNG folder — kho chung). KHÔNG
+ * inline-upload (giữ đồng nhất với Hero image picker; admin upload ở
+ * `/admin/media`).
  *
  * Thứ tự 5 slot cứng: "Tiêu điểm 1" → "Tiêu điểm 5". Vòng này không cho
  * thêm/xoá/sắp xếp slide (chỉ sửa ảnh + nội dung).
@@ -43,7 +46,6 @@ export interface HeroSlidesEditorProps {
   disabled?: boolean;
 }
 
-const FOLDER = 'homepage';
 const TAKE = 24;
 
 export function HeroSlidesEditor({ value, onChange, disabled }: HeroSlidesEditorProps) {
@@ -56,7 +58,8 @@ export function HeroSlidesEditor({ value, onChange, disabled }: HeroSlidesEditor
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/admin/media?folder=${FOLDER}&take=${TAKE}`, {
+      // hrp-t1c-media-global-pool-bulk-upload-hotfix: bỏ folder param — kho chung
+      const res = await fetch(`/api/admin/media?take=${TAKE}`, {
         cache: 'no-store',
       });
       if (!res.ok) {
@@ -295,7 +298,7 @@ export function HeroSlidesEditor({ value, onChange, disabled }: HeroSlidesEditor
                 >
                   {loading
                     ? 'Đang tải thư viện Media…'
-                    : `Chọn 1 ảnh từ Thư viện Media (folder ${FOLDER}).`}
+                    : 'Chọn 1 ảnh từ Thư viện Media.'}
                 </p>
                 {items.length === 0 && !loading ? (
                   <p

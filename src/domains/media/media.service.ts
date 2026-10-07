@@ -28,6 +28,7 @@ import {
   type PublicMediaItemDto,
   type PublicMediaResponse,
 } from './media.types';
+import { deriveMediaAlt } from './media-alt';
 
 export class MediaValidationError extends Error {
   constructor(message: string, public readonly field?: string) {
@@ -192,23 +193,32 @@ export async function createMedia(
   client: MediaClient,
   input: MediaCreateInput,
 ): Promise<MediaItemDto> {
-  validateCreateInput(input);
+  // hrp-t1c-media-global-pool-bulk-upload-hotfix (RQ-07): server authority cho alt.
+  // Khi input.alt rỗng/whitespace, derive từ filename trước khi validate.
+  const normalizedInput: MediaCreateInput = {
+    ...input,
+    alt:
+      input.alt === undefined || input.alt.trim() === ''
+        ? deriveMediaAlt(input.filename)
+        : input.alt,
+  };
+  validateCreateInput(normalizedInput);
 
   const created = await client.media.create({
     data: {
-      url: input.url,
-      alt: input.alt,
-      caption: input.caption ?? null,
-      folder: input.folder ?? 'uncategorized',
-      tags: input.tags ?? [],
-      status: input.status ?? 'PUBLIC',
-      cover: input.cover ?? false,
-      filename: input.filename,
-      size: input.size,
-      mimeType: input.mimeType,
-      publicUrl: input.url, // mirror cho tương lai CDN map
-      ownerId: input.ownerId,
-      createdById: input.createdById ?? null,
+      url: normalizedInput.url,
+      alt: normalizedInput.alt,
+      caption: normalizedInput.caption ?? null,
+      folder: normalizedInput.folder ?? 'uncategorized',
+      tags: normalizedInput.tags ?? [],
+      status: normalizedInput.status ?? 'PUBLIC',
+      cover: normalizedInput.cover ?? false,
+      filename: normalizedInput.filename,
+      size: normalizedInput.size,
+      mimeType: normalizedInput.mimeType,
+      publicUrl: normalizedInput.url, // mirror cho tương lai CDN map
+      ownerId: normalizedInput.ownerId,
+      createdById: normalizedInput.createdById ?? null,
     },
   });
 
@@ -280,8 +290,9 @@ export async function listMedia(
   const take = Math.min(50, Math.max(1, query.take ?? 20));
   const skip = Math.max(0, query.skip ?? 0);
 
+  // hrp-t1c-media-global-pool-bulk-upload-hotfix (RQ-10): global pool — folder không còn là filter.
+  // `query.folder` vẫn trên DTO cho backward-compat với client cũ, nhưng KHÔNG áp dụng vào where.
   const where: Prisma.MediaWhereInput = {};
-  if (query.folder) where.folder = query.folder;
   if (query.status) where.status = query.status;
   if (query.tag) where.tags = { has: query.tag };
   if (query.search) {

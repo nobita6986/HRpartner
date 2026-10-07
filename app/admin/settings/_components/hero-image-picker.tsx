@@ -1,18 +1,16 @@
 'use client';
 
 /**
- * hero-image-picker.tsx — hrp-t2-public-site-hotfix (T2 / STEP-07).
+ * hero-image-picker.tsx — hrp-t2-public-site-hotfix (T2 / STEP-07) +
+ *                        hrp-t1c-media-global-pool-bulk-upload-hotfix (RQ-12).
  *
  * Picker cho Admin chọn ảnh nền Hero trang chủ từ Media Library. UI thin
- * client: gọi `/api/admin/media?folder=homepage` (đã gate qua
- * CAN_MANAGE_MEDIA), hiển thị grid thumbnail, cho chọn 1 ảnh.
+ * client: gọi `/api/admin/media?take=24` (KHÔNG folder param — kho media là
+ * dùng chung sau hrp-t1c hotfix), hiển thị grid thumbnail, cho chọn 1 ảnh.
  *
  * KHÔNG inline-upload — Admin upload ảnh mới qua trang `/admin/media` đã
- * có sẵn, sau đó quay lại Settings → Giao diện chọn ảnh. Lý do: Vercel
- * Blob upload cần 3-step handshake (upload-url → upload → confirm) để
- * validate MIME/size; làm inline trong picker phình UI mà không thêm
- * capability. Nếu sau này cần inline-upload, refactor riêng một module
- * upload-flow chứ không nhồi vào picker.
+ * có sẵn (hỗ trợ bulk upload từ hrp-t1c), sau đó quay lại Settings → Giao
+ * diện chọn ảnh.
  */
 import * as React from 'react';
 import { Image as ImageIcon, X } from 'lucide-react';
@@ -27,7 +25,6 @@ export interface HeroImagePickerProps {
   disabled?: boolean;
 }
 
-const FOLDER = 'homepage';
 const TAKE = 24;
 
 export function HeroImagePicker({ selected, onSelect, disabled }: HeroImagePickerProps) {
@@ -39,7 +36,8 @@ export function HeroImagePicker({ selected, onSelect, disabled }: HeroImagePicke
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/admin/media?folder=${FOLDER}&take=${TAKE}`, {
+      // hrp-t1c-media-global-pool-bulk-upload-hotfix: bỏ folder param — kho chung
+      const res = await fetch(`/api/admin/media?take=${TAKE}`, {
         cache: 'no-store',
       });
       if (!res.ok) {
@@ -119,8 +117,11 @@ export function HeroImagePicker({ selected, onSelect, disabled }: HeroImagePicke
 
       {error ? (
         <p role="alert" style={{ color: 'var(--error)' }} className="text-xs font-medium">
-          {error}. Đảm bảo ảnh đã được upload ở trang Media Library với folder
-          <code className="mx-1 rounded bg-surface-container px-1 py-0.5">{FOLDER}</code>.
+          {error}. Đảm bảo ảnh đã được upload ở
+          <a className="ml-1 underline" href="/admin/media">
+            Quản lý Media
+          </a>
+          .
         </p>
       ) : null}
 
@@ -130,13 +131,11 @@ export function HeroImagePicker({ selected, onSelect, disabled }: HeroImagePicke
         </p>
       ) : items.length === 0 && !error ? (
         <p style={{ color: 'var(--on-surface-variant)' }} className="text-xs">
-          Chưa có ảnh nào trong folder
-          <code className="mx-1 rounded bg-surface-container px-1 py-0.5">{FOLDER}</code>.
-          Upload ảnh ở
+          Chưa có ảnh nào trong Thư viện Media. Upload ảnh ở
           <a className="ml-1 underline" href="/admin/media">
             Quản lý Media
           </a>
-          .
+          rồi quay lại.
         </p>
       ) : (
         <ul

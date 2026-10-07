@@ -4,7 +4,11 @@
  * Auth: ADMIN hoặc `CAN_MANAGE_MEDIA`.
  *
  * Sau khi client POST file qua /upload-url và nhận `blobUrl`, gọi POST
- * /confirm với metadata (alt bắt buộc nếu PUBLIC) để tạo Media row.
+ * /confirm với metadata. Alt KHÔNG bắt buộc từ client: nếu body.alt rỗng/whitespace,
+ * server tự derive từ filename (lấy từ `headResult.pathname`) qua
+ * `deriveMediaAlt`. Server vẫn authority cho alt (RQ-08).
+ *
+ * hrp-t1c-media-global-pool-bulk-upload-hotfix (RQ-08).
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { head } from '@vercel/blob';
@@ -16,6 +20,7 @@ import {
   createMedia,
   MediaValidationError,
 } from '@/src/domains/media/media.service';
+import { deriveMediaAlt } from '@/src/domains/media/media-alt';
 import type { MediaStatusEnum } from '@/src/domains/media/media.types';
 
 export const dynamic = 'force-dynamic';
@@ -106,15 +111,22 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   // 4. Tạo Media record
   try {
     const prisma = getPrisma();
+    // hrp-t1c-media-global-pool-bulk-upload-hotfix (RQ-08): server authority cho alt.
+    // Nếu client gửi alt rỗng/whitespace, derive từ filename trên Blob pathname.
+    const filename = headResult.pathname.split('/').pop() ?? headResult.pathname;
+    const resolvedAlt =
+      typeof body.alt === 'string' && body.alt.trim().length > 0
+        ? body.alt.trim()
+        : deriveMediaAlt(filename);
     const item = await createMedia(prisma, {
       url: body.blobUrl,
-      alt: body.alt,
+      alt: resolvedAlt,
       caption: body.caption ?? null,
       folder: body.folder ?? 'uncategorized',
       tags: body.tags ?? [],
       status: body.status ?? 'PUBLIC',
       cover: body.cover ?? false,
-      filename: headResult.pathname.split('/').pop() ?? headResult.pathname,
+      filename,
       size: body.size ?? headResult.size,
       mimeType: body.mimeType ?? 'application/octet-stream',
       ownerId: ctx.userId,

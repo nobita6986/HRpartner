@@ -1,10 +1,12 @@
 /**
- * media-responsive.static.test.ts — T1C admin-ux-hotfix 2 — DEC-08.
+ * media-responsive.static.test.ts — T1C admin-ux-hotfix 2 — DEC-08 +
+ *                                  hrp-t1c-media-global-pool-bulk-upload-hotfix (RQ-12).
  *
  * Lock:
  *   - /admin/media có padding/gutter responsive (mobile → desktop).
  *   - Grid thư viện dùng 2 / 3 / 4 cols theo breakpoint (sm / lg).
- *   - Folder sidebar collapse thành 1 cột khi viewport < md.
+ *   - Search form stacks vertically on mobile, row at sm+ (giữ nguyên).
+ *   - KHÔNG còn folder sidebar/select (sau hrp-t1c hotfix — kho media chung).
  *   - KHÔNG dùng raw row click + horizontal scroll tràn viewport.
  */
 import { readFileSync } from 'node:fs';
@@ -13,7 +15,7 @@ import { describe, expect, it } from 'vitest';
 
 const SOURCE = readFileSync(
   join(process.cwd(), 'app/admin/media/media-library-client.tsx'),
-  'utf8',
+  'utf8'
 );
 
 function stripComments(source: string): string {
@@ -26,7 +28,6 @@ const CODE = stripComments(SOURCE);
 
 describe('/admin/media — T1C admin-ux-hotfix 2 — responsive padding', () => {
   it('root container has horizontal + vertical padding that grows with viewport', () => {
-    // Expect px-4 → sm:px-6 → lg:px-8 chained on the root.
     expect(CODE).toMatch(/px-4[^"]*sm:px-6[^"]*lg:px-8/);
   });
 
@@ -42,9 +43,11 @@ describe('/admin/media — T1C admin-ux-hotfix 2 — responsive grid', () => {
     expect(CODE).toContain('lg:grid-cols-4');
   });
 
-  it('folder sidebar collapses to 1 col on mobile and shows fixed 220px sidebar at md+', () => {
-    expect(CODE).toContain('grid-cols-1');
-    expect(CODE).toContain('md:grid-cols-[220px_1fr]');
+  // hrp-t1c-media-global-pool-bulk-upload-hotfix (RQ-12): bỏ folder sidebar
+  it('does not render a folder sidebar (grid-cols-1 sidebar layout REMOVED)', () => {
+    expect(CODE).not.toContain('md:grid-cols-[220px_1fr]');
+    // Picker/library không dùng 'Thư mục' label sidebar
+    expect(CODE).not.toMatch(/>\s*Thư mục\s*</);
   });
 
   it('search form stacks vertically on mobile and aligns row at sm+', () => {
