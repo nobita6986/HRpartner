@@ -10,10 +10,15 @@ import { StatusBadge } from '@/src/shared/ui/status-badge';
 interface WorkerRow {
   id: string;
   userId: string;
-  fullName: string;
+  fullName: string | null;
   employmentStatus: WorkerEmploymentStatus | null;
   phone: string | null;
-  createdAt: string;
+  currentProject: { id: string; code: string | null; name: string | null } | null;
+  firstWorkDate: string | null;
+  currentProjectManager: string | null;
+  handler: string | null;
+  referrer: string | null;
+  commissionBeneficiary: string | null;
 }
 
 interface WorkersResponse {
@@ -24,16 +29,27 @@ interface WorkersResponse {
 }
 
 /**
- * `/admin/workers` — M5 Người lao động (T1B PRE-P2 HOTFIX).
+ * `/admin/workers` — Quản lý thông tin và trạng thái người lao động (T1B-OPS).
  *
- * Bảng gọn, CTA KHÔNG POST Worker rời rạc — dẫn operator sang luồng
- * "Tiếp nhận người lao động" tại `/admin/labor-profiles/new`. Worker chỉ
- * tồn tại qua conversion flow (`linkLaborProfileWorker` / PR #107), tạo
- * POST trực tiếp sẽ phá invariant `LaborProfile.workerId`. Row click
- * mở detail tại `/admin/workers/[id]`.
+ * T1B-OPS — Copy DEC-T1B-OPS-04: bỏ mã phân hệ nội bộ (M5) khỏi UI; mô tả
+ * ngắn "Quản lý thông tin và trạng thái người lao động.".
  *
- * Phân biệt với `/admin/labor-profiles` (Hồ sơ tiếp nhận): chưa convert
- * vẫn là LaborProfile, không phải Worker.
+ * T1B-OPS — Bảng thêm 6 cột vận hành dùng canonical relational data:
+ *   - currentProject        : ProjectAssignment.status IN (ACTIVE, PAUSED) mới nhất
+ *   - firstWorkDate         : MIN(EmploymentEpisode.startedAt) (KHÔNG dùng Worker.createdAt)
+ *   - currentProjectManager : Project.pmUserId (qua active assignment)
+ *   - handler               : Worker.assignedToId
+ *   - referrer              : ProjectAssignment.referrerId
+ *   - commissionBeneficiary : SourceClaim.ctvId (claimType='CTV_REFERRAL', accepted=true)
+ *
+ * Phân biệt rõ 4 thực thể người:
+ *   - Quản lý dự án ≠ Người phụ trách (handler) ≠ Người giới thiệu (referrer)
+ *     ≠ Người hưởng hoa hồng (CTV_REFERRAL accepted).
+ *
+ * CTA không POST Worker rời rạc — dẫn sang luồng "Tiếp nhận người lao động"
+ * tại `/admin/labor-profiles/new` (Worker chỉ tồn tại qua conversion flow
+ * `linkLaborProfileWorker`). Row click mở detail tại `/admin/workers/[id]`
+ * (ĐÃ BỎ cột Thao tác / nút "Xem" riêng — T1B-OPS DEC-T1B-OPS-04).
  */
 export default function WorkersPage() {
   const [workers, setWorkers] = useState<WorkerRow[]>([]);
@@ -83,7 +99,7 @@ export default function WorkersPage() {
             Danh sách người lao động
           </h1>
           <p style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-sm">
-            Phân hệ M5 — Quản lý hồ sơ người lao động (đã chuyển đổi từ Hồ sơ tiếp nhận).
+            Quản lý thông tin và trạng thái người lao động.
           </p>
         </div>
         <Link
@@ -161,11 +177,20 @@ export default function WorkersPage() {
                   borderBottom: '1px solid var(--outline-variant)',
                 }}
               >
-                {['Mã', 'Họ tên', 'Điện thoại', 'Trạng thái', 'Ngày tạo', 'Thao tác'].map(h => (
+                {[
+                  'Họ tên',
+                  'Trạng thái',
+                  'Dự án đang làm',
+                  'Ngày làm đầu tiên',
+                  'Quản lý dự án',
+                  'Người phụ trách',
+                  'Người giới thiệu',
+                  'Người hưởng hoa hồng',
+                ].map(h => (
                   <th
                     key={h}
                     style={{ color: 'var(--on-surface-variant)' }}
-                    className="px-4 py-3 text-left font-semibold"
+                    className="px-4 py-3 text-left font-semibold whitespace-nowrap"
                     scope="col"
                   >
                     {h}
@@ -185,14 +210,8 @@ export default function WorkersPage() {
                     window.location.href = `/admin/workers/${w.id}`;
                   }}
                 >
-                  <td style={{ color: 'var(--primary)' }} className="px-4 py-3 font-mono text-xs">
-                    {w.userId}
-                  </td>
                   <td style={{ color: 'var(--on-surface)' }} className="px-4 py-3">
-                    {w.fullName}
-                  </td>
-                  <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">
-                    {w.phone ?? '—'}
+                    {w.fullName ?? '—'}
                   </td>
                   <td className="px-4 py-3">
                     <StatusBadge
@@ -203,18 +222,25 @@ export default function WorkersPage() {
                       {workerStatusLabel(w.employmentStatus)}
                     </StatusBadge>
                   </td>
-                  <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">
-                    {new Date(w.createdAt).toLocaleDateString('vi-VN')}
+                  <td style={{ color: 'var(--on-surface)' }} className="px-4 py-3 text-xs">
+                    {w.currentProject
+                      ? `${w.currentProject.code ?? '—'}${w.currentProject.name ? ` · ${w.currentProject.name}` : ''}`
+                      : '—'}
                   </td>
-                  <td className="px-4 py-3">
-                    <Link
-                      href={`/admin/workers/${w.id}`}
-                      onClick={ev => ev.stopPropagation()}
-                      style={{ color: 'var(--primary)' }}
-                      className="text-xs font-medium hover:underline"
-                    >
-                      Xem
-                    </Link>
+                  <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs whitespace-nowrap">
+                    {w.firstWorkDate ? new Date(w.firstWorkDate).toLocaleDateString('vi-VN') : '—'}
+                  </td>
+                  <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">
+                    {w.currentProjectManager ?? '—'}
+                  </td>
+                  <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">
+                    {w.handler ?? '—'}
+                  </td>
+                  <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">
+                    {w.referrer ?? '—'}
+                  </td>
+                  <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">
+                    {w.commissionBeneficiary ?? '—'}
                   </td>
                 </tr>
               ))}

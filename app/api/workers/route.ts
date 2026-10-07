@@ -1,5 +1,5 @@
 /**
- * GET  /api/workers — M5 Admin Master Data (RQ-02)
+ * GET  /api/workers — M5 Admin Master Data (RQ-02) — T1B-OPS enriched.
  * POST /api/workers — DEPRECATED T1B: tạo Worker rời rạc KHÔNG còn là entrypoint.
  *
  * Lý do (T1B business invariant): Worker chỉ tồn tại qua conversion flow
@@ -16,9 +16,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getPrisma } from '@/src/lib/db';
 import { AuthSessionError, getAuthContext } from '@/src/shared/auth/auth-context';
 import { resolveEffectivePermissions } from '@/src/shared/auth/permission-resolver';
-import { projectWorkerList } from '@/src/shared/auth/worker-projection';
 import { withAuthorizedDbReadOnly } from '@/src/shared/auth/with-authorized-db';
 import { AuthScopeError } from '@/src/shared/auth/with-auth-scope';
+import { listWorkersForAdmin } from '@/src/domains/workforce/worker.service';
+import { maskPhone } from '@/src/shared/privacy/mask';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -54,39 +55,42 @@ export async function GET(req: NextRequest) {
   const finalStatus = employmentStatus ?? statusParam ?? undefined;
   const search = searchParams.get('search') ?? undefined;
 
-  const where: Record<string, unknown> = {};
-  if (finalStatus) {
-    if (!['NONE', 'ACTIVE', 'SUSPENDED', 'TERMINATED'].includes(finalStatus)) {
-      return NextResponse.json({ error: 'BAD_REQUEST', message: 'Invalid employmentStatus' }, { status: 400 });
-    }
-    where.employmentStatus = finalStatus;
-  }
+  // DEC-T1B-OPS-04: enriched service dùng canonical data sources (Episode /
+  // ProjectAssignment / SourceClaim) cho 6 cột bổ sung. `search` hiện
+  // không dùng ở UI — reject sớm để caller biết limit.
   if (search) {
-    where.OR = [
-      { fullName: { contains: search, mode: 'insensitive' } },
-      { phone: { contains: search, mode: 'insensitive' } },
-    ];
+    return NextResponse.json(
+      { error: 'UNSUPPORTED', message: 'Tìm kiếm chưa được hỗ trợ ở bảng Người lao động. Dùng filter trạng thái.' },
+      { status: 400 },
+    );
+  }
+  if (finalStatus && !['NONE', 'ACTIVE', 'SUSPENDED', 'TERMINATED'].includes(finalStatus)) {
+    return NextResponse.json({ error: 'BAD_REQUEST', message: 'Invalid employmentStatus' }, { status: 400 });
   }
 
   try {
     const permissions = await resolveEffectivePermissions({ userId: ctx.userId, role: ctx.role });
     const hasSensitivePermission = permissions.has('CAN_VIEW_WORKER_SENSITIVE');
-    // RQ-02/RQ-04: L1 buildWorkerScope (row scope theo 13-role matrix) + L2 RLS GUC
-    // trong CÙNG transaction. Root (ADMIN/HR_MANAGER/DIRECTOR) passthrough L1 → thấy
-    // toàn bộ; HR_STAFF/PM/SALE bị inject WHERE scope; role không khai báo scope Worker
-    // (MKT/ACCOUNTANT/EMPLOYEE) → L1 throw AuthScopeError → 403 (deny-by-default, DEC-08).
-    const { rows, total } = await withAuthorizedDbReadOnly(prisma, ctx, async (tx) => {
-      const [r, t] = await Promise.all([
-        tx.worker.findMany({ where, orderBy: { createdAt: 'desc' }, take, skip }),
-        tx.worker.count({ where }),
-      ]);
-      return { rows: r, total: t };
+    // T1B-OPS: enriched list 6 columns (currentProject, firstWorkDate,
+    // currentProjectManager, handler, referrer, commissionBeneficiary).
+    const result = await withAuthorizedDbReadOnly(prisma, ctx, async (tx) => {
+      return listWorkersForAdmin(tx as never, ctx as never, {
+        status: finalStatus ?? null,
+        take,
+        skip,
+      });
     });
+
+    // T1B-OPS: mask phone nếu caller không có CAN_VIEW_WORKER_SENSITIVE.
+    const maskedWorkers = result.workers.map((w) => ({
+      ...w,
+      phone: hasSensitivePermission ? w.phone : (w.phone ? maskPhone(w.phone) : null),
+    }));
     return NextResponse.json({
-      workers: projectWorkerList(rows, { hasSensitivePermission, action: 'LIST' }),
-      total,
-      take,
-      skip,
+      workers: maskedWorkers,
+      total: result.total,
+      take: result.take,
+      skip: result.skip,
     });
   } catch (err) {
     if (err instanceof AuthScopeError) {

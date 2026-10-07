@@ -255,5 +255,48 @@ export class WorkerServiceError extends Error {
   }
 }
 
+/**
+ * Worker list enriched row — projection mở rộng cho `/admin/workers`.
+ * Mỗi field computed null khi không có data canonical.
+ *
+ * DEC-T1B-OPS-03 / DEC-T1B-OPS-09 — tránh nhầm:
+ *   - `handler` ≠ referrer; tham chiếu `Worker.assignedToId`.
+ *   - `referrer` lấy từ `ProjectAssignment.referrerId` (fallback SourceClaim.referrerUserId).
+ *   - `commissionBeneficiary` từ `SourceClaim WHERE claimType='CTV_REFERRAL' AND accepted=true`.
+ *   - `currentProjectManager` từ `Project.pmUserId` (không phải `Worker.managerId`).
+ */
+export interface WorkerListEnrichedRow {
+  id: string;
+  userId: string;
+  fullName: string | null;
+  phone: string | null;
+  employmentStatus: string;
+  /** Dự án đang làm (ProjectAssignment WHERE status IN ('ACTIVE','PAUSED')) — null nếu không có. */
+  currentProject: { id: string; code: string | null; name: string | null } | null;
+  /** Ngày làm đầu tiên (MIN EmploymentEpisode.startedAt) — ISO date. */
+  firstWorkDate: string | null;
+  /** Quản lý dự án (Project.pmUserId) — User.name. */
+  currentProjectManager: string | null;
+  /** Người phụ trách (Worker.assignedToId) — User.name. KHÔNG nhầm với referrer. */
+  handler: string | null;
+  /** Người giới thiệu (ProjectAssignment.referrerId fallback SourceClaim.referrerUserId). */
+  referrer: string | null;
+  /** Người hưởng hoa hồng (SourceClaim.ctvId WHERE claimType='CTV_REFERRAL' AND accepted=true). */
+  commissionBeneficiary: string | null;
+}
+
+export interface WorkerListEnrichedFilter {
+  status?: string | null;
+  skip?: number;
+  take?: number;
+}
+
+export interface WorkerListEnrichedResponse {
+  workers: WorkerListEnrichedRow[];
+  total: number;
+  take: number;
+  skip: number;
+}
+
 /** Re-export Prisma type để caller dùng khi cần. */
 export type { Prisma };
