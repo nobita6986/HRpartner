@@ -12,7 +12,7 @@
 | Assurance lane | `FAST` |
 | Audit mode | `NONE` |
 | Audit reason | `FAST + single binary asset swap on the favicon slot. No schema, no auth, no PII, no API/contract change, no UI logic, no dependency. Tier 1 self-reviews per tier1.md. NONE chosen because the only delivery surface is one binary ICO at a well-known file-convention path plus a static-fence test; no public-API/PII/data blast radius. PWA icons/manifest are explicitly out of scope (the manifest does not reference the favicon slot).` |
-| Spec version | `v1.0` |
+| Spec version | `v1.1` |
 | Status | `READY_FOR_EXECUTION` |
 | Planner | `Tier 1` |
 | Baseline | `cdde6cef6fd5fdda8c098fb90d9d6d8989feda67` |
