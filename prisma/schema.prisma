@@ -1745,6 +1745,12 @@ model HomepageSettings {
   // xoá media row sẽ tự fallback gradient, không crash public.
   heroImageMediaId String?  @map("hero_image_media_id")
   heroImage        Media?   @relation("HomepageSettingsHeroImage", fields: [heroImageMediaId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  // hrp-t1c-t2-public-site-hero-slides-ctv-layout (2026-10-07): Nội dung 5
+  // slide Hero (image + title + desc) bên phải trang chủ. JSON array 5 phần tử
+  // `{mediaId: string|null, title: string, desc: string}` (T0 duyệt A1). NULL =
+  // fallback mảng hardcoded hiện tại. Không FK-enforce (mediaId là reference);
+  // service tự detect null và fallback image cũ/URL mặc định.
+  heroSlides       Json?    @map("hero_slides")
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt    @map("updated_at")
   updatedById      String?  @map("updated_by_id")
