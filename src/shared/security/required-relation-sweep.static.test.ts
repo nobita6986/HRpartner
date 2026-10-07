@@ -77,6 +77,14 @@ const EXPECTED_HITS = [
   'app/api/projects/route.ts:55 clientCompany',
   'app/api/vendor/orders/route.ts:44 project',
   'app/api/vendor/submissions/route.ts:62 project',
+  // T1C admin-ux-hotfix 2 (2026-10-07): `enrichWorkerList` selects
+  // `project: { code, name, pmUserId, pmUser: { name } }` from
+  // `ProjectAssignment` to render the "Dự án/Job đang làm" /
+  // "Quản lý dự án" columns on /admin/workers. Project is a required
+  // relation on ProjectAssignment (non-optional in schema, not a list).
+  // An toàn: chạy trong `withAuthorizedDbReadOnly(...)` (RLS GUC
+  // `hrp_project_visible_for` đã lọc; ADMIN/HR_MANAGER/DIRECTOR thoả).
+  'app/api/workers/route.ts:157 project',
   'src/domains/applications/application-queue.service.ts:183 project',
   'src/domains/applications/application-queue.service.ts:216 project',
   // AFF-04 STEP-02: re-read canonical ReferralAttribution via LaborProfile on
@@ -87,6 +95,14 @@ const EXPECTED_HITS = [
   // and `findDedupCandidates`, adding two comment lines above the AFF-04
   // select block. Sweep target is unchanged.
   'src/domains/applications/conversion.service.ts:130 laborProfile',
+  // T1C admin-ux-hotfix 2 (2026-10-07): `getLaborProfilesList` mở rộng
+  // `placementCase` chain để derive "Job/đơn gần nhất" — select
+  // `placements.project: { code, name }` (qua placementCase.placements)
+  // cho cột "Job/đơn gần nhất" trên /admin/labor-profiles. Project là quan
+  // hệ BẮT BUỘC trong schema `placement` (không optional, không list) — sweep
+  // đếm là đúng. An toàn: chạy trong `withDbContext` (RLS GUC
+  // `hrp_project_visible_for` đã lọc; HR_STAFF pool qua handlingAssignment).
+  'src/domains/talent/labor-profile.read-service.ts:164 project',
   'src/domains/crm/client-read.service.ts:80 staffingOrder',
   'src/domains/crm/project-read.service.ts:40 clientCompany',
   // T1A PRE-P2 PROJECT MANAGEMENT HOTFIX (2026-10-06): `getProjectForManagement`
@@ -436,9 +452,9 @@ describe('quan hệ BẮT BUỘC trên bảng bị RLS che: tập vị trí sele
    * `src/` giảm từ `9` xuống `5`. Assertion dưới đây khẳng định SỐ ĐO của lượt chạy hiện tại, không
    * khẳng định con số của lời văn, và cũng không khẳng định một phép trừ chưa chạy.
    */
-  it('phép quét phủ cả app/, chứng minh bằng chính ba dòng app/api trong kết quả (AC-04)', () => {
+  it('phép quét phủ cả app/, chứng minh bằng chính bốn dòng app/api trong kết quả (AC-04)', () => {
     const hits = sweep(scanned, fields);
-    expect(hits.filter((hit) => hit.startsWith('app/api/'))).toHaveLength(3);
+    expect(hits.filter((hit) => hit.startsWith('app/api/'))).toHaveLength(4);
     // Sau STEP-06 (4 dòng RỦI RO được sửa): 5 src. Sau AV2 commit e7ee2c8 (2026-09-13):
     // +4 dòng ở src/domains/staffing/job-posting-list.service.ts → 9 src. Tổng 12.
     // +4 dòng ở src/domains/crm và staffing W3 → 13 src. Tổng 16.
@@ -518,7 +534,14 @@ describe('quan hệ BẮT BUỘC trên bảng bị RLS che: tập vị trí sele
     // LaborProfile qua RLS `hrp_labor_profile_visible_for`; ProjectAssignment/User không
     // RLS-gated nhưng call site đã enforce worker scope (`assignedToId` / project.PM /
     // role) trước khi tới select. PII mask qua `projectWorker`. Tổng src = 44.
-    expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(44);
+    // T1C — ADMIN UX HOTFIX (2026-10-07, forward-merge tại đây): `getLaborProfilesList`
+    // mở rộng `placementCase.placements` để derive "Job/đơn gần nhất" — chọn
+    // `placements.project: { code, name }` (qua placementCase.placements). +1 entry mới:
+    // `labor-profile.read-service.ts:164 project`. Project là quan hệ BẮT BUỘC
+    // trong schema `placement` (không optional, không list). An toàn: chạy trong
+    // `withDbContext` (RLS GUC `hrp_project_visible_for` đã lọc; HR_STAFF pool qua
+    // handlingAssignment). Tổng src = 45.
+    expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(45);
   });
 });
 
