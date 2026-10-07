@@ -248,7 +248,15 @@ export async function withSerializableUserManagementDb<T>(
 
 /** PostgreSQL SSI conflict (Prisma P2034): caller should return retryable 409. */
 export function isUserMutationSerializationConflict(error: unknown): boolean {
-  return Boolean(error && typeof error === 'object' && 'code' in error && error.code === 'P2034');
+  if (!error || typeof error !== 'object' || !('code' in error)) return false;
+  if (error.code === 'P2034') return true;
+
+  // Prisma wraps serialization failures raised by raw SELECT ... FOR UPDATE
+  // as P2010; only PostgreSQL SQLSTATE 40001 is retryable, never generic P2010.
+  if (error.code !== 'P2010' || !('meta' in error) || !error.meta || typeof error.meta !== 'object') {
+    return false;
+  }
+  return 'code' in error.meta && error.meta.code === '40001';
 }
 
 /** Lock the complete active-admin set in stable order before the last-admin count. */

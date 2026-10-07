@@ -31,7 +31,13 @@ const mocks = vi.hoisted(() => ({
   deactivateUser: vi.fn(),
   reactivateUser: vi.fn(),
   getUserWithGrants: vi.fn(),
-  isUserMutationSerializationConflict: vi.fn((error: unknown) => Boolean(error && typeof error === 'object' && 'code' in error && error.code === 'P2034')),
+  isUserMutationSerializationConflict: vi.fn((error: unknown) => {
+    if (!error || typeof error !== 'object' || !('code' in error)) return false;
+    if (error.code === 'P2034') return true;
+    return error.code === 'P2010' && 'meta' in error && Boolean(
+      error.meta && typeof error.meta === 'object' && 'code' in error.meta && error.meta.code === '40001',
+    );
+  }),
 }));
 
 vi.mock('@/src/lib/db', () => ({ getPrisma: mocks.getPrisma }));
@@ -319,6 +325,21 @@ describe('POST /api/admin/users', () => {
   it('409 CONCURRENT_MODIFICATION khi PostgreSQL báo serialization conflict', async () => {
     setAuth('ADMIN');
     const error = Object.assign(new Error('serialization failure'), { code: 'P2034' });
+    mocks.withSerializableUserManagementDb.mockRejectedValue(error);
+    const res = await POSTUsers(new NextRequest('http://localhost/api/admin/users', {
+      method: 'POST',
+      body: JSON.stringify({ name: 'A', phone: '+84000000001', role: 'HR_STAFF', reason: 'Approved account' }),
+    }));
+    expect(res.status).toBe(409);
+    expect((await res.json()).error).toBe('CONCURRENT_MODIFICATION');
+  });
+
+  it('409 CONCURRENT_MODIFICATION cho raw-query P2010 chỉ khi meta.code là SQLSTATE 40001', async () => {
+    setAuth('ADMIN');
+    const error = Object.assign(new Error('Raw query failed'), {
+      code: 'P2010',
+      meta: { code: '40001', message: 'could not serialize access due to concurrent update' },
+    });
     mocks.withSerializableUserManagementDb.mockRejectedValue(error);
     const res = await POSTUsers(new NextRequest('http://localhost/api/admin/users', {
       method: 'POST',

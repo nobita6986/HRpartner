@@ -30,6 +30,7 @@ import {
   createUser,
   deactivateUser,
   getUserWithGrants,
+  isUserMutationSerializationConflict,
   reactivateUser,
   updateUser,
   withSerializableUserManagementDb,
@@ -191,6 +192,13 @@ describe('user-management serializable transaction boundary', () => {
     expect(applyRlsContext).toHaveBeenCalledWith(tx, ADMIN_AUTH);
     expect(callback).toHaveBeenCalledWith(tx);
     expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+  });
+
+  it('recognizes only Prisma P2034 or raw-query P2010 with PostgreSQL SQLSTATE 40001', () => {
+    expect(isUserMutationSerializationConflict({ code: 'P2034' })).toBe(true);
+    expect(isUserMutationSerializationConflict({ code: 'P2010', meta: { code: '40001' } })).toBe(true);
+    expect(isUserMutationSerializationConflict({ code: 'P2010', meta: { code: '42501' } })).toBe(false);
+    expect(isUserMutationSerializationConflict({ code: 'P2010', meta: { code: '42601' } })).toBe(false);
   });
 });
 
