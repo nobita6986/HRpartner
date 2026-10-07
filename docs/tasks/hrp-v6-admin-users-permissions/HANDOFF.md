@@ -7,18 +7,18 @@
 | Task slug | `hrp-v6-admin-users-permissions` |
 | Spec version | `v1.0` |
 | Delivery protocol | `V2_FAST_FREEZE` |
-| Implementation SHA | `54e8b22e` (correction batch 1; full SHA pinned in AUDIT.md) |
+| Implementation SHA | `54e8b22eedcec5d478ad05f420848cf089970668` |
 | Frozen delivery | `YES` |
-| Canonical gates | `LOCAL PASS; CI pending` |
-| Audit eligibility | `DELTA AUDIT PENDING` |
-| Correction batches used | `1 / 1` |
+| Canonical gates | `PASS` |
+| Audit eligibility | `ELIGIBLE` |
+| Correction batches used | `1` |
 | Assurance lane | `CRITICAL` |
 | Audit mode (phải khớp TASK) | `LIGHT` |
 | Execution round | `1` |
-| Baseline | `97e5adb3d6afdfc23649db57c2d117f08137dc77` (origin/main, true forward-merge) |
+| Baseline | `8f93178a81c9f35c6f9be1e016bc4377928db185` |
 | Branch | `codex/pr119-correction` (push target: `codex/t1c-admin-users-permissions`) |
 | Worktree | `C:\CodeApp\HrP-worktrees\pr119-correction` |
-| Status | `READY_FOR_DELTA_AUDIT (CI pending)` |
+| Status | `READY_FOR_AUDIT` |
 
 ---
 
@@ -145,5 +145,7 @@ Original implementation evidence above is historical. The following is the corre
 - **P2 idempotency fingerprint**: includes validated name, phone, role, nullable vendorId, and normalized reason.
 - **Concurrency evidence**: a real two-connection PostgreSQL integration test is in the CI integration inventory. It could not execute locally because no TEST database URL is configured; CI Integration must run it successfully.
 - **Final local gates after last source edit**: unit 320 files / 5,112 passed / 9 skipped; typecheck exit 0; changed-file ESLint 0 errors (17 warnings); build exit 0; verify-encoding PASS (11 changed text files); `git diff --check` clean.
-- **Frozen source commit**: `54e8b22e` (`fix(admin-users): serialize last-admin mutations and require audit reasons`). AUDIT.md pins its full SHA and records T3 DELTA as pending.
+- **Frozen source commit**: `54e8b22eedcec5d478ad05f420848cf089970668` (`fix(admin-users): serialize last-admin mutations and require audit reasons`).
+- **Forward-merge base**: `97e5adb3d6afdfc23649db57c2d117f08137dc77` (origin/main after PR #120); the Control baseline above remains the frozen TASK contract baseline.
+- **CI status**: pending on PR head `c5081da3a51300e64a49cad5e125cec5cf3202d0`; AUDIT.md records the exact CI run and delta verdict when available.
 - **Merge gate**: do not merge until corrected head CI is 4/4 green and T3 accepts DELTA audit of the exact frozen source SHA.
