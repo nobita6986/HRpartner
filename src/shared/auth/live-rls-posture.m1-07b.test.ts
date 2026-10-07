@@ -159,8 +159,16 @@ describe.skipIf(!enabled)(
       }
     });
 
-    it('AC-02/AC-05: every one of the 29 tables has a RESTRICTIVE FOR DELETE USING(false) backstop', async () => {
-      const list = TABLES_29.map((t) => `'${t}'`).join(',');
+    it('AC-02/AC-05: every one of the 29 tables has a RESTRICTIVE FOR DELETE USING(false) backstop (workers exempted by t1b-pre-p2-worker-delete-rls-hotfix)', async () => {
+      // t1b-pre-p2-worker-delete-rls-hotfix (PR #117) replaces
+      // `hrp_workers_no_delete USING false` on the `workers` table with
+      // `hrp_workers_delete_admin AS RESTRICTIVE FOR DELETE USING
+      // hrp_session_role() = 'ADMIN'`, so ADMIN can perform permanent
+      // delete on orphan workers. The 28/29 invariant therefore exempts
+      // `workers` (now 28 tables still have the USING false policy;
+      // workers has the new hrp_workers_delete_admin instead).
+      const TABLES_NO_DELETE_BACKSTOP = TABLES_29.filter((t) => t !== 'workers');
+      const list = TABLES_NO_DELETE_BACKSTOP.map((t) => `'${t}'`).join(',');
       const rows = await admin.$queryRawUnsafe<
         Array<{ tbl: string; polname: string; polpermissive: boolean; polcmd: string; qual: string | null }>
       >(
@@ -170,12 +178,36 @@ describe.skipIf(!enabled)(
          WHERE c.relname IN (${list}) AND c.relnamespace = 'public'::regnamespace
            AND p.polname = 'hrp_' || c.relname || '_no_delete'`,
       );
-      expect(rows.length).toBe(29);
+      expect(rows.length).toBe(28);
       for (const row of rows) {
         expect(row.polpermissive).toBe(false); // RESTRICTIVE
         expect(row.polcmd).toBe('d');          // FOR DELETE
         expect(String(row.qual)).toBe('false'); // USING(false)
       }
+      // Verify workers has the new admin-only RESTRICTIVE DELETE policy.
+      const workerPolicies = await admin.$queryRawUnsafe<
+        Array<{ polname: string; polpermissive: boolean; polcmd: string; qual: string | null }>
+      >(
+        `SELECT p.polname, p.polpermissive, p.polcmd,
+                pg_get_expr(p.polqual, p.polrelid) AS qual
+         FROM pg_policy p JOIN pg_class c ON c.oid = p.polrelid
+         WHERE c.relname = 'workers' AND c.relnamespace = 'public'::regnamespace
+           AND p.polname = 'hrp_workers_delete_admin'`,
+      );
+      expect(workerPolicies.length).toBe(1);
+      expect(workerPolicies[0].polpermissive).toBe(false); // RESTRICTIVE
+      expect(workerPolicies[0].polcmd).toBe('d');          // FOR DELETE
+      expect(String(workerPolicies[0].qual)).toContain('hrp_session_role'); // ADMIN-only
+      // And workers has no legacy hrp_workers_no_delete.
+      const legacyPolicy = await admin.$queryRawUnsafe<
+        Array<{ polname: string }>
+      >(
+        `SELECT p.polname FROM pg_policy p
+         JOIN pg_class c ON c.oid = p.polrelid
+         WHERE c.relname = 'workers' AND c.relnamespace = 'public'::regnamespace
+           AND p.polname = 'hrp_workers_no_delete'`,
+      );
+      expect(legacyPolicy.length).toBe(0);
     });
 
     // ══ AC-03: runtime roles are non-BYPASSRLS ═════════════════════════════════

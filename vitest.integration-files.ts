@@ -245,6 +245,18 @@ export const INTEGRATION_TEST_FILES: string[] = [
   // convert. Self-skips khi DATABASE_URL_TEST + DATABASE_URL_ADMIN_TEST absent.
   // Forward-only — không có migration mới; chỉ dùng schema hiện hữu.
   'tests/db/intake-convert-worker-link.integration.test.ts',
+  // hrp-t1b-pre-p2-worker-delete-rls-hotfix: forward-only RLS policy replacement
+  // for `workers` table — DROP `hrp_workers_no_delete` (RESTRICTIVE FOR DELETE
+  // USING false) + CREATE `hrp_workers_delete_admin` (RESTRICTIVE FOR DELETE
+  // USING hrp_session_role() = 'ADMIN'). Migration idempotent/convergent cho
+  // cả clean install và legacy DB. Covers AC-01 clean chain + AC-02 legacy
+  // convergence (seed hrp_workers_no_delete USING false thủ công) + AC-03
+  // role × delete matrix (ADMIN xóa OK; HR_MANAGER/DIRECTOR/HR_STAFF/WORKER
+  // deny Prisma P2025) + AC-04 idempotent re-apply + AC-05 dependency sweep
+  // (FK + service 409 WORKER_NOT_DELETABLE) + AC-06 file structural
+  // assertion. Self-skip when DATABASE_URL_TEST + DATABASE_URL_ADMIN_TEST
+  // absent (ENV_BLOCKED).
+  'tests/db/t1b-pre-p2-worker-delete-rls.integration.test.ts',
   // t1a-staffing-order-management (CORRECTION 2/1, T0): real PostgreSQL
   // two-connection race test for the canonical `p1a04:order:` advisory
   // lock. Three cases: (A) deleteStaffingOrder + concurrent JobOpening
