@@ -63,6 +63,9 @@ export default async function AdminSettingsPage() {
         // hrp-t2-public-site-hotfix (T2 / STEP-02): Hero image fallback null
         // khi schema DB chưa sẵn sàng — Hero render gradient (hành vi v1).
         heroImage: null,
+        // hrp-t1c-t2-public-site-hero-slides-ctv-layout (T2 hotfix / STEP-04):
+        // fallback rỗng — RecruitmentHighlight dùng hardcoded array v1.
+        heroSlides: [],
         updatedAt: new Date(0).toISOString(),
       };
       unavailableReason =

@@ -23,6 +23,8 @@ import { useRouter } from 'next/navigation';
 import { Loader2, RotateCcw, Save } from 'lucide-react';
 import {
   BEST_JOBS_PAGE_SIZES,
+  HERO_SLIDE_DESC_MAX,
+  HERO_SLIDE_TITLE_MAX,
   LISTING_PAGE_SIZE_MAX,
   LISTING_PAGE_SIZE_MIN,
   type HomepageSettingsDto,
@@ -48,6 +50,7 @@ import {
 import { buildHomepageSettingsPatch } from './homepage-settings-patch';
 import { actionLabel } from '@/src/shared/i18n/action-dictionary';
 import { HeroImagePicker } from './_components/hero-image-picker';
+import { HeroSlidesEditor, type HeroSlideSlot } from './_components/hero-slides-editor';
 import { AccountTabPanel, SettingsTabs, type SettingsTabId } from './_components/settings-tabs';
 
 const STICKY_TEXT_COLOR_LABELS: Readonly<Record<StickyTextColor, string>> = {
@@ -192,6 +195,23 @@ function validateCtaUrl(value: string): string | null {
   }
 }
 
+/**
+ * hrp-t1c-t2-public-site-hero-slides-ctv-layout (T2 hotfix / STEP-05):
+ * validate tiêu đề/mô tả của 5 slide. Title bắt buộc (server yêu cầu
+ * `min(1)` qua `HeroSlideSchema`); desc có thể rỗng.
+ */
+function validateHeroSlideTitle(value: string): string | null {
+  const trimmed = value.trim();
+  if (trimmed.length === 0) return 'Tiêu đề slide không được để trống.';
+  if (value.length > HERO_SLIDE_TITLE_MAX) return `Tối đa ${HERO_SLIDE_TITLE_MAX} ký tự.`;
+  return null;
+}
+
+function validateHeroSlideDesc(value: string): string | null {
+  if (value.length > HERO_SLIDE_DESC_MAX) return `Tối đa ${HERO_SLIDE_DESC_MAX} ký tự.`;
+  return null;
+}
+
 export default function AdminSettingsForm({ initialSettings, unavailableReason }: AdminSettingsFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -228,6 +248,28 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
           caption: initialSettings.heroImage.caption,
         },
   );
+
+  // hrp-t1c-t2-public-site-hero-slides-ctv-layout (T2 hotfix / STEP-05):
+  // 5 slide Hero carousel. Khi initialSettings.heroSlides rỗng (DB null
+  // hoặc column parse fail) → giữ 5 slot trống (admin tự điền lần đầu).
+  // `heroSlidesReset` đánh dấu admin bấm "Khôi phục mặc định" — patch sẽ
+  // emit `null` để server xoá cột JSONB và public render hardcoded array.
+  const initialHeroSlideSlots: HeroSlideSlot[] = React.useMemo(() => {
+    const slides = initialSettings.heroSlides ?? [];
+    return Array.from({ length: 5 }, (_, idx) => {
+      const s = slides[idx];
+      if (!s) return { mediaId: null, title: '', desc: '', publicUrl: null, publicAlt: '' };
+      return {
+        mediaId: s.mediaId,
+        title: s.title,
+        desc: s.desc,
+        publicUrl: s.url,
+        publicAlt: s.alt,
+      };
+    });
+  }, [initialSettings.heroSlides]);
+  const [heroSlideSlots, setHeroSlideSlots] = useState<HeroSlideSlot[]>(initialHeroSlideSlots);
+  const [heroSlidesReset, setHeroSlidesReset] = useState<boolean>(false);
 
   // ── UI2 / Phase B state ────────────────────────────────────────────────
   // Pull initial values from `initialSettings.stickyAnnouncement` (already
@@ -268,6 +310,26 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
     stickyMarqueeDurationSeconds <= 60
       ? null
       : 'Tốc độ chạy chữ phải từ 5 đến 60 giây mỗi vòng.';
+  // hrp-t1c-t2-public-site-hero-slides-ctv-layout (T2 hotfix / STEP-05):
+  // 5 slide — fail-fast nếu 1 slot vi phạm. Reset flag = admin đã chọn
+  // "Khôi phục mặc định" → không validate nội dung 5 slot (payload null).
+  const heroSlideFieldErrors = heroSlidesReset
+    ? []
+    : heroSlideSlots.map((s) => ({
+        title: validateHeroSlideTitle(s.title),
+        desc: validateHeroSlideDesc(s.desc),
+      }));
+  const hasHeroSlideFieldError = heroSlideFieldErrors.some(
+    (e) => e.title !== null || e.desc !== null,
+  );
+  const firstHeroSlideError =
+    heroSlideFieldErrors.find((e) => e.title !== null || e.desc !== null) ?? null;
+  const heroSlideErrorMessage =
+    heroSlidesReset
+      ? null
+      : firstHeroSlideError === null
+        ? null
+        : firstHeroSlideError.title ?? firstHeroSlideError.desc;
   const hasFieldError =
     bestJobsError !== null ||
     listingError !== null ||
@@ -277,7 +339,8 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
     stickyMessageError !== null ||
     stickyCtaLabelError !== null ||
     stickyCtaUrlError !== null ||
-    stickyMarqueeDurationError !== null;
+    stickyMarqueeDurationError !== null ||
+    hasHeroSlideFieldError;
 
   const hasChanges =
     bestJobsPageSize !== savedSnapshot.bestJobsPageSize ||
@@ -299,7 +362,17 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
     stickyAnimation !== savedSnapshot.stickyAnnouncement.animation ||
     stickyContentRevision !== savedSnapshot.stickyAnnouncement.contentRevision ||
     // hrp-t2-public-site-hotfix (T2 / STEP-07): Hero image — track media id.
-    heroImageMediaId !== (savedSnapshot.heroImage?.mediaId ?? null);
+    heroImageMediaId !== (savedSnapshot.heroImage?.mediaId ?? null) ||
+    // hrp-t1c-t2-public-site-hero-slides-ctv-layout (T2 hotfix / STEP-05):
+    // 5 slide Hero — so sánh element-wise. Reset flag luôn coi là có thay đổi.
+    heroSlidesReset ||
+    heroSlideSlots.some((s, idx) => {
+      const saved = (savedSnapshot.heroSlides ?? [])[idx];
+      if (!saved) {
+        return s.mediaId !== null || s.title !== '' || s.desc !== '';
+      }
+      return s.mediaId !== saved.mediaId || s.title !== saved.title || s.desc !== saved.desc;
+    });
 
   // Clear stale success/error when user edits again.
   useEffect(() => {
@@ -358,6 +431,15 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
         : null,
       // hrp-t2-public-site-hotfix (T2 / STEP-07): Hero image media id.
       heroImageMediaId,
+      // hrp-t1c-t2-public-site-hero-slides-ctv-layout (T2 hotfix / STEP-05):
+      // 5 slide. Khi `heroSlidesReset` true → emit null (clear column,
+      // public render hardcoded); ngược lại emit 5 slot payload.
+      heroSlides: heroSlideSlots.map((s) => ({
+        mediaId: s.mediaId,
+        title: s.title,
+        desc: s.desc,
+      })),
+      heroSlidesReset,
     }, savedSnapshot);
   }
 
@@ -382,6 +464,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
           stickyCtaLabelError ??
           stickyCtaUrlError ??
           stickyMarqueeDurationError ??
+          heroSlideErrorMessage ??
           'Có trường chưa hợp lệ.',
       );
       return;
@@ -440,6 +523,24 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
                   caption: savedHero.caption,
                 },
           );
+          // hrp-t1c-t2-public-site-hero-slides-ctv-layout (T2 hotfix / STEP-05):
+          // sync 5 slide từ snapshot — server join media đã cập nhật URL/alt.
+          // Khi column đã bị clear → snapshot trả [] → reset về 5 slot trống.
+          const savedSlides = data.settings.heroSlides ?? [];
+          setHeroSlideSlots(
+            Array.from({ length: 5 }, (_, idx) => {
+              const s = savedSlides[idx];
+              if (!s) return { mediaId: null, title: '', desc: '', publicUrl: null, publicAlt: '' };
+              return {
+                mediaId: s.mediaId,
+                title: s.title,
+                desc: s.desc,
+                publicUrl: s.url,
+                publicAlt: s.alt,
+              };
+            }),
+          );
+          setHeroSlidesReset(false);
           setSuccess('Đã lưu cài đặt trang chủ và kênh liên hệ.');
         }
         router.refresh();
@@ -482,6 +583,23 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
             caption: resetHero.caption,
           },
     );
+    // hrp-t1c-t2-public-site-hero-slides-ctv-layout (T2 hotfix / STEP-05):
+    // reset 5 slide về snapshot server. Reset flag đồng thời clear.
+    const resetSlides = savedSnapshot.heroSlides ?? [];
+    setHeroSlideSlots(
+      Array.from({ length: 5 }, (_, idx) => {
+        const s = resetSlides[idx];
+        if (!s) return { mediaId: null, title: '', desc: '', publicUrl: null, publicAlt: '' };
+        return {
+          mediaId: s.mediaId,
+          title: s.title,
+          desc: s.desc,
+          publicUrl: s.url,
+          publicAlt: s.alt,
+        };
+      }),
+    );
+    setHeroSlidesReset(false);
     setError(null);
     setSuccess(null);
   }
@@ -678,6 +796,60 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
               setHeroImageSelected(next);
               setHeroImageMediaId(next?.id ?? null);
             }}
+            disabled={Boolean(unavailableReason) || isPending}
+          />
+        </div>
+
+        {/* hrp-t1c-t2-public-site-hero-slides-ctv-layout (T2 hotfix / STEP-06):
+            5 slide Hero carousel — chỉnh ảnh + tiêu đề + mô tả từng slot.
+            Thứ tự cứng; vòng này không thêm/xoá/sắp xếp slide. Khi admin
+            bấm "Khôi phục mặc định" → patch gửi null để server xoá cột
+            JSONB, public surface render hardcoded array. */}
+        <div
+          className="mt-6 border-t pt-6"
+          style={{ borderColor: 'var(--outline-variant)' }}
+          data-testid="ui2-hero-slides-block"
+        >
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <h3 style={{ color: 'var(--on-surface)' }} className="text-sm font-semibold">
+                Ảnh &amp; nội dung slide Hero
+              </h3>
+              <p style={{ color: 'var(--on-surface-variant)' }} className="mt-0.5 text-xs">
+                5 tiêu điểm của carousel bên phải trang chủ. Tiêu đề bắt buộc; mô tả tối đa 280 ký tự. Bấm Khôi phục mặc định để trở về nội dung gốc.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setHeroSlideSlots(
+                  Array.from({ length: 5 }, () => ({
+                    mediaId: null,
+                    title: '',
+                    desc: '',
+                    publicUrl: null,
+                    publicAlt: '',
+                  })),
+                );
+                setHeroSlidesReset(true);
+              }}
+              disabled={Boolean(unavailableReason) || isPending}
+              style={{ background: 'var(--surface-container)', color: 'var(--on-surface)' }}
+              className="hrp-focus rounded-md border border-[var(--outline-variant)] px-2 py-1 text-[11px] font-semibold disabled:opacity-40"
+              data-testid="hero-slides-reset-button"
+            >
+              Khôi phục mặc định
+            </button>
+          </div>
+          <HeroSlidesEditor
+            value={heroSlideSlots}
+            onChange={(idx, next) =>
+              setHeroSlideSlots((prev) => {
+                const copy = prev.slice();
+                copy[idx] = next;
+                return copy;
+              })
+            }
             disabled={Boolean(unavailableReason) || isPending}
           />
         </div>

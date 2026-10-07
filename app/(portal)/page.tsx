@@ -220,7 +220,12 @@ export default function JobsPage() {
   // AV1: bootstrap HomepageSettings singleton (server fetches, client hydrates from page data).
   // If the API call fails, defaults are already in place via DEFAULT_BEST_PAGE_SIZE.
   // hrp-t2-public-site-hotfix (T2 / STEP-06): thêm `heroImage` từ DTO.
+  // hrp-t1c-t2-public-site-hero-slides-ctv-layout (T2 hotfix / STEP-08):
+  // thêm `heroSlides` (mảng 5 slide) để truyền cho RecruitmentHighlight.
   const [heroImage, setHeroImage] = useState<{ url: string; alt: string } | null>(null);
+  const [heroSlides, setHeroSlides] = useState<
+    Array<{ index: number; mediaId: string | null; url: string | null; alt: string; title: string; desc: string }>
+  >([]);
   useEffect(() => {
     fetch('/api/public/homepage-settings', { cache: 'no-store' })
       .then((res) => {
@@ -228,6 +233,14 @@ export default function JobsPage() {
         return res.json() as Promise<{
           bestJobsPageSize: number;
           heroImage: { url: string; alt: string; caption: string | null } | null;
+          heroSlides: Array<{
+            index: number;
+            mediaId: string | null;
+            url: string | null;
+            alt: string;
+            title: string;
+            desc: string;
+          }>;
         }>;
       })
       .then((data) => {
@@ -237,6 +250,9 @@ export default function JobsPage() {
         }
         if (data.heroImage && typeof data.heroImage.url === 'string') {
           setHeroImage({ url: data.heroImage.url, alt: data.heroImage.alt ?? '' });
+        }
+        if (Array.isArray(data.heroSlides)) {
+          setHeroSlides(data.heroSlides);
         }
       })
       .catch(() => { /* use default on error */ });
@@ -410,7 +426,10 @@ export default function JobsPage() {
           </form>
         </div>
         <div className="hidden w-full max-w-md flex-shrink-0 lg:block">
-          <RecruitmentHighlight />
+          {/* hrp-t1c-t2-public-site-hero-slides-ctv-layout (T2 hotfix / STEP-08):
+              truyền heroSlides từ DTO xuống component. Khi rỗng, component
+              fallback hardcoded array (giữ nguyên content v1). */}
+          <RecruitmentHighlight slides={heroSlides} />
         </div>
       </Hero>
 

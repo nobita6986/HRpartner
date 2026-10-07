@@ -25,8 +25,11 @@ const saved: HomepageSettingsDto = {
     animation: 'NONE',
     contentRevision: 'rev-1',
   },
-  // hrp-t2-public-site-hotfix (T2 / STEP-09): fence test thêm heroImage null.
+// hrp-t2-public-site-hotfix (T2 / STEP-09): fence test thêm heroImage null.
   heroImage: null,
+  // hrp-t1c-t2-public-site-hero-slides-ctv-layout (T2 hotfix / STEP-09):
+  // fence test thêm heroSlides rỗng (fallback hardcoded).
+  heroSlides: [],
   updatedAt: '2026-10-04T00:00:00.000Z',
 };
 
@@ -41,6 +44,14 @@ function draft(overrides: Partial<HomepageSettingsDraft> = {}): HomepageSettings
     stickyAnnouncement: saved.stickyAnnouncement,
     // hrp-t2-public-site-hotfix (T2 / STEP-09): draft giờ có thêm heroImageMediaId.
     heroImageMediaId: saved.heroImage?.mediaId ?? null,
+    // hrp-t1c-t2-public-site-hero-slides-ctv-layout (T2 hotfix / STEP-09):
+    // draft giờ có thêm 5 slide payload + reset flag.
+    heroSlides: (saved.heroSlides ?? []).map((s) => ({
+      mediaId: s.mediaId,
+      title: s.title,
+      desc: s.desc,
+    })),
+    heroSlidesReset: false,
     ...overrides,
   };
 }
@@ -148,5 +159,71 @@ describe('buildHomepageSettingsPatch', () => {
     expect(
       buildHomepageSettingsPatch(draft({ heroImageMediaId: null }), savedWithHero),
     ).toEqual({ heroImageMediaId: null });
+  });
+
+  // hrp-t1c-t2-public-site-hero-slides-ctv-layout (T2 hotfix / STEP-10):
+  // patch emit mảng 5 slide khi admin đổi nội dung. Reset flag → patch null
+  // để server xoá cột JSONB (fallback hardcoded).
+  it('emits full heroSlides array when one slot title changes', () => {
+    const savedWithSlides: HomepageSettingsDto = {
+      ...saved,
+      heroSlides: [
+        { index: 1, mediaId: null, url: null, alt: '', title: 'Slide 1 cũ', desc: '' },
+        { index: 2, mediaId: null, url: null, alt: '', title: 'Slide 2', desc: '' },
+        { index: 3, mediaId: null, url: null, alt: '', title: 'Slide 3', desc: '' },
+        { index: 4, mediaId: null, url: null, alt: '', title: 'Slide 4', desc: '' },
+        { index: 5, mediaId: null, url: null, alt: '', title: 'Slide 5', desc: '' },
+      ],
+    };
+    const next = draft({
+      heroSlides: savedWithSlides.heroSlides.map((s, i) =>
+        i === 0 ? { mediaId: s.mediaId, title: 'Slide 1 mới', desc: s.desc } : { mediaId: s.mediaId, title: s.title, desc: s.desc },
+      ),
+      heroSlidesReset: false,
+    });
+    expect(buildHomepageSettingsPatch(next, savedWithSlides).heroSlides).toEqual([
+      { mediaId: null, title: 'Slide 1 mới', desc: '' },
+      { mediaId: null, title: 'Slide 2', desc: '' },
+      { mediaId: null, title: 'Slide 3', desc: '' },
+      { mediaId: null, title: 'Slide 4', desc: '' },
+      { mediaId: null, title: 'Slide 5', desc: '' },
+    ]);
+  });
+
+  it('does not resend heroSlides when nothing changed', () => {
+    const savedWithSlides: HomepageSettingsDto = {
+      ...saved,
+      heroSlides: [
+        { index: 1, mediaId: null, url: null, alt: '', title: 'a', desc: '' },
+        { index: 2, mediaId: null, url: null, alt: '', title: 'b', desc: '' },
+        { index: 3, mediaId: null, url: null, alt: '', title: 'c', desc: '' },
+        { index: 4, mediaId: null, url: null, alt: '', title: 'd', desc: '' },
+        { index: 5, mediaId: null, url: null, alt: '', title: 'e', desc: '' },
+      ],
+    };
+    const slideInputs = savedWithSlides.heroSlides.map((s) => ({
+      mediaId: s.mediaId,
+      title: s.title,
+      desc: s.desc,
+    }));
+    expect(
+      buildHomepageSettingsPatch(draft({ heroSlides: slideInputs, heroSlidesReset: false }), savedWithSlides),
+    ).toEqual({});
+  });
+
+  it('emits null heroSlides when admin clicks restore default', () => {
+    const savedWithSlides: HomepageSettingsDto = {
+      ...saved,
+      heroSlides: [
+        { index: 1, mediaId: null, url: null, alt: '', title: 'a', desc: '' },
+        { index: 2, mediaId: null, url: null, alt: '', title: 'b', desc: '' },
+        { index: 3, mediaId: null, url: null, alt: '', title: 'c', desc: '' },
+        { index: 4, mediaId: null, url: null, alt: '', title: 'd', desc: '' },
+        { index: 5, mediaId: null, url: null, alt: '', title: 'e', desc: '' },
+      ],
+    };
+    expect(
+      buildHomepageSettingsPatch(draft({ heroSlidesReset: true }), savedWithSlides),
+    ).toEqual({ heroSlides: null });
   });
 });
