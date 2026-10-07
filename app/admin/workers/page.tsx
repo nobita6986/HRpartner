@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { workerStatusLabel, workerStatusTone } from '@/src/domains/workforce/worker-ui';
 import type { WorkerEmploymentStatus } from '@/src/domains/workforce/worker-ui';
 import { StatusBadge } from '@/src/shared/ui/status-badge';
@@ -10,10 +11,15 @@ import { StatusBadge } from '@/src/shared/ui/status-badge';
 interface WorkerRow {
   id: string;
   userId: string;
-  fullName: string;
+  fullName: string | null;
   employmentStatus: WorkerEmploymentStatus | null;
   phone: string | null;
-  createdAt: string;
+  currentProject: { id: string; code: string | null; name: string | null } | null;
+  firstWorkDate: string | null;
+  currentProjectManager: string | null;
+  handler: string | null;
+  referrer: string | null;
+  commissionBeneficiary: string | null;
 }
 
 interface WorkersResponse {
@@ -24,16 +30,27 @@ interface WorkersResponse {
 }
 
 /**
- * `/admin/workers` — M5 Người lao động (T1B PRE-P2 HOTFIX).
+ * `/admin/workers` — Quản lý thông tin và trạng thái người lao động (T1B-OPS).
  *
- * Bảng gọn, CTA KHÔNG POST Worker rời rạc — dẫn operator sang luồng
- * "Tiếp nhận người lao động" tại `/admin/labor-profiles/new`. Worker chỉ
- * tồn tại qua conversion flow (`linkLaborProfileWorker` / PR #107), tạo
- * POST trực tiếp sẽ phá invariant `LaborProfile.workerId`. Row click
- * mở detail tại `/admin/workers/[id]`.
+ * T1B-OPS — Copy DEC-T1B-OPS-04: bỏ mã phân hệ nội bộ (M5) khỏi UI; mô tả
+ * ngắn "Quản lý thông tin và trạng thái người lao động.".
  *
- * Phân biệt với `/admin/labor-profiles` (Hồ sơ tiếp nhận): chưa convert
- * vẫn là LaborProfile, không phải Worker.
+ * T1B-OPS — Bảng thêm 6 cột vận hành dùng canonical relational data:
+ *   - currentProject        : ProjectAssignment.status IN (ACTIVE, PAUSED) mới nhất
+ *   - firstWorkDate         : MIN(EmploymentEpisode.startedAt) (KHÔNG dùng Worker.createdAt)
+ *   - currentProjectManager : Project.pmUserId (qua active assignment)
+ *   - handler               : Worker.assignedToId
+ *   - referrer              : ProjectAssignment.referrerId
+ *   - commissionBeneficiary : SourceClaim.ctvId (claimType='CTV_REFERRAL', accepted=true)
+ *
+ * Phân biệt rõ 4 thực thể người:
+ *   - Quản lý dự án ≠ Người phụ trách (handler) ≠ Người giới thiệu (referrer)
+ *     ≠ Người hưởng hoa hồng (CTV_REFERRAL accepted).
+ *
+ * CTA không POST Worker rời rạc — dẫn sang luồng "Tiếp nhận người lao động"
+ * tại `/admin/labor-profiles/new` (Worker chỉ tồn tại qua conversion flow
+ * `linkLaborProfileWorker`). Row click mở detail tại `/admin/workers/[id]`
+ * (ĐÃ BỎ cột Thao tác / nút "Xem" riêng — T1B-OPS DEC-T1B-OPS-04).
  */
 export default function WorkersPage() {
   const [workers, setWorkers] = useState<WorkerRow[]>([]);
@@ -41,6 +58,27 @@ export default function WorkersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+
+  // T1B-OPS follow-up #1: hiển thị banner "Đã xóa người lao động …" khi list
+  // được mở từ luồng delete thành công (redirect kèm ?deleted=<id>&name=<name>).
+  // Banner render NGAY TRƯỚC filter row; auto-dismiss sau 6s; vẫn cho phép
+  // đóng thủ công. useSearchParams yêu cầu Suspense boundary, đã có sẵn ở
+  // layout mức app vì /admin/workers nằm trong admin segment.
+  const searchParams = useSearchParams();
+  const deletedId = searchParams?.get('deleted') ?? null;
+  const deletedNameRaw = searchParams?.get('name') ?? null;
+  const deletedName = (() => {
+    if (!deletedNameRaw) return null;
+    try { return decodeURIComponent(deletedNameRaw); } catch { return null; }
+  })();
+  const [showDeletedBanner, setShowDeletedBanner] = useState<boolean>(Boolean(deletedId));
+
+  useEffect(() => {
+    if (!deletedId) return;
+    setShowDeletedBanner(true);
+    const t = setTimeout(() => setShowDeletedBanner(false), 6000);
+    return () => clearTimeout(t);
+  }, [deletedId]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -83,17 +121,70 @@ export default function WorkersPage() {
             Danh sách người lao động
           </h1>
           <p style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-sm">
-            Phân hệ M5 — Quản lý hồ sơ người lao động (đã chuyển đổi từ Hồ sơ tiếp nhận).
+            Quản lý thông tin và trạng thái người lao động.
           </p>
         </div>
-        <Link
-          href="/admin/labor-profiles/new"
-          style={{ background: 'var(--primary)', color: 'var(--on-primary)' }}
-          className="rounded px-4 py-2 text-sm font-semibold"
-        >
-          + Tiếp nhận người lao động
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/admin/workers/delete-history"
+            style={{
+              background: 'var(--surface-container)',
+              color: 'var(--on-surface)',
+            }}
+            className="rounded border px-4 py-2 text-sm font-medium"
+          >
+            Lịch sử xóa
+          </Link>
+          <Link
+            href="/admin/labor-profiles/new"
+            style={{ background: 'var(--primary)', color: 'var(--on-primary)' }}
+            className="rounded px-4 py-2 text-sm font-semibold"
+          >
+            + Tiếp nhận người lao động
+          </Link>
+        </div>
       </div>
+
+      {showDeletedBanner && deletedId && (
+        <div
+          role="status"
+          aria-live="polite"
+          style={{
+            // T1B-OPS follow-up #1: dùng semantic tokens đã đăng ký trong
+            // app/globals.css (`--success-soft` + `--success` + `--on-surface`).
+            // KHÔNG dùng `--success-container` / `--on-success-container` /
+            // `--success` vì các alias "container" chưa tồn tại trong
+            // design-token gate RQ-04/AC-03.
+            background: 'var(--color-success-soft)',
+            color: 'var(--color-success)',
+            borderColor: 'var(--color-success)',
+          }}
+          className="mb-4 flex items-start justify-between gap-3 rounded-lg border p-3"
+        >
+          <p className="text-sm font-medium">
+            Đã xóa người lao động
+            {deletedName ? <strong className="font-semibold"> {deletedName}</strong> : null}
+            . Hành động đã được ghi vào{' '}
+            <Link
+              href={`/admin/audit-logs?entityType=Worker&entityId=${encodeURIComponent(deletedId)}&action=WORKER_PERMANENT_DELETE`}
+              style={{ color: 'var(--color-on-surface)' }}
+              className="underline"
+            >
+              nhật ký kiểm toán
+            </Link>
+            .
+          </p>
+          <button
+            type="button"
+            onClick={() => setShowDeletedBanner(false)}
+            aria-label="Đóng thông báo"
+            className="rounded px-2 py-1 text-xs font-semibold"
+            style={{ color: 'var(--color-on-surface)' }}
+          >
+            Đóng
+          </button>
+        </div>
+      )}
 
       <div className="mb-4 flex flex-wrap gap-3">
         <div className="flex flex-wrap gap-2">
@@ -161,11 +252,20 @@ export default function WorkersPage() {
                   borderBottom: '1px solid var(--outline-variant)',
                 }}
               >
-                {['Mã', 'Họ tên', 'Điện thoại', 'Trạng thái', 'Ngày tạo', 'Thao tác'].map(h => (
+                {[
+                  'Họ tên',
+                  'Trạng thái',
+                  'Dự án đang làm',
+                  'Ngày làm đầu tiên',
+                  'Quản lý dự án',
+                  'Người phụ trách',
+                  'Người giới thiệu',
+                  'Người hưởng hoa hồng',
+                ].map(h => (
                   <th
                     key={h}
                     style={{ color: 'var(--on-surface-variant)' }}
-                    className="px-4 py-3 text-left font-semibold"
+                    className="px-4 py-3 text-left font-semibold whitespace-nowrap"
                     scope="col"
                   >
                     {h}
@@ -185,14 +285,8 @@ export default function WorkersPage() {
                     window.location.href = `/admin/workers/${w.id}`;
                   }}
                 >
-                  <td style={{ color: 'var(--primary)' }} className="px-4 py-3 font-mono text-xs">
-                    {w.userId}
-                  </td>
                   <td style={{ color: 'var(--on-surface)' }} className="px-4 py-3">
-                    {w.fullName}
-                  </td>
-                  <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">
-                    {w.phone ?? '—'}
+                    {w.fullName ?? '—'}
                   </td>
                   <td className="px-4 py-3">
                     <StatusBadge
@@ -203,18 +297,25 @@ export default function WorkersPage() {
                       {workerStatusLabel(w.employmentStatus)}
                     </StatusBadge>
                   </td>
-                  <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">
-                    {new Date(w.createdAt).toLocaleDateString('vi-VN')}
+                  <td style={{ color: 'var(--on-surface)' }} className="px-4 py-3 text-xs">
+                    {w.currentProject
+                      ? `${w.currentProject.code ?? '—'}${w.currentProject.name ? ` · ${w.currentProject.name}` : ''}`
+                      : '—'}
                   </td>
-                  <td className="px-4 py-3">
-                    <Link
-                      href={`/admin/workers/${w.id}`}
-                      onClick={ev => ev.stopPropagation()}
-                      style={{ color: 'var(--primary)' }}
-                      className="text-xs font-medium hover:underline"
-                    >
-                      Xem
-                    </Link>
+                  <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs whitespace-nowrap">
+                    {w.firstWorkDate ? new Date(w.firstWorkDate).toLocaleDateString('vi-VN') : '—'}
+                  </td>
+                  <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">
+                    {w.currentProjectManager ?? '—'}
+                  </td>
+                  <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">
+                    {w.handler ?? '—'}
+                  </td>
+                  <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">
+                    {w.referrer ?? '—'}
+                  </td>
+                  <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">
+                    {w.commissionBeneficiary ?? '—'}
                   </td>
                 </tr>
               ))}

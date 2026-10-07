@@ -175,8 +175,8 @@ const EXPECTED_HITS = [
   // public DTO `gallery`/`PublicJobGalleryItemDto` interface + `toDetailDto` mapping of
   // gallery — `jobOpening.staffingOrder` / `jobOpening.staffingOrder.project` selects
   // shifted from 752/759 → 805/812. The select clauses themselves are unchanged.
-  'src/domains/job-board/public.service.ts:805 staffingOrder',
-  'src/domains/job-board/public.service.ts:812 project',
+  'src/domains/job-board/public.service.ts:806 staffingOrder',
+  'src/domains/job-board/public.service.ts:813 project',
   // hrp-p1-e0 (2026-09-26): Recruiter Workbench read-model cần `fullName`/`phone`/`cccdNumber`/
   // `identityVerification`/`completeness` để build `RecruiterWorkbenchRow.candidate` (§4.3 RQ-02).
   // `LaborProfile` là quan hệ BẮT BUỘC trong schema `placement_case` (không optional, không list) — sweep
@@ -252,9 +252,29 @@ const EXPECTED_HITS = [
   // HR_STAFF, project.PM for PM, etc.) before reaching the select. PII
   // (`phone`/`cccdNumber`) is masked when caller lacks
   // `CAN_VIEW_WORKER_SENSITIVE` per `projectWorker` projection.
-  'src/domains/workforce/worker.service.ts:266 laborProfile',
-  'src/domains/workforce/worker.service.ts:275 project',
-  'src/domains/workforce/worker.service.ts:283 owner',
+  // T1B-OPS PRE-P2 WORKER OPERATIONS HOTFIX (2026-10-07): line shifts 266→269,
+  // 275→278, 283→286 because of pre-existing comments / line edits in
+  // `getWorkerDetail`. New entry `:793 project` from `listWorkersForAdmin`
+  // (ProjectAssignment.project + Project.pmUserId for the Worker list 6
+  // canonical columns — currentProject, currentProjectManager). RLS-covered
+  // (Project via `withDbContext` + `hrp_project_visible_for`).
+  'src/domains/workforce/worker.service.ts:269 laborProfile',
+  'src/domains/workforce/worker.service.ts:278 project',
+  'src/domains/workforce/worker.service.ts:286 owner',
+  'src/domains/workforce/worker.service.ts:796 project',
+  // T1B-OPS PRE-P2 WORKER OPERATIONS HOTFIX (2026-10-07): `getLaborProfilesList`
+  // enriches each LaborProfile row with `latestJob` (CandidateSubmission.project),
+  // `applicationCount` (CandidateSubmission list), `handler`
+  // (LaborProfileHandlingAssignment.assigneeUser), and `intakeSource`
+  // (LaborProfileIntake). The 5 new entries below select `project` (RLS-covered
+  // via `hrp_project_visible_for`) to expose the latest-job name in the
+  // LaborProfile list view. All paths run under `withDbContext` for the
+  // LaborProfile caller, so RLS chain already filtered.
+  'src/domains/talent/labor-profile.read-service.ts:183 project',
+  'src/domains/talent/labor-profile.read-service.ts:198 project',
+  'src/domains/talent/labor-profile.read-service.ts:204 project',
+  'src/domains/talent/labor-profile.read-service.ts:225 project',
+  'src/domains/talent/labor-profile.read-service.ts:231 project',
 ] as const;
 
 interface SourceEntry {
@@ -518,7 +538,10 @@ describe('quan hệ BẮT BUỘC trên bảng bị RLS che: tập vị trí sele
     // LaborProfile qua RLS `hrp_labor_profile_visible_for`; ProjectAssignment/User không
     // RLS-gated nhưng call site đã enforce worker scope (`assignedToId` / project.PM /
     // role) trước khi tới select. PII mask qua `projectWorker`. Tổng src = 44.
-    expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(44);
+    // T1B-OPS PRE-P2 WORKER OPERATIONS HOTFIX (2026-10-07): thêm 6 entry mới
+    // (`worker.service.ts:796 project` + 5 entry `labor-profile.read-service.ts:project`
+    // cho 6 cột vận hành mới của LaborProfile). Tổng src = 50.
+    expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(50);
   });
 });
 

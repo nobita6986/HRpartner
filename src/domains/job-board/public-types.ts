@@ -21,6 +21,7 @@
 import type { EnrichedJob } from '@/app/(portal)/page';
 import type { StickyAnnouncementDto } from './public-content-controls/types';
 import { safeStickyAnnouncement } from './public-content-controls/types';
+import { z } from 'zod';
 
 /**
  * Public projection of the admin-managed news toggle. Default TRUE preserves
@@ -128,8 +129,94 @@ export interface HomepageSettingsDto {
    * with safe defaults applied.
    */
   stickyAnnouncement: StickyAnnouncementDto;
+  /**
+   * hrp-t2-public-site-hotfix (T2 / STEP-02): ảnh nền Hero trang chủ — Admin
+   * chọn từ Media Library. `null` khi chưa chọn hoặc media row đã xoá (FK
+   * SET NULL). Khi non-null, public surface render `<img>` overlay; null →
+   * render gradient-only (giữ hành vi v1).
+   */
+  heroImage: HomepageHeroImageDto | null;
+  /**
+   * hrp-t1c-t2-public-site-hero-slides-ctv-layout (T2 hotfix / STEP-02):
+   * Nội dung 5 slide Hero (carousel bên phải trang chủ `RecruitmentHighlight`).
+   * Admin sửa ảnh + title + desc cho từng slot ở tab Giao diện. Mảng LUÔN
+   * length 5 khi parse OK; length 0 khi column null (fallback hardcoded).
+   * Thứ tự mảng = thứ tự carousel (slide 1 → slide 5).
+   */
+  heroSlides: HeroSlidePublic[];
   /** ISO string of last update. */
   updatedAt: string;
+}
+
+/**
+ * hrp-t1c-t2-public-site-hero-slides-ctv-layout (T2 hotfix / STEP-02):
+ * 5 slide Hero bên phải trang chủ — Admin chỉnh sửa ảnh + title + desc
+ * cho từng slot qua tab Giao diện. Số slot cứng = 5, auto-rotate 3500ms
+ * cứng, KHÔNG thêm/xoá/sắp xếp slide trong vòng này.
+ *
+ * Schema Zod định nghĩa shape JSON trong DB column `homepage_settings.hero_slides`.
+ * Slide image qua `mediaId` reference (không FK-enforce — xem migration.sql);
+ * nếu media row xoá, service fallback URL mặc định (`/images/hero/<name>.jpg`).
+ */
+export const HERO_SLIDES_COUNT = 5;
+export const HERO_SLIDE_TITLE_MAX = 120;
+export const HERO_SLIDE_DESC_MAX = 280;
+
+/**
+ * hrp-t1c-t2-public-site-hero-slides-ctv-layout (T2 hotfix / STEP-02):
+ * Zod schema cho một slide. `mediaId` nullable (chưa chọn ảnh = giữ ảnh cũ).
+ * Title max 120 ký tự (đủ cho "Dịch vụ gia công và kiểm tra, phân loại linh kiện điện tử" ~55 ký tự).
+ * Desc max 280 ký tự (đủ cho 1-2 câu mô tả ngắn).
+ */
+export const HeroSlideSchema = z.object({
+  mediaId: z.string().min(1).nullable(),
+  title: z.string().min(1).max(HERO_SLIDE_TITLE_MAX),
+  desc: z.string().max(HERO_SLIDE_DESC_MAX),
+});
+
+/**
+ * Schema cho 5 slide cố định. Mảng đúng 5 phần tử — không cho phép length ≠ 5
+ * (admin không thêm/xoá slide trong vòng này). Nếu parse fail → service fallback
+ * mảng rỗng, component `RecruitmentHighlight` dùng hardcoded array hiện tại.
+ */
+export const HeroSlidesSchema = z.array(HeroSlideSchema).length(HERO_SLIDES_COUNT);
+
+/** Input type — write vào admin form, JSON.stringify lưu vào column. */
+export type HeroSlideInput = z.infer<typeof HeroSlideSchema>;
+
+/** Public DTO cho mỗi slide — thêm `index`, `url`, `alt` từ Media join. */
+export interface HeroSlidePublic {
+  /** 1..5 — thứ tự cứng trong carousel, KHÔNG sắp xếp lại. */
+  index: number;
+  /** Media row id — opaque, chỉ dùng nội bộ. */
+  mediaId: string | null;
+  /** Public Vercel Blob URL hoặc URL mặc định (khi media missing). */
+  url: string | null;
+  /** Alt text lấy từ Media row (admin đã nhập ở Media Library). */
+  alt: string;
+  /** Slide title (admin sửa ở Admin Settings). */
+  title: string;
+  /** Slide desc (admin sửa ở Admin Settings). */
+  desc: string;
+}
+
+/**
+ * hrp-t2-public-site-hotfix (T2 / STEP-02): DTO cho `heroImage` (ảnh nền Hero).
+ * 4 trường public — mediaId, url, alt, caption. Bao gồm đủ thông tin cần cho
+ * public render, không leak `ownerId` / `createdBy` của Media. Service join
+ * `Media` row khi `heroImageMediaId` set, fallback `null` khi row deleted.
+ *
+ * Bao gồm `mediaId` để Admin Settings form dùng cho picker (giữ chọn sau
+ * khi reload); không leak ra ngoài public surface (Hero component dùng
+ * `url` + `alt`).
+ */
+export interface HomepageHeroImageDto {
+  /** Media row id — opaque; chỉ dùng nội bộ Admin. */
+  mediaId: string;
+  /** URL public Vercel Blob (https://...). */
+  url: string;
+  alt: string;
+  caption: string | null;
 }
 
 /**

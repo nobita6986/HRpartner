@@ -47,6 +47,49 @@ export function salaryLabel(min: number | null, max: number | null): string {
 }
 
 /**
+ * hrp-t2-public-site-hotfix (T2 / STEP-03): 6 khoảng lương cố định theo
+ * `salaryMinVnd` (VND/tháng). Mỗi bucket mã hoá chuỗi hyphen-range để URL
+ * ngắn gọn (`?salary=10-15`). Thứ tự trong tuple cố định; UI hiển thị theo
+ * thứ tự đã khai. Các giá trị `1_000_000` này khớp DEC-01: 1 triệu VND.
+ *
+ * `null` job (không có `salaryMinVnd`) bị ẩn khỏi tập lọc khi bucket được
+ * chọn — đó là `formatPublicSalary` fallback "Lương thương lượng" và sẽ nói
+ * sai trong một dải lọc cụ thể.
+ *
+ * Tuple và type PHẢI đồng bộ với `SALARY_BUCKETS` trong
+ * `public-listing.params.ts` — parser là canonical (parser whitelist),
+ * labels là phái sinh (display). Test `public-listing.params.test.ts` ép
+ * cả hai cùng đi qua.
+ */
+export type SalaryBucket = '<5' | '5-10' | '10-15' | '15-20' | '20-30' | '>30';
+const SALARY_BUCKETS_TUPLE: readonly SalaryBucket[] = [
+  '<5',
+  '5-10',
+  '10-15',
+  '15-20',
+  '20-30',
+  '>30',
+];
+
+const SALARY_BUCKET_LABELS: Readonly<Record<SalaryBucket, string>> = {
+  '<5': 'Dưới 5 triệu',
+  '5-10': '5 – 10 triệu',
+  '10-15': '10 – 15 triệu',
+  '15-20': '15 – 20 triệu',
+  '20-30': '20 – 30 triệu',
+  '>30': 'Trên 30 triệu',
+};
+
+/**
+ * Label hiển thị cho option của select. Bất kỳ bucket nào không có trong
+ * whitelist sẽ có label rỗng (UI không bao giờ hiển thị chúng — parser
+ * whitelist `SALARY_BUCKETS`).
+ */
+export function salaryBucketLabel(bucket: SalaryBucket): string {
+  return SALARY_BUCKET_LABELS[bucket];
+}
+
+/**
  * hrp-ui-v1-public-card-truth-correction (T1A / DEC-09, DEC-10, RQ-11) — MỘT resolver cho cả
  * homepage FeaturedJobCard, public listing `/viec-lam`, public detail `/viec-lam/[slug]`, và
  * related-jobs card. Thứ tự ưu tiên:

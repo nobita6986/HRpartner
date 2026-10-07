@@ -102,12 +102,18 @@ export default async function LaborProfilesPage({
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm text-gray-600">
             <thead className="bg-gray-50 text-gray-900 font-semibold border-b border-gray-200">
+              {/* T1B-OPS DEC-T1B-OPS-09: thay cột SĐT (PII) & Ngày tạo
+                  bằng 3 cột vận hành hữu ích: Job gần nhất (kèm số đơn
+                  ứng tuyển), Người phụ trách, Trạng thái (Xác minh +
+                  Hoàn thiện + Nguồn tiếp nhận); giữ Ngày tiếp nhận (đã
+                  có sẵn từ createdAt). Giữ tổng số cột 5 (DEC-P2-10
+                  invariant: 5 <th> + colSpan 5). */}
               <tr>
                 <th className="px-6 py-4">Họ và tên</th>
-                <th className="px-6 py-4">Số điện thoại</th>
-                <th className="px-6 py-4">Xác minh danh tính</th>
-                <th className="px-6 py-4">Độ hoàn thiện</th>
-                <th className="px-6 py-4 text-right">Ngày tạo</th>
+                <th className="px-6 py-4">Job gần nhất</th>
+                <th className="px-6 py-4">Người phụ trách</th>
+                <th className="px-6 py-4">Trạng thái</th>
+                <th className="px-6 py-4 text-right">Ngày tiếp nhận</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -153,27 +159,51 @@ export default async function LaborProfilesPage({
                         {profile.fullName || 'Chưa cập nhật'}
                       </RowLink>
                     </td>
-                    <td className="px-6 py-4">{profile.phone || '-'}</td>
-                    <td className="px-6 py-4">
-                      <StatusBadge
-                        module="labor-profile-identity-verification"
-                        status={profile.identityVerification}
-                        tone={identityVerificationTone(profile.identityVerification)}
-                      >
-                        {laborProfileIdentityVerificationLabel(profile.identityVerification)}
-                      </StatusBadge>
+                    <td className="px-6 py-4 text-xs">
+                      {profile.latestJob
+                        ? `${profile.latestJob.code ?? '—'}${profile.latestJob.name ? ` · ${profile.latestJob.name}` : ''}`
+                        : '—'}
+                      {profile.applicationCount > 0 ? (
+                        <span
+                          className={`ml-2 inline-flex items-center justify-center min-w-[1.5rem] rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
+                            'bg-blue-100 text-blue-700'
+                          }`}
+                          title={`${profile.applicationCount} đơn ứng tuyển`}
+                        >
+                          {profile.applicationCount}
+                        </span>
+                      ) : null}
                     </td>
-                    <td className="px-6 py-4">
-                      <StatusBadge
-                        module="labor-profile-completeness"
-                        status={profile.completeness}
-                        tone={laborProfileCompletenessTone(profile.completeness)}
-                      >
-                        {laborProfileCompletenessLabel(profile.completeness)}
-                      </StatusBadge>
+                    <td className="px-6 py-4 text-xs">
+                      {profile.handler ?? '—'}
+                    </td>
+                    <td className="px-6 py-4 text-xs">
+                      <div className="flex flex-col gap-1">
+                        <StatusBadge
+                          module="labor-profile-identity-verification"
+                          status={profile.identityVerification}
+                          tone={identityVerificationTone(profile.identityVerification)}
+                        >
+                          {laborProfileIdentityVerificationLabel(profile.identityVerification)}
+                        </StatusBadge>
+                        <StatusBadge
+                          module="labor-profile-completeness"
+                          status={profile.completeness}
+                          tone={laborProfileCompletenessTone(profile.completeness)}
+                        >
+                          {laborProfileCompletenessLabel(profile.completeness)}
+                        </StatusBadge>
+                        {profile.intakeSource ? (
+                          <span className="text-[11px] text-gray-500" title="Nguồn tiếp nhận">
+                            Nguồn: {profile.intakeSource}
+                          </span>
+                        ) : null}
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      {new Date(profile.createdAt).toLocaleDateString('vi-VN')}
+                      {profile.intakeDate
+                        ? new Date(profile.intakeDate).toLocaleDateString('vi-VN')
+                        : new Date(profile.createdAt).toLocaleDateString('vi-VN')}
                     </td>
                   </tr>
                 ))

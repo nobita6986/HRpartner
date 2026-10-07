@@ -16,9 +16,12 @@ export function ReferralStrip() {
       /* Y2: thu hẹp padding để liền mạch hơn */
       className="w-full bg-primary-fixed/20 px-4 pb-8 pt-4 md:px-8 md:pb-10 md:pt-6"
     >
-      {/* RQ-10 / DEC-14 (VIS-06): inner container max-w-7xl (đồng bộ với Hero + SearchSection) */}
-      <div className="mx-auto w-full max-w-7xl grid grid-cols-1 items-center gap-8 lg:grid-cols-2 px-4 md:px-6">
-        <div className="flex flex-col gap-5">
+      {/* RQ-10 / DEC-14 (VIS-06): inner container max-w-7xl (đồng bộ với Hero + SearchSection)
+          hrp-t1c-t2-public-site-hero-slides-ctv-layout (T2 hotfix / STEP-09):
+          thêm `items-stretch` để 2 cột cao bằng nhau trên desktop, ảnh không
+          vượt quá chiều cao cột chữ. */}
+      <div className="mx-auto grid w-full max-w-7xl grid-cols-1 items-stretch gap-8 px-4 md:px-6 lg:grid-cols-2">
+        <div className="flex min-h-0 flex-col gap-5">
           {/* Y10.8+: bỏ eyebrow "Cơ hội mới" — chỉ giữ heading + subheading. */}
           <h2
             id="hrp-ctv-heading"
@@ -51,7 +54,11 @@ export function ReferralStrip() {
             </a>
           </div>
         </div>
-        <div className="relative overflow-hidden rounded-3xl shadow-card">
+        {/* hrp-t1c-t2-public-site-hero-slides-ctv-layout (T2 hotfix / STEP-09):
+            Cột ảnh — desktop `h-full` để khớp chiều cao cột chữ; mobile/tablet
+            tự nhiên (block). Ảnh `object-cover` để crop đẹp, không vượt khung.
+            max-h-[420px] mobile ngăn ảnh quá khổ khi xếp dọc. */}
+        <div className="relative min-h-0 overflow-hidden rounded-3xl shadow-card lg:h-full">
           <div
             aria-hidden="true"
             className="absolute -right-12 -top-12 h-48 w-48 rounded-full bg-tertiary-fixed opacity-50 blur-3xl"
@@ -63,7 +70,7 @@ export function ReferralStrip() {
           <img
             src="/images/homepage-huongb/referral-team.webp"
             alt="Đội ngũ cộng tác viên HRP"
-            className="relative h-full w-full object-cover"
+            className="relative h-full max-h-[420px] w-full object-cover object-center lg:max-h-none"
             width={1024}
             height={768}
           />

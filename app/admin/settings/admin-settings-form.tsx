@@ -23,6 +23,8 @@ import { useRouter } from 'next/navigation';
 import { Loader2, RotateCcw, Save } from 'lucide-react';
 import {
   BEST_JOBS_PAGE_SIZES,
+  HERO_SLIDE_DESC_MAX,
+  HERO_SLIDE_TITLE_MAX,
   LISTING_PAGE_SIZE_MAX,
   LISTING_PAGE_SIZE_MIN,
   type HomepageSettingsDto,
@@ -47,6 +49,9 @@ import {
 } from '@/src/domains/job-board/chat-links';
 import { buildHomepageSettingsPatch } from './homepage-settings-patch';
 import { actionLabel } from '@/src/shared/i18n/action-dictionary';
+import { HeroImagePicker } from './_components/hero-image-picker';
+import { HeroSlidesEditor, type HeroSlideSlot } from './_components/hero-slides-editor';
+import { AccountTabPanel, SettingsTabs, type SettingsTabId } from './_components/settings-tabs';
 
 const STICKY_TEXT_COLOR_LABELS: Readonly<Record<StickyTextColor, string>> = {
   'on-primary': 'Trên nền màu chính',
@@ -71,37 +76,50 @@ const STICKY_ANIMATION_LABELS: Readonly<Record<StickyAnimation, string>> = {
   MARQUEE: 'Chạy chữ',
 };
 
-const PLACEHOLDER_GROUPS = [
+const SYSTEM_TAB_ITEMS = [
   {
-    title: 'Bảo mật',
-    items: [
-      { label: 'Đổi mật khẩu', description: 'Thay đổi mật khẩu tài khoản' },
-      { label: 'Xác thực hai yếu tố (2FA)', description: 'Bật/tắt xác thực 2 lớp' },
-      { label: 'Lịch sử đăng nhập', description: 'Xem các phiên đăng nhập gần đây' },
-    ],
+    label: 'Đổi mật khẩu',
+    description: 'Thay đổi mật khẩu tài khoản',
   },
   {
-    title: 'Thông báo',
-    items: [
-      { label: 'Email thông báo', description: 'Cấu hình email nhận thông báo' },
-      { label: 'SMS / Zalo', description: 'Cấu hình kênh SMS và Zalo OA' },
-      { label: 'Thông báo đẩy', description: 'Bật hoặc tắt thông báo trên ứng dụng' },
-    ],
+    label: 'Xác thực hai yếu tố (2FA)',
+    description: 'Bật/tắt xác thực 2 lớp',
   },
   {
-    title: 'Tích hợp',
-    items: [
-      { label: 'Khóa API', description: 'Quản lý khóa API dùng cho dịch vụ bên thứ ba' },
-      { label: 'Webhook', description: 'Cấu hình webhook để nhận sự kiện' },
-      { label: 'Đăng nhập một lần (SSO)', description: 'Kết nối LDAP / SAML / OAuth' },
-    ],
+    label: 'Lịch sử đăng nhập',
+    description: 'Xem các phiên đăng nhập gần đây',
   },
   {
-    title: 'Nhật ký hệ thống',
-    items: [
-      { label: 'Nhật ký kiểm toán', description: 'Xem lịch sử các thay đổi quan trọng' },
-      { label: 'Nhật ký lỗi', description: 'Xem các lỗi hệ thống gần đây' },
-    ],
+    label: 'Email thông báo',
+    description: 'Cấu hình email nhận thông báo',
+  },
+  {
+    label: 'SMS / Zalo',
+    description: 'Cấu hình kênh SMS và Zalo OA',
+  },
+  {
+    label: 'Thông báo đẩy',
+    description: 'Bật hoặc tắt thông báo trên ứng dụng',
+  },
+  {
+    label: 'Khóa API',
+    description: 'Quản lý khóa API dùng cho dịch vụ bên thứ ba',
+  },
+  {
+    label: 'Webhook',
+    description: 'Cấu hình webhook để nhận sự kiện',
+  },
+  {
+    label: 'Đăng nhập một lần (SSO)',
+    description: 'Kết nối LDAP / SAML / OAuth',
+  },
+  {
+    label: 'Nhật ký kiểm toán',
+    description: 'Xem lịch sử các thay đổi quan trọng',
+  },
+  {
+    label: 'Nhật ký lỗi',
+    description: 'Xem các lỗi hệ thống gần đây',
   },
 ];
 
@@ -177,9 +195,30 @@ function validateCtaUrl(value: string): string | null {
   }
 }
 
+/**
+ * hrp-t1c-t2-public-site-hero-slides-ctv-layout (T2 hotfix / STEP-05):
+ * validate tiêu đề/mô tả của 5 slide. Title bắt buộc (server yêu cầu
+ * `min(1)` qua `HeroSlideSchema`); desc có thể rỗng.
+ */
+function validateHeroSlideTitle(value: string): string | null {
+  const trimmed = value.trim();
+  if (trimmed.length === 0) return 'Tiêu đề slide không được để trống.';
+  if (value.length > HERO_SLIDE_TITLE_MAX) return `Tối đa ${HERO_SLIDE_TITLE_MAX} ký tự.`;
+  return null;
+}
+
+function validateHeroSlideDesc(value: string): string | null {
+  if (value.length > HERO_SLIDE_DESC_MAX) return `Tối đa ${HERO_SLIDE_DESC_MAX} ký tự.`;
+  return null;
+}
+
 export default function AdminSettingsForm({ initialSettings, unavailableReason }: AdminSettingsFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+
+  // hrp-t2-public-site-hotfix (T2 / STEP-07): state tab — mặc định 'interface'.
+  // KHÔNG đồng bộ URL (giữ /admin/settings sạch cho redirect admin/users khi cần).
+  const [activeTab, setActiveTab] = useState<SettingsTabId>('interface');
 
   // Track last-saved snapshot so Reset can revert + "updated at" shows the latest.
   const [savedSnapshot, setSavedSnapshot] = useState<HomepageSettingsDto>(initialSettings);
@@ -188,6 +227,49 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
   const [zaloChatUrl, setZaloChatUrl] = useState(initialSettings.zaloChatUrl ?? '');
   const [messengerChatUrl, setMessengerChatUrl] = useState(initialSettings.messengerChatUrl ?? '');
   const [phoneCallNumber, setPhoneCallNumber] = useState(initialSettings.phoneCallNumber ?? '');
+
+  // hrp-t2-public-site-hotfix (T2 / STEP-07): Hero image — lưu media id thay
+  // vì URL để admin có thể đổi alt ở Media Library mà vẫn giữ chọn. Khi id
+  // null → giữ gradient (v1).
+  const initialHeroId = initialSettings.heroImage?.mediaId ?? null;
+  const [heroImageMediaId, setHeroImageMediaId] = useState<string | null>(initialHeroId);
+  const [heroImageSelected, setHeroImageSelected] = useState<{
+    id: string;
+    url: string;
+    alt: string;
+    caption: string | null;
+  } | null>(
+    initialSettings.heroImage === null
+      ? null
+      : {
+          id: initialSettings.heroImage.mediaId,
+          url: initialSettings.heroImage.url,
+          alt: initialSettings.heroImage.alt,
+          caption: initialSettings.heroImage.caption,
+        },
+  );
+
+  // hrp-t1c-t2-public-site-hero-slides-ctv-layout (T2 hotfix / STEP-05):
+  // 5 slide Hero carousel. Khi initialSettings.heroSlides rỗng (DB null
+  // hoặc column parse fail) → giữ 5 slot trống (admin tự điền lần đầu).
+  // `heroSlidesReset` đánh dấu admin bấm "Khôi phục mặc định" — patch sẽ
+  // emit `null` để server xoá cột JSONB và public render hardcoded array.
+  const initialHeroSlideSlots: HeroSlideSlot[] = React.useMemo(() => {
+    const slides = initialSettings.heroSlides ?? [];
+    return Array.from({ length: 5 }, (_, idx) => {
+      const s = slides[idx];
+      if (!s) return { mediaId: null, title: '', desc: '', publicUrl: null, publicAlt: '' };
+      return {
+        mediaId: s.mediaId,
+        title: s.title,
+        desc: s.desc,
+        publicUrl: s.url,
+        publicAlt: s.alt,
+      };
+    });
+  }, [initialSettings.heroSlides]);
+  const [heroSlideSlots, setHeroSlideSlots] = useState<HeroSlideSlot[]>(initialHeroSlideSlots);
+  const [heroSlidesReset, setHeroSlidesReset] = useState<boolean>(false);
 
   // ── UI2 / Phase B state ────────────────────────────────────────────────
   // Pull initial values from `initialSettings.stickyAnnouncement` (already
@@ -228,6 +310,26 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
     stickyMarqueeDurationSeconds <= 60
       ? null
       : 'Tốc độ chạy chữ phải từ 5 đến 60 giây mỗi vòng.';
+  // hrp-t1c-t2-public-site-hero-slides-ctv-layout (T2 hotfix / STEP-05):
+  // 5 slide — fail-fast nếu 1 slot vi phạm. Reset flag = admin đã chọn
+  // "Khôi phục mặc định" → không validate nội dung 5 slot (payload null).
+  const heroSlideFieldErrors = heroSlidesReset
+    ? []
+    : heroSlideSlots.map((s) => ({
+        title: validateHeroSlideTitle(s.title),
+        desc: validateHeroSlideDesc(s.desc),
+      }));
+  const hasHeroSlideFieldError = heroSlideFieldErrors.some(
+    (e) => e.title !== null || e.desc !== null,
+  );
+  const firstHeroSlideError =
+    heroSlideFieldErrors.find((e) => e.title !== null || e.desc !== null) ?? null;
+  const heroSlideErrorMessage =
+    heroSlidesReset
+      ? null
+      : firstHeroSlideError === null
+        ? null
+        : firstHeroSlideError.title ?? firstHeroSlideError.desc;
   const hasFieldError =
     bestJobsError !== null ||
     listingError !== null ||
@@ -237,7 +339,8 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
     stickyMessageError !== null ||
     stickyCtaLabelError !== null ||
     stickyCtaUrlError !== null ||
-    stickyMarqueeDurationError !== null;
+    stickyMarqueeDurationError !== null ||
+    hasHeroSlideFieldError;
 
   const hasChanges =
     bestJobsPageSize !== savedSnapshot.bestJobsPageSize ||
@@ -257,7 +360,19 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
     stickyFont !== savedSnapshot.stickyAnnouncement.font ||
     stickyEmphasis !== savedSnapshot.stickyAnnouncement.emphasis ||
     stickyAnimation !== savedSnapshot.stickyAnnouncement.animation ||
-    stickyContentRevision !== savedSnapshot.stickyAnnouncement.contentRevision;
+    stickyContentRevision !== savedSnapshot.stickyAnnouncement.contentRevision ||
+    // hrp-t2-public-site-hotfix (T2 / STEP-07): Hero image — track media id.
+    heroImageMediaId !== (savedSnapshot.heroImage?.mediaId ?? null) ||
+    // hrp-t1c-t2-public-site-hero-slides-ctv-layout (T2 hotfix / STEP-05):
+    // 5 slide Hero — so sánh element-wise. Reset flag luôn coi là có thay đổi.
+    heroSlidesReset ||
+    heroSlideSlots.some((s, idx) => {
+      const saved = (savedSnapshot.heroSlides ?? [])[idx];
+      if (!saved) {
+        return s.mediaId !== null || s.title !== '' || s.desc !== '';
+      }
+      return s.mediaId !== saved.mediaId || s.title !== saved.title || s.desc !== saved.desc;
+    });
 
   // Clear stale success/error when user edits again.
   useEffect(() => {
@@ -314,6 +429,17 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
             contentRevision: stickyContentRevision,
           }
         : null,
+      // hrp-t2-public-site-hotfix (T2 / STEP-07): Hero image media id.
+      heroImageMediaId,
+      // hrp-t1c-t2-public-site-hero-slides-ctv-layout (T2 hotfix / STEP-05):
+      // 5 slide. Khi `heroSlidesReset` true → emit null (clear column,
+      // public render hardcoded); ngược lại emit 5 slot payload.
+      heroSlides: heroSlideSlots.map((s) => ({
+        mediaId: s.mediaId,
+        title: s.title,
+        desc: s.desc,
+      })),
+      heroSlidesReset,
     }, savedSnapshot);
   }
 
@@ -338,6 +464,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
           stickyCtaLabelError ??
           stickyCtaUrlError ??
           stickyMarqueeDurationError ??
+          heroSlideErrorMessage ??
           'Có trường chưa hợp lệ.',
       );
       return;
@@ -382,6 +509,38 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
           setStickyEmphasis(snap.emphasis);
           setStickyAnimation(snap.animation);
           setStickyContentRevision(snap.contentRevision);
+          // hrp-t2-public-site-hotfix (T2 / STEP-07): sync Hero image từ
+          // snapshot (server join media đã cập nhật).
+          const savedHero = data.settings.heroImage ?? null;
+          setHeroImageMediaId(savedHero?.mediaId ?? null);
+          setHeroImageSelected(
+            savedHero === null
+              ? null
+              : {
+                  id: savedHero.mediaId,
+                  url: savedHero.url,
+                  alt: savedHero.alt,
+                  caption: savedHero.caption,
+                },
+          );
+          // hrp-t1c-t2-public-site-hero-slides-ctv-layout (T2 hotfix / STEP-05):
+          // sync 5 slide từ snapshot — server join media đã cập nhật URL/alt.
+          // Khi column đã bị clear → snapshot trả [] → reset về 5 slot trống.
+          const savedSlides = data.settings.heroSlides ?? [];
+          setHeroSlideSlots(
+            Array.from({ length: 5 }, (_, idx) => {
+              const s = savedSlides[idx];
+              if (!s) return { mediaId: null, title: '', desc: '', publicUrl: null, publicAlt: '' };
+              return {
+                mediaId: s.mediaId,
+                title: s.title,
+                desc: s.desc,
+                publicUrl: s.url,
+                publicAlt: s.alt,
+              };
+            }),
+          );
+          setHeroSlidesReset(false);
           setSuccess('Đã lưu cài đặt trang chủ và kênh liên hệ.');
         }
         router.refresh();
@@ -411,6 +570,36 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
     setStickyEmphasis(snap.emphasis);
     setStickyAnimation(snap.animation);
     setStickyContentRevision(snap.contentRevision);
+    // hrp-t2-public-site-hotfix (T2 / STEP-07): reset Hero image từ snapshot.
+    const resetHero = savedSnapshot.heroImage ?? null;
+    setHeroImageMediaId(resetHero?.mediaId ?? null);
+    setHeroImageSelected(
+      resetHero === null
+        ? null
+        : {
+            id: resetHero.mediaId,
+            url: resetHero.url,
+            alt: resetHero.alt,
+            caption: resetHero.caption,
+          },
+    );
+    // hrp-t1c-t2-public-site-hero-slides-ctv-layout (T2 hotfix / STEP-05):
+    // reset 5 slide về snapshot server. Reset flag đồng thời clear.
+    const resetSlides = savedSnapshot.heroSlides ?? [];
+    setHeroSlideSlots(
+      Array.from({ length: 5 }, (_, idx) => {
+        const s = resetSlides[idx];
+        if (!s) return { mediaId: null, title: '', desc: '', publicUrl: null, publicAlt: '' };
+        return {
+          mediaId: s.mediaId,
+          title: s.title,
+          desc: s.desc,
+          publicUrl: s.url,
+          publicAlt: s.alt,
+        };
+      }),
+    );
+    setHeroSlidesReset(false);
     setError(null);
     setSuccess(null);
   }
@@ -476,6 +665,16 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
           </span>
         </div>
 
+        {/* hrp-t2-public-site-hotfix (T2 / STEP-07): Tabs điều hướng nhóm
+            cài đặt (interface / contact / system / account). Render nội
+            dung cặn bên dưới theo `activeTab` để không phá UX sẵn có. */}
+        <SettingsTabs
+          active={activeTab}
+          onChange={setActiveTab}
+        />
+
+        {activeTab === 'interface' ? (
+        <>
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <div>
             <label
@@ -573,6 +772,95 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
         <div
           className="mt-6 border-t pt-6"
           style={{ borderColor: 'var(--outline-variant)' }}
+          data-testid="ui2-hero-image-block"
+        >
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <h3 style={{ color: 'var(--on-surface)' }} className="text-sm font-semibold">
+                Ảnh nền trang chủ (Hero)
+              </h3>
+              <p style={{ color: 'var(--on-surface-variant)' }} className="mt-0.5 text-xs">
+                Chọn ảnh từ Thư viện Media hoặc bỏ chọn để trở về gradient mặc định. Không ảnh hưởng carousel &amp; tin tức.
+              </p>
+            </div>
+            <span
+              style={{ background: 'var(--primary-container)', color: 'var(--on-primary-container)' }}
+              className="rounded-full px-2 py-0.5 text-xs font-medium"
+            >
+              GIAO DIỆN
+            </span>
+          </div>
+          <HeroImagePicker
+            selected={heroImageSelected}
+            onSelect={(next) => {
+              setHeroImageSelected(next);
+              setHeroImageMediaId(next?.id ?? null);
+            }}
+            disabled={Boolean(unavailableReason) || isPending}
+          />
+        </div>
+
+        {/* hrp-t1c-t2-public-site-hero-slides-ctv-layout (T2 hotfix / STEP-06):
+            5 slide Hero carousel — chỉnh ảnh + tiêu đề + mô tả từng slot.
+            Thứ tự cứng; vòng này không thêm/xoá/sắp xếp slide. Khi admin
+            bấm "Khôi phục mặc định" → patch gửi null để server xoá cột
+            JSONB, public surface render hardcoded array. */}
+        <div
+          className="mt-6 border-t pt-6"
+          style={{ borderColor: 'var(--outline-variant)' }}
+          data-testid="ui2-hero-slides-block"
+        >
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <h3 style={{ color: 'var(--on-surface)' }} className="text-sm font-semibold">
+                Ảnh &amp; nội dung slide Hero
+              </h3>
+              <p style={{ color: 'var(--on-surface-variant)' }} className="mt-0.5 text-xs">
+                5 tiêu điểm của carousel bên phải trang chủ. Tiêu đề bắt buộc; mô tả tối đa 280 ký tự. Bấm Khôi phục mặc định để trở về nội dung gốc.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setHeroSlideSlots(
+                  Array.from({ length: 5 }, () => ({
+                    mediaId: null,
+                    title: '',
+                    desc: '',
+                    publicUrl: null,
+                    publicAlt: '',
+                  })),
+                );
+                setHeroSlidesReset(true);
+              }}
+              disabled={Boolean(unavailableReason) || isPending}
+              style={{ background: 'var(--surface-container)', color: 'var(--on-surface)' }}
+              className="hrp-focus rounded-md border border-[var(--outline-variant)] px-2 py-1 text-[11px] font-semibold disabled:opacity-40"
+              data-testid="hero-slides-reset-button"
+            >
+              Khôi phục mặc định
+            </button>
+          </div>
+          <HeroSlidesEditor
+            value={heroSlideSlots}
+            onChange={(idx, next) =>
+              setHeroSlideSlots((prev) => {
+                const copy = prev.slice();
+                copy[idx] = next;
+                return copy;
+              })
+            }
+            disabled={Boolean(unavailableReason) || isPending}
+          />
+        </div>
+        </>
+        ) : null}
+
+        {activeTab === 'contact' && (
+        <div
+          className="mt-6 border-t pt-6"
+          style={{ borderColor: 'var(--outline-variant)' }}
+          data-testid="ui2-contact-channels-block"
         >
           <div className="mb-4">
             <h3 style={{ color: 'var(--on-surface)' }} className="text-sm font-semibold">
@@ -683,7 +971,11 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
             </div>
           </div>
         </div>
+        )}
 
+        {/* hrp-t2-public-site-hotfix (T2 / STEP-07): Tab Giao diện còn chứa
+            news toggle + sticky announcement. (Đặt chung với block
+            pagesizes + Hero image đã render phía trên.) */}
         {/* ── UI2 / Phase B — News section toggle ───────────────────────── */}
         <div
           className="mt-6 border-t pt-6"
@@ -1078,6 +1370,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
           </div>
         )}
 
+        {(activeTab === 'interface' || activeTab === 'contact') && (
         <div className="mt-6 flex flex-wrap items-center justify-end gap-3">
           <p style={{ color: 'var(--on-surface-variant)' }} className="text-xs">
             {unavailableReason
@@ -1105,47 +1398,37 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
             {actionLabel('save')}
           </button>
         </div>
+        )}
       </form>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {PLACEHOLDER_GROUPS.map((group) => (
-          <div
-            key={group.title}
-            style={{ background: 'var(--surface-container-lowest)', borderColor: 'var(--outline-variant)' }}
-            className="rounded-lg border"
-          >
-            <div
-              style={{ background: 'var(--surface-container)', borderBottom: '1px solid var(--outline-variant)' }}
-              className="flex items-center justify-between gap-3 px-4 py-3"
-            >
-              <h2 style={{ color: 'var(--on-surface)' }} className="text-sm font-semibold">{group.title}</h2>
-              <span
-                style={{ background: 'var(--surface-container-highest)', color: 'var(--on-surface-variant)' }}
-                className="rounded-full px-2 py-0.5 text-xs font-medium"
-              >
-                Chưa khả dụng
-              </span>
-            </div>
-            <div className="divide-y divide-solid" style={{ borderColor: 'var(--outline-variant)' }}>
-              {group.items.map((item) => (
-                <div key={item.label} className="block px-4 py-3 opacity-60">
-                  <div style={{ color: 'var(--on-surface)' }} className="text-sm font-medium">{item.label}</div>
-                  <div style={{ color: 'var(--on-surface-variant)' }} className="text-xs mt-0.5">{item.description}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
+      {/* hrp-t2-public-site-hotfix (T2 / STEP-07): Tab "Hệ thống" — nơi dự
+          kiến cho cài đặt nền (rate-limit, feature flags, jobs queue...) chưa
+          khả dụng trong T2. Render placeholder đồng nhất với UX cũ. */}
+      {activeTab === 'system' && (
+        <div
+          className="mt-8 rounded-lg border p-6"
+          style={{
+            background: 'var(--surface-container-lowest)',
+            borderColor: 'var(--outline-variant)',
+          }}
+          data-testid="settings-system-placeholder"
+        >
+          <h2 style={{ color: 'var(--on-surface)' }} className="text-base font-semibold">
+            Cài đặt hệ thống
+          </h2>
+          <p style={{ color: 'var(--on-surface-variant)' }} className="mt-2 text-sm">
+            Các tùy chọn này đang được chuẩn hoá trong task UI-3 và sẽ khả dụng trong bản phát hành kế tiếp.
+          </p>
+        </div>
+      )}
 
-      <div
-        style={{ background: 'var(--surface-container)', borderColor: 'var(--outline-variant)' }}
-        className="mt-8 rounded-lg border p-4 text-center"
-      >
-        <p style={{ color: 'var(--on-surface-variant)' }} className="text-sm">
-          Phiên bản hệ thống HRP <span className="font-mono text-xs">v1.0.0</span> — Các nhóm cài đặt chi tiết khác đang được phát triển.
-        </p>
-      </div>
+      {/* hrp-t2-public-site-hotfix (T2 / STEP-07): Tab "Tài khoản / Quyền"
+          chỉ điều hướng sang Users & Permissions. Không xây CRUD tài khoản ở
+          task T2 để tránh chồng chéo với hotfix Admin UI. */}
+      {activeTab === 'account' && (
+        <AccountTabPanel />
+      )}
+
     </div>
   );
 }

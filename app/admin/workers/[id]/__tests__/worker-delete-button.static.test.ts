@@ -128,8 +128,12 @@ describe('worker-delete-button — 4-layer defense', () => {
     expect(CODE).not.toMatch(/method:\s*['"]POST['"]/);
   });
 
-  it('success → redirect về /admin/workers', () => {
-    expect(CODE).toContain("window.location.href = '/admin/workers'");
+  it('success → redirect về /admin/workers với query deleted=<id> (T1B-OPS follow-up #1)', () => {
+    // T1B-OPS follow-up #1: thêm `deleted=<id>&name=<name>` để list page hiển thị
+    // banner "Đã xóa người lao động …". Đường dẫn đích vẫn là /admin/workers;
+    // chỉ payload thay đổi. Test khẳng định cả path đích lẫn query contract.
+    expect(CODE).toMatch(/window\.location\.href\s*=\s*`\/admin\/workers\?/);
+    expect(CODE).toContain('deleted: workerId');
   });
 });
 
