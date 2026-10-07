@@ -9,8 +9,8 @@
 | Task slug | `hrp-t1c-media-global-pool-bulk-upload-hotfix` |
 | Delivery protocol | `V2_FAST_FREEZE` |
 | Spec version | TASK v1.0 (`READY_TO_CODE`) |
-| Implementation SHA | `_PENDING_COMMIT_` (see §6) |
-| HEAD SHA | `_PENDING_PUSH_` |
+| Implementation SHA | `1ed91cd20a0d0c5098d2b6186c5671f03d0ed6fd` |
+| HEAD SHA | `1ed91cd20a0d0c5098d2b6186c5671f03d0ed6fd` (after push; sẽ tăng 1 vì re-commit HANDOFF pin) |
 | Branch | `codex/t1c-media-global-pool-bulk-upload-hotfix` |
 | Baseline (origin/main) | `04d91666b4ab024c5a4048dfbb947e3d3a97a82a` |
 | Worktree | `C:\CodeApp\HrP-t1c-media-global-pool-bulk-upload-hotfix` |
