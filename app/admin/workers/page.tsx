@@ -124,13 +124,25 @@ export default function WorkersPage() {
             Quản lý thông tin và trạng thái người lao động.
           </p>
         </div>
-        <Link
-          href="/admin/labor-profiles/new"
-          style={{ background: 'var(--primary)', color: 'var(--on-primary)' }}
-          className="rounded px-4 py-2 text-sm font-semibold"
-        >
-          + Tiếp nhận người lao động
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/admin/workers/delete-history"
+            style={{
+              background: 'var(--surface-container)',
+              color: 'var(--on-surface)',
+            }}
+            className="rounded border px-4 py-2 text-sm font-medium"
+          >
+            Lịch sử xóa
+          </Link>
+          <Link
+            href="/admin/labor-profiles/new"
+            style={{ background: 'var(--primary)', color: 'var(--on-primary)' }}
+            className="rounded px-4 py-2 text-sm font-semibold"
+          >
+            + Tiếp nhận người lao động
+          </Link>
+        </div>
       </div>
 
       {showDeletedBanner && deletedId && (

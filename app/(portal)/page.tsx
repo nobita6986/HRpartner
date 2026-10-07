@@ -25,6 +25,8 @@ import type {
   PublicJobOverview,
 } from '@/src/domains/job-board/public.service';
 import { BEST_JOBS_PAGE_SIZE_DEFAULT } from '@/src/domains/job-board/public-types';
+import { SALARY_BUCKETS, type SalaryBucket } from '@/src/domains/job-board/public-listing.params';
+import { salaryBucketLabel } from '@/src/domains/job-board/public-listing.labels';
 // hrp-ui-v1-public-card-truth-correction (T1A / DEC-07): `enrichJob` không còn pre-compute
 // `stamps: StampKey[]` nữa — `<JobStampOverlay>` (shared, ở `featured-job-card.tsx`) tự derive
 // qua `deriveStampsFromFlags` từ 4 flag boolean. Tránh RC-02 root cause (mảng 2 flag override).
@@ -155,6 +157,10 @@ export default function JobsPage() {
   const [keyword, setKeyword] = useState('');
   const [area, setArea] = useState('');
   const [shift, _setShift] = useState('');
+  // hrp-t2-public-site-hotfix (T2 / STEP-05): Salary state cho hero search,
+  // cùng 6 bucket như `/viec-lam` FilterForm. Trước đó control này là
+  // disabled placeholder "Mức lương — sắp có".
+  const [salary, setSalary] = useState<SalaryBucket | ''>('');
   const [facets, setFacets] = useState<PublicJobFacets>(EMPTY_FACETS);
   const [overview, setOverview] = useState<PublicJobOverview>(EMPTY_OVERVIEW);
   const [applyJob, setApplyJob] = useState<EnrichedJob | null>(null);
@@ -213,15 +219,40 @@ export default function JobsPage() {
 
   // AV1: bootstrap HomepageSettings singleton (server fetches, client hydrates from page data).
   // If the API call fails, defaults are already in place via DEFAULT_BEST_PAGE_SIZE.
+  // hrp-t2-public-site-hotfix (T2 / STEP-06): thêm `heroImage` từ DTO.
+  // hrp-t1c-t2-public-site-hero-slides-ctv-layout (T2 hotfix / STEP-08):
+  // thêm `heroSlides` (mảng 5 slide) để truyền cho RecruitmentHighlight.
+  const [heroImage, setHeroImage] = useState<{ url: string; alt: string } | null>(null);
+  const [heroSlides, setHeroSlides] = useState<
+    Array<{ index: number; mediaId: string | null; url: string | null; alt: string; title: string; desc: string }>
+  >([]);
   useEffect(() => {
     fetch('/api/public/homepage-settings', { cache: 'no-store' })
       .then((res) => {
         if (!res.ok) return null;
-        return res.json() as Promise<{ bestJobsPageSize: number }>;
+        return res.json() as Promise<{
+          bestJobsPageSize: number;
+          heroImage: { url: string; alt: string; caption: string | null } | null;
+          heroSlides: Array<{
+            index: number;
+            mediaId: string | null;
+            url: string | null;
+            alt: string;
+            title: string;
+            desc: string;
+          }>;
+        }>;
       })
       .then((data) => {
-        if (data?.bestJobsPageSize && [3, 6, 9, 12].includes(data.bestJobsPageSize)) {
+        if (!data) return;
+        if (data.bestJobsPageSize && [3, 6, 9, 12].includes(data.bestJobsPageSize)) {
           setBestPageSize(data.bestJobsPageSize);
+        }
+        if (data.heroImage && typeof data.heroImage.url === 'string') {
+          setHeroImage({ url: data.heroImage.url, alt: data.heroImage.alt ?? '' });
+        }
+        if (Array.isArray(data.heroSlides)) {
+          setHeroSlides(data.heroSlides);
         }
       })
       .catch(() => { /* use default on error */ });
@@ -256,13 +287,13 @@ export default function JobsPage() {
   // DEC-01 / STEP-02: Hero form submit → navigate tới /viec-lam với offset: 0
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
-    router.push(buildListingHref({ q: keyword.trim() || undefined, area: area || undefined, shift: shift || undefined, offset: 0 }));
+    router.push(buildListingHref({ q: keyword.trim() || undefined, salary: salary || undefined, area: area || undefined, shift: shift || undefined, offset: 0 }));
   }
 
   // DEC-01 / STEP-02: applyArea → navigate tới /viec-lam với area mới, giữ keyword/shift hiện tại, offset: 0
   function applyArea(value: string) {
     setArea(value);
-    router.push(buildListingHref({ q: keyword.trim() || undefined, area: value || undefined, shift: shift || undefined, offset: 0 }));
+    router.push(buildListingHref({ q: keyword.trim() || undefined, salary: salary || undefined, area: value || undefined, shift: shift || undefined, offset: 0 }));
   }
 
   function handleApply(job: EnrichedJob) {
@@ -298,7 +329,7 @@ export default function JobsPage() {
 
   return (
     <main id="hrp-main" tabIndex={-1} className="flex w-full flex-col items-stretch gap-0">
-      <Hero>
+      <Hero backgroundImage={heroImage}>
         <div className="flex min-w-0 flex-1 flex-col justify-center gap-6 text-on-primary">
           <p className="font-label text-label-md font-bold uppercase tracking-widest text-secondary-fixed">
             Cùng tìm kiếm
@@ -361,18 +392,28 @@ export default function JobsPage() {
             <div className="flex-1">
               <label
                 htmlFor="hrp-hero-salary"
-                /* DEC-08: salary disabled — Mức lương — sắp có */
+                /* hrp-t2-public-site-hotfix (T2 / STEP-05): salary hero control
+                   kích hoạt — dùng cùng 6 bucket với FilterForm. Label đổi
+                   từ "Mức lương — sắp có" (placeholder disabled) sang
+                   "Mức lương" thật. */
                 className="mb-1 block font-label text-label-sm font-bold text-on-surface"
               >
-                Mức lương — sắp có
+                Mức lương
               </label>
               <select
                 id="hrp-hero-salary"
-                disabled
-                aria-disabled="true"
-                className="hrp-focus w-full cursor-not-allowed rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2.5 text-on-surface-variant text-sm opacity-70 min-h-11"
+                value={salary}
+                onChange={(e) => setSalary(e.target.value as SalaryBucket | '')}
+                /* STEP-06/RQ-11/DEC-17: Select → bg-white border-outline-variant */
+                className="hrp-focus w-full rounded-lg border border-outline-variant bg-white px-3 py-2.5 text-on-surface text-sm min-h-11"
+                data-testid="hrp-hero-salary-select"
               >
                 <option value="">Mọi mức lương</option>
+                {SALARY_BUCKETS.map((bucket) => (
+                  <option key={bucket} value={bucket}>
+                    {salaryBucketLabel(bucket)}
+                  </option>
+                ))}
               </select>
             </div>
             <button
@@ -385,7 +426,10 @@ export default function JobsPage() {
           </form>
         </div>
         <div className="hidden w-full max-w-md flex-shrink-0 lg:block">
-          <RecruitmentHighlight />
+          {/* hrp-t1c-t2-public-site-hero-slides-ctv-layout (T2 hotfix / STEP-08):
+              truyền heroSlides từ DTO xuống component. Khi rỗng, component
+              fallback hardcoded array (giữ nguyên content v1). */}
+          <RecruitmentHighlight slides={heroSlides} />
         </div>
       </Hero>
 
@@ -416,9 +460,13 @@ export default function JobsPage() {
       <HrpIntroSection content={demoHrpIntro} />
 
       <RecruitingProjectsSection
+        /* hrp-t2-public-site-hotfix (T2 / STEP-08): truyền companyName làm
+           tiêu đề dự án và positionTitle làm subtitle (fix bug "Thợ điện"
+           hiển thị như tên dự án). */
         jobs={recruitingProjects.map((job) => ({
           id: job.id,
-          title: job.title,
+          companyName: job.companyName,
+          positionTitle: job.title,
           availableSlots: job.availableSlots,
         }))}
         buildHref={(jobId) => publicJobDetailPath(jobId)}

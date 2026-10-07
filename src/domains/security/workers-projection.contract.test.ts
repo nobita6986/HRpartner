@@ -18,6 +18,18 @@ const mocks = vi.hoisted(() => {
       create: vi.fn(),
       update: vi.fn(),
     },
+    projectAssignment: {
+      findMany: vi.fn(),
+    },
+    employmentEpisode: {
+      findMany: vi.fn(),
+    },
+    commissionLedger: {
+      findMany: vi.fn(),
+    },
+    user: {
+      findMany: vi.fn(),
+    },
     serviceGetWorkerDetail: vi.fn(),
     serviceUpdateWorkerProfile: vi.fn(),
     serviceDeleteWorker: vi.fn(),
@@ -40,11 +52,23 @@ vi.mock('@/src/lib/db', () => ({
 // Row-scope L1 + GUC L2 thực sự đã được chứng minh ở live-vendor-worker-scope.m1-06b (integration).
 vi.mock('@/src/shared/auth/with-authorized-db', () => ({
   withAuthorizedDbReadOnly: (_prisma: unknown, _ctx: unknown, cb: (tx: unknown) => unknown) =>
-    cb({ worker: mocks.worker }),
+    cb({
+      worker: mocks.worker,
+      projectAssignment: mocks.projectAssignment,
+      employmentEpisode: mocks.employmentEpisode,
+      commissionLedger: mocks.commissionLedger,
+      user: mocks.user,
+    }),
 }));
 vi.mock('@/src/shared/auth/with-db-context', () => ({
   withDbContext: (_prisma: unknown, _ctx: unknown, cb: (tx: unknown) => unknown) =>
-    cb({ worker: mocks.worker }),
+    cb({
+      worker: mocks.worker,
+      projectAssignment: mocks.projectAssignment,
+      employmentEpisode: mocks.employmentEpisode,
+      commissionLedger: mocks.commissionLedger,
+      user: mocks.user,
+    }),
 }));
 // T1B: [id] route dùng service layer (`getWorkerDetail` / `updateWorkerProfile` /
 // `deleteWorker`) thay vì gọi thẳng Prisma. Mock service để giữ unit lane.
@@ -90,6 +114,12 @@ describe('worker route projections', () => {
     mocks.worker.count.mockResolvedValue(1);
     mocks.worker.update.mockResolvedValue(rawWorker);
     mocks.resolveEffectivePermissions.mockResolvedValue(new Set());
+    // T1C admin-ux-hotfix 2: enrichWorkerList queries 4 tables to enrich 4
+    // operational columns. Mock empty so the enrichment returns nulls safely.
+    mocks.projectAssignment.findMany.mockResolvedValue([]);
+    mocks.employmentEpisode.findMany.mockResolvedValue([]);
+    mocks.commissionLedger.findMany.mockResolvedValue([]);
+    mocks.user.findMany.mockResolvedValue([]);
     // T1B: [id] route đi qua service. Mock trả về row rawWorker khi gọi
     // getWorkerDetail / updateWorkerProfile.
     mocks.serviceGetWorkerDetail.mockResolvedValue(rawWorker);

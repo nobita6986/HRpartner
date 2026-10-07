@@ -115,6 +115,16 @@ export default async function WorkerDetailPage({ params }: { params: Promise<{ i
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <a
+            href="/admin/workers/delete-history"
+            className="rounded border px-3 py-2 text-sm font-medium"
+            style={{
+              borderColor: 'var(--outline-variant)',
+              color: 'var(--on-surface-variant)',
+            }}
+          >
+            Lịch sử xóa
+          </a>
           {canDelete && (
             <WorkerDeleteButton workerId={detail.id} workerName={detail.fullName} />
           )}
