@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { workerStatusLabel, workerStatusTone } from '@/src/domains/workforce/worker-ui';
 import type { WorkerEmploymentStatus } from '@/src/domains/workforce/worker-ui';
 import { StatusBadge } from '@/src/shared/ui/status-badge';
@@ -16,15 +17,28 @@ interface WorkerRow {
   createdAt: string;
 }
 
+interface EnrichmentRow {
+  currentJob: {
+    projectId: string;
+    projectCode: string;
+    projectName: string;
+    assignmentStatus: string;
+  } | null;
+  firstJobStartedAt: string | null;
+  pmName: string | null;
+  commissionBeneficiary: { userId: string; name: string | null } | null;
+}
+
 interface WorkersResponse {
   workers: WorkerRow[];
+  enrichment: Record<string, EnrichmentRow>;
   total: number;
   take: number;
   skip: number;
 }
 
 /**
- * `/admin/workers` — M5 Người lao động (T1B PRE-P2 HOTFIX).
+ * `/admin/workers` — M5 Người lao động (T1B PRE-P2 HOTFIX, T1C admin-ux-hotfix 2).
  *
  * Bảng gọn, CTA KHÔNG POST Worker rời rạc — dẫn operator sang luồng
  * "Tiếp nhận người lao động" tại `/admin/labor-profiles/new`. Worker chỉ
@@ -32,11 +46,22 @@ interface WorkersResponse {
  * POST trực tiếp sẽ phá invariant `LaborProfile.workerId`. Row click
  * mở detail tại `/admin/workers/[id]`.
  *
+ * Cột vận hành (T1C admin-ux-hotfix 2 — DEC-03):
+ *   - "Dự án/Job đang làm": ProjectAssignment ACTIVE mới nhất → Project.code/name.
+ *     Fallback sang assignment gần nhất nếu không ACTIVE.
+ *   - "Ngày làm đầu tiên": MIN(EmploymentEpisode.startedAt, ProjectAssignment.validFrom)
+ *     qua Worker. KHÔNG suy diễn từ Worker.createdAt.
+ *   - "Quản lý dự án": Project.pmUser.name. NULL → "—".
+ *   - "Người hưởng hoa hồng": CommissionLedger.ctvId CTV mới nhất gắn Worker
+ *     (User.name). KHÔNG fallback sang Worker.assignedToId.
+ *
  * Phân biệt với `/admin/labor-profiles` (Hồ sơ tiếp nhận): chưa convert
  * vẫn là LaborProfile, không phải Worker.
  */
 export default function WorkersPage() {
+  const router = useRouter();
   const [workers, setWorkers] = useState<WorkerRow[]>([]);
+  const [enrichment, setEnrichment] = useState<Record<string, EnrichmentRow>>({});
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -62,6 +87,7 @@ export default function WorkersPage() {
       }
       const d: WorkersResponse = await r.json();
       setWorkers(d.workers);
+      setEnrichment(d.enrichment ?? {});
       setTotal(d.total);
     } catch {
       setError('Không thể tải danh sách người lao động.');
@@ -76,23 +102,35 @@ export default function WorkersPage() {
   }, [load]);
 
   return (
-    <div style={{ background: 'var(--surface)' }} className="px-6 py-8 lg:px-8">
+    <div style={{ background: 'var(--surface)' }} className="px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 style={{ color: 'var(--on-surface)' }} className="text-2xl font-semibold">
             Danh sách người lao động
           </h1>
           <p style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-sm">
-            Phân hệ M5 — Quản lý hồ sơ người lao động (đã chuyển đổi từ Hồ sơ tiếp nhận).
+            Quản lý thông tin và trạng thái người lao động.
           </p>
         </div>
-        <Link
-          href="/admin/labor-profiles/new"
-          style={{ background: 'var(--primary)', color: 'var(--on-primary)' }}
-          className="rounded px-4 py-2 text-sm font-semibold"
-        >
-          + Tiếp nhận người lao động
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/admin/workers/delete-history"
+            style={{
+              background: 'var(--surface-container)',
+              color: 'var(--on-surface)',
+            }}
+            className="rounded border px-4 py-2 text-sm font-medium"
+          >
+            Lịch sử xóa
+          </Link>
+          <Link
+            href="/admin/labor-profiles/new"
+            style={{ background: 'var(--primary)', color: 'var(--on-primary)' }}
+            className="rounded px-4 py-2 text-sm font-semibold"
+          >
+            + Tiếp nhận người lao động
+          </Link>
+        </div>
       </div>
 
       <div className="mb-4 flex flex-wrap gap-3">
@@ -161,11 +199,20 @@ export default function WorkersPage() {
                   borderBottom: '1px solid var(--outline-variant)',
                 }}
               >
-                {['Mã', 'Họ tên', 'Điện thoại', 'Trạng thái', 'Ngày tạo', 'Thao tác'].map(h => (
+                {[
+                  'Mã',
+                  'Họ tên',
+                  'Điện thoại',
+                  'Trạng thái',
+                  'Dự án/Job đang làm',
+                  'Ngày làm đầu tiên',
+                  'Quản lý dự án',
+                  'Người hưởng hoa hồng',
+                ].map(h => (
                   <th
                     key={h}
                     style={{ color: 'var(--on-surface-variant)' }}
-                    className="px-4 py-3 text-left font-semibold"
+                    className="px-4 py-3 text-left font-semibold whitespace-nowrap"
                     scope="col"
                   >
                     {h}
@@ -174,50 +221,62 @@ export default function WorkersPage() {
               </tr>
             </thead>
             <tbody>
-              {workers.map((w, i) => (
-                <tr
-                  key={w.id}
-                  className="cursor-pointer transition-colors duration-150 ease-out hover:bg-[var(--color-surface-container)]"
-                  style={{
-                    borderBottom: i < workers.length - 1 ? '1px solid var(--outline-variant)' : 'none',
-                  }}
-                  onClick={() => {
-                    window.location.href = `/admin/workers/${w.id}`;
-                  }}
-                >
-                  <td style={{ color: 'var(--primary)' }} className="px-4 py-3 font-mono text-xs">
-                    {w.userId}
-                  </td>
-                  <td style={{ color: 'var(--on-surface)' }} className="px-4 py-3">
-                    {w.fullName}
-                  </td>
-                  <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">
-                    {w.phone ?? '—'}
-                  </td>
-                  <td className="px-4 py-3">
-                    <StatusBadge
-                      module="worker"
-                      status={w.employmentStatus ?? 'NONE'}
-                      tone={workerStatusTone(w.employmentStatus)}
+              {workers.map((w, i) => {
+                const e = enrichment[w.id];
+                return (
+                  <tr
+                    key={w.id}
+                    className="cursor-pointer transition-colors duration-150 ease-out hover:bg-[var(--color-surface-container)]"
+                    style={{
+                      borderBottom: i < workers.length - 1 ? '1px solid var(--outline-variant)' : 'none',
+                    }}
+                    onClick={() => router.push(`/admin/workers/${w.id}`)}
+                  >
+                    <td style={{ color: 'var(--primary)' }} className="px-4 py-3 font-mono text-xs whitespace-nowrap">
+                      {w.userId}
+                    </td>
+                    <td style={{ color: 'var(--on-surface)' }} className="px-4 py-3 whitespace-nowrap">
+                      {w.fullName}
+                    </td>
+                    <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">
+                      {w.phone ?? '—'}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <StatusBadge
+                        module="worker"
+                        status={w.employmentStatus ?? 'NONE'}
+                        tone={workerStatusTone(w.employmentStatus)}
+                      >
+                        {workerStatusLabel(w.employmentStatus)}
+                      </StatusBadge>
+                    </td>
+                    <td style={{ color: 'var(--on-surface)' }} className="px-4 py-3 text-xs">
+                      {e?.currentJob ? (
+                        <>
+                          <span className="font-mono">{e.currentJob.projectCode}</span>{' '}
+                          {e.currentJob.projectName}
+                        </>
+                      ) : (
+                        <span style={{ color: 'var(--on-surface-variant)' }}>—</span>
+                      )}
+                    </td>
+                    <td
+                      style={{ color: 'var(--on-surface-variant)' }}
+                      className="px-4 py-3 text-xs whitespace-nowrap"
                     >
-                      {workerStatusLabel(w.employmentStatus)}
-                    </StatusBadge>
-                  </td>
-                  <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">
-                    {new Date(w.createdAt).toLocaleDateString('vi-VN')}
-                  </td>
-                  <td className="px-4 py-3">
-                    <Link
-                      href={`/admin/workers/${w.id}`}
-                      onClick={ev => ev.stopPropagation()}
-                      style={{ color: 'var(--primary)' }}
-                      className="text-xs font-medium hover:underline"
-                    >
-                      Xem
-                    </Link>
-                  </td>
-                </tr>
-              ))}
+                      {e?.firstJobStartedAt
+                        ? new Date(e.firstJobStartedAt).toLocaleDateString('vi-VN')
+                        : '—'}
+                    </td>
+                    <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">
+                      {e?.pmName ?? '—'}
+                    </td>
+                    <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">
+                      {e?.commissionBeneficiary?.name ?? '—'}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
           <div

@@ -75,15 +75,38 @@ export async function GET(req: NextRequest) {
     // trong CÙNG transaction. Root (ADMIN/HR_MANAGER/DIRECTOR) passthrough L1 → thấy
     // toàn bộ; HR_STAFF/PM/SALE bị inject WHERE scope; role không khai báo scope Worker
     // (MKT/ACCOUNTANT/EMPLOYEE) → L1 throw AuthScopeError → 403 (deny-by-default, DEC-08).
-    const { rows, total } = await withAuthorizedDbReadOnly(prisma, ctx, async (tx) => {
+    //
+    // T1C admin-ux-hotfix 2: 4 cột vận hành mới trên /admin/workers (DEC-03).
+    // Lấy từ quan hệ chuẩn: Worker.assignments → Project.pmUser → User.name; Worker.episodes
+    // cho ngày làm đầu tiên; CommissionLedger.ctvId cho CTV hưởng hoa hồng. KHÔNG qua
+    // projectWorker allowlist (cột mới = dữ liệu vận hành, không phải field nhạy cảm
+    // của Worker); KHÔNG suy diễn từ Worker.createdAt / Worker.assignedToId.
+    const { rows, total, enrichment } = await withAuthorizedDbReadOnly(prisma, ctx, async (tx) => {
       const [r, t] = await Promise.all([
-        tx.worker.findMany({ where, orderBy: { createdAt: 'desc' }, take, skip }),
+        tx.worker.findMany({
+          where,
+          orderBy: { createdAt: 'desc' },
+          take,
+          skip,
+          select: {
+            id: true,
+            userId: true,
+            fullName: true,
+            employmentStatus: true,
+            phone: true,
+            createdAt: true,
+          },
+        }),
         tx.worker.count({ where }),
       ]);
-      return { rows: r, total: t };
+      // Enrichment (parallel) — bound to the listed worker IDs only.
+      const ids = r.map(w => w.id);
+      const enrichment = await enrichWorkerList(tx, ids);
+      return { rows: r, total: t, enrichment };
     });
     return NextResponse.json({
       workers: projectWorkerList(rows, { hasSensitivePermission, action: 'LIST' }),
+      enrichment,
       total,
       take,
       skip,
@@ -98,6 +121,144 @@ export async function GET(req: NextRequest) {
     console.error('[api/workers] query error:', err);
     return NextResponse.json({ error: 'INTERNAL', message: 'Failed to query workers' }, { status: 500 });
   }
+}
+
+/**
+ * T1C admin-ux-hotfix 2 — DEC-03: enrich 4 cột vận hành cho /admin/workers.
+ *
+ * - currentJob: ProjectAssignment ACTIVE mới nhất theo validFrom → Project.code/name.
+ *   Nếu không có ACTIVE thì fallback sang dòng gần đây nhất (PAUSED/PLANNED) để
+ *   operator thấy được "đang dự án nào" dù chưa ACTIVE — đúng với thực tế vận hành
+ *   (Worker đã onboard nhưng chờ ngày bắt đầu). Vẫn KHÔNG suy diễn từ createdAt.
+ * - firstJobStartedAt: MIN(EmploymentEpisode.startedAt) hoặc MIN(ProjectAssignment.validFrom)
+ *   qua Worker — bỏ qua null. KHÔNG fallback Worker.createdAt (DEC-09).
+ * - pmName: Project.pmUser.name (lookup User). null khi pmUserId null.
+ * - commissionBeneficiaryName: CTV/User (CommissionLedger.ctvId) có dòng CREDIT mới nhất
+ *   gắn Worker. KHÔNG fallback Worker.assignedToId (DEC-09).
+ *
+ * Trả về Map<workerId, EnrichmentRow>. Tất cả field nullable khi thiếu data.
+ */
+async function enrichWorkerList(
+  tx: import('@prisma/client').Prisma.TransactionClient,
+  ids: string[],
+): Promise<Record<string, EnrichmentRow>> {
+  const empty: Record<string, EnrichmentRow> = {};
+  if (ids.length === 0) return empty;
+
+  // (a) Active assignment + Project + PM.
+  // Lấy 1 assignment mới nhất / Worker (ACTIVE ưu tiên; nếu không có → bất kỳ).
+  const assignments = await tx.projectAssignment.findMany({
+    where: { workerId: { in: ids } },
+    orderBy: [{ status: 'asc' }, { validFrom: 'desc' }],
+    select: {
+      workerId: true,
+      status: true,
+      validFrom: true,
+      project: {
+        select: {
+          id: true,
+          code: true,
+          name: true,
+          pmUserId: true,
+          pmUser: { select: { name: true } },
+        },
+      },
+    },
+  });
+
+  // Group by worker, ưu tiên ACTIVE trước rồi mới đến các status khác.
+  const byWorker = new Map<string, typeof assignments>();
+  for (const a of assignments) {
+    const list = byWorker.get(a.workerId) ?? [];
+    list.push(a);
+    byWorker.set(a.workerId, list);
+  }
+
+  // (b) First episode / first assignment date.
+  // EmploymentEpisode.startedAt là non-nullable trong schema, nên không cần
+  // filter not-null — chỉ cần theo workerId. workerId có thể null
+  // (episode gắn laborProfile nhưng chưa link Worker) → bỏ qua.
+  const episodes = await tx.employmentEpisode.findMany({
+    where: { workerId: { in: ids, not: null } },
+    select: { workerId: true, startedAt: true },
+  });
+  const assignmentDates = assignments
+    .map(a => ({ workerId: a.workerId, validFrom: a.validFrom }))
+    .filter(d => d.validFrom instanceof Date);
+
+  const firstDateByWorker = new Map<string, Date>();
+  function consider(workerId: string, d: Date | null | undefined) {
+    if (!(d instanceof Date) || Number.isNaN(d.getTime())) return;
+    const cur = firstDateByWorker.get(workerId);
+    if (!cur || d.getTime() < cur.getTime()) firstDateByWorker.set(workerId, d);
+  }
+  for (const e of episodes) {
+    if (!e.workerId) continue;
+    consider(e.workerId, e.startedAt);
+  }
+  for (const a of assignmentDates) consider(a.workerId, a.validFrom);
+
+  // (c) Commission beneficiary (latest CREDIT ledger for worker).
+  // CommissionLedger.ctvId là non-nullable. workerId có thể null
+  // (PERCENT_OF_REVENUE không gắn worker) — lọc ra khỏi where.
+  const ledgers = await tx.commissionLedger.findMany({
+    where: { workerId: { in: ids, not: null } },
+    orderBy: { createdAt: 'desc' },
+    select: { workerId: true, ctvId: true },
+  });
+  // resolve CTV name (User).
+  const ctvIds = Array.from(new Set(ledgers.map(l => l.ctvId).filter((v): v is string => Boolean(v))));
+  const ctvMap = new Map<string, string | null>();
+  if (ctvIds.length > 0) {
+    const users = await tx.user.findMany({ where: { id: { in: ctvIds } }, select: { id: true, name: true } });
+    for (const u of users) ctvMap.set(u.id, u.name);
+  }
+  // Pick first (latest) per worker.
+  const commissionByWorker = new Map<string, { id: string; name: string | null }>();
+  for (const l of ledgers) {
+    if (!l.ctvId) continue;
+    if (!l.workerId) continue;
+    if (commissionByWorker.has(l.workerId)) continue;
+    commissionByWorker.set(l.workerId, { id: l.ctvId, name: ctvMap.get(l.ctvId) ?? null });
+  }
+
+  // Build enrichment map.
+  const out: Record<string, EnrichmentRow> = {};
+  for (const id of ids) {
+    const list = byWorker.get(id) ?? [];
+    // Prefer ACTIVE.
+    const active = list.find(a => a.status === 'ACTIVE');
+    const pick = active ?? list[0];
+    const first = firstDateByWorker.get(id) ?? null;
+    const ctv = commissionByWorker.get(id) ?? null;
+    out[id] = {
+      currentJob: pick
+        ? {
+            projectId: pick.project.id,
+            projectCode: pick.project.code,
+            projectName: pick.project.name,
+            assignmentStatus: pick.status,
+          }
+        : null,
+      firstJobStartedAt: first ? first.toISOString() : null,
+      pmName: pick?.project.pmUser?.name ?? null,
+      commissionBeneficiary:
+        ctv != null ? { userId: ctv.id, name: ctv.name } : null,
+    };
+  }
+  return out;
+}
+
+interface EnrichmentRow {
+  currentJob: {
+    projectId: string;
+    projectCode: string;
+    projectName: string;
+    assignmentStatus: string;
+  } | null;
+  firstJobStartedAt: string | null;
+  pmName: string | null;
+  commissionBeneficiary: { userId: string; name: string | null } | null;
 }
 
 export async function POST(_req: NextRequest) {

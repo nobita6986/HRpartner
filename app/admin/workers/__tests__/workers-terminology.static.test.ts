@@ -31,7 +31,8 @@ describe('/admin/workers Wave 3 terminology', () => {
     // T1B: column header shortened từ "Mã người dùng" → "Mã" cho gọn
     // (đã có fullName làm nhãn rõ ràng).
     expect(CODE).toContain("'Mã'");
-    expect(CODE).toContain("'Thao tác'");
+    // T1C: cột "Thao tác" đã bị DEC-04 dỡ bỏ (bấm hàng để vào detail).
+    expect(CODE).not.toContain("'Thao tác'");
     expect(CODE).not.toMatch(/>\s*User ID\s*</);
     expect(CODE).not.toMatch(/>\s*\{w\.employmentStatus\}\s*</);
   });

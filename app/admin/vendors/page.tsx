@@ -157,7 +157,7 @@ export default function VendorsPage() {
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 style={{ color: 'var(--on-surface)' }} className="text-2xl font-semibold">Nhà cung cấp</h1>
-          <p style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-sm">Phân hệ M7 — Quản lý đối tác</p>
+          <p style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-sm">Quản lý thông tin, liên hệ và trạng thái nhà cung cấp.</p>
         </div>
         <button onClick={() => setShowCreate(true)} style={{ background: 'var(--primary)', color: 'var(--on-primary)' }} className="rounded px-4 py-2 text-sm font-semibold">+ Thêm nhà cung cấp</button>
       </div>

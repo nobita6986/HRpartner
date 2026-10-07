@@ -32,6 +32,12 @@ export interface LaborProfileListDto {
   completeness: string;
   createdAt: string;
   workerId: string | null;
+  // T1C admin-ux-hotfix 2 — DEC-05: 4 cột vận hành cho /admin/labor-profiles.
+  // Lấy từ quan hệ chuẩn, KHÔNG suy diễn; null → "—" ở UI.
+  latestJobLabel: string | null; // MAX(PlacementCase.openedAt) → Project.code/name
+  submissionsCount: number;
+  handlerName: string | null; // LaborProfileHandlingAssignment ACTIVE → User.name
+  intakeChannelLabel: string | null; // LaborProfileIntake mới nhất → channel label
 }
 
 export interface LaborProfileListResponse {
@@ -132,6 +138,34 @@ export async function getLaborProfilesList(
         completeness: true,
         createdAt: true,
         workerId: true,
+        // T1C admin-ux-hotfix 2 — DEC-05: select tối thiểu cần cho 4 cột mới.
+        submissions: { select: { id: true } },
+        intakes: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+          select: { channel: true },
+        },
+        handlingAssignments: {
+          where: { status: 'ACTIVE' },
+          take: 1,
+          select: {
+            assigneeUser: { select: { name: true } },
+          },
+        },
+        placementCases: {
+          orderBy: { openedAt: 'desc' },
+          take: 1,
+          select: {
+            openedAt: true,
+            placements: {
+              orderBy: { createdAt: 'desc' },
+              take: 1,
+              select: {
+                project: { select: { code: true, name: true } },
+              },
+            },
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
       skip: filter.skip || 0,
@@ -140,11 +174,27 @@ export async function getLaborProfilesList(
   ]);
 
   return {
-    items: items.map(item => ({
-      ...item,
-      phone: canSeeSensitive ? item.phone : (item.phone ? maskPhone(item.phone) : null),
-      createdAt: item.createdAt.toISOString(),
-    })),
+    items: items.map(item => {
+      const placementCase = item.placementCases?.[0];
+      const placement = placementCase?.placements?.[0];
+      const latestProject = placement?.project;
+      const latestJobLabel = latestProject
+        ? `${latestProject.code} — ${latestProject.name}`
+        : null;
+      const handlerAssignment = item.handlingAssignments?.[0];
+      const handlerName = handlerAssignment?.assigneeUser?.name ?? null;
+      const intake = item.intakes[0];
+      const intakeChannelLabel = intake?.channel ?? null;
+      return {
+        ...item,
+        phone: canSeeSensitive ? item.phone : item.phone ? maskPhone(item.phone) : null,
+        createdAt: item.createdAt.toISOString(),
+        latestJobLabel,
+        submissionsCount: item.submissions.length,
+        handlerName,
+        intakeChannelLabel,
+      };
+    }),
     total,
   };
 }

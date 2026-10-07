@@ -118,8 +118,8 @@ export function MediaLibraryClient({
   }
 
   return (
-    <div className="space-y-4">
-      <header className="flex flex-wrap items-end justify-between gap-2">
+    <div className="px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8 mx-auto w-full max-w-7xl space-y-4 sm:space-y-6">
+      <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold" style={{ color: 'var(--color-on-surface)' }}>
             Thư viện tệp và ảnh
@@ -140,9 +140,9 @@ export function MediaLibraryClient({
       </header>
 
       {/* Folder sidebar + filters */}
-      <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-3 sm:gap-4">
         <aside
-          className="rounded-xl border p-4 space-y-3"
+          className="rounded-xl border p-3 sm:p-4 space-y-3 md:sticky md:top-4 md:self-start"
           style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-outline-variant)' }}
         >
           <h2 className="text-xs font-bold uppercase" style={{ color: 'var(--color-on-surface-variant)' }}>
@@ -169,9 +169,9 @@ export function MediaLibraryClient({
         </aside>
 
         <div className="space-y-3">
-          <form onSubmit={onSearch} className="flex items-center gap-2">
+          <form onSubmit={onSearch} className="flex flex-col sm:flex-row sm:items-center gap-2">
             <div
-              className="flex flex-1 items-center gap-2 rounded-lg border px-3 py-2"
+              className="flex flex-1 items-center gap-2 rounded-lg border px-3 py-2 min-w-0"
               style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-outline-variant)' }}
             >
               <Search className="h-4 w-4" aria-hidden style={{ color: 'var(--color-on-surface-variant)' }} />
@@ -211,7 +211,7 @@ export function MediaLibraryClient({
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
               {items.map((item) => (
                 <MediaCard
                   key={item.id}
