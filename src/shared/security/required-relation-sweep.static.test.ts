@@ -77,14 +77,6 @@ const EXPECTED_HITS = [
   'app/api/projects/route.ts:55 clientCompany',
   'app/api/vendor/orders/route.ts:44 project',
   'app/api/vendor/submissions/route.ts:62 project',
-  // T1C admin-ux-hotfix 2 (2026-10-07): `enrichWorkerList` selects
-  // `project: { code, name, pmUserId, pmUser: { name } }` from
-  // `ProjectAssignment` to render the "Dự án/Job đang làm" /
-  // "Quản lý dự án" columns on /admin/workers. Project is a required
-  // relation on ProjectAssignment (non-optional in schema, not a list).
-  // An toàn: chạy trong `withAuthorizedDbReadOnly(...)` (RLS GUC
-  // `hrp_project_visible_for` đã lọc; ADMIN/HR_MANAGER/DIRECTOR thoả).
-  'app/api/workers/route.ts:157 project',
   'src/domains/applications/application-queue.service.ts:183 project',
   'src/domains/applications/application-queue.service.ts:216 project',
   // AFF-04 STEP-02: re-read canonical ReferralAttribution via LaborProfile on
@@ -95,14 +87,6 @@ const EXPECTED_HITS = [
   // and `findDedupCandidates`, adding two comment lines above the AFF-04
   // select block. Sweep target is unchanged.
   'src/domains/applications/conversion.service.ts:130 laborProfile',
-  // T1C admin-ux-hotfix 2 (2026-10-07): `getLaborProfilesList` mở rộng
-  // `placementCase` chain để derive "Job/đơn gần nhất" — select
-  // `placements.project: { code, name }` (qua placementCase.placements)
-  // cho cột "Job/đơn gần nhất" trên /admin/labor-profiles. Project là quan
-  // hệ BẮT BUỘC trong schema `placement` (không optional, không list) — sweep
-  // đếm là đúng. An toàn: chạy trong `withDbContext` (RLS GUC
-  // `hrp_project_visible_for` đã lọc; HR_STAFF pool qua handlingAssignment).
-  'src/domains/talent/labor-profile.read-service.ts:164 project',
   'src/domains/crm/client-read.service.ts:80 staffingOrder',
   'src/domains/crm/project-read.service.ts:40 clientCompany',
   // T1A PRE-P2 PROJECT MANAGEMENT HOTFIX (2026-10-06): `getProjectForManagement`
@@ -191,9 +175,6 @@ const EXPECTED_HITS = [
   // public DTO `gallery`/`PublicJobGalleryItemDto` interface + `toDetailDto` mapping of
   // gallery — `jobOpening.staffingOrder` / `jobOpening.staffingOrder.project` selects
   // shifted from 752/759 → 805/812. The select clauses themselves are unchanged.
-  // hrp-t2-public-site-hotfix (T2 / STEP-02): added `homepageSettings: { select: { heroImageMediaId: true } }`
-  // join — chỉ đọc FK, KHÔNG phải quan hệ BẮT BUỘC với bảng RLS (HomepageSettings không có RLS);
-  // nên sweep KHÔNG đếm hit mới. Line shift +1 do thêm dòng `homepageSettings: ...`.
   'src/domains/job-board/public.service.ts:806 staffingOrder',
   'src/domains/job-board/public.service.ts:813 project',
   // hrp-p1-e0 (2026-09-26): Recruiter Workbench read-model cần `fullName`/`phone`/`cccdNumber`/
@@ -271,9 +252,29 @@ const EXPECTED_HITS = [
   // HR_STAFF, project.PM for PM, etc.) before reaching the select. PII
   // (`phone`/`cccdNumber`) is masked when caller lacks
   // `CAN_VIEW_WORKER_SENSITIVE` per `projectWorker` projection.
-  'src/domains/workforce/worker.service.ts:266 laborProfile',
-  'src/domains/workforce/worker.service.ts:275 project',
-  'src/domains/workforce/worker.service.ts:283 owner',
+  // T1B-OPS PRE-P2 WORKER OPERATIONS HOTFIX (2026-10-07): line shifts 266→269,
+  // 275→278, 283→286 because of pre-existing comments / line edits in
+  // `getWorkerDetail`. New entry `:793 project` from `listWorkersForAdmin`
+  // (ProjectAssignment.project + Project.pmUserId for the Worker list 6
+  // canonical columns — currentProject, currentProjectManager). RLS-covered
+  // (Project via `withDbContext` + `hrp_project_visible_for`).
+  'src/domains/workforce/worker.service.ts:269 laborProfile',
+  'src/domains/workforce/worker.service.ts:278 project',
+  'src/domains/workforce/worker.service.ts:286 owner',
+  'src/domains/workforce/worker.service.ts:796 project',
+  // T1B-OPS PRE-P2 WORKER OPERATIONS HOTFIX (2026-10-07): `getLaborProfilesList`
+  // enriches each LaborProfile row with `latestJob` (CandidateSubmission.project),
+  // `applicationCount` (CandidateSubmission list), `handler`
+  // (LaborProfileHandlingAssignment.assigneeUser), and `intakeSource`
+  // (LaborProfileIntake). The 5 new entries below select `project` (RLS-covered
+  // via `hrp_project_visible_for`) to expose the latest-job name in the
+  // LaborProfile list view. All paths run under `withDbContext` for the
+  // LaborProfile caller, so RLS chain already filtered.
+  'src/domains/talent/labor-profile.read-service.ts:183 project',
+  'src/domains/talent/labor-profile.read-service.ts:198 project',
+  'src/domains/talent/labor-profile.read-service.ts:204 project',
+  'src/domains/talent/labor-profile.read-service.ts:225 project',
+  'src/domains/talent/labor-profile.read-service.ts:231 project',
 ] as const;
 
 interface SourceEntry {
@@ -455,9 +456,9 @@ describe('quan hệ BẮT BUỘC trên bảng bị RLS che: tập vị trí sele
    * `src/` giảm từ `9` xuống `5`. Assertion dưới đây khẳng định SỐ ĐO của lượt chạy hiện tại, không
    * khẳng định con số của lời văn, và cũng không khẳng định một phép trừ chưa chạy.
    */
-  it('phép quét phủ cả app/, chứng minh bằng chính bốn dòng app/api trong kết quả (AC-04)', () => {
+  it('phép quét phủ cả app/, chứng minh bằng chính ba dòng app/api trong kết quả (AC-04)', () => {
     const hits = sweep(scanned, fields);
-    expect(hits.filter((hit) => hit.startsWith('app/api/'))).toHaveLength(4);
+    expect(hits.filter((hit) => hit.startsWith('app/api/'))).toHaveLength(3);
     // Sau STEP-06 (4 dòng RỦI RO được sửa): 5 src. Sau AV2 commit e7ee2c8 (2026-09-13):
     // +4 dòng ở src/domains/staffing/job-posting-list.service.ts → 9 src. Tổng 12.
     // +4 dòng ở src/domains/crm và staffing W3 → 13 src. Tổng 16.
@@ -537,14 +538,10 @@ describe('quan hệ BẮT BUỘC trên bảng bị RLS che: tập vị trí sele
     // LaborProfile qua RLS `hrp_labor_profile_visible_for`; ProjectAssignment/User không
     // RLS-gated nhưng call site đã enforce worker scope (`assignedToId` / project.PM /
     // role) trước khi tới select. PII mask qua `projectWorker`. Tổng src = 44.
-    // T1C — ADMIN UX HOTFIX (2026-10-07, forward-merge tại đây): `getLaborProfilesList`
-    // mở rộng `placementCase.placements` để derive "Job/đơn gần nhất" — chọn
-    // `placements.project: { code, name }` (qua placementCase.placements). +1 entry mới:
-    // `labor-profile.read-service.ts:164 project`. Project là quan hệ BẮT BUỘC
-    // trong schema `placement` (không optional, không list). An toàn: chạy trong
-    // `withDbContext` (RLS GUC `hrp_project_visible_for` đã lọc; HR_STAFF pool qua
-    // handlingAssignment). Tổng src = 45.
-    expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(45);
+    // T1B-OPS PRE-P2 WORKER OPERATIONS HOTFIX (2026-10-07): thêm 6 entry mới
+    // (`worker.service.ts:796 project` + 5 entry `labor-profile.read-service.ts:project`
+    // cho 6 cột vận hành mới của LaborProfile). Tổng src = 50.
+    expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(50);
   });
 });
 

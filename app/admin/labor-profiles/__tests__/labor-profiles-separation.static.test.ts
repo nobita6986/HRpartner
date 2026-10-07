@@ -94,17 +94,16 @@ describe('/admin/labor-profiles list page — T1B Pre-P2 table column drop (DEC-
     expect(CODE.list).not.toContain('Đã liên kết');
   });
 
-  it('thead has exactly 9 <th> entries (T1C: 5 baseline + 4 operational columns)', () => {
-    // T1C admin-ux-hotfix 2: 4 new operational columns added —
-    //   Job/đơn gần nhất, Số đơn, Người phụ trách, Nguồn tiếp nhận.
-    // Baseline 5 (DEC-P2-10) + 4 = 9.
+  it('thead has exactly 5 <th> entries (DEC-P2-10 stacked operational layout)', () => {
+    // T1B-OPS keeps the total-column invariant by stacking status/completeness/source
+    // and placing applicationCount beside the latest job instead of adding columns.
     const thCount = (CODE.list.match(/<th[\s>]/g) ?? []).length;
-    expect(thCount, `expected 9 <th>, got ${thCount}`).toBe(9);
+    expect(thCount, `expected 5 <th>, got ${thCount}`).toBe(5);
   });
 
-  it('empty-state colSpan is 9 (matches 9 <th>)', () => {
-    expect(CODE.list).toMatch(/<td\s+colSpan=\{9\}/);
-    expect(CODE.list).not.toMatch(/<td\s+colSpan=\{5\}/);
+  it('empty-state colSpan is 5 (matches 5 <th>)', () => {
+    expect(CODE.list).toMatch(/<td\s+colSpan=\{5\}/);
+    expect(CODE.list).not.toMatch(/<td\s+colSpan=\{9\}/);
     expect(CODE.list).not.toMatch(/<td\s+colSpan=\{6\}/);
   });
 });

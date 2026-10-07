@@ -128,15 +128,12 @@ describe('worker-delete-button — 4-layer defense', () => {
     expect(CODE).not.toMatch(/method:\s*['"]POST['"]/);
   });
 
-  it('success → banner xác nhận + redirect về /admin/workers (T1C)', () => {
-    // T1C: thay vì window.location.href ngay, hiển thị banner xác nhận
-    // rồi redirect sau ~2.5s. Vẫn dùng Next.js client navigation (router.push)
-    // để tránh full-page reload và giữ React state.
-    expect(CODE).toContain("router.push('/admin/workers')");
-    expect(CODE).toContain('data-testid="worker-delete-success-toast"');
-    expect(CODE).toMatch(/2500/);
-    // Hard guard: KHÔNG dùng window.location.href nữa.
-    expect(CODE).not.toMatch(/window\.location\.href\s*=\s*['"]\/admin\/workers['"]/);
+  it('success → redirect về /admin/workers với query deleted=<id> (T1B-OPS follow-up #1)', () => {
+    // T1B-OPS follow-up #1: thêm `deleted=<id>&name=<name>` để list page hiển thị
+    // banner "Đã xóa người lao động …". Đường dẫn đích vẫn là /admin/workers;
+    // chỉ payload thay đổi. Test khẳng định cả path đích lẫn query contract.
+    expect(CODE).toMatch(/window\.location\.href\s*=\s*`\/admin\/workers\?/);
+    expect(CODE).toContain('deleted: workerId');
   });
 });
 

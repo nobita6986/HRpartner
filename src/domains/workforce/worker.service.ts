@@ -42,6 +42,9 @@ import {
   type WorkerDependencyKind,
   type WorkerDetailRow,
   type WorkerEmploymentStatusValue,
+  type WorkerListEnrichedFilter,
+  type WorkerListEnrichedResponse,
+  type WorkerListEnrichedRow,
 } from './worker.types';
 
 const ADVISORY_LOCK_NAMESPACE = 'hrp:worker:';
@@ -730,6 +733,172 @@ export async function deleteWorker(
 }
 
 /**
+ * T1B-OPS — Worker list enriched cho `/admin/workers`.
+ *
+ * DEC-T1B-OPS-03 / 09 — Canonical projections:
+ *   - `currentProject` từ `ProjectAssignment WHERE status IN ('ACTIVE','PAUSED') ORDER BY validFrom DESC LIMIT 1`.
+ *   - `firstWorkDate` = `MIN(EmploymentEpisode.startedAt WHERE workerId = X)`.
+ *   - `currentProjectManager` từ `Project.pmUserId` (User.name) — KHÔNG phải Worker.managerId.
+ *   - `handler` từ `Worker.assignedToId` (User.name).
+ *   - `referrer` từ `ProjectAssignment.referrerId` (User.name), fallback `SourceClaim.referrerUserId`.
+ *   - `commissionBeneficiary` từ `SourceClaim WHERE accepted=true AND claimType='CTV_REFERRAL'` → `ctvId` (User.name).
+ *
+ * Pipeline tối ưu:
+ *   1. 1 query Worker.findMany với include relations cố định.
+ *   2. 1 batch query cho aggregate (Episode min) + latest Assignment + latest SourceClaim.
+ *   3. Compose DTO từ data đã có, không loop per-row query.
+ *
+ * Permission: ADMIN/HR_MANAGER/DIRECTOR thấy toàn bộ. HR_STAFF/SALE/PM scope theo 13-role matrix (mirror `buildWorkerScopeWhere`).
+ *
+ * Auth role guard `ROLE_VIEWER` (mirror list route).
+ */
+export async function listWorkersForAdmin(
+  tx: Prisma.TransactionClient,
+  ctx: AuthContext,
+  filter: WorkerListEnrichedFilter = {},
+): Promise<WorkerListEnrichedResponse> {
+  assertViewerRole(ctx);
+
+  const take = Math.min(filter.take ?? 50, 200);
+  const skip = filter.skip ?? 0;
+  const where: Prisma.WorkerWhereInput = { ...buildWorkerScopeWhere(ctx) };
+  if (filter.status) {
+    where.employmentStatus = filter.status;
+  }
+
+  const [total, rows] = await Promise.all([
+    tx.worker.count({ where }),
+    tx.worker.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take,
+      skip,
+      select: {
+        id: true,
+        userId: true,
+        fullName: true,
+        phone: true,
+        cccdNumber: true,
+        bankAccount: true,
+        bankName: true,
+        employmentStatus: true,
+        assignedTo: { select: { id: true, name: true } },
+        // T1B-OPS: Pre-load ACTIVE/PAUSED assignments + Project (pmSubUserId1/pmSubUserId2).
+        // We'll pick the latest one in service.
+        assignments: {
+          where: { status: { in: ['ACTIVE', 'PAUSED'] } },
+          orderBy: { validFrom: 'desc' },
+          take: 1,
+          select: {
+            referrerId: true,
+            referrer: { select: { id: true, name: true } },
+            projectId: true,
+            project: { select: { id: true, code: true, name: true, pmUserId: true, subPmUserId1: true, subPmUserId2: true } },
+          },
+        },
+        // T1B-OPS: Pre-load firstWorkDate (MIN startedAt).
+        episodes: {
+          orderBy: { startedAt: 'asc' },
+          take: 1,
+          select: { startedAt: true },
+        },
+      },
+    }),
+  ]);
+
+  if (rows.length === 0) {
+    return { workers: [], total, take, skip };
+  }
+
+  const ids = rows.map(r => r.id);
+
+  // T1B-OPS: batch fetch commission beneficiary (CTV_REFERRAL accepted).
+  const sourceClaims = await tx.sourceClaim.findMany({
+    where: {
+      workerId: { in: ids },
+      accepted: true,
+      claimType: 'CTV_REFERRAL',
+    },
+    orderBy: { createdAt: 'desc' },
+    select: {
+      workerId: true,
+      ctvId: true,
+      ctv: { select: { id: true, name: true } },
+    },
+  });
+  const ctvByWorkerId = new Map<string, string | null>();
+  for (const claim of sourceClaims) {
+    if (!ctvByWorkerId.has(claim.workerId)) {
+      ctvByWorkerId.set(claim.workerId, claim.ctv?.name ?? null);
+    }
+  }
+
+  // T1B-OPS: Resolve PM names (1 query for all PMs).
+  const pmUserIds = new Set<string>();
+  for (const row of rows) {
+    const a = row.assignments[0];
+    if (!a) continue;
+    if (a.project?.pmUserId) pmUserIds.add(a.project.pmUserId);
+    if (!a.project?.pmUserId && a.project?.subPmUserId1) pmUserIds.add(a.project.subPmUserId1);
+    if (!a.project?.pmUserId && a.project?.subPmUserId2) pmUserIds.add(a.project.subPmUserId2);
+  }
+  const pmRows = pmUserIds.size > 0
+    ? await tx.user.findMany({
+        where: { id: { in: Array.from(pmUserIds) } },
+        select: { id: true, name: true },
+      })
+    : [];
+  const pmNameById = new Map<string, string | null>();
+  for (const u of pmRows) pmNameById.set(u.id, u.name);
+
+  return {
+    workers: rows.map((row) => {
+      const a = row.assignments[0];
+      const currentProject = a
+        ? {
+            id: a.projectId,
+            code: a.project?.code ?? null,
+            name: a.project?.name ?? null,
+          }
+        : null;
+      let currentProjectManager: string | null = null;
+      if (a?.project) {
+        if (a.project.pmUserId) {
+          currentProjectManager = pmNameById.get(a.project.pmUserId) ?? null;
+        } else if (a.project.subPmUserId1) {
+          currentProjectManager = pmNameById.get(a.project.subPmUserId1) ?? null;
+        } else if (a.project.subPmUserId2) {
+          currentProjectManager = pmNameById.get(a.project.subPmUserId2) ?? null;
+        }
+      }
+      const referrer = a?.referrer?.name ?? null;
+      const firstWorkDate = row.episodes[0]?.startedAt?.toISOString() ?? null;
+      const handler = row.assignedTo?.name ?? null;
+      const commissionBeneficiary = ctvByWorkerId.get(row.id) ?? null;
+      return {
+        id: row.id,
+        userId: row.userId,
+        fullName: row.fullName,
+        phone: row.phone,
+        cccdNumber: row.cccdNumber,
+        bankAccount: row.bankAccount,
+        bankName: row.bankName,
+        employmentStatus: row.employmentStatus,
+        currentProject,
+        firstWorkDate,
+        currentProjectManager,
+        handler,
+        referrer,
+        commissionBeneficiary,
+      };
+    }),
+    total,
+    take,
+    skip,
+  };
+}
+
+/**
  * Snapshot Worker dependencies (read-only) — dùng cho UI confirm trước khi
  * DELETE. Trả về facts nếu có, hoặc mảng rỗng nếu sạch.
  */
@@ -761,4 +930,7 @@ export {
   type WorkerDependencyKind,
   type WorkerDetailRow,
   type WorkerEmploymentStatusValue,
+  type WorkerListEnrichedRow,
+  type WorkerListEnrichedFilter,
+  type WorkerListEnrichedResponse,
 };

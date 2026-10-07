@@ -1,9 +1,14 @@
 /**
- * workers-list-cta.test.tsx — T1B list CTA fence.
+ * workers-list-cta.test.tsx — T1B-OPS list CTA fence.
  *
  * T1B invariant: CTA trên /admin/workers KHÔNG được POST trực tiếp Worker rời
  * rạc. Worker chỉ tồn tại qua conversion flow (LaborProfile.workerId). CTA
  * phải là <Link> sang /admin/labor-profiles/new với wording rõ ràng.
+ *
+ * T1B-OPS (DEC-T1B-OPS-04 / 09): bảng có 6 cột vận hành mới
+ * (currentProject, firstWorkDate, currentProjectManager, handler, referrer,
+ * commissionBeneficiary). KHÔNG có 'Mã' / 'Điện thoại' / 'Ngày tạo' / 'Thao tác'
+ * ở bảng này — chuyển sang detail page.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -21,58 +26,55 @@ const CODE = stripComments(PAGE);
 
 describe('/admin/workers — T1B list CTA + row navigation', () => {
   it('CTA wording is "Tiếp nhận người lao động" (not "Thêm người lao động mới")', () => {
-    // T1B: wording phải rõ ràng là "tiếp nhận" (intake) thay vì "thêm"
-    // để operator hiểu đây là luồng intake → conversion, không phải tạo
-    // Worker rời rạc.
     expect(CODE).toContain('Tiếp nhận người lao động');
     expect(CODE).not.toContain('Thêm người lao động mới');
   });
 
   it('CTA is a <Link> to /admin/labor-profiles/new, not a button opening modal', () => {
     expect(CODE).toMatch(/<Link[\s\S]*?href="\/admin\/labor-profiles\/new"[\s\S]*?>/);
-    // Không còn modal tạo Worker inline.
     expect(CODE).not.toMatch(/setShowCreate/);
     expect(CODE).not.toMatch(/<Modal/);
   });
 
   it('does not POST /api/workers from the list surface (anywhere)', () => {
-    // T1B: UI list KHÔNG bao giờ POST Worker. Page chỉ GET /api/workers
-    // để load danh sách.
     expect(CODE).not.toMatch(/fetch\(\s*['"`]\/api\/workers['"`]/);
     expect(CODE).not.toMatch(/method:\s*['"]POST['"]/);
-    // Method chỉ xuất hiện trong PATCH/DELETE ở detail page (file khác), không phải list page.
   });
 
   it('row click navigates to /admin/workers/[id] (detail surface)', () => {
-    // T1C: dùng Next.js client navigation (router.push) thay vì
-    // window.location.href để tránh full-page reload.
-    expect(CODE).toMatch(/router\.push\(`\/admin\/workers\/\$\{w\.id\}`\)/);
+    expect(CODE).toMatch(/window\.location\.href\s*=\s*`\/admin\/workers\/\$\{w\.id\}`/);
   });
 
-  it('table has scoped column headers (T1C: 8 column headers after operational columns added)', () => {
-    // T1C: thêm 4 cột vận hành mới, bỏ cột "Thao tác" (bấm hàng để vào detail).
+  it('table has 6 operational column headers (T1B-OPS DEC-T1B-OPS-04)', () => {
+    // DEC-T1B-OPS-04: 6 cột vận hành dùng canonical relational data.
     const headers = [
-      'Mã',
       'Họ tên',
-      'Điện thoại',
       'Trạng thái',
-      'Dự án/Job đang làm',
+      'Dự án đang làm',
       'Ngày làm đầu tiên',
       'Quản lý dự án',
+      'Người phụ trách',
+      'Người giới thiệu',
       'Người hưởng hoa hồng',
     ];
     for (const h of headers) {
-      expect(CODE, `missing header ${h}`).toContain(`'${h}'`);
+      expect(CODE).toContain(`'${h}'`);
     }
-    // "Thao tác" cột đã được DEC-04 dỡ bỏ.
-    expect(CODE).not.toContain("'Thao tác'");
   });
 
-  it('table has 6 columns (không nhồi dữ liệu nhạy cảm vào list)', () => {
-    // T1B: list gọn; CCCD, ngân hàng, BHXH KHÔNG xuất hiện ở list.
+  it('table has NO PII column (CCCD/Phone/BankAccount) on the list', () => {
+    // T1B-OPS: PII chỉ ở detail page.
     expect(CODE).not.toMatch(/cccdNumber/);
     expect(CODE).not.toMatch(/bankAccount/);
     expect(CODE).not.toMatch(/insuranceCode/);
+  });
+
+  it('does not have "Xem" / "Thao tác" / "Mã" / "Ngày tạo" legacy columns (T1B-OPS)', () => {
+    // DEC-T1B-OPS-04: row click mở detail; bỏ cột Thao tác / Xem riêng.
+    expect(CODE).not.toMatch(/'Thao tác'/);
+    expect(CODE).not.toMatch(/'Mã'/);
+    expect(CODE).not.toMatch(/'Ngày tạo'/);
+    expect(CODE).not.toMatch(/>Xem</);
   });
 
   it('uses shared StatusBadge primitive + Vietnamese status labels', () => {
@@ -81,7 +83,6 @@ describe('/admin/workers — T1B list CTA + row navigation', () => {
   });
 
   it('empty state explains LaborProfile vs Worker separation', () => {
-    // Empty state phải chỉ dẫn operator tới /admin/labor-profiles khi list trống.
     expect(CODE).toMatch(/Hồ sơ tiếp nhận/);
     expect(CODE).toMatch(/href="\/admin\/labor-profiles"/);
   });

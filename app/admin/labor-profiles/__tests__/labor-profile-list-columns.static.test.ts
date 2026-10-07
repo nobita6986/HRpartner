@@ -2,8 +2,8 @@
  * labor-profile-list-columns.static.test.ts — T1C admin-ux-hotfix 2 — DEC-05/06.
  *
  * Lock:
- *   - /admin/labor-profiles có đủ cột: Job/đơn gần nhất, Số đơn,
- *     Người phụ trách, Nguồn tiếp nhận.
+ *   - /admin/labor-profiles giữ invariant 5 cột, với Job gần nhất kèm số đơn,
+ *     Người phụ trách, Trạng thái (xác minh/hoàn thiện/nguồn), Ngày tiếp nhận.
  *   - KHÔNG thêm CCCD vào bảng.
  *   - KHÔNG render nhiều hàng cho một hồ sơ (không map render lặp).
  *   - Bảo toàn mask PII (sensitive fields not rendered).
@@ -25,19 +25,22 @@ function stripComments(source: string): string {
 
 const CODE = stripComments(SOURCE);
 
-describe('/admin/labor-profiles — T1C admin-ux-hotfix 2 — new columns', () => {
-  it('renders the 4 new operational columns', () => {
-    expect(CODE).toContain('Job/đơn gần nhất');
-    expect(CODE).toContain('Số đơn');
+describe('/admin/labor-profiles — merged 5-column operational layout', () => {
+  it('keeps job and application count together with handler, status and intake date', () => {
+    expect(CODE).toContain('Job gần nhất');
+    expect(CODE).toContain('applicationCount');
     expect(CODE).toContain('Người phụ trách');
+    expect(CODE).toContain('Trạng thái');
+    expect(CODE).toContain('Ngày tiếp nhận');
     expect(CODE).toContain('Nguồn tiếp nhận');
   });
 
-  it('binds the four enrichment fields with placeholder when null', () => {
-    expect(CODE).toContain('profile.latestJobLabel');
-    expect(CODE).toContain('profile.submissionsCount');
-    expect(CODE).toContain('profile.handlerName');
-    expect(CODE).toContain('profile.intakeChannelLabel');
+  it('binds the canonical merged read-model fields', () => {
+    expect(CODE).toContain('profile.latestJob');
+    expect(CODE).toContain('profile.applicationCount');
+    expect(CODE).toContain('profile.handler');
+    expect(CODE).toContain('profile.intakeSource');
+    expect(CODE).toContain('profile.intakeDate');
   });
 });
 
