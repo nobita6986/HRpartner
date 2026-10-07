@@ -44,14 +44,28 @@ describe('/admin/workers — T1B list CTA + row navigation', () => {
   });
 
   it('row click navigates to /admin/workers/[id] (detail surface)', () => {
-    expect(CODE).toMatch(/window\.location\.href\s*=\s*`\/admin\/workers\/\$\{w\.id\}`/);
+    // T1C: dùng Next.js client navigation (router.push) thay vì
+    // window.location.href để tránh full-page reload.
+    expect(CODE).toMatch(/router\.push\(`\/admin\/workers\/\$\{w\.id\}`\)/);
   });
 
-  it('table has scoped column headers: Mã, Họ tên, Điện thoại, Trạng thái, Ngày tạo, Thao tác', () => {
-    const headers = ['Mã', 'Họ tên', 'Điện thoại', 'Trạng thái', 'Ngày tạo', 'Thao tác'];
+  it('table has scoped column headers (T1C: 8 column headers after operational columns added)', () => {
+    // T1C: thêm 4 cột vận hành mới, bỏ cột "Thao tác" (bấm hàng để vào detail).
+    const headers = [
+      'Mã',
+      'Họ tên',
+      'Điện thoại',
+      'Trạng thái',
+      'Dự án/Job đang làm',
+      'Ngày làm đầu tiên',
+      'Quản lý dự án',
+      'Người hưởng hoa hồng',
+    ];
     for (const h of headers) {
-      expect(CODE).toContain(`'${h}'`);
+      expect(CODE, `missing header ${h}`).toContain(`'${h}'`);
     }
+    // "Thao tác" cột đã được DEC-04 dỡ bỏ.
+    expect(CODE).not.toContain("'Thao tác'");
   });
 
   it('table has 6 columns (không nhồi dữ liệu nhạy cảm vào list)', () => {
