@@ -16,16 +16,26 @@ const describeWithDb = hasTestDb ? describe : describe.skip;
 describeWithDb('user management last-admin concurrency (PostgreSQL)', () => {
   let writer: PrismaClient;
   let admin: PrismaClient;
+  let originalActiveAdminIds: string[] = [];
 
   beforeAll(async () => {
     writer = new PrismaClient({ datasources: { db: { url: writerUrl } } });
     admin = new PrismaClient({ datasources: { db: { url: adminUrl } } });
 
-    // The integration DB is a fresh migrated container; keep this proof isolated
-    // so the two fixture admins are the complete active-admin set.
-    const existingAdmins = await admin.user.count({ where: { role: SystemRole.ADMIN, isActive: true } });
-    if (existingAdmins !== 0) {
-      throw new Error(`LAST_ADMIN_TEST_REQUIRES_EMPTY_ADMIN_SET: found ${existingAdmins} active ADMIN rows`);
+    // The disposable CI DB may contain a seeded active ADMIN. Snapshot and
+    // temporarily deactivate those rows so only the two test admins participate
+    // in the invariant; afterAll restores the original state even on assertion
+    // failure. Never point these URLs at a non-test database.
+    const originalAdmins = await admin.user.findMany({
+      where: { role: SystemRole.ADMIN, isActive: true },
+      select: { id: true },
+    });
+    originalActiveAdminIds = originalAdmins.map(({ id }) => id);
+    if (originalActiveAdminIds.length > 0) {
+      await admin.user.updateMany({
+        where: { id: { in: originalActiveAdminIds } },
+        data: { isActive: false },
+      });
     }
 
     await admin.user.createMany({
@@ -40,9 +50,21 @@ describeWithDb('user management last-admin concurrency (PostgreSQL)', () => {
 
   afterAll(async () => {
     if (admin) {
-      await admin.auditLog.deleteMany({ where: { entityType: 'User', entityId: { in: adminIds } } });
-      await admin.user.deleteMany({ where: { id: { in: adminIds } } });
-      await admin.$disconnect();
+      try {
+        await admin.auditLog.deleteMany({ where: { entityType: 'User', entityId: { in: adminIds } } });
+        await admin.user.deleteMany({ where: { id: { in: adminIds } } });
+      } finally {
+        try {
+          if (originalActiveAdminIds.length > 0) {
+            await admin.user.updateMany({
+              where: { id: { in: originalActiveAdminIds } },
+              data: { isActive: true },
+            });
+          }
+        } finally {
+          await admin.$disconnect();
+        }
+      }
     }
     if (writer) await writer.$disconnect();
   });
