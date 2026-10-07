@@ -21,6 +21,7 @@ const mocks = vi.hoisted(() => {
     serviceGetWorkerDetail: vi.fn(),
     serviceUpdateWorkerProfile: vi.fn(),
     serviceDeleteWorker: vi.fn(),
+    serviceListWorkersForAdmin: vi.fn(),
   };
 });
 
@@ -61,6 +62,7 @@ vi.mock('@/src/domains/workforce/worker.service', () => ({
   getWorkerDetail: mocks.serviceGetWorkerDetail,
   updateWorkerProfile: mocks.serviceUpdateWorkerProfile,
   deleteWorker: mocks.serviceDeleteWorker,
+  listWorkersForAdmin: mocks.serviceListWorkersForAdmin,
 }));
 vi.mock('@/src/shared/integrity/idempotency', () => ({
   withIdempotency: async ({ handler }: { handler: () => Promise<unknown> }) => {
@@ -95,6 +97,13 @@ describe('worker route projections', () => {
       id: 'worker-1',
       updatedAt: new Date('2026-01-01T00:00:00Z'),
       updatedFields: ['fullName'],
+    });
+    // T1B: list route đi qua listWorkersForAdmin service.
+    mocks.serviceListWorkersForAdmin.mockResolvedValue({
+      workers: [rawWorker],
+      total: 1,
+      take: 50,
+      skip: 0,
     });
   });
 

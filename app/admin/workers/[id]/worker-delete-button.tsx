@@ -155,7 +155,7 @@ export function WorkerDeleteButton({
         onClick={() => setOpen(true)}
         style={{
           background: 'var(--error)',
-          color: 'var(--on-error)',
+          color: 'var(--on-error-container)',
         }}
         className="rounded px-4 py-2 text-sm font-semibold"
       >
@@ -234,7 +234,7 @@ export function WorkerDeleteButton({
           type="button"
           onClick={onDelete}
           disabled={deleting || !reason.trim()}
-          style={{ background: 'var(--error)', color: 'var(--on-error)' }}
+          style={{ background: 'var(--error)', color: 'var(--on-error-container)' }}
           className="rounded px-4 py-2 text-sm font-semibold disabled:opacity-50"
         >
           {deleting ? 'Đang xóa…' : 'Xác nhận xóa vĩnh viễn'}

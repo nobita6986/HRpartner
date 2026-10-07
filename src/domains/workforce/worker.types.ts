@@ -270,6 +270,12 @@ export interface WorkerListEnrichedRow {
   userId: string;
   fullName: string | null;
   phone: string | null;
+  /** PII — route layer masks to '***' khi caller không có CAN_VIEW_WORKER_SENSITIVE. */
+  cccdNumber: string | null;
+  /** PII — route layer masks to '***' khi caller không có CAN_VIEW_WORKER_SENSITIVE. */
+  bankAccount: string | null;
+  /** PII — route layer masks to '***' khi caller không có CAN_VIEW_WORKER_SENSITIVE. */
+  bankName: string | null;
   employmentStatus: string;
   /** Dự án đang làm (ProjectAssignment WHERE status IN ('ACTIVE','PAUSED')) — null nếu không có. */
   currentProject: { id: string; code: string | null; name: string | null } | null;

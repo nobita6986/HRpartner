@@ -261,7 +261,7 @@ const EXPECTED_HITS = [
   'src/domains/workforce/worker.service.ts:269 laborProfile',
   'src/domains/workforce/worker.service.ts:278 project',
   'src/domains/workforce/worker.service.ts:286 owner',
-  'src/domains/workforce/worker.service.ts:793 project',
+  'src/domains/workforce/worker.service.ts:796 project',
   // T1B-OPS PRE-P2 WORKER OPERATIONS HOTFIX (2026-10-07): `getLaborProfilesList`
   // enriches each LaborProfile row with `latestJob` (CandidateSubmission.project),
   // `applicationCount` (CandidateSubmission list), `handler`
@@ -539,7 +539,7 @@ describe('quan hệ BẮT BUỘC trên bảng bị RLS che: tập vị trí sele
     // RLS-gated nhưng call site đã enforce worker scope (`assignedToId` / project.PM /
     // role) trước khi tới select. PII mask qua `projectWorker`. Tổng src = 44.
     // T1B-OPS PRE-P2 WORKER OPERATIONS HOTFIX (2026-10-07): thêm 6 entry mới
-    // (`worker.service.ts:793 project` + 5 entry `labor-profile.read-service.ts:project`
+    // (`worker.service.ts:796 project` + 5 entry `labor-profile.read-service.ts:project`
     // cho 6 cột vận hành mới của LaborProfile). Tổng src = 50.
     expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(50);
   });

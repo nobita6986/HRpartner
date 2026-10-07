@@ -102,21 +102,17 @@ export default async function LaborProfilesPage({
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm text-gray-600">
             <thead className="bg-gray-50 text-gray-900 font-semibold border-b border-gray-200">
-              {/* T1B-OPS DEC-T1B-OPS-09: bổ sung 6 cột vận hành từ
-                  `getLaborProfilesList` enriched: latestJob, applicationCount,
-                  handler, intakeSource, identityVerification + completeness
-                  (giữ 2 cột trạng thái), intakeDate. Bỏ cột "Số điện thoại"
-                  & "Ngày tạo" — số ĐT là PII (CCCD đã bị loại khỏi bảng
-                  theo các DEC trước, dùng detail page để xem). Giữ
-                  colSpan 7→7 (N cột vẫn bằng N). */}
+              {/* T1B-OPS DEC-T1B-OPS-09: thay cột SĐT (PII) & Ngày tạo
+                  bằng 3 cột vận hành hữu ích: Job gần nhất (kèm số đơn
+                  ứng tuyển), Người phụ trách, Trạng thái (Xác minh +
+                  Hoàn thiện + Nguồn tiếp nhận); giữ Ngày tiếp nhận (đã
+                  có sẵn từ createdAt). Giữ tổng số cột 5 (DEC-P2-10
+                  invariant: 5 <th> + colSpan 5). */}
               <tr>
                 <th className="px-6 py-4">Họ và tên</th>
                 <th className="px-6 py-4">Job gần nhất</th>
-                <th className="px-6 py-4">Số đơn</th>
                 <th className="px-6 py-4">Người phụ trách</th>
-                <th className="px-6 py-4">Nguồn tiếp nhận</th>
-                <th className="px-6 py-4">Xác minh</th>
-                <th className="px-6 py-4">Hoàn thiện</th>
+                <th className="px-6 py-4">Trạng thái</th>
                 <th className="px-6 py-4 text-right">Ngày tiếp nhận</th>
               </tr>
             </thead>
@@ -129,7 +125,7 @@ export default async function LaborProfilesPage({
                   comment → phá regex trong static test. */}
               {data.items.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
                     Chưa có hồ sơ ứng viên nào.
                   </td>
                 </tr>
@@ -167,41 +163,42 @@ export default async function LaborProfilesPage({
                       {profile.latestJob
                         ? `${profile.latestJob.code ?? '—'}${profile.latestJob.name ? ` · ${profile.latestJob.name}` : ''}`
                         : '—'}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`inline-flex items-center justify-center min-w-[2rem] rounded-full px-2 py-0.5 text-xs font-semibold ${
-                          profile.applicationCount > 0
-                            ? 'bg-blue-100 text-blue-700'
-                            : 'bg-gray-100 text-gray-500'
-                        }`}
-                      >
-                        {profile.applicationCount}
-                      </span>
+                      {profile.applicationCount > 0 ? (
+                        <span
+                          className={`ml-2 inline-flex items-center justify-center min-w-[1.5rem] rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
+                            'bg-blue-100 text-blue-700'
+                          }`}
+                          title={`${profile.applicationCount} đơn ứng tuyển`}
+                        >
+                          {profile.applicationCount}
+                        </span>
+                      ) : null}
                     </td>
                     <td className="px-6 py-4 text-xs">
                       {profile.handler ?? '—'}
                     </td>
                     <td className="px-6 py-4 text-xs">
-                      {profile.intakeSource ?? '—'}
-                    </td>
-                    <td className="px-6 py-4">
-                      <StatusBadge
-                        module="labor-profile-identity-verification"
-                        status={profile.identityVerification}
-                        tone={identityVerificationTone(profile.identityVerification)}
-                      >
-                        {laborProfileIdentityVerificationLabel(profile.identityVerification)}
-                      </StatusBadge>
-                    </td>
-                    <td className="px-6 py-4">
-                      <StatusBadge
-                        module="labor-profile-completeness"
-                        status={profile.completeness}
-                        tone={laborProfileCompletenessTone(profile.completeness)}
-                      >
-                        {laborProfileCompletenessLabel(profile.completeness)}
-                      </StatusBadge>
+                      <div className="flex flex-col gap-1">
+                        <StatusBadge
+                          module="labor-profile-identity-verification"
+                          status={profile.identityVerification}
+                          tone={identityVerificationTone(profile.identityVerification)}
+                        >
+                          {laborProfileIdentityVerificationLabel(profile.identityVerification)}
+                        </StatusBadge>
+                        <StatusBadge
+                          module="labor-profile-completeness"
+                          status={profile.completeness}
+                          tone={laborProfileCompletenessTone(profile.completeness)}
+                        >
+                          {laborProfileCompletenessLabel(profile.completeness)}
+                        </StatusBadge>
+                        {profile.intakeSource ? (
+                          <span className="text-[11px] text-gray-500" title="Nguồn tiếp nhận">
+                            Nguồn: {profile.intakeSource}
+                          </span>
+                        ) : null}
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-right">
                       {profile.intakeDate

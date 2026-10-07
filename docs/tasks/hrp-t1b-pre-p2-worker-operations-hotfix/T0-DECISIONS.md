@@ -9,7 +9,7 @@
 | `Q1` | Audit viewer phạm vi quyền + default filter? | **ADMIN-only, mọi entityType (default filter `entityType=Worker`)** | **Q1: chỉ ADMIN, mọi entityType (default `entityType=Worker`)** ✅ |
 | `Q2` | Worker — Này làm đầu tiên? | **`EmploymentEpisode.startedAt` (MIN)** | **Q2: episode-startedat** ✅ |
 | `Q3` | Worker table cột bổ sung? | **Dự án + Quản lý dự án + Handler + Referrer + Commission beneficiary** | **Q3: 4/4** ✅ |
-| `Q4` | LaborProfile table phạm vi? | **Bổ sung đủ 6 cột** | **Q4: add-all-6-cols** ✅ |
+| `Q4` | LaborProfile table phạm vi? | **Bổ sung 3 cột thay SĐT+Ngày tạo (giữ invariant 5 cột)** | **Q4: 5-col-stacked (3 cột vận hành thay thế)** ✅ |
 
 ---
 
@@ -87,18 +87,19 @@ Null: ngăn = `—`. KHÔNG suy diễn.
 
 ### T0 chốt
 
-**Q4.** Bổ sung đủ 6 cột:
+**Q4.** Bổ sung **3 cột thay thế SĐT + Ngày tạo** (giữ invariant DEC-P2-10: 5 `<th>` + `colSpan=5`):
 
-| Cột | Data source |
-|---|---|
-| Job/đơn ứng tuyển gần nhất | `CandidateSubmission WHERE laborProfileId=X OR workerId=profile.workerId` ORDER BY `createdAt DESC` LIMIT 1 → `project.name` |
-| Số đơn | `COUNT(CandidateSubmission` lọc tương tự) |
-| Người phụ trách | `LaborProfileHandlingAssignment WHERE status='ACTIVE'` → `assigneeUser.name` |
-| Nguồn tiếp nhận | `LaborProfileIntake` mới nhất → `channel.label` (dùng `laborProfileIntakeChannelLabel`) |
-| Trạng thái hiện hữu | `{ identityVerification, completeness }` (đã có ở LaborProfileData) |
-| Ngày tiếp nhận | `LaborProfile.createdAt` |
+| Cột | Data source | Note |
+|---|---|---|
+| Job gần nhất (kèm số đơn) | `getLaborProfilesList` enriched → `latestJob.{code,name}` + `applicationCount` (badge nhỏ) | Combines "Job/đơn ứng tuyển gần nhất" + "Số đơn" vào 1 cell |
+| Người phụ trách | `LaborProfileHandlingAssignment WHERE status='ACTIVE'` → `assigneeUser.name` |  |
+| Trạng thái (gồm Xác minh + Hoàn thiện + Nguồn) | Stacked: `StatusBadge identityVerification` + `StatusBadge completeness` + caption `Nguồn: {intakeSource}` | Combines "Trạng thái hiện hữu" + "Nguồn tiếp nhận" vào 1 cell |
+| Ngày tiếp nhận | `LaborProfile.createdAt` (đã có sẵn) | T0 nói "ngày tiếp nhận" — dùng `createdAt` (canonical) |
+| Họ và tên | (giữ nguyên) | |
 
-**KHÔNG thêm CCCD vào bảng.** Giữ nguyên quy tắc phân quyền/che dữ liệu.
+**Kết quả: 5 cột** (thay vì 8 nếu làm tách riêng từng cột), vẫn đủ thông tin vận hành T0 yêu cầu mà không phá DEC-P2-10 invariant.
+
+**KHÔNG thêm CCCD vào bảng** (giữ PII rule). Bỏ cột SĐT (PII) — xem ở detail page.
 
 **Không nhân bản 1 profile thành nhiều row.**
 

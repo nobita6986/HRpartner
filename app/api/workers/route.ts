@@ -81,11 +81,21 @@ export async function GET(req: NextRequest) {
       });
     });
 
-    // T1B-OPS: mask phone nếu caller không có CAN_VIEW_WORKER_SENSITIVE.
-    const maskedWorkers = result.workers.map((w) => ({
-      ...w,
-      phone: hasSensitivePermission ? w.phone : (w.phone ? maskPhone(w.phone) : null),
-    }));
+    // T1B-OPS: mask PII nếu caller không có CAN_VIEW_WORKER_SENSITIVE.
+    // - phone: maskPhone để giữ format gợi ý (vd 098***1234)
+    // - cccdNumber / bankAccount / bankName: thay toàn bộ bằng '***' theo
+    //   contract workers-projection.contract.test.ts. Áp dụng cùng pattern
+    //   như các PII khác (đã được list route cũ áp dụng).
+    const maskedWorkers = result.workers.map((w) => {
+      if (hasSensitivePermission) return w;
+      return {
+        ...w,
+        phone: w.phone ? maskPhone(w.phone) : null,
+        cccdNumber: w.cccdNumber ? '***' : null,
+        bankAccount: w.bankAccount ? '***' : null,
+        bankName: w.bankName ? '***' : null,
+      };
+    });
     return NextResponse.json({
       workers: maskedWorkers,
       total: result.total,
