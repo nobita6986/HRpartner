@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { workerStatusLabel, workerStatusTone } from '@/src/domains/workforce/worker-ui';
 import type { WorkerEmploymentStatus } from '@/src/domains/workforce/worker-ui';
 import { StatusBadge } from '@/src/shared/ui/status-badge';
@@ -58,6 +59,27 @@ export default function WorkersPage() {
   const [error, setError] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
 
+  // T1B-OPS follow-up #1: hiển thị banner "Đã xóa người lao động …" khi list
+  // được mở từ luồng delete thành công (redirect kèm ?deleted=<id>&name=<name>).
+  // Banner render NGAY TRƯỚC filter row; auto-dismiss sau 6s; vẫn cho phép
+  // đóng thủ công. useSearchParams yêu cầu Suspense boundary, đã có sẵn ở
+  // layout mức app vì /admin/workers nằm trong admin segment.
+  const searchParams = useSearchParams();
+  const deletedId = searchParams?.get('deleted') ?? null;
+  const deletedNameRaw = searchParams?.get('name') ?? null;
+  const deletedName = (() => {
+    if (!deletedNameRaw) return null;
+    try { return decodeURIComponent(deletedNameRaw); } catch { return null; }
+  })();
+  const [showDeletedBanner, setShowDeletedBanner] = useState<boolean>(Boolean(deletedId));
+
+  useEffect(() => {
+    if (!deletedId) return;
+    setShowDeletedBanner(true);
+    const t = setTimeout(() => setShowDeletedBanner(false), 6000);
+    return () => clearTimeout(t);
+  }, [deletedId]);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError('');
@@ -110,6 +132,47 @@ export default function WorkersPage() {
           + Tiếp nhận người lao động
         </Link>
       </div>
+
+      {showDeletedBanner && deletedId && (
+        <div
+          role="status"
+          aria-live="polite"
+          style={{
+            // T1B-OPS follow-up #1: dùng semantic tokens đã đăng ký trong
+            // app/globals.css (`--success-soft` + `--success` + `--on-surface`).
+            // KHÔNG dùng `--success-container` / `--on-success-container` /
+            // `--success` vì các alias "container" chưa tồn tại trong
+            // design-token gate RQ-04/AC-03.
+            background: 'var(--color-success-soft)',
+            color: 'var(--color-success)',
+            borderColor: 'var(--color-success)',
+          }}
+          className="mb-4 flex items-start justify-between gap-3 rounded-lg border p-3"
+        >
+          <p className="text-sm font-medium">
+            Đã xóa người lao động
+            {deletedName ? <strong className="font-semibold"> {deletedName}</strong> : null}
+            . Hành động đã được ghi vào{' '}
+            <Link
+              href={`/admin/audit-logs?entityType=Worker&entityId=${encodeURIComponent(deletedId)}&action=WORKER_PERMANENT_DELETE`}
+              style={{ color: 'var(--color-on-surface)' }}
+              className="underline"
+            >
+              nhật ký kiểm toán
+            </Link>
+            .
+          </p>
+          <button
+            type="button"
+            onClick={() => setShowDeletedBanner(false)}
+            aria-label="Đóng thông báo"
+            className="rounded px-2 py-1 text-xs font-semibold"
+            style={{ color: 'var(--color-on-surface)' }}
+          >
+            Đóng
+          </button>
+        </div>
+      )}
 
       <div className="mb-4 flex flex-wrap gap-3">
         <div className="flex flex-wrap gap-2">

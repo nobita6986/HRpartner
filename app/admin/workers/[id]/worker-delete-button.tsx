@@ -71,8 +71,14 @@ export function WorkerDeleteButton({
         body: JSON.stringify({ reason }),
       });
       if (r.ok) {
-        // T1B-OPS: thành công → redirect về /admin/workers với banner.
-        window.location.href = '/admin/workers';
+        // T1B-OPS: thành công → redirect về /admin/workers với banner (T1B-OPS follow-up #1).
+        // Query `deleted=<id>&name=<name>` được list page đọc qua useSearchParams
+        // để hiển thị banner "Đã xóa người lao động …". Tên được encodeURIComponent
+        // để xử lý an toàn khoảng trắng / ký tự đặc biệt; trang list sẽ tự fallback
+        // về "người lao động" nếu thiếu hoặc decode lỗi.
+        const params = new URLSearchParams({ deleted: workerId });
+        if (workerName) params.set('name', workerName);
+        window.location.href = `/admin/workers?${params.toString()}`;
         return;
       }
       const j = (await r.json().catch(() => ({}))) as {

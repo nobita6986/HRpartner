@@ -211,6 +211,13 @@ export const ADMIN_NAV_PHASE4: NavItem[] = [
   { href: '/admin/users', label: 'Tài khoản', icon: Users, roles: ['ADMIN'], section: 'system' },
   { href: '/admin/settings', label: 'Cài đặt', icon: Settings, roles: ['ADMIN'], section: 'system' },
   { href: '/admin/media', label: 'Thư viện Media', icon: Image, roles: ['ADMIN', 'HR_MANAGER', 'HR_STAFF'], section: 'system' },
+  // T1B-OPS follow-up #2: thêm mục "Nhật ký kiểm toán" vào nhóm Hệ thống
+  // (ADMIN-only) để operator có đường vào `/admin/audit-logs` từ sidebar.
+  // Trang audit viewer đã được tạo từ trước và bảo vệ bằng redirect ở
+  // page.tsx (non-ADMIN → /admin) nên chỉ cần thêm nav item, không mở rộng
+  // role matrix. Icon `FileText` đã có sẵn trong lucide-react của layout,
+  // dùng chung với nhóm Tài chính để giữ footprint tối thiểu.
+  { href: '/admin/audit-logs', label: 'Nhật ký kiểm toán', icon: FileText, roles: ['ADMIN'], section: 'system' },
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════
