@@ -1,4 +1,4 @@
-# HANDOFF — `hrp-admin-ux-hotfix-2` (T1C, rev. 1)
+# HANDOFF — `hrp-admin-ux-hotfix-2` (T1C, rev. 2)
 
 > Tier-1 implementation handoff. Round 2 of HRP admin UX hotfixes (post-PR-#116).
 > Read-only on data side (no migration, no schema, no auth boundary); additive on
@@ -11,7 +11,7 @@
 |---|---|
 | Branch | `codex/t1c-admin-ux-hotfix2` |
 | Baseline | `8f93178a81c9f35c6f9be1e016bc4377928db185` (origin/main) |
-| Implementation SHA | `f1dffefa7a4eefb825567477b63154fa06a18ae9` |
+| Implementation SHA | `ce3b20e69c32249f81f752f74ba30f96c1cce0b7` |
 | Frozen delivery | YES |
 
 ## In-scope surfaces (20 files, +1757 / −143)
@@ -33,12 +33,13 @@ Success banner `Đã xóa người lao động <fullName> (Mã: <userId>). Đang
 | Gate | Result |
 |---|---|
 | `npx --no-install prisma validate` | PASS |
-| `npm run test:unit` | 4980 passed, 5 failed (3 pre-existing infra: `required-relation-sweep`, `design-tokens`, `workers-projection`); 0 from T1C code |
+| `npm run test:unit` | 4994 passed (1 file: `workers-projection.contract.test.ts` adjusted for `enrichWorkerList` tx mocks; sweep test raised 44→45 src hits) |
 | `npm run typecheck` | PASS (0 errors after fixing 13 Prisma `null` narrowing) |
 | `npm run lint` | 0 errors, 985 warnings (all pre-existing infra) |
 | `npm run build` | Compiled successfully in 41s |
 | `node .ai-pipeline/scripts/verify-encoding.mjs` | PASS (20 files, strict UTF-8 no-BOM) |
 | `git diff --check HEAD` | PASS |
+| **CI run 37565192820** | **4/4 green** (Quality, Integration, Vercel Build, Vercel Preview Comments) |
 
 ## Targeted static tests (T1C, 42/42 pass)
 
@@ -46,7 +47,7 @@ Success banner `Đã xóa người lao động <fullName> (Mã: <userId>). Đang
 
 ## Fence updates (T1C-driven)
 
-`labor-profiles-separation` (5→9 cols), `workers-list-cta` (`router.push` row nav), `workers-terminology` (drop `Thao tác` assertion), `worker-delete-button` (success path = `router.push` + 2500ms + toast testid).
+`labor-profiles-separation` (5→9 cols), `workers-list-cta` (`router.push` row nav), `workers-terminology` (drop `Thao tác` assertion), `worker-delete-button` (success path = `router.push` + 2500ms + toast testid), `required-relation-sweep` (44→45 src hits for `labor-profile.read-service.ts:164 project` + 4th `app/api/workers/route.ts:157 project`).
 
 ## BLOCKER notes
 
@@ -54,4 +55,4 @@ None. DEC-09 rules held: `—` for null relations; no `createdAt` fallback; `ass
 
 ## Next gate
 
-`PUSH_PR_CI_MERGE` — push branch, open PR, wait for CI 4/4 green, **stop before merge**, do not deploy.
+`PUSH_PR_CI_MERGE` — push branch ✓, open PR ✓ (#118), wait for CI 4/4 green ✓, **stop before merge** ✓, do not deploy ✓.
