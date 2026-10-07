@@ -237,4 +237,89 @@ describe('withIdempotency (Phase 3 / AC-02)', () => {
     expect(ttlMs).toBeGreaterThanOrEqual(24 * 60 * 60 * 1000 - 100);
     expect(ttlMs).toBeLessThanOrEqual(24 * 60 * 60 * 1000 + 100);
   });
+
+  // ─────────────────────────────────────────────────────────────────────
+  // hrp-v6-admin-users-permissions — sanitize body trước khi lưu (PHASE_KHOAHOC DoD):
+  // secret chỉ hiển thị một lần. Retry phải trả về body đã sanitize (KHÔNG có secret).
+  // ─────────────────────────────────────────────────────────────────────
+
+  it('sanitizeResponseForStorage: lưu body đã sanitize (KHÔNG có secret)', async () => {
+    const handler = vi.fn(async () => ({
+      body: { user: { id: 'u1' }, temporaryPassword: 'SECRET-XYZ' },
+      statusCode: 201,
+    }));
+    await withIdempotency({
+      prisma: m.prisma,
+      route: 'POST:/api/admin/users',
+      actorId: 'admin-1',
+      key: 'k-sanitize-1',
+      requestBody: { phone: '+84...' },
+      handler,
+      sanitizeResponseForStorage: (body) => {
+        const b = (body ?? {}) as Record<string, unknown>;
+        const { temporaryPassword: _drop, ...rest } = b;
+        return rest;
+      },
+    });
+
+    const row = Array.from(m.rows.values())[0];
+    // Persisted body KHÔNG chứa temporaryPassword.
+    expect(row.response).toEqual({ user: { id: 'u1' } });
+    expect(JSON.stringify(row.response)).not.toContain('SECRET-XYZ');
+    expect(JSON.stringify(row.response)).not.toContain('temporaryPassword');
+  });
+
+  it('sanitizeResponseForStorage: retry trả về body đã sanitize (KHÔNG leak secret qua replay)', async () => {
+    const handler = vi.fn(async () => ({
+      body: { user: { id: 'u1' }, temporaryPassword: 'SECRET-XYZ' },
+      statusCode: 201,
+    }));
+    const opts = {
+      prisma: m.prisma,
+      route: 'POST:/api/admin/users',
+      actorId: 'admin-1',
+      key: 'k-sanitize-2',
+      requestBody: { phone: '+84...' },
+      sanitizeResponseForStorage: (body: unknown) => {
+        const b = (body ?? {}) as Record<string, unknown>;
+        const { temporaryPassword: _drop, ...rest } = b;
+        return rest;
+      },
+    };
+
+    const r1 = await withIdempotency({ ...opts, handler });
+    const r2 = await withIdempotency({ ...opts, handler });
+
+    // Lần đầu: handler trả về full body (bao gồm secret) — caller là người quyết
+    // định KHÔNG ghi secret vào log. Caller PHẢI dùng response này để hiển thị 1 lần
+    // rồi KHÔNG echo lại cho client trên retry.
+    expect(r1.replayed).toBe(false);
+    expect((r1.body as Record<string, unknown>).temporaryPassword).toBe('SECRET-XYZ');
+
+    // Lần 2 (retry): CHỈ trả body đã sanitize — không leak secret qua idempotency cache.
+    expect(r2.replayed).toBe(true);
+    expect(r2.body).toEqual({ user: { id: 'u1' } });
+    expect((r2.body as Record<string, unknown>).temporaryPassword).toBeUndefined();
+    expect(handler).toHaveBeenCalledTimes(1); // handler không chạy lại
+  });
+
+  it('không truyền sanitize: hành vi cũ (lưu full body)', async () => {
+    // Backward-compat: callers hiện hữu không đổi hành vi.
+    const handler = vi.fn(async () => ({
+      body: { user: { id: 'u1' }, temporaryPassword: 'SECRET-XYZ' },
+      statusCode: 201,
+    }));
+    await withIdempotency({
+      prisma: m.prisma,
+      route: 'POST:/api/legacy',
+      actorId: 'admin-1',
+      key: 'k-legacy-1',
+      requestBody: { phone: '+84...' },
+      handler,
+      // KHÔNG truyền sanitizeResponseForStorage
+    });
+
+    const row = Array.from(m.rows.values())[0];
+    expect((row.response as Record<string, unknown>).temporaryPassword).toBe('SECRET-XYZ');
+  });
 });
