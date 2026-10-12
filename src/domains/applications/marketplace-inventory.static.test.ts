@@ -821,10 +821,11 @@ describe('RQ-07/DEC-11 — một UI apply canonical, hai URL cũ chỉ redirect'
     expect(page).toContain('buildListingHref');
     expect(page).toContain('router.push(buildListingHref');
     expect(page).toContain('offset: 0');
-    // ui-03: Hero form builds keyword/area/shift via state (controlled inputs)
+    // Hero form builds keyword/area/salary; shift đã bị loại khỏi public listing contract.
     expect(page).toContain('keyword.trim()');
     expect(page).toContain('area || undefined');
-    expect(page).toContain('shift || undefined');
+    expect(page).toContain('salary || undefined');
+    expect(page).not.toContain('shift: shift || undefined');
     expect(route).toContain("searchParams.getAll('shiftType')");
     expect(route).toContain("searchParams.getAll('jobType')");
     expect(service).toContain('opts.shiftTypes.includes(job.shiftType)');

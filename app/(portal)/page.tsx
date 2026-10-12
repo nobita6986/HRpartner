@@ -156,7 +156,6 @@ export default function JobsPage() {
 
   const [keyword, setKeyword] = useState('');
   const [area, setArea] = useState('');
-  const [shift, _setShift] = useState('');
   // hrp-t2-public-site-hotfix (T2 / STEP-05): Salary state cho hero search,
   // cùng 6 bucket như `/viec-lam` FilterForm. Trước đó control này là
   // disabled placeholder "Mức lương — sắp có".
@@ -287,13 +286,13 @@ export default function JobsPage() {
   // DEC-01 / STEP-02: Hero form submit → navigate tới /viec-lam với offset: 0
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
-    router.push(buildListingHref({ q: keyword.trim() || undefined, salary: salary || undefined, area: area || undefined, shift: shift || undefined, offset: 0 }));
+    router.push(buildListingHref({ q: keyword.trim() || undefined, salary: salary || undefined, area: area || undefined, offset: 0 }));
   }
 
-  // DEC-01 / STEP-02: applyArea → navigate tới /viec-lam với area mới, giữ keyword/shift hiện tại, offset: 0
+  // DEC-01 / STEP-02: applyArea → navigate tới /viec-lam với area mới, giữ keyword hiện tại, offset: 0
   function applyArea(value: string) {
     setArea(value);
-    router.push(buildListingHref({ q: keyword.trim() || undefined, salary: salary || undefined, area: value || undefined, shift: shift || undefined, offset: 0 }));
+    router.push(buildListingHref({ q: keyword.trim() || undefined, salary: salary || undefined, area: value || undefined, offset: 0 }));
   }
 
   function handleApply(job: EnrichedJob) {
