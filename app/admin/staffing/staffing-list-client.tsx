@@ -93,7 +93,9 @@ function CreateModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
   const [projectId, setProjectId] = useState('');
   const [projects, setProjects] = useState<ProjectOption[]>([]);
   const [projectsError, setProjectsError] = useState('');
-  const [positionCode, setPositionCode] = useState('GEN');
+  // T1D DEC-T0-05: positionCode do server sinh tự động (POS-001, ...). UI bỏ
+  // input mã; hiển thị mã server vừa sinh qua `createdPositionCodes` sau khi
+  // tạo thành công.
   const [positionTitle, setPositionTitle] = useState('');
   const [slotsNeeded, setSlotsNeeded] = useState('1');
   const [hourlyRateVnd, setHourlyRateVnd] = useState('');
@@ -104,6 +106,7 @@ function CreateModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
   const [validTo, setValidTo] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState('');
+  const [createdPositionCodes, setCreatedPositionCodes] = useState<string[] | null>(null);
 
   // Dự án nạp từ API để khỏi phải dán UUID bằng tay.
   useEffect(() => {
@@ -123,7 +126,7 @@ function CreateModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !projectId || !positionTitle.trim() || !positionCode.trim()) {
+    if (!title.trim() || !projectId || !positionTitle.trim()) {
       setErr('Điền đầy đủ các trường bắt buộc.');
       return;
     }
@@ -136,8 +139,8 @@ function CreateModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
     setErr('');
     try {
       // Field để trống thì không gửi — tránh ghi chuỗi rỗng vào DB.
+      // T1D DEC-T0-05: KHÔNG gửi positionCode; server sinh POS-001 tự động.
       const slot: Record<string, string | number> = {
-        positionCode: positionCode.trim(),
         positionTitle: positionTitle.trim(),
         slotsNeeded: parseInt(slotsNeeded, 10) || 1,
         validFrom: new Date().toISOString().slice(0, 10),
@@ -165,6 +168,14 @@ function CreateModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
         setErr(d.message ?? `Lỗi ${r.status}`);
         return;
       }
+      const data = await r.json();
+      const codes = Array.isArray(data?.order?.slots)
+        ? data.order.slots.map((s: { positionCode?: string }) => s.positionCode).filter(Boolean)
+        : [];
+      if (codes.length > 0) {
+        setCreatedPositionCodes(codes);
+        return;
+      }
       onSuccess();
       onClose();
     } catch {
@@ -188,6 +199,18 @@ function CreateModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
         <h2 style={{ color: 'var(--on-surface)' }} className="mb-4 text-lg font-semibold">
           Tạo đơn tuyển dụng
         </h2>
+        {/* T1D DEC-T0-05: hiển thị mã vị trí do server sinh sau khi tạo thành công. */}
+        {createdPositionCodes && (
+          <div style={{ background: 'var(--primary-container)', color: 'var(--on-primary-container)', borderColor: 'var(--primary)' }} className="mb-4 rounded-lg border p-3 text-sm">
+            <p className="font-medium">Đã tạo đơn tuyển dụng.</p>
+            <p className="mt-1">Mã vị trí:</p>
+            <ul className="mt-1 font-mono text-base">
+              {createdPositionCodes.map(c => <li key={c}><strong>{c}</strong></li>)}
+            </ul>
+            <button type="button" onClick={() => { onSuccess(); onClose(); }} style={{ background: 'var(--primary)', color: 'var(--on-primary)' }} className="mt-3 rounded px-4 py-2 text-sm font-semibold">Đóng</button>
+          </div>
+        )}
+        {!createdPositionCodes && (
         <form onSubmit={submit} className="space-y-4">
           <div>
             <label style={{ color: 'var(--on-surface)' }} className="mb-1 block text-sm font-medium">Tiêu đề *</label>
@@ -231,15 +254,12 @@ function CreateModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
                 required
               />
             </div>
+            {/* T1D DEC-T0-05: bỏ input mã vị trí; server sinh POS-001 tự động. */}
             <div>
-              <label style={{ color: 'var(--on-surface)' }} className="mb-1 block text-sm font-medium">Mã vị trí *</label>
-              <input
-                value={positionCode} onChange={e => setPositionCode(e.target.value)}
-                placeholder="VD: DIEN"
-                style={{ borderColor: 'var(--outline)', background: 'var(--surface-container)' }}
-                className="w-full rounded border px-3 py-2 text-sm font-mono"
-                required
-              />
+              <label style={{ color: 'var(--on-surface-variant)' }} className="mb-1 block text-sm font-medium">Mã vị trí</label>
+              <p style={{ color: 'var(--on-surface-variant)' }} className="rounded border border-dashed px-3 py-2 text-xs italic" >
+                Hệ thống tự sinh (POS-001, POS-002, …).
+              </p>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -333,6 +353,7 @@ function CreateModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
             </button>
           </div>
         </form>
+        )}
       </div>
     </div>
   );

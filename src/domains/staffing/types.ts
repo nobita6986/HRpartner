@@ -45,7 +45,12 @@ export interface CreateStaffingOrderInput {
 
 /** Input tạo 1 slot trong StaffingOrder. */
 export interface CreateSlotInput {
-  positionCode: string;
+  /**
+   * T1D DEC-T0-05: `positionCode` do server sinh tự động (POS-001, POS-002, ...).
+   * Field này chỉ còn trong type để route có thể strict-reject khi client cố gửi.
+   * Caller (UI/server) KHÔNG đặt giá trị; nếu đặt thì route trả 400 SERVER_GENERATED_CODE.
+   */
+  positionCode?: string;
   positionTitle: string;
   slotsNeeded: number;
   hourlyRateVnd?: bigint | number; // BigInt VND (ADR-010)
@@ -69,7 +74,12 @@ export interface FillSlotResult {
 export interface UpdateSlotInput {
   /** UUID tồn tại trong order = cập nhật slot đó; thiếu = append slot mới. */
   id?: string;
-  positionCode: string;
+  /**
+   * T1D DEC-T0-05: slot hiện hữu giữ nguyên positionCode (immutable). Field này
+   * chỉ được set khi `id` tồn tại (slot cũ) để truyền giá trị hiện tại qua
+   * route; KHÔNG tạo slot mới với positionCode do client gửi.
+   */
+  positionCode?: string;
   positionTitle: string;
   slotsNeeded: number;
   hourlyRateVnd?: number | null;

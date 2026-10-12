@@ -148,14 +148,22 @@ export async function POST(req: NextRequest) {
       { status: 400 },
     );
   }
+  // T1D DEC-T0-05: positionCode do server sinh tự động. Nếu body chứa
+  // positionCode trong bất kỳ slot → 400 SERVER_GENERATED_CODE.
+  if (body.slots.some((s) => s && typeof s === 'object' && 'positionCode' in s && s.positionCode !== undefined)) {
+    return NextResponse.json(
+      { error: 'SERVER_GENERATED_CODE', message: 'Ma vi tri tuyen do server sinh tu dong; khong gui `positionCode` trong body.' },
+      { status: 400 },
+    );
+  }
   const invalidSlot = body.slots.some((slot) =>
-    !slot.positionCode?.trim() || !slot.positionTitle?.trim() ||
+    !slot.positionTitle?.trim() ||
     !Number.isInteger(slot.slotsNeeded) || slot.slotsNeeded <= 0 ||
     !slot.validFrom || Number.isNaN(new Date(slot.validFrom).getTime()),
   );
   if (invalidSlot) {
     return NextResponse.json(
-      { error: 'VALIDATION_ERROR', message: 'Mỗi slot cần positionCode, positionTitle, headcount dương và validFrom hợp lệ' },
+      { error: 'VALIDATION_ERROR', message: 'Mỗi slot cần positionTitle, headcount dương và validFrom hợp lệ' },
       { status: 400 },
     );
   }

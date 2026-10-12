@@ -13,6 +13,7 @@ import { AuthSessionError, getAuthContext } from '@/src/shared/auth/auth-context
 import { withAuthorizedDbReadOnly } from '@/src/shared/auth/with-authorized-db';
 import { withDbContext } from '@/src/shared/auth/with-db-context';
 import { AuthScopeError } from '@/src/shared/auth/with-auth-scope';
+import { nextBusinessCode } from '@/src/shared/business-code/business-code';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -90,17 +91,27 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'BAD_REQUEST', message: 'Invalid JSON' }, { status: 400 });
   }
 
-  const { code, name, taxCode, phone, email, area, status } = body;
-  if (!code || !name) {
-    return NextResponse.json({ error: 'VALIDATION', message: 'code và name la bat buoc.' }, { status: 400 });
+  // T1D DEC-T0-04: server-side generator authority duy nhất. Client KHÔNG
+  // được gửi `code` trong body; nếu gửi → 400 SERVER_GENERATED_CODE.
+  if (body && typeof body === 'object' && 'code' in body && body.code !== undefined) {
+    return NextResponse.json(
+      { error: 'SERVER_GENERATED_CODE', message: 'Ma vendor do server sinh tu dong; khong gui `code` trong body.' },
+      { status: 400 },
+    );
+  }
+
+  const { name, taxCode, phone, email, area, status } = body;
+  if (!name) {
+    return NextResponse.json({ error: 'VALIDATION', message: 'name la bat buoc.' }, { status: 400 });
   }
 
   try {
-    const vendor = await withDbContext(prisma, ctx, (tx) =>
-      tx.vendor.create({
+    const vendor = await withDbContext(prisma, ctx, async (tx) => {
+      const code = await nextBusinessCode(tx, 'VENDOR');
+      return tx.vendor.create({
         data: { code, name, taxCode: taxCode ?? null, phone: phone ?? null, email: email ?? null, area: area ?? null, status: status ?? 'ACTIVE' },
-      }),
-    );
+      });
+    });
     return NextResponse.json({ vendor }, { status: 201 });
   } catch (err: any) {
     if (err instanceof AuthScopeError) {

@@ -137,6 +137,11 @@ function txFor(over: {
     },
     applicationStatusHistory: { create: vi.fn().mockResolvedValue({ id: 'history-1' }) },
     auditLog: { create: vi.fn().mockResolvedValue({ id: 'audit-1' }) },
+    // T1D DEC-T0-01: createWorkerFromApplication gọi nextBusinessCode cho
+    // Worker.userId; generator cần 2 raw helper. Mock trả "USR-EMP-001" mặc
+    // định; tests dùng mockExecRaw/mockQueryRaw để override per-case.
+    $executeRawUnsafe: vi.fn().mockResolvedValue(0),
+    $queryRawUnsafe: vi.fn().mockResolvedValue([{ max_num: null }]),
   };
 }
 
@@ -156,8 +161,11 @@ describe('MP-3B application conversion', () => {
       data: expect.objectContaining({ status: 'CONVERTED', version: { increment: 1 } }),
     });
     expect(tx.worker.create).toHaveBeenCalledWith({
+      // T1D DEC-T0-02: Worker.userId do server sinh (USR-EMP-001, ...). Mock
+      // generator trả về 1 mỗi lần gọi; trên cùng 1 test tạo 1 worker nên
+      // userId = "USR-EMP-001".
       data: expect.objectContaining({
-        userId: 'APP-sub-1', fullName: 'Nguyen Van A', phone: '0909123456',
+        userId: 'USR-EMP-001', fullName: 'Nguyen Van A', phone: '0909123456',
         cccdNumber: '012345678901', gender: 'MALE', ownerId: 'hr-1',
       }),
       select: { id: true },

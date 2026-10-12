@@ -20,6 +20,10 @@ const mocks = vi.hoisted(() => ({
   projectUpdateMany: vi.fn(),
   authorizedRO: vi.fn(),
   dbContext: vi.fn(),
+  // T1D DEC-T0-01: server-side generator authority. Mock raw SQL helpers used
+  // by `nextBusinessCode` to allow tests to exercise the create path without DB.
+  execRaw: vi.fn(),
+  queryRaw: vi.fn(),
 }));
 
 vi.mock('@/src/shared/auth/auth-context', () => ({
@@ -50,6 +54,9 @@ const tx = () => ({
   project: {
     updateMany: mocks.projectUpdateMany,
   },
+  // T1D DEC-T0-01: generator uses raw SQL helpers on the transaction.
+  $executeRawUnsafe: mocks.execRaw,
+  $queryRawUnsafe: mocks.queryRaw,
 });
 
 const getReq = () => new NextRequest('http://localhost/api/clients');
@@ -74,6 +81,9 @@ describe('clients master — role matrix (RQ-04 / AC-04)', () => {
     mocks.count.mockResolvedValue(0);
     mocks.create.mockResolvedValue({ id: 'c1' });
     mocks.update.mockResolvedValue({ id: 'c1' });
+    // T1D DEC-T0-01: generator returns "CC-001" when table is empty.
+    mocks.execRaw.mockResolvedValue(0);
+    mocks.queryRaw.mockResolvedValue([{ max_num: null }]);
     // [Y10.4-projection] Default no-op for project rename propagation.
     mocks.projectUpdateMany.mockResolvedValue({ count: 0 });
     mocks.authorizedRO.mockImplementation((cb: (t: unknown) => unknown) => cb(tx()));
@@ -101,10 +111,14 @@ describe('clients master — role matrix (RQ-04 / AC-04)', () => {
 
   it.each(['ADMIN', 'HR_MANAGER', 'DIRECTOR'])('POST: %s → 201 tạo qua boundary', async (role) => {
     mocks.getAuthContext.mockResolvedValue({ userId: 'u', role });
-    const res = await POST(postReq({ code: 'C01', name: 'KH 1' }));
+    // T1D DEC-T0-04: client KHÔNG gửi `code` trong body; server tự sinh CC-001.
+    const res = await POST(postReq({ name: 'KH 1' }));
     expect(res.status).toBe(201);
     expect(mocks.dbContext).toHaveBeenCalledTimes(1);
     expect(mocks.create).toHaveBeenCalledTimes(1);
+    expect(mocks.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ code: 'CC-001' }) }),
+    );
   });
 
   it('POST: SALE → 403 (deviation: SALE cũ tạo được nay bị chặn)', async () => {
@@ -112,6 +126,15 @@ describe('clients master — role matrix (RQ-04 / AC-04)', () => {
     const res = await POST(postReq({ code: 'C01', name: 'KH 1' }));
     expect(res.status).toBe(403);
     expect(mocks.create).not.toHaveBeenCalled();
+  });
+
+  it('POST: body chứa `code` → 400 SERVER_GENERATED_CODE (T1D DEC-T0-04)', async () => {
+    mocks.getAuthContext.mockResolvedValue({ userId: 'u', role: 'ADMIN' });
+    const res = await POST(postReq({ code: 'CC-HACK', name: 'KH 1' }));
+    expect(res.status).toBe(400);
+    expect(mocks.create).not.toHaveBeenCalled();
+    const body = await res.json();
+    expect(body.error).toBe('SERVER_GENERATED_CODE');
   });
 
   it('PUT: DIRECTOR → 200 sửa qua boundary', async () => {

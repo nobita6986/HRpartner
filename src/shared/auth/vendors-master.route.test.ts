@@ -15,6 +15,10 @@ const mocks = vi.hoisted(() => ({
   vendorFindMany: vi.fn(),
   vendorCount: vi.fn(),
   vendorCreate: vi.fn(),
+  // T1D DEC-T0-01: server-side generator authority. Mock raw SQL helpers used
+  // by `nextBusinessCode` to allow tests to exercise the create path without DB.
+  execRaw: vi.fn(),
+  queryRaw: vi.fn(),
 }));
 
 vi.mock('@/src/shared/auth/auth-context', () => ({
@@ -22,13 +26,23 @@ vi.mock('@/src/shared/auth/auth-context', () => ({
   AuthSessionError: class AuthSessionError extends Error {},
 }));
 vi.mock('@/src/lib/db', () => ({ getPrisma: () => ({ __raw: true }) }));
+// T1D DEC-T0-01: route cần `$executeRawUnsafe` và `$queryRawUnsafe` để chạy
+// generator; mở rộng mock tx để route nhận cả 2 helper.
 vi.mock('@/src/shared/auth/with-authorized-db', () => ({
   withAuthorizedDbReadOnly: (_p: unknown, _c: unknown, cb: (t: unknown) => unknown) =>
-    cb({ vendor: { findMany: mocks.vendorFindMany, count: mocks.vendorCount } }),
+    cb({
+      vendor: { findMany: mocks.vendorFindMany, count: mocks.vendorCount },
+      $executeRawUnsafe: mocks.execRaw,
+      $queryRawUnsafe: mocks.queryRaw,
+    }),
 }));
 vi.mock('@/src/shared/auth/with-db-context', () => ({
   withDbContext: (_p: unknown, _c: unknown, cb: (t: unknown) => unknown) =>
-    cb({ vendor: { create: mocks.vendorCreate } }),
+    cb({
+      vendor: { create: mocks.vendorCreate },
+      $executeRawUnsafe: mocks.execRaw,
+      $queryRawUnsafe: mocks.queryRaw,
+    }),
 }));
 
 import { GET, POST } from '@/app/api/vendors/route';
@@ -47,6 +61,9 @@ describe('vendors master — role matrix (DEC-08 / AC-08)', () => {
     mocks.vendorFindMany.mockResolvedValue([]);
     mocks.vendorCount.mockResolvedValue(0);
     mocks.vendorCreate.mockResolvedValue({ id: 'v1' });
+    // T1D DEC-T0-01: generator returns "VD-001" when table is empty.
+    mocks.execRaw.mockResolvedValue(0);
+    mocks.queryRaw.mockResolvedValue([{ max_num: null }]);
   });
 
   it('GET: PM → 403 (DEC-08: PM không xem Vendor master), KHÔNG query', async () => {
@@ -89,8 +106,21 @@ describe('vendors master — role matrix (DEC-08 / AC-08)', () => {
 
   it('POST: SALE → 201 tạo qua boundary', async () => {
     mocks.getAuthContext.mockResolvedValue({ userId: 'sale-1', role: 'SALE' });
-    const res = await POST(postReq({ code: 'V01', name: 'Vendor 1' }));
+    // T1D DEC-T0-04: client KHÔNG gửi `code`; server tự sinh VD-001.
+    const res = await POST(postReq({ name: 'Vendor 1' }));
     expect(res.status).toBe(201);
     expect(mocks.vendorCreate).toHaveBeenCalledTimes(1);
+    expect(mocks.vendorCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ code: 'VD-001' }) }),
+    );
+  });
+
+  it('POST: body chứa `code` → 400 SERVER_GENERATED_CODE (T1D DEC-T0-04)', async () => {
+    mocks.getAuthContext.mockResolvedValue({ userId: 'admin-1', role: 'ADMIN' });
+    const res = await POST(postReq({ code: 'VD-HACK', name: 'Vendor 1' }));
+    expect(res.status).toBe(400);
+    expect(mocks.vendorCreate).not.toHaveBeenCalled();
+    const body = await res.json();
+    expect(body.error).toBe('SERVER_GENERATED_CODE');
   });
 });

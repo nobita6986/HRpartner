@@ -140,7 +140,6 @@ function Modal({ onClose, onSuccess, editData, clientCompanies, canEdit }: {
   clientCompanies: Array<{ id: string; code: string; name: string }>;
   canEdit: boolean;
 }) {
-  const [code, setCode] = useState(editData?.code ?? '');
   const [name, setName] = useState(editData?.name ?? '');
   const [clientCompanyId, setClientCompanyId] = useState(editData?.clientCompanyId ?? '');
   const [startDate, setStartDate] = useState(editData?.startDate?.slice(0, 10) ?? '');
@@ -151,11 +150,14 @@ function Modal({ onClose, onSuccess, editData, clientCompanies, canEdit }: {
   const [siteAddress, setSiteAddress] = useState(editData?.siteAddress ?? '');
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState('');
+  // T1D DEC-T0-04: server sinh `code` (PRJ-{year}-001, ...). UI bỏ input mã;
+  // hiển thị mã server vừa sinh qua `createdCode` sau khi tạo thành công.
+  const [createdCode, setCreatedCode] = useState<string | null>(null);
   const isEdit = !!editData;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isEdit && (!code.trim() || !name.trim() || !clientCompanyId || !startDate)) {
+    if (!isEdit && (!name.trim() || !clientCompanyId || !startDate)) {
       setErr('Điền đầy đủ các trường bắt buộc.');
       return;
     }
@@ -175,7 +177,6 @@ function Modal({ onClose, onSuccess, editData, clientCompanies, canEdit }: {
       const url = isEdit ? `/api/projects/${editData.id}` : '/api/projects';
       const method = isEdit ? 'PUT' : 'POST';
       const body: Record<string, string | number> = {};
-      if (!isEdit) body.code = code.trim();
       body.name = name.trim();
       body.clientCompanyId = clientCompanyId;
       body.startDate = startDate;
@@ -186,6 +187,11 @@ function Modal({ onClose, onSuccess, editData, clientCompanies, canEdit }: {
 
       const r = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       if (!r.ok) { const d = await r.json(); setErr(d.message ?? `Lỗi ${r.status}`); return; }
+      if (!isEdit) {
+        const data = await r.json();
+        if (data?.project?.code) setCreatedCode(String(data.project.code));
+        return;
+      }
       onSuccess();
       onClose();
     } catch { setErr('Lỗi kết nối server.'); } finally { setSubmitting(false); }
@@ -200,14 +206,16 @@ function Modal({ onClose, onSuccess, editData, clientCompanies, canEdit }: {
     <div style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} className="fixed inset-0 z-50 flex items-center justify-center" onClick={onClose}>
       <div style={{ background: 'var(--surface-container-lowest)' }} className="w-full max-w-md rounded-lg border p-6 shadow-xl" onClick={ev => ev.stopPropagation()}>
         <h2 style={{ color: 'var(--on-surface)' }} className="mb-4 text-lg font-semibold">{isEdit ? 'Sửa dự án' : 'Thêm dự án mới'}</h2>
+        {/* T1D DEC-T0-04: hiển thị mã server vừa sinh sau khi tạo thành công. */}
+        {createdCode && !isEdit && (
+          <div style={{ background: 'var(--primary-container)', color: 'var(--on-primary-container)', borderColor: 'var(--primary)' }} className="mb-4 rounded-lg border p-3 text-sm">
+            <p className="font-medium">Đã tạo dự án.</p>
+            <p className="mt-1 font-mono text-base">Mã dự án: <strong>{createdCode}</strong></p>
+            <button type="button" onClick={() => { onSuccess(); onClose(); }} style={{ background: 'var(--primary)', color: 'var(--on-primary)' }} className="mt-3 rounded px-4 py-2 text-sm font-semibold">Đóng</button>
+          </div>
+        )}
+        {!createdCode && (
         <form onSubmit={submit} className="space-y-4">
-          {!isEdit && (
-            <div>
-              <label style={{ color: 'var(--on-surface)' }} className="mb-1 block text-sm font-medium">Mã dự án *</label>
-              <input value={code} onChange={e => setCode(e.target.value)} placeholder="VD: PRJ-2026-001"
-                style={{ borderColor: 'var(--outline)', background: 'var(--surface-container)' }} className="w-full rounded border px-3 py-2 text-sm font-mono" required />
-            </div>
-          )}
           <div>
             <label style={{ color: 'var(--on-surface)' }} className="mb-1 block text-sm font-medium">Tên dự án *</label>
             <input value={name} onChange={e => setName(e.target.value)} placeholder="VD: Yên Phong Factory"
@@ -262,6 +270,7 @@ function Modal({ onClose, onSuccess, editData, clientCompanies, canEdit }: {
             </button>
           </div>
         </form>
+        )}
       </div>
     </div>
   );

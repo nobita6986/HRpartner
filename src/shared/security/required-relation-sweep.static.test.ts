@@ -74,7 +74,7 @@ const CONTEXT_LOOKBACK = 25;
  * service không đổi — tổng còn 5 + 3 + 4 = 12.
  */
 const EXPECTED_HITS = [
-  'app/api/projects/route.ts:55 clientCompany',
+  'app/api/projects/route.ts:56 clientCompany',
   'app/api/vendor/orders/route.ts:44 project',
   'app/api/vendor/submissions/route.ts:62 project',
   'src/domains/applications/application-queue.service.ts:183 project',
@@ -86,7 +86,7 @@ const EXPECTED_HITS = [
   // `linkLaborProfileWorker` helper was inserted between `convertApplication`
   // and `findDedupCandidates`, adding two comment lines above the AFF-04
   // select block. Sweep target is unchanged.
-  'src/domains/applications/conversion.service.ts:130 laborProfile',
+  'src/domains/applications/conversion.service.ts:131 laborProfile',
   'src/domains/crm/client-read.service.ts:80 staffingOrder',
   'src/domains/crm/project-read.service.ts:40 clientCompany',
   // T1A PRE-P2 PROJECT MANAGEMENT HOTFIX (2026-10-06): `getProjectForManagement`
@@ -155,12 +155,12 @@ const EXPECTED_HITS = [
   //   - `order.service.ts:428` `updateStaffingOrder` re-read slots — line shift 387 → 428.
   //   - `order.service.ts:459` `updateStaffingOrder` re-read slots.jobOpening
   //     (thêm mới — sweep phát hiện thêm 1 hit).
-  'src/domains/staffing/order.service.ts:207 project',
-  'src/domains/staffing/order.service.ts:233 project',
-  'src/domains/staffing/order.service.ts:346 project',
-  'src/domains/staffing/order.service.ts:351 jobOpening',
-  'src/domains/staffing/order.service.ts:443 jobOpening',
-  'src/domains/staffing/order.service.ts:474 jobOpening',
+  'src/domains/staffing/order.service.ts:218 project',
+  'src/domains/staffing/order.service.ts:244 project',
+  'src/domains/staffing/order.service.ts:357 project',
+  'src/domains/staffing/order.service.ts:362 jobOpening',
+  'src/domains/staffing/order.service.ts:454 jobOpening',
+  'src/domains/staffing/order.service.ts:485 jobOpening',
   'src/domains/staffing/submission.service.ts:204 project',
   // AFF-04 STEP-04: re-read SourceClaim -> Worker.userId under lock for
   // self-referral classification. Worker is required in schema, so the

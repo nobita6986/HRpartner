@@ -9,6 +9,7 @@ import { AuthSessionError, getAuthContext } from '@/src/shared/auth/auth-context
 import { withAuthorizedDbReadOnly } from '@/src/shared/auth/with-authorized-db';
 import { withDbContext } from '@/src/shared/auth/with-db-context';
 import { AuthScopeError } from '@/src/shared/auth/with-auth-scope';
+import { nextBusinessCode } from '@/src/shared/business-code/business-code';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -153,11 +154,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'BAD_REQUEST', message: 'Invalid JSON body' }, { status: 400 });
   }
 
-  const { code, name, clientCompanyId, pmUserId, siteAddress, startDate, endDate, status, quota } = body;
-
-  if (!code || !name || !clientCompanyId || !startDate) {
+  // T1D DEC-T0-04: server-side generator authority duy nhất. Client KHÔNG
+  // được gửi `code` trong body; nếu gửi → 400 SERVER_GENERATED_CODE.
+  if (body && typeof body === 'object' && 'code' in body && body.code !== undefined) {
     return NextResponse.json(
-      { error: 'VALIDATION', message: 'code, name, clientCompanyId, startDate la bat buoc.' },
+      { error: 'SERVER_GENERATED_CODE', message: 'Ma du an do server sinh tu dong; khong gui `code` trong body.' },
+      { status: 400 },
+    );
+  }
+
+  const { name, clientCompanyId, pmUserId, siteAddress, startDate, endDate, status, quota } = body;
+
+  if (!name || !clientCompanyId || !startDate) {
+    return NextResponse.json(
+      { error: 'VALIDATION', message: 'name, clientCompanyId, startDate la bat buoc.' },
       { status: 400 },
     );
   }
@@ -174,6 +184,9 @@ export async function POST(req: NextRequest) {
         where: { id: clientCompanyId },
         select: { name: true },
       });
+      // T1D DEC-T0-01: Project year-aware. year = startDate.getUTCFullYear().
+      const year = new Date(startDate).getUTCFullYear();
+      const code = await nextBusinessCode(tx, 'PROJECT', { year });
       return tx.project.create({
         data: {
           code,
