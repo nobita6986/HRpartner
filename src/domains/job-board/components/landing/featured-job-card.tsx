@@ -187,16 +187,17 @@ export function FeaturedJobCard({ job, href, onApply }: FeaturedJobCardProps) {
           </svg>
         </Link>
 
-        {/* RQ-18/RQ-19: Ứng tuyển — primary cam thương hiệu (Primary). */}
+        {/* RQ-18/RQ-19: Ứng tuyển — softer warm-orange tone, share class .hrp-btn-apply
+            với JobCard (/viec-lam list) và DetailApplyCta (/viec-lam/{slug}) để 3 nơi
+            đồng bộ màu nền, màu chữ, hover, focus và disabled (t2-apply-cta-tone). */}
         <button
           type="button"
           disabled={preview}
           onClick={preview ? undefined : (e => { e.stopPropagation(); e.preventDefault(); onApply?.(); })}
-          className={`inline-flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
-            ${preview || !onApply
-              ? 'cursor-not-allowed bg-slate-100 text-slate-400 opacity-60'
-              : 'bg-primary text-white hover:bg-primary-dark focus-visible:outline-primary'
-            }`}
+          className={
+            'hrp-btn-apply inline-flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-semibold' +
+            (preview || !onApply ? ' opacity-60' : '')
+          }
           aria-label={preview ? 'Bản xem trước' : !onApply ? 'Xem chi tiết' : 'Ứng tuyển nhanh'}
           data-testid="featured-job-cta"
         >

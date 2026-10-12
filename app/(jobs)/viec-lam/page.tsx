@@ -386,7 +386,11 @@ function JobCard({ job }: { job: ListingJob }) {
           Hạn nhận hồ sơ: {formatDeadlineDate(job.deadline)}
         </p>
       )}
-      {/* Y3.3 + Y3.4: Hàng nút bấm dưới cùng — outline (trắng/viền xám) + primary (cam). */}
+      {/* Y3.3 + Y3.4: Hàng nút bấm dưới cùng — outline (trắng/viền xám) + Apply CTA.
+          Apply CTA dùng class dùng chung `.hrp-btn-apply` để đồng bộ với
+          FeaturedJobCard (trang chủ) và DetailApplyCta (/viec-lam/{slug}):
+          tông cam dịu hơn primary brand, hover đậm hơn, focus ring đỏ-cam đậm.
+          (t2-apply-cta-tone) */}
       <div className="mt-auto flex flex-wrap gap-2 pt-2">
         <Link
           href={publicJobDetailPath(job.slug)}
@@ -398,14 +402,7 @@ function JobCard({ job }: { job: ListingJob }) {
         </Link>
         <Link
           href={isPreview ? publicJobDetailPath(job.slug) : `${publicJobDetailPath(job.slug)}#ung-tuyen`}
-          // hrp-t2-public-paging-tone-hotfix (RQ-04): default dùng
-          // `bg-primary-dark` (#a63b00 cam đậm/nâu) để tone khớp với màu
-          // title job (`var(--color-primary-dark)` ở header trên). Hover
-          // chuyển sang `bg-primary` (#f26522 cam sáng) — vẫn trong họ cam
-          // brand HRP, không rơi về xám/đen ở bất kỳ trạng thái nào.
-          // Trước fix: default `bg-primary` quá rực, hover `bg-primary-dark`
-          // → mất semantic alignment với title.
-          className="hrp-focus inline-flex min-h-11 flex-1 items-center justify-center gap-1 rounded-lg bg-primary-dark px-3 text-sm font-semibold text-white hover:bg-primary"
+          className="hrp-btn-apply hrp-focus inline-flex min-h-11 flex-1 items-center justify-center gap-1 rounded-lg px-3 text-sm font-semibold"
         >
           Ứng tuyển
         </Link>

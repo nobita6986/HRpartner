@@ -35,19 +35,22 @@ export function DetailApplyCta({ job, isFull }: { job: ApplyModalJob; isFull: bo
   const disabled = isFull || applied;
   const label = isFull ? LABEL_FULL : applied ? LABEL_APPLIED : LABEL_APPLY;
 
-  /** Một nguồn cho cả nút trong luồng và nút trong thanh dính. */
+  /** Một nguồn cho cả nút trong luồng và nút trong thanh dính.
+      Tông màu dùng token --color-primary-cta (dịu hơn primary brand HRP) để
+      đồng bộ với FeaturedJobCard (trang chủ) và JobCard (/viec-lam list)
+      thông qua class .hrp-btn-apply. t2-apply-cta-tone. */
   const button = (extraClassName: string) => (
     <button
       type="button"
       onClick={() => setFormOpen(true)}
       disabled={disabled}
-      className={`font-semibold px-6 py-2 rounded-lg transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${extraClassName}`}
+      className={`hrp-btn-apply font-semibold px-6 py-2 rounded-lg ${extraClassName}`}
       style={
         isFull
           ? { backgroundColor: 'var(--color-surface-container)', color: 'var(--color-on-surface-variant)', cursor: 'not-allowed' }
           : applied
             ? { backgroundColor: 'var(--color-success-soft)', color: 'var(--color-success)', cursor: 'default' }
-            : { backgroundColor: 'var(--color-primary)', color: 'var(--color-on-primary)' }
+            : undefined
       }
     >
       {label}

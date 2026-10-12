@@ -12,6 +12,15 @@
   --color-primary-soft: #fdf1ec;
   --color-on-primary: #ffffff;
 
+  /* Apply CTA — softer warm-orange tone for "Ứng tuyển" button across
+     landing, /viec-lam list, and /viec-lam/{slug} detail. Distinct from
+     --color-primary so a brand-wide token change cannot accidentally
+     affect this surface. Contrast vs white ~3.0:1 — passes WCAG 2.x
+     large/bold text rule (14px+ bold = 3:1), which is what the 14px
+     `font-semibold` "Ứng tuyển" label relies on. */
+  --color-primary-cta: #f07f1a;
+  --color-primary-cta-dark: #c2520a;
+
   /* Surface / neutral */
   --color-background: #faf9f7;
   --color-surface-warm: #faf9f7;
@@ -418,6 +427,38 @@ body {
   background-color: var(--color-success-soft);
   color: var(--color-success);
   cursor: default;
+}
+
+/* --- Nút "Ứng tuyển" dùng chung --------------------------------------- */
+/* Single source of truth cho nút Ứng tuyển ở cả ba nơi: FeaturedJobCard
+   (trang chủ), JobCard (/viec-lam list) và DetailApplyCta (/viec-lam/{slug}).
+   Tông cam dịu hơn --color-primary (warm orange 24° lightness 52%),
+   đổi sang --color-primary-cta-dark khi hover, focus ring lấy từ
+   --color-focus-ring (resolve về --color-primary-dark). KHÔNG có transform
+   và KHÔNG nằm trong allowlist transform của RQ-23, nên giữ nguyên nội dung
+   khối này khi đổi brand. Trạng thái disabled dùng chung với .hrp-btn-muted
+   — bề mặt Ứng tuyển đã có nhãn thay thế (Bản xem trước / Đã đủ chỉ tiêu)
+   nên disabled chỉ áp dụng cho preview hoặc preview-state. */
+.hrp-btn-apply {
+  background-color: var(--color-primary-cta);
+  color: var(--color-on-primary);
+  cursor: pointer;
+  transition-property: background-color;
+  transition-duration: var(--t-fast);
+  transition-timing-function: var(--ease-out);
+}
+.hrp-btn-apply:hover:not(:disabled) {
+  background-color: var(--color-primary-cta-dark);
+  transition-duration: var(--t-medium);
+}
+.hrp-btn-apply:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+.hrp-btn-apply:disabled {
+  background-color: var(--color-surface-container);
+  color: var(--color-on-surface-variant);
+  cursor: not-allowed;
 }
 
 /* --- Ô từ khoá và select — RQ-08, RQ-22 --------------------------------- */
