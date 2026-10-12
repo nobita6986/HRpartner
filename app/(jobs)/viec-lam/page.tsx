@@ -78,7 +78,7 @@ const RATE_LIMITED_TITLE = 'Bạn thao tác quá nhanh';
 
 const PAGE_TITLE = 'Việc làm đang tuyển';
 const PAGE_DESCRIPTION =
-  'Danh sách việc làm đang tuyển tại HRPartner. Lọc theo từ khóa, khu vực và ca làm; mỗi bộ lọc là một địa chỉ chia sẻ được.';
+  'Danh sách việc làm đang tuyển tại HRPartner. Lọc theo từ khóa, khu vực và mức lương; mỗi bộ lọc là một địa chỉ chia sẻ được.';
 
 type RawSearchParams = Record<string, string | string[] | undefined>;
 type ListingPageProps = { searchParams: Promise<RawSearchParams> };
@@ -98,7 +98,6 @@ const loadListing = cache(
     q: string | undefined,
     salary: SalaryBucket | undefined,
     area: string | undefined,
-    shift: string | undefined,
     offset: number,
   ): Promise<ListingLoad> => {
     // AV1: inject listingPageSize from HomepageSettings singleton.
@@ -127,7 +126,7 @@ const loadListing = cache(
     // to the service so pagination arithmetic stays consistent with the actual page size.
     // hrp-t2-public-site-hotfix (T2 / STEP-05): thêm `salary` vào filter chain.
     const data = await withPublicDb(getPrisma(), (tx) =>
-      listPublicJobProjection(tx, { q, salary, area, shift, offset, limit: listingPageSize }),
+      listPublicJobProjection(tx, { q, salary, area, offset, limit: listingPageSize }),
     );
     return { kind: 'ok', data, listingPageSize };
   },
@@ -178,7 +177,7 @@ function ThrottledNotice() {
 /**
  * Form GET thuần HTML: không cần một dòng JS nào ở trình duyệt, nên nó lọc được cả khi bundle chưa
  * tải (`RQ-16`). Form CỐ Ý không mang `offset`: submit một bộ lọc mới là về trang một (`DEC-02`), và
- * ba ô rỗng khi người dùng chưa chọn gì cho ra `?q=&area=&shift=` — hình dạng mà parser đã xử như
+ * các ô rỗng khi người dùng chưa chọn gì cho ra query rỗng — hình dạng mà parser đã xử như
  * VẮNG MẶT, nên URL ấy vẫn được coi là sạch.
  */
 function FilterForm({ params, facets }: { params: ListingParams; facets: ListingFacets }) {
@@ -233,33 +232,6 @@ function FilterForm({ params, facets }: { params: ListingParams; facets: Listing
           {facets.areas.map((area) => (
             <option key={area} value={area}>
               {area}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="flex flex-col gap-1">
-        <label
-          htmlFor="listing-shift"
-          className="text-sm font-medium"
-          style={{ color: 'var(--color-on-surface)' }}
-        >
-          Ca làm
-        </label>
-        <select
-          id="listing-shift"
-          name="shift"
-          defaultValue={params.shift ?? ''}
-          className="hrp-focus min-h-11 w-full rounded-lg border px-3 text-base"
-          style={{
-            backgroundColor: 'var(--color-surface)',
-            borderColor: 'var(--color-outline-variant)',
-            color: 'var(--color-on-surface)',
-          }}
-        >
-          <option value="">Tất cả ca làm</option>
-          {facets.shifts.map((shift) => (
-            <option key={shift} value={shift}>
-              {shift}
             </option>
           ))}
         </select>
@@ -414,7 +386,7 @@ function JobCard({ job }: { job: ListingJob }) {
 
 export default async function PublicJobListingPage({ searchParams }: ListingPageProps) {
   const params = parseListingSearchParams(await searchParams);
-  const loaded = await loadListing(params.q, params.salary, params.area, params.shift, params.offset);
+  const loaded = await loadListing(params.q, params.salary, params.area, params.offset);
   if (loaded.kind === 'throttled') return <ThrottledNotice />;
 
   const { jobs, facets, total, nextOffset } = loaded.data;
@@ -422,8 +394,7 @@ export default async function PublicJobListingPage({ searchParams }: ListingPage
   const hasFilter =
     params.q !== undefined ||
     params.salary !== undefined ||
-    params.area !== undefined ||
-    params.shift !== undefined;
+    params.area !== undefined;
 
   /**
    * `RQ-02` liệt kê ba ca `offset` phải về 0, và ca "vượt `total`" là ca DUY NHẤT parser không đo

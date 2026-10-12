@@ -30,7 +30,7 @@ import {
 /** Bốn tên tham số mà `RQ-03` cấm phát ra, kể cả khi người dùng tự gõ vào URL.
  *  hrp-t2-public-site-hotfix (T2 / STEP-09): `salary` được kích hoạt như
  *  search-param hợp lệ, nên KHÔNG còn nằm trong danh sách cấm. */
-const BANNED_PARAMS = ['limit', 'shiftType', 'jobType'] as const;
+const BANNED_PARAMS = ['shift', 'limit', 'shiftType', 'jobType'] as const;
 
 describe('mục 4.4 — hai hằng số là nguồn duy nhất', () => {
   it('PAGE_SIZE bằng 20 và LISTING_PATH bằng /viec-lam', () => {
@@ -40,9 +40,9 @@ describe('mục 4.4 — hai hằng số là nguồn duy nhất', () => {
 });
 
 describe('RQ-02/AC-03 — parseListingSearchParams làm sạch bốn trường', () => {
-  it('searchParams rỗng cho bộ mặc định: ba trường vắng, offset 0', () => {
+  it('searchParams rỗng cho bộ mặc định: ba bộ lọc vắng, offset 0', () => {
     const params = parseListingSearchParams({});
-    expect(params).toEqual({ q: undefined, area: undefined, shift: undefined, offset: 0 });
+    expect(params).toEqual({ q: undefined, salary: undefined, area: undefined, offset: 0 });
   });
 
   it('q chỉ có khoảng trắng thì bị bỏ, q có khoảng trắng hai đầu thì bị cắt', () => {
@@ -51,20 +51,20 @@ describe('RQ-02/AC-03 — parseListingSearchParams làm sạch bốn trường',
     expect(parseListingSearchParams({ q: '  bao ve  ' }).q).toBe('bao ve');
   });
 
-  it('area và shift giữ nguyên chuỗi khi có mặt, và bị bỏ khi rỗng', () => {
+  it('area giữ nguyên chuỗi khi có mặt; shift legacy luôn bị bỏ qua', () => {
     const params = parseListingSearchParams({ area: 'Ha Noi', shift: 'Ca dem' });
     expect(params.area).toBe('Ha Noi');
-    expect(params.shift).toBe('Ca dem');
+    expect(params).not.toHaveProperty('shift');
     // `?area=` từ một form GET vừa submit khi người dùng chưa chọn gì: coi như vắng mặt, cùng
     // luật với `q`. Nếu giữ chuỗi rỗng thì `listingIsIndexable` tắt index trên một URL vốn SẠCH.
     expect(parseListingSearchParams({ area: '', shift: '' })).toEqual({
       q: undefined,
+      salary: undefined,
       area: undefined,
-      shift: undefined,
       offset: 0,
     });
     expect(parseListingSearchParams({ area: '   ' }).area).toBeUndefined();
-    expect(parseListingSearchParams({ shift: '  \t ' }).shift).toBeUndefined();
+    expect(parseListingSearchParams({ shift: 'Ca dem' })).toEqual(parseListingSearchParams({}));
   });
 
   it('offset âm bị kẹp về 0', () => {
@@ -93,16 +93,17 @@ describe('RQ-02/AC-03 — parseListingSearchParams làm sạch bốn trường',
   it('giá trị dạng mảng lấy phần tử đầu', () => {
     const params = parseListingSearchParams({
       q: ['bao ve', 'khac'],
+      salary: ['10-15', '15-20'],
       area: ['Ha Noi', 'Da Nang'],
       shift: ['Ca dem', 'Ca ngay'],
       offset: ['40', '80'],
     });
-    expect(params).toEqual({ q: 'bao ve', area: 'Ha Noi', shift: 'Ca dem', offset: 40 });
+    expect(params).toEqual({ q: 'bao ve', salary: '10-15', area: 'Ha Noi', offset: 40 });
   });
 
   it('mảng rỗng xử như vắng mặt', () => {
-    const params = parseListingSearchParams({ q: [], area: [], shift: [], offset: [] });
-    expect(params).toEqual({ q: undefined, area: undefined, shift: undefined, offset: 0 });
+    const params = parseListingSearchParams({ q: [], salary: [], area: [], shift: [], offset: [] });
+    expect(params).toEqual({ q: undefined, salary: undefined, area: undefined, offset: 0 });
   });
 });
 
@@ -123,7 +124,7 @@ describe('RQ-03/AC-04 — mọi khoá ngoài bốn tên bị bỏ qua trong im l
     // hrp-t2-public-site-hotfix (T2 / STEP-09): fence test — `salary` được
     // thêm vào hợp đồng public-listing (5 tham số chính). Năm khoá còn
     // lại (limit, shiftType, jobType, industry, page) bị parser bỏ qua.
-    expect(Object.keys(params).sort()).toEqual(['area', 'offset', 'q', 'salary', 'shift']);
+    expect(Object.keys(params).sort()).toEqual(['area', 'offset', 'q', 'salary']);
     expect(params.q).toBe('bao ve');
     expect(params.salary).toBeUndefined();
   });
@@ -153,7 +154,7 @@ describe('RQ-03/AC-04 — mọi khoá ngoài bốn tên bị bỏ qua trong im l
     }
     expect(href).toContain('q=');
     expect(href).toContain('area=');
-    expect(href).toContain('shift=');
+    expect(href).not.toContain('shift=');
   });
 
   it('href luôn bắt đầu bằng LISTING_PATH, không phải URL tuyệt đối', () => {
@@ -192,7 +193,7 @@ describe('RQ-06/AC-07 — trang một của một bộ lọc là ĐÚNG MỘT UR
 
 describe('RQ-05/AC-06 — phân trang giữ nguyên bộ lọc ở ba mốc offset', () => {
   /** Một bộ lọc đang bật cả ba trường, để mất một tham số là thấy ngay trên chuỗi. */
-  const filters = { q: 'bao ve', area: 'Ha Noi', shift: 'Ca dem' };
+  const filters = { q: 'bao ve', salary: '10-15', area: 'Ha Noi' };
   const TOTAL = 100;
   const LAST_OFFSET = 80;
 
@@ -200,23 +201,23 @@ describe('RQ-05/AC-06 — phân trang giữ nguyên bộ lọc ở ba mốc offs
     const params = parseListingSearchParams(filters);
     expect(params.offset).toBe(0);
     const next = buildListingHref(params, params.offset + PAGE_SIZE);
-    expect(next).toBe('/viec-lam?q=bao+ve&area=Ha+Noi&shift=Ca+dem&offset=20');
+    expect(next).toBe('/viec-lam?q=bao+ve&salary=10-15&area=Ha+Noi&offset=20');
   });
 
   it('mốc giữa, offset 40: cả Trước và Sau giữ đủ ba bộ lọc', () => {
     const params = parseListingSearchParams({ ...filters, offset: '40' });
     expect(buildListingHref(params, params.offset - PAGE_SIZE)).toBe(
-      '/viec-lam?q=bao+ve&area=Ha+Noi&shift=Ca+dem&offset=20',
+      '/viec-lam?q=bao+ve&salary=10-15&area=Ha+Noi&offset=20',
     );
     expect(buildListingHref(params, params.offset + PAGE_SIZE)).toBe(
-      '/viec-lam?q=bao+ve&area=Ha+Noi&shift=Ca+dem&offset=60',
+      '/viec-lam?q=bao+ve&salary=10-15&area=Ha+Noi&offset=60',
     );
   });
 
   it('mốc cuối, offset 80 trên total 100: Trước về 60, và không còn trang sau', () => {
     const params = parseListingSearchParams({ ...filters, offset: String(LAST_OFFSET) });
     expect(buildListingHref(params, params.offset - PAGE_SIZE)).toBe(
-      '/viec-lam?q=bao+ve&area=Ha+Noi&shift=Ca+dem&offset=60',
+      '/viec-lam?q=bao+ve&salary=10-15&area=Ha+Noi&offset=60',
     );
     // Mệnh đề "trang cuối không có link Sau" là mệnh đề về TRANG, không về hàm ghép URL: nó được
     // hàng rào tĩnh của `STEP-07` canh. Ở đây chỉ ghim phần hàm này chịu trách nhiệm — số học mốc
@@ -241,8 +242,8 @@ describe('DEC-08 — listingIsIndexable chỉ true khi cả bốn trường ở 
 
   it('mỗi một trường rời mặc định là đủ để tắt index', () => {
     expect(listingIsIndexable(parseListingSearchParams({ q: 'bao ve' }))).toBe(false);
+    expect(listingIsIndexable(parseListingSearchParams({ salary: '10-15' }))).toBe(false);
     expect(listingIsIndexable(parseListingSearchParams({ area: 'Ha Noi' }))).toBe(false);
-    expect(listingIsIndexable(parseListingSearchParams({ shift: 'Ca dem' }))).toBe(false);
     expect(listingIsIndexable(parseListingSearchParams({ offset: '20' }))).toBe(false);
   });
 
@@ -253,7 +254,7 @@ describe('DEC-08 — listingIsIndexable chỉ true khi cả bốn trường ở 
     expect(listingIsIndexable(parseListingSearchParams({ offset: 'abc' }))).toBe(true);
     // Nhưng `q` chỉ có khoảng trắng cũng vậy: bị bỏ nên URL vẫn sạch.
     expect(listingIsIndexable(parseListingSearchParams({ q: '   ' }))).toBe(true);
-    expect(listingIsIndexable(parseListingSearchParams({ area: '', shift: '' }))).toBe(true);
+    expect(listingIsIndexable(parseListingSearchParams({ area: '', shift: 'Ca dem' }))).toBe(true);
   });
 });
 

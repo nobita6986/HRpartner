@@ -20,6 +20,7 @@ const PAGE = 'app/(jobs)/viec-lam/page.tsx';
 const DETAIL = 'app/(jobs)/viec-lam/[slug]/page.tsx';
 const LABELS = 'src/domains/job-board/public-listing.labels.ts';
 const HOME = 'app/(portal)/page.tsx';
+const NAV = 'app/components/GlobalNavbar.tsx';
 
 const raw = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 
@@ -31,6 +32,7 @@ const count = (source: string, pattern: RegExp) => (source.match(pattern) ?? [])
 
 const page = raw(PAGE);
 const code = strip(page);
+const filterForm = code.slice(code.indexOf('function FilterForm'), code.indexOf('function JobCard'));
 
 describe('RQ-01/AC-01 — trang là Server Component, không có chỉ thị client', () => {
   it('không chứa chỉ thị use client ở bất kỳ dạng nào, kể cả trong chú thích', () => {
@@ -130,11 +132,21 @@ describe('RQ-03/AC-04 — trang chỉ đọc searchParams qua parser', () => {
   });
 });
 
-describe('RQ-04/AC-05 — option select đến từ facets, không từ mảng hằng', () => {
-  it('cả hai select map trên facets của chính kết quả truy vấn', () => {
+describe('RQ-04/AC-05 — option khu vực đến từ facets, không từ mảng hằng', () => {
+  it('select khu vực map trên facets; không còn select ca làm', () => {
     expect(code).toContain('facets.areas.map(');
-    expect(code).toContain('facets.shifts.map(');
+    expect(filterForm).not.toContain('facets.shifts.map(');
+    expect(filterForm).not.toContain('listing-shift');
+    expect(filterForm).not.toMatch(/name=["']shift["']/);
+    expect(filterForm).not.toContain('Ca làm');
     expect(code).toMatch(/const\s*\{\s*jobs,\s*facets,\s*total,\s*nextOffset\s*\}\s*=/);
+  });
+
+  it('loader không nhận hoặc truyền shift vào truy vấn listing', () => {
+    const loader = code.slice(code.indexOf('const loadListing'), code.indexOf('export async function generateMetadata'));
+    expect(loader).not.toMatch(/\bshift\b/);
+    expect(code).not.toContain('params.shift');
+    expect(page).toContain('Lọc theo từ khóa, khu vực và mức lương');
   });
 
   it('tệp KHÔNG khai một mảng hằng nào — không có danh sách vùng/ca/ngành/loại việc dán tay', () => {
@@ -240,7 +252,7 @@ describe('RQ-16/AC-18 — dùng được bằng bàn phím và bằng ngón tay'
     // (vì `testid` kết thúc bằng `id`). Lọc bằng whitelist các id đã biết để
     // fence test deterministic — chỉ tính những id thật sự có htmlFor tương ứng.
     // hrp-t2-public-site-hotfix (T2 / STEP-09): bổ sung `listing-salary`.
-    const KNOWN_IDS = ['listing-q', 'listing-area', 'listing-shift', 'listing-salary'] as const;
+    const KNOWN_IDS = ['listing-q', 'listing-area', 'listing-salary'] as const;
     const idRegex = new RegExp(`\\bid="(${KNOWN_IDS.join('|')})"`, 'g');
     const forRegex = new RegExp(`\\bhtmlFor="(${KNOWN_IDS.join('|')})"`, 'g');
     const ids = [...code.matchAll(idRegex)].map((m) => m[1]).sort();
@@ -277,5 +289,20 @@ describe('RQ-15 — trang chi tiết quay lại đúng danh sách, không về t
   it('hai href quay lại trỏ /viec-lam, và không còn href nào trỏ /', () => {
     expect(count(detail, /href="\/viec-lam"/g)).toBe(2);
     expect(detail).not.toMatch(/href="\/"/);
+  });
+});
+
+describe('T1C public navigation — Trang chủ và Việc làm có route/active-state đúng', () => {
+  const nav = strip(raw(NAV));
+
+  it('mảng dùng chung có Trang chủ trỏ / và Việc làm trỏ /viec-lam', () => {
+    expect(nav).toContain("{ href: '/', label: 'Trang chủ', type: 'route' }");
+    expect(nav).toContain("{ href: '/viec-lam', label: 'Việc làm', type: 'route' }");
+    expect(count(nav, /visibleNavLinks\.map\(/g)).toBe(2);
+  });
+
+  it('root chỉ khớp tuyệt đối, route khác khớp chính nó và route con', () => {
+    expect(nav).toMatch(/link\.href === '\/'\s*\? pathname === '\/'/);
+    expect(nav).toMatch(/pathname === link\.href \|\| pathname\.startsWith\(`\$\{link\.href\}\/`\)/);
   });
 });
