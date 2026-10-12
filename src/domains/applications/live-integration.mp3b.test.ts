@@ -77,9 +77,10 @@ describe.skipIf(!enabled)('MP-3B LIVE conversion', () => {
       });
       expect(submission).toMatchObject({ status: 'CONVERTED', version: 1 });
       expect(submission.workerId).toBeTruthy();
+      if (!submission.workerId) throw new Error('Conversion did not link a Worker');
 
       const [workers, claims, history, audits] = await Promise.all([
-        admin.worker.findMany({ where: { userId: `APP-${submissionId}` }, select: { id: true } }),
+        admin.worker.findMany({ where: { id: submission.workerId }, select: { id: true } }),
         admin.sourceClaim.findMany({ where: { submissionId, accepted: true }, select: { id: true, workerId: true } }),
         admin.applicationStatusHistory.findMany({ where: { submissionId, fromStatus: 'QUALIFIED', toStatus: 'CONVERTED' } }),
         admin.auditLog.findMany({ where: { entityId: submissionId, action: 'APPLICATION_CONVERT' } }),
@@ -90,11 +91,17 @@ describe.skipIf(!enabled)('MP-3B LIVE conversion', () => {
       expect(audits).toHaveLength(1);
       expect(submission.workerId).toBe(workers[0].id);
     } finally {
+      const linkedSubmission = await admin.candidateSubmission.findUnique({
+        where: { id: submissionId },
+        select: { workerId: true },
+      }).catch(() => null);
       await admin.auditLog.deleteMany({ where: { entityId: submissionId } });
       await admin.applicationStatusHistory.deleteMany({ where: { submissionId } });
       await admin.sourceClaim.deleteMany({ where: { submissionId } });
       await admin.candidateSubmission.deleteMany({ where: { id: submissionId } });
-      await admin.worker.deleteMany({ where: { userId: `APP-${submissionId}` } });
+      if (linkedSubmission?.workerId) {
+        await admin.worker.deleteMany({ where: { id: linkedSubmission.workerId } });
+      }
       await admin.user.deleteMany({ where: { id: actorId } });
     }
   }, 30_000);

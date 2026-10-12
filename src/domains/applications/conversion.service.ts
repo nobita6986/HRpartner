@@ -25,6 +25,7 @@
  */
 import { Gender, Prisma } from '@prisma/client';
 import type { AuthContext } from '@/src/shared/auth/auth-context';
+import { nextBusinessCode } from '@/src/shared/business-code/business-code';
 import { normalizePhone } from './apply-helpers';
 
 const CONVERT_ROLES = new Set(['ADMIN', 'HR_MANAGER']);
@@ -587,9 +588,13 @@ async function createWorkerFromApplication(
   const gender = current.gender && VALID_GENDERS.has(current.gender as Gender)
     ? current.gender as Gender
     : null;
+  // T1D DEC-T0-02: Worker.userId do server sinh tự động (USR-EMP-001, ...).
+  // T1D DEC-T0-03: NO MIGRATION — row Worker cũ giữ `APP-${id}`, regex
+  // `^USR-EMP-\d+$` bỏ qua khi tìm MAX.
+  const userId = await nextBusinessCode(tx, 'WORKER_USER_ID');
   return tx.worker.create({
     data: {
-      userId: `APP-${current.id}`,
+      userId,
       fullName: current.fullName,
       phone: current.normalizedPhone ?? normalizePhone(current.phone),
       cccdNumber: current.cccdNumber,

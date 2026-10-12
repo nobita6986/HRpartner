@@ -23,6 +23,10 @@ const mocks = vi.hoisted(() => ({
   clientCompanyFindUnique: vi.fn(),
   authorizedRO: vi.fn(),
   dbContext: vi.fn(),
+  // T1D DEC-T0-01: server-side generator authority. Mock raw SQL helpers used
+  // by `nextBusinessCode` to allow tests to exercise the create path without DB.
+  execRaw: vi.fn(),
+  queryRaw: vi.fn(),
 }));
 
 vi.mock('@/src/shared/auth/auth-context', () => ({
@@ -53,6 +57,9 @@ const tx = () => ({
   clientCompany: {
     findUnique: mocks.clientCompanyFindUnique,
   },
+  // T1D DEC-T0-01: generator uses raw SQL helpers on the transaction.
+  $executeRawUnsafe: mocks.execRaw,
+  $queryRawUnsafe: mocks.queryRaw,
 });
 
 const getReq = () => new NextRequest('http://localhost/api/projects');
@@ -77,6 +84,9 @@ describe('projects master — role matrix (RQ-03 / AC-03)', () => {
     mocks.count.mockResolvedValue(0);
     mocks.create.mockResolvedValue({ id: 'p1' });
     mocks.update.mockResolvedValue({ id: 'p1' });
+    // T1D DEC-T0-01: generator returns "PRJ-{year}-001" when table is empty.
+    mocks.execRaw.mockResolvedValue(0);
+    mocks.queryRaw.mockResolvedValue([{ max_num: null }]);
     // [Y10.4-projection] Default: ClientCompany exists with a canonical name.
     // Routes derive clientCompanyName from this lookup; tests verify the field.
     mocks.clientCompanyFindUnique.mockResolvedValue({ name: 'Công ty ABC' });
@@ -153,10 +163,14 @@ describe('projects master — role matrix (RQ-03 / AC-03)', () => {
 
   it.each(['ADMIN', 'PM', 'HR_MANAGER'])('POST: %s → 201 tạo qua boundary', async (role) => {
     mocks.getAuthContext.mockResolvedValue({ userId: 'u', role });
-    const res = await POST(postReq({ code: 'P01', name: 'DA 1', clientCompanyId: 'c1', startDate: '2026-01-01' }));
+    // T1D DEC-T0-04: client KHÔNG gửi `code` trong body; server tự sinh.
+    const res = await POST(postReq({ name: 'DA 1', clientCompanyId: 'c1', startDate: '2026-01-01' }));
     expect(res.status).toBe(201);
     expect(mocks.dbContext).toHaveBeenCalledTimes(1);
     expect(mocks.create).toHaveBeenCalledTimes(1);
+    // T1D DEC-T0-01: generator gọi 1 executeRaw (lock) + 1 queryRaw (MAX).
+    expect(mocks.execRaw).toHaveBeenCalled();
+    expect(mocks.queryRaw).toHaveBeenCalled();
   });
 
   it.each(['SALE', 'ACCOUNTANT', 'HR_STAFF', 'MKT'])('POST: %s → 403, KHÔNG tạo', async (role) => {
@@ -164,6 +178,15 @@ describe('projects master — role matrix (RQ-03 / AC-03)', () => {
     const res = await POST(postReq({ code: 'P01', name: 'DA 1', clientCompanyId: 'c1', startDate: '2026-01-01' }));
     expect(res.status).toBe(403);
     expect(mocks.create).not.toHaveBeenCalled();
+  });
+
+  it('POST: body chứa `code` → 400 SERVER_GENERATED_CODE (T1D DEC-T0-04)', async () => {
+    mocks.getAuthContext.mockResolvedValue({ userId: 'u', role: 'ADMIN' });
+    const res = await POST(postReq({ code: 'CC-HACK', name: 'DA 1', clientCompanyId: 'c1', startDate: '2026-01-01' }));
+    expect(res.status).toBe(400);
+    expect(mocks.create).not.toHaveBeenCalled();
+    const body = await res.json();
+    expect(body.error).toBe('SERVER_GENERATED_CODE');
   });
 
   it('PUT: PM → 200 sửa qua boundary', async () => {
@@ -193,8 +216,9 @@ describe('projects master — role matrix (RQ-03 / AC-03)', () => {
   it('POST: clientCompanyName derived from ClientCompany lookup (no raw client op)', async () => {
     mocks.getAuthContext.mockResolvedValue({ userId: 'u', role: 'ADMIN' });
     mocks.clientCompanyFindUnique.mockResolvedValue({ name: 'Khách hàng XYZ' });
+    // T1D DEC-T0-04: bỏ `code` trong body; server sinh PRJ-{year}-001.
     const res = await POST(
-      postReq({ code: 'P-NEW', name: 'DA mới', clientCompanyId: 'cc-99', startDate: '2026-12-01' }),
+      postReq({ name: 'DA mới', clientCompanyId: 'cc-99', startDate: '2026-12-01' }),
     );
     expect(res.status).toBe(201);
     expect(mocks.clientCompanyFindUnique).toHaveBeenCalledTimes(1);
@@ -202,10 +226,11 @@ describe('projects master — role matrix (RQ-03 / AC-03)', () => {
       where: { id: 'cc-99' },
       select: { name: true },
     });
-    // clientCompanyName phải lấy từ lookup, không phải từ body
+    // clientCompanyName phải lấy từ lookup, không phải từ body; code do server sinh.
     expect(mocks.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
+          code: 'PRJ-2026-001',
           clientCompanyName: 'Khách hàng XYZ',
           clientCompanyId: 'cc-99',
         }),
@@ -218,13 +243,17 @@ describe('projects master — role matrix (RQ-03 / AC-03)', () => {
   it('POST: lookup returns null → clientCompanyName = null', async () => {
     mocks.getAuthContext.mockResolvedValue({ userId: 'u', role: 'ADMIN' });
     mocks.clientCompanyFindUnique.mockResolvedValue(null);
+    // T1D DEC-T0-04: bỏ `code`; server sinh.
     const res = await POST(
-      postReq({ code: 'P-NEW', name: 'DA mới', clientCompanyId: 'cc-missing', startDate: '2026-12-01' }),
+      postReq({ name: 'DA mới', clientCompanyId: 'cc-missing', startDate: '2026-12-01' }),
     );
     expect(res.status).toBe(201);
     expect(mocks.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ clientCompanyName: null }),
+        data: expect.objectContaining({
+          code: 'PRJ-2026-001',
+          clientCompanyName: null,
+        }),
       }),
     );
   });

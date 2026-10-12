@@ -8,6 +8,7 @@ import { AuthSessionError, getAuthContext } from '@/src/shared/auth/auth-context
 import { withAuthorizedDbReadOnly } from '@/src/shared/auth/with-authorized-db';
 import { withDbContext } from '@/src/shared/auth/with-db-context';
 import { AuthScopeError } from '@/src/shared/auth/with-auth-scope';
+import { nextBusinessCode } from '@/src/shared/business-code/business-code';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -105,18 +106,28 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'BAD_REQUEST', message: 'Invalid JSON body' }, { status: 400 });
   }
 
-  const { code, name, taxCode, industry, companySize, status } = body;
-
-  if (!code || !name) {
+  // T1D DEC-T0-04: server-side generator authority duy nhất. Client KHÔNG
+  // được gửi `code` trong body; nếu gửi → 400 SERVER_GENERATED_CODE.
+  if (body && typeof body === 'object' && 'code' in body && body.code !== undefined) {
     return NextResponse.json(
-      { error: 'VALIDATION', message: 'code va name la bat buoc.' },
+      { error: 'SERVER_GENERATED_CODE', message: 'Ma khach hang do server sinh tu dong; khong gui `code` trong body.' },
+      { status: 400 },
+    );
+  }
+
+  const { name, taxCode, industry, companySize, status } = body;
+
+  if (!name) {
+    return NextResponse.json(
+      { error: 'VALIDATION', message: 'name la bat buoc.' },
       { status: 400 },
     );
   }
 
   try {
-    const client = await withDbContext(prisma, ctx, (tx) =>
-      tx.clientCompany.create({
+    const client = await withDbContext(prisma, ctx, async (tx) => {
+      const code = await nextBusinessCode(tx, 'CLIENT');
+      return tx.clientCompany.create({
         data: {
           code,
           name,
@@ -125,8 +136,8 @@ export async function POST(req: NextRequest) {
           companySize: companySize ?? null,
           status: status ?? 'PROSPECT',
         },
-      }),
-    );
+      });
+    });
     return NextResponse.json({ client }, { status: 201 });
   } catch (err: any) {
     if (err.code === 'P2002') {

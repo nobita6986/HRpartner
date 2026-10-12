@@ -24,6 +24,7 @@ import type { AuthContext } from '@/src/shared/auth/auth-context';
 import { SCOPE_REGISTRY } from '@/src/shared/auth/scopes';
 import { buildStaffingOrderScope, buildStaffingOrderSlotScope } from '@/src/shared/auth/scopes/staffing.scope';
 import { enqueueOutbox } from '@/src/shared/integrity/outbox';
+import { nextBusinessCode, nextBusinessCodeBatch } from '@/src/shared/business-code/business-code';
 import type {
   CreateStaffingOrderInput,
   CreateSlotInput,
@@ -135,6 +136,16 @@ export async function createStaffingOrder(
 ): Promise<Prisma.StaffingOrderGetPayload<{ include: { slots: true } }>> {
   const code = await generateOrderCode(tx);
 
+  // T1D DEC-T0-05: cấp N mã POS- trong CÙNG transaction qua batch; KHÔNG
+  // query MAX riêng rẽ trước nested-create. nextBusinessCodeBatch acquire
+  // advisory lock 'business_code:slot_position_code' serialize tất cả
+  // request tạo slot cùng kind.
+  const positionCodes = await nextBusinessCodeBatch(
+    tx,
+    'STAFFING_ORDER_SLOT_POSITION',
+    input.slots.length,
+  );
+
   const order = await tx.staffingOrder.create({
     data: {
       code,
@@ -144,8 +155,8 @@ export async function createStaffingOrder(
       deadlineDate: input.deadlineDate ? new Date(input.deadlineDate) : null,
       status: 'OPEN',
       slots: {
-        create: input.slots.map((slot) => ({
-          positionCode: slot.positionCode,
+        create: input.slots.map((slot, idx) => ({
+          positionCode: positionCodes[idx],
           positionTitle: slot.positionTitle,
           slotsNeeded: slot.slotsNeeded,
           slotsFilled: 0,
@@ -570,9 +581,16 @@ export async function updateStaffingOrder(
           data: pickSlotWriteData(incoming),
         });
       } else {
+        // T1D DEC-T0-05: slot mới phải do server sinh positionCode.
+        // nextBusinessCode acquire cùng advisory lock 'business_code:slot_position_code'
+        // với nextBusinessCodeBatch trong createStaffingOrder, nên sequence vẫn
+        // monotonic xuyên suốt order mới + order edit.
+        const newCode = await nextBusinessCode(tx, 'STAFFING_ORDER_SLOT_POSITION');
+        const writeData = pickSlotWriteData(incoming);
         await tx.staffingOrderSlot.create({
           data: {
-            ...pickSlotWriteData(incoming),
+            ...writeData,
+            positionCode: newCode,
             staffingOrderId: orderId,
             slotsFilled: 0,
           },

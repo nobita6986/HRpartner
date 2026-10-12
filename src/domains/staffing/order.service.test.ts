@@ -147,18 +147,22 @@ describe('order.service', () => {
     });
 
     it('gọi 2 lần → 2 mã khác nhau', async () => {
-      let counter = 0;
+      // T1D DEC-T0-05: mỗi lần createStaffingOrder giờ gọi 2 queryRaw: một
+      // cho generateOrderCode (SO-...) và một cho nextBusinessCodeBatch
+      // (POS-...). counter tăng mỗi queryRaw call. Sequence SO của
+      // staffingOrder chỉ phụ thuộc call đầu của mỗi order → dùng soCount.
+      let soCount = 0;
       const tx = makeMockTx({
         $queryRawUnsafe: vi.fn().mockImplementation(() =>
-          Promise.resolve([{ max_num: BigInt(counter++) }])
+          Promise.resolve([{ max_num: BigInt(soCount++) }])
         ),
         $executeRawUnsafe: vi.fn().mockResolvedValue([]),  // STEP-03 advisory lock
         staffingOrder: {
           ...makeMockTx().staffingOrder,
           create: vi.fn().mockImplementation(() =>
             Promise.resolve({
-              id: `o-${counter}`,
-              code: `SO-${String(counter).padStart(5, '0')}`,
+              id: `o-${soCount}`,
+              code: `SO-${String(soCount).padStart(5, '0')}`,
               status: 'OPEN',
               slots: [],
             })
@@ -174,8 +178,11 @@ describe('order.service', () => {
       });
 
       const calls = tx.staffingOrder.create.mock.calls;
+      // Lần 1: soCount 0 → SO-00001; lần 2: soCount 2 (đã bị tăng bởi batch POS
+      // generator) → SO-00003. Spec chỉ yêu cầu 2 mã khác nhau; verify strictly
+      // different + là tiền tố SO- với padding 5.
       expect(calls[0][0]?.data?.code).toBe('SO-00001');
-      expect(calls[1][0]?.data?.code).toBe('SO-00002');
+      expect(calls[1][0]?.data?.code).toBe('SO-00003');
     });
   });
 
