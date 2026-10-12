@@ -92,6 +92,18 @@ describe('hrp-t1a-introduce-hrp-and-menu-cleanup — correction 1/1 / role-aware
     expect(CLIENT_SOURCE).toMatch(/if\s*\(!capability\.canPublish\)/);
   });
 
+  it('keeps the publish button above the row-link navigation overlay', () => {
+    const handlerIndex = CLIENT_SOURCE.indexOf('onClick={() => handlePublish(p)}');
+    const buttonStart = CLIENT_SOURCE.lastIndexOf('<button', handlerIndex);
+    const buttonEnd = CLIENT_SOURCE.indexOf('</button>', handlerIndex);
+    const publishButton = CLIENT_SOURCE.slice(buttonStart, buttonEnd);
+
+    expect(handlerIndex).toBeGreaterThan(-1);
+    expect(buttonStart).toBeGreaterThan(-1);
+    expect(buttonEnd).toBeGreaterThan(buttonStart);
+    expect(publishButton).toMatch(/className="[^"]*\brelative\b[^"]*\bz-10\b[^"]*"/);
+  });
+
   // RQ-06 — SALE (và role khác ngoài VIEWER_ROLES) phải thấy câu giải thích
   // "incompatibility có sẵn" thay vì bảng rỗng hoặc lỗi chung chung.
   it('client renders an incompatibility panel when role is outside VIEWER_ROLES', () => {

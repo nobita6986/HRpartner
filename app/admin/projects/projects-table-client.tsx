@@ -585,7 +585,7 @@ export default function ProjectsTableClient({ capability, role }: ProjectsTableC
                         onClick={() => handlePublish(p)}
                         disabled={blockPublish}
                         title={blockPublish ? 'Dự án chưa có đơn tuyển dụng đang mở còn slot trống.' : undefined}
-                        className="px-3 py-1 text-sm font-medium rounded border disabled:cursor-not-allowed disabled:opacity-50"
+                        className="relative z-10 px-3 py-1 text-sm font-medium rounded border disabled:cursor-not-allowed disabled:opacity-50"
                         style={{ borderColor: 'var(--outline)', color: 'var(--primary)' }}
                       >
                         {p.isPublic ? 'Bỏ công bố dự án' : 'Công bố dự án'}
