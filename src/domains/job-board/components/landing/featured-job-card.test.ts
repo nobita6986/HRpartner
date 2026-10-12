@@ -561,25 +561,37 @@ describe('AC-22: Posted time chi render khi postedAt truthy — KHONG invent "x 
   });
 });
 
-describe('AC-23: CTA Ung tuyen dung bg-primary brand (04c2 Owner #2, RQ-02)', () => {
-  it('CTA Ung tuyen dung bg-primary text-white (brand color)', () => {
-    // Search from data-testid backwards to include full button including className
+describe('AC-23: CTA Ung tuyen dung class dung chung .hrp-btn-apply (t2-apply-cta-tone)', () => {
+  it('CTA Ung tuyen dung class .hrp-btn-apply (share voi JobCard + DetailApplyCta)', () => {
+    // (t2-apply-cta-tone) share class .hrp-btn-apply de 3 noi cung background,
+    // color, hover, focus, disabled — single source of truth trong globals.css.
     const btnStart = CARD.indexOf('data-testid="featured-job-cta"');
     const btnBlock = CARD.slice(Math.max(0, btnStart - 600), btnStart + 100);
-    expect(btnBlock).toContain('bg-primary');
-    expect(btnBlock).toContain('text-white');
+    expect(btnBlock).toContain('hrp-btn-apply');
   });
 
-  it('CTA Ung tuyen hover dung bg-primary-dark', () => {
-    const btnStart = CARD.indexOf('data-testid="featured-job-cta"');
-    const btnBlock = CARD.slice(Math.max(0, btnStart - 600), btnStart + 100);
-    expect(btnBlock).toContain('hover:bg-primary-dark');
-  });
-
-  it('token bg-primary resolve duoc trong project', () => {
-    // Check globals.css hoac tailwind config co primary token
+  it('.hrp-btn-apply resolve token --color-primary-cta (softer warm orange) trong globals.css', () => {
+    // Class .hrp-btn-apply phai background-color: var(--color-primary-cta)
+    // de khong phu thuoc tailwind utility. Verify bang cach doc globals.css.
     const globals = readFileSync(join(process.cwd(), 'app/globals.css'), 'utf8').replace(/\r\n/g, '\n');
-    expect(globals).toContain('--color-primary');
+    expect(globals).toContain('--color-primary-cta: #f07f1a');
+    expect(globals).toContain('--color-primary-cta-dark: #c2520a');
+    expect(globals).toMatch(/\.hrp-btn-apply\s*\{[^}]*--color-primary-cta/);
+    expect(globals).toMatch(/\.hrp-btn-apply:hover:not\(:disabled\)\s*\{[^}]*--color-primary-cta-dark/);
+  });
+
+  it('.hrp-btn-apply color la --color-on-primary (text trang tren CTA)', () => {
+    // Mau chu trang duoc dinh nghia trong CSS class (k dung text-white de
+    // khong phu thuoc tailwind). Verify bang cach doc globals.css.
+    const globals = readFileSync(join(process.cwd(), 'app/globals.css'), 'utf8').replace(/\r\n/g, '\n');
+    expect(globals).toMatch(/\.hrp-btn-apply\s*\{[^}]*color:\s*var\(--color-on-primary\)/);
+  });
+
+  it('token --color-primary-cta van resolve duoc', () => {
+    // Sanity: token moi da duoc khai trong @theme.
+    const globals = readFileSync(join(process.cwd(), 'app/globals.css'), 'utf8').replace(/\r\n/g, '\n');
+    expect(globals).toContain('--color-primary: #f26522');
+    expect(globals).toContain('--color-primary-cta');
   });
 });
 
