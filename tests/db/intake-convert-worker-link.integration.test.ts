@@ -321,8 +321,13 @@ describe.skipIf(!HAS_TEST_DB)('hrp-t1c-intake-worker-link — DB-touching proof'
       // Vẫn chỉ một Worker / một SourceClaim / một history / một audit.
       const claimCount = await admin.sourceClaim.count({ where: { submissionId, accepted: true } });
       expect(claimCount).toBe(1);
-      const workerCount = await admin.worker.count({ where: { userId: `APP-${submissionId}` } });
+      const workerCount = await admin.worker.count({ where: { id: workerId } });
       expect(workerCount).toBe(1);
+      const worker = await admin.worker.findUniqueOrThrow({
+        where: { id: workerId },
+        select: { userId: true },
+      });
+      expect(worker.userId).toMatch(/^USR-EMP-\d+$/);
     } finally {
       await writer.$disconnect().catch(() => {});
     }
