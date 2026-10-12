@@ -11,110 +11,95 @@
 | Build vs automate | `N/A` |
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
-| Audit reason | Theme foundation định nghĩa token contract cho 5 palette; admin scope isolation; contrast invariants; registry tên/nhãn. CRITICAL + LIGHT là default theo lane matrix. |
-| Spec version | `v1.0` |
+| Audit reason | Theme foundation defines token contract for 5 palettes; admin scope isolation; contrast invariants; registry of names/labels. CRITICAL + LIGHT is default per lane matrix. |
+| Spec version | `v1.1` |
 | Status | `READY_FOR_EXECUTION` |
 | Planner | `Tier 1` |
-| Baseline | `44333245a5decc374aa9ac6ae97d3cb1e475adfa` |
+| Baseline | `aa86902fcf3c49274a3ccc0cf7decf84aaec4e19` |
 | Contract gate | `READY_TO_CODE` |
 | Decision state | `CLOSED` |
 | Test environment | `READY` |
 | Correction budget | `1` |
-| In-scope roots | `src/shared/theme/`, `app/globals.css`, `app/(portal)/layout.tsx`, `app/(jobs)/viec-lam/layout.tsx`, `app/components/GlobalNavbar.tsx` (chỉ 2 dòng nền nút Đăng ký) |
-| Forbidden paths | `app/admin/layout.tsx`, `app/admin/admin-shell.tsx`, `app/layout.tsx` (không gắn data-theme ở thẻ html gốc), `src/shared/theme/theme-storage.ts` + `src/shared/theme/theme-picker.tsx` (T1B sở hữu), `prisma/schema.prisma`, `vercel.json`, `middleware.ts`, `Dockerfile`, `src/shared/ui/design-tokens.static.test.ts` (chỉ sửa nếu gắn data-theme ở thẻ html gốc — KHÔNG trong DEC-04) |
-| Required gates | (chạy theo thứ tự) `npm run typecheck`; `npm run lint`; `npm run test:unit`; `npm run test:integration`; `npm run build`; `node .ai-pipeline/scripts/verify-encoding.mjs`; `pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-t1c-theme-foundation/TASK.md` |
+| In-scope roots | `src/shared/theme/`, `app/globals.css` |
+| Forbidden paths | `app/(portal)/layout.tsx` (T1B mounts scope + picker), `app/(jobs)/viec-lam/layout.tsx` (T1B mounts scope + picker), `app/admin/layout.tsx`, `app/admin/admin-shell.tsx`, `app/layout.tsx`, `src/shared/theme/theme-storage.ts` (T1B), `src/shared/theme/theme-picker.tsx` (T1B), `app/components/GlobalNavbar.tsx` (T1B owns fully), `prisma/schema.prisma`, `vercel.json`, `middleware.ts`, `Dockerfile`, `src/shared/ui/design-tokens.static.test.ts`, `src/domains/job-board/public-ui-premium.static.test.ts` |
+| Required gates | `npm run typecheck`; `npm run lint`; `npm run test:unit`; `npm run test:integration`; `npm run build`; `node .ai-pipeline/scripts/verify-encoding.mjs`; `pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-t1c-theme-foundation/TASK.md` |
 | Current execution round | `0` |
 | Current audit round | `0` |
-| Next gate | `LIGHT: /deliver → /audit → /resolve` |
-
-> Lane và audit là hai quyết định riêng. FAST mặc định NONE; STANDARD mặc định NONE; CRITICAL mặc định LIGHT. CRITICAL + LIGHT đã chọn; lý do ghi ở `Audit reason`.
-
-> Chỉ chuyển `READY_FOR_EXECUTION` khi `Contract gate = READY_TO_CODE`, `Decision state = CLOSED`, environment đã `READY`, baseline và file ownership đã pin. V2 chỉ có một consolidated correction batch sau audit.
+| Next gate | `LIGHT: /deliver /audit /resolve` |
 
 ## 1. Outcome
 
 ### 1.1 User-visible outcome
 
-- Portal public (`app/(portal)/*` + `app/(jobs)/*`) có **2 public shell** mà brand color tokens có thể swap runtime qua `data-theme`.
-- 5 palette đã duyệt (`hrp`, `ocean-trust`, `emerald-growth`, `violet-future`, `executive-gold`) với hex v1 (xem §3).
-- Mặc định `hrp`; key lạ / cũ fallback `hrp`; KHÔNG crash UI.
-- Admin layout (`app/admin/*`) **không** thấy theme — luôn dùng HRP (alias `:root` mặc định vì admin không gắn `data-theme`).
-- Persistence: `localStorage` + `useEffect` (T1B sở hữu mount picker; T1C chỉ đọc storage ở shell layout).
-- Không inline script. CSP an toàn cả Vercel và VPS.
+- T1C defines token contract (`ThemeDefinition` + `THEMES` + `getTheme` + `isThemeKey`) for 5 palettes (`hrp`, `ocean-trust`, `emerald-growth`, `violet-future`, `executive-gold`) with hex v1 (see 3.3).
+- T1C adds 5 `[data-theme="..."]` blocks to `app/globals.css` AFTER `:root` alias (line 189-211), BEFORE `.material-symbols-outlined` (line 217). Each block overrides 5 brand tokens: `--color-primary`, `--color-primary-dark`, `--color-primary-soft`, `--color-primary-container`, `--color-on-primary-container`.
+- T1C does NOT attach `data-theme` to any layout (T1B owns mount scope + picker).
+- T1C does NOT edit `GlobalNavbar.tsx` (T1B owns fully; T1C only provides token).
 
 ### 1.2 Non-goals
 
-- KHÔNG thêm API, DB, migration, dependency mới.
-- KHÔNG đổi status / badge / stamp colors (DEC-05).
-- KHÔNG mở dark mode (gate `src/domains/job-board/public-ui-premium.static.test.ts:681-683` khóa `prefers-color-scheme` = 0 và `.dark` = 0).
-- KHÔNG sync preference giữa tài khoản / thiết bị.
-- KHÔNG mount picker UI (T1B sở hữu).
-- KHÔNG sửa `design-tokens.static.test.ts` (chỉ sửa nếu gắn ở thẻ html gốc — không trong DEC-04).
-- KHÔNG theme-hóa admin (DEC-04).
-- KHÔNG override `--color-surface`, `--color-on-surface`, `--color-background` (chỉ override 5 brand token theo §3.1).
+- No API, DB, migration, new dependency.
+- No `data-theme` on any layout (T1B scope).
+- No edits to `GlobalNavbar.tsx` (T1B scope).
+- No dark mode (gate `src/domains/job-board/public-ui-premium.static.test.ts:681-683` locks `prefers-color-scheme`=0 and `.dark`=0).
+- No override of `--color-primary-cta` / `--color-primary-cta-dark` (CTA token is separate from brand).
+- No edits to `.hrp-btn-apply` (uses `--color-primary-cta`, separate from brand).
+- No override of `--color-surface`, `--color-on-surface`, `--color-background`.
+- No new inline scripts.
+- No new `@media (prefers-color-scheme: dark)`.
+- No edits to `src/shared/ui/design-tokens.static.test.ts` or `src/domains/job-board/public-ui-premium.static.test.ts`.
 
 ## 2. Evidence
 
 | ID | Evidence | Why it matters |
 |---|---|---|
-| `EV-01` | `app/globals.css:7-178` — token block (`@theme` directive), 97 token, gồm brand (`--color-primary`, `--color-primary-dark`, `--color-primary-soft`, `--color-primary-container`, `--color-on-primary-container`), surface, focus-ring (`--color-focus-ring: var(--color-primary-dark)`) | Token contract hiện hành; runtime override qua CSS variable, không thêm palette động vào `@theme` |
-| `EV-02` | `app/globals.css:180-202` — 22 alias `:root` đúng `var(--color-...)` không chứa hex (line 181 `--primary: var(--color-primary);`, 182 `--primary-dark: var(--color-primary-dark);`, ...) | Mọi giá trị brand chỉ thay đổi nếu alias + token gốc cùng đổi — runtime override ở `[data-theme]` sẽ lan xuống alias cùng scope |
-| `EV-03` | `app/globals.css:154` — `--color-focus-ring: var(--color-primary-dark)`; `app/globals.css:646-648` — `:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px }` | Focus ring dùng `var(--color-primary)`; khi T1C override `primary` ở scope public, focus ring sẽ đổi theo |
-| `EV-04` | `app/globals.css:511-516` — `.pub-btn-primary { color: var(--color-on-primary); background: var(--color-primary); ... }`; `app/globals.css:619-625` — `.apply-btn` tương tự; `app/globals.css:578` — `.fcheck.on` | C2 decoration: P nền + text trắng — KHÔNG cần đổi vì 3:1 AA-large/UI đủ |
-| `EV-05` | `app/components/GlobalNavbar.tsx:297` (desktop) + `:424` (mobile) — nút "Đăng ký" dùng `var(--color-primary)` nền + `var(--color-on-primary)` text | T0 Cách A: T1C refactor 2 dòng này sang `var(--color-primary-dark)` (PD) cho C1 pass 4.5:1 |
-| `EV-06` | `app/(portal)/layout.tsx:11-17`, `app/(jobs)/viec-lam/layout.tsx:18-25` — 2 shell giống hệt: `GlobalNavbar` + `GlobalFooter` + `FloatingChatActions` | Hai shell nơi T1C gắn `data-theme` ở root `div` |
-| `EV-07` | `app/admin/layout.tsx:23-31` (`dynamic = 'force-dynamic'`) + `app/admin/admin-shell.tsx:44-56` | Admin KHÔNG render `GlobalNavbar`. Cùng document root → scope theme phải giới hạn ở public shell |
-| `EV-08` | `app/(portal)/ve-chung-toi/page.tsx:145` — nút "Xem việc làm" dùng `var(--color-primary)` nền + `var(--color-on-primary)` text 14px semibold | C2 decoration: giữ nguyên P, không đổi (xem DECISION_REQUEST §C2) |
-| `EV-09` | `app/login/login-form.tsx:137` — nút "Đăng nhập" dùng `var(--color-primary)` nền + white text 14px semibold | C2 decoration: giữ nguyên P |
-| `EV-10` | `src/shared/ui/design-tokens.static.test.ts:106-127` — khóa đúng MỘT khối `:root`, đúng 22 khai báo, mỗi khai báo `^--[a-z0-9-]+:\s*var\(--color-[a-z0-9-]+\);$` (cấm `#`) | Khi T1C thêm block `[data-theme="..."]` SAU `:root`, invariant `:root` không đổi (chỉ thêm block mới) |
-| `EV-11` | `src/domains/job-board/public-ui-token-parity.static.test.ts:60-130+` — tập token được suy từ `@theme`, không phải danh sách chép tay | Thêm token mới mà không khai trong `@theme` → FAIL. T1C chỉ override brand tokens đã có, không thêm token mới |
-| `EV-12` | `src/domains/job-board/public-ui-premium.static.test.ts:681-683` — khóa `prefers-color-scheme` = 0 và `.dark` = 0 trong `app/globals.css` | T1C KHÔNG mở dark mode |
-| `EV-13` | `app/layout.tsx:23-42` — thẻ html có `lang="vi"` + thẻ head chỉ có thẻ link font; KHÔNG có thẻ script | DEC-06: T1C KHÔNG thêm inline script |
-| `EV-14` | `middleware.ts:135-148` matcher + `122-220` logic — match `/`, `/vendor/*`, `/worker/*`, `/ctv/*`, `/api/*`; KHÔNG match `/admin/*` hay public shell | Middleware không can thiệp theme |
-| `EV-15` | `vercel.json` (23 dòng) + `Dockerfile` (66 dòng) — KHÔNG có `headers` CSP | DEC-06: localStorage + useEffect an toàn |
-| `EV-16` | `src/shared/ui/view-toggle/view-toggle.tsx:55-72` (URL > localStorage > default) + `src/domains/job-board/public-content-controls/sticky-announcement.tsx:99-123` (useEffect + try/catch) | Pattern tiền đề cho persistence |
-| `EV-17` | `docs/tasks/hrp-t1c-theme-foundation/DECISION_REQUEST.md` §Tất cả 7 quyết định — T0 đã chốt DEC-01..07 | Decision state = CLOSED |
-| `EV-18` | `docs/tasks/hrp-t1c-theme-foundation/contrast-probe.mjs` — probe chạy 5/5 palette pass 6/6 cặp | Verify DEC-07 ngay tại worktree |
+| `EV-01` | `app/globals.css:7-25` — `@theme` directive with brand tokens plus CTA tokens (PR #132). PR #132 added `--color-primary-cta: #f07f1a` and `--color-primary-cta-dark: #c2520a` (line 21-22), separated from brand. | CTA uses separate token; T1C does NOT override. |
+| `EV-02` | `app/globals.css:163` — `--color-focus-ring: var(--color-primary-dark)` | T1C override of `primary-dark` cascades to focus ring. |
+| `EV-03` | `app/globals.css:189-211` — 22 `:root` aliases correctly using `var(--color-...)` with no hex (line 190 `--primary: var(--color-primary);`, etc.). | Runtime `[data-theme]` override cascades to aliases. |
+| `EV-04` | `app/globals.css:442-462` — `.hrp-btn-apply` uses `--color-primary-cta` and `--color-primary-cta-dark`, SEPARATE from brand. Comment line 436: "KHONG co transform va KHONG nam trong allowlist transform cua RQ-23". | T1C does NOT edit `.hrp-btn-apply`. |
+| `EV-05` | `app/globals.css:552-558` — `.pub-btn-primary` uses `--color-primary` + `--color-on-primary`. | C2 decoration: T1C keeps as-is. |
+| `EV-06` | `app/globals.css:660-668` — `.apply-btn` uses `--color-primary` + `--color-on-primary`. | C2 decoration: T1C keeps as-is. |
+| `EV-07` | `app/globals.css:619` — `.fcheck.on` uses `--color-primary`. | C2 decoration: T1C keeps as-is. |
+| `EV-08` | `app/(portal)/layout.tsx:11-22` — public shell uses `GlobalNavbar` + `GlobalFooter` + `FloatingChatActions`. T1C does NOT edit this file (T1B mounts scope + picker). | Layout shell is T1B scope. |
+| `EV-09` | `app/(jobs)/viec-lam/layout.tsx:17-26` — same as EV-08. T1C does NOT edit this file (T1B mounts scope + picker). | T1B mounts scope. |
+| `EV-10` | `app/components/GlobalNavbar.tsx:67,158,186,241,297,360,383,424` — "Dang ky" button line 297, 424 uses `--color-primary`. T1C does NOT edit this file (T1B owns fully). | GlobalNavbar is T1B scope; T1C only provides token. |
+| `EV-11` | `app/admin/layout.tsx:27` (`dynamic = 'force-dynamic'`) + `app/admin/admin-shell.tsx:44-56`. | Admin keeps default HRP. |
+| `EV-12` | `src/shared/ui/design-tokens.static.test.ts:106-127` — locks exactly ONE `:root` block, exactly 22 declarations, pattern `^--[a-z0-9-]+:\s*var\(--color-[a-z0-9-]+\);$` (no `#`). | T1C adds `[data-theme]` blocks AFTER `:root`; invariant preserved. |
+| `EV-13` | `src/domains/job-board/public-ui-premium.static.test.ts:681-683` — locks `prefers-color-scheme`=0 and `.dark`=0. | T1C does NOT open dark mode. |
+| `EV-14` | `src/domains/job-board/public-ui-token-parity.static.test.ts:1-379` — token set derived from `@theme`, not hand-copied list. | T1C only overrides existing brand tokens. |
+| `EV-15` | `src/shared/ui/view-toggle/view-toggle.tsx:55-72` (URL > localStorage > default) + `src/domains/job-board/public-content-controls/sticky-announcement.tsx:99-123` (useEffect + try/catch). | Pattern template for persistence (T1B owns). |
+| `EV-16` | `docs/tasks/hrp-t1c-theme-foundation/DECISION_REQUEST.md` — T0 closed DEC-01..07. | Decision state = CLOSED. |
+| `EV-17` | `docs/tasks/hrp-t1c-theme-foundation/contrast-probe.mjs` — 5/5 palettes pass 6/6 pairs. | Verify DEC-07. |
 
 ## 3. Decisions
 
 | ID | Decision | Status |
 |---|---|---|
-| `DEC-01` | 5 palette với hex v1 (bảng §3.1) | `CHOSEN` |
-| `DEC-02` | key ASCII kebab-case (`hrp`, `ocean-trust`, `emerald-growth`, `violet-future`, `executive-gold`); nhãn hiển thị EN (tên riêng); hướng dẫn / control / tooltip VI | `CHOSEN` |
-| `DEC-03` | Mặc định `hrp`; key lạ / không hợp lệ / cũ → fallback `hrp`; KHÔNG crash UI | `CHOSEN` |
-| `DEC-04` | Scope ở root `div` của `app/(portal)/layout.tsx` và `app/(jobs)/viec-lam/layout.tsx`. KHÔNG gắn trên thẻ html. Admin giữ mặc định HRP. | `CHOSEN` |
-| `DEC-05` | GIỮ màu status / badge / stamp theo giá trị mặc định ở mọi theme (không theme-hóa trong MVP) | `CHOSEN` |
-| `DEC-06` | `localStorage` + `useEffect` (pattern `sticky-announcement.tsx:99-123`); KHÔNG inline script. Chấp nhận flash 1 lần | `CHOSEN` |
-| `DEC-07` | WCAG AA: text thường ≥ 4.5:1; chữ lớn (≥ 18.66px bold hoặc ≥ 24px regular) + UI/focus ≥ 3:1. Áp dụng cho 6 cặp màu thực sự dùng (xem §3.2) | `CHOSEN` |
-
-Không có câu hỏi cần Owner quyết khi chuyển READY_FOR_EXECUTION.
+| `DEC-01` | 5 palettes with hex v1 (table 3.3) | `CHOSEN` |
+| `DEC-02` | key ASCII kebab-case; EN labels for display; VI for guidance/controls | `CHOSEN` |
+| `DEC-03` | default `hrp`; invalid/outdated key falls back to `hrp`; no UI crash | `CHOSEN` |
+| `DEC-04` | Scope on root `div` of 2 public shells. NOT on `html` tag. Admin keeps default HRP. | `CHOSEN` |
+| `DEC-05` | Keep status/badge/stamp colors at default values across all themes (not theme-hazed in MVP) | `CHOSEN` |
+| `DEC-06` | `localStorage` + `useEffect` (pattern `sticky-announcement.tsx:99-123`); NO inline script. Accept 1-time flash | `CHOSEN` |
+| `DEC-07` | WCAG AA: normal text at least 4.5:1; large text (from 18.66px bold or from 24px regular) plus UI/focus at least 3:1. Applied to 6 real color pairs | `CHOSEN` |
 
 ### 3.1 Build vs Adopt
 
-| Capability | Existing options | Decision | License | Version/source | Wrapper boundary | Reason |
-|---|---|---|---|---|---|---|
-| N/A | — | `N/A` | — | — | — | Task không tạo capability kỹ thuật phổ thông (no editor/form/table/upload/date/chart/queue/email/a11y) và không thêm dependency. Theme override dùng CSS variable cascade (đã có sẵn pattern trong `app/globals.css:180-202`); không có library candidate phù hợp. |
-
-- `ADOPT`: phải pin license, version/source, compatibility và wrapper/test boundary. → N/A.
-- `CUSTOM`: phải có marker `CUSTOM_BUILD_JUSTIFICATION` và evidence cụ thể. → N/A.
-- `N/A`: ghi lý do task không tạo capability phổ thông và không đổi dependency/shared framework. ✓
+| Capability | Existing options | Decision | Reason |
+|---|---|---|---|
+| N/A | none | `N/A` | No new capability created; no new dependency added; CSS variable cascade already exists at `app/globals.css:189-211`. |
 
 ### 3.2 Build vs Automate
 
-| Capability | Existing platform/options | Decision | Platform/source | Authority boundary | Retry/idempotency | Observability/recovery | Reason |
-|---|---|---|---|---|---|---|---|
-| N/A | — | `N/A` | — | — | — | — | Task không tạo/thay connector, scheduler, notification worker, multi-system/operator workflow. Theme read/write chạy in-process qua `useEffect` + `localStorage`, không qua orchestration platform. |
+| Capability | Existing platform | Decision | Reason |
+|---|---|---|---|
+| N/A | none | `N/A` | No connector/scheduler/notification worker; theme read/write runs in-process via `useEffect` + `localStorage`. |
 
-- `ORCHESTRATE`: phải pin platform/source, credential/authority boundary, retry/idempotency, observability/recovery và failure fallback. → N/A.
-- `CUSTOM`: phải có marker `CUSTOM_AUTOMATION_JUSTIFICATION` và evidence cụ thể. → N/A.
-- `N/A`: ghi lý do task không tạo/thay connector, scheduler, notification worker hoặc multi-system/operator workflow. ✓
+### 3.3 Palette hex v1 table (T0 approved)
 
-### 3.3 Bảng palette + hex v1 (T0 duyệt)
+5 entries `ThemeDefinition { key, label, description, tokens: { primary, primaryDark, primaryContainer, primarySoft, surface, onPrimary, onPrimarySoft, onPrimaryContainer } }`.
 
-5 entry với shape `ThemeDefinition { key, label, description, tokens: { primary, primaryDark, primaryContainer, primarySoft, surface, onPrimary, onPrimarySoft, onPrimaryContainer } }`.
-
-| key | label (EN) | primary (P) | primaryDark (PD) | primaryContainer (PC) | primarySoft (PS) | surface (S) | onPrimary (oP) | onPrimarySoft (oPS) | onPrimaryContainer (oPC) |
+| key | label | primary | primaryDark | primaryContainer | primarySoft | surface | onPrimary | onPrimarySoft | onPrimaryContainer |
 |---|---|---|---|---|---|---|---|---|---|
 | `hrp` | HR Partner | `#f26522` | `#a63b00` | `#fde6d8` | `#fff0e5` | `#faf9f7` | `#ffffff` | `#1f2937` | `#1f2937` |
 | `ocean-trust` | Ocean Trust | `#1e6f8f` | `#0d4a63` | `#d6ebf5` | `#e8f3f8` | `#f4f9fc` | `#ffffff` | `#0d1f2d` | `#0d1f2d` |
@@ -122,25 +107,23 @@ Không có câu hỏi cần Owner quyết khi chuyển READY_FOR_EXECUTION.
 | `violet-future` | Violet Future | `#6a3fb5` | `#3f1f7a` | `#e1d5f4` | `#ede4f8` | `#f7f3fc` | `#ffffff` | `#1c0f3a` | `#1c0f3a` |
 | `executive-gold` | Executive Gold | `#9a7a17` | `#5d4a08` | `#f0e6c0` | `#f7f0d9` | `#fbf9f0` | `#ffffff` | `#221e04` | `#221e04` |
 
-**Ghi chú quan trọng về `surface`:** T0 chốt `surface` cho MỖI palette trong bảng — nhưng T1C implement sẽ KHÔNG override `--color-surface` ở `[data-theme]` block. Lý do:
-1. `surface` hiện tại = `#ffffff` (line 17); đây là "material 3 surface" chung, không phải brand color.
-2. DEC-04 chỉ yêu cầu override brand tokens; surface là neutral.
-3. Nếu sau này cần surface khác mỗi palette, sẽ thêm vào scope riêng (T2+).
+T1C scope: only overrides 5 brand tokens above in `[data-theme]` blocks. T1C does NOT override:
+- `--color-primary-cta` / `--color-primary-cta-dark` (CTA token, separate from brand).
+- `--color-surface`, `--color-on-surface`, `--color-background` (neutral surface, kept as-is).
+- Status colors (`--color-success`, `--color-error`, `--color-warning`, etc.).
 
-`primarySoft` trong bảng v1 dùng giá trị mới (`#fff0e5` HRP) — KHÁC với `--color-primary-soft: #fdf1ec` hiện tại ở line 12. T1C implement sẽ override 5 token (`--color-primary-soft` bao gồm) sang giá trị mới khi `[data-theme="hrp"]` được gắn.
+### 3.4 Contrast pairs (probe)
 
-### 3.4 Cặp màu đo contrast (probe)
-
-| # | Cặp | Ý nghĩa | Min |
+| # | Pair | Meaning | Min |
 |---|---|---|---|
-| C1 | `onPrimary` trên `primaryDark` | Nền nút "Đăng ký" (Cách A: dùng PD) | 4.5:1 |
-| C2 | `onPrimary` trên `primary` | Accent decoration (P làm nền, không dùng làm nút) | 3:1 |
-| C3 | `onPrimarySoft` trên `primarySoft` | Badge role / avatar pill | 4.5:1 |
-| C4 | `onPrimaryContainer` trên `primaryContainer` | Stamp / active border | 4.5:1 |
-| C5 | `primaryDark` trên `surface` | Heading, link active | 4.5:1 |
-| C6 | `primaryDark` trên `surface` (viền) | Focus ring outline | 3:1 |
+| C1 | `onPrimary` on `primaryDark` | Heading, link active, focus ring background | 4.5:1 |
+| C2 | `onPrimary` on `primary` | Accent decoration (P bg + white text; NOT used as 14px semibold button) | 3:1 |
+| C3 | `onPrimarySoft` on `primarySoft` | Badge role / avatar pill | 4.5:1 |
+| C4 | `onPrimaryContainer` on `primaryContainer` | Stamp / active border | 4.5:1 |
+| C5 | `primaryDark` on `surface` | Heading, link active | 4.5:1 |
+| C6 | `primaryDark` on `surface` (border) | Focus ring outline | 3:1 |
 
-Probe `contrast-probe.mjs` đã verify 5/5 palette PASS 6/6 cặp. Re-run trước khi commit.
+Probe `contrast-probe.mjs` verified 5/5 palettes pass 6/6 pairs. Re-run before each commit.
 
 ## 4. Contract
 
@@ -148,127 +131,108 @@ Probe `contrast-probe.mjs` đã verify 5/5 palette PASS 6/6 cặp. Re-run trư�
 
 | ID | Requirement |
 |---|---|
-| `RQ-01` | `src/shared/theme/theme-types.ts` export: `ThemeKey` (union 5 key), `ThemeTokens` (8 field), `ThemeDefinition` ({ key, label, description, tokens }), `THEMES` (readonly array 5 entry), `DEFAULT_THEME_KEY` (= `'hrp'`), `getTheme(key)` (trả `ThemeDefinition` hoặc fallback default), `isThemeKey(value)` (type guard). |
-| `RQ-02` | `src/shared/theme/theme-tokens.ts` export 5 `ThemeDefinition` với đúng bảng hex ở §3.3. Mỗi entry có đủ 8 token (không undefined / null / empty). |
-| `RQ-03` | `app/globals.css` thêm 5 selector `[data-theme="hrp"]`, `[data-theme="ocean-trust"]`, `[data-theme="emerald-growth"]`, `[data-theme="violet-future"]`, `[data-theme="executive-gold"]` đặt SAU block `:root` (line 180-202) và TRƯỚC `.material-symbols-outlined` (line 207-208). Mỗi selector override đúng 5 token: `--color-primary`, `--color-primary-dark`, `--color-primary-soft`, `--color-primary-container`, `--color-on-primary-container`. Selector `[data-theme="hrp"]` idempotent với `:root` (set cùng giá trị). |
-| `RQ-04` | `app/(portal)/layout.tsx` chuyển sang Client Component (nếu chưa) bằng directive `'use client'`. Đọc `localStorage.getItem('hrp-theme')` trong `useEffect` (pattern `sticky-announcement.tsx:99-123`); gắn `data-theme={resolvedKey}` lên root `div`. `resolvedKey = isThemeKey(stored) ? stored : 'hrp'`. SSR / first-paint: `data-theme="hrp"`. |
-| `RQ-05` | `app/(jobs)/viec-lam/layout.tsx` chuyển sang Client Component tương tự RQ-04. |
-| `RQ-06` | `app/components/GlobalNavbar.tsx:297` (desktop) và `:424` (mobile) — đổi `backgroundColor: 'var(--color-primary)'` → `'var(--color-primary-dark)'` (Cách A: PD làm nền nút "Đăng ký"). Text giữ `var(--color-on-primary)` (white). |
-| `RQ-07` | KHÔNG gắn `data-theme` ở `app/layout.tsx` (line 23-42); KHÔNG gắn ở `app/admin/layout.tsx` (line 23-31) hoặc `app/admin/admin-shell.tsx` (line 44-56). |
-| `RQ-08` | KHÔNG thêm thẻ script inline ở `app/layout.tsx` hoặc 2 public shell. |
-| `RQ-09` | `localStorage.getItem` chỉ chạy trong `useEffect` + try/catch; SSR an toàn (server không đọc storage). |
-| `RQ-10` | KHÔNG override `--color-success`, `--color-error`, `--color-warning`, `--color-on-primary-soft` (KHÔNG tồn tại trong token system). DEC-05 giữ status colors. |
-| `RQ-11` | KHÔNG mở dark mode: KHÔNG thêm `@media (prefers-color-scheme: dark)`; KHÔNG thêm class `.dark`. Gate `src/domains/job-board/public-ui-premium.static.test.ts:681-683` vẫn pass. |
-| `RQ-12` | Pre-existing invariants KHÔNG bị phá: `:root` block (line 180-202) 22 alias đúng pattern `^--[a-z0-9-]+:\s*var\(--color-[a-z0-9-]+\);$`; `@theme` block (line 7-178) đủ 97 token ban đầu. |
+| `RQ-01` | `src/shared/theme/theme-types.ts` export: `ThemeKey` (union 5 keys), `ThemeTokens` (8 fields), `ThemeDefinition` ({ key, label, description, tokens }), `THEMES` (readonly array 5 entries), `DEFAULT_THEME_KEY` (= `'hrp'`), `getTheme(key)` (returns `ThemeDefinition` or falls back to default), `isThemeKey(value)` (type guard). |
+| `RQ-02` | `src/shared/theme/theme-tokens.ts` exports 5 `ThemeDefinition` with exact hex from 3.3. Each entry has all 8 tokens (no undefined / null / empty). |
+| `RQ-03` | `app/globals.css` adds 5 selectors `[data-theme="hrp"]`, `[data-theme="ocean-trust"]`, `[data-theme="emerald-growth"]`, `[data-theme="violet-future"]`, `[data-theme="executive-gold"]` placed AFTER `:root` alias block (line 189-211) and BEFORE `.material-symbols-outlined` (line 217). Each selector overrides exactly 5 tokens: `--color-primary`, `--color-primary-dark`, `--color-primary-soft`, `--color-primary-container`, `--color-on-primary-container`. Selector `[data-theme="hrp"]` is idempotent with `:root` (sets same values, for scope isolation). |
+| `RQ-04` | T1C does NOT attach `data-theme` to `app/(portal)/layout.tsx`, `app/(jobs)/viec-lam/layout.tsx`, `app/layout.tsx`, `app/admin/layout.tsx`, `app/admin/admin-shell.tsx`. T1B owns mounting scope and picker. |
+| `RQ-05` | T1C does NOT edit `app/components/GlobalNavbar.tsx`. T1B owns this file fully; T1C only provides `primaryDark` token. |
+| `RQ-06` | T1C does NOT edit `.hrp-btn-apply` or override `--color-primary-cta` / `--color-primary-cta-dark`. |
+| `RQ-07` | T1C does NOT edit `.apply-btn`, `.pub-btn-primary`, `.fcheck.on`, `login-form.tsx`, `ve-chung-toi/page.tsx`. |
+| `RQ-08` | T1C does NOT add `@media (prefers-color-scheme: dark)` or class `.dark`. Gate `src/domains/job-board/public-ui-premium.static.test.ts:681-683` stays green. |
+| `RQ-09` | T1C does NOT add inline `<script>` tags. |
+| `RQ-10` | T1C does NOT override `--color-success`, `--color-error`, `--color-warning`, `--color-warning-soft`, `--color-success-soft`. |
+| `RQ-11` | T1C does NOT add new tokens not already in `@theme` block (line 7-178). Only overrides 5 existing brand tokens. |
+| `RQ-12` | `:root` alias block (line 189-211) keeps exactly 22 declarations in pattern `^--[a-z0-9-]+:\s*var\(--color-[a-z0-9-]+\);$` (no `#`). |
 
-### 4.2 Rà public white-on-primary usages (T0 yêu cầu)
+### 4.2 Contrast audit of white-on-primary sites (T0 directive)
 
-Tất cả vị trí public dùng `var(--color-primary)` nền + white text (C2 decoration):
+WCAG 2.x thresholds:
+- Normal text (smaller than 18.66px bold or smaller than 24px regular): minimum 4.5:1
+- Large text (from 18.66px bold OR from 24px regular): minimum 3:1
+- UI component (touch target minimum 44x44px): minimum 3:1
 
-| Vị trí | File:line | Quyết định |
-|---|---|---|
-| Nút "Đăng ký" desktop | `GlobalNavbar.tsx:297` | **RQ-06**: đổi sang PD (C1) |
-| Nút "Đăng ký" mobile | `GlobalNavbar.tsx:424` | **RQ-06**: đổi sang PD (C1) |
-| Nút login form | `login-form.tsx:137` | **GIỮ** P (C2 decoration, 3:1 AA-large/UI) |
-| Nút "Xem việc làm" ve-chung-toi | `ve-chung-toi/page.tsx:145` | **GIỮ** P (C2 decoration) |
-| `.pub-btn-primary` CSS | `globals.css:511-516` | **GIỮ** P (C2 decoration) |
-| `.apply-btn` CSS | `globals.css:619-625` | **GIỮ** P (C2 decoration) |
+All 7 sites below use 14px semibold or 13px semibold = normal text, requiring minimum 4.5:1.
 
-5 vị trí C2 giữ nguyên — đây là design có chủ đích. Probe C2 (P nền + white text) ≥ 3:1 ở mọi palette (HRP 3.153, Ocean 5.637, Emerald 4.338, Violet 7.021, Executive 4.062) → đạt AA-large/UI.
+| Site | File:line | Font | Weight | Need | P HRP | PD HRP | CTA HRP | Decision |
+|---|---|---|---|---|---|---|---|---|
+| CTA "Ung tuyen" | `globals.css:442` | 14px | semibold | 4.5:1 | 3.153:1 FAIL | 6.468:1 PASS | 2.708:1 FAIL | CTA token separate; T1C does NOT edit. T1B/T2 handles. |
+| apply-btn (JobCard) | `globals.css:660` | 14px | semibold | 4.5:1 | 3.153:1 FAIL | 6.468:1 PASS | 2.708:1 FAIL | C2 decoration; keep P. T1B/T2 handles. |
+| "Dang ky" desktop | `GlobalNavbar.tsx:297` | 14px | semibold | 4.5:1 | 3.153:1 FAIL | 6.468:1 PASS | N/A | T1B owns fully; T1C only provides token PD. |
+| "Dang ky" mobile | `GlobalNavbar.tsx:424` | 14px | semibold | 4.5:1 | 3.153:1 FAIL | 6.468:1 PASS | N/A | T1B owns fully; T1C only provides token PD. |
+| "Dang nhap" | `login-form.tsx:137` | 14px | semibold | 4.5:1 | 3.153:1 FAIL | 6.468:1 PASS | N/A | C2 decoration; keep P. T1B/T2 handles. |
+| "Xem viec lam" | `ve-chung-toi/page.tsx:145` | 14px | semibold | 4.5:1 | 3.153:1 FAIL | 6.468:1 PASS | N/A | C2 decoration; keep P. T1B/T2 handles. |
+| `.pub-btn-primary` | `globals.css:552` | 13px | semibold | 4.5:1 | 3.153:1 FAIL | 6.468:1 PASS | N/A | C2 decoration; keep P. T1B/T2 handles. |
+
+All 7 sites use normal text (14px/13px semibold), not large text, so need minimum 4.5:1. Primary HRP only achieves 3.153:1 (below threshold). All these sites are OUTSIDE T1C scope. T1C only provides the token contract and CSS overrides. T1B/T2 will handle changing button backgrounds to `primaryDark` (achieving 6.468:1).
+
+Token `--color-primary-cta: #f07f1a` (PR #132) achieves 2.708:1 (default) and 4.661:1 (hover). Default state is also below 4.5:1. PR #132 comment says "passes 3:1 large/bold text" but 14px semibold is NOT large text. CTA token is separate; T1C does NOT override.
 
 ## 5. Execution Plan
 
-### STEP-01 — `src/shared/theme/theme-types.ts` (mới)
+### STEP-01 — `src/shared/theme/theme-types.ts` (new)
 
-Export: `ThemeKey`, `ThemeTokens`, `ThemeDefinition`, `THEMES`, `DEFAULT_THEME_KEY`, `getTheme`, `isThemeKey`. Theo shape trong RQ-01.
+Export: `ThemeKey`, `ThemeTokens`, `ThemeDefinition`, `THEMES`, `DEFAULT_THEME_KEY`, `getTheme`, `isThemeKey`. Per RQ-01.
 
-### STEP-02 — `src/shared/theme/theme-tokens.ts` (mới)
+### STEP-02 — `src/shared/theme/theme-tokens.ts` (new)
 
-5 entry `ThemeDefinition` với bảng hex ở §3.3 (RQ-02). Thêm JSDoc cho mỗi entry với link DECISION_REQUEST.
+5 `ThemeDefinition` entries with hex table from 3.3 (RQ-02). Add JSDoc for each entry with DECISION_REQUEST link.
 
-### STEP-03 — `app/globals.css` [data-theme] block (sửa)
+### STEP-03 — `app/globals.css` [data-theme] blocks (edit)
 
-Thêm 5 selector `[data-theme="hrp"]` / `[data-theme="ocean-trust"]` / `[data-theme="emerald-growth"]` / `[data-theme="violet-future"]` / `[data-theme="executive-gold"]` SAU `:root` alias (line 202) TRƯỚC `.material-symbols-outlined` (line 207-208).
+Add 5 selectors `[data-theme="hrp"]` / `[data-theme="ocean-trust"]` / `[data-theme="emerald-growth"]` / `[data-theme="violet-future"]` / `[data-theme="executive-gold"]` AFTER `:root` alias (line 189-211) and BEFORE `.material-symbols-outlined` (line 217).
 
-Mỗi selector override 5 token:
+Each selector overrides exactly 5 tokens:
 - `--color-primary`
 - `--color-primary-dark`
 - `--color-primary-soft`
 - `--color-primary-container`
 - `--color-on-primary-container`
 
-`[data-theme="hrp"]` set giá trị idempotent với `:root` (để scope cô lập — dù cho default = 'hrp', selector này vẫn tồn tại).
+`[data-theme="hrp"]` is idempotent with `:root` (sets same values for scope isolation).
 
-`--color-focus-ring: var(--color-primary-dark)` ở `:root` (line 154) sẽ tự follow theo `primary-dark` mới ở scope.
+Do NOT edit any other class (`.hrp-btn-apply`, `.apply-btn`, `.pub-btn-primary`, `.fcheck.on` stay as-is).
 
-### STEP-04 — `app/(portal)/layout.tsx` (sửa)
-
-Thêm `'use client'`. Đọc theme key trong `useEffect` (RQ-04). Gắn `data-theme={resolvedKey}` lên root `div`. SSR / first-paint: `data-theme="hrp"` (server-render).
-
-### STEP-05 — `app/(jobs)/viec-lam/layout.tsx` (sửa)
-
-Tương STEP-04.
-
-### STEP-06 — `app/components/GlobalNavbar.tsx` (sửa 2 dòng)
-
-Đổi `backgroundColor: 'var(--color-primary)'` → `'var(--color-primary-dark)'` ở line 297 (desktop) và line 424 (mobile). Text giữ `var(--color-on-primary)` (white).
-
-### STEP-07 — Test (5 file mới)
+### STEP-04 — Tests (3 new files)
 
 1. `src/shared/theme/__tests__/theme-types.test.ts`:
    - `isThemeKey('hrp') === true`; `isThemeKey('foo') === false`; `isThemeKey(null) === false`; `isThemeKey(undefined) === false`.
    - `getTheme('hrp').tokens.primary === '#f26522'`.
    - `getTheme('hrp').tokens.primaryDark === '#a63b00'`.
    - `getTheme('ocean-trust').tokens.primary === '#1e6f8f'`.
-   - `getTheme('foo')` trả về `getTheme(DEFAULT_THEME_KEY)` (fallback).
+   - `getTheme('foo')` falls back to `getTheme('hrp')`.
    - `THEMES.length === 5`.
-   - `THEMES.map(t => t.key).sort()` deep-equal `['executive-gold', 'emerald-growth', 'hrp', 'ocean-trust', 'violet-future']`.
-   - Mỗi entry có đủ 8 token (không undefined / null / empty).
+   - `THEMES.map(t => t.key).sort()` equals `['executive-gold', 'emerald-growth', 'hrp', 'ocean-trust', 'violet-future']`.
+   - Each entry has all 8 tokens (no undefined / null / empty).
    - `DEFAULT_THEME_KEY === 'hrp'`.
 
 2. `src/shared/theme/__tests__/contrast-probe.test.ts`:
-   - 5/5 palette pass 6/6 cặp.
-   - Reuse `contrast-probe.mjs` (import `node:child_process` execSync hoặc reimplement in-test).
-   - Output ratios cho mỗi palette + assert ≥ min.
+   - 5/5 palettes pass 6/6 pairs (text at least 4.5:1, large/UI at least 3:1).
+   - Reuse `contrast-probe.mjs` (execSync or reimplement in-test).
+   - Output ratios per palette + assert at least min.
 
 3. `src/shared/theme/__tests__/globals-css-theme-scope.test.ts`:
-   - `app/globals.css` có đúng 5 selector `[data-theme="..."]`.
-   - Mỗi selector set đủ 5 token brand (primary, primary-dark, primary-soft, primary-container, on-primary-container).
-   - Selector đặt SAU block `:root` (line 180-202) và TRƯỚC `.material-symbols-outlined` (line 207-208).
-   - Selector `[data-theme="hrp"]` set giá trị giống `:root` (idempotent).
-   - `app/globals.css` KHÔNG chứa `prefers-color-scheme` hoặc `.dark` (gate `public-ui-premium`).
+   - `app/globals.css` has exactly 5 `[data-theme="..."]` selectors.
+   - Each selector sets all 5 brand tokens (primary, primary-dark, primary-soft, primary-container, on-primary-container).
+   - Selectors placed AFTER `:root` alias block (line 189-211) and BEFORE `.material-symbols-outlined` (line 217).
+   - `[data-theme="hrp"]` is idempotent with `:root`.
+   - `app/globals.css` does NOT contain `prefers-color-scheme` or `.dark`.
+   - `.hrp-btn-apply` still uses `--color-primary-cta` (separate from brand).
+   - `:root` alias block still has exactly 22 declarations.
 
-4. `src/shared/theme/__tests__/public-shell-theme-scope.test.ts`:
-   - `app/(portal)/layout.tsx` có directive `'use client'`.
-   - `app/(jobs)/viec-lam/layout.tsx` có directive `'use client'`.
-   - Cả 2 shell render `data-theme={...}` ở root `div`.
-   - Cả 2 shell có `useEffect` đọc `localStorage.getItem('hrp-theme')`.
-   - Cả 2 shell có try/catch quanh `localStorage`.
-   - `app/admin/layout.tsx` KHÔNG render `data-theme` (grep `'data-theme'` expect 0).
-   - `app/admin/admin-shell.tsx` KHÔNG render `data-theme` (grep expect 0).
-   - `app/layout.tsx` KHÔNG render `data-theme` ở thẻ html gốc (grep expect 0).
-   - `app/layout.tsx` KHÔNG chứa thẻ script (grep expect 0).
-   - SSR default = 'hrp' (server-render trước khi `useEffect` chạy).
+### STEP-05 — Gates
 
-5. `src/shared/theme/__tests__/public-button-contrast.test.ts`:
-   - 6 vị trí public dùng nền P + white text (GlobalNavbar.tsx:297,424; login-form.tsx:137; ve-chung-toi/page.tsx:145; globals.css `.pub-btn-primary`; globals.css `.apply-btn`) — verify rằng SAU khi T1C refactor GlobalNavbar, các vị trí còn lại là **C2 decoration** (3:1 AA-large/UI) và đều pass.
-   - Vị trí GlobalNavbar nút "Đăng ký" (2 dòng) — verify C1 (4.5:1 AA-text) với 5 palette (PD nền + white text).
-   - Probe re-run trong test (execSync `node docs/tasks/hrp-t1c-theme-foundation/contrast-probe.mjs`) hoặc reimplement in-test.
-
-### STEP-08 — Gates
-
-Chạy theo thứ tự:
+Run in order:
 1. `npm run typecheck` — 0 errors.
 2. `npm run lint` — 0 errors (warnings OK).
 3. `npm run test:unit` — 100% pass.
-4. `npm run test:integration` — Tier 0 chạy; Tier 1 không tự chạy.
+4. `npm run test:integration` — Tier 0 runs; Tier 1 does not self-run.
 5. `npm run build` — PASS.
 6. `node .ai-pipeline/scripts/verify-encoding.mjs` — PASS.
 7. `pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-t1c-theme-foundation/TASK.md` — PASS.
 
-### STEP-09 — Commit + push
+### STEP-06 — Commit + push
 
-Pin Implementation SHA trong HANDOFF.md. Push branch `codex/t1c-theme-foundation`. DỪNG trước merge/deploy.
+Pin Implementation SHA in HANDOFF.md. Push branch `codex/t1c-theme-foundation`. STOP before merge/deploy.
 
 ## 6. Acceptance
 
@@ -276,21 +240,22 @@ Pin Implementation SHA trong HANDOFF.md. Push branch `codex/t1c-theme-foundation
 
 | ID | Expectation | How to verify |
 |---|---|---|
-| `AC-01` | `THEMES.length === 5` và 5 key đúng `['hrp', 'ocean-trust', 'emerald-growth', 'violet-future', 'executive-gold']` (sorted) | `npm run test:unit -- src/shared/theme/__tests__/theme-types.test.ts` |
-| `AC-02` | Mỗi palette có đủ 8 token (primary, primaryDark, primaryContainer, primarySoft, surface, onPrimary, onPrimarySoft, onPrimaryContainer); không undefined / null / empty. | `npm run test:unit -- src/shared/theme/__tests__/theme-types.test.ts` |
-| `AC-03` | `isThemeKey('hrp') === true`; `isThemeKey('foo') === false`; `isThemeKey(null) === false`; `isThemeKey(undefined) === false`. `getTheme('foo')` fallback về `getTheme('hrp')`. | `npm run test:unit -- src/shared/theme/__tests__/theme-types.test.ts` |
-| `AC-04` | 5/5 palette pass 6/6 cặp contrast (text ≥ 4.5:1, large/UI ≥ 3:1). | `node docs/tasks/hrp-t1c-theme-foundation/contrast-probe.mjs` exit 0; `npm run test:unit -- src/shared/theme/__tests__/contrast-probe.test.ts` |
-| `AC-05` | `app/globals.css` có đúng 5 selector `[data-theme="hrp"]` / `ocean-trust` / `emerald-growth` / `violet-future` / `executive-gold`, mỗi selector set đủ 5 token brand. | `npm run test:unit -- src/shared/theme/__tests__/globals-css-theme-scope.test.ts` |
-| `AC-06` | Selector `[data-theme="..."]` đặt SAU block `:root` (line 180-202) và TRƯỚC `.material-symbols-outlined` (line 207-208). | `npm run test:unit -- src/shared/theme/__tests__/globals-css-theme-scope.test.ts` |
-| `AC-07` | `app/globals.css` KHÔNG chứa `prefers-color-scheme` hoặc `.dark`. | `npm run test:unit -- src/shared/theme/__tests__/globals-css-theme-scope.test.ts`; pre-existing `npm run test:unit -- src/domains/job-board/public-ui-premium.static.test.ts` |
-| `AC-08` | `app/(portal)/layout.tsx` + `app/(jobs)/viec-lam/layout.tsx` là Client Component, render `data-theme` ở root `div`, đọc `localStorage` trong `useEffect` + try/catch. | `npm run test:unit -- src/shared/theme/__tests__/public-shell-theme-scope.test.ts` |
-| `AC-09` | `app/admin/layout.tsx` + `app/admin/admin-shell.tsx` KHÔNG render `data-theme`. | `npm run test:unit -- src/shared/theme/__tests__/public-shell-theme-scope.test.ts` |
-| `AC-10` | `app/layout.tsx` KHÔNG render `data-theme` ở thẻ html gốc; KHÔNG có thẻ script. | `npm run test:unit -- src/shared/theme/__tests__/public-shell-theme-scope.test.ts` |
-| `AC-11` | `app/components/GlobalNavbar.tsx:297` (desktop) + `:424` (mobile) đổi nền nút "Đăng ký" từ `var(--color-primary)` → `var(--color-primary-dark)`. Text giữ `var(--color-on-primary)` (white). | `npm run test:unit -- src/shared/theme/__tests__/public-button-contrast.test.ts`; `grep -n 'color-primary-dark' app/components/GlobalNavbar.tsx` expect ≥ 2 match |
-| `AC-12` | 5 vị trí C2 decoration (login-form.tsx:137; ve-chung-toi/page.tsx:145; globals.css `.pub-btn-primary`; globals.css `.apply-btn`; GlobalNavbar nền hover) giữ P nền. C2 contrast ≥ 3:1 AA-large/UI ở mọi palette. | `npm run test:unit -- src/shared/theme/__tests__/public-button-contrast.test.ts` |
-| `AC-13` | Pre-existing invariants không đổi: `:root` block 22 alias đúng pattern `^--[a-z0-9-]+:\s*var\(--color-[a-z0-9-]+\);$`; `@theme` block đủ 97 token ban đầu. | `npm run test:unit -- src/shared/ui/design-tokens.static.test.ts`; `npm run test:unit -- src/domains/job-board/public-ui-token-parity.static.test.ts` |
-| `AC-14` | Canonical gates: typecheck, lint, unit, integration, build, encoding, task verify → 0 error. | `npm run typecheck && npm run lint && npm run test:unit && npm run build && node .ai-pipeline/scripts/verify-encoding.mjs && pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-t1c-theme-foundation/TASK.md` |
-| `AC-15` | Baseline pin `44333245a5decc374aa9ac6ae97d3cb1e475adfa` không đổi trong suốt implementation; chỉ thêm file mới + sửa file trong in-scope roots. | `git diff --stat 44333245a5decc374aa9ac6ae97d3cb1e475adfa HEAD` (so với baseline commit, đã chứa cả untracked qua `git add -A && git diff --cached --stat` trước commit) |
+| `AC-01` | `THEMES.length === 5` and 5 keys equal `['hrp', 'ocean-trust', 'emerald-growth', 'violet-future', 'executive-gold']` (sorted). | `npm run test:unit -- src/shared/theme/__tests__/theme-types.test.ts` |
+| `AC-02` | Each palette has all 8 tokens (primary, primaryDark, primaryContainer, primarySoft, surface, onPrimary, onPrimarySoft, onPrimaryContainer); no undefined / null / empty. | `npm run test:unit -- src/shared/theme/__tests__/theme-types.test.ts` |
+| `AC-03` | `isThemeKey('hrp') === true`; `isThemeKey('foo') === false`; `isThemeKey(null) === false`; `isThemeKey(undefined) === false`. `getTheme('foo')` falls back to `getTheme('hrp')`. | `npm run test:unit -- src/shared/theme/__tests__/theme-types.test.ts` |
+| `AC-04` | 5/5 palettes pass 6/6 contrast pairs (text at least 4.5:1, large/UI at least 3:1). | `node docs/tasks/hrp-t1c-theme-foundation/contrast-probe.mjs` exit 0; `npm run test:unit -- src/shared/theme/__tests__/contrast-probe.test.ts` |
+| `AC-05` | `app/globals.css` has exactly 5 `[data-theme="hrp"]` / `ocean-trust` / `emerald-growth` / `violet-future` / `executive-gold` selectors, each setting all 5 brand tokens. | `npm run test:unit -- src/shared/theme/__tests__/globals-css-theme-scope.test.ts` |
+| `AC-06` | Selectors placed AFTER `:root` alias block (line 189-211) and BEFORE `.material-symbols-outlined` (line 217). | `npm run test:unit -- src/shared/theme/__tests__/globals-css-theme-scope.test.ts` |
+| `AC-07` | `app/globals.css` does NOT contain `prefers-color-scheme` or `.dark`. | `npm run test:unit -- src/shared/theme/__tests__/globals-css-theme-scope.test.ts`; existing `npm run test:unit -- src/domains/job-board/public-ui-premium.static.test.ts` |
+| `AC-08` | `.hrp-btn-apply` still uses `--color-primary-cta` (separate from brand; T1C does NOT override). | `npm run test:unit -- src/shared/theme/__tests__/globals-css-theme-scope.test.ts`; `npm run test:unit -- src/domains/job-board/components/__tests__/apply-cta-tone-soften.static.test.ts` |
+| `AC-09` | `.apply-btn`, `.pub-btn-primary`, `.fcheck.on` still use `--color-primary` bg (C2 decoration; T1C keeps as-is). | `npm run test:unit -- src/shared/theme/__tests__/globals-css-theme-scope.test.ts` |
+| `AC-10` | `:root` alias block (line 189-211) still has exactly 22 declarations in correct pattern. | `npm run test:unit -- src/shared/ui/design-tokens.static.test.ts` |
+| `AC-11` | Pre-existing invariants unchanged: `@theme` block has all tokens; no dark mode added. | `npm run test:unit -- src/domains/job-board/public-ui-token-parity.static.test.ts`; `npm run test:unit -- src/domains/job-board/public-ui-premium.static.test.ts` |
+| `AC-12` | Canonical gates: typecheck, lint, unit, integration, build, encoding, task verify — 0 error. | `npm run typecheck && npm run lint && npm run test:unit && npm run build && node .ai-pipeline/scripts/verify-encoding.mjs && pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-t1c-theme-foundation/TASK.md` |
+| `AC-13` | Baseline pin `aa86902fcf3c49274a3ccc0cf7decf84aaec4e19` unchanged throughout implementation. | `git status --porcelain -- app/components/GlobalNavbar.tsx` expect empty (T1B scope); `git status --porcelain -- 'app/(portal)/' 'app/(jobs)/' 'app/admin/'` expect empty (T1B scope) |
+| `AC-14` | T1C does NOT attach `data-theme` to any of 5 forbidden layouts: `app/(portal)/layout.tsx`, `app/(jobs)/viec-lam/layout.tsx`, `app/layout.tsx`, `app/admin/layout.tsx`, `app/admin/admin-shell.tsx`. T1B owns mounting. | grep -nE "data-theme" against each of the 5 files; expect 0 match |
+| `AC-15` | T1C does NOT edit `app/components/GlobalNavbar.tsx`. T1B owns the file fully. | `git status --porcelain -- app/components/GlobalNavbar.tsx` expect empty |
+| `AC-16` | T1C does NOT add any inline script tag to any source file. | `grep -rnE 'script[^>]*' --include='*.tsx' --include='*.ts' --include='*.css' src/ app/` baseline count == post-impl count |
 
 ### 6.2 Traceability
 
@@ -299,50 +264,49 @@ Pin Implementation SHA trong HANDOFF.md. Push branch `codex/t1c-theme-foundation
 | `RQ-01` | `STEP-01` | `AC-01`, `AC-03` |
 | `RQ-02` | `STEP-02` | `AC-01`, `AC-02` |
 | `RQ-03` | `STEP-03` | `AC-05`, `AC-06`, `AC-07` |
-| `RQ-04` | `STEP-04` | `AC-08` |
-| `RQ-05` | `STEP-05` | `AC-08` |
-| `RQ-06` | `STEP-06` | `AC-11` |
-| `RQ-07` | `STEP-03`, `STEP-04`, `STEP-05` | `AC-09`, `AC-10` |
-| `RQ-08` | `STEP-03`, `STEP-04`, `STEP-05` | `AC-10` |
-| `RQ-09` | `STEP-04`, `STEP-05` | `AC-08` |
-| `RQ-10` | `STEP-03` | `AC-13` |
-| `RQ-11` | `STEP-03` | `AC-07` |
-| `RQ-12` | `STEP-03`, `STEP-04`, `STEP-05` | `AC-13` |
-| (C2 audit) | `STEP-06` | `AC-12` |
-| (gates) | `STEP-08` | `AC-14` |
-| (baseline) | `STEP-09` | `AC-15` |
+| `RQ-04` | `STEP-03` | `AC-14` |
+| `RQ-05` | `STEP-03` | `AC-15` |
+| `RQ-06` | `STEP-03` | `AC-08` |
+| `RQ-07` | `STEP-03` | `AC-09` |
+| `RQ-08` | `STEP-03` | `AC-07` |
+| `RQ-09` | `STEP-03` | `AC-16` |
+| `RQ-10` | `STEP-03` | `AC-11` |
+| `RQ-11` | `STEP-03` | `AC-05`, `AC-11` |
+| `RQ-12` | `STEP-03` | `AC-10`, `AC-11` |
+| `RQ-23` | `STEP-03` | `AC-08` |
+| (gates) | `STEP-05` | `AC-12` |
+| (baseline) | `STEP-06` | `AC-13` |
 
 ## 7. Risk
 
-| ID | Risk | Mitigation / rollback |
+| ID | Risk | Mitigation |
 |---|---|---|
-| `RISK-01` | Baseline drift giữa implementation và `origin/main`. | Plan pin baseline `44333245`; Tier 1 đo line refs lại trước khi sửa. |
-| `RISK-02` | Override scope sai → alias `:root` không đổi. | STEP-03 thêm block SAU `:root`; test `globals-css-theme-scope` verify selector thứ tự. |
-| `RISK-03` | Admin layout ở cùng document root. | DEC-04 gắn ở root `div` 2 public shell; admin KHÔNG đụng; test `public-shell-theme-scope` verify admin không có `data-theme`. |
-| `RISK-04` | FOUC 1 lần khi SSR default = 'hrp'. | DEC-06 chấp nhận; chỉ 1 flash ngắn ở first paint. |
-| `RISK-05` | Inline script nếu dev tự thêm. | Test `public-shell-theme-scope` grep thẻ script trong 2 shell + `app/layout.tsx`. |
-| `RISK-06` | C1 (nút "Đăng ký") nền P fail AA-text. | T0 Cách A: PD nền; test `public-button-contrast` verify C1 pass 4.5:1 cho 5 palette. |
-| `RISK-07` | T1B chạm file T1C. | File ownership §4.1 rõ; T1B test picker độc lập (T1B scope). |
-| `RISK-08` | Pre-existing test fail do T1C vô tình phá alias `:root` (22 alias) hoặc `@theme` (97 token). | Test `public-ui-token-parity` + `design-tokens.static.test` chạy trong AC-13; Tier 1 chạy full unit suite trước commit. |
-| `RISK-09` | `surface` hex trong §3.3 KHÔNG được implement ở `[data-theme]` (chỉ là design note). | Ghi chú rõ §3.3; T1C KHÔNG override `--color-surface`; nếu T0 đổi ý → T2+. |
-| `RISK-10` | `primarySoft` HRP mới (`#fff0e5`) khác legacy (`#fdf1ec`) → nơi nào đó dùng `--color-primary-soft` đang code nền sẽ đổi khi scope public. | Probe verify C3 (4.5:1) với giá trị mới. Nếu có hardcode `#fdf1ec` ở portal public → fix khi audit. |
+| `RISK-01` | Baseline drift from `origin/main`. | Plan pins `aa86902f`; Tier 1 re-verifies line refs before editing. |
+| `RISK-02` | Wrong override scope — aliases `:root` unchanged. | STEP-03 adds block AFTER `:root`; test verifies selector order. |
+| `RISK-03` | Admin layout shares same document root. | T1C does NOT mount scope (T1B does); admin keeps default HRP. |
+| `RISK-04` | T1B touches T1C files (or vice versa). | File ownership is clear: T1C owns `src/shared/theme/` + `app/globals.css`; T1B owns layout + GlobalNavbar + picker. No overlap. |
+| `RISK-05` | T1C accidentally overrides CTA token. | RQ-06 locks it; test verifies `.hrp-btn-apply` still uses `--color-primary-cta`. |
+| `RISK-06` | Pre-existing tests fail (token parity, design-tokens, premium). | Run full unit suite before commit; if fail, only fix T1C artifacts, not pre-existing tests. |
+| `RISK-07` | All 7 white-on-primary sites fail 4.5:1 with primary HRP (3.153:1). | OUTSIDE T1C scope. T1B/T2 will change button backgrounds to `primaryDark` (6.468:1). T1C only provides token. |
+| `RISK-08` | `--color-primary-cta: #f07f1a` default state = 2.708:1 (fails 4.5:1). | OUTSIDE T1C scope. T1B/T2 handles. T1C does NOT override CTA token. |
 
 ## 8. Open Questions
 
-- None.
+None.
 
-Không được còn câu hỏi cần Owner quyết khi `Contract gate: READY_TO_CODE`.
+No open questions remain for `Contract gate: READY_TO_CODE`.
 
 ## 9. Planner Resolution
 
-Tier 1 append sau review/audit. Audit NONE resolve trực tiếp từ HANDOFF; LIGHT resolve từ AUDIT.
+Tier 1 appends after review/audit. Audit NONE resolves directly from HANDOFF; LIGHT resolves from AUDIT.
 
 | Round | Decision | Reason |
 |---|---|---|
-| 0 | `READY_TO_CODE` | DEC-01..07 đã CLOSED (T0 duyệt); baseline + worktree + gates đã pin; test env READY. |
+| 0 | `READY_TO_CODE` | DEC-01..07 CLOSED; baseline updated `aa86902f` (PR 132 forward-merge); T1C vs T1B ownership separated; contrast audit done by T0; spec v1.1. |
 
 ## 10. Revision Log
 
 | Spec version | Date | Change | Reason |
 |---|---|---|---|
-| `v1.0` | 2026-10-12 | Initial contract — T0 closed 7 decisions; baseline `44333245a5decc374aa9ac6ae97d3cb1e475adfa`; worktree `codex/t1c-theme-foundation`; READY_TO_CODE. | T0 duyệt DEC-01..07; Tier 1 viết TASK theo template T1D. |
+| `v1.0` | 2026-10-12 | Initial contract; T0 closed 7 decisions; baseline `44333245a5decc374aa9ac6ae97d3cb1e475adfa`; worktree `codex/t1c-theme-foundation`; READY_TO_CODE. | T0 approved DEC-01..07. |
+| `v1.1` | 2026-10-12 | Baseline updated `aa86902f` (PR 132 forward-merge). Contrast audit: all 7 white-on-primary sites use 14px semibold (normal text) needing minimum 4.5:1 but primary HRP only reaches 3.153:1. Ownership separated: T1C only provides token contract and CSS overrides; GlobalNavbar + layout + picker belong to T1B. CTA token `--color-primary-cta` is separate from brand; T1C does NOT override. GlobalNavbar fully owned by T1B. STEP reduced to 3 (types+tokens; CSS; tests; gates; commit). | T0 directive: update baseline; audit contrast; separate ownership; audit CTA token PR 132. |
