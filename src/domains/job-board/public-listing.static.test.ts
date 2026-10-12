@@ -100,9 +100,14 @@ describe('RQ-08/AC-10 — đúng MỘT đường tới DB, không có đường 
     expect(count(code, /listPublicJobProjection\(/g)).toBe(1);
   });
 
-  it('getPrisma() chỉ xuất hiện trong withPublicDb wrapper (AV1: 1 cho settings + 1 cho query)', () => {
+  it('getPrisma() xuất hiện đúng 2 lần: 1 trong loadListingPageSize (settings) + 1 trong withPublicDb wrapper (jobs query). loadListing dùng lại cache() nên không gọi thêm', () => {
     // AV1: getPrisma() dùng cho 2 việc — đọc singleton HomepageSettings + query jobs.
-    // Cả hai đều wrap hoặc là singleton global (no RLS).
+    // hrp-t2-public-paging-tone-hotfix (RQ-02): `loadListingPageSize()` tách
+    // ra helper riêng để `generateMetadata` cũng dùng được. `cache()` đảm
+    // bảo loadListingPageSize chỉ query 1 lần cho cả metadata + body
+    // (cùng request); `loadListing` không gọi getPrisma() thêm nữa vì dùng
+    // lại giá trị trả về từ helper. Tổng cộng 2 lần `getPrisma()` trong
+    // source. Cả hai vị trí đều dùng singleton/global (no RLS).
     expect(count(code, /getPrisma\(\)/g)).toBe(2);
     expect(code).toMatch(/withPublicDb\(getPrisma\(\),/);
   });
@@ -116,7 +121,10 @@ describe('RQ-08/AC-10 — đúng MỘT đường tới DB, không có đường 
 describe('RQ-03/AC-04 — trang chỉ đọc searchParams qua parser', () => {
   it('mọi lần await searchParams đều đi qua parseListingSearchParams', () => {
     expect(count(code, /await searchParams/g)).toBe(2);
-    expect(count(code, /parseListingSearchParams\(await searchParams\)/g)).toBe(2);
+    // hrp-t2-public-paging-tone-hotfix: parser giờ nhận `pageSize` làm tham số thứ hai
+    // (`parseListingSearchParams(await searchParams, listingPageSize)`), pattern cũ chỉ
+    // khớp dạng 1-arg nên được nới lỏng để khớp cả 2 dạng.
+    expect(count(code, /parseListingSearchParams\(\s*await\s+searchParams\b/g)).toBe(2);
   });
 
   it('không truy cập thuộc tính nào của searchParams, và không đọc bốn tên bị cấm', () => {
@@ -167,13 +175,23 @@ describe('RQ-09/AC-11 — canonical sạch, robots theo listingIsIndexable', () 
     expect(count(code, /index:\s*true/g)).toBe(1);
   });
 
-  it('generateMetadata KHÔNG gọi loader, nên một lượt render tiêu đúng một suất ngân sách', () => {
+  it('generateMetadata KHÔNG gọi jobs-loader, nên một lượt render tiêu đúng một suất ngân sách', () => {
     const meta = code.slice(
       code.indexOf('export async function generateMetadata'),
       code.indexOf('function ThrottledNotice'),
     );
     expect(meta.length).toBeGreaterThan(0);
-    expect(meta).not.toContain('loadListing');
+    // hrp-t2-public-paging-tone-hotfix (RQ-02): metadata giờ gọi
+    // `loadListingPageSize()` để đọc `listingPageSize` từ HomepageSettings, vì
+    // nếu parser nhận default `PAGE_SIZE = 20` thay vì `listingPageSize` thật
+    // (mặc định 12), `cleanOffset` sẽ kéo `?offset=12` về `0` và
+    // `listingIsIndexable` trả `true` → metadata index nhầm page 2 (DEC-08).
+    // Helper này chỉ đọc singleton `homepageSettings` (1 row, no RLS, no rate
+    // limit) và được `cache()` dedupe với `loadListing`; nó KHÔNG query jobs.
+    // Vì vậy fence giữ là "không query jobs", không phải "không DB call".
+    expect(meta).not.toContain('listPublicJobProjection');
+    expect(meta).not.toContain('withPublicDb');
+    expect(meta).not.toContain('evaluateRateLimits');
   });
 });
 
