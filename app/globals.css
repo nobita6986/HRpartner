@@ -212,6 +212,58 @@
 }
 
 /* ==========================================================================
+   Theme overrides — `[data-theme="<key>"]` blocks (T1C hrp-t1c-theme-foundation v1.2)
+   --------------------------------------------------------------------------
+   Each selector overrides exactly 5 brand tokens (RQ-03):
+     --color-primary, --color-primary-dark, --color-primary-soft,
+     --color-primary-container, --color-on-primary-container
+
+   `[data-theme="hrp"]` is idempotent with `:root` (sets same values).
+   5 palettes: HR Partner (default), Ocean Trust, Emerald Growth, Violet Future, Executive Gold.
+   Source of truth: src/shared/theme/theme-tokens.ts (DEC-01 hex v1).
+   ========================================================================== */
+
+[data-theme='hrp'] {
+  --color-primary: #f26522;
+  --color-primary-dark: #a63b00;
+  --color-primary-soft: #fff0e5;
+  --color-primary-container: #fde6d8;
+  --color-on-primary-container: #1f2937;
+}
+
+[data-theme='ocean-trust'] {
+  --color-primary: #1e6f8f;
+  --color-primary-dark: #0d4a63;
+  --color-primary-soft: #e8f3f8;
+  --color-primary-container: #d6ebf5;
+  --color-on-primary-container: #0d1f2d;
+}
+
+[data-theme='emerald-growth'] {
+  --color-primary: #1f8a5a;
+  --color-primary-dark: #0d5a39;
+  --color-primary-soft: #e3f3ea;
+  --color-primary-container: #d2ebde;
+  --color-on-primary-container: #0a2017;
+}
+
+[data-theme='violet-future'] {
+  --color-primary: #6a3fb5;
+  --color-primary-dark: #3f1f7a;
+  --color-primary-soft: #ede4f8;
+  --color-primary-container: #e1d5f4;
+  --color-on-primary-container: #1c0f3a;
+}
+
+[data-theme='executive-gold'] {
+  --color-primary: #9a7a17;
+  --color-primary-dark: #5d4a08;
+  --color-primary-soft: #f7f0d9;
+  --color-primary-container: #f0e6c0;
+  --color-on-primary-container: #221e04;
+}
+
+/* ==========================================================================
    Material Symbols Outlined — display class for icons to render
    ========================================================================== */
 .material-symbols-outlined {
