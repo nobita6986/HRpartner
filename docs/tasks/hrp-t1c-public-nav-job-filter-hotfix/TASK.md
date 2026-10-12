@@ -13,9 +13,10 @@
 | Audit mode | `NONE` |
 | Audit reason | Public UI/URL contract nhỏ, cô lập; unit/static regression và canonical gates đủ kiểm soát |
 | Spec version | `v1.0` |
-| Status | `READY_FOR_EXECUTION` |
+| Status | `READY_FOR_REVIEW` |
 | Planner | `Tier 1` |
 | Baseline | `d62df50e0a5ab48a5bba6cdc0c3fb1d033ff9f6f` |
+| Implementation SHA | `e7c5b350dd8ebbcb05623856a96f772a3f7e5c75` |
 | Contract gate | `READY_TO_CODE` |
 | Decision state | `CLOSED` |
 | Test environment | `READY` |
@@ -23,9 +24,9 @@
 | In-scope roots | `app/(jobs)/viec-lam/page.tsx`; `app/(portal)/page.tsx`; `app/components/GlobalNavbar.tsx`; `src/domains/job-board/public-listing.*`; `src/domains/applications/marketplace-inventory.static.test.ts`; task artifacts |
 | Forbidden paths | Schema, migrations, API routes, public service, admin/settings worktree và dependency manifests |
 | Required gates | targeted Vitest; `pnpm run typecheck`; ESLint changed files; `pnpm run test:unit`; `pnpm run build`; encoding verifier; `git diff --check` |
-| Current execution round | `0` |
+| Current execution round | `1` |
 | Current audit round | `0` |
-| Next gate | `/deliver → /resolve` |
+| Next gate | `T0 review; stop before merge/deploy` |
 
 ## 1. Outcome
 
@@ -143,6 +144,7 @@
 
 | Round | Decision | Reason |
 |---|---|---|
+| `1` | `Implementation frozen at e7c5b350dd8ebbcb05623856a96f772a3f7e5c75` | Canonical gates pass; T1 stopped before merge/deploy as directed |
 
 ## 10. Revision Log
 
