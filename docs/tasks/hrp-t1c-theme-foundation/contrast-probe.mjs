@@ -147,13 +147,13 @@ const PALETTES = {
 
 // ─── Cặp màu thực sự dùng (per-palette) ───────────────────────────────────
 function pairs(tokens) {
-  // C1 MỚI (T0 Q2): onPrimary trên primaryDark (Cách A: dùng PD làm nền nút).
+  // C1 (T0 Q2): onPrimary trên primaryDark (Cách A: dùng PD làm nền nút).
   // Ratio trên PD ≥ 4.5:1 với #ffffff ở mọi palette (xem probe kết quả).
   return {
     'C1: text-trên-primaryDark (Cách A: nền nút Đăng ký = PD)':
       { fg: tokens.onPrimary, bg: tokens.primaryDark, min: RATIO_TEXT_MIN, rule: 'AA text ≥ 4.5:1' },
     'C2: text-trên-primary (P làm nền, dùng cho accent decoration)':
-      { fg: tokens.onPrimary, bg: tokens.primary, min: RATIO_LARGE_UI, rule: 'AA-large/UI ≥ 3:1 (chỉ decoration, không dùng làm nền nút)' },
+      { fg: tokens.onPrimary, bg: tokens.primary, min: RATIO_LARGE_UI, rule: 'AA-large/UI ≥ 3:1 (chỉ decoration, không dùng làm nền nút 14px semibold)' },
     'C3: text-trên-primarySoft (badge role / avatar pill)':
       { fg: tokens.onPrimarySoft, bg: tokens.primarySoft, min: RATIO_TEXT_MIN, rule: 'AA text ≥ 4.5:1' },
     'C4: text-trên-primaryContainer (stamp/active border)':
@@ -162,6 +162,8 @@ function pairs(tokens) {
       { fg: tokens.primaryDark, bg: tokens.surface, min: RATIO_TEXT_MIN, rule: 'AA text ≥ 4.5:1' },
     'C6: focus-ring/PD-trên-surface (focus ring outline)':
       { fg: tokens.primaryDark, bg: tokens.surface, min: RATIO_LARGE_UI, rule: 'AA UI/focus ≥ 3:1' },
+    'C7: text-trắng-trên-primary (T1B-owned, 14px semibold)':
+      { fg: tokens.onPrimary, bg: tokens.primary, min: RATIO_TEXT_MIN, rule: 'AA text ≥ 4.5:1 (normal text 14px semibold)' },
   };
 }
 
@@ -189,10 +191,23 @@ for (const [key, def] of Object.entries(PALETTES)) {
 
 console.log('\n=== SUMMARY ===');
 const failPalette = new Set();
+const t1bOwnedFail = [];
 for (const r of rows) {
-  if (r.verdict === 'FAIL') failPalette.add(r.palette);
+  if (r.verdict === 'FAIL') {
+    // C7 (white text 14px semibold trên P) thuộc T1B ownership — không
+    // phải palette-blocker; ghi nhận để T1B xử lý.
+    if (r.pair.startsWith('C7:')) {
+      t1bOwnedFail.push(r);
+    } else {
+      failPalette.add(r.palette);
+    }
+  }
 }
-console.log(`Palettes không pass mọi cặp (BLOCKER DEC-01): ${[...failPalette].join(', ') || '(none)'}`);
+console.log(`Palettes có cặp palette-blocker FAIL (C1, C3, C4, C5): ${[...failPalette].join(', ') || '(none)'}`);
+console.log(`T1B-owned C7 fail (white-on-P, 14px semibold, T1B sẽ xử lý): ${t1bOwnedFail.length} row(s)`);
+for (const r of t1bOwnedFail) {
+  console.log(`  - ${r.palette}: ${fmt(r.ratio)}:1 (cần ≥ 4.5:1, file dùng primary background) → T1B sẽ đổi sang primaryDark`);
+}
 
 console.log('\n=== CSV-like dump ===');
 console.log('palette,key,pair,fg,bg,ratio,min,verdict');
@@ -201,7 +216,18 @@ for (const r of rows) {
 }
 
 // ─── DEC-01 verdict ────────────────────────────────────────────────────────
-const allPass = failPalette.size === 0;
-console.log(`\nDEC-01 verdict: ${allPass ? 'CÓ THỂ chốt' : 'CẦN điều chỉnh hex'} — ${failPalette.size} palette có cặp FAIL.`);
-console.log('Cặp FAIL làm BLOCKER cho DEC-01; T0 cần hoặc chỉnh hex hoặc loại palette đó.');
+// C1, C3, C4, C5, C6 = palette-blocker: phải PASS 5/5 palette (T1C scope).
+// C2, C7 = T1B-owned (white text trên P): T1B sẽ đổi nền P→PD tại 6 vị trí
+//   theme-sensitive (GlobalNavbar 297/424, login-form 137, ve-chung-toi 145,
+//   globals.css .apply-btn 660, globals.css .pub-btn-primary 552).
+//   C2 (3:1) chỉ cho UI-decoration; C7 (4.5:1) cho text thường 14px semibold.
+// CTA (.hrp-btn-apply, --color-primary-cta*) ngoài scope T1C/T1B: ghi nhận
+//   riêng tại §Báo cáo contrast CTA.
+const paletteBlocker = [...failPalette];
+const allPass = paletteBlocker.length === 0;
+console.log(`\nDEC-01 verdict (palette-blocker only, T1C scope): ${allPass ? 'CÓ THỂ chốt' : 'CẦN điều chỉnh hex'} — ${paletteBlocker.length} palette có C1/C3/C4/C5 FAIL.`);
+console.log('T1B-owned C7 white-on-P FAILs (not palette-blocker):');
+for (const r of t1bOwnedFail) {
+  console.log(`  - ${r.key} P=${r.bg} → ${fmt(r.ratio)}:1`);
+}
 process.exit(allPass ? 0 : 1);

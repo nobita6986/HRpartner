@@ -55,57 +55,102 @@
 
 ---
 
-## Báo cáo contrast đo được (C1 = Cách A: PD làm nền nút)
+## Báo cáo contrast đo được (7 cặp, baseline `aa86902f`)
 
-Probe `contrast-probe.mjs` đo 6 cặp trên mỗi palette (baseline `44333245`).
+Probe `contrast-probe.mjs` đo **7 cặp** trên mỗi palette (baseline `aa86902f`).
 
 ### Cặp màu đo
 
-| # | Cặp | Ý nghĩa | Min |
+| # | Cặp | Ý nghĩa | Min | Owner |
+|---|---|---|---|---|
+| C1 | `onPrimary` trên `primaryDark` | Nền nút "Đăng ký" (Cách A: dùng PD) | 4.5:1 | T1B (nút) |
+| C2 | `onPrimary` trên `primary` | Accent decoration 3:1 (UI/large text only) | 3:1 | T1B (cảnh báo) |
+| C3 | `onPrimarySoft` trên `primarySoft` | Badge role / avatar pill | 4.5:1 | T1C |
+| C4 | `onPrimaryContainer` trên `primaryContainer` | Stamp / active border | 4.5:1 | T1C |
+| C5 | `primaryDark` trên `surface` | Heading, link active | 4.5:1 | T1C |
+| C6 | `primaryDark` trên `surface` (viền) | Focus ring outline | 3:1 | T1C |
+| **C7** | **`onPrimary` trên `primary` (text thường 14px semibold)** | **6 vị trí theme-sensitive (T1B-owned)** | **4.5:1** | **T1B** |
+
+### Kết quả palette-blocker (C1, C3, C4, C5, C6 — T1C scope)
+
+| Palette | C1 | C3 | C4 | C5 | C6 | Tổng palette-blocker fail |
+|---|---|---|---|---|---|---|
+| HR Partner | 6.468 ✅ | 13.174 ✅ | 12.223 ✅ | 6.147 ✅ | 6.147 ✅ | 0 |
+| Ocean Trust | 9.647 ✅ | 14.874 ✅ | 13.638 ✅ | 9.097 ✅ | 9.097 ✅ | 0 |
+| Emerald Growth | 8.272 ✅ | 14.835 ✅ | 13.539 ✅ | 7.806 ✅ | 7.806 ✅ | 0 |
+| Violet Future | 12.438 ✅ | 14.467 ✅ | 12.746 ✅ | 11.360 ✅ | 11.360 ✅ | 0 |
+| Executive Gold | 8.577 ✅ | 14.672 ✅ | 13.369 ✅ | 8.132 ✅ | 8.132 ✅ | 0 |
+
+**Tất cả 5/5 palette pass mọi cặp palette-blocker (T1C scope).**
+
+### Kết quả T1B-owned (C2 + C7 — text trắng trên P, 14px/13px semibold = normal text)
+
+| Palette | C2 (3:1) | C7 (4.5:1) | T1B cần đổi nền 6 vị trí? |
 |---|---|---|---|
-| C1 | `onPrimary` trên `primaryDark` | Nền nút "Đăng ký" (Cách A: dùng PD) | 4.5:1 |
-| C2 | `onPrimary` trên `primary` | Accent decoration (P làm nền, không dùng làm nút) | 3:1 |
-| C3 | `onPrimarySoft` trên `primarySoft` | Badge role / avatar pill | 4.5:1 |
-| C4 | `onPrimaryContainer` trên `primaryContainer` | Stamp / active border | 4.5:1 |
-| C5 | `primaryDark` trên `surface` | Heading, link active | 4.5:1 |
-| C6 | `primaryDark` trên `surface` (viền) | Focus ring outline | 3:1 |
+| HR Partner | 3.153 ✅ (3:1 OK) | **3.153** ❌ | CÓ — đổi P → PD |
+| Ocean Trust | 5.637 ✅ | 5.637 ✅ | KHÔNG — đã pass |
+| Emerald Growth | 4.338 ✅ (3:1 OK) | **4.338** ❌ | CÓ — đổi P → PD |
+| Violet Future | 7.021 ✅ | 7.021 ✅ | KHÔNG — đã pass |
+| Executive Gold | 4.062 ✅ (3:1 OK) | **4.062** ❌ | CÓ — đổi P → PD |
 
-### Kết quả
+**C2 (3:1) đạt cho mọi palette — nhưng T0 lần 2 đã xác nhận: "Không thể coi chúng là đạt chỉ dựa trên ngưỡng UI 3:1". Tất cả 6 vị trí dùng text 14px semibold = normal text, cần C7 (4.5:1). HRP, Emerald, Executive fail C7. T1B sẽ đổi 6 vị trí theme-sensitive sang nền `primaryDark` (PD).**
 
-| Palette | C1 | C2 | C3 | C4 | C5 | C6 | Tổng fail |
-|---|---|---|---|---|---|---|---|---|
-| HR Partner | **6.468** ✅ | 3.153 ✅ | 13.174 ✅ | 12.223 ✅ | 6.147 ✅ | 6.147 ✅ | 0 |
-| Ocean Trust | **9.647** ✅ | 5.637 ✅ | 14.874 ✅ | 13.638 ✅ | 9.097 ✅ | 9.097 ✅ | 0 |
-| Emerald Growth | **8.272** ✅ | 4.338 ✅ | 14.835 ✅ | 13.539 ✅ | 7.806 ✅ | 7.806 ✅ | 0 |
-| Violet Future | **12.438** ✅ | 7.021 ✅ | 14.467 ✅ | 12.746 ✅ | 11.360 ✅ | 11.360 ✅ | 0 |
-| Executive Gold | **8.577** ✅ | 4.062 ✅ | 14.672 ✅ | 13.369 ✅ | 8.132 ✅ | 8.132 ✅ | 0 |
+Sau khi T1B đổi sang PD, tỉ số tại 6 vị trí = white-on-PD: HRP 6.468 / Ocean 9.647 / Emerald 8.272 / Violet 12.438 / Executive 8.577 — 5/5 pass ≥ 4.5:1.
 
-**5/5 palette pass mọi cặp. Không có cặp fail.**
+### CTA token (`.hrp-btn-apply` + `--color-primary-cta*`) — NGOÀI scope
+
+`--color-primary-cta: #f07f1a` (default) chỉ đạt 2.708:1 white text — fail AA-text. `--color-primary-cta-dark: #c2520a` (hover) đạt 4.661:1 — pass. Theo T0: ghi nhận là vấn đề riêng, không thay đổi trong vòng này.
 
 ---
 
-## C2 — Rà vị trí dùng primary nền với text trắng (T0 đã yêu cầu)
+## C7 — 6 vị trí theme-sensitive (T1B-owned, 14px/13px semibold = normal text)
 
-Theo chỉ đạo T0: "Trước khi chốt test, rà các vị trí public khác dùng nền primary với chữ thường màu trắng; nếu có, phải bảo đảm tương phản AA tương tự."
+Theo chỉ đạo T0 lần 2: "Kết quả '5/5 palette pass' chưa bao phủ các vị trí dùng chữ trắng cỡ thường trên primary. DEC-07 yêu cầu chữ thường đạt 4.5:1. Audit hiện báo apply-btn, nút ở form đăng nhập, 'Xem việc làm' và .pub-btn-primary đang dưới ngưỡng với HRP; Emerald và Executive cũng fail với chữ trắng trên primary. Không thể coi chúng là đạt chỉ dựa trên ngưỡng UI 3:1."
 
-Tất cả các vị trí sau dùng `var(--color-primary)` nền với `var(--color-on-primary)` text trắng:
+Tất cả 6 vị trí dùng `--color-primary` nền + white text 14px/13px semibold = **normal text**, cần **≥ 4.5:1** theo DEC-07. Tất cả giao cho **T1B** xử lý (3 site theme-sensitive mới + 2 nút "Đăng ký" đã thuộc ownership + 1 CSS class):
 
-| Vị trí | File:line | Token dùng | Text | Tương phản trên P |
+| # | Vị trí | File:line | Font | Owner |
 |---|---|---|---|---|
-| Nút "Đăng ký" desktop | `GlobalNavbar.tsx:297` | `--color-primary` + `--color-on-primary` | 14px semibold | 3.153:1 (P HRP) — **C2 decoration** |
-| Nút "Đăng ký" mobile | `GlobalNavbar.tsx:424` | `--color-primary` + `--color-on-primary` | 14px semibold | 3.153:1 (P HRP) — **C2 decoration** |
-| Nút login form | `login-form.tsx:137` | `--color-primary` + `--color-on-primary` | 14px semibold | 3.153:1 (P HRP) — **C2 decoration** |
-| Nút "Xem việc làm" ve-chung-toi | `ve-chung-toi/page.tsx:145` | `--color-primary` + `--color-on-primary` | 14px semibold | 3.153:1 (P HRP) — **C2 decoration** |
-| `.pub-btn-primary` CSS | `globals.css:513` | `--color-primary` + `--color-on-primary` | 13px semibold | 3.153:1 (P HRP) — **C2 decoration** |
-| `.apply-btn` CSS | `globals.css:621` | `--color-primary` + `--color-on-primary` | 14px semibold | 3.153:1 (P HRP) — **C2 decoration** |
+| 1 | Nút "Đăng ký" desktop | `GlobalNavbar.tsx:297` | 14px semibold | **T1B** (đã thuộc ownership) |
+| 2 | Nút "Đăng ký" mobile | `GlobalNavbar.tsx:424` | 14px semibold | **T1B** |
+| 3 | Nút login form | `login-form.tsx:137` | 14px semibold | **T1B** (theme-sensitive mới) |
+| 4 | Nút "Xem việc làm" ve-chung-toi | `ve-chung-toi/page.tsx:145` | 14px semibold | **T1B** (theme-sensitive mới) |
+| 5 | `.apply-btn` CSS | `globals.css:660` | 14px semibold | **T1B** (theme-sensitive mới) |
+| 6 | `.pub-btn-primary` CSS | `globals.css:552` | 13px semibold | **T1B** (theme-sensitive mới) |
 
-**Tất cả đều dùng `--color-primary` (P) với `--color-on-primary` (text trắng)** — đây là **C2 decoration** (ngưỡng 3:1 AA-large/UI). Không dùng P làm nền nút chính.
+### Kết quả probe C7 (white text 14px semibold trên P) — 5 palette
 
-**Tuy nhiên:** T0 đã chốt Cách A — dùng `--color-primary-dark` (PD) làm nền nút "Đăng ký" ở GlobalNavbar. Điều này **không ảnh hưởng** C2 vì C2 chỉ là decoration (vd icon background, accent border, hover state). Vấn đề là: sau khi T1C implement, các vị trí **không phải nút "Đăng ký"** vẫn dùng P nền + text trắng → vẫn là C2 (3:1).
+| Palette | P hex | C7 ratio | Need | Verdict |
+|---|---|---|---|---|
+| HR Partner | `#f26522` | **3.153:1** | ≥ 4.5:1 | ❌ FAIL → T1B đổi sang PD |
+| Ocean Trust | `#1e6f8f` | 5.637:1 | ≥ 4.5:1 | ✅ PASS |
+| Emerald Growth | `#1f8a5a` | **4.338:1** | ≥ 4.5:1 | ❌ FAIL → T1B đổi sang PD |
+| Violet Future | `#6a3fb5` | 7.021:1 | ≥ 4.5:1 | ✅ PASS |
+| Executive Gold | `#9a7a17` | **4.062:1** | ≥ 4.5:1 | ❌ FAIL → T1B đổi sang PD |
 
-**Khuyến nghị T1C implement:** Khi implement, T1C chỉ cần đảm bảo `[data-theme]` override đúng `--color-primary-dark` (PD) cho C1 (nút Đăng ký trong GlobalNavbar). Các vị trí C2 decoration (login form, apply-btn, pub-btn-primary, Xem việc làm) vẫn dùng P nền — đó là hành vi **có chủ đích** của design, không phải bug.
+**3/5 palette FAIL C7** (HRP, Emerald, Executive). Khi T1B đổi nền 6 vị trí từ P sang `primaryDark` (PD), contrast với white sẽ là:
 
-**Không cần thay đổi design** cho các vị trí C2 vì chúng đều thuộc nhóm decoration (hover-state buttons, small pills, accent backgrounds) — ngưỡng 3:1 AA-large/UI đã đủ.
+| Palette | PD hex | white on PD | Need | Verdict |
+|---|---|---|---|---|
+| HR Partner | `#a63b00` | 6.468:1 | ≥ 4.5:1 | ✅ PASS |
+| Ocean Trust | `#0d4a63` | 9.647:1 | ≥ 4.5:1 | ✅ PASS |
+| Emerald Growth | `#0d5a39` | 8.272:1 | ≥ 4.5:1 | ✅ PASS |
+| Violet Future | `#3f1f7a` | 12.438:1 | ≥ 4.5:1 | ✅ PASS |
+| Executive Gold | `#5d4a08` | 8.577:1 | ≥ 4.5:1 | ✅ PASS |
+
+**5/5 palette pass C7 sau khi T1B áp dụng PD làm nền cho 6 vị trí theme-sensitive.**
+
+### Phạm vi T1C: KHÔNG đụng 6 vị trí này
+
+T1C chỉ cung cấp token contract (token `primaryDark` đã định nghĩa ở §3.3). T1B sở hữu cả 6 vị trí — T1B sẽ áp dụng `--color-primary-dark` làm nền (thay cho `--color-primary`) cho 6 button 14px semibold. Có thể làm 1 lần ở CSS class (`.apply-btn`, `.pub-btn-primary`) hoặc sửa inline style (login-form.tsx, ve-chung-toi/page.tsx, GlobalNavbar.tsx). T1C KHÔNG sửa các file này trong vòng này.
+
+### CTA token (`.hrp-btn-apply` + `--color-primary-cta*`) — NGOÀI scope T1C
+
+PR #132 thêm `--color-primary-cta: #f07f1a` (default state 2.708:1 — fail 4.5:1 với white) và `.hrp-btn-apply` class. CTA token dùng riêng cho nút "Ứng tuyển" (FeaturedJobCard, JobCard, DetailApplyCta).
+
+**Ghi nhận vấn đề riêng**: CTA token `--color-primary-cta: #f07f1a` default state chỉ đạt 2.708:1 white text — fail AA-text (4.5:1). Hover state (CTA-dark `#c2520a` on white) đạt 4.661:1 — pass. PR #132 comment "passes 3:1 large/bold text" không chính xác với 14px semibold (không phải large text). Theo yêu cầu T0: "Giữ .hrp-btn-apply và hai token --color-primary-cta* ngoài scope T1C như đã thống nhất; ghi nhận contrast của chúng là vấn đề riêng, không thay đổi màu trong vòng này."
+
+**T1C KHÔNG override CTA token. T1C KHÔNG sửa `.hrp-btn-apply`.**
 
 ---
 
