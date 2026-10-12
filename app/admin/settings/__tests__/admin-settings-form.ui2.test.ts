@@ -93,4 +93,14 @@ describe('admin-settings-form.tsx — Phase B / UI2 wiring', () => {
     expect(code).toMatch(/function\s+handlePublish\s*\(/);
     expect(code).toMatch(/nextContentRevision\(/);
   });
+
+  it('keeps unrelated settings writable before Hero slides are configured', () => {
+    expect(code).toMatch(/const\s+heroSlidesAreEmpty\s*=\s*heroSlideSlots\.every\(/);
+    expect(code).toMatch(/heroSlidesReset\s*\|\|\s*heroSlidesAreEmpty\s*\?\s*\[\]/);
+  });
+
+  it('formats the server timestamp in a fixed timezone to avoid hydration mismatch', () => {
+    expect(code).toContain("timeZone: 'Asia/Bangkok'");
+    expect(code).not.toContain("toLocaleString('vi-VN')");
+  });
 });

@@ -313,7 +313,10 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
   // hrp-t1c-t2-public-site-hero-slides-ctv-layout (T2 hotfix / STEP-05):
   // 5 slide — fail-fast nếu 1 slot vi phạm. Reset flag = admin đã chọn
   // "Khôi phục mặc định" → không validate nội dung 5 slot (payload null).
-  const heroSlideFieldErrors = heroSlidesReset
+  const heroSlidesAreEmpty = heroSlideSlots.every(
+    (slide) => slide.mediaId === null && slide.title.trim() === '' && slide.desc.trim() === '',
+  );
+  const heroSlideFieldErrors = heroSlidesReset || heroSlidesAreEmpty
     ? []
     : heroSlideSlots.map((s) => ({
         title: validateHeroSlideTitle(s.title),
@@ -1375,7 +1378,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
           <p style={{ color: 'var(--on-surface-variant)' }} className="text-xs">
             {unavailableReason
               ? 'Chưa thể chỉnh sửa vì dữ liệu cài đặt chưa sẵn sàng.'
-              : `Cập nhật lần cuối: ${new Date(savedSnapshot.updatedAt).toLocaleString('vi-VN')}`}
+              : `Cập nhật lần cuối: ${new Date(savedSnapshot.updatedAt).toLocaleString('vi-VN', { timeZone: 'Asia/Bangkok' })}`}
           </p>
           <button
             type="button"
