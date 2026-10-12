@@ -1,53 +1,82 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import type { HeroSlidePublic } from '@/src/domains/job-board/public-types';
 
 interface RecruitmentHighlightProps {
   className?: string;
+  /**
+   * hrp-t1c-t2-public-site-hero-slides-ctv-layout (T2 hotfix / STEP-07):
+   * 5 slide do admin cấu hình. Khi `length === 0` (column null trong DB
+   * hoặc admin chọn "Khôi phục mặc định") → fallback về `FALLBACK_SLIDES`
+   * hardcoded. Auto-rotate 3500ms vẫn cứng; thứ tự 5 slot cứng.
+   */
+  slides?: HeroSlidePublic[];
 }
 
-/** Y10.4/UI04g fix: Ảnh thật Unsplash free stock theo chủ đề slide (thay SVG illustration + loại bỏ 2 dòng header text). */
-/** Y10.10/UI04i r6: 5 text dịch vụ HRP + 3 ảnh loop (công nhân Việt Nam thật). */
-const SLIDES = [
+/**
+ * hrp-t1c-t2-public-site-hero-slides-ctv-layout (T2 hotfix / STEP-07):
+ * Hardcoded fallback — render khi DB column `homepage_settings.hero_slides`
+ * null hoặc admin chọn "Khôi phục mặc định". KHÔNG đổi content v1; chỉ
+ * nâng cấp shape để cùng kiểu với admin override (`title` + `desc`).
+ */
+const FALLBACK_SLIDES: ReadonlyArray<{
+  url: string;
+  title: string;
+  desc: string;
+}> = [
   {
     // Slide 1: Cung ứng và cho thuê lại lao động thời vụ — công nhân vận hành máy móc
-    image: '/images/hero/cong-nhan-may-moc.jpg',
+    url: '/images/hero/cong-nhan-may-moc.jpg',
     title: 'Cung ứng và cho thuê lại lao động thời vụ ngắn hạn, dài hạn',
     desc: '',
   },
   {
     // Slide 2: Dịch vụ gia công và kiểm tra, phân loại linh kiện điện tử — công nhân may
-    image: '/images/hero/may-sai-gon.jpg',
+    url: '/images/hero/may-sai-gon.jpg',
     title: 'Dịch vụ gia công và kiểm tra, phân loại linh kiện điện tử',
     desc: '',
   },
   {
     // Slide 3: Dịch vụ giới thiệu lao động, việc làm — đóng gói Hà Nội
-    image: '/images/hero/dong-goi-ha-noi.jpg',
+    url: '/images/hero/dong-goi-ha-noi.jpg',
     title: 'Dịch vụ giới thiệu lao động, việc làm',
     desc: '',
   },
   {
     // Slide 4: Dịch vụ bốc xếp hàng hóa — công nhân vận hành máy móc (loop ảnh 1)
-    image: '/images/hero/cong-nhan-may-moc.jpg',
+    url: '/images/hero/cong-nhan-may-moc.jpg',
     title: 'Dịch vụ bốc xếp hàng hóa',
     desc: '',
   },
   {
     // Slide 5: Dịch vụ đóng gói hàng hoá — công nhân đóng gói Hà Nội (loop ảnh 3)
-    image: '/images/hero/dong-goi-ha-noi.jpg',
+    url: '/images/hero/dong-goi-ha-noi.jpg',
     title: 'Dịch vụ đóng gói hàng hoá',
     desc: '',
   },
-] as const;
+];
 
 /** Y10.4/UI04g fix: bỏ header + ảnh thật Unsplash theo chủ đề. */
-export function RecruitmentHighlight({ className = '' }: RecruitmentHighlightProps) {
+export function RecruitmentHighlight({ className = '', slides = [] }: RecruitmentHighlightProps) {
+  // hrp-t1c-t2-public-site-hero-slides-ctv-layout (T2 hotfix / STEP-07):
+  // Khi admin override trống (length === 0) → fallback hardcoded. Khi
+  // override non-empty → dùng URL từ Media row joined server-side.
+  const activeSlides: ReadonlyArray<{ url: string; title: string; desc: string; alt: string }> =
+    slides.length === 0
+      ? FALLBACK_SLIDES.map((s) => ({ url: s.url, title: s.title, desc: s.desc, alt: s.title }))
+      : slides.map((s) => ({
+          url: s.url ?? '',
+          title: s.title,
+          desc: s.desc,
+          alt: s.alt || s.title,
+        }));
+
   const [current, setCurrent] = useState(0);
 
   const next = useCallback(() => {
-    setCurrent((c) => (c + 1) % SLIDES.length);
-  }, []);
+    setCurrent((c) => (c + 1) % activeSlides.length);
+  }, [activeSlides.length]);
 
   useEffect(() => {
     const id = setInterval(next, 3500);
@@ -78,17 +107,17 @@ export function RecruitmentHighlight({ className = '' }: RecruitmentHighlightPro
               className="flex transition-transform duration-500 ease-out"
               style={{ transform: `translateX(-${current * 100}%)` }}
             >
-              {SLIDES.map((slide, i) => (
+              {activeSlides.map((slide, i) => (
                 <div
-                  key={slide.title}
+                  key={`${i}-${slide.title}`}
                   className="w-full flex-shrink-0"
                   aria-hidden={i !== current}
                 >
                   {/* Ảnh thật Unsplash theo chủ đề */}
                   <div className="relative h-44 w-full overflow-hidden rounded-2xl sm:h-48 md:h-52">
                     <img
-                      src={slide.image}
-                      alt={slide.title}
+                      src={slide.url}
+                      alt={slide.alt}
                       className="h-full w-full object-cover"
                       loading={i === 0 ? 'eager' : 'lazy'}
                     />
@@ -112,7 +141,7 @@ export function RecruitmentHighlight({ className = '' }: RecruitmentHighlightPro
 
           {/* Dots navigation */}
           <div className="mt-3 flex items-center justify-center gap-2" role="tablist" aria-label="Chuyển slide">
-            {SLIDES.map((_, i) => (
+            {activeSlides.map((_, i) => (
               <button
                 key={i}
                 type="button"

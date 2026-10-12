@@ -18,7 +18,7 @@ export interface ForbiddenPanelProps {
   reason?: string;
 }
 
-export function ForbiddenPanel({ reason }: ForbiddenPanelProps): React.ReactElement {
+export function ForbiddenPanel(_props: ForbiddenPanelProps): React.ReactElement {
   return (
     <div
       role="alert"
@@ -28,13 +28,8 @@ export function ForbiddenPanel({ reason }: ForbiddenPanelProps): React.ReactElem
     >
       <h2 className="text-base font-semibold mb-2">Không có quyền truy cập</h2>
       <p className="text-sm">
-        Tài khoản của bạn không có quyền xem danh sách này với bộ lọc hiện tại.
-        {reason !== undefined && reason.length > 0 ? (
-          <>
-            {' '}
-            <span data-testid="forbidden-reason">{reason}</span>
-          </>
-        ) : null}
+        Tài khoản của bạn hiện chưa được phép truy cập nội dung này. Nếu cho rằng đây là nhầm lẫn,
+        hãy liên hệ quản trị viên.
       </p>
     </div>
   );

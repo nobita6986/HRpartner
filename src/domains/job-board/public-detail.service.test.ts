@@ -73,7 +73,11 @@ function detailRow(canonical: ReturnType<typeof slot> | null) {
 type PublicTx = Parameters<typeof getPublicJobDetail>[0];
 
 function detailTx(row: unknown) {
-  return { jobPosting: { findFirst: vi.fn().mockResolvedValue(row) } } as unknown as PublicTx;
+  // hrp-t1c-jobposting-media-youtube (RQ-03): gallery query added; default mock returns [].
+  return {
+    jobPosting: { findFirst: vi.fn().mockResolvedValue(row) },
+    mediaAssignment: { findMany: vi.fn().mockResolvedValue([]) },
+  } as unknown as PublicTx;
 }
 
 const QC_SLOT = {

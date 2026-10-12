@@ -379,6 +379,208 @@ describe('F-06 / AC-16 nextAction matrix (7 closed enum values)', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────
+// F6 — placement unavailable reason (cell render tests).
+// ─────────────────────────────────────────────────────────────────────────
+
+describe('F6 — placement unavailable reason rendering', () => {
+  it('F6-CEL01 [no override]: canMutatePlacement=false → bare "—" (F-02 byte-exact), reason paragraph NOT present', () => {
+    const html = render(
+      createElement(PlacementActionCell, {
+        row: makeRowInput({
+          caseId: 'case-f6-1',
+          caseStatus: 'READY_TO_PLACE',
+          placement: null,
+          placementOptions: [makeOption({})],
+          nextAction: 'REVIEW_PLACEMENT',
+        }),
+        canMutatePlacement: false,
+        placementRouteFamily: 'admin',
+      }),
+    );
+    expect(html).toContain('—');
+    expect(html).not.toContain('placement-unavailable-reason');
+    // The wrapper still carries the test hook for tooling/analytics.
+    expect(html).toContain('data-unavailable-reason="NO_AUTHORITY"');
+  });
+
+  it('F6-CEL02 [no override]: stale row → existing F-03 amber alert, reason paragraph NOT present', () => {
+    const html = render(
+      createElement(PlacementActionCell, {
+        row: makeRowInput({
+          caseId: 'case-f6-2',
+          caseStatus: 'IN_PROGRESS',
+          placement: makePlacement({ status: 'SELECTED' }),
+          placementOptions: null,
+          nextAction: 'REVIEW_PLACEMENT',
+        }),
+        canMutatePlacement: true,
+        placementRouteFamily: 'admin',
+      }),
+    );
+    expect(html).toContain('placement-stale-alert');
+    expect(html).toContain('Dữ liệu đã cũ');
+    expect(html).not.toContain('placement-unavailable-reason');
+    // The wrapper carries the test hook for the resolver's STALE code.
+    expect(html).toContain('data-unavailable-reason="STALE"');
+  });
+
+  it('F6-CEL03: no placement + no options + READY_TO_PLACE → NO_ELIGIBLE_OPTION reason', () => {
+    const html = render(
+      createElement(PlacementActionCell, {
+        row: makeRowInput({
+          caseId: 'case-f6-3',
+          caseStatus: 'READY_TO_PLACE',
+          placement: null,
+          placementOptions: [],
+          nextAction: 'REVIEW_PLACEMENT',
+        }),
+        canMutatePlacement: true,
+        placementRouteFamily: 'admin',
+      }),
+    );
+    expect(html).toContain('placement-unavailable-reason');
+    expect(html).toContain('data-reason-code="NO_ELIGIBLE_OPTION"');
+    expect(html).toContain('JobOpening');
+    expect(html).not.toContain('Mở bố trí');
+  });
+
+  it('F6-CEL04: no placement + options + non-READY → CASE_NOT_READY reason', () => {
+    const html = render(
+      createElement(PlacementActionCell, {
+        row: makeRowInput({
+          caseId: 'case-f6-4',
+          caseStatus: 'IN_PROGRESS',
+          placement: null,
+          placementOptions: [makeOption({})],
+          nextAction: 'REVIEW_PLACEMENT',
+        }),
+        canMutatePlacement: true,
+        placementRouteFamily: 'admin',
+      }),
+    );
+    expect(html).toContain('placement-unavailable-reason');
+    expect(html).toContain('data-reason-code="CASE_NOT_READY"');
+    expect(html).toContain('Sẵn sàng bố trí');
+    expect(html).not.toContain('Mở bố trí');
+  });
+
+  it.each(['EFFECTIVE', 'FAILED', 'CANCELLED'] as const)(
+    'F6-CEL05[%s]: terminal placement → TERMINAL_PLACEMENT reason',
+    (status) => {
+      // EFFECTIVE on a non-CLOSED case is captured by the F-03 stale
+      // path (LOCK-15) — see `isStalePlacementSnapshot` rule: an
+      // EFFECTIVE placement is "stale" until the case is CLOSED. Use
+      // CLOSED here to exercise the TERMINAL_PLACEMENT reason for an
+      // EFFECTIVE placement; the F-03 stale path is covered separately
+      // by F6-CEL02.
+      const caseStatus = 'CLOSED';
+      const html = render(
+        createElement(PlacementActionCell, {
+          row: makeRowInput({
+            caseId: `case-f6-5-${status}`,
+            caseStatus,
+            placement: makePlacement({ status }),
+            placementOptions: null,
+            nextAction: 'NONE',
+          }),
+          canMutatePlacement: true,
+          placementRouteFamily: 'admin',
+        }),
+      );
+      expect(html).toContain('placement-unavailable-reason');
+      expect(html).toContain('data-reason-code="TERMINAL_PLACEMENT"');
+      expect(html).toContain('kết thúc');
+      expect(html).not.toContain('Mở bố trí');
+    },
+  );
+
+  it.each([
+    'OPEN_INTAKE',
+    'REQUEST_DOCS',
+    'SCREEN_SUBMISSION',
+    'SCHEDULE_SCREEN',
+    'AWAITING_RESULT',
+    'NONE',
+  ] as const)(
+    'F6-CEL06[%s]: SELECTED + READY_TO_PLACE + non-REVIEW nextAction → WORKFLOW_GATE reason',
+    (nextAction) => {
+      const html = render(
+        createElement(PlacementActionCell, {
+          row: makeRowInput({
+            caseId: `case-f6-6-${nextAction}`,
+            caseStatus: 'READY_TO_PLACE',
+            placement: makePlacement({ status: 'SELECTED' }),
+            placementOptions: null,
+            nextAction,
+          }),
+          canMutatePlacement: true,
+          placementRouteFamily: 'admin',
+        }),
+      );
+      expect(html).toContain('placement-unavailable-reason');
+      expect(html).toContain('data-reason-code="WORKFLOW_GATE"');
+      expect(html).toContain('bước bố trí');
+      expect(html).not.toContain('Mở bố trí');
+    },
+  );
+
+  it('F6-CEL07 [eligible regression]: READY_TO_PLACE + options + REVIEW_PLACEMENT → "Mở bố trí" still renders (F-06 byte-exact)', () => {
+    const html = render(
+      createElement(PlacementActionCell, {
+        row: makeRowInput({
+          caseId: 'case-f6-7',
+          caseStatus: 'READY_TO_PLACE',
+          placement: null,
+          placementOptions: [makeOption({ jobOpeningId: 'jo-1' })],
+          nextAction: 'REVIEW_PLACEMENT',
+        }),
+        canMutatePlacement: true,
+        placementRouteFamily: 'admin',
+      }),
+    );
+    expect(html).toContain('Mở bố trí');
+    expect(html).toContain('placement-action-open');
+    // The wrapper still carries a data-unavailable-reason attribute
+    // (the resolver returns GENERIC_FALLBACK for the has-actions path
+    // but the cell renders the trigger button — the attribute is
+    // harmless metadata for tooling).
+    expect(html).toContain('data-unavailable-reason=');
+  });
+
+  it('F6-CEL08 [parent override]: parent supplies placementUnavailableReason=TERMINAL_PLACEMENT → wrapper carries the parent code (forward-compatible DTO field)', () => {
+    // The parent can stamp the wrapper with a server-derived reason
+    // code even when the row has actions. The cell's render decision
+    // is still driven by the row + canMutatePlacement (so the trigger
+    // button renders); the wrapper's `data-unavailable-reason` honors
+    // the parent-supplied code. This pins the F6 contract: the parent
+    // can supply a reason code for tooling/analytics without
+    // suppressing the trigger button.
+    const html = render(
+      createElement(PlacementActionCell, {
+        row: makeRowInput({
+          caseId: 'case-f6-8',
+          caseStatus: 'READY_TO_PLACE',
+          placement: null,
+          placementOptions: [makeOption({ jobOpeningId: 'jo-1' })],
+          nextAction: 'REVIEW_PLACEMENT',
+        }),
+        canMutatePlacement: true,
+        placementRouteFamily: 'admin',
+        placementUnavailableReason: 'TERMINAL_PLACEMENT',
+      }),
+    );
+    // Parent-supplied reason wins over the local resolver on the wrapper.
+    expect(html).toContain('data-unavailable-reason="TERMINAL_PLACEMENT"');
+    // The cell still renders the trigger button (F-06 byte-exact).
+    expect(html).toContain('Mở bố trí');
+    expect(html).toContain('placement-action-open');
+    // The reason paragraph is NOT rendered for the has-actions branch
+    // (the paragraph only renders when !hasActions).
+    expect(html).not.toContain('data-reason-code=');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────
 // F-05 / SlideOutDrawer adoption (drawer is the shared primitive).
 // ─────────────────────────────────────────────────────────────────────────
 

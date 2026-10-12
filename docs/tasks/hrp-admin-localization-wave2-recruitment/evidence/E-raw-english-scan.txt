@@ -1,0 +1,46 @@
+# AC-26 raw-English scan — negative evidence (no matches)
+
+Date: 2026-10-04 (Vietnamese +07)
+Implementation SHA: c68aede301bdb986533cc9f9e1c3696207a5c441
+Command (a) — raw <span>{status}</span> in 4 route files:
+
+```bash
+rg -n "<span>\{(\w*[Ss]tatus\w*)\}</span>" \
+   app/admin/jobs/page.tsx \
+   app/admin/jobs/job-postings/page.tsx \
+   "app/admin/jobs/job-postings/[id]/page.tsx" \
+   "app/admin/job-openings/[id]/page.tsx" \
+   app/admin/staffing/staffing-list-client.tsx
+```
+
+Exit: 1 (no matches).
+Output: empty.
+
+Command (b) — bare >ENUM_LIST_UPPER_TOKEN< pattern (filter <option> raw):
+
+```bash
+rg -n "^>[A-Z_]+$" \
+   app/admin/jobs/page.tsx \
+   app/admin/jobs/job-postings/page.tsx \
+   "app/admin/jobs/job-postings/[id]/page.tsx" \
+   "app/admin/job-openings/[id]/page.tsx" \
+   app/admin/staffing/staffing-list-client.tsx
+```
+
+Exit: 1 (no matches).
+Output: empty.
+
+Result: NO raw English status enum rendered on any of the 5 surfaces.
+Status of [Published]/[Unpublished]/[Closed] on jobs/page.tsx replaced by
+projectPublishColumnLabel() (Vietnamese).
+Status of [DRAFT]/[PUBLISHED]/[ARCHIVED] on job-postings/* replaced by
+jobPostingStatusLabel() (Vietnamese) through `<StatusBadge
+module={JOB_POSTING_MODULE}>`.
+Status of [DRAFT]/[OPEN]/[CLOSING_SOON]/[CLOSED]/[FILLED]/[CANCELLED] on
+job-openings/[id] replaced by jobOpeningStatusLabel() (Vietnamese) through
+`<StatusBadge module={JOB_OPENING_MODULE}>`.
+serviceModel raw [onsite]/[remote] replaced by
+jobOpeningServiceModelLabel() (Vietnamese).
+Status of [OPEN]/[CLOSING_SOON]/[CLOSED]/[CANCELLED] on staffing-list-client
+replaced by staffingOrderStatusLabel() (Vietnamese) through `<StatusBadge
+module={STAFFING_ORDER_MODULE}>`.

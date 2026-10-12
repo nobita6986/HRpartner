@@ -7,13 +7,18 @@
  * render với `searchParams`, rate-limit và DB đều mock — và một bài test như thế vẫn xanh khi hàm
  * ghép URL đánh rơi một bộ lọc lúc sang trang.
  *
+ * hrp-t2-public-site-hotfix (T2 / STEP-03): thêm 1 tham số `salary` với 6
+ * bucket cố định (whitelist). URL contract đổi từ 4 → 5 tên; bốn tên cũ
+ * KHÔNG đổi thứ tự, cấm phát tham số khác ngoài whitelist. Hai luật cũ
+ * giữ nguyên: (a) KHÔNG ghi `offset` khi nó bằng 0, (b) chỉ whitelist tên
+ * được phát ra.
  * Hai luật của hợp đồng, cả hai đều là luật về URL chứ không về hiển thị:
  *   - KHÔNG ghi `offset` khi nó bằng 0, nên trang một của một bộ lọc là ĐÚNG MỘT chuỗi (`RQ-06`).
  *     Thiếu luật này thì `/viec-lam?q=a` và `/viec-lam?q=a&offset=0` là hai URL cho cùng một nội
  *     dung, và canonical của `DEC-08` mất nghĩa.
- *   - CHỈ bốn tên `q`, `area`, `shift`, `offset` được đọc và được phát ra. Mọi tên khác bị loại
- *     trong im lặng (`RQ-03`), gồm bốn tên mà bề mặt cũ từng hứa mà không có vị từ chống lưng:
- *     `salary`, `limit`, `shiftType`, `jobType`.
+ *   - CHỈ năm tên `q`, `salary`, `area`, `shift`, `offset` được đọc và được phát ra. Mọi tên khác
+ *     bị loại trong im lặng (`RQ-03`), gồm ba tên mà bề mặt cũ từng hứa mà không có vị từ
+ *     chống lưng: `limit`, `shiftType`, `jobType`.
  *
  * Ba xử lý `offset` KHÁC nhau, đừng gộp: âm hoặc không phải số thì KẸP về 0 (`RQ-02`); không chia
  * hết `PAGE_SIZE` thì KÉO XUỐNG bội gần nhất, vì `RQ-02` chỉ liệt kê ba ca reset-về-0 và ca này
@@ -28,6 +33,20 @@ export const PAGE_SIZE = 20;
 
 /** Đường dẫn chính tắc của trang danh sách công khai. */
 export const LISTING_PATH = '/viec-lam';
+
+/**
+ * hrp-t2-public-site-hotfix (T2 / STEP-03): whitelist 6 bucket lương cho
+ * `/viec-lam`. Mọi literal không thuộc whitelist sẽ bị parser kẹp về
+ * `undefined` (giống cơ chế `offset` rác). Tên bucket dùng thẳng làm URL
+ * value (`?salary=10-15`).
+ *
+ * Type và tuple PHẢI đồng bộ với `SALARY_BUCKETS` trong
+ * `public-listing.labels.ts` (cùng chuỗi). Hai module tách riêng chỉ vì
+ * labels.ts cũng là dependency của trang chủ; việc thống nhất chuỗi được
+ * gate bằng unit test ở `public-listing.params.test.ts`.
+ */
+export const SALARY_BUCKETS = ['<5', '5-10', '10-15', '15-20', '20-30', '>30'] as const;
+export type SalaryBucket = (typeof SALARY_BUCKETS)[number];
 
 /** Next.js cho một khoá xuất hiện nhiều lần; hợp đồng chọn phần tử đầu. */
 function firstValue(raw: string | string[] | undefined): string | undefined {
@@ -61,11 +80,29 @@ function cleanOffset(raw: string | string[] | undefined): number {
 }
 
 /**
- * Bộ bốn trường đã làm sạch. Bốn khoá LUÔN có mặt kể cả khi giá trị là `undefined`, để phía gọi
+ * hrp-t2-public-site-hotfix (T2 / STEP-03): whitelist salary bucket. Trả về
+ * bucket nếu nằm trong whitelist, ngược lại `undefined`. Tham số rỗng / chuỗi
+ * rỗng / whitespace cũng là `undefined`. Cùng tinh thần với `cleanOffset` —
+ * input không hợp lệ phải đi vào nhánh vắng mặt để `listingIsIndexable` xử
+ * như URL sạch.
+ */
+function cleanSalary(raw: string | string[] | undefined): SalaryBucket | undefined {
+  const value = firstValue(raw);
+  if (value === undefined) return undefined;
+  const trimmed = value.trim();
+  if (trimmed === '') return undefined;
+  return (SALARY_BUCKETS as readonly string[]).includes(trimmed)
+    ? (trimmed as SalaryBucket)
+    : undefined;
+}
+
+/**
+ * Bộ năm trường đã làm sạch. Năm khoá LUÔN có mặt kể cả khi giá trị là `undefined`, để phía gọi
  * đọc được `params.q` mà không phải kiểm tồn tại, và để test đếm được bề mặt bằng `Object.keys`.
  */
 export function parseListingSearchParams(raw: RawSearchParams): {
   q: string | undefined;
+  salary: SalaryBucket | undefined;
   area: string | undefined;
   shift: string | undefined;
   offset: number;
@@ -73,25 +110,31 @@ export function parseListingSearchParams(raw: RawSearchParams): {
   const q = presentValue(raw.q);
   return {
     q: q === undefined ? undefined : q.trim(),
+    salary: cleanSalary(raw.salary),
     area: presentValue(raw.area),
     shift: presentValue(raw.shift),
     offset: cleanOffset(raw.offset),
   };
 }
 
-/** Kiểu cục bộ, KHÔNG export: mục 4.4 chốt bề mặt của module này là đúng năm thứ. */
+/** Kiểu cục bộ, KHÔNG export: mục 4.4 chốt bề mặt của module này là đúng sáu thứ. */
 type ListingParams = ReturnType<typeof parseListingSearchParams>;
 
 /**
  * Đường tương đối cho mọi liên kết của trang: hai nút phân trang, liên kết xoá lọc, và canonical.
  * `offsetOverride` là cách hai nút Trước/Sau đổi trang mà giữ nguyên bộ lọc — phía gọi truyền
  * `params.offset ± PAGE_SIZE`, không tự ghép chuỗi.
+ *
+ * hrp-t2-public-site-hotfix (T2 / STEP-03): thứ tự ghi là `q, salary, area, shift, offset`. Đặt
+ * `salary` ngay sau `q` để URL ngắn gọn (lương thường là filter top-level, khu vực/ca là filter
+ * phụ).
  */
 export function buildListingHref(params: ListingParams, offsetOverride?: number): string {
   const offset = offsetOverride ?? params.offset;
   const search = new URLSearchParams();
   // Thứ tự ghi là hợp đồng: cùng một trạng thái lọc phải cho cùng một chuỗi, ở mọi chỗ gọi.
   if (params.q) search.set('q', params.q);
+  if (params.salary) search.set('salary', params.salary);
   if (params.area) search.set('area', params.area);
   if (params.shift) search.set('shift', params.shift);
   if (offset > 0) search.set('offset', String(offset));
@@ -102,10 +145,15 @@ export function buildListingHref(params: ListingParams, offsetOverride?: number)
 /**
  * `DEC-08`: chỉ URL sạch được index. Mọi tổ hợp lọc và mọi trang từ hai trở đi là nội dung dẫn
  * xuất, nên `robots` phải `noindex` để chúng không cạnh tranh với chính `/viec-lam`.
+ *
+ * hrp-t2-public-site-hotfix (T2 / STEP-03): bổ sung `salary !== undefined` vào
+ * blacklist index — bucket lương là filter thật, có thể chọn bất kỳ, không
+ * phải URL sạch.
  */
 export function listingIsIndexable(params: ListingParams): boolean {
   return (
     params.q === undefined &&
+    params.salary === undefined &&
     params.area === undefined &&
     params.shift === undefined &&
     params.offset === 0

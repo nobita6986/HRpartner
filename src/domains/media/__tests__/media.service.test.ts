@@ -269,6 +269,90 @@ describe('createMedia', () => {
       }),
     );
   });
+
+  // hrp-t1c-media-global-pool-bulk-upload-hotfix (RQ-07)
+  it('derives alt from filename when alt is empty string', async () => {
+    const c = makeClient();
+    c._client.media.create.mockResolvedValue(mockRow({ alt: 'anh van phong' }));
+    await createMedia(c as never, {
+      url: 'https://blob.example/hrp/1715000000-anh_van_phong.png',
+      alt: '',
+      filename: '1715000000-anh_van_phong.png',
+      size: 1024,
+      mimeType: 'image/png',
+      ownerId: 'u1',
+    });
+    expect(c._client.media.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          alt: 'anh van phong',
+        }),
+      }),
+    );
+  });
+
+  // hrp-t1c-media-global-pool-bulk-upload-hotfix (RQ-07)
+  it('derives alt from filename when alt is whitespace-only', async () => {
+    const c = makeClient();
+    c._client.media.create.mockResolvedValue(mockRow());
+    await createMedia(c as never, {
+      url: 'https://blob.example/hrp/banh_mi.jpg',
+      alt: '   ',
+      filename: 'banh_mi.jpg',
+      size: 1024,
+      mimeType: 'image/jpeg',
+      ownerId: 'u1',
+    });
+    expect(c._client.media.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          alt: 'banh mi',
+        }),
+      }),
+    );
+  });
+
+  // hrp-t1c-media-global-pool-bulk-upload-hotfix (RQ-07)
+  it('falls back to DEFAULT_MEDIA_ALT when filename derives empty', async () => {
+    const c = makeClient();
+    c._client.media.create.mockResolvedValue(mockRow({ alt: 'Hình ảnh' }));
+    await createMedia(c as never, {
+      url: 'https://blob.example/hrp/____.jpg',
+      alt: '',
+      filename: '____.jpg',
+      size: 1024,
+      mimeType: 'image/jpeg',
+      ownerId: 'u1',
+    });
+    expect(c._client.media.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          alt: 'Hình ảnh',
+        }),
+      }),
+    );
+  });
+
+  // hrp-t1c-media-global-pool-bulk-upload-hotfix (RQ-07)
+  it('keeps client-provided alt when non-empty', async () => {
+    const c = makeClient();
+    c._client.media.create.mockResolvedValue(mockRow({ alt: 'Custom alt' }));
+    await createMedia(c as never, {
+      url: 'https://blob.example/hrp/banh_mi.jpg',
+      alt: 'Custom alt',
+      filename: 'banh_mi.jpg',
+      size: 1024,
+      mimeType: 'image/jpeg',
+      ownerId: 'u1',
+    });
+    expect(c._client.media.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          alt: 'Custom alt',
+        }),
+      }),
+    );
+  });
 });
 
 describe('getMedia / updateMedia / deleteMedia', () => {
@@ -349,6 +433,47 @@ describe('listMedia', () => {
     const result = await listMedia(c as never, { take: 20, skip: 0 });
     expect(result.items).toHaveLength(1);
     expect(result.total).toBe(1);
+  });
+
+  // hrp-t1c-media-global-pool-bulk-upload-hotfix (RQ-10): folder không còn filter là.
+  // Media cũ ở mọi folder phải list chung.
+  it('does not filter by folder even when query.folder is set (global pool)', async () => {
+    const c = makeClient();
+    c._client.media.findMany.mockResolvedValue([]);
+    c._client.media.count.mockResolvedValue(0);
+    await listMedia(c as never, {
+      folder: 'homepage',
+      folder_legacy: undefined as never,
+      take: 20,
+      skip: 0,
+    } as never);
+    expect(c._client.media.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.not.objectContaining({ folder: expect.anything() }),
+      }),
+    );
+  });
+
+  it('still filters by status / tag / search', async () => {
+    const c = makeClient();
+    c._client.media.findMany.mockResolvedValue([]);
+    c._client.media.count.mockResolvedValue(0);
+    await listMedia(c as never, {
+      status: 'PUBLIC',
+      tag: 'hero',
+      search: 'anh',
+      take: 20,
+      skip: 0,
+    });
+    expect(c._client.media.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          status: 'PUBLIC',
+          tags: { has: 'hero' },
+          OR: expect.any(Array),
+        }),
+      }),
+    );
   });
 });
 

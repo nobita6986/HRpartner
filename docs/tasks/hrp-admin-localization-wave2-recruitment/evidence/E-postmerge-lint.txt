@@ -1,0 +1,9 @@
+corepack : $ eslint .
+exit: 0
+
+==> SUMMARY <==
+corepack pnpm run lint
+exit: 0
+0 errors, 918 warnings
+(wave 2 baseline 920 warnings; delta -2 from wave 1 PR #96 + PR #97 contribution)
+0 errors and 17 warnings potentially fixable with the `--fix` option.

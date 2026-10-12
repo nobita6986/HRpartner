@@ -55,6 +55,10 @@ import {
   type PlacementCommandPayloadShape,
   type PlacementRouteFamily,
 } from './recruiter-workbench.placement-actions.states';
+import {
+  resolvePlacementUnavailableReason,
+  type PlacementUnavailableReasonCode,
+} from './recruiter-workbench.placement-actions.unavailable';
 
 export {
   EFFECTIVE_EVIDENCE_SCHEMA,
@@ -98,6 +102,14 @@ export interface PlacementActionCellProps {
    * Server F0 authorization remains canonical; this flag is purely UX.
    */
   canMutatePlacement: boolean;
+  /**
+   * F6: server-derived safe reason code the cell renders when no action
+   * is available. OPTIONAL — when absent, the cell computes the reason
+   * from the local resolver. When present, the cell renders that code's
+   * Vietnamese label and stamps `data-unavailable-reason={code}` on the
+   * wrapper. NEVER inferred by the cell.
+   */
+  placementUnavailableReason?: PlacementUnavailableReasonCode | null;
 }
 
 /**
@@ -114,15 +126,35 @@ export function PlacementActionCell({
   row,
   placementRouteFamily,
   canMutatePlacement,
+  placementUnavailableReason,
 }: PlacementActionCellProps): React.ReactElement {
   const [open, setOpen] = React.useState(false);
   const hasActions = canPerformPlacementAction(row);
   const stale = isStalePlacementSnapshot(row);
   const authorized = canMutatePlacement === true;
 
+  // F6: resolve the unavailable reason once. The cell may NOT infer
+  // permission on its own; the resolver is a presentation-only mapper of
+  // server-derived flags. When the parent supplies a server-derived
+  // `placementUnavailableReason`, we honor it; otherwise we fall back
+  // to the local resolver (the read service is forward-compatible — the
+  // field is OPTIONAL on the DTO).
+  const resolved = resolvePlacementUnavailableReason({
+    canMutatePlacement,
+    isStale: stale,
+    row,
+  });
+  const reasonCode: PlacementUnavailableReasonCode =
+    placementUnavailableReason ?? resolved.code;
+  const reasonLabel = resolved.label;
+
   if (!authorized) {
     // F-02 / AC-03: role gate. UI MUST NOT render any mutation affordance
     // for HR_STAFF / CTV / PUBLIC / unauthenticated. Server F0 is authority.
+    // F6: keep the bare `—` byte-exact (no reason text — the unauthorized
+    // path intentionally does not explain what is missing to avoid
+    // information leakage); the wrapper still carries
+    // `data-unavailable-reason` for test hook.
     return (
       <div
         className="flex justify-end"
@@ -130,6 +162,7 @@ export function PlacementActionCell({
         data-case-id={row.caseId}
         data-authorized="false"
         data-route-family={placementRouteFamily}
+        data-unavailable-reason={reasonCode}
       >
         <span className="text-xs text-slate-500" aria-hidden="true">
           —
@@ -146,6 +179,7 @@ export function PlacementActionCell({
         data-case-id={row.caseId}
         data-authorized="true"
         data-route-family={placementRouteFamily}
+        data-unavailable-reason={reasonCode}
       >
         <span className="text-xs text-slate-500" aria-hidden="true">
           —
@@ -162,17 +196,24 @@ export function PlacementActionCell({
   }
 
   if (!hasActions) {
+    // F6: replace the bare `—` with a single-line reason paragraph
+    // carrying the safe Vietnamese label + a test hook.
     return (
       <div
-        className="flex justify-end"
+        className="flex flex-col items-end gap-1"
         data-testid="placement-action-cell"
         data-case-id={row.caseId}
         data-authorized="true"
         data-route-family={placementRouteFamily}
+        data-unavailable-reason={reasonCode}
       >
-        <span className="text-xs text-slate-500" aria-hidden="true">
-          —
-        </span>
+        <p
+          data-testid="placement-unavailable-reason"
+          data-reason-code={reasonCode}
+          className="text-[11px] text-slate-500 text-right max-w-[180px] leading-snug"
+        >
+          {reasonLabel}
+        </p>
       </div>
     );
   }
@@ -184,6 +225,7 @@ export function PlacementActionCell({
       data-case-id={row.caseId}
       data-authorized="true"
       data-route-family={placementRouteFamily}
+      data-unavailable-reason={reasonCode}
     >
       <button
         type="button"

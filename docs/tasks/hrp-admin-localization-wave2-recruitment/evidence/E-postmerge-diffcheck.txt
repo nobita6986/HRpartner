@@ -1,0 +1,7 @@
+$ git diff --check
+(no output)
+
+exit: 0
+
+==> SUMMARY <==
+git diff --check: 0 whitespace / BOM errors post-merge.

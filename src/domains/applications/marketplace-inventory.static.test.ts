@@ -800,12 +800,15 @@ describe('RQ-07/DEC-11 — một UI apply canonical, hai URL cũ chỉ redirect'
     expect(page).toContain('locations: job.locations');
     // DEC-01: location and salary computation moved inside BestJobsSection
     expect(bestJobs).toContain("location: job.locations[0]");
-    // DEC-04: FeaturedJobCard receives salaryMinVnd/salaryMaxVnd separately, computes label internally
+    // DEC-04: FeaturedJobCard receives salaryMinVnd/salaryMaxVnd/salaryDisplay separately,
+    // resolves label via shared `formatPublicSalary` (T1A / RC-03) — single source of truth
+    // ở `public-listing.labels.ts`. KHÔNG tự build inline string ở card.
     expect(bestJobs).toContain('salaryMinVnd: job.salaryMinVnd');
     expect(bestJobs).toContain('salaryMaxVnd: job.salaryMaxVnd');
-    // FeaturedJobCard has its own salaryLabel function for internal computation
+    expect(bestJobs).toContain('salaryDisplay: job.salaryDisplay');
     const card = strip(read('src/domains/job-board/components/landing/featured-job-card.tsx'));
-    expect(card).toContain('salaryLabel(');
+    expect(card).toContain('formatPublicSalary(');
+    expect(card).not.toContain('salaryLabel(');
   });
 
   it('nút Tìm kiếm chuyển ba bộ lọc thật vào API, không còn control trang trí', () => {

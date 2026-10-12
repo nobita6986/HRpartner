@@ -1,164 +1,161 @@
+/**
+ * /ve-chung-toi — Trang Giới thiệu công khai.
+ *
+ * hrp-t1a-introduce-hrp-and-menu-cleanup: re-creates the legacy public route
+ * (deleted in a commit before this task's baseline). The page carries the
+ * T0-supplied copy for "HRP Việt Nam" and "Sàn Việc Làm Miền Bắc".
+ *
+ * Server component (no client state). Uses the same public-portal chrome
+ * (GlobalNavbar + GlobalFooter mounted by `app/(portal)/layout.tsx`).
+ */
 export const metadata = {
-  title: 'Về HRP — Hệ thống quản trị cung ứng nhân lực',
+  title: 'Giới thiệu — HRP Việt Nam',
   description:
-    'HRP là hệ thống quản trị cung ứng nhân lực toàn diện: từ khách hàng, nhu cầu tuyển, người lao động, chấm công, đối soát đến trả lương.',
+    'Công ty TNHH HRP Việt Nam — cung ứng, tuyển dụng, đào tạo và quản lý nhân sự. Sàn Việc Làm Miền Bắc — nền tảng kết nối tuyển dụng.',
 };
-
-const CARDS = [
-  {
-    icon: '🏢',
-    title: 'Hệ quản trị HRP',
-    desc: 'Toàn cảnh hệ thống: ba cổng (nội bộ, đối tác, người lao động), chuỗi nghiệp vụ từ bán hàng đến trả lương, nguyên tắc chống tranh chấp và lộ trình triển khai.',
-    tag: 'Giới thiệu',
-    tagStyle: 'ok',
-    href: '/ve-hrp.html',
-    more: 'Xem toàn cảnh →',
-  },
-  {
-    icon: '💼',
-    title: 'Việc làm đang tuyển',
-    desc: 'Danh sách vị trí đang tuyển, nộp hồ sơ trực tuyến và tra cứu tình trạng hồ sơ bằng mã theo dõi.',
-    tag: 'Đang tuyển',
-    tagStyle: 'ok',
-    href: '/jobs',
-    more: 'Xem việc làm →',
-  },
-  {
-    icon: '🧾',
-    title: 'Tra cứu bảng công',
-    desc: 'Tra cứu bảng công cá nhân và phiếu lương chi tiết theo mã thẻ — lịch chấm công từng ngày, tổng công, tăng ca, bảng lương A–E.',
-    tag: 'Đã triển khai',
-    tagStyle: 'ok',
-    href: 'https://www.hrpvietnam.vn/',
-    more: 'Tra cứu ngay →',
-  },
-];
 
 export default function VeChungToiPage() {
   return (
-    <div className="min-h-screen" style={{ backgroundColor: 'var(--color-background)' }}>
-
-      {/* Hero */}
-      <section className="py-16 md:py-20 px-6 md:px-[5%]" style={{ backgroundColor: 'var(--color-background)' }}>
-        <div className="max-w-5xl mx-auto">
-          {/* Kicker */}
-          <div
-            className="inline-block text-sm font-bold tracking-widest uppercase mb-6 px-4 py-1.5 rounded-full"
-            style={{
-              color: 'var(--color-primary-dark)',
-              backgroundColor: 'var(--color-primary-soft)',
-              border: '1px solid var(--color-outline-variant)',
-            }}
-          >
-            HRP — Hệ thống quản trị cung ứng nhân lực
-          </div>
-
-          {/* Headline */}
-          <h1
-            className="text-4xl md:text-5xl font-extrabold leading-tight mb-6"
-            style={{ letterSpacing: '-0.02em', color: 'var(--color-on-surface)', maxWidth: '760px' }}
-          >
-            Một hệ thống cho toàn bộ nghiệp vụ{' '}
-            <em className="not-italic" style={{ color: 'var(--color-primary-dark)' }}>
-              cung ứng nhân sự
-            </em>
-            .
-          </h1>
-
-          {/* Lede */}
+    // hrp-t1a-introduce-hrp-and-menu-cleanup — correction 1/1:
+    // `app/(portal)/layout.tsx` already wraps children in <main className="flex-1">,
+    // so the page root must NOT be another <main> (HTML5 forbids nested <main>
+    // landmarks and breaks the skip-link target semantics). Root is a
+    // <div id="hrp-main" tabIndex={-1}> so:
+    //   1. There is exactly one <main> on the page (provided by the layout).
+    //   2. The GlobalNavbar skip link `href="#hrp-main"` still resolves.
+    //   3. Programmatic focus from the skip link still lands on a focusable
+    //      element (div + tabIndex={-1}) for screen-reader / keyboard users.
+    <div
+      id="hrp-main"
+      tabIndex={-1}
+      className="flex w-full flex-col items-stretch gap-0 focus:outline-none"
+      style={{ backgroundColor: 'var(--surface)' }}
+    >
+      {/* Hero / tiêu đề trang */}
+      <section
+        className="w-full"
+        style={{ backgroundColor: 'var(--color-primary-soft)' }}
+      >
+        <div className="mx-auto w-full max-w-[1080px] px-4 py-12 md:px-6 md:py-16">
           <p
-            className="text-lg md:text-xl mb-8"
-            style={{ color: 'var(--color-on-surface-variant)', maxWidth: '640px', lineHeight: 1.7 }}
+            className="font-label text-label-md font-bold uppercase tracking-widest"
+            style={{ color: 'var(--color-primary-dark)' }}
           >
-            Từ khách hàng, nhu cầu tuyển, người lao động, chấm công, đối soát — đến trả lương và hoa hồng.
-            Mọi con số đã chốt là không sửa.
+            Giới thiệu
           </p>
+          <h1
+            className="mt-3 font-head text-headline-lg font-bold leading-tight md:text-headline-xl"
+            style={{ color: 'var(--on-surface)' }}
+          >
+            HRP Việt Nam — Kết nối doanh nghiệp và người lao động
+          </h1>
+          <p
+            className="mt-3 max-w-3xl font-body text-body-lg"
+            style={{ color: 'var(--on-surface-variant)' }}
+          >
+            Cung ứng, tuyển dụng, đào tạo và quản lý nhân sự cho doanh nghiệp tại
+            khu vực phía Bắc.
+          </p>
+        </div>
+      </section>
 
-          {/* CTA Row */}
-          <div className="flex flex-wrap gap-3">
-            <a
-              href="/ve-hrp.html"
-              className="inline-flex items-center gap-2 font-semibold px-6 py-3 rounded-xl text-white transition-all hover:-translate-y-0.5 hover:shadow-md"
-              style={{ backgroundColor: 'var(--color-primary-dark)' }}
-            >
-              Tìm hiểu về HRP
-            </a>
+      {/* Section 1: HRP Việt Nam */}
+      <section className="w-full">
+        <div className="mx-auto w-full max-w-[1080px] px-4 py-10 md:px-6 md:py-14">
+          <h2
+            className="font-head text-headline-sm font-bold"
+            style={{ color: 'var(--on-surface)' }}
+          >
+            HRP Việt Nam – Kết nối doanh nghiệp và người lao động
+          </h2>
+          <div
+            className="mt-4 space-y-4 font-body text-body-md md:text-body-lg"
+            style={{ color: 'var(--on-surface-variant)' }}
+          >
+            <p>
+              Công ty TNHH HRP Việt Nam hoạt động trong lĩnh vực cung ứng, tuyển
+              dụng, đào tạo và quản lý nhân sự. Với đội ngũ giàu kinh nghiệm
+              cùng mạng lưới cộng tác viên tại nhiều tỉnh thành, HRP hướng tới
+              việc đáp ứng nhanh chóng nhu cầu nhân lực, cung cấp đúng người,
+              đúng việc và đồng hành lâu dài cùng doanh nghiệp cũng như người
+              lao động.
+            </p>
+            <p>
+              HRP cung cấp các giải pháp nhân sự từ lao động thời vụ, ngắn hạn
+              và dài hạn đến tuyển dụng, đào tạo, thuê ngoài, quản lý và điều
+              phối nhân lực tại nhà máy, công trường, kho bãi. Mỗi nhu cầu
+              tuyển dụng được theo sát từ khâu tìm kiếm, sàng lọc đến hỗ trợ
+              người lao động tiếp cận công việc phù hợp.
+            </p>
+            <p>
+              Hoạt động của HRP được xây dựng trên các giá trị tận tâm, đạo
+              đức, tôn trọng và tuân thủ. Công ty cam kết minh bạch, tuân thủ
+              pháp luật lao động, chú trọng an toàn và bảo đảm quyền lợi chính
+              đáng của người lao động.
+            </p>
           </div>
         </div>
       </section>
 
-      {/* Feature Cards */}
-      <section className="px-6 md:px-[5%] pb-20">
-        <div className="max-w-5xl mx-auto">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {CARDS.map((card) => (
-              <a
-                key={card.title}
-                href={card.href}
-                className="flex flex-col gap-3 rounded-2xl p-6 border border-outline-variant transition-all hover:-translate-y-1 hover:border-primary hover:shadow-md"
-                style={{ backgroundColor: 'var(--color-surface)' }}
-              >
-                {/* Icon */}
-                <div
-                  className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl"
-                  style={{ backgroundColor: 'var(--color-primary-soft)' }}
-                >
-                  {card.icon}
-                </div>
+      {/* Section 2: Sàn Việc Làm Miền Bắc */}
+      <section
+        className="w-full"
+        style={{ backgroundColor: 'var(--color-surface-container-low)' }}
+      >
+        <div className="mx-auto w-full max-w-[1080px] px-4 py-10 md:px-6 md:py-14">
+          <h2
+            className="font-head text-headline-sm font-bold"
+            style={{ color: 'var(--on-surface)' }}
+          >
+            Sàn Việc Làm Miền Bắc
+          </h2>
+          <div
+            className="mt-4 space-y-4 font-body text-body-md md:text-body-lg"
+            style={{ color: 'var(--on-surface-variant)' }}
+          >
+            <p>
+              Sàn Việc Làm Miền Bắc là nền tảng kết nối tuyển dụng của HRP, giúp
+              người lao động dễ dàng tìm kiếm các cơ hội việc làm rõ ràng, phù
+              hợp tại khu vực phía Bắc. Thông tin tuyển dụng được trình bày
+              trực quan, hỗ trợ người tìm việc xem chi tiết và gửi đơn ứng
+              tuyển thuận tiện.
+            </p>
+            <p>
+              Đối với doanh nghiệp, nền tảng giúp công bố nhu cầu tuyển dụng,
+              tiếp cận ứng viên và phối hợp với HRP trong quá trình tuyển chọn
+              nhân sự. Đây là cầu nối số giữa doanh nghiệp, HRP và người lao
+              động, hướng tới một thị trường tuyển dụng minh bạch, nhanh chóng
+              và bền vững.
+            </p>
+            <p>
+              HRP Việt Nam không chỉ cung cấp nhân lực mà còn mong muốn trở
+              thành người bạn đồng hành tin cậy, giúp doanh nghiệp ổn định sản
+              xuất và giúp người lao động tìm được công việc phù hợp.
+            </p>
+          </div>
 
-                {/* Title */}
-                <h2 className="text-lg font-bold" style={{ color: 'var(--color-on-surface)' }}>
-                  {card.title}
-                </h2>
-
-                {/* Description */}
-                <p className="text-sm flex-1 leading-relaxed" style={{ color: 'var(--color-on-surface-variant)' }}>
-                  {card.desc}
-                </p>
-
-                {/* Tag */}
-                <div>
-                  <span
-                    className="inline-block text-xs font-bold px-2.5 py-1 rounded-full"
-                    style={
-                      card.tagStyle === 'ok'
-                        ? { backgroundColor: 'var(--color-success-soft)', color: 'var(--color-success)' }
-                        : { backgroundColor: 'var(--color-warning-soft)', color: 'var(--color-warning)' }
-                    }
-                  >
-                    {card.tag}
-                  </span>
-                </div>
-
-                {/* More link */}
-                <span className="text-sm font-semibold" style={{ color: 'var(--color-primary-dark)' }}>
-                  {card.more}
-                </span>
-              </a>
-            ))}
+          {/* Quick links back to the rest of the portal */}
+          <div
+            className="mt-8 flex flex-wrap items-center gap-3 border-t pt-6"
+            style={{ borderColor: 'var(--outline-variant)' }}
+          >
+            <a
+              href="/viec-lam"
+              className="hrp-btn-primary inline-flex items-center justify-center rounded-lg px-5 py-2.5 font-label text-label-md font-semibold transition-colors"
+              style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-on-primary)' }}
+            >
+              Xem việc làm
+            </a>
+            <a
+              href="/ctv-portal"
+              className="inline-flex items-center justify-center rounded-lg border px-5 py-2.5 font-label text-label-md font-medium transition-colors"
+              style={{ borderColor: 'var(--outline)', color: 'var(--color-primary-dark)' }}
+            >
+              Trở thành Cộng tác viên
+            </a>
           </div>
         </div>
       </section>
-
-      {/* Footer */}
-      <footer className="px-6 md:px-[5%] py-8 mt-auto" style={{ borderTop: '1px solid var(--color-line)' }}>
-        <div
-          className="max-w-5xl mx-auto flex flex-wrap justify-between gap-4 text-sm"
-          style={{ color: 'var(--color-on-surface-variant)' }}
-        >
-          <span>HRP — Hệ thống quản trị cung ứng nhân lực</span>
-          <span>
-            <a
-              href="mailto:contact@hrpartner.vn"
-              className="font-semibold hover:underline"
-              style={{ color: 'var(--color-primary-dark)' }}
-            >
-              Liên hệ
-            </a>
-          </span>
-        </div>
-      </footer>
-
     </div>
   );
 }

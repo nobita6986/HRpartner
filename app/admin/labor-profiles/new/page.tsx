@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { applicantSignalLabel } from '@/src/domains/labor-profile/labor-profile-ui';
 import Link from 'next/link';
 
 export default function NewLaborProfilePage() {
@@ -170,7 +171,7 @@ export default function NewLaborProfilePage() {
 
           {step === 3 && (
             <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-              <h2 className="text-lg font-semibold text-gray-900">Phát hiện hồ sơ có thể trùng lặp! (POSSIBLE_MATCH)</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Phát hiện hồ sơ có thể trùng lặp</h2>
               
               <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
                 <p className="text-sm text-yellow-800 mb-3">Hệ thống phát hiện {possibleMatches.length} hồ sơ có thể thuộc về người lao động này, nhưng có dữ liệu xung đột. Vui lòng kiểm tra kỹ hoặc chọn hồ sơ hiện có.</p>
@@ -178,8 +179,8 @@ export default function NewLaborProfilePage() {
                   {possibleMatches.map((m, idx) => (
                     <li key={idx} className="flex justify-between items-center text-sm bg-white p-2 rounded shadow-sm border border-yellow-100">
                       <div>
-                        <span className="block font-medium">Hồ sơ ID: {m.laborProfileId}</span>
-                        <span className="text-xs text-gray-500">Trùng: {m.signalsMatched?.join(', ')}</span>
+                        <span className="block font-medium">Mã hồ sơ: {m.laborProfileId}</span>
+                        <span className="text-xs text-gray-500">Thông tin trùng khớp: {m.signalsMatched?.map(applicantSignalLabel).join(', ')}</span>
                       </div>
                       <Link href={`/admin/labor-profiles/${m.laborProfileId}`} className="text-blue-600 hover:underline font-medium">
                         Sử dụng hồ sơ này

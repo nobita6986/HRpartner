@@ -504,7 +504,7 @@ describe('RecruiterAssignmentManager — HR_STAFF display label (B-09)', () => {
   it('never exposes the raw UUID as the primary label', () => {
     const lbl = hrStaffDisplayLabel({ id: '11111111-1111-4111-8111-111111111111', name: null, phone: null, isActive: true });
     expect(lbl).not.toContain('11111111');
-    expect(lbl).toBe('(no name)');
+    expect(lbl).toBe('(chưa có tên)');
   });
 });
 
@@ -512,16 +512,28 @@ describe('RecruiterAssignmentManager — HR_STAFF display label (B-09)', () => {
 // Integration: prove that the component file IS IMPORTED by the page so
 // `app/admin/staffing-orders/[id]/page.tsx` actually wires the canonical
 // component (no orphan file).
+//
+// t1a-staffing-order-management (T0 §B-09 → RQ-04): page no longer 403 cứng
+// cho HR_STAFF; nó mở read-only. `RecruiterAssignmentManager` vẫn được
+// mount nhưng `canManage=false` cho HR_STAFF, đảm bảo dual lock:
+//   1) server: capability.canAssign = ASSIGN_ROLES (ADMIN/HR_MANAGER)
+//   2) client: RecruiterAssignmentManager.canManage = capability.canAssign
 // ═══════════════════════════════════════════════════════════════════════════
 
 describe('RecruiterAssignmentManager — wiring (B-04/B-09)', () => {
-  it('the admin staffing-orders detail page imports the canonical component', async () => {
+  it('the admin staffing-orders detail page imports the canonical component (directly or via client wrapper)', async () => {
     const { readFileSync } = await import('node:fs');
     const { join } = await import('node:path');
     const pagePath = join(process.cwd(), 'app', 'admin', 'staffing-orders', '[id]', 'page.tsx');
-    const src = readFileSync(pagePath, 'utf8');
-    expect(src).toContain('RecruiterAssignmentManager');
-    expect(src).toContain("from './recruiter-assignment-manager'");
+    const clientPath = join(process.cwd(), 'app', 'admin', 'staffing-orders', '[id]', 'order-management-client.tsx');
+    const pageSrc = readFileSync(pagePath, 'utf8');
+    const clientSrc = readFileSync(clientPath, 'utf8');
+    // Trang có thể import trực tiếp (cũ) hoặc qua client wrapper (mới —
+    // t1a-staffing-order-management). Cả hai đều đảm bảo component được
+    // mount trong DOM thật của trang.
+    const pageImportsManager = pageSrc.includes("from './recruiter-assignment-manager'");
+    const clientImportsManager = clientSrc.includes("from './recruiter-assignment-manager'");
+    expect(pageImportsManager || clientImportsManager).toBe(true);
   });
 
   it('the component file exposes the canonical API contracts in its source', async () => {
@@ -550,29 +562,55 @@ describe('RecruiterAssignmentManager — wiring (B-04/B-09)', () => {
     expect(src).toContain('clearIdempotencyKey');
   });
 
-  it('the page file strictly gates ADMIN/HR_MANAGER before mounting the manager', async () => {
+  it('the page file derives ASSIGN_ROLES (ADMIN/HR_MANAGER) used to gate the manager', async () => {
+    // t1a-staffing-order-management: gate chuyển từ `MANAGE_ROLES.has()` trong
+    // page (cũ — kèm 403 cứng) sang `ASSIGN_ROLES` capability ở server → truyền
+    // xuống client → truyền vào `canManage` của `RecruiterAssignmentManager`.
     const { readFileSync } = await import('node:fs');
     const { join } = await import('node:path');
     const pagePath = join(process.cwd(), 'app', 'admin', 'staffing-orders', '[id]', 'page.tsx');
-    const src = readFileSync(pagePath, 'utf8');
-    // B-09: page MUST enforce ADMIN/HR_MANAGER before mounting manager.
-    expect(src).toMatch(/MANAGE_ROLES/);
-    expect(src).toMatch(/ADMIN/);
-    expect(src).toMatch(/HR_MANAGER/);
-    // The 403 branch must be rendered BEFORE the manager mount so HR_STAFF
-    // never reaches canManage=true at runtime.
-    const gateIdx = src.indexOf('MANAGE_ROLES.has(');
-    const mountIdx = src.indexOf('<RecruiterAssignmentManager');
-    expect(gateIdx).toBeGreaterThan(-1);
-    expect(mountIdx).toBeGreaterThan(gateIdx);
+    const clientPath = join(process.cwd(), 'app', 'admin', 'staffing-orders', '[id]', 'order-management-client.tsx');
+    const pageSrc = readFileSync(pagePath, 'utf8');
+    const clientSrc = readFileSync(clientPath, 'utf8');
+    // Server page KHỞI TẠO capability.canAssign từ ASSIGN_ROLES.
+    expect(pageSrc).toMatch(/ASSIGN_ROLES/);
+    expect(pageSrc).toMatch(/canAssign:\s*ASSIGN_ROLES\.has/);
+    // Client truyền capability.canAssign xuống canManage.
+    expect(clientSrc).toMatch(/canManage=\{capability\.canAssign\}/);
+    // Server page khởi tạo capability object TRƯỚC khi mount
+    // <OrderManagementClient capability={capability} ...>. Đảm bảo gate được
+    // derive trước khi render.
+    const capabilityIdx = pageSrc.indexOf('canAssign: ASSIGN_ROLES.has');
+    const mountIdx = pageSrc.indexOf('<OrderManagementClient');
+    expect(capabilityIdx).toBeGreaterThan(-1);
+    expect(mountIdx).toBeGreaterThan(capabilityIdx);
+    // Client render `<RecruiterAssignmentManager` với `canManage` được bind
+    // từ capability.canAssign. Gate prop xuất hiện cùng khối JSX mount.
+    const bindIdx = clientSrc.indexOf('canManage={capability.canAssign}');
+    const mountIdxClient = clientSrc.indexOf('<RecruiterAssignmentManager');
+    expect(bindIdx).toBeGreaterThan(-1);
+    expect(mountIdxClient).toBeGreaterThan(-1);
+    // Hai ký hiệu nằm trong cùng một câu lệnh mount (<RecruiterAssignmentManager
+    // ...canManage=...>), đảm bảo không có nhánh render trước gate.
+    expect(Math.abs(mountIdxClient - bindIdx)).toBeLessThan(200);
   });
 
-  it('the page file links HR_STAFF to the canonical Recruiter Workbench surface', async () => {
+  it('HR_STAFF has a canonical surface (recruiter-workbench) wired into the role-guard layout', async () => {
+    // Trang chi tiết giờ mở read-only cho HR_STAFF. HR_STAFF dùng
+    // Recruiter Workbench ở route riêng; mục này được quản lý bởi
+    // role-guard layout (sidebar) chứ không phải page này.
     const { readFileSync } = await import('node:fs');
     const { join } = await import('node:path');
-    const pagePath = join(process.cwd(), 'app', 'admin', 'staffing-orders', '[id]', 'page.tsx');
-    const src = readFileSync(pagePath, 'utf8');
-    // 403 page redirects HR_STAFF to their own workbench.
+    const roleGuardPath = join(
+      process.cwd(),
+      'src',
+      'shared',
+      'ui',
+      'role-guard',
+      'role-guard-layout.tsx',
+    );
+    const src = readFileSync(roleGuardPath, 'utf8');
+    // T0 §B-09: HR_STAFF vẫn có route Recruiter Workbench.
     expect(src).toMatch(/recruiter-workbench|Bảng tuyển dụng/);
   });
 });

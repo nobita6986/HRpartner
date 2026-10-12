@@ -1,0 +1,13 @@
+corepack : $ vitest run --config vitest.unit.config.ts
+exit: 0
+
+==> SUMMARY <==
+corepack pnpm run test:unit
+exit: 0
+Test Files  240 passed (240)
+     Tests  3861 passed | 9 skipped (3870)
+  Duration  83.83s
+
+delta vs wave 2 baseline (3836 passed):
++25 tests = wave 1 PR #96 + PR #97 contribution
+0 failed

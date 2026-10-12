@@ -1,0 +1,21 @@
+TASK CONTRACT GATE
+  subject: docs/tasks/hrp-admin-localization-wave2-recruitment/TASK.md
+
+  [OK]   A-01 all 11 required sections present.
+  [OK]   A-02 control fields present (status: READY_TO_CODE).
+  [OK]   A-02 assurance lane: STANDARD.
+  [OK]   A-02 audit mode: NONE.
+  [OK]   A-02 audit selection has a recorded reason.
+  [OK]   T-10 Build vs adopt decision is explicit: N/A.
+  [OK]   T-11 Build vs automate decision is explicit: N/A.
+  [OK]   T-09 V2 draft fields are structurally valid.
+  [WARN] A-04 status is 'READY_TO_CODE' - placeholder and dry-run checks are non-blocking.
+  [OK]   A-05 22 requirement(s) traceable to STEP and AC.
+  [OK]   T-01 4 referenced npm script(s) all exist.
+  [WARN] T-03 AC-14 measures scope with 'git diff --stat', which is blind to untracked files (go-live-09 PLN-21: 8 tracked vs 10 real).
+  [OK]   T-03 no AC proves scope with a bare 'git diff'.
+  [OK]   T-04 changed-file AC explicitly account for docs/tasks/hrp-admin-localization-wave2-recruitment/**.
+  [OK]   T-05 all 27 AC row(s) name a measurable method.
+  [OK]   T-06 no plaintext secret in TASK.md.
+
+RESULT: DRAFT-VALID (2 warning(s)).

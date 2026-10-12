@@ -1,68 +1,130 @@
 /**
- * /admin/staffing-orders/[id] — Server Component gate session + render RecruiterAssignmentManager.
+ * /admin/staffing-orders/[id] — Trang quản lý Nhu cầu tuyển dụng.
  *
- * P1-A0.4 R3-F07/B-04/B-09: Real admin surface for managing recruiter
- * assignments (Chuyên viên tuyển dụng) on a staffing order.
+ * t1a-staffing-order-management (T0 directive):
  *
- * Role gate (B-09):
- *   - ADMIN/HR_MANAGER → canManage=true → render the full manager with
- *     assign + revoke controls + selectable HR_STAFF dropdown.
- *   - HR_STAFF (and any other non-managing role) → 403 page; HR_STAFF has
- *     no operational authority on this surface. They DO see the canonical
- *     Recruiter Workbench MINE rail at `/admin/recruiter-workbench` for
- *     their own claimed candidates.
+ *   - Trước đây: page này CHỈ hiển thị `RecruiterAssignmentManager` (màn phân
+ *     công chuyên viên) và 403 cứng cho mọi role ngoài ADMIN/HR_MANAGER.
+ *   - Sau vòng này: page là full management surface — header (code, title,
+ *     project, description, deadline, status) + bảng vị trí + bảng
+ *     JobOpenings/Postings liên kết + section chuyên viên (gated) + toolbar
+ *     (Sửa / Đánh dấu sắp đóng / Mở lại / Đóng / Hủy / Xóa vĩnh viễn).
+ *   - Quyền view: GIỮ NGUYÊN authority hiện tại (LIST_ROLES ở GET
+ *     `/api/staffing/orders/[id]`). Role có API read access mở được trang ở
+ *     chế độ read-only; KHÔNG redirect 403 cứng.
+ *   - Quyền mutate: `ADMIN/HR_MANAGER/SALE` (edit + status) và `ADMIN/HR_MANAGER`
+ *     (phân công chuyên viên) — đồng bộ với API.
+ *   - Xóa vĩnh viễn: chỉ `ADMIN`.
  *
- * The previous round-7 read-only HR_STAFF banner was removed per T0 §B-09
- * role-contradiction mandate ("keep this assignment-management page
- * ADMIN/HR_MANAGER only").
+ * Force-dynamic: re-read session + detail mỗi request.
+ *
+ * Out of scope: KHÔNG thêm status mới, KHÔNG sửa schema/RLS.
  */
-import { redirect } from 'next/navigation';
+
+import { notFound, redirect } from 'next/navigation';
+
 import { getServerSession } from '@/src/shared/auth/server-session';
-import { RecruiterAssignmentManager } from './recruiter-assignment-manager';
+import { getPrisma } from '@/src/lib/db';
+import { withDbContext } from '@/src/shared/auth/with-db-context';
+import {
+  getStaffingOrderDetail,
+  StaffingOrderServiceError,
+} from '@/src/domains/staffing/order.service';
+import { AuthScopeError } from '@/src/shared/auth/with-auth-scope';
+
+import { OrderManagementClient } from './order-management-client';
+import type { StaffingOrderCapability, StaffingOrderDetailDto } from './order-management-client';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export const metadata = {
-  title: 'Chi tiết Order - Quản lý chuyên viên tuyển dụng',
+  title: 'Nhu cầu tuyển dụng - HRPartner Admin',
 };
 
-const MANAGE_ROLES = new Set(['ADMIN', 'HR_MANAGER'] as const);
+/** Quyền xem Nhu cầu tuyển dụng — đồng bộ với LIST_ROLES của GET
+ * `/api/staffing/orders/[id]`. HR_STAFF/PM/DIRECTOR/ACCOUNTANT mở được
+ * ở chế độ read-only. */
+const VIEW_ROLES = new Set([
+  'ADMIN', 'HR_MANAGER', 'HR_STAFF', 'PM', 'SALE', 'DIRECTOR', 'ACCOUNTANT',
+] as const);
 
-export default async function StaffingOrderDetailPage({
-  params,
-}: {
+/** Quyền edit/status — đồng bộ với UPDATE_ROLES của PATCH/PUT. */
+const MUTATE_ROLES = new Set(['ADMIN', 'HR_MANAGER', 'SALE'] as const);
+
+/** Quyền phân công chuyên viên — đồng bộ với MANAGE_ROLES của
+ * `/api/admin/staffing/orders/[orderId]/recruiters`. */
+const ASSIGN_ROLES = new Set(['ADMIN', 'HR_MANAGER'] as const);
+
+/** Quyền xóa vĩnh viễn — chỉ ADMIN, đồng bộ với DELETE_ROLES. */
+const DELETE_ROLES = new Set(['ADMIN'] as const);
+
+/** BigInt trong Prisma (slot.hourlyRateVnd) không serialize được qua
+ * `JSON.stringify` mặc định — chuyển sang number khi truyền xuống client. */
+function bigintSafe<T>(value: T): unknown {
+  return JSON.parse(
+    JSON.stringify(value, (_k, v) => (typeof v === 'bigint' ? Number(v) : v)),
+  );
+}
+
+export default async function StaffingOrderDetailPage(props: {
   params: Promise<{ id: string }>;
 }) {
-  const resolvedParams = await params;
+  const params = await props.params;
   const session = await getServerSession();
+
   if (!session) {
-    redirect('/auth/login?returnUrl=/admin/staffing-orders/' + resolvedParams.id);
-  }
-  if (!MANAGE_ROLES.has(session.role as 'ADMIN' | 'HR_MANAGER')) {
-    return (
-      <div className="p-8 text-red-600">
-        Bạn không có quyền truy cập trang này. Trang quản lý chuyên viên
-        tuyển dụng chỉ dành cho ADMIN hoặc HR_MANAGER. Chuyên viên tuyển dụng
-        dùng <a className="underline" href="/admin/recruiter-workbench?view=MINE">Bảng tuyển dụng của tôi</a>.
-      </div>
-    );
+    redirect('/login?callback=/admin/staffing-orders/' + params.id);
   }
 
+  if (!VIEW_ROLES.has(session.role as typeof VIEW_ROLES extends Set<infer T> ? T : never)) {
+    // Role không có quyền xem Nhu cầu tuyển dụng — dùng 404 thay vì 403 để
+    // không lộ sự tồn tại của order (đồng bộ với `/admin/projects/[id]`).
+    notFound();
+  }
+
+  const ctx = { userId: session.userId, role: session.role };
+  const prisma = getPrisma();
+
+  let order: StaffingOrderDetailDto | null = null;
+  let loadError: string | null = null;
+
+  try {
+    const raw = await withDbContext(prisma, ctx, (tx) =>
+      getStaffingOrderDetail(tx, ctx, params.id),
+    );
+    order = bigintSafe(raw) as StaffingOrderDetailDto;
+  } catch (e) {
+    if (e instanceof StaffingOrderServiceError) {
+      if (e.code === 'NOT_FOUND') {
+        notFound();
+      }
+      loadError = e.message;
+    } else if (e instanceof AuthScopeError) {
+      // L1 scope chặn → tương đương "không có quyền". T0: view giữ nguyên
+      // authority — không mở rộng, không nới lỏng.
+      notFound();
+    } else {
+      console.error('[admin/staffing-orders/[id] page] detail error:', e);
+      loadError = 'Không tải được chi tiết nhu cầu tuyển dụng.';
+    }
+  }
+
+  const role = session.role;
+  const capability: StaffingOrderCapability = {
+    canView: true,
+    canEdit: MUTATE_ROLES.has(role as typeof MUTATE_ROLES extends Set<infer T> ? T : never),
+    canChangeStatus: MUTATE_ROLES.has(role as typeof MUTATE_ROLES extends Set<infer T> ? T : never),
+    canAssign: ASSIGN_ROLES.has(role as typeof ASSIGN_ROLES extends Set<infer T> ? T : never),
+    canDelete: DELETE_ROLES.has(role as typeof DELETE_ROLES extends Set<infer T> ? T : never),
+  };
+
   return (
-    <div className="p-8 max-w-5xl mx-auto space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold" style={{ color: 'var(--on-surface)' }}>
-          Staffing Order {resolvedParams.id}
-        </h1>
-        <p className="text-sm" style={{ color: 'var(--on-surface-variant)' }}>
-          Quản lý chuyên viên tuyển dụng cho order này.
-        </p>
-      </header>
-      <RecruiterAssignmentManager
-        staffingOrderId={resolvedParams.id}
-        canManage={true}
-      />
-    </div>
+    <OrderManagementClient
+      order={order}
+      loadError={loadError}
+      capability={capability}
+      role={role}
+    />
   );
 }

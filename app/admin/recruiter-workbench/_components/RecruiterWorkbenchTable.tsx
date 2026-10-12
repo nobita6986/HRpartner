@@ -224,6 +224,9 @@ export function RecruiterWorkbenchTable({
                       placementOptions: row.placementOptions,
                       nextAction: row.nextAction,
                     }}
+                    placementUnavailableReason={
+                      row.placementUnavailableReason ?? null
+                    }
                     placementRouteFamily={placementRouteFamily}
                     canMutatePlacement={canMutatePlacement}
                   />

@@ -163,12 +163,12 @@ describe('/admin/job-openings/[id] — page-level authorization (AC-06 / v1.2 §
     mockSession = { userId: 'admin-1', role: 'ADMIN' };
     mockOpeningDto = defaultOpeningDto();
     const html = await renderPage();
-    expect(html).toContain('Tuyển dụng (Opening)');
+    expect(html).toContain('Đợt tuyển dụng');
     expect(stubbedActionsProps).toHaveLength(1);
     const flags = stubbedActionsProps[0].flags;
     expect(flags.canClassify).toBe(true);
     expect(flags.canOpen).toBe(false); // serviceModel NULL → 422 on /open
-    expect(flags.blockedReason).toContain('phân loại ServiceModel');
+    expect(flags.blockedReason).toContain('Hãy chọn hình thức tuyển dụng trước khi mở.');
     expect(flags.currentStatus).toBe('DRAFT');
     expect(stubbedActionsProps[0].opening).toEqual({ id: 'op-1' });
   });
@@ -232,7 +232,7 @@ describe('/admin/job-openings/[id] — page-level authorization (AC-06 / v1.2 §
     const flags = stubbedActionsProps[0].flags;
     expect(flags.canClassify).toBe(false);
     expect(flags.canOpen).toBe(false);
-    expect(flags.blockedReason).toContain('phân loại ServiceModel');
+    expect(flags.blockedReason).toContain('Hãy chọn hình thức tuyển dụng trước khi mở.');
   });
 
   // (6) Unassigned / revoked HR_STAFF → notFound
@@ -292,7 +292,7 @@ describe('/admin/job-openings/[id] — page-level authorization (AC-06 / v1.2 §
     await renderPage();
     const flags = stubbedActionsProps[0].flags;
     expect(flags.canOpen).toBe(false);
-    expect(flags.blockedReason).toContain('quá hạn');
+    expect(flags.blockedReason).toContain('đã hết hạn nhận hồ sơ');
   });
 
   it('blockedReason reflects slot over-filled', async () => {
@@ -323,6 +323,6 @@ describe('/admin/job-openings/[id] — page-level authorization (AC-06 / v1.2 §
     await renderPage();
     const flags = stubbedActionsProps[0].flags;
     expect(flags.canOpen).toBe(false);
-    expect(flags.blockedReason).toContain('StaffingOrder ở trạng thái CLOSED');
+    expect(flags.blockedReason).toContain('Nhu cầu tuyển dụng đang ở trạng thái Đã đóng');
   });
 });

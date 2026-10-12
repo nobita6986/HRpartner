@@ -70,7 +70,7 @@ export default function LoginForm({ subtitle = 'Đăng nhập hệ thống' }: {
       }}
     >
       <div className="text-center mb-8">
-        <img src="/logo.png" alt="HRP Logo" className="h-14 w-auto mx-auto mb-4" />
+        <img src="/hrp-logo.webp" alt="HRP — Việc làm miền Bắc" className="h-14 w-auto mx-auto mb-4" />
         <h1 className="text-xl font-bold" style={{ color: 'var(--color-on-surface)' }}>
           Đăng nhập HRP
         </h1>

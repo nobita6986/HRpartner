@@ -2,8 +2,10 @@
  * GET /api/admin/media — List media library items.
  *
  * Auth: ADMIN (short-circuit) hoặc `CAN_MANAGE_MEDIA` permission.
- * Query: ?folder, ?tag, ?status, ?take, ?skip, ?search
+ * Query: ?status, ?tag, ?take, ?skip, ?search, ?folder (accept-and-ignored
+ *   cho backward-compat với URL cũ — hrp-t1c-media-global-pool-bulk-upload-hotfix RQ-10)
  *
+ * Folder không còn là filter nghiệp vụ: toàn bộ media trong một kho chung.
  * Pagination: offset-based (DEC-06 RECOMMENDATION, đơn giản cho MVP).
  */
 import { NextRequest, NextResponse } from 'next/server';
@@ -21,6 +23,8 @@ function parseQuery(url: URL): MediaListQuery {
   const skip = url.searchParams.get('skip');
   const status = url.searchParams.get('status');
   return {
+    // hrp-t1c-media-global-pool-bulk-upload-hotfix (RQ-10): folder không còn filter.
+    // Vẫn accept `folder` param từ URL cũ nhưng service bỏ qua.
     folder: url.searchParams.get('folder') ?? undefined,
     tag: url.searchParams.get('tag') ?? undefined,
     status: status === 'PUBLIC' || status === 'INTERNAL' ? (status as MediaStatusEnum) : undefined,

@@ -4,6 +4,13 @@ import * as React from 'react';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 
+import { StatusBadge } from '@/src/shared/ui/status-badge';
+import {
+  STAFFING_ORDER_MODULE,
+  staffingOrderStatusLabel,
+  staffingOrderStatusTone,
+} from '@/src/domains/staffing/staffing-order-ui';
+
 interface StaffingOrderRow {
   id: string;
   code: string;
@@ -11,6 +18,8 @@ interface StaffingOrderRow {
   status: 'OPEN' | 'CLOSING_SOON' | 'CLOSED' | 'CANCELLED';
   project: { id: string; name: string; code: string };
   slots: Array<{ id: string; positionTitle: string; slotsNeeded: number; slotsFilled: number }>;
+  /** T1A-staffing-order-management: deadlineDate surfaced để user còn cân nhắc hạn tuyển trên list. */
+  deadlineDate: string | null;
   createdAt: string;
 }
 
@@ -21,12 +30,11 @@ interface OrdersResponse {
   skip: number;
 }
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  OPEN:          { label: 'Mở',        color: '#197a56', bg: '#e8f5e9' },
-  CLOSING_SOON: { label: 'Sắp đóng',  color: '#e65100', bg: '#fff3e0' },
-  CLOSED:       { label: 'Đã đóng',   color: '#37474f', bg: '#eceff1' },
-  CANCELLED:    { label: 'Đã hủy',    color: '#c62828', bg: '#ffebee' },
-};
+// T1B Wave 2 (EP §3.2 — staffing_order lifecycle, EP §3.1 #3 binding):
+// the inline `STATUS_CONFIG` + local `StatusBadge` component is removed.
+// Lookup goes through the domain-owned dictionary + shared `<StatusBadge>`
+// primitive via `staffingOrderStatusLabel()` / `staffingOrderStatusTone()`.
+// Raw enum values are NEVER rendered as text in this file.
 
 const STATUS_FILTERS = ['', 'OPEN', 'CLOSING_SOON', 'CLOSED', 'CANCELLED'] as const;
 type StatusFilter = (typeof STATUS_FILTERS)[number];
@@ -37,26 +45,40 @@ function isStatusFilter(v: string): v is StatusFilter {
   return (STATUS_FILTERS as readonly string[]).includes(v);
 }
 
-function StatusBadge({ status }: { status: string }) {
-  const cfg = STATUS_CONFIG[status] ?? { label: status, color: '#37474f', bg: '#eceff1' };
+function StaffingOrderStatusBadge({ status }: { status: string }) {
+  const label = staffingOrderStatusLabel(status);
+  const tone = staffingOrderStatusTone(status);
   return (
-    <span
-      style={{ background: cfg.bg, color: cfg.color }}
-      className="rounded-full px-2 py-0.5 text-xs font-semibold"
+    <StatusBadge
+      module={STAFFING_ORDER_MODULE}
+      status={status}
+      tone={tone}
+      testId={`staffing-order-status-${status}`}
     >
-      {cfg.label}
-    </span>
+      {label}
+    </StatusBadge>
   );
 }
 
-function SlotChip({ needed, filled }: { needed: number; filled: number }) {
-  const pct = needed === 0 ? 100 : Math.round((filled / needed) * 100);
-  const bg = pct >= 100 ? '#e8f5e9' : pct >= 50 ? '#fff3e0' : '#ffebee';
-  const fg = pct >= 100 ? '#197a56' : pct >= 50 ? '#e65100' : '#c62828';
+/**
+ * T1A-staffing-order-management: chip `0/1` đơn thuần không đủ ngữ cảnh.
+ * T0 directive yêu cầu: hiển thị `Tên vị trí — filled/needed (còn thiếu N)` cho
+ * từng slot để user quyết định được tình trạng tuyển thực tế mà không cần mở
+ * chi tiết. Color cue giữ tone xanh/đỏ để dễ quét; còn thiếu 0 vẫn hiển thị
+ * "(đã đủ)" thay vì "(còn thiếu 0)" để copy tự nhiên hơn.
+ */
+function SlotBreakdown({ slot }: { slot: { id: string; positionTitle: string; slotsNeeded: number; slotsFilled: number } }) {
+  const remaining = Math.max(0, slot.slotsNeeded - slot.slotsFilled);
+  const isFull = remaining === 0;
+  const color = isFull ? '#197a56' : remaining >= slot.slotsNeeded / 2 ? '#e65100' : '#c62828';
   return (
-    <span style={{ background: bg, color: fg }} className="rounded px-1.5 py-0.5 text-xs font-mono">
-      {filled}/{needed}
-    </span>
+    <div className="text-xs" style={{ color: 'var(--on-surface)' }}>
+      <span className="font-medium">{slot.positionTitle}</span>{' '}
+      <span className="font-mono" style={{ color }} data-testid={`slot-summary-${slot.id}`}>
+        {slot.slotsFilled}/{slot.slotsNeeded}
+        {isFull ? ' (đã đủ)' : ` (còn thiếu ${remaining})`}
+      </span>
+    </div>
   );
 }
 
@@ -402,7 +424,7 @@ export default function StaffingListClient({ canCreate }: StaffingListClientProp
       setOrders(d.orders);
       setTotal(d.total);
     } catch {
-      setError('Không thể tải danh sách Orders.');
+      setError('Không thể tải danh sách nhu cầu tuyển dụng.');
     } finally {
       setLoading(false);
     }
@@ -418,7 +440,10 @@ export default function StaffingListClient({ canCreate }: StaffingListClientProp
     <div style={{ background: 'var(--surface)' }} className="px-6 py-8 lg:px-8">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 style={{ color: 'var(--on-surface)' }} className="text-2xl font-semibold">Staffing Orders</h1>
+          {/* T1B Wave 2 (EP §3.1 #2/#3 — staffing / staffing_order). H1 was
+              previously `Staffing Orders` raw English; now bound to the
+              cross-module glossary. */}
+          <h1 style={{ color: 'var(--on-surface)' }} className="text-2xl font-semibold">Nhu cầu tuyển dụng</h1>
         </div>
         {canCreate && (
           <button
@@ -426,7 +451,7 @@ export default function StaffingListClient({ canCreate }: StaffingListClientProp
             style={{ background: 'var(--primary)', color: 'var(--on-primary)' }}
             className="rounded px-4 py-2 text-sm font-semibold"
           >
-            + Tạo Order
+            + Tạo nhu cầu tuyển dụng
           </button>
         )}
       </div>
@@ -443,7 +468,7 @@ export default function StaffingListClient({ canCreate }: StaffingListClientProp
             }}
             className="rounded-full border px-3 py-1 text-xs font-medium transition-colors"
           >
-            {s === '' ? 'Tất cả' : STATUS_CONFIG[s]?.label ?? s}
+            {s === '' ? 'Tất cả' : staffingOrderStatusLabel(s)}
           </button>
         ))}
       </div>
@@ -464,13 +489,13 @@ export default function StaffingListClient({ canCreate }: StaffingListClientProp
         >
           <p className="text-sm">
             {statusFilter
-              ? `Chưa có Staffing Order nào ở trạng thái ${STATUS_CONFIG[statusFilter]?.label ?? statusFilter}${canCreate ? '' : ' (trong phạm vi của bạn)'}.`
+              ? `Chưa có đơn tuyển dụng nào ở trạng thái ${staffingOrderStatusLabel(statusFilter)}${canCreate ? '' : ' (trong phạm vi của bạn)'}.`
               : canCreate
-                ? 'Chưa có Staffing Order nào.'
-                : 'Chưa có Staffing Order nào trong phạm vi của bạn.'}
+                ? 'Chưa có đơn tuyển dụng nào.'
+                : 'Chưa có đơn tuyển dụng nào trong phạm vi của bạn.'}
           </p>
           {canCreate && (
-            <p className="mt-1 text-xs">Nhấn &quot;Tạo Order&quot; để bắt đầu.</p>
+            <p className="mt-1 text-xs">Nhấn &quot;Tạo nhu cầu tuyển dụng&quot; để bắt đầu.</p>
           )}
         </div>
       ) : (
@@ -479,7 +504,7 @@ export default function StaffingListClient({ canCreate }: StaffingListClientProp
             <table className="w-full text-sm">
               <thead>
                 <tr style={{ background: 'var(--surface-container)', borderBottom: '1px solid var(--outline-variant)' }}>
-                  {['Mã', 'Tiêu đề', 'Dự án', 'Slots', 'Trạng thái', 'Ngày tạo'].map(h => (
+                  {['Mã', 'Tiêu đề', 'Dự án', 'Vị trí cần tuyển', 'Hạn tuyển', 'Trạng thái', 'Thao tác'].map(h => (
                     <th key={h} style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-left font-semibold">{h}</th>
                   ))}
                 </tr>
@@ -512,22 +537,34 @@ export default function StaffingListClient({ canCreate }: StaffingListClientProp
                     </td>
                     <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">{o.project?.name ?? o.project?.code ?? '—'}</td>
                     <td className="px-4 py-3">
-                      <div className="flex flex-wrap gap-1">
-                        {o.slots.map(s => (
-                          <SlotChip key={s.id} needed={s.slotsNeeded} filled={s.slotsFilled} />
-                        ))}
+                      <div className="flex flex-col gap-0.5">
+                        {o.slots.length === 0 ? (
+                          <span style={{ color: 'var(--on-surface-variant)' }} className="text-xs">—</span>
+                        ) : (
+                          o.slots.map(s => <SlotBreakdown key={s.id} slot={s} />)
+                        )}
                       </div>
                     </td>
-                    <td className="px-4 py-3"><StatusBadge status={o.status} /></td>
                     <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">
-                      {new Date(o.createdAt).toLocaleDateString('vi-VN')}
+                      {o.deadlineDate ? new Date(o.deadlineDate).toLocaleDateString('vi-VN') : '—'}
+                    </td>
+                    <td className="px-4 py-3"><StaffingOrderStatusBadge status={o.status} /></td>
+                    <td className="px-4 py-3">
+                      <Link
+                        href={`/admin/staffing-orders/${o.id}`}
+                        data-testid={`staffing-order-action-${o.id}`}
+                        style={{ color: 'var(--primary)' }}
+                        className="text-xs font-medium underline-offset-2 hover:underline"
+                      >
+                        Xem chi tiết
+                      </Link>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
             <div style={{ borderColor: 'var(--outline-variant)', color: 'var(--on-surface-variant)' }} className="border-t px-4 py-2 text-xs">
-              Tổng: {total} orders
+              Tổng: {total} đơn tuyển dụng
             </div>
           </div>
 
@@ -535,7 +572,7 @@ export default function StaffingListClient({ canCreate }: StaffingListClientProp
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm" style={{ color: 'var(--on-surface-variant)' }}>
             <div>
               Hiển thị {showingFrom}–{showingTo} / {total}
-              {statusFilter && ` • Lọc: ${STATUS_CONFIG[statusFilter]?.label ?? statusFilter}`}
+              {statusFilter && ` • Lọc: ${staffingOrderStatusLabel(statusFilter)}`}
               {total > take && ` • Trang ${page} / ${totalPages}`}
             </div>
             {total > take && (

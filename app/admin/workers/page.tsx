@@ -2,16 +2,24 @@
 
 import * as React from 'react';
 import { useState, useEffect, useCallback } from 'react';
-
-type EmploymentStatus = 'NONE' | 'ACTIVE' | 'SUSPENDED' | 'TERMINATED';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { workerStatusLabel, workerStatusTone } from '@/src/domains/workforce/worker-ui';
+import type { WorkerEmploymentStatus } from '@/src/domains/workforce/worker-ui';
+import { StatusBadge } from '@/src/shared/ui/status-badge';
 
 interface WorkerRow {
   id: string;
   userId: string;
-  fullName: string;
-  employmentStatus: EmploymentStatus | null;
+  fullName: string | null;
+  employmentStatus: WorkerEmploymentStatus | null;
   phone: string | null;
-  createdAt: string;
+  currentProject: { id: string; code: string | null; name: string | null } | null;
+  firstWorkDate: string | null;
+  currentProjectManager: string | null;
+  handler: string | null;
+  referrer: string | null;
+  commissionBeneficiary: string | null;
 }
 
 interface WorkersResponse {
@@ -21,126 +29,56 @@ interface WorkersResponse {
   skip: number;
 }
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  NONE:       { label: 'Chưa rõ',    color: '#607d8b', bg: '#eceff1' },
-  ACTIVE:     { label: 'Đang làm',   color: '#197a56', bg: '#e8f5e9' },
-  SUSPENDED:  { label: 'Tạm ngưng',  color: '#6a1b9a', bg: '#f3e5f5' },
-  TERMINATED: { label: 'Đã nghỉ',    color: '#c62828', bg: '#ffebee' },
-};
-
-function StatusBadge({ status }: { status?: string | null }) {
-  if (!status) return <span className="rounded-full px-2 py-0.5 text-xs font-semibold bg-gray-100 text-gray-500">Trống</span>;
-  const cfg = STATUS_CONFIG[status] ?? { label: status, color: '#37474f', bg: '#eceff1' };
-  return (
-    <span style={{ background: cfg.bg, color: cfg.color }} className="rounded-full px-2 py-0.5 text-xs font-semibold">
-      {cfg.label}
-    </span>
-  );
-}
-
-function Modal({ onClose, onSuccess, editData }: { onClose: () => void; onSuccess: () => void; editData?: WorkerRow }) {
-  const [userId, setUserId] = useState(editData?.userId ?? '');
-  const [fullName, setFullName] = useState(editData?.fullName ?? '');
-  const [phone, setPhone] = useState('');
-  const [cccdNumber, setCccdNumber] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [err, setErr] = useState('');
-
-  const isEdit = !!editData;
-
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!fullName.trim() || (!isEdit && !userId.trim())) {
-      setErr('Điền đầy đủ các trường bắt buộc.');
-      return;
-    }
-    setSubmitting(true);
-    setErr('');
-    try {
-      const url = isEdit ? `/api/workers/${editData.id}` : '/api/workers';
-      const method = isEdit ? 'PUT' : 'POST';
-      const body: Record<string, string> = {};
-      if (!isEdit) body.userId = userId.trim();
-      body.fullName = fullName.trim();
-      if (phone.trim()) body.phone = phone.trim();
-      if (cccdNumber.trim()) body.cccdNumber = cccdNumber.trim();
-
-      const r = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      if (!r.ok) {
-        const d = await r.json();
-        setErr(d.message ?? `Lỗi ${r.status}`);
-        return;
-      }
-      onSuccess();
-      onClose();
-    } catch {
-      setErr('Lỗi kết nối server.');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  return (
-    <div style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} className="fixed inset-0 z-50 flex items-center justify-center" onClick={onClose}>
-      <div style={{ background: 'var(--surface-container-lowest)' }} className="w-full max-w-md rounded-lg border p-6 shadow-xl" onClick={ev => ev.stopPropagation()}>
-        <h2 style={{ color: 'var(--on-surface)' }} className="mb-4 text-lg font-semibold">
-          {isEdit ? 'Sửa nhân viên' : 'Thêm nhân viên mới'}
-        </h2>
-        <form onSubmit={submit} className="space-y-4">
-          {!isEdit && (
-            <div>
-              <label style={{ color: 'var(--on-surface)' }} className="mb-1 block text-sm font-medium">User ID *</label>
-              <input value={userId} onChange={e => setUserId(e.target.value)} placeholder="VD: USR-001"
-                style={{ borderColor: 'var(--outline)', background: 'var(--surface-container)' }}
-                className="w-full rounded border px-3 py-2 text-sm font-mono" required />
-            </div>
-          )}
-          <div>
-            <label style={{ color: 'var(--on-surface)' }} className="mb-1 block text-sm font-medium">Họ tên *</label>
-            <input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="VD: Nguyễn Văn A"
-              style={{ borderColor: 'var(--outline)', background: 'var(--surface-container)' }}
-              className="w-full rounded border px-3 py-2 text-sm" required />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label style={{ color: 'var(--on-surface)' }} className="mb-1 block text-sm font-medium">Điện thoại</label>
-              <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="VD: 0901234567"
-                style={{ borderColor: 'var(--outline)', background: 'var(--surface-container)' }}
-                className="w-full rounded border px-3 py-2 text-sm" />
-            </div>
-            <div>
-              <label style={{ color: 'var(--on-surface)' }} className="mb-1 block text-sm font-medium">CCCD</label>
-              <input value={cccdNumber} onChange={e => setCccdNumber(e.target.value)} placeholder="VD: 001234567890"
-                style={{ borderColor: 'var(--outline)', background: 'var(--surface-container)' }}
-                className="w-full rounded border px-3 py-2 text-sm font-mono" />
-            </div>
-          </div>
-          {err && <p style={{ color: 'var(--error)' }} className="text-sm">{err}</p>}
-          <div className="flex justify-end gap-3 pt-2">
-            <button type="button" onClick={onClose} style={{ background: 'var(--surface-container)', color: 'var(--on-surface)' }} className="rounded px-4 py-2 text-sm">Hủy</button>
-            <button type="submit" disabled={submitting} style={{ background: 'var(--primary)', color: 'var(--on-primary)' }} className="rounded px-4 py-2 text-sm font-semibold disabled:opacity-50">
-              {submitting ? 'Đang lưu…' : isEdit ? 'Lưu' : 'Thêm'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
-
+/**
+ * `/admin/workers` — Quản lý thông tin và trạng thái người lao động (T1B-OPS).
+ *
+ * T1B-OPS — Copy DEC-T1B-OPS-04: bỏ mã phân hệ nội bộ (M5) khỏi UI; mô tả
+ * ngắn "Quản lý thông tin và trạng thái người lao động.".
+ *
+ * T1B-OPS — Bảng thêm 6 cột vận hành dùng canonical relational data:
+ *   - currentProject        : ProjectAssignment.status IN (ACTIVE, PAUSED) mới nhất
+ *   - firstWorkDate         : MIN(EmploymentEpisode.startedAt) (KHÔNG dùng Worker.createdAt)
+ *   - currentProjectManager : Project.pmUserId (qua active assignment)
+ *   - handler               : Worker.assignedToId
+ *   - referrer              : ProjectAssignment.referrerId
+ *   - commissionBeneficiary : SourceClaim.ctvId (claimType='CTV_REFERRAL', accepted=true)
+ *
+ * Phân biệt rõ 4 thực thể người:
+ *   - Quản lý dự án ≠ Người phụ trách (handler) ≠ Người giới thiệu (referrer)
+ *     ≠ Người hưởng hoa hồng (CTV_REFERRAL accepted).
+ *
+ * CTA không POST Worker rời rạc — dẫn sang luồng "Tiếp nhận người lao động"
+ * tại `/admin/labor-profiles/new` (Worker chỉ tồn tại qua conversion flow
+ * `linkLaborProfileWorker`). Row click mở detail tại `/admin/workers/[id]`
+ * (ĐÃ BỎ cột Thao tác / nút "Xem" riêng — T1B-OPS DEC-T1B-OPS-04).
+ */
 export default function WorkersPage() {
   const [workers, setWorkers] = useState<WorkerRow[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [search, setSearch] = useState('');
-  const [showCreate, setShowCreate] = useState(false);
-  const [editRow, setEditRow] = useState<WorkerRow | null>(null);
+
+  // T1B-OPS follow-up #1: hiển thị banner "Đã xóa người lao động …" khi list
+  // được mở từ luồng delete thành công (redirect kèm ?deleted=<id>&name=<name>).
+  // Banner render NGAY TRƯỚC filter row; auto-dismiss sau 6s; vẫn cho phép
+  // đóng thủ công. useSearchParams yêu cầu Suspense boundary, đã có sẵn ở
+  // layout mức app vì /admin/workers nằm trong admin segment.
+  const searchParams = useSearchParams();
+  const deletedId = searchParams?.get('deleted') ?? null;
+  const deletedNameRaw = searchParams?.get('name') ?? null;
+  const deletedName = (() => {
+    if (!deletedNameRaw) return null;
+    try { return decodeURIComponent(deletedNameRaw); } catch { return null; }
+  })();
+  const [showDeletedBanner, setShowDeletedBanner] = useState<boolean>(Boolean(deletedId));
+
+  useEffect(() => {
+    if (!deletedId) return;
+    setShowDeletedBanner(true);
+    const t = setTimeout(() => setShowDeletedBanner(false), 6000);
+    return () => clearTimeout(t);
+  }, [deletedId]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -148,22 +86,27 @@ export default function WorkersPage() {
     try {
       const params = new URLSearchParams({ take: '50' });
       if (statusFilter) params.set('status', statusFilter);
-      if (search.trim()) params.set('search', search.trim());
       const r = await fetch(`/api/workers?${params}`);
       if (!r.ok) {
-        if (r.status === 401) { setError('Vui lòng đăng nhập.'); return; }
-        if (r.status === 403) { setError('Bạn không có quyền xem.'); return; }
+        if (r.status === 401) {
+          setError('Vui lòng đăng nhập.');
+          return;
+        }
+        if (r.status === 403) {
+          setError('Bạn không có quyền xem.');
+          return;
+        }
         throw new Error(`${r.status}`);
       }
       const d: WorkersResponse = await r.json();
       setWorkers(d.workers);
       setTotal(d.total);
     } catch {
-      setError('Không thể tải danh sách nhân viên.');
+      setError('Không thể tải danh sách người lao động.');
     } finally {
       setLoading(false);
     }
-  }, [statusFilter, search]);
+  }, [statusFilter]);
 
   useEffect(() => {
     const timer = setTimeout(load, 300);
@@ -174,74 +117,218 @@ export default function WorkersPage() {
     <div style={{ background: 'var(--surface)' }} className="px-6 py-8 lg:px-8">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 style={{ color: 'var(--on-surface)' }} className="text-2xl font-semibold">Nhân viên</h1>
-          <p style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-sm">Module M5 — Quản lý master data nhân viên</p>
+          <h1 style={{ color: 'var(--on-surface)' }} className="text-2xl font-semibold">
+            Danh sách người lao động
+          </h1>
+          <p style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-sm">
+            Quản lý thông tin và trạng thái người lao động.
+          </p>
         </div>
-        <button onClick={() => setShowCreate(true)} style={{ background: 'var(--primary)', color: 'var(--on-primary)' }} className="rounded px-4 py-2 text-sm font-semibold">
-          + Thêm nhân viên
-        </button>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/admin/workers/delete-history"
+            style={{
+              background: 'var(--surface-container)',
+              color: 'var(--on-surface)',
+            }}
+            className="rounded border px-4 py-2 text-sm font-medium"
+          >
+            Lịch sử xóa
+          </Link>
+          <Link
+            href="/admin/labor-profiles/new"
+            style={{ background: 'var(--primary)', color: 'var(--on-primary)' }}
+            className="rounded px-4 py-2 text-sm font-semibold"
+          >
+            + Tiếp nhận người lao động
+          </Link>
+        </div>
       </div>
 
+      {showDeletedBanner && deletedId && (
+        <div
+          role="status"
+          aria-live="polite"
+          style={{
+            // T1B-OPS follow-up #1: dùng semantic tokens đã đăng ký trong
+            // app/globals.css (`--success-soft` + `--success` + `--on-surface`).
+            // KHÔNG dùng `--success-container` / `--on-success-container` /
+            // `--success` vì các alias "container" chưa tồn tại trong
+            // design-token gate RQ-04/AC-03.
+            background: 'var(--color-success-soft)',
+            color: 'var(--color-success)',
+            borderColor: 'var(--color-success)',
+          }}
+          className="mb-4 flex items-start justify-between gap-3 rounded-lg border p-3"
+        >
+          <p className="text-sm font-medium">
+            Đã xóa người lao động
+            {deletedName ? <strong className="font-semibold"> {deletedName}</strong> : null}
+            . Hành động đã được ghi vào{' '}
+            <Link
+              href={`/admin/audit-logs?entityType=Worker&entityId=${encodeURIComponent(deletedId)}&action=WORKER_PERMANENT_DELETE`}
+              style={{ color: 'var(--color-on-surface)' }}
+              className="underline"
+            >
+              nhật ký kiểm toán
+            </Link>
+            .
+          </p>
+          <button
+            type="button"
+            onClick={() => setShowDeletedBanner(false)}
+            aria-label="Đóng thông báo"
+            className="rounded px-2 py-1 text-xs font-semibold"
+            style={{ color: 'var(--color-on-surface)' }}
+          >
+            Đóng
+          </button>
+        </div>
+      )}
+
       <div className="mb-4 flex flex-wrap gap-3">
-        <input type="text" placeholder="Tìm kiếm…"
-          value={search} onChange={e => setSearch(e.target.value)}
-          style={{ borderColor: 'var(--outline)', background: 'var(--surface-container)' }}
-          className="rounded border px-3 py-2 text-sm" />
         <div className="flex flex-wrap gap-2">
           {['', 'NONE', 'ACTIVE', 'SUSPENDED', 'TERMINATED'].map(s => (
-            <button key={s} onClick={() => setStatusFilter(s)}
+            <button
+              key={s}
+              onClick={() => setStatusFilter(s)}
               style={{
                 borderColor: statusFilter === s ? 'var(--primary)' : 'var(--outline-variant)',
                 background: statusFilter === s ? 'var(--primary-container)' : 'var(--surface-container-lowest)',
                 color: statusFilter === s ? 'var(--on-primary-container)' : 'var(--on-surface-variant)',
               }}
-              className="rounded-full border px-3 py-1 text-xs font-medium transition-colors">
-              {s === '' ? 'Tất cả' : STATUS_CONFIG[s]?.label ?? s}
+              className="rounded-full border px-3 py-1 text-xs font-medium transition-colors"
+            >
+              {s === '' ? 'Tất cả' : workerStatusLabel(s)}
             </button>
           ))}
         </div>
       </div>
 
       {loading ? (
-        <p style={{ color: 'var(--on-surface-variant)' }} className="py-12 text-center text-sm">Đang tải…</p>
+        <p style={{ color: 'var(--on-surface-variant)' }} className="py-12 text-center text-sm">
+          Đang tải…
+        </p>
       ) : error ? (
-        <div style={{ background: 'var(--error-container)', color: 'var(--on-error-container)', borderColor: 'var(--error)' }} className="rounded-lg border p-4 text-sm">{error}</div>
+        <div
+          style={{
+            background: 'var(--error-container)',
+            color: 'var(--on-error-container)',
+            borderColor: 'var(--error)',
+          }}
+          className="rounded-lg border p-4 text-sm"
+        >
+          {error}
+        </div>
       ) : workers.length === 0 ? (
-        <div style={{ background: 'var(--surface-container-lowest)', borderColor: 'var(--outline-variant)', color: 'var(--on-surface-variant)' }} className="rounded-lg border p-8 text-center">
-          <p className="text-sm">Chưa có nhân viên nào.</p>
+        <div
+          style={{
+            background: 'var(--surface-container-lowest)',
+            borderColor: 'var(--outline-variant)',
+            color: 'var(--on-surface-variant)',
+          }}
+          className="rounded-lg border p-8 text-center"
+        >
+          <p className="text-sm">Chưa có người lao động nào.</p>
+          <p className="mt-2 text-xs">
+            Người chưa chuyển đổi vẫn là{' '}
+            <Link href="/admin/labor-profiles" style={{ color: 'var(--primary)' }} className="underline">
+              Hồ sơ tiếp nhận
+            </Link>
+            . Tạo mới tại{' '}
+            <Link href="/admin/labor-profiles/new" style={{ color: 'var(--primary)' }} className="underline">
+              /admin/labor-profiles/new
+            </Link>
+            .
+          </p>
         </div>
       ) : (
         <div style={{ borderColor: 'var(--outline-variant)' }} className="overflow-x-auto rounded-lg border">
           <table className="w-full text-sm">
             <thead>
-              <tr style={{ background: 'var(--surface-container)', borderBottom: '1px solid var(--outline-variant)' }}>
-                {['User ID', 'Họ tên', 'Điện thoại', 'Trạng thái', 'Ngày tạo', 'Hành động'].map(h => (
-                  <th key={h} style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-left font-semibold">{h}</th>
+              <tr
+                style={{
+                  background: 'var(--surface-container)',
+                  borderBottom: '1px solid var(--outline-variant)',
+                }}
+              >
+                {[
+                  'Họ tên',
+                  'Trạng thái',
+                  'Dự án đang làm',
+                  'Ngày làm đầu tiên',
+                  'Quản lý dự án',
+                  'Người phụ trách',
+                  'Người giới thiệu',
+                  'Người hưởng hoa hồng',
+                ].map(h => (
+                  <th
+                    key={h}
+                    style={{ color: 'var(--on-surface-variant)' }}
+                    className="px-4 py-3 text-left font-semibold whitespace-nowrap"
+                    scope="col"
+                  >
+                    {h}
+                  </th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {workers.map((w, i) => (
-                <tr key={w.id} className="transition-colors duration-150 ease-out hover:bg-[var(--color-surface-container)]"
-                  style={{ borderBottom: i < workers.length - 1 ? '1px solid var(--outline-variant)' : 'none' }}>
-                  <td style={{ color: 'var(--primary)' }} className="px-4 py-3 font-mono text-xs">{w.userId}</td>
-                  <td style={{ color: 'var(--on-surface)' }} className="px-4 py-3">{w.fullName}</td>
-                  <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">{w.phone ?? '—'}</td>
-                  <td className="px-4 py-3"><StatusBadge status={w.employmentStatus} /></td>
-                  <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">{new Date(w.createdAt).toLocaleDateString('vi-VN')}</td>
+                <tr
+                  key={w.id}
+                  className="cursor-pointer transition-colors duration-150 ease-out hover:bg-[var(--color-surface-container)]"
+                  style={{
+                    borderBottom: i < workers.length - 1 ? '1px solid var(--outline-variant)' : 'none',
+                  }}
+                  onClick={() => {
+                    window.location.href = `/admin/workers/${w.id}`;
+                  }}
+                >
+                  <td style={{ color: 'var(--on-surface)' }} className="px-4 py-3">
+                    {w.fullName ?? '—'}
+                  </td>
                   <td className="px-4 py-3">
-                    <button onClick={() => setEditRow(w)} style={{ color: 'var(--primary)' }} className="text-xs font-medium hover:underline">Sửa</button>
+                    <StatusBadge
+                      module="worker"
+                      status={w.employmentStatus ?? 'NONE'}
+                      tone={workerStatusTone(w.employmentStatus)}
+                    >
+                      {workerStatusLabel(w.employmentStatus)}
+                    </StatusBadge>
+                  </td>
+                  <td style={{ color: 'var(--on-surface)' }} className="px-4 py-3 text-xs">
+                    {w.currentProject
+                      ? `${w.currentProject.code ?? '—'}${w.currentProject.name ? ` · ${w.currentProject.name}` : ''}`
+                      : '—'}
+                  </td>
+                  <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs whitespace-nowrap">
+                    {w.firstWorkDate ? new Date(w.firstWorkDate).toLocaleDateString('vi-VN') : '—'}
+                  </td>
+                  <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">
+                    {w.currentProjectManager ?? '—'}
+                  </td>
+                  <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">
+                    {w.handler ?? '—'}
+                  </td>
+                  <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">
+                    {w.referrer ?? '—'}
+                  </td>
+                  <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">
+                    {w.commissionBeneficiary ?? '—'}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-          <div style={{ borderColor: 'var(--outline-variant)', color: 'var(--on-surface-variant)' }} className="border-t px-4 py-2 text-xs">Tổng: {total} nhân viên</div>
+          <div
+            style={{ borderColor: 'var(--outline-variant)', color: 'var(--on-surface-variant)' }}
+            className="border-t px-4 py-2 text-xs"
+          >
+            Tổng: {total} người lao động
+          </div>
         </div>
       )}
-
-      {showCreate && <Modal onClose={() => setShowCreate(false)} onSuccess={load} />}
-      {editRow && <Modal onClose={() => setEditRow(null)} onSuccess={load} editData={editRow} />}
     </div>
   );
 }

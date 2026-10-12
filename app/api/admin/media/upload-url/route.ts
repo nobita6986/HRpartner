@@ -77,7 +77,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   const file = formData.get('file');
-  const folder = formData.get('folder');
+  // hrp-t1c-media-global-pool-bulk-upload-hotfix (RQ-09): folder không còn là khái niệm
+  // nghiệp vụ. Accept-and-ignore nếu client vẫn gửi field `folder`.
+  const _folder = formData.get('folder');
   if (!(file instanceof File)) {
     return badRequest('Field `file` (multipart) là bắt buộc.');
   }
@@ -95,9 +97,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return badRequest(`size phải nằm trong (0, ${MAX_UPLOAD_BYTES}] bytes.`);
   }
 
-  const folderStr = typeof folder === 'string' && folder.length > 0 ? folder : 'uncategorized';
+  // hrp-t1c-media-global-pool-bulk-upload-hotfix (RQ-09): dùng technical prefix `media/`.
+  // Không còn business folder trong pathname; chỉ timestamp + sanitized filename.
   const safeFilename = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-  const pathname = `${folderStr}/${Date.now()}-${safeFilename}`;
+  const pathname = `media/${Date.now()}-${safeFilename}`;
 
   // 5. Upload lên Blob
   try {

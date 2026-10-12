@@ -43,6 +43,14 @@ import {
   type JobPostingSlotSelectorDto,
 } from '@/src/domains/staffing/job-posting-list.service';
 import {
+  JOB_POSTING_MODULE,
+  jobPostingStatusLabel,
+  jobPostingStatusTone,
+  type JobPostingLifecycleStatus,
+} from '@/src/domains/staffing/job-posting-ui';
+import { jobOpeningStatusLabel } from '@/src/domains/staffing/job-opening-ui';
+import { StatusBadge } from '@/src/shared/ui/status-badge';
+import {
   CreateJobPostingForm,
   type EligibleSlotDto,
 } from './create-job-posting-form';
@@ -52,7 +60,9 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export const metadata = {
-  title: 'JobPosting viewer — Admin',
+  // EP §3.5 #47 — breadcrumb + H1 binding (binding the display name to
+  // the cross-module glossary term `job_posting`).
+  title: 'Tin tuyển dụng — soạn & đăng — Admin',
 };
 
 /**
@@ -149,8 +159,15 @@ export default async function AdminJobPostingsListPage({ searchParams }: PagePro
   let slotLoadError: { code: string; message: string } | null = null;
   if (CREATE_ROLES.has(session.role)) {
     try {
+      // hrp-f9-hr-staff-jobposting-scope STEP-07/STEP-08 (DEC-07, DEC-13):
+      // HR_STAFF callers pass `actorId` so the selector composes the
+      // scoped-recruiter predicate (`EXISTS ... staffing_order_recruiter_assignments`
+      // with `status='ACTIVE'`). Other roles keep the pre-F9 selector
+      // surface (no recruiter predicate → no false negatives for
+      // ADMIN/HR_MANAGER/PM/SALE/DIRECTOR).
+      const actorId = session.role === 'HR_STAFF' ? session.userId : undefined;
       const rawSlots: JobPostingSlotSelectorDto[] = await withDbContext(prisma, ctx, async (tx) =>
-        listEligibleSlotsForNewJobPosting(tx, { limit: 100 }),
+        listEligibleSlotsForNewJobPosting(tx, { limit: 100, ...(actorId ? { actorId } : {}) }),
       );
       eligibleSlots = rawSlots.map((slot) => ({
         slotId: slot.id,
@@ -182,19 +199,16 @@ export default async function AdminJobPostingsListPage({ searchParams }: PagePro
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--on-surface-variant)' }}>
-              <Link href="/admin/jobs" className="hover:underline">Admin Jobs</Link>
+              <Link href="/admin/jobs" className="hover:underline">Danh sách nhu cầu</Link>
               <span aria-hidden="true">/</span>
-              <span>JobPosting authoring &amp; publish</span>
+              <span>Tin tuyển dụng — soạn &amp; đăng</span>
             </div>
             <h1 className="mt-1 text-2xl font-semibold" style={{ color: 'var(--on-surface)' }}>
-              JobPosting — authoring &amp; publish
+              Tin tuyển dụng — soạn &amp; đăng
             </h1>
             <p className="mt-1 text-sm" style={{ color: 'var(--on-surface-variant)' }}>
-              Chọn một JobPosting để chỉnh nội dung, lưu bản nháp, publish/unpublish/archive.
-              Schema JobPosting mở rộng ở P1-A0 với rich content (Tiptap, contentSchemaVersion=1);
-              form tạo/reuse JobOpening từ StaffingOrderSlot đã được dựng ở P1-A0.1 (chỉ
-              CREATE_ROLES thấy). Trang public <code>/viec-lam/[slug]</code> hiện đọc JobPosting
-              PUBLISHED (P1-A1) và anonymous apply RPC bind JobPosting (P1-B) đã nghiệm thu.
+              Soạn và quản lý tin tuyển dụng. Tin đã đăng sẽ xuất hiện trên trang tìm việc;
+              bản nháp chỉ dành cho người có quyền quản lý.
             </p>
           </div>
           <Link
@@ -202,7 +216,7 @@ export default async function AdminJobPostingsListPage({ searchParams }: PagePro
             className="rounded px-3 py-1.5 text-sm font-medium"
             style={{ borderColor: 'var(--outline)', color: 'var(--on-surface)' }}
           >
-            ← Quay lại Admin Jobs
+            ← Quay lại Danh sách nhu cầu
           </Link>
         </div>
 
@@ -220,7 +234,7 @@ export default async function AdminJobPostingsListPage({ searchParams }: PagePro
           >
             <option value="">Tất cả</option>
             {STATUSES.map((s) => (
-              <option key={s} value={s}>{s}</option>
+              <option key={s} value={s}>{jobPostingStatusLabel(s)}</option>
             ))}
           </select>
           <button
@@ -240,6 +254,29 @@ export default async function AdminJobPostingsListPage({ searchParams }: PagePro
             </Link>
           )}
         </form>
+
+        {/* hrp-f9-hr-staff-jobposting-scope STEP-08 (DEC-13): role-conditional UI
+            banner so HR_STAFF callers understand that the selector and
+            write-path are scoped to their ACTIVE
+            `StaffingOrderRecruiterAssignment`. Generic copy: no order code,
+            no assignee name, no staffing order id — RISK-06. Other roles
+            do NOT see the banner. The empty-state message inside
+            `CreateJobPostingForm` remains generic. */}
+        {CREATE_ROLES.has(session.role) && session.role === 'HR_STAFF' ? (
+          <div
+            role="note"
+            aria-label="Phạm vi vị trí tuyển dụng của bạn"
+            data-testid="hr-staff-recruiter-scope-banner"
+            className="mb-4 rounded-lg border p-3 text-sm"
+            style={{
+              borderColor: 'var(--primary)',
+              backgroundColor: 'var(--color-primary-soft)',
+              color: 'var(--on-surface)',
+            }}
+          >
+            Bạn chỉ thấy các vị trí thuộc nhu cầu tuyển dụng được phân công cho bạn.
+          </div>
+        ) : null}
 
         {/* hrp-p1-a0-1 (DEC-01..04): form tạo JobPosting mới — chỉ hiển thị cho
             CREATE_ROLES (ADMIN/HR_MANAGER/HR_STAFF), dùng POST endpoint hiện hữu,
@@ -261,19 +298,19 @@ export default async function AdminJobPostingsListPage({ searchParams }: PagePro
             <thead style={{ backgroundColor: 'var(--primary-container)' }}>
               <tr>
                 <th className="px-4 py-3 text-left text-sm font-semibold" style={{ color: 'var(--on-surface)' }}>
-                  Slug
+                  Đường dẫn công khai
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold" style={{ color: 'var(--on-surface)' }}>
-                  Staffing Order
+                  Nhu cầu tuyển dụng
                 </th>
                 <th className="px-4 py-3 text-center text-sm font-semibold" style={{ color: 'var(--on-surface)' }}>
-                  Status
+                  Trạng thái
                 </th>
                 <th className="px-4 py-3 text-center text-sm font-semibold" style={{ color: 'var(--on-surface)' }}>
-                  Revision
+                  Phiên bản chỉnh sửa
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold" style={{ color: 'var(--on-surface)' }}>
-                  Cập nhật
+                  Ngày cập nhật
                 </th>
               </tr>
             </thead>
@@ -284,8 +321,8 @@ export default async function AdminJobPostingsListPage({ searchParams }: PagePro
                     <EmptyState
                       title="Chưa có dữ liệu"
                       description={statusFilter
-                        ? `Chưa có JobPosting nào ở trạng thái ${statusFilter}${VIEWER_ROLES.has(session.role) ? '' : ' (role hiện tại không đọc được — xem banner)'}.`
-                        : 'Chưa có JobPosting nào trong hệ thống (hoặc role hiện tại không đọc được — xem banner).'}
+                        ? `Chưa có tin tuyển dụng nào ở trạng thái ${jobPostingStatusLabel(statusFilter)}.`
+                        : 'Chưa có tin tuyển dụng nào.'}
                     />
                   </td>
                 </tr>
@@ -305,20 +342,54 @@ export default async function AdminJobPostingsListPage({ searchParams }: PagePro
                     </td>
                     <td className="px-4 py-3 text-sm" style={{ color: 'var(--on-surface-variant)' }}>
                       {item.openingStaffingOrderCode ? (
-                        <>
-                          <span className="font-mono">{item.openingStaffingOrderCode}</span>
-                          {item.openingStatus && (
-                            <span className="ml-2 text-xs">
-                              (JobOpening: {item.openingStatus})
-                            </span>
-                          )}
-                        </>
+                        // hrp-m2a-operational-ux-debt / F7 — JobPosting list
+                        // linkage (audit §8.7, execution decision §D Priority 2).
+                        // When the canonical `JobOpening` ID is available
+                        // (`jobOpeningId` is already on the row DTO at
+                        // `src/domains/staffing/job-posting-list.service.ts:71`
+                        // and `:158`), the staffing-order code and the
+                        // `(JobOpening: <status>)` suffix become a single
+                        // navigation link to `/admin/job-openings/<id>` so an
+                        // operator can recover the canonical activation page
+                        // in one click. When the JobOpening is missing
+                        // (orphan), the row keeps the existing plain-text
+                        // sentinel — never fabricate a link.
+                        item.jobOpeningId ? (
+                          <Link
+                            href={`/admin/job-openings/${item.jobOpeningId}`}
+                            className="font-mono underline-offset-2 hover:underline"
+                            data-testid="job-opening-link"
+                          >
+                            <span className="font-mono">{item.openingStaffingOrderCode}</span>
+                            {item.openingStatus && (
+                              <span className="ml-2 text-xs">
+                                ({jobOpeningStatusLabel(item.openingStatus)})
+                              </span>
+                            )}
+                          </Link>
+                        ) : (
+                          <>
+                            <span className="font-mono">{item.openingStaffingOrderCode}</span>
+                            {item.openingStatus && (
+                              <span className="ml-2 text-xs">
+                                ({jobOpeningStatusLabel(item.openingStatus)})
+                              </span>
+                            )}
+                          </>
+                        )
                       ) : (
-                        <span className="text-xs italic">(orphan — JobOpening đã xoá)</span>
+                        <span className="text-xs italic">(Chưa liên kết với đợt tuyển dụng)</span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-center text-sm">
-                      <StatusBadge status={item.status} />
+                      <StatusBadge
+                        module={JOB_POSTING_MODULE}
+                        status={item.status}
+                        tone={jobPostingStatusTone(item.status)}
+                        testId={`job-posting-list-status-${item.id}`}
+                      >
+                        {jobPostingStatusLabel(item.status)}
+                      </StatusBadge>
                     </td>
                     <td className="px-4 py-3 text-center text-sm" style={{ color: 'var(--on-surface-variant)' }}>
                       v{item.revision}
@@ -336,8 +407,8 @@ export default async function AdminJobPostingsListPage({ searchParams }: PagePro
         {/* Pagination + count */}
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm" style={{ color: 'var(--on-surface-variant)' }}>
           <div>
-            Hiển thị {showingFrom}–{showingTo} / {result.total} JobPosting
-            {statusFilter && ` (lọc: ${statusFilter})`}
+            Hiển thị {showingFrom}–{showingTo} / {result.total} tin tuyển dụng
+            {statusFilter && ` (lọc: ${jobPostingStatusLabel(statusFilter)})`}
           </div>
           <div className="flex items-center gap-2">
             {page > 1 && (
@@ -384,20 +455,15 @@ export default async function AdminJobPostingsListPage({ searchParams }: PagePro
             backgroundColor: 'var(--color-surface-container)',
             color: 'var(--on-surface-variant)',
           }}
-          aria-label="Phần còn hạn chế"
+          aria-label="Tính năng chưa khả dụng"
           data-testid="locked-section-list"
         >
           <h2 className="mb-2 text-sm font-semibold" style={{ color: 'var(--on-surface)' }}>
-            Phần còn hạn chế (đang chờ tích hợp)
+            Tính năng chưa khả dụng
           </h2>
           <ul className="ml-4 list-disc space-y-1">
             <li>
-              <strong>Gallery media</strong> (ảnh đính kèm JobPosting) — JobPosting hiện chỉ mang
-              rich-text content qua 4 field <code>descriptionJson</code> /
-              <code>requirementsJson</code> / <code>benefitsJson</code> /
-              <code>applicationInstructionsJson</code> (validator AC-03..AC-05). Media
-              library integration chưa có; dự kiến sẽ đến sau cùng với AV4 Media
-              Library.
+              Hiện chưa thể đính kèm ảnh vào tin tuyển dụng.
             </li>
           </ul>
         </section>
@@ -406,19 +472,9 @@ export default async function AdminJobPostingsListPage({ searchParams }: PagePro
   );
 }
 
-function StatusBadge({ status }: { status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED' }) {
-  const colorMap: Record<string, { bg: string; fg: string }> = {
-    DRAFT: { bg: 'var(--color-surface-container-high)', fg: 'var(--on-surface-variant)' },
-    PUBLISHED: { bg: 'var(--color-primary-soft)', fg: 'var(--color-primary-dark)' },
-    ARCHIVED: { bg: 'var(--color-surface-container)', fg: 'var(--on-surface-variant)' },
-  };
-  const c = colorMap[status] ?? colorMap.DRAFT;
-  return (
-    <span
-      className="px-2 py-0.5 rounded-full text-xs font-semibold"
-      style={{ backgroundColor: c.bg, color: c.fg }}
-    >
-      {status}
-    </span>
-  );
-}
+// T1B Wave 2 (EP §3.2.3): the inline `colorMap` + local `StatusBadge`
+// component previously at the bottom of this file is replaced by the
+// shared `<StatusBadge module={JOB_POSTING_MODULE}>` primitive + the
+// domain-owned `jobPostingStatusLabel()` / `jobPostingStatusTone()`
+// helpers from `src/domains/staffing/job-posting-ui.ts`. There is no
+// local StatusBadge or colorMap in this file anymore.

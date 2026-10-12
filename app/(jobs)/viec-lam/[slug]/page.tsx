@@ -72,15 +72,16 @@ import {
   publicJobMetaText,
 } from '@/src/domains/job-board/public-detail.meta';
 import { GallerySection } from '@/src/domains/job-board/components/detail/gallery-section';
-import { ContentSection, CtvInfoSection } from '@/src/domains/job-board/components/detail/content-section';
+import { YouTubeEmbed } from '@/src/domains/job-board/components/detail/youtube-embed';
+import { CtvInfoSection } from '@/src/domains/job-board/components/detail/content-section';
 import { EmployerSidebar } from '@/src/domains/job-board/components/detail/employer-sidebar';
 import { RelatedJobsSection } from '@/src/domains/job-board/components/detail/related-jobs-section';
 import { renderJobPostingRichText } from '@/src/shared/content/job-posting-rich-text';
-import { CtvInfoSectionContent, EmployerSidebarContent, GallerySectionContent } from '@/src/domains/job-board/public-types';
+import { CtvInfoSectionContent, EmployerSidebarContent, GallerySectionContent, MediaItem } from '@/src/domains/job-board/public-types';
 import {
-  deriveStampsFromFlags,
-} from '@/src/domains/job-board/components/landing/stamp-defs';
-import { JobStampBadge } from '@/src/domains/job-board/components/landing/stamp-badge';
+  JobStampOverlay,
+} from '@/src/domains/job-board/components/landing/stamp-overlay';
+import { formatPublicSalary } from '@/src/domains/job-board/public-listing.labels';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -267,13 +268,39 @@ function ThrottledNotice() {
  * Skeleton dùng `source: 'INTEGRATION_PENDING'` + data rỗng; demo dùng fixture
  * typed. KHÔNG đổi DTO — chỉ derive thêm trường view-model.
  */
-function buildGallerySection(): GallerySectionContent {
+function buildGallerySection(
+  job: LoadedJob,
+): GallerySectionContent {
+  // hrp-t1c-jobposting-media-youtube (RQ-03, DEC-02): render REAL gallery từ `job.gallery`
+  // (đã sort `[cover DESC, order ASC, createdAt ASC]`, filter `media.status='PUBLIC'`).
+  // `MediaItem.id` được tổng hợp từ URL hash vì public DTO KHÔNG lộ `MediaAssignment.id` /
+  // `Media.id` (no existence oracle).
+  //
+  // `order` synthetic = index 0..N vì DTO không phát `order` cho public (chỉ mapper nội bộ
+  // dùng để render gallery riêng). Cover/Order đã được DTO sort ở service layer.
+  const media: MediaItem[] = job.gallery.map((item, index) => ({
+    id: `g-${index}-${item.url.length}`,
+    url: item.url,
+    alt: item.alt,
+    caption: item.caption,
+    cover: item.cover,
+    order: index,
+  }));
+  if (media.length === 0) {
+    return {
+      id: 'gallery',
+      enabled: false,
+      order: 20,
+      source: 'INTEGRATION_PENDING',
+      media: [],
+    };
+  }
   return {
     id: 'gallery',
     enabled: true,
     order: 20,
-    source: 'INTEGRATION_PENDING',
-    media: [],
+    source: 'REAL',
+    media,
   };
 }
 
@@ -334,7 +361,7 @@ export default async function PublicJobDetailPage({ params }: PageProps) {
   // UI04d D.A: AFF-gated (chưa có role CTV → mặc định false; sau này sẽ đọc từ session).
   const showCtvInfo = false;
 
-  const gallery = buildGallerySection();
+  const gallery = buildGallerySection(job);
   const ctvInfo = buildCtvInfoSection();
   const employerSidebar = buildEmployerSidebar(job);
 
@@ -357,14 +384,16 @@ export default async function PublicJobDetailPage({ params }: PageProps) {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--color-on-surface)' }}>{job.title}</h1>
-            {/* hrp-p1-a0-1 (DEC-05, C-05): detail page render stamps từ canonical boolean
-                `JobPosting.isHot`/`isUrgent` qua shared `<JobStampBadge>` — single source
-                với listing + homepage FeaturedJobCard. 0.7↔1.0 animation per stamp qua class
-                `.job-stamp-attention`; reduced-motion tắt animation. */}
-            <JobStampBadge
+            {/* hrp-ui-v1-public-card-truth-correction (T1A / DEC-07 / RC-01+RC-02): detail page
+                dùng CÙNG shared `<JobStampOverlay>` (3D tilted rubber stamp, tràn viền) với
+                homepage FeaturedJobCard + `/viec-lam` listing — một visual duy nhất. Component
+                tự derive từ 4 boolean; KHÔNG pre-compute `stamps: StampKey[]` để tránh partial
+                override (RC-02). */}
+            <JobStampOverlay
               isHot={job.isHot}
               isUrgent={job.isUrgent}
-              stamps={deriveStampsFromFlags(job.isHot, job.isUrgent)}
+              isHighReward={job.isHighReward}
+              isExpiringSoon={job.isExpiringSoon}
               size="md"
             />
           </div>
@@ -390,6 +419,19 @@ export default async function PublicJobDetailPage({ params }: PageProps) {
         </div>
 
         <dl className="mt-5 grid gap-3 sm:grid-cols-3">
+          {/* hrp-ui-v1-public-card-truth-correction (T1A / DEC-09 / RQ-11 / RC-03):
+              public detail PHẢI hiển thị salaryDisplay trong fact/chip — không chỉ mang field
+              trong DTO rồi bỏ không (ghi chú RC-03). Dùng `formatPublicSalary` để cùng
+              precedence (1 author-verbatim → 2 hourly/range → 3 "Lương thương lượng") với
+              homepage + listing. */}
+          <Fact
+            label="Mức lương"
+            value={formatPublicSalary({
+              salaryDisplay: job.salaryDisplay,
+              salaryMinVnd: job.salaryMinVnd,
+              salaryMaxVnd: job.salaryMaxVnd,
+            })}
+          />
           <Fact
             label="Chỗ trống"
             value={isFull ? job.statusLabel : `Còn ${job.availableSlots} chỗ trống`}
@@ -405,8 +447,11 @@ export default async function PublicJobDetailPage({ params }: PageProps) {
 
         {/* SECTIONS 2..13 — UI04d D.A + hrp-p1-a1 (RQ-02/AC-03..05) */}
         <div className="mt-6 flex flex-col gap-4">
-          {/* GALLERY (skeleton — chờ AV4 Media) */}
+          {/* GALLERY (REAL — T1C) */}
           <GallerySection content={gallery} />
+
+          {/* YOUTUBE EMBED (REAL — T1C). Component return null khi `videoId` rỗng. */}
+          <YouTubeEmbed videoId={job.youtubeVideoId} />
 
           {/* GRID: editorial + sidebar */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">

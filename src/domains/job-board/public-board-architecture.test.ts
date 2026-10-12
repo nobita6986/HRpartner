@@ -159,7 +159,17 @@ function listTx(rows: Row[]) {
 
 function detailTx(single: Row) {
   const findFirst = vi.fn().mockResolvedValue(single);
-  return { tx: { jobPosting: { findFirst } } as unknown as PublicTx, findFirst };
+  // hrp-t1c-jobposting-media-youtube (RQ-03): public detail now also fetches the
+  // gallery via `tx.mediaAssignment.findMany` (no Prisma relation from JobPosting,
+  // polymorphic FK via `ownerType`+`ownerId`). Default mock returns [] so the test
+  // stays focused on the four-field parity assertion and doesn't need to invent
+  // media rows. Tests that assert on `gallery` should override this mock.
+  const findMany = vi.fn().mockResolvedValue([]);
+  return {
+    tx: { jobPosting: { findFirst }, mediaAssignment: { findMany } } as unknown as PublicTx,
+    findFirst,
+    findMany,
+  };
 }
 
 /** Gọi list và đòi đúng một job — dùng cho các case chỉ quan tâm hình dạng DTO. */

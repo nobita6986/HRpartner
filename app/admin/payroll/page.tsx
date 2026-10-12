@@ -53,7 +53,7 @@ function TypeBadge({ type }: { type: string }) {
       style={{ background: '#e3f2fd', color: '#1565c0' }}
       className="rounded px-1.5 py-0.5 text-xs font-medium"
     >
-      {TYPE_LABELS[type] ?? type}
+      {TYPE_LABELS[type] ?? 'Loại khác'}
     </span>
   );
 }
@@ -66,7 +66,7 @@ function formatValue(value: unknown, type: string): string {
     case 'PERCENT':
       return typeof value === 'number' ? `${(value * 100).toFixed(2)}%` : String(value);
     case 'MULTIPLIER':
-      return typeof value === 'number' ? `${value}x` : String(value);
+      return typeof value === 'number' ? `${value} lần` : String(value);
     case 'MONEY':
       return typeof value === 'number'
         ? `${value.toLocaleString('vi-VN')} ₫`
@@ -153,12 +153,9 @@ export default function PayrollPage() {
             className="rounded border px-3 py-2 text-sm"
           >
             <option value="">Tất cả loại</option>
-            <option value="NUMBER">Số</option>
-            <option value="PERCENT">Phần trăm</option>
-            <option value="MULTIPLIER">Hệ số</option>
-            <option value="MONEY">Tiền tệ</option>
-            <option value="BOOLEAN">Có/Không</option>
-            <option value="STRING">Chuỗi</option>
+            {Object.entries(TYPE_LABELS).map(([value, label]) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
           </select>
         </div>
       </div>

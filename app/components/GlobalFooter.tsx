@@ -8,7 +8,7 @@ interface FooterLink {
 }
 
 const footerLinks: FooterLink[] = [
-  { href: '/ve-chung-toi', label: 'Về chúng tôi', type: 'route' },
+  // hrp-ui-v1-job-card-stamps-brand (T1B / D4): footer link "Về chúng tôi" đã xoá.
   { href: '#', label: 'Điều khoản', type: 'disabled' },
   { href: '#', label: 'Chính sách bảo mật', type: 'disabled' },
   { href: '#', label: 'Liên hệ', type: 'disabled' },

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<!--
+  T1C viewport-aware single-text marquee browser-check fixture (v1.2).
+
+  This file mirrors the DOM that sticky-announcement.tsx renders when
+  animation=MARQUEE, using the EXACT hashed class names emitted by the
+  Next.js CSS Modules compiler. The CSS file linked below is the
+  v1.2 stylesheet (`@keyframes hrpStickyAnnouncementMarquee` uses
+  `translateX(0)` → `translateX(calc(-1 * var(--marquee-shift, 0px)))`).
+
+  v1.2 publishes `--marquee-shift = window.innerWidth + message.width`
+  in pixels from a small inline `<script>` below. This mirrors what
+  the live `sticky-announcement.tsx` does in its `useEffect` so the
+  offline fixture behaves the same way as the live component once
+  React has mounted. The Puppeteer-core browser-check waits for the
+  custom property to be set before running the start/mid/end seek
+  invariants (see scripts/ops/t1c-marquee-browser-check.mjs).
+
+  The full browser-check that runs against the live Vercel Preview
+  URL is gated on the Vercel SSO cookie being available to the agent
+  (the current Vercel Preview deployment sits behind a Vercel
+  Authentication barrier, so the headless Chrome cannot reach
+  /api/public/homepage-settings). This fixture is the
+  offline-equivalent: it ships the production CSS verbatim, mounts
+  the production DOM shape, and runs the same Puppeteer-core checks
+  (single-text DOM, --marquee-shift published, computed keyframe,
+  forced start/mid/end boundingClientRect viewport-bound checks,
+  monotonic leftward transform after releasing the seek). See
+  HANDOFF.md §E-14 + §DEV-02 for the exact Vercel-access limitation
+  and the resolution.
+-->
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <title>T1C marquee fixture</title>
+    <link rel="stylesheet" href="./0b1237131f449bdc.css" />
+    <style>
+      :root {
+        --color-on-primary: #ffffff;
+        --color-primary: #1d4ed8;
+        --sticky-background-opacity: 100%;
+        --sticky-marquee-duration: 4s;
+      }
+      body { margin: 0; padding: 0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+      .page-filler { min-height: 1500px; padding: 1rem; }
+    </style>
+  </head>
+  <body>
+    <div class="page-filler">T1C browser-check fixture page (filler, scrollable).</div>
+    <div
+      role="region"
+      aria-label="Thông báo"
+      aria-live="polite"
+      data-testid="sticky-announcement"
+      class="sticky-announcement_hrpStickyAnnouncement__2IrTD sticky-announcement_hrpStickyAnnouncementAnimMarquee__B18V6"
+      style="--sticky-marquee-duration:4s"
+    >
+      <div
+        class="sticky-announcement_hrpStickyAnnouncementViewport__zSGKR"
+        data-testid="sticky-announcement-marquee"
+      >
+        <span
+          class="sticky-announcement_hrpStickyAnnouncementMessage__Bczbb sticky-announcement_hrpStickyAnnouncementMessageMarquee__Dnpj3"
+        >
+          Hỗ trợ tư vấn 24/7 — Liên hệ ngay để được hỗ trợ
+        </span>
+      </div>
+    </div>
+    <script>
+      // Mirror of the marquee effect in src/domains/job-board/public-content-controls/sticky-announcement.tsx (v1.2).
+      // Two-step publish: measure the natural (pre-transform) rect, set the
+      // px values on the viewport element, then arm the animation INLINE on
+      // the message element (the CSS keyframe is not inlined because it
+      // depends on CSS Modules hashing for the @keyframes rule name; we
+      // resolve the hashed keyframe name from the loaded stylesheet instead).
+      (function () {
+        var viewport = document.querySelector('[data-testid="sticky-announcement-marquee"]');
+        var message = viewport ? viewport.querySelector('span') : null;
+        if (!viewport || !message) return;
+        function resolveKeyframeName() {
+          for (var i = 0; i < document.styleSheets.length; i++) {
+            var sheet = document.styleSheets[i];
+            var rules;
+            try { rules = sheet.cssRules || []; } catch (_) { rules = []; }
+            for (var j = 0; j < rules.length; j++) {
+              var rule = rules[j];
+              if (rule && /hrpStickyAnnouncementMarquee/.test(rule.name || '')) {
+                return rule.name;
+              }
+            }
+          }
+          return 'hrpStickyAnnouncementMarquee';
+        }
+        function arm() {
+          var parentRect = viewport.getBoundingClientRect();
+          var naturalLeft = parentRect.left + message.offsetLeft;
+          var messageWidth = message.offsetWidth;
+          var viewportWidth = window.innerWidth;
+          viewport.style.setProperty('--marquee-shift-start', (viewportWidth - naturalLeft) + 'px');
+          viewport.style.setProperty('--marquee-shift-end', (naturalLeft + messageWidth) + 'px');
+          var keyframeName = resolveKeyframeName();
+          message.style.animation = keyframeName + ' 4s linear infinite';
+        }
+        function disarm() {
+          message.style.animation = 'none';
+        }
+        requestAnimationFrame(function () {
+          arm();
+        });
+        if (typeof ResizeObserver === 'function') {
+          new ResizeObserver(function () {
+            disarm();
+            requestAnimationFrame(function () {
+              arm();
+            });
+          }).observe(message);
+        }
+        window.addEventListener('resize', function () {
+          disarm();
+          requestAnimationFrame(function () {
+            arm();
+          });
+        });
+      })();
+    </script>
+  </body>
+</html>

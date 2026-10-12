@@ -1,0 +1,155 @@
+{
+  "previewUrl": "http://127.0.0.1:4000/fixture.html",
+  "viewports": [
+    {
+      "name": "desktop-1440x900",
+      "status": "PASS"
+    },
+    {
+      "name": "mobile-390x844",
+      "status": "PASS"
+    }
+  ],
+  "log": [
+    {
+      "id": "[desktop-1440x900].single-text",
+      "ok": true,
+      "detail": "count=1"
+    },
+    {
+      "id": "[desktop-1440x900].no-tail",
+      "ok": true,
+      "detail": "tailCount=0"
+    },
+    {
+      "id": "[desktop-1440x900].animation-name",
+      "ok": true,
+      "detail": "sticky-announcement_hrpStickyAnnouncementMarquee__0pucR"
+    },
+    {
+      "id": "[desktop-1440x900].kf-0",
+      "ok": true,
+      "detail": "0% { transform: translateX(var(--marquee-shift-start,0)); }"
+    },
+    {
+      "id": "[desktop-1440x900].kf-100",
+      "ok": true,
+      "detail": "100% { transform: translateX(calc(-1 * var(--marquee-shift-end, 0px))); }"
+    },
+    {
+      "id": "[desktop-1440x900].marquee-shift-start",
+      "ok": true,
+      "detail": "--marquee-shift-start=1428px"
+    },
+    {
+      "id": "[desktop-1440x900].marquee-shift-end",
+      "ok": true,
+      "detail": "--marquee-shift-end=349px"
+    },
+    {
+      "id": "[desktop-1440x900].marquee-shift-start-positive",
+      "ok": true,
+      "detail": "--marquee-shift-start=1428px"
+    },
+    {
+      "id": "[desktop-1440x900].msg-white-space",
+      "ok": true,
+      "detail": "white-space=nowrap"
+    },
+    {
+      "id": "[desktop-1440x900].msg-no-overflow-hidden",
+      "ok": true,
+      "detail": "overflow=visible"
+    },
+    {
+      "id": "[desktop-1440x900].seek-start",
+      "ok": true,
+      "detail": "raw={\"left\":1440,\"right\":1777.078125,\"width\":337.078125,\"viewportWidth\":1440,\"animationDurationMs\":4000}"
+    },
+    {
+      "id": "[desktop-1440x900].seek-mid",
+      "ok": true,
+      "detail": "raw={\"left\":551.5,\"right\":888.578125,\"width\":337.078125,\"viewportWidth\":1440,\"animationDurationMs\":4000}"
+    },
+    {
+      "id": "[desktop-1440x900].seek-end",
+      "ok": true,
+      "detail": "raw={\"left\":-336.9995422363281,\"right\":0.078582763671875,\"width\":337.078125,\"viewportWidth\":1440,\"animationDurationMs\":4000}"
+    },
+    {
+      "id": "[desktop-1440x900].leftward",
+      "ok": true,
+      "detail": "[1428,946.732,465.534]"
+    },
+    {
+      "id": "[mobile-390x844].single-text",
+      "ok": true,
+      "detail": "count=1"
+    },
+    {
+      "id": "[mobile-390x844].no-tail",
+      "ok": true,
+      "detail": "tailCount=0"
+    },
+    {
+      "id": "[mobile-390x844].animation-name",
+      "ok": true,
+      "detail": "sticky-announcement_hrpStickyAnnouncementMarquee__0pucR"
+    },
+    {
+      "id": "[mobile-390x844].kf-0",
+      "ok": true,
+      "detail": "0% { transform: translateX(var(--marquee-shift-start,0)); }"
+    },
+    {
+      "id": "[mobile-390x844].kf-100",
+      "ok": true,
+      "detail": "100% { transform: translateX(calc(-1 * var(--marquee-shift-end, 0px))); }"
+    },
+    {
+      "id": "[mobile-390x844].marquee-shift-start",
+      "ok": true,
+      "detail": "--marquee-shift-start=378px"
+    },
+    {
+      "id": "[mobile-390x844].marquee-shift-end",
+      "ok": true,
+      "detail": "--marquee-shift-end=349px"
+    },
+    {
+      "id": "[mobile-390x844].marquee-shift-start-positive",
+      "ok": true,
+      "detail": "--marquee-shift-start=378px"
+    },
+    {
+      "id": "[mobile-390x844].msg-white-space",
+      "ok": true,
+      "detail": "white-space=nowrap"
+    },
+    {
+      "id": "[mobile-390x844].msg-no-overflow-hidden",
+      "ok": true,
+      "detail": "overflow=visible"
+    },
+    {
+      "id": "[mobile-390x844].seek-start",
+      "ok": true,
+      "detail": "raw={\"left\":390,\"right\":727.078125,\"width\":337.078125,\"viewportWidth\":390,\"animationDurationMs\":4000}"
+    },
+    {
+      "id": "[mobile-390x844].seek-mid",
+      "ok": true,
+      "detail": "raw={\"left\":26.5,\"right\":363.578125,\"width\":337.078125,\"viewportWidth\":390,\"animationDurationMs\":4000}"
+    },
+    {
+      "id": "[mobile-390x844].seek-end",
+      "ok": true,
+      "detail": "raw={\"left\":-336.99981689453125,\"right\":0.07830810546875,\"width\":337.078125,\"viewportWidth\":390,\"animationDurationMs\":4000}"
+    },
+    {
+      "id": "[mobile-390x844].leftward",
+      "ok": true,
+      "detail": "[378,181.108,-9.72964]"
+    }
+  ]
+}

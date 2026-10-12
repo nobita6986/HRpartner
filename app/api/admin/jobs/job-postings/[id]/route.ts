@@ -34,6 +34,7 @@ import {
   updateDraftContent,
   type UpdateDraftContentInput,
 } from '@/src/domains/staffing/job-posting-authoring.service';
+import { extractYouTubeVideoId } from '@/src/domains/media/youtube';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -56,6 +57,18 @@ interface PatchBody {
   // phát hiện payload khác cho cùng key.
   isHot?: unknown;
   isUrgent?: unknown;
+  // hrp-ui-v1-job-card-stamps-brand (T1B / RQ-10): 2 author-selected flag canonical mới
+  // — cùng semantics ("undefined" = bỏ qua, non-boolean = 400). Cả hai field đều được
+  // include vào `requestBody` array để idempotency hash phát hiện payload khác.
+  isHighReward?: unknown;
+  isExpiringSoon?: unknown;
+  /**
+   * hrp-t1c-jobposting-media-youtube (RQ-02, DEC-04): YouTube video URL/ID (optional).
+   * `undefined` = bỏ qua (giữ nguyên DB); `null`/`""` = clear; string khác = qua
+   * `extractYouTubeVideoId` helper. Validator type-jailmọi non-string/non-null/non-undefined
+   * ở đây và reject 400 INVALID_INPUT trước khi `assertYouTubeVideoId` của service chạy.
+   */
+  youtubeVideoId?: unknown;
 }
 
 const PATCH_BODY_ALLOWED_KEYS = new Set<string>([
@@ -69,6 +82,11 @@ const PATCH_BODY_ALLOWED_KEYS = new Set<string>([
   'contentSchemaVersion',
   'isHot',
   'isUrgent',
+  // hrp-ui-v1-job-card-stamps-brand (T1B / RQ-10): 2 flag mới.
+  'isHighReward',
+  'isExpiringSoon',
+  // hrp-t1c-jobposting-media-youtube (RQ-02): 1 slot mới cho YouTube ID.
+  'youtubeVideoId',
 ]);
 
 function badRequest(message: string, code = 'INVALID_INPUT'): NextResponse {
@@ -80,6 +98,19 @@ function assertStrictBoolean(value: unknown): value is boolean | undefined {
   if (value === undefined) return true;
   if (typeof value === 'boolean') return true;
   return false;
+}
+
+/**
+ * hrp-t1c-jobposting-media-youtube (RQ-02, DEC-04): type-jail cho `youtubeVideoId`
+ * trước khi đến service `assertYouTubeVideoId`. Service sẽ gọi
+ * `extractYouTubeVideoId` để canonical hoá URL → 11-char ID. Ở đây chỉ chặn
+ * non-string/non-null/non-undefined (number/object/array/boolean) để fail-fast
+ * với message an toàn (KHÔNG echo raw input) — service giữ authority validate chi tiết.
+ */
+function assertYouTubeVideoIdShape(value: unknown): value is string | null | undefined {
+  if (value === undefined) return true;
+  if (value === null) return true;
+  return typeof value === 'string';
 }
 
 export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
@@ -101,8 +132,13 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
   const { id } = await ctx.params;
   try {
     const prisma = getPrisma();
+    // hrp-f9-hr-staff-jobposting-scope STEP-06 (DEC-09): pass the
+    // AuthContext so the read helper can enforce the scoped-recruiter
+    // authority. For an unassigned HR_STAFF caller, the helper returns
+    // `null` (no existence oracle) → 404 NOT_FOUND. The route's existing
+    // 404 mapping is preserved.
     const posting = await withDbContext(prisma, authCtx, async (tx) =>
-      getJobPostingForAuthoring(tx, id),
+      getJobPostingForAuthoring(tx, authCtx, id),
     );
     if (!posting) {
       return NextResponse.json({ error: 'NOT_FOUND', message: `JobPosting ${id} không tồn tại.` }, { status: 404 });
@@ -184,6 +220,18 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
   if (!assertStrictBoolean(body.isUrgent)) {
     return badRequest('isUrgent phải là boolean (true/false) hoặc bị bỏ qua.');
   }
+  // hrp-ui-v1-job-card-stamps-brand (T1B / RQ-10): 2 flag mới — cùng semantic.
+  if (!assertStrictBoolean(body.isHighReward)) {
+    return badRequest('isHighReward phải là boolean (true/false) hoặc bị bỏ qua.');
+  }
+  if (!assertStrictBoolean(body.isExpiringSoon)) {
+    return badRequest('isExpiringSoon phải là boolean (true/false) hoặc bị bỏ qua.');
+  }
+  // hrp-t1c-jobposting-media-youtube (RQ-02, DEC-04): type-jail — service kiểm tra chi tiết
+  // (URL → ID) sau khi đã chắn pipe non-string/muốn fail-fast với safe message.
+  if (!assertYouTubeVideoIdShape(body.youtubeVideoId)) {
+    return badRequest('youtubeVideoId phải là chuỗi (URL/ID), null, hoặc bị bỏ qua.');
+  }
 
   const input: UpdateDraftContentInput = {
     jobPostingId: id,
@@ -203,6 +251,11 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     // C-01: pass boolean flags through; service keeps `undefined` semantics via assertBoolean.
     isHot: body.isHot as boolean | undefined,
     isUrgent: body.isUrgent as boolean | undefined,
+    // hrp-ui-v1-job-card-stamps-brand (T1B / RQ-10): 2 flag mới.
+    isHighReward: body.isHighReward as boolean | undefined,
+    isExpiringSoon: body.isExpiringSoon as boolean | undefined,
+    // hrp-t1c-jobposting-media-youtube (RQ-02, DEC-04): truyền giá trị thô; service fold null/"" → null.
+    youtubeVideoId: body.youtubeVideoId as string | null | undefined,
   };
 
   // C-01: idempotency hash MUST include both stamp booleans — otherwise client could send
@@ -221,6 +274,17 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     input.contentSchemaVersion,
     input.isHot ?? null,
     input.isUrgent ?? null,
+    // hrp-ui-v1-job-card-stamps-brand (T1B / RQ-10): 2 slot mở rộng cho 2 flag mới,
+    // đưa tổng array length lên 13. Cùng key-order convention (cũ → mới) để
+    // idempotency hash stable.
+    input.isHighReward ?? null,
+    input.isExpiringSoon ?? null,
+    // hrp-t1c-jobposting-media-youtube (RQ-02): slot cuối cùng cho YouTube — fold
+    // canonical 11-char form để hash không nhạy với cách viết URL của client
+    // (cùng video viết `/watch?v=` hay `/embed/` đều ra cùng ID).
+    input.youtubeVideoId === undefined || input.youtubeVideoId === null
+      ? null
+      : (extractYouTubeVideoId(String(input.youtubeVideoId).trim()) ?? '__INVALID_YT__'),
   ];
 
   try {

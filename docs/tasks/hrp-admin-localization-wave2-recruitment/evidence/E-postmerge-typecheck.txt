@@ -1,0 +1,13 @@
+corepack : $ tsc --noEmit
+At C:\Users\Admin\AppData\Local\Temp\ps-script-731747cf-1a23-40db-85c5-1a66b4723419.ps1:84 char:249
++ ... te-Host "=== typecheck ==="; corepack pnpm run typecheck 2>&1 | Selec ...
++                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ($ tsc --noEmit:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+exit: 0
+
+==> SUMMARY <==
+corepack pnpm run typecheck
+exit: 0
+0 type errors

@@ -320,7 +320,7 @@ export function hrStaffDisplayLabel(u: HrStaffUserOption): string {
   if (u.name && u.phone) return `${u.name} (${u.phone})`;
   if (u.name) return u.name;
   if (u.phone) return u.phone;
-  return '(no name)';
+  return '(chưa có tên)';
 }
 
 const STATUS_CONFIG: Record<AssignmentStatus, { label: string; bg: string; color: string }> = {
