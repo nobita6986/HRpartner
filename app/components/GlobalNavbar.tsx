@@ -29,7 +29,8 @@ interface NavLink {
 }
 
 const navLinks: NavLink[] = [
-  { href: '/', label: 'Việc làm', type: 'route' },
+  { href: '/', label: 'Trang chủ', type: 'route' },
+  { href: '/viec-lam', label: 'Việc làm', type: 'route' },
   // hrp-t1a-introduce-hrp-and-menu-cleanup: "Công ty" → "Giới thiệu".
   // Route re-created at `app/(portal)/ve-chung-toi/page.tsx` (was deleted
   // before this task's baseline). Type flipped from 'disabled' to 'route'.
@@ -44,8 +45,8 @@ const navLinks: NavLink[] = [
 
 /**
  * go-live-15 / RQ-09 - muc dieu huong ung voi duong dan hien tai, SUY tu
- * `usePathname()` chu khong hard-code. Nam href cua `navLinks` khong long nhau
- * va `/` chi khop tuyet doi, nen ham nay tra ve NHIEU NHAT mot href: moi nhanh
+ * `usePathname()` chu khong hard-code. `/` chi khop tuyet doi, con `/viec-lam`
+ * khop ca trang danh sach va cac trang chi tiet, nen ham nay tra ve NHIEU NHAT mot href: moi nhanh
  * chi co the co dung MOT link mang `aria-current="page"`.
  */
 function activeNavHref(pathname: string | null): string | null {

@@ -16,9 +16,9 @@
  *   - KHÔNG ghi `offset` khi nó bằng 0, nên trang một của một bộ lọc là ĐÚNG MỘT chuỗi (`RQ-06`).
  *     Thiếu luật này thì `/viec-lam?q=a` và `/viec-lam?q=a&offset=0` là hai URL cho cùng một nội
  *     dung, và canonical của `DEC-08` mất nghĩa.
- *   - CHỈ năm tên `q`, `salary`, `area`, `shift`, `offset` được đọc và được phát ra. Mọi tên khác
- *     bị loại trong im lặng (`RQ-03`), gồm ba tên mà bề mặt cũ từng hứa mà không có vị từ
- *     chống lưng: `limit`, `shiftType`, `jobType`.
+ *   - CHỈ bốn tên `q`, `salary`, `area`, `offset` được đọc và được phát ra. Mọi tên khác
+ *     bị loại trong im lặng (`RQ-03`), gồm `shift` cũ cùng ba tên không có vị từ chống lưng:
+ *     `limit`, `shiftType`, `jobType`.
  *
  * Ba xử lý `offset` KHÁC nhau, đừng gộp: âm hoặc không phải số thì KẸP về 0 (`RQ-02`); không chia
  * hết `PAGE_SIZE` thì KÉO XUỐNG bội gần nhất, vì `RQ-02` chỉ liệt kê ba ca reset-về-0 và ca này
@@ -58,7 +58,7 @@ function firstValue(raw: string | string[] | undefined): string | undefined {
  * Chuỗi rỗng, hoặc chuỗi chỉ có khoảng trắng, xử như VẮNG MẶT — đó là hình dạng của `?area=` khi
  * form GET submit lúc người dùng chưa chọn gì. Giữ chuỗi rỗng lại thì `listingIsIndexable` tắt
  * index trên một URL vốn sạch. Giá trị được giữ NGUYÊN VĂN khi có nội dung: giá trị của select
- * vùng và select ca đến từ `facets` của DB, không phải do người dùng gõ, nên không cắt gọt.
+ * vùng đến từ `facets` của DB, không phải do người dùng gõ, nên không cắt gọt.
  */
 function presentValue(raw: string | string[] | undefined): string | undefined {
   const value = firstValue(raw);
@@ -97,14 +97,13 @@ function cleanSalary(raw: string | string[] | undefined): SalaryBucket | undefin
 }
 
 /**
- * Bộ năm trường đã làm sạch. Năm khoá LUÔN có mặt kể cả khi giá trị là `undefined`, để phía gọi
+ * Bộ bốn trường đã làm sạch. Bốn khoá LUÔN có mặt kể cả khi giá trị là `undefined`, để phía gọi
  * đọc được `params.q` mà không phải kiểm tồn tại, và để test đếm được bề mặt bằng `Object.keys`.
  */
 export function parseListingSearchParams(raw: RawSearchParams): {
   q: string | undefined;
   salary: SalaryBucket | undefined;
   area: string | undefined;
-  shift: string | undefined;
   offset: number;
 } {
   const q = presentValue(raw.q);
@@ -112,7 +111,6 @@ export function parseListingSearchParams(raw: RawSearchParams): {
     q: q === undefined ? undefined : q.trim(),
     salary: cleanSalary(raw.salary),
     area: presentValue(raw.area),
-    shift: presentValue(raw.shift),
     offset: cleanOffset(raw.offset),
   };
 }
@@ -125,9 +123,8 @@ type ListingParams = ReturnType<typeof parseListingSearchParams>;
  * `offsetOverride` là cách hai nút Trước/Sau đổi trang mà giữ nguyên bộ lọc — phía gọi truyền
  * `params.offset ± PAGE_SIZE`, không tự ghép chuỗi.
  *
- * hrp-t2-public-site-hotfix (T2 / STEP-03): thứ tự ghi là `q, salary, area, shift, offset`. Đặt
- * `salary` ngay sau `q` để URL ngắn gọn (lương thường là filter top-level, khu vực/ca là filter
- * phụ).
+ * Thứ tự ghi là `q, salary, area, offset`. `shift` là legacy input và bị bỏ qua theo yêu cầu
+ * bỏ tìm kiếm theo ca làm khỏi `/viec-lam`.
  */
 export function buildListingHref(params: ListingParams, offsetOverride?: number): string {
   const offset = offsetOverride ?? params.offset;
@@ -136,7 +133,6 @@ export function buildListingHref(params: ListingParams, offsetOverride?: number)
   if (params.q) search.set('q', params.q);
   if (params.salary) search.set('salary', params.salary);
   if (params.area) search.set('area', params.area);
-  if (params.shift) search.set('shift', params.shift);
   if (offset > 0) search.set('offset', String(offset));
   const query = search.toString();
   return query === '' ? LISTING_PATH : `${LISTING_PATH}?${query}`;
@@ -155,7 +151,6 @@ export function listingIsIndexable(params: ListingParams): boolean {
     params.q === undefined &&
     params.salary === undefined &&
     params.area === undefined &&
-    params.shift === undefined &&
     params.offset === 0
   );
 }
