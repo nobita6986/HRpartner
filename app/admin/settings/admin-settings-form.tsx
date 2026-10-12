@@ -51,7 +51,7 @@ import { buildHomepageSettingsPatch } from './homepage-settings-patch';
 import { actionLabel } from '@/src/shared/i18n/action-dictionary';
 import { HeroImagePicker } from './_components/hero-image-picker';
 import { HeroSlidesEditor, type HeroSlideSlot } from './_components/hero-slides-editor';
-import { AccountTabPanel, SettingsTabs, type SettingsTabId } from './_components/settings-tabs';
+import { SettingsTabs, type SettingsTabId } from './_components/settings-tabs';
 
 const STICKY_TEXT_COLOR_LABELS: Readonly<Record<StickyTextColor, string>> = {
   'on-primary': 'Trên nền màu chính',
@@ -75,53 +75,6 @@ const STICKY_ANIMATION_LABELS: Readonly<Record<StickyAnimation, string>> = {
   BLINK: 'Nhấp nháy',
   MARQUEE: 'Chạy chữ',
 };
-
-const SYSTEM_TAB_ITEMS = [
-  {
-    label: 'Đổi mật khẩu',
-    description: 'Thay đổi mật khẩu tài khoản',
-  },
-  {
-    label: 'Xác thực hai yếu tố (2FA)',
-    description: 'Bật/tắt xác thực 2 lớp',
-  },
-  {
-    label: 'Lịch sử đăng nhập',
-    description: 'Xem các phiên đăng nhập gần đây',
-  },
-  {
-    label: 'Email thông báo',
-    description: 'Cấu hình email nhận thông báo',
-  },
-  {
-    label: 'SMS / Zalo',
-    description: 'Cấu hình kênh SMS và Zalo OA',
-  },
-  {
-    label: 'Thông báo đẩy',
-    description: 'Bật hoặc tắt thông báo trên ứng dụng',
-  },
-  {
-    label: 'Khóa API',
-    description: 'Quản lý khóa API dùng cho dịch vụ bên thứ ba',
-  },
-  {
-    label: 'Webhook',
-    description: 'Cấu hình webhook để nhận sự kiện',
-  },
-  {
-    label: 'Đăng nhập một lần (SSO)',
-    description: 'Kết nối LDAP / SAML / OAuth',
-  },
-  {
-    label: 'Nhật ký kiểm toán',
-    description: 'Xem lịch sử các thay đổi quan trọng',
-  },
-  {
-    label: 'Nhật ký lỗi',
-    description: 'Xem các lỗi hệ thống gần đây',
-  },
-];
 
 export interface AdminSettingsFormProps {
   /** Server-side fetched initial settings. */
@@ -216,9 +169,8 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
-  // hrp-t2-public-site-hotfix (T2 / STEP-07): state tab — mặc định 'interface'.
-  // KHÔNG đồng bộ URL (giữ /admin/settings sạch cho redirect admin/users khi cần).
-  const [activeTab, setActiveTab] = useState<SettingsTabId>('interface');
+  // Tab is only a visual grouping; keep the settings route stable.
+  const [activeTab, setActiveTab] = useState<SettingsTabId>('homepage');
 
   // Track last-saved snapshot so Reset can revert + "updated at" shows the latest.
   const [savedSnapshot, setSavedSnapshot] = useState<HomepageSettingsDto>(initialSettings);
@@ -313,7 +265,10 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
   // hrp-t1c-t2-public-site-hero-slides-ctv-layout (T2 hotfix / STEP-05):
   // 5 slide — fail-fast nếu 1 slot vi phạm. Reset flag = admin đã chọn
   // "Khôi phục mặc định" → không validate nội dung 5 slot (payload null).
-  const heroSlideFieldErrors = heroSlidesReset
+  const heroSlidesAreEmpty = heroSlideSlots.every(
+    (slide) => slide.mediaId === null && slide.title.trim() === '' && slide.desc.trim() === '',
+  );
+  const heroSlideFieldErrors = heroSlidesReset || heroSlidesAreEmpty
     ? []
     : heroSlideSlots.map((s) => ({
         title: validateHeroSlideTitle(s.title),
@@ -541,7 +496,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
             }),
           );
           setHeroSlidesReset(false);
-          setSuccess('Đã lưu cài đặt trang chủ và kênh liên hệ.');
+          setSuccess('Đã lưu cài đặt website công khai.');
         }
         router.refresh();
       } catch {
@@ -617,7 +572,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
           Cài đặt
         </h1>
         <p style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-sm">
-          Cấu hình hệ thống. Nhóm cài đặt trang chủ bên dưới đã có hiệu lực; các nhóm khác sẽ sớm khả dụng.
+          Cấu hình nội dung và cách hiển thị trên website công khai.
         </p>
       </div>
 
@@ -648,10 +603,10 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
             <h2 style={{ color: 'var(--on-surface)' }} className="text-base font-semibold">
-              Cài đặt trang chủ
+              Cài đặt website công khai
             </h2>
             <p style={{ color: 'var(--on-surface-variant)' }} className="mt-0.5 text-xs">
-              Thay đổi tại đây có hiệu lực trên trang chủ sau khi lưu.
+              Trang chủ, thông báo và kênh liên hệ được lưu trong cùng cấu hình.
             </p>
           </div>
           <span
@@ -665,15 +620,18 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
           </span>
         </div>
 
-        {/* hrp-t2-public-site-hotfix (T2 / STEP-07): Tabs điều hướng nhóm
-            cài đặt (interface / contact / system / account). Render nội
-            dung cặn bên dưới theo `activeTab` để không phá UX sẵn có. */}
         <SettingsTabs
           active={activeTab}
           onChange={setActiveTab}
         />
 
-        {activeTab === 'interface' ? (
+        <div
+          role="tabpanel"
+          id={`settings-tab-panel-${activeTab}`}
+          aria-labelledby={`settings-tab-${activeTab}`}
+          data-testid={`settings-tab-panel-${activeTab}`}
+        >
+        {activeTab === 'homepage' ? (
         <>
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <div>
@@ -973,10 +931,8 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
         </div>
         )}
 
-        {/* hrp-t2-public-site-hotfix (T2 / STEP-07): Tab Giao diện còn chứa
-            news toggle + sticky announcement. (Đặt chung với block
-            pagesizes + Hero image đã render phía trên.) */}
         {/* ── UI2 / Phase B — News section toggle ───────────────────────── */}
+        {activeTab === 'homepage' && (
         <div
           className="mt-6 border-t pt-6"
           style={{ borderColor: 'var(--outline-variant)' }}
@@ -1018,8 +974,10 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
             </span>
           </label>
         </div>
+        )}
 
         {/* ── UI2 / Phase B — Sticky bottom announcement ────────────────── */}
+        {activeTab === 'announcement' && (
         <div
           className="mt-6 border-t pt-6"
           style={{ borderColor: 'var(--outline-variant)' }}
@@ -1341,6 +1299,8 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
             </p>
           </fieldset>
         </div>
+        )}
+        </div>
 
         {error && (
           <div
@@ -1370,12 +1330,11 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
           </div>
         )}
 
-        {(activeTab === 'interface' || activeTab === 'contact') && (
         <div className="mt-6 flex flex-wrap items-center justify-end gap-3">
           <p style={{ color: 'var(--on-surface-variant)' }} className="text-xs">
             {unavailableReason
               ? 'Chưa thể chỉnh sửa vì dữ liệu cài đặt chưa sẵn sàng.'
-              : `Cập nhật lần cuối: ${new Date(savedSnapshot.updatedAt).toLocaleString('vi-VN')}`}
+              : `Cập nhật lần cuối: ${new Date(savedSnapshot.updatedAt).toLocaleString('vi-VN', { timeZone: 'Asia/Bangkok' })}`}
           </p>
           <button
             type="button"
@@ -1398,36 +1357,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
             {actionLabel('save')}
           </button>
         </div>
-        )}
       </form>
-
-      {/* hrp-t2-public-site-hotfix (T2 / STEP-07): Tab "Hệ thống" — nơi dự
-          kiến cho cài đặt nền (rate-limit, feature flags, jobs queue...) chưa
-          khả dụng trong T2. Render placeholder đồng nhất với UX cũ. */}
-      {activeTab === 'system' && (
-        <div
-          className="mt-8 rounded-lg border p-6"
-          style={{
-            background: 'var(--surface-container-lowest)',
-            borderColor: 'var(--outline-variant)',
-          }}
-          data-testid="settings-system-placeholder"
-        >
-          <h2 style={{ color: 'var(--on-surface)' }} className="text-base font-semibold">
-            Cài đặt hệ thống
-          </h2>
-          <p style={{ color: 'var(--on-surface-variant)' }} className="mt-2 text-sm">
-            Các tùy chọn này đang được chuẩn hoá trong task UI-3 và sẽ khả dụng trong bản phát hành kế tiếp.
-          </p>
-        </div>
-      )}
-
-      {/* hrp-t2-public-site-hotfix (T2 / STEP-07): Tab "Tài khoản / Quyền"
-          chỉ điều hướng sang Users & Permissions. Không xây CRUD tài khoản ở
-          task T2 để tránh chồng chéo với hotfix Admin UI. */}
-      {activeTab === 'account' && (
-        <AccountTabPanel />
-      )}
 
     </div>
   );

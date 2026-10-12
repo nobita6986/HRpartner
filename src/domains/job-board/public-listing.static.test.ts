@@ -20,6 +20,7 @@ const PAGE = 'app/(jobs)/viec-lam/page.tsx';
 const DETAIL = 'app/(jobs)/viec-lam/[slug]/page.tsx';
 const LABELS = 'src/domains/job-board/public-listing.labels.ts';
 const HOME = 'app/(portal)/page.tsx';
+const NAV = 'app/components/GlobalNavbar.tsx';
 
 const raw = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 
@@ -31,6 +32,7 @@ const count = (source: string, pattern: RegExp) => (source.match(pattern) ?? [])
 
 const page = raw(PAGE);
 const code = strip(page);
+const filterForm = code.slice(code.indexOf('function FilterForm'), code.indexOf('function JobCard'));
 
 describe('RQ-01/AC-01 — trang là Server Component, không có chỉ thị client', () => {
   it('không chứa chỉ thị use client ở bất kỳ dạng nào, kể cả trong chú thích', () => {
@@ -98,9 +100,14 @@ describe('RQ-08/AC-10 — đúng MỘT đường tới DB, không có đường 
     expect(count(code, /listPublicJobProjection\(/g)).toBe(1);
   });
 
-  it('getPrisma() chỉ xuất hiện trong withPublicDb wrapper (AV1: 1 cho settings + 1 cho query)', () => {
+  it('getPrisma() xuất hiện đúng 2 lần: 1 trong loadListingPageSize (settings) + 1 trong withPublicDb wrapper (jobs query). loadListing dùng lại cache() nên không gọi thêm', () => {
     // AV1: getPrisma() dùng cho 2 việc — đọc singleton HomepageSettings + query jobs.
-    // Cả hai đều wrap hoặc là singleton global (no RLS).
+    // hrp-t2-public-paging-tone-hotfix (RQ-02): `loadListingPageSize()` tách
+    // ra helper riêng để `generateMetadata` cũng dùng được. `cache()` đảm
+    // bảo loadListingPageSize chỉ query 1 lần cho cả metadata + body
+    // (cùng request); `loadListing` không gọi getPrisma() thêm nữa vì dùng
+    // lại giá trị trả về từ helper. Tổng cộng 2 lần `getPrisma()` trong
+    // source. Cả hai vị trí đều dùng singleton/global (no RLS).
     expect(count(code, /getPrisma\(\)/g)).toBe(2);
     expect(code).toMatch(/withPublicDb\(getPrisma\(\),/);
   });
@@ -114,7 +121,10 @@ describe('RQ-08/AC-10 — đúng MỘT đường tới DB, không có đường 
 describe('RQ-03/AC-04 — trang chỉ đọc searchParams qua parser', () => {
   it('mọi lần await searchParams đều đi qua parseListingSearchParams', () => {
     expect(count(code, /await searchParams/g)).toBe(2);
-    expect(count(code, /parseListingSearchParams\(await searchParams\)/g)).toBe(2);
+    // hrp-t2-public-paging-tone-hotfix: parser giờ nhận `pageSize` làm tham số thứ hai
+    // (`parseListingSearchParams(await searchParams, listingPageSize)`), pattern cũ chỉ
+    // khớp dạng 1-arg nên được nới lỏng để khớp cả 2 dạng.
+    expect(count(code, /parseListingSearchParams\(\s*await\s+searchParams\b/g)).toBe(2);
   });
 
   it('không truy cập thuộc tính nào của searchParams, và không đọc bốn tên bị cấm', () => {
@@ -130,11 +140,21 @@ describe('RQ-03/AC-04 — trang chỉ đọc searchParams qua parser', () => {
   });
 });
 
-describe('RQ-04/AC-05 — option select đến từ facets, không từ mảng hằng', () => {
-  it('cả hai select map trên facets của chính kết quả truy vấn', () => {
+describe('RQ-04/AC-05 — option khu vực đến từ facets, không từ mảng hằng', () => {
+  it('select khu vực map trên facets; không còn select ca làm', () => {
     expect(code).toContain('facets.areas.map(');
-    expect(code).toContain('facets.shifts.map(');
+    expect(filterForm).not.toContain('facets.shifts.map(');
+    expect(filterForm).not.toContain('listing-shift');
+    expect(filterForm).not.toMatch(/name=["']shift["']/);
+    expect(filterForm).not.toContain('Ca làm');
     expect(code).toMatch(/const\s*\{\s*jobs,\s*facets,\s*total,\s*nextOffset\s*\}\s*=/);
+  });
+
+  it('loader không nhận hoặc truyền shift vào truy vấn listing', () => {
+    const loader = code.slice(code.indexOf('const loadListing'), code.indexOf('export async function generateMetadata'));
+    expect(loader).not.toMatch(/\bshift\b/);
+    expect(code).not.toContain('params.shift');
+    expect(page).toContain('Lọc theo từ khóa, khu vực và mức lương');
   });
 
   it('tệp KHÔNG khai một mảng hằng nào — không có danh sách vùng/ca/ngành/loại việc dán tay', () => {
@@ -155,13 +175,23 @@ describe('RQ-09/AC-11 — canonical sạch, robots theo listingIsIndexable', () 
     expect(count(code, /index:\s*true/g)).toBe(1);
   });
 
-  it('generateMetadata KHÔNG gọi loader, nên một lượt render tiêu đúng một suất ngân sách', () => {
+  it('generateMetadata KHÔNG gọi jobs-loader, nên một lượt render tiêu đúng một suất ngân sách', () => {
     const meta = code.slice(
       code.indexOf('export async function generateMetadata'),
       code.indexOf('function ThrottledNotice'),
     );
     expect(meta.length).toBeGreaterThan(0);
-    expect(meta).not.toContain('loadListing');
+    // hrp-t2-public-paging-tone-hotfix (RQ-02): metadata giờ gọi
+    // `loadListingPageSize()` để đọc `listingPageSize` từ HomepageSettings, vì
+    // nếu parser nhận default `PAGE_SIZE = 20` thay vì `listingPageSize` thật
+    // (mặc định 12), `cleanOffset` sẽ kéo `?offset=12` về `0` và
+    // `listingIsIndexable` trả `true` → metadata index nhầm page 2 (DEC-08).
+    // Helper này chỉ đọc singleton `homepageSettings` (1 row, no RLS, no rate
+    // limit) và được `cache()` dedupe với `loadListing`; nó KHÔNG query jobs.
+    // Vì vậy fence giữ là "không query jobs", không phải "không DB call".
+    expect(meta).not.toContain('listPublicJobProjection');
+    expect(meta).not.toContain('withPublicDb');
+    expect(meta).not.toContain('evaluateRateLimits');
   });
 });
 
@@ -240,7 +270,7 @@ describe('RQ-16/AC-18 — dùng được bằng bàn phím và bằng ngón tay'
     // (vì `testid` kết thúc bằng `id`). Lọc bằng whitelist các id đã biết để
     // fence test deterministic — chỉ tính những id thật sự có htmlFor tương ứng.
     // hrp-t2-public-site-hotfix (T2 / STEP-09): bổ sung `listing-salary`.
-    const KNOWN_IDS = ['listing-q', 'listing-area', 'listing-shift', 'listing-salary'] as const;
+    const KNOWN_IDS = ['listing-q', 'listing-area', 'listing-salary'] as const;
     const idRegex = new RegExp(`\\bid="(${KNOWN_IDS.join('|')})"`, 'g');
     const forRegex = new RegExp(`\\bhtmlFor="(${KNOWN_IDS.join('|')})"`, 'g');
     const ids = [...code.matchAll(idRegex)].map((m) => m[1]).sort();
@@ -277,5 +307,20 @@ describe('RQ-15 — trang chi tiết quay lại đúng danh sách, không về t
   it('hai href quay lại trỏ /viec-lam, và không còn href nào trỏ /', () => {
     expect(count(detail, /href="\/viec-lam"/g)).toBe(2);
     expect(detail).not.toMatch(/href="\/"/);
+  });
+});
+
+describe('T1C public navigation — Trang chủ và Việc làm có route/active-state đúng', () => {
+  const nav = strip(raw(NAV));
+
+  it('mảng dùng chung có Trang chủ trỏ / và Việc làm trỏ /viec-lam', () => {
+    expect(nav).toContain("{ href: '/', label: 'Trang chủ', type: 'route' }");
+    expect(nav).toContain("{ href: '/viec-lam', label: 'Việc làm', type: 'route' }");
+    expect(count(nav, /visibleNavLinks\.map\(/g)).toBe(2);
+  });
+
+  it('root chỉ khớp tuyệt đối, route khác khớp chính nó và route con', () => {
+    expect(nav).toMatch(/link\.href === '\/'\s*\? pathname === '\/'/);
+    expect(nav).toMatch(/pathname === link\.href \|\| pathname\.startsWith\(`\$\{link\.href\}\/`\)/);
   });
 });

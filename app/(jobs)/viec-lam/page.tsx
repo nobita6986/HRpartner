@@ -78,7 +78,7 @@ const RATE_LIMITED_TITLE = 'Bạn thao tác quá nhanh';
 
 const PAGE_TITLE = 'Việc làm đang tuyển';
 const PAGE_DESCRIPTION =
-  'Danh sách việc làm đang tuyển tại HRPartner. Lọc theo từ khóa, khu vực và ca làm; mỗi bộ lọc là một địa chỉ chia sẻ được.';
+  'Danh sách việc làm đang tuyển tại HRPartner. Lọc theo từ khóa, khu vực và mức lương; mỗi bộ lọc là một địa chỉ chia sẻ được.';
 
 type RawSearchParams = Record<string, string | string[] | undefined>;
 type ListingPageProps = { searchParams: Promise<RawSearchParams> };
@@ -93,26 +93,42 @@ type ListingLoad =
   | { readonly kind: 'ok'; readonly data: ListingData; readonly listingPageSize: number }
   | { readonly kind: 'throttled' };
 
+/**
+ * hrp-t2-public-paging-tone-hotfix (RQ-02): tách helper đọc `listingPageSize`
+ * từ HomepageSettings ra khỏi `loadListing` để `generateMetadata` cũng dùng
+ * được. Lý do tách: `generateMetadata` chạy TRƯỚC khi thân trang render, và
+ * nếu parser nhận default `PAGE_SIZE = 20` thay vì `listingPageSize` thật
+ * (mặc định 12), nó sẽ kéo `?offset=12` về `0` và `listingIsIndexable`
+ * trả `true` → metadata index nhầm page 2 (DEC-08). Bọc `cache()` để cả
+ * `generateMetadata` và `loadListing` dùng chung một lần query.
+ *
+ * Singleton `homepageSettings` không qua RLS, đọc bằng admin prisma an toàn.
+ * Lỗi đọc (migration chưa apply, DB down) rơi về `LISTING_PAGE_SIZE_DEFAULT`.
+ */
+const loadListingPageSize = cache(async (): Promise<number> => {
+  let listingPageSize = LISTING_PAGE_SIZE_DEFAULT;
+  try {
+    const prisma = getPrisma();
+    const settings = await prisma.homepageSettings.findUnique({ where: { id: 'default' } });
+    if (settings) {
+      listingPageSize = clampListingPageSize(settings.listingPageSize);
+    }
+  } catch {
+    // fallback to default on any error (e.g. migration not applied yet)
+  }
+  return listingPageSize;
+});
+
 const loadListing = cache(
   async (
     q: string | undefined,
     salary: SalaryBucket | undefined,
     area: string | undefined,
-    shift: string | undefined,
     offset: number,
   ): Promise<ListingLoad> => {
     // AV1: inject listingPageSize from HomepageSettings singleton.
     // The table has no RLS and is a global singleton — safe to read with admin prisma.
-    let listingPageSize = LISTING_PAGE_SIZE_DEFAULT;
-    try {
-      const prisma = getPrisma();
-      const settings = await prisma.homepageSettings.findUnique({ where: { id: 'default' } });
-      if (settings) {
-        listingPageSize = clampListingPageSize(settings.listingPageSize);
-      }
-    } catch {
-      // fallback to default on any error (e.g. migration not applied yet)
-    }
+    const listingPageSize = await loadListingPageSize();
 
     const requestHeaders = await headers();
     const outcome = await evaluateRateLimits({
@@ -127,7 +143,7 @@ const loadListing = cache(
     // to the service so pagination arithmetic stays consistent with the actual page size.
     // hrp-t2-public-site-hotfix (T2 / STEP-05): thêm `salary` vào filter chain.
     const data = await withPublicDb(getPrisma(), (tx) =>
-      listPublicJobProjection(tx, { q, salary, area, shift, offset, limit: listingPageSize }),
+      listPublicJobProjection(tx, { q, salary, area, offset, limit: listingPageSize }),
     );
     return { kind: 'ok', data, listingPageSize };
   },
@@ -140,7 +156,13 @@ const loadListing = cache(
  * trang qua `metadata`. Hàm này không gọi loader: nó không cần một dòng dữ liệu nào.
  */
 export async function generateMetadata({ searchParams }: ListingPageProps): Promise<Metadata> {
-  const params = parseListingSearchParams(await searchParams);
+  // hrp-t2-public-paging-tone-hotfix (RQ-02): truyền `listingPageSize` từ
+  // HomepageSettings vào parser để `cleanOffset` rounding khớp với
+  // `listingPageSize` runtime. Nếu không, `?offset=12` bị kéo về `0` (vì
+  // `Math.floor(12/20) * 20 = 0`) và `listingIsIndexable` trả `true`,
+  // khiến metadata index nhầm page 2 (DEC-08).
+  const listingPageSize = await loadListingPageSize();
+  const params = parseListingSearchParams(await searchParams, listingPageSize);
   return {
     title: PAGE_TITLE,
     description: PAGE_DESCRIPTION,
@@ -178,7 +200,7 @@ function ThrottledNotice() {
 /**
  * Form GET thuần HTML: không cần một dòng JS nào ở trình duyệt, nên nó lọc được cả khi bundle chưa
  * tải (`RQ-16`). Form CỐ Ý không mang `offset`: submit một bộ lọc mới là về trang một (`DEC-02`), và
- * ba ô rỗng khi người dùng chưa chọn gì cho ra `?q=&area=&shift=` — hình dạng mà parser đã xử như
+ * các ô rỗng khi người dùng chưa chọn gì cho ra query rỗng — hình dạng mà parser đã xử như
  * VẮNG MẶT, nên URL ấy vẫn được coi là sạch.
  */
 function FilterForm({ params, facets }: { params: ListingParams; facets: ListingFacets }) {
@@ -233,33 +255,6 @@ function FilterForm({ params, facets }: { params: ListingParams; facets: Listing
           {facets.areas.map((area) => (
             <option key={area} value={area}>
               {area}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="flex flex-col gap-1">
-        <label
-          htmlFor="listing-shift"
-          className="text-sm font-medium"
-          style={{ color: 'var(--color-on-surface)' }}
-        >
-          Ca làm
-        </label>
-        <select
-          id="listing-shift"
-          name="shift"
-          defaultValue={params.shift ?? ''}
-          className="hrp-focus min-h-11 w-full rounded-lg border px-3 text-base"
-          style={{
-            backgroundColor: 'var(--color-surface)',
-            borderColor: 'var(--color-outline-variant)',
-            color: 'var(--color-on-surface)',
-          }}
-        >
-          <option value="">Tất cả ca làm</option>
-          {facets.shifts.map((shift) => (
-            <option key={shift} value={shift}>
-              {shift}
             </option>
           ))}
         </select>
@@ -403,7 +398,14 @@ function JobCard({ job }: { job: ListingJob }) {
         </Link>
         <Link
           href={isPreview ? publicJobDetailPath(job.slug) : `${publicJobDetailPath(job.slug)}#ung-tuyen`}
-          className="hrp-focus inline-flex min-h-11 flex-1 items-center justify-center gap-1 rounded-lg bg-primary px-3 text-sm font-semibold text-white hover:bg-primary-dark"
+          // hrp-t2-public-paging-tone-hotfix (RQ-04): default dùng
+          // `bg-primary-dark` (#a63b00 cam đậm/nâu) để tone khớp với màu
+          // title job (`var(--color-primary-dark)` ở header trên). Hover
+          // chuyển sang `bg-primary` (#f26522 cam sáng) — vẫn trong họ cam
+          // brand HRP, không rơi về xám/đen ở bất kỳ trạng thái nào.
+          // Trước fix: default `bg-primary` quá rực, hover `bg-primary-dark`
+          // → mất semantic alignment với title.
+          className="hrp-focus inline-flex min-h-11 flex-1 items-center justify-center gap-1 rounded-lg bg-primary-dark px-3 text-sm font-semibold text-white hover:bg-primary"
         >
           Ứng tuyển
         </Link>
@@ -413,17 +415,19 @@ function JobCard({ job }: { job: ListingJob }) {
 }
 
 export default async function PublicJobListingPage({ searchParams }: ListingPageProps) {
-  const params = parseListingSearchParams(await searchParams);
-  const loaded = await loadListing(params.q, params.salary, params.area, params.shift, params.offset);
+  // hrp-t2-public-paging-tone-hotfix (RQ-02): load listingPageSize TRƯỚC parser
+  // để `cleanOffset` rounding khớp với page size thật. `cache()` đảm bảo
+  // `loadListing` dùng lại cùng một query (chỉ tốn 1 round-trip DB cho
+  // settings, dù loadListingPageSize + loadListing đều đọc).
+  const listingPageSize = await loadListingPageSize();
+  const params = parseListingSearchParams(await searchParams, listingPageSize);
+  const loaded = await loadListing(params.q, params.salary, params.area, params.offset);
   if (loaded.kind === 'throttled') return <ThrottledNotice />;
-
   const { jobs, facets, total, nextOffset } = loaded.data;
-  const listingPageSize = loaded.listingPageSize;
   const hasFilter =
     params.q !== undefined ||
     params.salary !== undefined ||
-    params.area !== undefined ||
-    params.shift !== undefined;
+    params.area !== undefined;
 
   /**
    * `RQ-02` liệt kê ba ca `offset` phải về 0, và ca "vượt `total`" là ca DUY NHẤT parser không đo

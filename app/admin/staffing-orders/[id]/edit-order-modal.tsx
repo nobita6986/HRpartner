@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * EditOrderModal — t1a-staffing-order-management.
+ * EditOrderModal — t1a-staffing-order-management + t1b slot-hide.
  *
  * Modal sửa Nhu cầu tuyển dụng. Cho phép cập nhật:
  *   - title
@@ -386,41 +386,6 @@ export function EditOrderModal({ order, canEdit, onClose, onSaved }: EditOrderMo
                           onChange={(e) => updateDraft(idx, { slotsNeeded: parseInt(e.target.value, 10) || 0 })}
                           required
                           data-testid={`edit-slot-needed-${idx}`}
-                          className="mt-1 w-full rounded border px-2 py-1 text-sm"
-                          style={{ borderColor: 'var(--outline)', background: 'var(--surface-container)' }}
-                        />
-                      </label>
-                      <label className="text-xs">
-                        <span style={{ color: 'var(--on-surface-variant)' }}>Lương/giờ (VND)</span>
-                        <input
-                          type="number"
-                          min={0}
-                          step={1000}
-                          value={d.hourlyRateVnd ?? ''}
-                          onChange={(e) => updateDraft(idx, { hourlyRateVnd: e.target.value === '' ? null : Number(e.target.value) })}
-                          data-testid={`edit-slot-rate-${idx}`}
-                          className="mt-1 w-full rounded border px-2 py-1 text-sm"
-                          style={{ borderColor: 'var(--outline)', background: 'var(--surface-container)' }}
-                        />
-                      </label>
-                      <label className="text-xs">
-                        <span style={{ color: 'var(--on-surface-variant)' }}>Giờ vào</span>
-                        <input
-                          type="time"
-                          value={d.shiftStart ?? ''}
-                          onChange={(e) => updateDraft(idx, { shiftStart: e.target.value || null })}
-                          data-testid={`edit-slot-start-${idx}`}
-                          className="mt-1 w-full rounded border px-2 py-1 text-sm"
-                          style={{ borderColor: 'var(--outline)', background: 'var(--surface-container)' }}
-                        />
-                      </label>
-                      <label className="text-xs">
-                        <span style={{ color: 'var(--on-surface-variant)' }}>Giờ ra</span>
-                        <input
-                          type="time"
-                          value={d.shiftEnd ?? ''}
-                          onChange={(e) => updateDraft(idx, { shiftEnd: e.target.value || null })}
-                          data-testid={`edit-slot-end-${idx}`}
                           className="mt-1 w-full rounded border px-2 py-1 text-sm"
                           style={{ borderColor: 'var(--outline)', background: 'var(--surface-container)' }}
                         />

@@ -16,7 +16,14 @@ export function Hero({ children, className = '', backgroundImage = null }: HeroP
     <section
       data-section="hero"
       aria-label="Giới thiệu và tìm việc nhanh"
-      className={`relative w-full overflow-hidden bg-gradient-to-br from-primary-dark via-primary to-primary-fixed text-on-primary ${className}`}
+      // hrp-t2-public-paging-tone-hotfix (RQ-05): giảm độ rực của Hero
+      // gradient. Trước: `from-primary-dark via-primary to-primary-fixed` —
+      // 3 tone cam đậm liên tiếp (#a63b00 → #f26522 → #ffdbce) quá bão
+      // hòa, chói mắt. Sau: `from-primary-container to-primary-fixed` —
+      // 2 tone, primary-container #a63b00 (cam đậm/nâu, WCAG AA) → primary-fixed
+      // #ffdbce (cam rất nhạt) cho cảm giác dịu hơn, vẫn giữ nhận diện
+      // brand cam HRP. Blob blur giữ nguyên cấu trúc.
+      className={`relative w-full overflow-hidden bg-gradient-to-br from-primary-container to-primary-fixed text-on-primary ${className}`}
     >
       {/* hrp-t2-public-site-hotfix (T2 / STEP-06): ảnh nền Admin chọn.
           Render absolute layer dưới overlay gradient; <img> (không phải

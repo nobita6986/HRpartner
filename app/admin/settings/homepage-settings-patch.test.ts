@@ -67,6 +67,28 @@ describe('buildHomepageSettingsPatch', () => {
     ).toEqual({ newsSectionEnabled: false });
   });
 
+  it('does not let empty default slides block unrelated settings from saving', () => {
+    const blankSlides = Array.from({ length: 5 }, () => ({
+      mediaId: null,
+      title: '',
+      desc: '',
+    }));
+
+    expect(
+      buildHomepageSettingsPatch(
+        draft({
+          phoneCallNumber: '0901234567',
+          newsSectionEnabled: false,
+          heroSlides: blankSlides,
+        }),
+        saved,
+      ),
+    ).toEqual({
+      phoneCallNumber: '0901234567',
+      newsSectionEnabled: false,
+    });
+  });
+
   it('sends only one changed legacy setting', () => {
     expect(buildHomepageSettingsPatch(draft({ listingPageSize: 24 }), saved)).toEqual({
       listingPageSize: 24,

@@ -29,7 +29,8 @@ interface NavLink {
 }
 
 const navLinks: NavLink[] = [
-  { href: '/', label: 'Việc làm', type: 'route' },
+  { href: '/', label: 'Trang chủ', type: 'route' },
+  { href: '/viec-lam', label: 'Việc làm', type: 'route' },
   // hrp-t1a-introduce-hrp-and-menu-cleanup: "Công ty" → "Giới thiệu".
   // Route re-created at `app/(portal)/ve-chung-toi/page.tsx` (was deleted
   // before this task's baseline). Type flipped from 'disabled' to 'route'.
@@ -44,8 +45,8 @@ const navLinks: NavLink[] = [
 
 /**
  * go-live-15 / RQ-09 - muc dieu huong ung voi duong dan hien tai, SUY tu
- * `usePathname()` chu khong hard-code. Nam href cua `navLinks` khong long nhau
- * va `/` chi khop tuyet doi, nen ham nay tra ve NHIEU NHAT mot href: moi nhanh
+ * `usePathname()` chu khong hard-code. `/` chi khop tuyet doi, con `/viec-lam`
+ * khop ca trang danh sach va cac trang chi tiet, nen ham nay tra ve NHIEU NHAT mot href: moi nhanh
  * chi co the co dung MOT link mang `aria-current="page"`.
  */
 function activeNavHref(pathname: string | null): string | null {
@@ -285,7 +286,14 @@ export function GlobalNavbar() {
                   aria-disabled="true"
                   title="Đang phát triển"
                   tabIndex={-1}
-                  className="hrp-focus font-semibold px-5 min-h-11 inline-flex items-center rounded-lg cursor-not-allowed opacity-70"
+                  // hrp-t2-public-paging-tone-hotfix (RQ-06): thu nhỏ button
+                  // Đăng ký desktop để cân với menu. Trước: `px-5 min-h-11`
+                  // (44px cao, padding 20px ngang) — quá to so với nav links
+                  // 16px text + h-16 (64px) navbar. Sau: `px-3 min-h-9` (36px
+                  // cao, padding 12px ngang) — gọn hơn nhưng vẫn đủ min-h
+                  // 36px để pass touch target. Giữ nguyên `font-semibold`
+                  // (cỡ chữ) + label "Đăng ký" + color tokens.
+                  className="hrp-focus font-semibold px-3 min-h-9 inline-flex items-center rounded-lg cursor-not-allowed opacity-70"
                   style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-on-primary)' }}
                 >
                   Đăng ký
@@ -408,7 +416,11 @@ export function GlobalNavbar() {
                     aria-disabled="true"
                     title="Đang phát triển"
                     tabIndex={-1}
-                    className="hrp-focus flex items-center justify-center px-4 min-h-11 font-semibold rounded-lg cursor-not-allowed opacity-70"
+                    // hrp-t2-public-paging-tone-hotfix (RQ-07): thu nhỏ
+                    // button Đăng ký mobile. Trước: `px-4 min-h-11` (44px
+                    // cao) — Sau: `px-3 min-h-9` (36px cao) đồng bộ với
+                    // desktop. Giữ nguyên `font-semibold` + label + color.
+                    className="hrp-focus flex items-center justify-center px-3 min-h-9 font-semibold rounded-lg cursor-not-allowed opacity-70"
                     style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-on-primary)' }}
                     onClick={() => setMobileMenuOpen(false)}
                   >
