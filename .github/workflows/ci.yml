@@ -59,6 +59,8 @@ jobs:
         run: npm run typecheck
       - name: Lint (eslint .)
         run: npm run lint
+      - name: VPS image-retention regression test
+        run: bash deploy/vps-production/tests/prune-old-hrp-images.test.sh
       - name: Unit tests (no DB — fail-closed sentinel)
         run: npm run test:unit
       - name: Build (next build)

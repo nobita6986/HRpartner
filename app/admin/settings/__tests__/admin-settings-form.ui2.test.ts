@@ -103,4 +103,23 @@ describe('admin-settings-form.tsx — Phase B / UI2 wiring', () => {
     expect(code).toContain("timeZone: 'Asia/Bangkok'");
     expect(code).not.toContain("toLocaleString('vi-VN')");
   });
+
+  it('groups public settings by homepage, announcement, and contact', () => {
+    expect(code).toContain("useState<SettingsTabId>('homepage')");
+    expect(code).toContain('id={`settings-tab-panel-${activeTab}`}');
+    expect(code).toContain("activeTab === 'contact' && (");
+    expect(code).toContain("activeTab === 'announcement' && (");
+
+    const newsBlock = code.indexOf('data-testid="ui2-news-section-block"');
+    expect(code.lastIndexOf("activeTab === 'homepage'", newsBlock)).toBeGreaterThan(-1);
+    expect(code).not.toMatch(/activeTab === '(system|account|interface)'/);
+    expect(code).not.toContain('settings-system-placeholder');
+    expect(code).not.toContain('AccountTabPanel');
+  });
+
+  it('keeps shared save and reset actions available across all functional tabs', () => {
+    expect(code).toContain('data-testid="settings-save-button"');
+    expect(code).toContain('data-testid="settings-reset-button"');
+    expect(code).not.toMatch(/\(activeTab === '[^']+' \|\| activeTab === '[^']+'\) && \(/);
+  });
 });

@@ -93,6 +93,13 @@ jobs:
         run: |
           set -euo pipefail
           image="$IMAGE_REPOSITORY:$RELEASE_SHA"
+          previous_image_id="$(ssh "$VPS_USER@$VPS_HOST" "docker inspect --format '{{.Image}}' hrp-app")"
+          if ! [[ "$previous_image_id" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            echo "::error::unable to identify the currently deployed image for rollback retention"
+            exit 1
+          fi
+          rollback_ref="$IMAGE_REPOSITORY:rollback-$RELEASE_SHA"
+          ssh "$VPS_USER@$VPS_HOST" "docker image tag '$previous_image_id' '$rollback_ref'"
           # The GHCR package is public. No VPS-side `docker login` is needed.
           # VPS user (hrpdeploy) is locked down to three NOPASSWD sudo
           # wrappers and must not write a Docker credential store under
@@ -100,3 +107,4 @@ jobs:
           # invoked via `sudo -n` with a narrow NOPASSWD entry for that
           # exact path only (see /etc/sudoers.d/hrpdeploy-deploy).
           ssh "$VPS_USER@$VPS_HOST" "docker pull '$image' && sudo -n /usr/local/sbin/hrp-check-migrations '$image' && sudo -n /opt/hrp/deploy-production.sh '$image'"
+          ssh "$VPS_USER@$VPS_HOST" "bash -s -- '$image' '$previous_image_id' '$rollback_ref'" < deploy/vps-production/prune-old-hrp-images.sh

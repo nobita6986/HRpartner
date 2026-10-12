@@ -140,6 +140,12 @@ function heroSlidesEqual(
   draft: HeroSlideInput[],
   saved: ReadonlyArray<{ mediaId: string | null; title: string; desc: string }>,
 ): boolean {
+  if (
+    saved.length === 0 &&
+    draft.every((slide) => slide.mediaId === null && slide.title === '' && slide.desc === '')
+  ) {
+    return true;
+  }
   if (draft.length !== saved.length) return false;
   for (let i = 0; i < draft.length; i += 1) {
     const a = draft[i]!;

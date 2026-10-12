@@ -24,7 +24,11 @@ Runtime secrets live only in `/etc/hrp/secrets/production.env` and
    the exact commit SHA.
 3. The VPS checks that no migration is pending, resolves the tag to an immutable
    digest, starts the release, and smoke-tests `/login` and `/viec-lam`.
-4. On failure, `deploy-production.sh` restores the prior image.
+4. After successful smoke tests, the workflow sends a helper from the checked-out
+   release to remove old HRP image tags while retaining the new image and the
+   image that was running before deployment. It does not prune volumes or other
+   repositories.
+5. On failure, `deploy-production.sh` restores the prior image; cleanup is skipped.
 
 If a release contains a new migration, the automatic deployment stops before
 changing the running app. Run the manual `Migrate production database` workflow;
