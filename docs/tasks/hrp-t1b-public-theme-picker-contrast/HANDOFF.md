@@ -151,7 +151,7 @@ T1B đã implement full theme picker + contrast accessibility completion cho pub
 
 | ID | Evidence | Path / Command | Result |
 |---|---|---|---|
-| E-01 | Implementation SHA | `git rev-parse HEAD` | `856871cf616e0a8cf730977c3bea51667bdf1c6f` |
+| E-01 | Implementation SHA | `git rev-parse HEAD` | `85577100ce3da53f728ac9baff0b9b54f7b34af6` |
 | E-02 | Full unit suite | `npx vitest run --config vitest.unit.config.ts` | 5366/5366 pass (9 skipped) |
 | E-03 | Targeted theme unit | `npx vitest run --config vitest.unit.config.ts 'src/shared/theme'` | 132/132 pass (74 T1C + 58 T1B) |
 | E-04 | Typecheck | `pnpm exec tsc --noEmit` | 0 errors |
