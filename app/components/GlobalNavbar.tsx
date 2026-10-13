@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect, useCallback } from 'react';
 import { usePublicContentControls } from '@/src/domains/job-board/public-content-controls';
+import { ThemePicker } from '@/src/shared/theme/theme-picker';
 
 interface AuthUser {
   userId: string;
@@ -294,10 +295,18 @@ export function GlobalNavbar() {
                   // 36px để pass touch target. Giữ nguyên `font-semibold`
                   // (cỡ chữ) + label "Đăng ký" + color tokens.
                   className="hrp-focus font-semibold px-3 min-h-9 inline-flex items-center rounded-lg cursor-not-allowed opacity-70"
-                  style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-on-primary)' }}
+                  // t1b-public-theme-picker-contrast (RQ-04, C7): background
+                  // --color-primary → --color-primary-dark để white-on-PD
+                  // đạt 4.5:1 ở 5/5 palette (HRP 6.468 / Ocean 9.647 /
+                  // Emerald 8.272 / Violet 12.438 / Executive 8.577).
+                  style={{ backgroundColor: 'var(--color-primary-dark)', color: 'var(--color-on-primary)' }}
                 >
                   Đăng ký
                 </button>
+                {/* t1b-public-theme-picker-contrast (RQ-01, AC-01): ThemePicker
+                    mount ngay sau nút Đăng ký desktop. Component đọc
+                    data-theme từ ancestor (ThemeScope wrap public shell). */}
+                <ThemePicker />
               </>
             )}
           </div>
@@ -420,12 +429,18 @@ export function GlobalNavbar() {
                     // button Đăng ký mobile. Trước: `px-4 min-h-11` (44px
                     // cao) — Sau: `px-3 min-h-9` (36px cao) đồng bộ với
                     // desktop. Giữ nguyên `font-semibold` + label + color.
+                    // t1b-public-theme-picker-contrast (RQ-04, C7): bg P → PD.
                     className="hrp-focus flex items-center justify-center px-3 min-h-9 font-semibold rounded-lg cursor-not-allowed opacity-70"
-                    style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-on-primary)' }}
+                    style={{ backgroundColor: 'var(--color-primary-dark)', color: 'var(--color-on-primary)' }}
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Đăng ký
                   </button>
+                  {/* t1b-public-theme-picker-contrast (AC-01): ThemePicker
+                      trong mobile menu, ở vị trí tương ứng sau nút Đăng ký.
+                      Mobile menu đóng khi user chọn nav link hoặc nhấn
+                      ThemePicker item (caller xử lý). */}
+                  <ThemePicker />
                 </>
               )}
             </div>

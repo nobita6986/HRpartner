@@ -134,7 +134,8 @@ export default function LoginForm({ subtitle = 'Đăng nhập hệ thống' }: {
           type="submit"
           disabled={loading}
           className="w-full py-3 text-sm font-semibold text-white transition-opacity disabled:opacity-50"
-          style={{ background: 'var(--color-primary)', borderRadius: 'var(--radius-DEFAULT)' }}
+          // t1b-public-theme-picker-contrast (RQ-04, C7): bg P → PD.
+          style={{ background: 'var(--color-primary-dark)', borderRadius: 'var(--radius-DEFAULT)' }}
         >
           {loading ? 'Đang đăng nhập…' : 'Đăng nhập'}
         </button>

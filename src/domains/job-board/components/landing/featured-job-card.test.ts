@@ -580,11 +580,16 @@ describe('AC-23: CTA Ung tuyen dung class dung chung .hrp-btn-apply (t2-apply-ct
     expect(globals).toMatch(/\.hrp-btn-apply:hover:not\(:disabled\)\s*\{[^}]*--color-primary-cta-dark/);
   });
 
-  it('.hrp-btn-apply color la --color-on-primary (text trang tren CTA)', () => {
-    // Mau chu trang duoc dinh nghia trong CSS class (k dung text-white de
-    // khong phu thuoc tailwind). Verify bang cach doc globals.css.
+  it('.hrp-btn-apply color la --color-on-surface (text dam cho default CTA, 4.5:1+ voi --color-primary-cta)', () => {
+    // t1b-public-theme-picker-contrast (RQ-05, AC-16): PR #132 sai khi dung
+    // var(--color-on-primary) (white) o default — white-on-#f07f1a chi dat
+    // ~3:1, 14px semibold = normal text can 4.5:1. T1B doi default sang
+    // var(--color-on-surface) (#1a1c1b dam) — probe ~7.4:1 pass 4.5:1.
+    // Hover moi dung var(--color-on-primary) vi #c2520a dat ~7:1.
     const globals = readFileSync(join(process.cwd(), 'app/globals.css'), 'utf8').replace(/\r\n/g, '\n');
-    expect(globals).toMatch(/\.hrp-btn-apply\s*\{[^}]*color:\s*var\(--color-on-primary\)/);
+    expect(globals).toMatch(/\.hrp-btn-apply\s*\{[^}]*color:\s*var\(--color-on-surface\)/);
+    // Hover van dung white (var(--color-on-primary)) cho pass 4.5:1 voi #c2520a
+    expect(globals).toMatch(/\.hrp-btn-apply:hover:not\(:disabled\)\s*\{[^}]*color:\s*var\(--color-on-primary\)/);
   });
 
   it('token --color-primary-cta van resolve duoc', () => {

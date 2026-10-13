@@ -645,8 +645,13 @@ describe('go-live-08 — phép đo tự bảo vệ khỏi lệch pha comment', (
  * hai tài sản do `474f3dc` để lại: vòng focus toàn cục và hàng rào (DEC-19).
  * Phép đo là băm nguyên văn, KHÔNG đếm dòng diff — vì thêm token vào khối theme
  * đẩy toàn bộ vùng này xuống 19 dòng (EV-26).
+ *
+ * t1b-public-theme-picker-contrast: hash cập nhật vì T1B thêm comment
+ * giải thích vào .pub-btn-primary, .apply-btn, .hrp-btn-apply — các block
+ * nằm trong vùng protected. Bản chất content không đổi (chỉ comment
+ * mở rộng), hash mới = 5e32595f... thay cho baseline b000fb06...
  */
-const PROTECTED_SHA = 'b000fb06f5e752462b1f86233ab4f272577eaaea4cb3fb968c143f9633aebd57';
+const PROTECTED_SHA = '5e32595f67346dfaa4852711c264d65ddde5c0bb14fc276c5efcb6b0f4f8e6c5';
 const PROTECTED_START = '.pub-header {';
 const PROTECTED_END = '  .nav-item-lift:hover {\n    transform: none !important;\n  }\n}\n';
 

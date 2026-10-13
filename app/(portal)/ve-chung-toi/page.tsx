@@ -142,7 +142,8 @@ export default function VeChungToiPage() {
             <a
               href="/viec-lam"
               className="hrp-btn-primary inline-flex items-center justify-center rounded-lg px-5 py-2.5 font-label text-label-md font-semibold transition-colors"
-              style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-on-primary)' }}
+              // t1b-public-theme-picker-contrast (RQ-04, C7): bg P → PD.
+              style={{ backgroundColor: 'var(--color-primary-dark)', color: 'var(--color-on-primary)' }}
             >
               Xem việc làm
             </a>
