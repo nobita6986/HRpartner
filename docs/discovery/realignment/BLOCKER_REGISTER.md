@@ -19,7 +19,7 @@ Báo cáo READ-ONLY. Theo [`docs/HRP_EXECUTION_REALIGNMENT_PLAN.md`](../../../do
 | **BLK-08** | P0-A và P0-B là 2 workstream chưa tách decision | `COORDINATION_PREREQUISITE` | **NON_BLOCKING_PLANNING** (coordination prerequisite, không phải product blocker; có thể chạy song song sau discovery refresh) | [`./EXECUTION_REALIGNMENT_DISCOVERY.md`](./EXECUTION_REALIGNMENT_DISCOVERY.md) §8 |
 | **BLK-09** | P3-B Recruiter Appearance Lite (V8.2 microsite) | `DEFERRED_BY_OWNER_WITH_TRIGGER` | **DEFERRED** (trigger mở: M1 pilot evidence + T0 quyết định mở P3; P3 chưa được mở) | [`./EXECUTION_REALIGNMENT_DISCOVERY.md`](./EXECUTION_REALIGNMENT_DISCOVERY.md) §2 P3 |
 
-Tổng: 9 blockers tracked, 4 CLOSED (BLK-01, BLK-03, BLK-06, plus BLK-05 chờ audit), 1 PARTIAL (BLK-04), 2 ACTIVE (BLK-02, BLK-07), 1 DEFERRED (BLK-09), 1 NON_BLOCKING_PLANNING (BLK-08).
+Tổng: 9 blockers tracked, 3 CLOSED (BLK-01, BLK-03, BLK-06), 1 REFRESH_READY_FOR_LIGHT_AUDIT (BLK-05), 1 PARTIAL (BLK-04), 2 ACTIVE (BLK-02, BLK-07), 1 DEFERRED (BLK-09), 1 NON_BLOCKING_PLANNING (BLK-08).
 
 ## 2. M0 Production Safety Ready (BLK-04) chi tiết
 
