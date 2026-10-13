@@ -11,7 +11,8 @@
 | Audit mode | `NONE` |
 | Execution round | `2` (R0 round 1, R1 round 2) |
 | Baseline | `5cfbca12e948c3a207f61db06fe7001c9cc248d2` |
-| Implementation SHA | `bdcef0f89919976d984863d15d1d1e783c55659d` (R1 follow-up — HEAD; commit trước `a22fd2b6` chứa toàn bộ code/test/probe semantic thay đổi; commit này chỉ pin SHA vào HANDOFF) |
+| Implementation SHA | `88e1221c6935a5c7c204a72bc12ada4d93b0b4fb` |
+| Implementation SHA note | HEAD = `88e1221c`; semantic code/test/probe ở `a22fd2b6` (commit trước); commit pin SHA + 1 cleanup là docs-only. |
 | Frozen delivery | `YES` |
 | Canonical gates | `NOT_REQUIRED` |
 | Audit eligibility | `NOT_REQUIRED` |
