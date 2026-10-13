@@ -9,12 +9,12 @@
 | Spec version | `v1.0` |
 | Assurance lane | `FAST` |
 | Audit mode | `NONE` |
-| Execution round | `0` |
+| Execution round | `1` |
 | Baseline | `5cfbca12e948c3a207f61db06fe7001c9cc248d2` |
 | Implementation SHA | `a42bb31908aeb59ece0925b13af1a80bd8fc747c` |
 | Frozen delivery | `YES` |
-| Canonical gates | `NOT_REQUIRED` (npm/vitest/tsc không khả dụng trong worktree — node binary không có trong PATH; T0/runner chạy canonical gates sau khi nhận worktree) |
-| Audit eligibility | `NOT_REQUIRED` (Audit mode = NONE) |
+| Canonical gates | `NOT_REQUIRED` |
+| Audit eligibility | `NOT_REQUIRED` |
 | Correction batches used | `0` |
 | Status | `READY_FOR_REVIEW` |
 
@@ -58,7 +58,18 @@ Dòng đầu là verify-task. Mỗi command đăng ký một lần bằng `E-xx`
 | `AC-06` | `E-04`: PowerShell probe on-surface-variant #594138 on surface-container #efeeec | 8.093:1 | None |
 | `AC-07` | `E-01`: `theme-shell-mount.test.ts` (T1B-owned, đã có sẵn ở baseline) cover 3 site dùng class `hrp-btn-apply`; static regex `const FEATURED = readFileSync(.../featured-job-card.tsx); expect(FEATURED).toContain('hrp-btn-apply')`; tương tự cho JobCard và DetailApplyCta | Không sửa test; nội dung 3 file .tsx giữ nguyên | None |
 
-## 3. Contrast measurements theo theme (cho T0 / tác vụ heading eyebrow + CTV)
+## 3. Evidence registry
+
+Log ngắn để inline; chỉ tạo `evidence/*` cho output dài, LIVE transcript hoặc ảnh cần lưu.
+
+| Evidence | Command / method | Exit / measured result | Artifact |
+|---|---|---|---|
+| `E-00` | `powershell -NoProfile -ExecutionPolicy Bypass -File ".ai-pipeline/scripts/verify-task.ps1" -TaskPath "docs/tasks/hrp-t1a-theme-apply-cta-hotfix/TASK.md"` | exit 0; `RESULT: PASS`; 14 OK / 0 error / 0 warning | inline |
+| `E-01` | `Select-String -Path "app/globals.css" -Pattern 'background-color:\s*var\(--color-apply-cta\)\|color:\s*var\(--color-on-primary\)\|background-color:\s*var\(--color-apply-cta-dark\)\|--color-apply-cta[^;]*;\|--color-apply-cta-dark[^;]*;\|\.hrp-btn-apply:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--color-focus-ring\)\|\.hrp-btn-apply:disabled\s*\{[^}]*cursor:\s*not-allowed'` | match đủ 7 token/block; CTA token + color:on-primary + hover token + focus ring 2px + disabled cursor:not-ailed | inline |
+| `E-02` | PowerShell probe — `relativeLuminance(hex)` theo WCAG 2.x; tính `contrast(white, PD)` cho 5 palette hex trong `src/shared/theme/theme-tokens.ts` | HRP 6.468 / Ocean 9.647 / Emerald 8.272 / Violet 12.438 / Gold 8.577 — 5/5 ≥ 4.5:1 | inline (xem §2 AC-03) |
+| `E-03` | PowerShell probe — `color-mix(PD 82%, #000)` rồi `contrast(white, mix)` | HRP 8.503 / Ocean 11.663 / Emerald 10.320 / Violet 14.295 / Gold 10.618 — 5/5 ≥ 4.5:1 | inline (xem §2 AC-04) |
+| `E-04` | PowerShell probe — `contrast(#594138, #efeeec)` (on-surface-variant / surface-container) | 8.093:1 ≥ 4.5:1 | inline (xem §2 AC-06) |
+| `E-05` | `Select-String -Path "src/domains/job-board/components/landing/featured-job-card.tsx" -Pattern "hrp-btn-apply"` + tương tự cho `app/(jobs)/viec-lam/page.tsx` và `src/domains/job-board/components/detail-apply-cta.tsx` | cả 3 file chứa `hrp-btn-apply`; test `theme-shell-mount.test.ts` (T1B-owned) đã khóa contract này ở baseline và giữ nguyên | inline (xem §2 AC-07) |
 
 Probe bằng helper PowerShell inline (công thức WCAG 2.x). Token lấy từ `src/shared/theme/theme-tokens.ts` (T1C-owned, v1.2 hex).
 

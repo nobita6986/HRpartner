@@ -77,7 +77,7 @@
 | `DEC-T1A-02` | `.hrp-btn-apply` default = `var(--color-on-primary)` (white) trên `var(--color-apply-cta)` (cascade PD/theme). 14px semibold = normal text, cần 4.5:1. HRP chỉ đạt 3.153:1 với P → KHÔNG pass; do đó dùng PD ở mọi palette (5/5 pass ≥ 4.5:1) thay vì P có điều kiện. Hover giữ `var(--color-on-primary)` (white) trên `var(--color-apply-cta-dark)` (resolve P-DARK token hoặc mix 82% PD + 18% black để ≥ 4.5:1). | `CHOSEN` |
 | `DEC-T1A-03` | Focus-visible ring `var(--color-focus-ring)` (resolve PD) — UI ≥ 3:1 5/5 palette (HRP 6.147, Ocean 9.097, Emerald 7.806, Violet 11.360, Gold 8.132). Disabled `var(--color-on-surface-variant)` trên `var(--color-surface-container)` (8.093:1). | `CHOSEN` |
 | `DEC-T1A-04` | Tạo token mới `--color-apply-cta` & `--color-apply-cta-dark` trong `@theme` block (alias PD); KHÔNG thêm block `[data-theme='...']` mới (T1C contract v1.2 đã đóng băng 5 token; CTA dùng chính primaryDark nên tự cascade). | `CHOSEN` |
-| `DEC-T1A-05` | Test cập nhật trong phạm vi ownership: `theme-cta-foreground.test.ts`, `theme-shell-mount.test.ts`, `apply-cta-tone-soften.static.test.ts`, `featured-job-card.test.ts` (chỉ block AC-23), `contrast-probe.test.ts` (nếu có). T1C-owned `globals-css-theme-scope.test.ts` KHÔNG sửa (giữ nguyên contract v1.2 + comment "T1B sẽ migrate"). | `CHOSEN` |
+| `DEC-T1A-05` | Test cập nhật trong phạm vi ownership: `theme-cta-foreground.test.ts`, `theme-shell-mount.test.ts`, `apply-cta-tone-soften.static.test.ts`, `featured-job-card.test.ts` (chỉ block AC về CTA "Ứng tuyển"), `contrast-probe.test.ts` (nếu có). T1C-owned `globals-css-theme-scope.test.ts` KHÔNG sửa (giữ nguyên contract v1.2 + comment "T1B sẽ migrate"). | `CHOSEN` |
 | `DEC-T1A-06` | `Audit mode: NONE` theo FAST lane matrix; Tier 1 self-review tối đa 3 rủi ro trọng yếu trong HANDOFF. | `CHOSEN` |
 
 ### 3.1 Build vs Adopt
@@ -114,7 +114,7 @@ Thực hiện tuần tự gate (1→7). Gate sau chỉ chạy nếu gate trướ
 |---|---|---|---|
 | 1 | Targeted tests (trước) | `npx vitest run --config vitest.unit.config.ts src/shared/theme src/domains/job-board/components/__tests__ src/domains/job-board/components/landing/featured-job-card.test.ts` | Snapshot failing test hiện tại (token cũ). |
 | 2 | Edit `app/globals.css` | Thêm 2 token `--color-apply-cta` / `--color-apply-cta-dark` (alias `--color-primary-dark` / mix 82% PD + 18% black); sửa `.hrp-btn-apply` block dùng token mới. Giữ `--color-primary-cta*` cũ là alias ngược để không vỡ site cũ (nếu có). | Đổi nguồn màu CTA sang token cascade theo theme. |
-| 3 | Cập nhật test | `theme-cta-foreground.test.ts`: cập nhật regex/contract từ `primary-cta` sang `apply-cta`; `apply-cta-tone-soften.static.test.ts`: cập nhật token name trong khối `@theme`; `theme-shell-mount.test.ts`: xác nhận class `.hrp-btn-apply` vẫn xuất hiện ở 3 site; `featured-job-card.test.ts` (chỉ AC-23): cập nhật regex. | Bảo vệ contract mới trong scope. |
+| 3 | Cập nhật test | `theme-cta-foreground.test.ts`: cập nhật regex/contract từ `primary-cta` sang `apply-cta`; `apply-cta-tone-soften.static.test.ts`: cập nhật token name trong khối `@theme`; `theme-shell-mount.test.ts`: xác nhận class `.hrp-btn-apply` vẫn xuất hiện ở 3 site; `featured-job-card.test.ts` (khối AC về CTA): cập nhật regex. | Bảo vệ contract mới trong scope. |
 | 4 | Targeted tests (sau) | Cùng lệnh gate 1 | Tất cả pass. |
 | 5 | Typecheck | `npx tsc --noEmit` | 0 errors. |
 | 6 | Encoding | `node .ai-pipeline/scripts/verify-encoding.mjs` | UTF-8 NO BOM. |
@@ -147,8 +147,8 @@ Thực hiện tuần tự gate (1→7). Gate sau chỉ chạy nếu gate trướ
 | ID | Risk | Mitigation / rollback |
 |---|---|---|
 | `RISK-01` | Token `--color-primary-cta*` hiện đang dùng ở nhiều chỗ ngoài `.hrp-btn-apply`. Nếu giữ alias ngược an toàn, nhưng nếu không — sẽ vỡ test/visuals. | T1-A KHÔNG xóa `--color-primary-cta*`; chỉ alias ngược. Grep toàn repo để xác nhận scope trước khi commit. |
-| `RISK-02` | Test trong phạm vi ownership (theme-cta-foreground, apply-cta-tone-soften, theme-shell-mount, featured-job-card AC-23) đang lock token `--color-primary-cta*`. Nếu chỉ thay regex mà không đọc kỹ comment, có thể miss edge case. | Đọc comment + probe từng test trước khi sửa; chạy targeted suite sau từng patch. |
-| `RISK-03` | T1C-owned `globals-css-theme-scope.test.ts` AC-08 / AC-17 đang assert `.hrp-btn-apply` block KHÔNG nằm trong `[data-theme]` — không sửa block này, chỉ thay đổi nội dung bên trong nó. | T1-A KHÔNG thêm block `[data-theme]` mới; chỉ sửa nội dung `.hrp-btn-apply`. Test AC-17 vẫn pass. |
+| `RISK-02` | Test trong phạm vi ownership (theme-cta-foreground, apply-cta-tone-soften, theme-shell-mount, featured-job-card) đang lock token `--color-primary-cta*`. Nếu chỉ thay regex mà không đọc kỹ comment, có thể miss edge case. | Đọc comment + probe từng test trước khi sửa; chạy targeted suite sau từng patch. |
+| `RISK-03` | T1C-owned `globals-css-theme-scope.test.ts` (các hàng AC về RQ cũ trong test cũ) đang assert `.hrp-btn-apply` block KHÔNG nằm trong `[data-theme]` — không sửa block này, chỉ thay đổi nội dung bên trong nó. | T1-A KHÔNG thêm block `[data-theme]` mới; chỉ sửa nội dung `.hrp-btn-apply`. Test vẫn pass. |
 
 ## 8. Open Questions
 
