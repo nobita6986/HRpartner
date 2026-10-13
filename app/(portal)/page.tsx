@@ -330,7 +330,7 @@ export default function JobsPage() {
     <main id="hrp-main" tabIndex={-1} className="flex w-full flex-col items-stretch gap-0">
       <Hero backgroundImage={heroImage}>
         <div className="flex min-w-0 flex-1 flex-col justify-center gap-6 text-on-primary">
-          <p className="font-label text-label-md font-bold uppercase tracking-widest text-secondary-fixed">
+          <p className="font-label text-label-md font-bold uppercase tracking-widest text-on-primary">
             Cùng tìm kiếm
           </p>
           <h1 className="font-head text-headline-xl font-bold leading-tight text-on-primary">

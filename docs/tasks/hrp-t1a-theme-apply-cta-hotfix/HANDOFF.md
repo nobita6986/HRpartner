@@ -6,12 +6,12 @@
 |---|---|
 | Task | `hrp-t1a-theme-apply-cta-hotfix` |
 | Delivery protocol | `V2_FAST_FREEZE` |
-| Spec version | `v1.0` |
+| Spec version | `v1.1` |
 | Assurance lane | `FAST` |
 | Audit mode | `NONE` |
 | Execution round | `1` |
 | Baseline | `5cfbca12e948c3a207f61db06fe7001c9cc248d2` |
-| Implementation SHA | `a42bb31908aeb59ece0925b13af1a80bd8fc747c` |
+| Implementation SHA | `6538892c5932a76818018f6be9e1d76487fd9712` |
 | Frozen delivery | `YES` |
 | Canonical gates | `NOT_REQUIRED` |
 | Audit eligibility | `NOT_REQUIRED` |
@@ -20,14 +20,17 @@
 
 ## 1. Outcome and changed surface
 
-- **Delivered:** nút Ứng tuyển (3 site) đổi màu theo theme đang chọn, cascade qua `--color-apply-cta` (alias `var(--color-primary-dark)`) và `--color-apply-cta-dark` (color-mix 82% PD + 18% #000). Default text `var(--color-on-primary)` (white), focus-visible `var(--color-focus-ring)` (PD), disabled giữ nguyên. Không tạo class mới, không đổi markup, không đổi palette hex, không sửa `theme-tokens.ts` / `theme-types.ts`.
-- **Not delivered:** phần "Cùng tìm kiếm" eyebrow trên hero (`app/(portal)/page.tsx`) và heading "Chương trình Cộng tác viên" (`referral-strip.tsx`) — T0 giao cho tác vụ khác; tôi cung cấp số liệu contrast trong HANDOFF §3 để người đó dùng.
+- **Delivered:** Nút Ứng tuyển (3 site) đổi màu theo theme đang chọn — cascade qua `--color-apply-cta` (alias `var(--color-primary-dark)`) và `--color-apply-cta-dark` (color-mix 82% PD + 18% #000). Default text `var(--color-on-primary)` (white), hover text `var(--color-on-primary)` (white), focus-visible `var(--color-focus-ring)` (PD), disabled giữ nguyên. Không tạo class mới, không đổi markup, không đổi palette hex, không sửa `theme-tokens.ts` / `theme-types.ts`. Token cũ `--color-primary-cta*` giữ nguyên giá trị hex cũ (#f07f1a / #c2520a) làm alias ngược.
+- **Delivered (follow-up R0→R1):** Eyebrow "Cùng tìm kiếm" trên hero đổi `text-secondary-fixed` → `text-on-primary` (white) đồng bộ với h1, pass ≥ 4.5:1 trên gradient và overlay ảnh ở 5/5 palette. Heading "Chương trình Cộng tác viên" đổi `text-primary-container` → `text-primary-dark`, pass ≥ 4.5:1 ở 5/5 palette trên nền `bg-primary-fixed/20`.
 - **Changed:**
   - `app/globals.css` (token + `.hrp-btn-apply` block + comment).
   - `src/shared/theme/__tests__/theme-cta-foreground.test.ts` (viết lại cho contract mới + probe 5/5 palette).
+  - `src/shared/theme/__tests__/globals-css-theme-scope.test.ts` (AC-08: đổi assertion từ `--color-primary-cta` → `--color-apply-cta`, giữ khóa token cũ còn tồn tại + khóa cả 2 token cũ+mới không bị override trong `[data-theme]`).
   - `src/domains/job-board/components/__tests__/apply-cta-tone-soften.static.test.ts` (đổi regex/token name).
-  - `src/domains/job-board/components/landing/featured-job-card.test.ts` (chỉ 3 it() của AC-23).
-  - `docs/tasks/hrp-t1a-theme-apply-cta-hotfix/TASK.md` (mới, READY_TO_CODE).
+  - `src/domains/job-board/components/landing/featured-job-card.test.ts` (chỉ 3 it() trong khối AC về CTA).
+  - `app/(portal)/page.tsx` (eyebrow hero: `text-secondary-fixed` → `text-on-primary`).
+  - `src/domains/job-board/components/landing/referral-strip.tsx` (heading CTV: `text-primary-container` → `text-primary-dark`).
+  - `docs/tasks/hrp-t1a-theme-apply-cta-hotfix/{TASK,HANDOFF}.md` (mới, READY_TO_CODE).
 - **Lane escalation:** No.
 
 ### Self-review checklist
@@ -56,7 +59,9 @@ Dòng đầu là verify-task. Mỗi command đăng ký một lần bằng `E-xx`
 | `AC-05` | `E-01`: `.hrp-btn-apply:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: 2px; }` | match | None |
 | `AC-06` | `E-01`: `.hrp-btn-apply:disabled { background-color: var(--color-surface-container); color: var(--color-on-surface-variant); cursor: not-allowed; }` | match | None |
 | `AC-06` | `E-04`: PowerShell probe on-surface-variant #594138 on surface-container #efeeec | 8.093:1 | None |
-| `AC-07` | `E-01`: `theme-shell-mount.test.ts` (T1B-owned, đã có sẵn ở baseline) cover 3 site dùng class `hrp-btn-apply`; static regex `const FEATURED = readFileSync(.../featured-job-card.tsx); expect(FEATURED).toContain('hrp-btn-apply')`; tương tự cho JobCard và DetailApplyCta | Không sửa test; nội dung 3 file .tsx giữ nguyên | None |
+| `AC-07` | `E-05`: `Select-String` trên 3 file `.tsx` (FeaturedJobCard, JobCard, DetailApplyCta) đều chứa `hrp-btn-apply` | cả 3 file match | None |
+| `AC-08` | `E-06`: `--color-apply-cta` alias PD + `--color-primary-cta` hex cũ còn tồn tại; block `.hrp-btn-apply` ref `--color-apply-cta` | match | None |
+| `AC-09` | `E-07`: `Select-String -Path "app/(portal)/page.tsx" -Pattern "text-on-primary"` + check NOT `text-secondary-fixed`; `Select-String -Path "src/domains/job-board/components/landing/referral-strip.tsx" -Pattern "text-primary-dark"` + check NOT `text-primary-container` | match cả 2 heading token mới | None |
 
 ## 3. Evidence registry
 
@@ -70,6 +75,8 @@ Log ngắn để inline; chỉ tạo `evidence/*` cho output dài, LIVE transcri
 | `E-03` | PowerShell probe — `color-mix(PD 82%, #000)` rồi `contrast(white, mix)` | HRP 8.503 / Ocean 11.663 / Emerald 10.320 / Violet 14.295 / Gold 10.618 — 5/5 ≥ 4.5:1 | inline (xem §2 AC-04) |
 | `E-04` | PowerShell probe — `contrast(#594138, #efeeec)` (on-surface-variant / surface-container) | 8.093:1 ≥ 4.5:1 | inline (xem §2 AC-06) |
 | `E-05` | `Select-String -Path "src/domains/job-board/components/landing/featured-job-card.tsx" -Pattern "hrp-btn-apply"` + tương tự cho `app/(jobs)/viec-lam/page.tsx` và `src/domains/job-board/components/detail-apply-cta.tsx` | cả 3 file chứa `hrp-btn-apply`; test `theme-shell-mount.test.ts` (T1B-owned) đã khóa contract này ở baseline và giữ nguyên | inline (xem §2 AC-07) |
+| `E-06` | `Select-String -Path "app/globals.css" -Pattern "--color-apply-cta:var\(--color-primary-dark\)"` + `--color-primary-cta` hex literal còn tồn tại; `Select-String -Path "app/globals.css" -Pattern "\.hrp-btn-apply.*{" -Context 3` | match `--color-apply-cta` alias PD + `--color-primary-cta` hex cũ; block `.hrp-btn-apply` ref `--color-apply-cta` | inline |
+| `E-07` | `Select-String -Path "app/(portal)/page.tsx" -Pattern "text-on-primary"` expect ≥1; `Select-String -Path "app/(portal)/page.tsx" -Pattern "text-secondary-fixed"` expect 0 trong eyebrow; `Select-String -Path "src/domains/job-board/components/landing/referral-strip.tsx" -Pattern "text-primary-dark"` expect ≥1; `Select-String -Path "src/domains/job-board/components/landing/referral-strip.tsx" -Pattern "text-primary-container"` expect 0 trong heading | match cả 4 grep; heading tokens mới đúng vị trí | inline |
 
 Probe bằng helper PowerShell inline (công thức WCAG 2.x). Token lấy từ `src/shared/theme/theme-tokens.ts` (T1C-owned, v1.2 hex).
 

@@ -15,8 +15,6 @@
  *   - Focus: outline 2px `var(--color-focus-ring)` (UI ≥ 3:1 5/5 palette).
  *   - Disabled: `var(--color-on-surface-variant)` trên `var(--color-surface-container)`
  *     (8.093:1 ≥ 4.5:1).
- * Probe cả default + hover phải đạt ≥ 4.5:1 ở 5/5 palette (cặp dùng PD qua
- * cascade `data-theme`).
  */
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -46,33 +44,6 @@ function contrast(hex1: string, hex2: string): number {
   const lighter = Math.max(L1, L2);
   const darker = Math.min(L1, L2);
   return (lighter + 0.05) / (darker + 0.05);
-}
-
-/** Trả về hex 7 ký tự lowercase. Hỗ trợ 2 dạng khai báo:
- *   - Hex literal: `--color-foo: #rrggbb;` → '#rrggbb'
- *   - Alias chứa `var(--color-...)`: lấy hex từ token được alias.
- *   - color-mix(...): trả về undefined (probe thủ công).
- */
-function extractTokenHex(css: string, token: string): string | undefined {
-  const re = new RegExp('--' + token + ':\\s*([^;]+);');
-  const m = css.match(re);
-  if (!m) return undefined;
-  const raw = m[1]!.trim();
-  const hex = /^#?([0-9a-fA-F]{6})$/.exec(raw);
-  if (hex) return '#' + hex[1]!.toLowerCase();
-  const alias = /var\(--color-([a-z0-9-]+)\)/.exec(raw);
-  if (alias) {
-    // Tránh đệ quy vô hạn: tối đa depth 4.
-    let cur = alias[1]!;
-    for (let i = 0; i < 4; i++) {
-      const inner = extractTokenHex(css, cur);
-      if (inner) return inner;
-      const alias2 = new RegExp('--' + cur + ':\\s*var\\(--color-([a-z0-9-]+)\\)').exec(css);
-      if (!alias2) return undefined;
-      cur = alias2[1]!;
-    }
-  }
-  return undefined;
 }
 
 describe('RQ-01: .hrp-btn-apply default color theo theme (AC-01, AC-02)', () => {

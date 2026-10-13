@@ -12,8 +12,8 @@
 | Assurance lane | `FAST` |
 | Audit mode | `NONE` |
 | Audit reason | UI tone + theme CTA alignment (3 sites, đồng bộ 1 class), không đổi palette hex, không đổi contract data/auth, lane FAST theo matrix. T0 instruction không yêu cầu audit. |
-| Spec version | `v1.0` |
-| Status | `READY_FOR_EXECUTION` |
+| Spec version | `v1.1` |
+| Status | `READY_FOR_REVIEW` |
 | Planner | `Tier 1` |
 | Baseline | `5cfbca12e948c3a207f61db06fe7001c9cc248d2` |
 | Baseline note | origin/main @ PR #135 — post-T1B theme picker (CTA contract đã cố định bằng `--color-primary-cta*` token ổn định) |
@@ -21,10 +21,10 @@
 | Decision state | `CLOSED` |
 | Test environment | `READY` |
 | Correction budget | `1` |
-| In-scope roots | `app/globals.css`, `app/(jobs)/viec-lam/layout.tsx` (đọc để xác nhận ThemeScope mount, không sửa), `src/shared/theme/__tests__/theme-cta-foreground.test.ts`, `src/shared/theme/__tests__/theme-shell-mount.test.ts`, `src/domains/job-board/components/__tests__/apply-cta-tone-soften.static.test.ts`, `src/domains/job-board/components/landing/featured-job-card.test.ts` (chỉ chạm khối AC về CTA "Ứng tuyển"), `src/shared/theme/__tests__/contrast-probe.test.ts`, `docs/tasks/hrp-t1a-theme-apply-cta-hotfix/**` |
-| Forbidden paths | `app/(portal)/page.tsx` (T0 giao riêng phần hero copy/layout), `app/domains/job-board/components/landing/referral-strip.tsx` (T0 giao riêng phần CTV), `src/shared/theme/theme-tokens.ts`, `src/shared/theme/theme-types.ts` (T1C-owned READ-ONLY), `prisma/**`, `app/admin/**`, `app/api/**`, `middleware.ts`, `vercel.json`, `Dockerfile` |
-| Required gates | `npx tsc --noEmit`; `npx vitest run --config vitest.unit.config.ts src/shared/theme src/domains/job-board/components/__tests__ src/domains/job-board/components/landing/featured-job-card.test.ts`; `node .ai-pipeline/scripts/verify-encoding.mjs`; `pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-t1a-theme-apply-cta-hotfix/TASK.md`; `pwsh .ai-pipeline/scripts/verify-handoff.ps1 -HandoffPath docs/tasks/hrp-t1a-theme-apply-cta-hotfix/HANDOFF.md`; `git diff --check` |
-| Current execution round | `0` |
+| In-scope roots | `app/globals.css`, `src/shared/theme/__tests__/theme-cta-foreground.test.ts`, `src/shared/theme/__tests__/globals-css-theme-scope.test.ts` (chỉ AC-08), `src/shared/theme/__tests__/theme-shell-mount.test.ts`, `src/domains/job-board/components/__tests__/apply-cta-tone-soften.static.test.ts`, `src/domains/job-board/components/landing/featured-job-card.test.ts` (chỉ khối AC về CTA "Ứng tuyển"), `app/(portal)/page.tsx` (eyebrow hero), `src/domains/job-board/components/landing/referral-strip.tsx` (heading CTV), `docs/tasks/hrp-t1a-theme-apply-cta-hotfix/**` |
+| Forbidden paths | `src/shared/theme/theme-tokens.ts`, `src/shared/theme/theme-types.ts` (T1C-owned READ-ONLY), `prisma/**`, `app/admin/**`, `app/api/**`, `middleware.ts`, `vercel.json`, `Dockerfile` |
+| Required gates | `npx tsc --noEmit`; `npx vitest run --config vitest.unit.config.ts src/shared/theme src/domains/job-board/components/__tests__ src/domains/job-board/components/landing/featured-job-card.test.ts`; `node .ai-pipeline/scripts/verify-encoding.mjs`; `powershell -NoProfile -ExecutionPolicy Bypass -File ".ai-pipeline/scripts/verify-task.ps1" -TaskPath "docs/tasks/hrp-t1a-theme-apply-cta-hotfix/TASK.md"`; `powershell -NoProfile -ExecutionPolicy Bypass -File ".ai-pipeline/scripts/verify-handoff.ps1" -HandoffPath "docs/tasks/hrp-t1a-theme-apply-cta-hotfix/HANDOFF.md" -TaskPath "docs/tasks/hrp-t1a-theme-apply-cta-hotfix/TASK.md"`; `git diff --check` |
+| Current execution round | `1` |
 | Current audit round | `0` |
 | Next gate | `READY_FOR_REVIEW` |
 
@@ -38,23 +38,22 @@
 
 - Nút **Ứng tuyển** ở cả 3 vị trí (FeaturedJobCard trên trang chủ, JobCard trên `/viec-lam`, DetailApplyCta trên `/viec-lam/{slug}`) đổi màu theo theme đang chọn (HR Partner / Ocean Trust / Emerald Growth / Violet Future / Executive Gold). Cả 3 nút dùng chung class `.hrp-btn-apply` đã có sẵn (single source of truth trong `app/globals.css`) — chỉ đổi token bên trong, không tạo class mới.
 - Mặc định + hover + focus-visible + disabled của `.hrp-btn-apply` đọc rõ ở 5/5 palette (default ≥ 4.5:1, hover ≥ 4.5:1, focus ring ≥ 3:1).
-- Hai heading eyebrow **không thuộc scope trực tiếp** của task này; user đã giao `app/(portal)/page.tsx` và `referral-strip.tsx` cho tác vụ khác. T1-A chỉ xác nhận vị trí và cung cấp token đã đo đạt WCAG AA để T0/tác vụ kia áp dụng (không sửa file trong scope T0).
+- Eyebrow "Cùng tìm kiến" trên hero đổi `text-secondary-fixed` → `text-on-primary` (white) — đồng bộ với h1, pass ≥ 4.5:1 trên gradient và overlay ảnh ở 5/5 palette.
+- Heading "Chương trình Cộng tác viên" đổi `text-primary-container` → `text-primary-dark` — pass ≥ 4.5:1 ở 5/5 palette trên nền `bg-primary-fixed/20`.
 
 ### 1.2 Non-goals
 
-- KHÔNG sửa `app/(portal)/page.tsx` (T0 giao cho người khác) — kể cả phần "Cùng tìm kiếm" eyebrow, layout hero, h1, body copy.
-- KHÔNG sửa `src/domains/job-board/components/landing/referral-strip.tsx` (T0 giao cho người khác) — kể cả heading "Chương trình Cộng tác viên".
 - KHÔNG thay đổi `src/shared/theme/theme-types.ts`, `src/shared/theme/theme-tokens.ts` (T1C-owned READ-ONLY, baseline v1.2 hex).
-- KHÔNG override bất kỳ token mới nào trong khối `[data-theme='...']`; chỉ dùng lại 5 brand token đã có (primary / primaryDark / primaryContainer / primarySoft / onPrimary).
-- KHÔNG thêm mới class CSS cho CTA, KHÔNG đổi layout/markup của 3 site; chỉ sửa bên trong `.hrp-btn-apply` block và (nếu cần) alias token để CTA cascade theo theme.
-- KHÔNG đổi màu của `.apply-btn` / `.pub-btn-primary` (đã do T1B migrate sang `--color-primary-dark` ở PR #133, đã đạt 4.5:1 ở 5/5 palette theo `theme-sites-c7-pd.test.ts`).
+- KHÔNG override bất kỳ token mới nào trong khối `[data-theme='...']`; chỉ dùng lại 5 brand token đã có.
+- KHÔNG thêm mới class CSS cho CTA, KHÔNG đổi layout/markup của 3 site; chỉ sửa bên trong `.hrp-btn-apply` block và alias token để CTA cascade theo theme.
+- KHÔNG đổi màu của `.apply-btn` / `.pub-btn-primary` (đã do T1B migrate).
 - KHÔNG mở rộng sang status color, dark mode, admin shell, migration, API.
 
 ### 1.3 Traceability matrix (RQ → STEP → AC)
 
 | RQ | STEP | AC |
 |---|---|---|
-| RQ-01 | STEP-01, STEP-02, STEP-03 | AC-01, AC-02, AC-03, AC-04, AC-05, AC-06, AC-07 |
+| RQ-01 | STEP-01, STEP-02, STEP-03 | AC-01, AC-02, AC-03, AC-04, AC-05, AC-06, AC-07, AC-08, AC-09 |
 
 ## 2. Evidence
 
@@ -135,12 +134,15 @@ Thực hiện tuần tự gate (1→7). Gate sau chỉ chạy nếu gate trướ
 | `AC-05` | `.hrp-btn-apply:focus-visible` outline 2px `var(--color-focus-ring)` (resolve PD) ≥ 3:1 ở 5/5 palette | Grep + probe |
 | `AC-06` | `.hrp-btn-apply:disabled` text `var(--color-on-surface-variant)` trên `var(--color-surface-container)` ≥ 4.5:1 | Grep + probe (8.093:1) |
 | `AC-07` | 3 site (FeaturedJobCard, /viec-lam JobCard, DetailApplyCta) đều dùng class `hrp-btn-apply` (không tạo class mới) | `theme-shell-mount.test.ts` (`grep 'hrp-btn-apply'` trên 3 file .tsx); static test đã có sẵn |
+| `AC-07` | `E-05`: `Select-String -Path "src/domains/job-board/components/landing/featured-job-card.tsx" -Pattern "hrp-btn-apply"` + tương tự cho JobCard và DetailApplyCta | cả 3 file chứa `hrp-btn-apply` | None |
+| `AC-08` | `E-06`: `Select-String -Path "app/globals.css" -Pattern "--color-apply-cta:var\(--color-primary-dark\)"` + `--color-primary-cta` hex cũ còn tồn tại; `Select-String -Path "app/globals.css" -Pattern "\.hrp-btn-apply.*{" -Context 3` (block ref `--color-apply-cta`) | match đủ 2 token + block ref | None |
+| `AC-09` | `E-07`: `Select-String -Path "app/(portal)/page.tsx" -Pattern "text-on-primary"` expect ≥1 + `text-secondary-fixed` expect 0 trong eyebrow; `Select-String -Path "src/domains/job-board/components/landing/referral-strip.tsx" -Pattern "text-primary-dark"` expect ≥1 + `text-primary-container` expect 0 trong heading | match cả 4 grep | None |
 
 ### 6.2 Traceability
 
 | Requirement | Step | Acceptance |
 |---|---|---|
-| `RQ-01` | STEP-01..STEP-03 | AC-01..AC-07 |
+| `RQ-01` | STEP-01..STEP-03 | AC-01..AC-09 |
 
 ## 7. Risk
 
@@ -166,3 +168,4 @@ Tier 1 append sau self-review. Audit NONE resolve trực tiếp từ HANDOFF.
 | Spec version | Date | Change | Reason |
 |---|---|---|---|
 | `v1.0` | 2026-10-13 | Initial contract | Initial |
+| `v1.1` | 2026-10-13 | R1 follow-up: T0 review chỉ ra AC-08 fail (`.hrp-btn-apply` đã chuyển sang `--color-apply-cta`); cập nhật assertion AC-08 trong `globals-css-theme-scope.test.ts`. Đồng thời hoàn tất 2 heading còn thiếu: eyebrow hero `text-secondary-fixed` → `text-on-primary` và heading CTV `text-primary-container` → `text-primary-dark`. | T0 review; số liệu WCAG đã đo trước đó. |
