@@ -1,25 +1,86 @@
 # CRM CONTRACT GAP REPORT
 
-Dựa trên yêu cầu P0-C của `HRP_EXECUTION_REALIGNMENT_PLAN.md` và các tài liệu tham chiếu (`docs/V7/HRP_CRM_CONNECTOR.md`, `docs/V7/HRP_CRM_INFRA_SPLIT.md`), báo cáo này đối chiếu khoảng trống (gap) giữa hợp đồng lý thuyết và source code HRP hiện hành.
+Dựa trên yêu cầu P0-C của [`docs/HRP_EXECUTION_REALIGNMENT_PLAN.md`](../../../docs/HRP_EXECUTION_REALIGNMENT_PLAN.md) §20 (HRP↔CRM contract source of truth) và các tài liệu tham chiếu [`docs/V7/HRP_CRM_CONNECTOR.md`](../../../docs/V7/HRP_CRM_CONNECTOR.md), [`docs/V7/HRP_CRM_INFRA_SPLIT.md`](../../../docs/V7/HRP_CRM_INFRA_SPLIT.md).
 
-## 1. Trạng thái repo CRM
-- **Truy cập:** Không thể truy cập repo CRM từ workspace hiện tại của HRP. Việc đối chiếu được thực hiện một chiều dựa trên các API và DTO hiện có trong codebase HRP.
+**Refreshed baseline SHA:** `a87784229e8f06369082cfcd0e36ec63352dadb7` (origin/main HEAD verified 2026-10-13).
+**Supersede baseline cũ:** `1059f6669482efac5b7956ef25d43996ca59d515` (2026-09-21).
 
-## 2. Hợp đồng đã tồn tại (Existing Contracts)
-- **Cấu trúc DTO cơ bản:** Codebase HRP hiện đã có các interface/DTo nền tảng tại `src/shared/types` và các DTO liên quan đến Client/Project/JobOpening (thông qua V5/V6).
-- **Cấu trúc Auth:** Cơ chế ServerSession và phân quyền nội bộ (RBAC) đã tồn tại, nhưng chưa có luồng cấp quyền Service-to-Service (S2S) chuẩn hóa cho CRM.
+Báo cáo READ-ONLY. Đối chiếu một chiều từ HRP sang CRM (CRM repo không thể truy cập từ workspace HRP).
 
-## 3. Hợp đồng Target-Only (Chỉ có trong tài liệu)
-- **IntegrationEventEnvelope:** Chưa tồn tại trong source code. Việc đóng gói event (như `occurredAt`, `correlationId`, `payload`) chỉ mới được tài liệu hóa.
-- **IdempotencyKey cho S2S:** Cơ chế Idempotency hiện tại (trong `shared/integrity/idempotency.ts`) được dùng nội bộ cho API route. Chưa có hợp đồng Idempotency Key chung với hệ thống CRM (ví dụ, ingest contact, interaction event).
-- **ActorRef / ConversationRef / ClientContactRef:** Chưa được định nghĩa dưới dạng các interface hoặc DTO chia sẻ rõ ràng. Các tham chiếu đến đối tượng CRM vẫn đang sử dụng ID thô hoặc bị nhúng trực tiếp vào entity.
-- **Outbox Pattern cho CRM:** Chưa có implementation Outbox Pattern để đồng bộ bất đồng bộ event sang CRM một cách an toàn (tránh partial failure).
+## 1. Architectural authority (đã chốt trong Realignment Plan §10 + Owner Decision Log §59)
 
-## 4. Xung đột (Conflicts)
-- **Sự nhân bản (Duplication):** Các Enum (ví dụ: trạng thái Placement, trạng thái Labor Profile) có nguy cơ bị copy-paste thủ công giữa hai repo thay vì được quản lý tập trung qua một source of truth (NPM package hoặc OpenAPI schema).
-- **Xung đột State Machine:** Nếu CRM cố gắng trực tiếp thay đổi trạng thái của PlacementCase hoặc JobOpening thông qua REST API thô mà không thông qua Domain Event, nó sẽ phá vỡ tính toàn vẹn của HRP.
+Theo [`docs/HRP_EXECUTION_REALIGNMENT_PLAN.md`](../../../docs/HRP_EXECUTION_REALIGNMENT_PLAN.md) §10 và §59 (Owner Decision Log):
 
-## 5. Quyết định thuộc thẩm quyền Owner
-- **Kho lưu trữ Contract:** Owner cần quyết định nơi đặt Source-of-Truth cho Contract (ví dụ: tạo repo `hrp-contracts`, cấu hình OpenAPI generator, hay dùng Monorepo package).
-- **S2S Authentication:** Quyết định phương thức xác thực giữa HRP và CRM (ví dụ: mTLS, JWT Service Accounts, hay Preshared Keys).
-- **Phân định rõ Boundary:** Dữ liệu nào CRM nắm quyền làm chủ (System of Engagement) và dữ liệu nào HRP làm chủ (System of Record) cần được khóa chặt, đặc biệt trong quy trình Intake và Referral.
+- **V7 = canonical business truth / System of Record** (HRP).
+- **CRM = separate System of Engagement.**
+- **CRM KHÔNG được truy cập trực tiếp HRP core Prisma / core DB** — không cho phép.
+- **Universal AFF = attribution authority** (HRP-side canonical).
+- **Integration:** phải qua `explicit shared contract authority + S2S + idempotency + outbox`. Đây là contract authority boundary.
+
+## 2. Trạng thái repo CRM (cập nhật)
+
+- **Truy cập:** Không thể truy cập repo CRM từ workspace HRP hiện tại. Việc đối chiếu là một chiều — chỉ từ HRP codebase.
+- **T0 quyết định chưa chốt (2026-10-13):** contract distribution mechanism (NPM package chung / OpenAPI generator / monorepo) và S2S authentication mechanism (mTLS / JWT Service Accounts / Preshared Keys) đều chưa được Tier 0 chốt. Discovery này chỉ mô tả gap, không đề xuất implementation.
+
+## 3. Hợp đồng đã tồn tại trong HRP (Existing Contracts)
+
+- **DTO nền tảng nội bộ:** HRP có internal DTO ở các domain (`recruiter-workbench.types.ts` cho Placement/NextAction, `client-read.service.ts` cho Client qua `domains/crm`); KHÔNG có module `src/shared/types/`. Tất cả là internal DTO, CHƯA shared với CRM.
+- **Auth nội bộ:** `ServerSession` + RBAC nội bộ đã tồn tại. CHƯA có luồng cấp quyền Service-to-Service (S2S) chuẩn hóa cho CRM.
+- **Idempotency nội bộ:** [`../../src/shared/integrity/idempotency.ts`](../../../src/shared/integrity/idempotency.ts) dùng cho placement routes (F0/F1) qua `withIdempotency` wrapper keyed by `(route, actorId, key)`. CHƯA có hợp đồng Idempotency Key chung với CRM.
+
+## 4. Hợp đồng Target-Only (chỉ có trong tài liệu — P0-C03..C06)
+
+| ID | Hợp đồng | Trạng thái trong source HRP | Bằng chứng (hoặc INSUFFICIENT_EVIDENCE) |
+|---|---|---|---|
+| **C03** | `IntegrationEventEnvelope` (occurredAt, correlationId, payload) | `NOT_STARTED` | không tìm thấy file định nghĩa envelope |
+| **C04** | Idempotency S2S semantics | `INSUFFICIENT_EVIDENCE` | internal idempotency có ở [`../../src/shared/integrity/idempotency.ts`](../../../src/shared/integrity/idempotency.ts); chưa có shared S2S contract |
+| **C05** | Error taxonomy (canonical codes) | `INSUFFICIENT_EVIDENCE` | placement routes có `SAFE_CODE_MESSAGES` ở [`../../src/domains/talent/recruiter-workbench.placement-actions.states.ts`](../../../src/domains/talent/recruiter-workbench.placement-actions.states.ts); chỉ local |
+| **C06** | Initial shared DTOs (ActorRef, ConversationRef, ClientContactRef) | `INSUFFICIENT_EVIDENCE` | HRP internal DTOs ở [`../../../src/domains/talent/recruiter-workbench.types.ts`](../../../src/domains/talent/recruiter-workbench.types.ts) (Placement + NextAction) + [`../../../src/domains/crm/client-read.service.ts`](../../../src/domains/crm/client-read.service.ts) (Client); chưa shared với CRM. `src/shared/types/` module KHÔNG tồn tại ở main. |
+
+## 5. Outbox Pattern (P0-D03)
+
+- **Outbox table:** `NOT_STARTED` — chưa thấy outbox table hoặc worker code ở main.
+- **Retry/dedupe test (P0-D04):** `NOT_STARTED`.
+
+## 6. Xung đột (Conflicts)
+
+- **Duplication:** Enum (Placement status, LaborProfile status) có nguy cơ copy-paste giữa HRP và CRM. Hiện chưa có source-of-truth authority (C02 `NOT_STARTED`).
+- **State machine conflict:** Nếu CRM trực tiếp mutate PlacementCase/JobOpening qua REST API thô (không qua Domain Event), phá vỡ tính toàn vẹn HRP. Cần D03 outbox + D02 idempotent S2S để tránh.
+
+## 7. Quyết định thuộc thẩm quyền Owner (T0 chưa chốt 2026-10-13)
+
+| Quyết định | Trạng thái |
+|---|---|
+| Kho lưu trữ Contract Authority (NPM package chung / OpenAPI / monorepo) | `TBD` — T0 chưa chốt |
+| S2S Authentication (mTLS / JWT / Preshared) | `TBD` — T0 chưa chốt |
+| System of Engagement (CRM) vs System of Record (HRP) boundary | **CHỐT** — CRM = System of Engagement; HRP = System of Record; CRM KHÔNG được truy cập trực tiếp HRP core Prisma. Theo Realignment Plan §10 + Owner Decision Log §59. |
+| Integration shape (explicit shared contract authority + S2S + idempotency + outbox) | **CHỐT** — per Realignment Plan §10 + §59. |
+
+## 8. Delta so với baseline cũ
+
+| Hạng mục | Baseline cũ (2026-09-21) | Refreshed (2026-10-13) |
+|---|---|---|
+| Internal idempotency | chỉ nói "dùng nội bộ" | chi tiết: [`../../src/shared/integrity/idempotency.ts`](../../../src/shared/integrity/idempotency.ts) + `withIdempotency` wrapper keyed `(route, actorId, key)` |
+| Safe code messages | chưa nói | [`../../src/domains/talent/recruiter-workbench.placement-actions.states.ts`](../../../src/domains/talent/recruiter-workbench.placement-actions.states.ts) có `SAFE_CODE_MESSAGES` ở placement scope |
+| CRM ↔ HRP boundary | "Owner cần quyết định" | **ĐÃ CHỐT** theo §10 + §59 |
+| Contract distribution mechanism | "Owner cần quyết định" | T0 (2026-10-13) vẫn chưa chốt |
+| S2S auth | "Owner cần quyết định" | T0 (2026-10-13) vẫn chưa chốt |
+
+## Kết luận
+
+- Architectural boundary HRP ↔ CRM đã chốt (Realignment Plan §10 + §59).
+- HRP có internal contracts (DTO, idempotency, error codes) nhưng CHƯA shared với CRM.
+- P0-C/D là 2 workstream độc lập với P0-A và P0-B. Có thể chạy song song.
+- CHƯA có gì trong P0-C/D đủ điều kiện `M3` (CRM Integration Proof).
+- T0 cần chốt 2 quyết định còn `TBD` (contract distribution mechanism + S2S auth) trước khi mở implementation task P0-C02.
+
+## Liên kết
+
+- Realignment Plan: [`docs/HRP_EXECUTION_REALIGNMENT_PLAN.md`](../../../docs/HRP_EXECUTION_REALIGNMENT_PLAN.md) §10 (Architectural authority), §20 (P0-C), §21 (P0-D), §59 (Owner Decision Log)
+- Source evidence:
+  - [`../../src/shared/integrity/idempotency.ts`](../../../src/shared/integrity/idempotency.ts)
+  - [`../../../src/domains/talent/recruiter-workbench.types.ts`](../../../src/domains/talent/recruiter-workbench.types.ts)
+  - [`../../src/domains/talent/recruiter-workbench.placement-actions.states.ts`](../../../src/domains/talent/recruiter-workbench.placement-actions.states.ts) (SAFE_CODE_MESSAGES)
+  - [`docs/V7/HRP_CRM_CONNECTOR.md`](../../../docs/V7/HRP_CRM_CONNECTOR.md)
+  - [`docs/V7/HRP_CRM_INFRA_SPLIT.md`](../../../docs/V7/HRP_CRM_INFRA_SPLIT.md)
+- Discovery đồng hành: [`./EXECUTION_REALIGNMENT_DISCOVERY.md`](./EXECUTION_REALIGNMENT_DISCOVERY.md), [`./BLOCKER_REGISTER.md`](./BLOCKER_REGISTER.md)
