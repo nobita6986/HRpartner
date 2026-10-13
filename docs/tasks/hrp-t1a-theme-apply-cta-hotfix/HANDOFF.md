@@ -11,7 +11,7 @@
 | Audit mode | `NONE` |
 | Execution round | `2` (R0 round 1, R1 round 2) |
 | Baseline | `5cfbca12e948c3a207f61db06fe7001c9cc248d2` |
-| Implementation SHA | `a22fd2b6f1ecffee5044f553198d8d576be22f02` (R1 follow-up — final) |
+| Implementation SHA | `bdcef0f89919976d984863d15d1d1e783c55659d` (R1 follow-up — HEAD; commit trước `a22fd2b6` chứa toàn bộ code/test/probe semantic thay đổi; commit này chỉ pin SHA vào HANDOFF) |
 | Frozen delivery | `YES` |
 | Canonical gates | `NOT_REQUIRED` |
 | Audit eligibility | `NOT_REQUIRED` |
@@ -204,32 +204,18 @@ Báo cáo R0 trước đó ghi nhầm là "docs-only, 0 semantic delta" — đã
 - Update `docs/tasks/.../TASK.md` (v1.2) + `HANDOFF.md` (v1.2)
 - Probe scripts ở `docs/tasks/.../evidence/`
 
-### Commit kế tiếp (chưa thực hiện)
+### Commit kế tiếp (đã thực hiện)
 
-Sẽ tạo 1 commit mới:
+1. `a22fd2b6` — semantic (R1 follow-up — CODE):
+   - `app/(portal)/page.tsx`: Hero copy container className dùng conditional `heroImage ? 'text-on-primary' : 'text-primary-dark'` (1 điểm sửa, áp dụng cho cả 3 child: eyebrow `<p>`, `<h1>`, body `<p>`). Bỏ class `text-on-primary` / `text-secondary-fixed` hardcode ở child.
+   - `src/shared/theme/__tests__/hero-eyebrow-contrast.test.ts` (mới, T1A-owned): 2-state assertion (regex conditional + probe 5/5 theme).
+   - `docs/tasks/.../TASK.md`: spec v1.1 → v1.2. Thêm EV-09, DEC-T1A-07, RISK-04, AC-10, In-scope roots.
+   - `docs/tasks/.../HANDOFF.md`: rewrite §1 honest semantic delta, thêm §2 E-08 R1 evidence, thêm §3 probe 2-state, thêm §4 limitation state 2.
+   - `docs/tasks/.../evidence/{probe-eyebrow,probe-hero-2state,probe-pd-overlay}.ps1` (mới): WCAG probe scripts.
 
-```
-fix(t1a-theme-apply-cta-hotfix): R1 follow-up — Hero copy 2-state contrast + honest semantic delta report
+2. `bdcef0f8` — docs (pin SHA — non-semantic):
+   - `docs/tasks/.../HANDOFF.md`: cập nhật Implementation SHA trong §0 Control từ `a22fd2b6` → `bdcef0f8` (= HEAD sau commit pin). Tất cả semantic thay đổi nằm ở `a22fd2b6`.
 
-- app/(portal)/page.tsx: Hero copy container className dùng conditional
-  heroImage ? 'text-on-primary' : 'text-primary-dark' (1 điểm sửa, áp dụng
-  cho cả 3 child: eyebrow <p>, <h1>, body <p>). Bỏ class text-on-primary /
-  text-secondary-fixed hardcode ở child.
-- src/shared/theme/__tests__/hero-eyebrow-contrast.test.ts (mới, T1A-owned):
-  2-state assertion (regex conditional + probe 5/5 theme). State 1 (no image,
-  gradient) PASS 5/5 ≥ 5.0:1 với text-primary-dark. State 2 (image, overlay
-  55%) structural-only — pre-existing limitation documented (RISK-04).
-- docs/tasks/.../TASK.md: spec v1.1 → v1.2. Thêm EV-09, DEC-T1A-07, RISK-04,
-  AC-10, In-scope roots. Revision log row v1.2.
-- docs/tasks/.../HANDOFF.md: rewrite §1 honest semantic delta, thêm §2 E-08
-  R1 evidence, thêm §3 probe 2-state, thêm §4 limitation state 2, sửa §5
-  git freeze posture với Implementation SHA mới.
-- docs/tasks/.../evidence/{probe-eyebrow,probe-hero-2state,probe-pd-overlay}.ps1
-  (mới): WCAG probe scripts.
-
-Trước commit: working tree đã clean (chỉ còn untracked evidence/probe scripts).
-Sau commit: HEAD SHA mới sẽ thay thế fd84297f. Working tree chỉ còn các
-docs update tương ứng.
-```
+`git diff a22fd2b6..bdcef0f8 -- app src prisma tests` = empty (chỉ docs thay đổi, không semantic delta mới). HEAD freeze = `bdcef0f89919976d984863d15d1d1e783c55659d`.
 
 > Handoff status: `READY_FOR_REVIEW`
