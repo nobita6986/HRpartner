@@ -1,120 +1,127 @@
 # CURRENT CI COST REPORT
 
-Dựa trên nguyên tắc quy định tại `docs/HRP_EXECUTION_REALIGNMENT_PLAN.md` §51 (CI/process simplification) và §22 (P0-E).
+Dựa trên [`docs/HRP_EXECUTION_REALIGNMENT_PLAN.md`](../../../docs/HRP_EXECUTION_REALIGNMENT_PLAN.md) §52 (CI Cost Audit) và §22 (P0-E).
 
 **Refreshed baseline SHA:** `a87784229e8f06369082cfcd0e36ec63352dadb7` (origin/main HEAD verified 2026-10-13).
-**Supersede baseline cũ:** `1059f6669482efac5b7956ef25d43996ca59d515` (2026-09-21, dữ liệu chỉ từ W5 handling assignment UI PR #21).
+**Supersede baseline cũ:** `1059f6669482efac5b7956ef25d43996ca59d515` (2026-09-21).
 
-Báo cáo READ-ONLY. Dữ liệu từ `gh run list` (verified 2026-10-13).
+Báo cáo READ-ONLY. Mỗi claim phải có exact log/source evidence hoặc ghi `INSUFFICIENT_EVIDENCE`.
 
-## 1. Cấu trúc Workflow & Trigger (cập nhật)
+## 1. Cấu trúc Workflow & Trigger
 
-- **Workflows ở `.github/workflows/`:**
+- **Workflows ở [`../../.github/workflows/`](../../../.github/workflows/):**
   - `ci.yml` (12 393 bytes) — 2 jobs chạy song song:
     1. `Quality`: schema validate, typecheck, lint, test:unit, next build.
     2. `Integration`: DB tests fail-closed (ephemeral PostgreSQL service container, RLS role, prisma migrate deploy, test:integration).
-  - `deploy-vps.yml` (4 177 bytes) — Deploy HRP to VPS.
-  - `migrate-vps.yml` (2 229 bytes) — Migrate VPS.
-- **Trigger:**
-  - `ci.yml`: kích hoạt trên mọi `pull_request` và `push` vào `main`.
-  - `deploy-vps.yml`: kích hoạt tự động bởi `workflow_run` từ main push.
-  - `migrate-vps.yml`: kích hoạt bởi `workflow_dispatch` hoặc workflow chain (chưa rõ chi tiết).
-- **Path filter (short-circuit):** Integration job có bước lọc `path-filter` tự động SKIP (báo success ngay) nếu thay đổi chỉ giới hạn trong `docs/*`, `*.md`, `scratch/*`, v.v. — giảm lãng phí cho PR tài liệu.
+  - `deploy-vps.yml` (4 177 bytes) — workflow name `Deploy HRP to VPS`.
+  - `migrate-vps.yml` (2 229 bytes) — workflow name `Migrate VPS`.
+- **Trigger (chỉ xác nhận từ `gh run list`):**
+  - `ci.yml`: chạy trên `pull_request` (verified qua các run `38352361334`, `38368283035`, `38372053221`) và `push` vào `main` (verified qua các run `38255822673`, `38279052656`, `38372807924`).
+  - `deploy-vps.yml`: kích hoạt bởi `workflow_run` event sau main push (verified qua các run `38256227331`, `38279395808`, `38373171674` đều có event `workflow_run`).
+  - `migrate-vps.yml`: trigger chi tiết `INSUFFICIENT_EVIDENCE` (chưa có run observed trong `gh run list` được lấy mẫu; cần xem workflow file trực tiếp).
+- **Path filter (short-circuit):** theo baseline cũ, Integration job có bước lọc `path-filter` tự động SKIP nếu thay đổi chỉ giới hạn trong `docs/*`, `*.md`, `scratch/*`, v.v. Verification exact path-filter config: `INSUFFICIENT_EVIDENCE` (cần xem `ci.yml` chi tiết).
 
-## 2. Dữ liệu run hiện tại (verified 2026-10-13 từ `gh run list`)
+## 2. Dữ liệu run đã xác minh (verified 2026-10-13 từ `gh run list`)
 
-### Main CI runs (gần đây)
+Các run dưới đây là mẫu được verify trực tiếp; không ngoại suy thành "60+ merge PASS".
 
-| Run | Workflow | SHA/Trigger | Status | Wall time | Ngày |
+### Main CI runs (sau PR merge vào main)
+
+| Run ID | Workflow | Event | Status | Wall time | Ngày (UTC) |
 |---|---|---|---|---|---|
-| `38372807924` | CI (main push) | PR #134 merge → main | success | 3m0s | 2026-10-13T08:56:58Z |
-| `38279052656` | CI (main push) | PR #133 merge → main | success | 2m58s | 2026-10-12T16:40:31Z |
-| `38255822673` | CI (main push) | PR #132 merge → main | success | 3m32s | 2026-10-12T13:27:28Z |
+| `38372807924` | CI | push (main) | success | 3m0s | 2026-10-13T08:56:58Z |
+| `38279052656` | CI | push (main) | success | 2m58s | 2026-10-12T16:40:31Z |
+| `38255822673` | CI | push (main) | success | 3m32s | 2026-10-12T13:27:28Z |
 
-### VPS Deploy runs (gần đây)
+### VPS Deploy runs (sau main push)
 
-| Run | Workflow | Trigger | Status | Wall time | Ngày |
+| Run ID | Workflow | Event | Status | Wall time | Ngày (UTC) |
 |---|---|---|---|---|---|
-| `38373171674` | Deploy HRP to VPS | main push (PR #134) | success | 4m9s | 2026-10-13T09:00:00Z |
-| `38279395808` | Deploy HRP to VPS | main push (PR #133) | success | 3m46s | 2026-10-12T16:43:31Z |
-| `38256227331` | Deploy HRP to VPS | main push (PR #132) | success | 3m57s | 2026-10-12T13:31:03Z |
+| `38373171674` | Deploy HRP to VPS | workflow_run | success | 4m9s | 2026-10-13T09:00:00Z |
+| `38279395808` | Deploy HRP to VPS | workflow_run | success | 3m46s | 2026-10-12T16:43:31Z |
+| `38256227331` | Deploy HRP to VPS | workflow_run | success | 3m57s | 2026-10-12T13:31:03Z |
+
+### PR runs (chỉ CI)
+
+| Run ID | Workflow | Event | Status | Wall time | Ngày (UTC) |
+|---|---|---|---|---|---|
+| `38372053221` | CI | pull_request | success | 2m48s | 2026-10-13T08:50:33Z |
+| `38368283035` | CI | pull_request | success | 3m39s | 2026-10-13T08:17:46Z |
+| `38352361334` | CI | pull_request | success | 3m43s | 2026-10-13T05:37:46Z |
 
 ### Main CI `38372807924` chi tiết (sau PR #134)
 
 - **Quality (schema · typecheck · lint · unit · build):** ✓ 2m57s (job ID 115213715737).
 - **Integration (DB tests · fail-closed):** ✓ 1m42s (job ID 115213716064).
-- **Annotations (deprecation, không fail):**
-  - Node.js 20 deprecated trên `actions/checkout@v4`, `actions/setup-node@v4` (đã được force upgrade Node 24). Cần theo dõi.
-  - Một số lint warnings (còn 7 warning về unused vars + `any` type) — không block CI.
-  - Ubuntu-latest sẽ migrate Ubuntu 26 từ 19/10/2026.
+- **Annotations chỉ ghi nhận (deprecation + lint warnings, không fail):** xem §5.
 
-## 3. Thời lượng & Chi phí (cập nhật so với baseline cũ)
+## 3. Thời lượng & chi phí (chỉ trên run đã xác minh)
 
-| Hạng mục | Baseline cũ (W5 PR #21) | Refreshed (PR #134) |
-|---|---|---|
-| Integration job | 47s | 1m42s (chậm hơn 2x) |
-| Quality job | 2m 12s | 2m57s (chậm hơn 35s) |
-| VPS Deploy | (không đo) | 4m9s |
-| Total wall time per CI run | ~2.5 phút | 3m0s |
+- **Wall-clock duration CI (Quality + Integration chạy song song):**
+  - `38372807924`: 3m0s wall.
+  - `38279052656`: 2m58s wall.
+  - `38255822673`: 3m32s wall.
+  - `38372053221`: 2m48s wall (PR).
+- **Runner consumption (tổng thời gian job trên runner):**
+  - `38372807924`: Quality 2m57s + Integration 1m42s = 4m39s runner-minutes (2 jobs chạy song song).
+- **Wall-clock duration VPS Deploy:**
+  - `38373171674`: 4m9s.
+  - `38279395808`: 3m46s.
+  - `38256227331`: 3m57s.
 
-**Quan sát:**
-- Integration chậm hơn vì số test tăng (P1 chain có nhiều test hơn) + RLS roles nhiều hơn.
-- Quality chậm hơn vì test:unit + build nặng hơn (Next.js build toàn app).
-- VPS Deploy 4m9s — chấp nhận được, bao gồm docker pull + prisma migrate + restart service.
+Wall-clock ≠ runner consumption. "Cost" đầy đủ cần cộng runner-minutes theo pricing plan GitHub Actions; discovery này không tính pricing.
 
-## 4. Các điểm tối ưu & Trùng lặp (cập nhật)
+## 4. Các điểm tối ưu & trùng lặp (chỉ phần đã verify)
 
-- **Bước trùng lặp:** Cả 2 job đều chạy `pnpm install` + `prisma generate`. Đây là trùng lặp bắt buộc để job chạy song song.
-- **Lint warnings:** 7 warning chưa sửa:
-  - `app/admin/job-openings/[id]/page.test.tsx:32` — `Unexpected any. Specify a different type`
-  - `app/admin/job-openings/[id]/job-opening-actions.test.tsx:31` — `capturedFetchInit` unused
-  - `.ai-pipeline/scripts/verify-encoding.mjs:4,5` — `relative`, `statSync`, `readdirSync` unused
-  - `.ai-pipeline/scripts/verify-encoding-range.mjs:25` — `execFileSync` unused
-- **Node 20 deprecation:** cần upgrade actions lên Node 24 (vẫn chạy, không fail).
+- **Trùng lặp `pnpm install` + `prisma generate` ở 2 job:** cần verify exact bằng đọc [`../../.github/workflows/ci.yml`](../../../.github/workflows/ci.yml) chi tiết. Hiện tại chưa verify exact diff.
 
-## 5. Các bước bắt buộc (Không được cắt bỏ)
+## 5. Annotations từ `gh run view 38372807924` (xác minh trực tiếp)
 
-- **RLS/Database Boundary:** Job Integration hiện cấp quyền RLS (8 role, bao gồm `app_user_writer`) rồi chạy `prisma migrate deploy` và `test:integration`. Đây là chốt chặn duy nhất (Gate) phát hiện lỗi bảo mật RLS (như lỗi `42501` của AFF-03, đã closed 21/09) trước khi merge.
+- **Node 20 deprecation** trên `actions/checkout@v4`, `actions/setup-node@v4` — thông báo deprecation; không fail CI. **Run mới có thể đã chuyển sang Node 24; verification exact runtime của run sau này: `INSUFFICIENT_EVIDENCE`.**
+- **Ubuntu-latest sẽ migrate Ubuntu 26 từ 19/10/2026** — thông báo; không fail CI.
+- **Lint warnings (chỉ ghi nhận trong `38372807924`):** 7 warning — claim này dựa trên output `gh run view` xem tại thời điểm verify 2026-10-13. Có thể đã thay đổi ở run sau.
+
+## 6. Các bước bắt buộc (theo baseline cũ §22)
+
+- **RLS/Database Boundary:** Job Integration hiện cấp quyền RLS (8 role, bao gồm `app_user_writer`) rồi chạy `prisma migrate deploy` và `test:integration`. Verification exact RLS role count và role names: `INSUFFICIENT_EVIDENCE` trong scope discovery này (chưa đọc chi tiết `ci.yml`).
 - Việc hạ cấp xuống chỉ mock test (unit test) không đảm bảo tính an toàn cho hạ tầng V7/V8. Phải giữ Integration Fail-Closed.
-- **VPS Deploy tự động:** mỗi push main → deploy. Hiện KHÔNG có manual gate; chỉ có CI check trước đó. Production verification phụ thuộc pilot usage chứ không phụ thuộc deploy success.
+- **VPS Deploy tự động** (theo `gh run list`): mỗi main push → deploy. Trigger cụ thể của `deploy-vps.yml` (workflow_run vs workflow_dispatch) đã xác minh qua event field = `workflow_run`. **Claim "deploy bao gồm migration": `INSUFFICIENT_EVIDENCE`** — chưa đọc chi tiết nội dung `deploy-vps.yml`; cần verify trước khi khẳng định.
 
-## 6. Đề xuất rút gọn (cập nhật)
+## 7. Đề xuất rút gọn
 
-CI hiện ~3 phút mỗi run, VPS deploy ~4 phút. **Không khuyến nghị thay đổi hay rút gọn thêm** tại thời điểm này để tránh vô ý phá vỡ an toàn RLS/Integration Gates.
+CI wall-clock ~3 phút mỗi run, VPS deploy ~4 phút mỗi run (chỉ trên 6 run đã verify). **Không khuyến nghị thay đổi hay rút gọn thêm** tại thời điểm này để tránh vô ý phá vỡ an toàn RLS/Integration Gates.
 
-Tuy nhiên, có thể theo dõi:
-- Node 24 deprecation (sau 19/10/2026).
-- Ubuntu 26 migration (sau 19/10/2026).
-- Lint warnings 7 cái cần sửa nếu Tier 0 muốn CI sạch.
+Cần theo dõi:
+- Node 24 runtime exact cho run mới (verification pending).
+- Ubuntu 26 migration exact (verification pending).
 
-## 7. Delta so với baseline cũ
+## 8. Delta so với baseline cũ
 
 | Hạng mục | Baseline cũ (2026-09-21) | Refreshed (2026-10-13) |
 |---|---|---|
 | Số workflows | 1 (`ci.yml`) | 3 (`ci.yml`, `deploy-vps.yml`, `migrate-vps.yml`) |
-| Integration job wall time | 47s | 1m42s |
-| Quality job wall time | 2m 12s | 2m57s |
-| VPS Deploy wall time | không đo | 4m9s |
-| Path filter cho docs | có | có (xác nhận) |
-| Số PR merge từ baseline | 0 | 60+ |
+| Integration job wall time | 47s | 1m42s (trong `38372807924`) |
+| Quality job wall time | 2m 12s | 2m57s (trong `38372807924`) |
+| VPS Deploy wall time | không đo | 4m9s (trong `38373171674`) |
+| Path filter cho docs | có (chưa verify exact config) | chưa verify exact config ở main hiện tại |
 
 ## Kết luận
 
-- CI hiện tại ổn định, pass 60+ merge liên tiếp.
-- VPS deploy tự động chạy thành công; không có lỗi phát hiện.
-- Chi phí CI ~3 phút/lần, VPS ~4 phút/lần — chấp nhận được.
+- 6 run được lấy mẫu đều PASS (CI Quality + Integration + VPS Deploy).
+- CI wall-clock ~3 phút; VPS deploy wall-clock ~4 phút; chấp nhận được.
+- Nhiều claim (lint warning count, Node 20 deprecation, Ubuntu 26, deploy includes migration, migrate-vps.yml trigger) đã được ghi rõ là `INSUFFICIENT_EVIDENCE` cho đến khi verify exact từ workflow files.
 - **Mở rộng P2+ sẽ tăng cost**; cần monitor.
-- **P0-E02 (Direct Fix class)** và **P0-E03 (Test matrix by task risk)** vẫn INSUFFICIENT_EVIDENCE — chưa có classification rule chính thức.
+- **P0-E02** = `ACCEPTED_IMPLEMENTATION_VERIFIED` (xem [`./EXECUTION_REALIGNMENT_DISCOVERY.md`](./EXECUTION_REALIGNMENT_DISCOVERY.md) §1 P0-E).
+- **P0-E03** = `PARTIAL_IMPLEMENTATION_VERIFIED` — có lane FAST/STANDARD/CRITICAL + NONE/LIGHT + TASK template + critical-path guard T-08 + gate self-tests; chưa có ma trận đầy đủ theo mọi work type trong §22.
 
 ## Liên kết
 
-- Realignment Plan: [`docs/HRP_EXECUTION_REALIGNMENT_PLAN.md`](../HRP_EXECUTION_REALIGNMENT_PLAN.md) §51, §22 (P0-E)
+- Realignment Plan: [`docs/HRP_EXECUTION_REALIGNMENT_PLAN.md`](../../../docs/HRP_EXECUTION_REALIGNMENT_PLAN.md) §52 (CI Cost Audit), §22 (P0-E)
 - Workflows:
-  - [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml)
-  - [`.github/workflows/deploy-vps.yml`](../../.github/workflows/deploy-vps.yml)
-  - [`.github/workflows/migrate-vps.yml`](../../.github/workflows/migrate-vps.yml)
+  - [`../../.github/workflows/ci.yml`](../../../.github/workflows/ci.yml)
+  - [`../../.github/workflows/deploy-vps.yml`](../../../.github/workflows/deploy-vps.yml)
+  - [`../../.github/workflows/migrate-vps.yml`](../../../.github/workflows/migrate-vps.yml)
 - Source evidence:
-  - `gh run list` (verified 2026-10-13, runs 38xxx series)
-  - `gh run view 38372807924` (PR #134 CI)
-  - `gh run view 38373171674` (PR #134 VPS deploy — admin rights cần thiết để xem log chi tiết)
-- Discovery đồng hành: [`EXECUTION_REALIGNMENT_DISCOVERY.md`](./EXECUTION_REALIGNMENT_DISCOVERY.md), [`BLOCKER_REGISTER.md`](./BLOCKER_REGISTER.md)
+  - `gh run list` (verified 2026-10-13, 9 run IDs ở §2)
+  - `gh run view 38372807924` (PR #134 CI chi tiết)
+- Discovery đồng hành: [`./EXECUTION_REALIGNMENT_DISCOVERY.md`](./EXECUTION_REALIGNMENT_DISCOVERY.md), [`./BLOCKER_REGISTER.md`](./BLOCKER_REGISTER.md)

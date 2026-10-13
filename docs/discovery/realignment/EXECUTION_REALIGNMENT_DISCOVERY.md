@@ -2,7 +2,7 @@
 
 **Refreshed baseline SHA:** `a87784229e8f06369082cfcd0e36ec63352dadb7` (origin/main HEAD verified 2026-10-13 sau PR #134).
 **Supersede baseline cũ:** `1059f6669482efac5b7956ef25d43996ca59d515` (2026-09-21).
-**Authority:** `docs/HRP_EXECUTION_REALIGNMENT_PLAN.md` §1, §17–§45, §46–§53.
+**Authority:** [`docs/HRP_EXECUTION_REALIGNMENT_PLAN.md`](../../../docs/HRP_EXECUTION_REALIGNMENT_PLAN.md) §1, §17–§45, §46–§53.
 
 Báo cáo này là khảo sát trạng thái toàn bộ Realignment Plan (P0 → P5, M0 → M5) đối chiếu với `origin/main` hiện hành. Báo cáo READ-ONLY; mọi kết luận phải có file/SHA/PR/run evidence. Status milestones dùng đúng taxonomy §15.2.
 
@@ -12,18 +12,18 @@ Báo cáo này là khảo sát trạng thái toàn bộ Realignment Plan (P0 →
 
 Trạng thái hiện tại đối chiếu `origin/main @ a8778422`:
 
-- **P0-A01 Audit current file/evidence handling:** `ACCEPTED_HISTORICAL_AUDIT_NEEDS_REFRESH`. Audit doc tồn tại tại `docs/discovery/realignment/EVIDENCE_STORAGE_AUDIT.md` (đang được refresh đồng thời trong lane này).
-- **P0-A02 Add EvidenceStorage port:** `ACCEPTED_IMPLEMENTATION_VERIFIED`. File `src/domains/evidence/evidence-storage.port.ts` định nghĩa provider-neutral port, `StorageKey` brand, `EvidenceStorage` interface (write/read/delete/exists/stat). Có test tại `evidence-storage.port.test.ts`. KHÔNG có production call site wire port này ở production flow.
-- **P0-A03 Add LocalVpsEvidenceStorageAdapter:** `ACCEPTED_IMPLEMENTATION_VERIFIED`. File `src/domains/evidence/local-vps-evidence-storage.adapter.ts` implement Node fs + symlink rejection + realpath containment + atomic `'wx'` write + streaming read 64 KiB + safe-message error sanitization. Có test tại `local-vps-evidence-storage.adapter.test.ts`. KHÔNG có production call site.
-- **P0-A04 Add EvidenceRecord metadata:** `ACCEPTED_PRODUCTION_VERIFIED` nếu coi migration đã apply production DB. `prisma/schema.prisma` có `model EvidenceRecord`; migration `prisma/migrations/20260924120000_er003_evidence_record_metadata/migration.sql` (CHECK constraints: owner_type, evidence_type, status, checksum SHA-256, sizeBytes, storage_key, original_filename, deleted_at_invariant; RLS enabled + forced; REVOKE all). Migration chạy thành công 2026-09-24.
+- **P0-A01 Audit current file/evidence handling:** `REFRESHED_CURRENT_BASELINE_AWAITING_LIGHT_AUDIT`. Audit doc tồn tại tại [`./EVIDENCE_STORAGE_AUDIT.md`](./EVIDENCE_STORAGE_AUDIT.md) và đã được refresh đồng thời trong lane này. Sau khi T0 LIGHT audit pass + merge, sẽ chuyển sang `ACCEPTED` nếu Tier 0 chốt.
+- **P0-A02 Add EvidenceStorage port:** `ACCEPTED_IMPLEMENTATION_VERIFIED`. File [`src/domains/evidence/evidence-storage.port.ts`](../../../src/domains/evidence/evidence-storage.port.ts) định nghĩa provider-neutral port, `StorageKey` brand, `EvidenceStorage` interface (write/read/delete/exists/stat). Có test tại `evidence-storage.port.test.ts`. KHÔNG có production call site wire port này ở production flow.
+- **P0-A03 Add LocalVpsEvidenceStorageAdapter:** `ACCEPTED_IMPLEMENTATION_VERIFIED`. File [`src/domains/evidence/local-vps-evidence-storage.adapter.ts`](../../../src/domains/evidence/local-vps-evidence-storage.adapter.ts) implement Node fs + symlink rejection + realpath containment + atomic `'wx'` write + streaming read 64 KiB + safe-message error sanitization. Có test tại `local-vps-evidence-storage.adapter.test.ts`. KHÔNG có production call site.
+- **P0-A04 Add EvidenceRecord metadata:** `ACCEPTED_IMPLEMENTATION_VERIFIED`. Migration source tồn tại tại [`prisma/migrations/20260924120000_er003_evidence_record_metadata/migration.sql`](../../../prisma/migrations/20260924120000_er003_evidence_record_metadata/migration.sql); schema ở [`prisma/schema.prisma`](../../../prisma/schema.prisma) line 1873 (model `EvidenceRecord`); CHECK constraints (owner_type, evidence_type, status, checksum SHA-256, sizeBytes, storage_key, original_filename, deleted_at_invariant); RLS enabled + forced; REVOKE from PUBLIC/app_user/app_user_writer. Schema/constraints/RLS đã review. **Production application evidence: `INSUFFICIENT_EVIDENCE`** — chưa có run/log/postcheck truy vết được xác nhận trên đúng production DB.
 - **P0-A05 storeEvidence command:** `INSUFFICIENT_EVIDENCE`. Không tìm thấy EvidenceGateway implementation wire port + adapter + record.
 - **P0-A06 protected evidence read:** `INSUFFICIENT_EVIDENCE`. Không tìm thấy `readEvidence` command.
 - **P0-A07 delete/quarantine commands:** `INSUFFICIENT_EVIDENCE`. Không tìm thấy `quarantine` implementation.
 - **P0-A08 evidence access audit:** `INSUFFICIENT_EVIDENCE`. Không có model `evidence_access_log`; grep `evidenceAccessLog` không khớp.
-- **P0-A09 production/test environment guard:** `INSUFFICIENT_EVIDENCE`. Adapter có `defaultEvidencePathResolver` fail-closed nếu `HRP_EVIDENCE_ROOT` missing/blank/not absolute. NHƯNG không thấy logic chặn "Vercel/test" dùng adapter này (chưa có `REAL_EVIDENCE_STORAGE_ENABLED` integration-level).
+- **P0-A09 production/test environment guard:** `INSUFFICIENT_EVIDENCE` (port-level fail-closed có; integration-level guard CHƯA). Adapter có `defaultEvidencePathResolver` fail-closed nếu `HRP_EVIDENCE_ROOT` missing/blank/not absolute. NHƯNG không thấy logic chặn "Vercel/test" dùng adapter này (chưa có `REAL_EVIDENCE_STORAGE_ENABLED` integration-level).
 - **P0-A10 backup/restore runbook + restore test:** `NOT_STARTED`. File `EVIDENCE_BACKUP_RESTORE_RUNBOOK.md` chưa tồn tại ở main.
 
-Tổng P0-A: 4/10 ACCEPTED (A01 audit doc cần refresh, A02 port, A03 adapter, A04 metadata); 5/10 INSUFFICIENT_EVIDENCE; 1/10 NOT_STARTED.
+Tổng P0-A: 1/10 `REFRESHED_CURRENT_BASELINE_AWAITING_LIGHT_AUDIT` (A01); 3/10 `ACCEPTED_IMPLEMENTATION_VERIFIED` (A02, A03, A04); 5/10 `INSUFFICIENT_EVIDENCE` (A05..A09); 1/10 `NOT_STARTED` (A10).
 
 ### P0-B Deployment Boundary (§19)
 
@@ -43,7 +43,7 @@ Tổng P0-B: 0/4 ACCEPTED; 1/4 IN_PROGRESS; 2/4 INSUFFICIENT_EVIDENCE; 1/4 NOT_S
 - **P0-C05 define error taxonomy:** `INSUFFICIENT_EVIDENCE` (placement routes có `SAFE_CODE_MESSAGES` ở `recruiter-workbench.placement-actions.states.ts`; chỉ local).
 - **P0-C06 pin initial shared DTOs:** `INSUFFICIENT_EVIDENCE` (HRP internal DTOs ở `src/shared/types`; chưa shared với CRM).
 
-Tổng P0-C: 0/6 ACCEPTED; 1/6 IN_PROGRESS; 4/6 INSUFFICIENT_EVIDENCE; 1/6 NOT_STARTED.
+Tổng P0-C: 0/6 ACCEPTED; 1/6 IN_PROGRESS; 2/6 NOT_STARTED; 3/6 INSUFFICIENT_EVIDENCE.
 
 ### P0-D S2S / Outbox (§21)
 
@@ -56,10 +56,10 @@ Tổng P0-D: 0/4 ACCEPTED; 2/4 INSUFFICIENT_EVIDENCE; 2/4 NOT_STARTED.
 
 ### P0-E CI / Governance Simplification (§22)
 
-- **P0-E02 define Direct Fix class:** `INSUFFICIENT_EVIDENCE`. Chưa thấy classification rule tài liệu chính thức; PR #131 `t1d-business-code-standard` (merge 12/10) là style/lint, không phải Direct Fix class.
-- **P0-E03 document test matrix by task risk:** `INSUFFICIENT_EVIDENCE`. Có `.ai-pipeline/scripts/verify-encoding.mjs` + `verify-encoding-range.mjs` nhưng chưa phải test matrix per task risk.
+- **P0-E02 define Direct Fix class:** `ACCEPTED_IMPLEMENTATION_VERIFIED`. Định nghĩa đã tồn tại ở [`.ai-pipeline/tier1.md`](../../../.ai-pipeline/tier1.md) §A "Direct fix — sửa trực tiếp, không ceremony" (line 16-50) — bao gồm: điều kiện được phép, ranh giới, điều kiện phải chuyển sang governed task (schema/migration, API/auth, state machine, dependency/CI, shared component blast radius, ambiguous request, expanding diff), policy "không gọi Tier 3 trên direct fix". Tham chiếu Realignment Plan §53 "Direct Fix Policy".
+- **P0-E03 document test matrix by task risk:** `PARTIAL_IMPLEMENTATION_VERIFIED`. Repo đã có: lane `FAST / STANDARD / DOMAIN / MIGRATION / SECURITY` (Realignment Plan §22 line 977-982); lane `NONE / LIGHT` (Tier 1 protocol); TASK template; critical-path guard T-08; gate self-tests (`.ai-pipeline/scripts/verify-*.ps1`). CHƯA có: ma trận đầy đủ theo mọi work type trong §22 — thiếu phân loại work type → required evidence per task.
 
-Tổng P0-E: 0/2 ACCEPTED; 2/2 INSUFFICIENT_EVIDENCE. (P0-E01 không tồn tại trong plan §22.)
+Tổng P0-E: 1/2 ACCEPTED_IMPLEMENTATION_VERIFIED (E02); 1/2 PARTIAL_IMPLEMENTATION_VERIFIED (E03). (P0-E01 không tồn tại trong plan §22.)
 
 ## 2. Trạng thái P1 đến P5 (Realignment Plan §23–§45)
 
@@ -68,7 +68,7 @@ Tổng P0-E: 0/2 ACCEPTED; 2/2 INSUFFICIENT_EVIDENCE. (P0-E01 không tồn tại
 - **P1-A JobPosting public slice (§24):** `CODE_COMPLETE_DEPLOYED_AWAITING_REAL_USER_PILOT`. P1-A0, A0-1, A0-2, A0-3, A0-4, A0-5, A1; PR #55, #57, #65, #67, #68, #69, #73 đã merge. Test + ×3 zero-residue E2E (P1-Final closeout). VPS deploy success.
 - **P1-B Public Apply (§25):** `CODE_COMPLETE_DEPLOYED_AWAITING_REAL_USER_PILOT`. `docs/tasks/hrp-p1-b-public-apply/`. Test + VPS deploy.
 - **P1-C LaborProfile create-or-match (§26):** `CODE_COMPLETE_DEPLOYED_AWAITING_REAL_USER_PILOT`. EXACT/POSSIBLE/NEW. `intake-writer.service.ts`. Test + VPS deploy.
-- **P1-D PlacementCase + NextAction (§27):** `CODE_COMPLETE_DEPLOYED_AWAITING_REAL_USER_PILOT`. **NextAction = `IMPLEMENTED_CANONICAL`** — closed enum 7 giá trị (`OPEN_INTAKE`, `REQUEST_DOCS`, `SCREEN_SUBMISSION`, `SCHEDULE_SCREEN`, `AWAITING_RESULT`, `REVIEW_PLACEMENT`, `NONE`) ở `src/domains/talent/recruiter-workbench.types.ts`; `deriveNextAction` ở `recruiter-workbench.read-service.ts`; F-06 gate `isPlacementReadyRow` ở `recruiter-workbench.placement-actions.states.ts`; field `nextAction` trong `RecruiterWorkbenchRow` DTO; test `recruiter-workbench.derive.test.ts`. NextAction không lưu DB (server-derived).
+- **P1-D PlacementCase + NextAction (§27):** `CODE_COMPLETE_DEPLOYED_AWAITING_REAL_USER_PILOT`. **NextAction = `IMPLEMENTED_CANONICAL`** — closed enum 7 giá trị (`OPEN_INTAKE`, `REQUEST_DOCS`, `SCREEN_SUBMISSION`, `SCHEDULE_SCREEN`, `AWAITING_RESULT`, `REVIEW_PLACEMENT`, `NONE`) ở [`src/domains/talent/recruiter-workbench.types.ts`](../../../src/domains/talent/recruiter-workbench.types.ts); `deriveNextAction` ở `recruiter-workbench.read-service.ts`; F-06 gate `isPlacementReadyRow` ở `recruiter-workbench.placement-actions.states.ts`; field `nextAction` trong `RecruiterWorkbenchRow` DTO; test `recruiter-workbench.derive.test.ts`. NextAction không lưu DB (server-derived).
 - **P1-E Simple Recruiter Workbench (§28):** `CODE_COMPLETE_DEPLOYED_AWAITING_REAL_USER_PILOT`. P1-E0 (read model) + P1-E1 (UI); PR #61, #62.
 - **P1-F Placement (§29):** `CODE_COMPLETE_DEPLOYED_AWAITING_REAL_USER_PILOT`. SELECTED/CONFIRMED/EFFECTIVE/FAILED/CANCELLED + CLIENT_MANAGED/HRP_MANAGED. P1-F0 + P1-F1; PR #58, #59, #63, #64; P1-Final closeout PR #73.
 
@@ -78,6 +78,11 @@ Tổng P1: 6/6 `CODE_COMPLETE_DEPLOYED_AWAITING_REAL_USER_PILOT`.
 
 - **P2-A V8.0 Workspace Shell:** `NOT_STARTED`. Không có task docs; không có V8 doc ở main. Pre-P2 hotfix (PR #104 menu cleanup, #108 staffing order, #112 sidebar, #113/#115/#117/#120 worker ops, #126 staffing order slot, #114 project mgmt) là technical debt cho admin shell, KHÔNG tạo P2 value slice.
 - **P2-B V8.2 Recruiter Microsite:** `NOT_STARTED`. Không có microsite route ở main. PR #87 `t1c-p2-execution-split-decision` chỉ là decision docs, không tạo code.
+
+**Unlock conditions (per Realignment Plan, không phải blanket P0 dependency):**
+- P2-A: cần ActorContext, permissions, workspace navigation ổn định.
+- P2-B: cần recruiter public profile, public JobPosting, public Apply, public security boundary.
+- P0-A chỉ chặn phần sử dụng evidence thật; P0-C/D chỉ chặn integration/CRM-dependent capability.
 
 Tổng P2: 0/2 NOT_STARTED.
 
@@ -89,6 +94,8 @@ Tổng P2: 0/2 NOT_STARTED.
 - **P3-D Share Kit Lite:** `NOT_STARTED`.
 - **P3-E Universal AFF enablement (5-recruiter usage):** `INSUFFICIENT_EVIDENCE`.
 
+**Unlock condition:** P3 mở bằng quyết định T0 và dependency riêng; M1 evidence là ưu tiên sequencing, không phải blanket architecture dependency.
+
 Tổng P3: 0/5 ACCEPTED, 1/5 FOUNDATION_ONLY.
 
 ### P4 Workspace / V8.1 Kanban (§43)
@@ -99,9 +106,9 @@ Tổng P3: 0/5 ACCEPTED, 1/5 FOUNDATION_ONLY.
 
 - `NOT_STARTED`. Chỉ có V9 docs (deferred). Chưa có evidence real data.
 
-## 3. Universal AFF (theo `docs/V6/aff_plan.md` §0.2, §14.1, §15.1)
+## 3. Universal AFF (theo [`docs/V6/aff_plan.md`](../../../docs/V6/aff_plan.md) §0.2, §14.1, §15.1)
 
-Denominator: 7 (AFF-01..AFF-07).
+Denominator (high-level): **7** (AFF-01..AFF-07; AFF-05 tách internal sub-items 05A/05B nhưng tính là 1 phase trong tổng high-level).
 
 | ID | Trạng thái | Source evidence | Production evidence |
 |---|---|---|---|
@@ -109,12 +116,13 @@ Denominator: 7 (AFF-01..AFF-07).
 | **AFF-02** Link capture + shared self-service | `ACCEPTED_PRODUCTION_VERIFIED` | `tier1/hrp-v6-n2-aff-02-link-capture`; CTV dashboard live | production verified |
 | **AFF-03** Public apply attribution boundary | `ACCEPTED_PRODUCTION_VERIFIED` | `tier1/hrp-v6-n2-aff-03-apply-attribution` (21/09); `-03b-rls-runtime-fix` (RLS 42501 fix); `-03c-cs-labor-profile-fix` (21/09) | production verified |
 | **AFF-04** Conversion + SourceClaim + ProjectAssignment propagation | `ACCEPTED_PRODUCTION_VERIFIED` | `t1b-aff04-conversion-propagation` 24/09; main `8b8e39b` (PR #35); `docs/tasks/hrp-v6-n2-aff-04-conversion-propagation/HANDOFF.md` | production verified |
-| **AFF-05A** LaborProfile handling + Company Pool + dispute (residual) | `PARTIAL` — R1+R2 ACCEPTED; residual Company Pool/dispute CHƯA | `t1b-aff05a-r1-canonical-initial-handling` 23/09; `t1b-aff05a-r2-bounded-manager-assignment` 24/09; PR #43 (24/09); W5 (`tier1/hrp-v6-w5-handling-assignment-safety`). W5 chỉ chứng minh RLS + elapsed assignment sweep + REVOKED semantics — KHÔNG chứng minh toàn bộ Company Pool/dispute của AFF-05A (`aff_plan.md` §0.2) | R1+R2 ACCEPTED; residual Company Pool/dispute chưa production verify |
-| **AFF-05B** Universal commission beneficiary | `NOT_STARTED` | chưa có task | n/a |
+| **AFF-05** LaborProfile handling + commission (high-level) | `PARTIAL` | — (xem sub-items 05A/05B bên dưới) | — |
+| &nbsp;&nbsp;&nbsp;↳ *AFF-05A* LaborProfile handling, Company Pool, dispute (residual) | `PARTIAL` (R1+R2 ACCEPTED; residual Company Pool/dispute CHƯA) | `t1b-aff05a-r1-canonical-initial-handling` 23/09; `t1b-aff05a-r2-bounded-manager-assignment` 24/09; PR #43 (24/09); W5 (`tier1/hrp-v6-w5-handling-assignment-safety`). W5 chỉ chứng minh RLS + elapsed assignment sweep + REVOKED semantics — KHÔNG chứng minh toàn bộ Company Pool/dispute của AFF-05A (`aff_plan.md` §0.2) | R1+R2 ACCEPTED; residual Company Pool/dispute chưa production verify |
+| &nbsp;&nbsp;&nbsp;↳ *AFF-05B* Universal commission beneficiary | `NOT_STARTED` | chưa có task; phụ thuộc AFF-05A residual + M6 commission policy | n/a |
 | **AFF-06** Analytics + dashboard + abuse hardening | `NOT_STARTED` | chưa có task; chờ AFF-OQ-11 (retention) | n/a |
 | **AFF-07** Rollout + operations + cleanup | `NOT_STARTED` | chưa có task | n/a |
 
-Tổng AFF: 4 ACCEPTED_PRODUCTION_VERIFIED; 1 PARTIAL; 2 NOT_STARTED (05B, 06); 1 NOT_STARTED (07).
+Tổng high-level AFF: 4 ACCEPTED_PRODUCTION_VERIFIED (AFF-01..04); 1 PARTIAL (AFF-05); 2 NOT_STARTED (AFF-06, AFF-07). Denominator = 7.
 
 Lưu ý từ `aff_plan.md` §0.2: "Full feature Definition of Done tại §23 chưa đạt; `ACCEPTED` của AFF-03C không phải `ACCEPTED` cho Universal AFF." → KHÔNG tuyên bố "AFF hoàn tất" dù 4/7 sub-items production-verified.
 
@@ -122,8 +130,8 @@ Lưu ý từ `aff_plan.md` §0.2: "Full feature Definition of Done tại §23 ch
 
 | M | Tên | Trạng thái | Bằng chứng |
 |---|---|---|---|
-| **M0** | Production Safety Ready | `PARTIAL` | P0-A 4/10 ACCEPTED; P0-B 0/4; P0-C 0/6; P0-D 0/4; P0-E 0/2. Thiếu ENVIRONMENT_MATRIX, audit, restore drill, fail-closed integration, contract authority, S2S proof. |
-| **M1** | One Recruiter End-to-End | `CODE_COMPLETE_DEPLOYED_AWAITING_REAL_USER_PILOT` | P1 chain 6/6 code-complete; CI `38372807924` + VPS `38373171674` success sau PR #134; ×3 zero-residue E2E. Pilot recruiter thật chưa chạy. |
+| **M0** | Production Safety Ready | `PARTIAL` | P0-A 5/10 ACCEPTED_IMPLEMENTATION (1 REFRESHED + 3 IMPLEMENTATION + 5 INSUFFICIENT + 1 NOT_STARTED); P0-B 0/4; P0-C 0/6; P0-D 0/4; P0-E 1/2 + 1/2 PARTIAL. Thiếu ENVIRONMENT_MATRIX, audit, restore drill, fail-closed integration, contract authority, S2S proof. |
+| **M1** | One Recruiter End-to-End | `CODE_COMPLETE_DEPLOYED_AWAITING_M1_PILOT_READY` | P1 chain 6/6 code-complete; CI `38372807924` + VPS `38373171674` success sau PR #134; ×3 zero-residue E2E. Hai cấp evidence phân biệt (xem §6): (a) `M1_PILOT_READY` chưa có; (b) `M1_ACCEPTED_PRODUCTION_VERIFIED` chưa có. |
 | **M2** | Recruiter Public Distribution | `NOT_STARTED` | Microsite route chưa tồn tại. |
 | **M3** | CRM Integration Proof | `INSUFFICIENT_EVIDENCE` | Contract authority + S2S proof chưa có. |
 | **M4** | 5 Recruiters Repeated Usage | `INSUFFICIENT_EVIDENCE` | Pilot chưa chạy. |
@@ -133,7 +141,7 @@ Ghi chú: P0-A KHÔNG chặn M1 pilot vì P1 flow không yêu cầu upload CCCD/
 
 ## 5. Deployment evidence hiện tại
 
-Từ `gh run list` (verified 2026-10-13):
+Từ `gh run list` (verified 2026-10-13) — chỉ ghi các run đã xác minh, không ngoại suy:
 
 ```
 Deploy HRP to VPS   38373171674  main  workflow_run  4m9s   2026-10-13T09:00:00Z   (sau PR #134)
@@ -144,19 +152,27 @@ Deploy HRP to VPS   38256227331  main  workflow_run  3m57s  2026-10-12T13:31:03Z
 CI                  38255822673  main  push          3m32s  2026-10-12T13:27:28Z   (PR #132 merge)
 ```
 
-- CI Quality job (schema · typecheck · lint · unit · build) trong Quality workflow: pass.
-- CI Integration job (DB tests · fail-closed) trong Integration workflow: pass.
-- Deploy HRP to VPS workflow: pass (sau mỗi merge main).
+- 6 run được lấy mẫu đều PASS (CI Quality + Integration + VPS Deploy).
+- `gh run view 38373171674 --log` không truy cập được log chi tiết (HTTP 403, cần admin rights); chỉ verify được workflow name + status qua `gh run list`.
 
-## 6. Code vs Tài liệu & Trình tự
+## 6. Hai cấp M1 evidence (per T0 brief 2026-10-13 C-09)
+
+| Cấp | Trạng thái | Điều kiện |
+|---|---|---|
+| `M1_PILOT_READY` | `INSUFFICIENT_EVIDENCE` (chưa chạy pilot) | Recruiter thật thao tác; dữ liệu synthetic; không CCCD; workflow vận hành |
+| `M1_ACCEPTED_PRODUCTION_VERIFIED` | `INSUFFICIENT_EVIDENCE` (chưa đạt) | Một real controlled candidate/application flow; consent + PII tối thiểu; không CCCD; hoàn tất Placement không cần developer can thiệp |
+
+Synthetic-only pilot KHÔNG tự đóng M1.
+
+## 7. Code vs Tài liệu & Trình tự
 
 - **Code đã deploy production:** P1-A..P1-F (6/6), AFF-01..AFF-04, AFF-05A-R1+R2 (ACCEPTED, R2 chờ T0 production preflight), W5 (handling assignment safety).
 - **Code chỉ có implementation/test chưa wire production:** P0-A02 port, P0-A03 adapter.
-- **Code có migration production:** P0-A04 `evidence_records` (24/09).
+- **Code có migration source, chưa có production application evidence:** P0-A04 `evidence_records` (24/09 source merge; production application `INSUFFICIENT_EVIDENCE`).
 - **Chỉ có tài liệu:** V8, V9, HRP↔CRM contract, P0-B deployment matrix, P0-A05..A10 lifecycle/audit/guard/runbook.
 - **Trình tự plan:** P0 trước, P1 sau, P2+. P0 chưa hoàn tất, nhưng P1 đã chạy được vì P1 flow không yêu cầu evidence thật.
 
-## 7. Dependencies & Next Safe Action
+## 8. Dependencies & Next Safe Action
 
 ### Dependency thực sự
 
@@ -170,12 +186,12 @@ P0-A và P0-B là 2 workstream độc lập, có thể chạy song song sau khi 
 
 ### Next safe action (theo thứ tự T0 chốt 2026-10-13)
 
-1. **Refresh 6 discovery file** (lane này, `codex/t1b-realignment-discovery-refresh-20261013`).
-2. **M1 pilot readiness** — chạy pilot 1 recruiter thật + synthetic data + không CCCD. Phải đạt `M1_PILOT_READY` trước, sau đó `M1_ACCEPTED_PRODUCTION_VERIFIED` (T0 corrections C-04).
+1. **Refresh 6 discovery file** (lane này, `codex/t1b-realignment-discovery-refresh-20261013`) — chờ LIGHT audit.
+2. **M1 pilot readiness** — chạy pilot 1 recruiter thật + synthetic data + không CCCD. Phải đạt `M1_PILOT_READY` trước, sau đó `M1_ACCEPTED_PRODUCTION_VERIFIED`.
 3. **P0-A lifecycle/security** (A05..A10) — song song với M1 pilot (không chặn pilot).
 4. **P0-B deployment boundary** (B01..B04) — song song với M1 pilot.
 5. **P0-C/P0-D contract decision** — T0 chốt mechanism + S2S auth.
-6. **P2 decision** — T0 quyết mở P2-A (V8 Shell) hay P2-B (V8.2 Microsite) trước.
+6. **P2 decision** — T0 quyết mở P2-A (V8 Shell) hay P2-B (V8.2 Microsite) trước; theo unlock conditions §2.
 7. **P3** chỉ sau khi M1 pilot xong.
 8. **P4/P5** chỉ sau khi có evidence real data.
 
@@ -183,10 +199,10 @@ P0-A và P0-B là 2 workstream độc lập, có thể chạy song song sau khi 
 
 Phát hiện từ vòng T1B: discovery matrix §49 cũ ghi NextAction = `NOT_IMPLEMENTED` trong khi source trên main chứng minh `IMPLEMENTED_CANONICAL`. Mọi quyết định P2+ phải dùng discovery đã refresh.
 
-## 8. Artifact Liên kết
+## 9. Artifact Liên kết
 
-- [EVIDENCE_STORAGE_AUDIT.md](./EVIDENCE_STORAGE_AUDIT.md) — refreshed
-- [CRM_CONTRACT_GAP_REPORT.md](./CRM_CONTRACT_GAP_REPORT.md) — refreshed
-- [THIN_SLICE_CAPABILITY_MATRIX.md](./THIN_SLICE_CAPABILITY_MATRIX.md) — refreshed (NextAction = IMPLEMENTED_CANONICAL)
-- [CURRENT_CI_COST_REPORT.md](./CURRENT_CI_COST_REPORT.md) — refreshed (CI run hiện tại)
-- [BLOCKER_REGISTER.md](./BLOCKER_REGISTER.md) — refreshed (đóng BLK-01, BLK-06; thêm BLK-07..09)
+- [`./EVIDENCE_STORAGE_AUDIT.md`](./EVIDENCE_STORAGE_AUDIT.md) — refreshed
+- [`./CRM_CONTRACT_GAP_REPORT.md`](./CRM_CONTRACT_GAP_REPORT.md) — refreshed
+- [`./THIN_SLICE_CAPABILITY_MATRIX.md`](./THIN_SLICE_CAPABILITY_MATRIX.md) — refreshed (NextAction = IMPLEMENTED_CANONICAL)
+- [`./CURRENT_CI_COST_REPORT.md`](./CURRENT_CI_COST_REPORT.md) — refreshed (CI run hiện tại, §52 authority)
+- [`./BLOCKER_REGISTER.md`](./BLOCKER_REGISTER.md) — refreshed (đóng BLK-01, BLK-06; thêm BLK-07..09)

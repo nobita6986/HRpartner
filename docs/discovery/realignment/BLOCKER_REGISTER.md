@@ -1,33 +1,104 @@
 # BLOCKER REGISTER
 
-Tài liệu quản lý và theo dõi các điểm nghẽn (Blockers) hiện tại dựa trên `docs/HRP_EXECUTION_REALIGNMENT_PLAN.md`, đối chiếu với `origin/main @ a87784229e8f06369082cfcd0e36ec63352dadb7` (verified 2026-10-13 sau PR #134).
+**Refreshed baseline SHA:** `a87784229e8f06369082cfcd0e36ec63352dadb7` (origin/main HEAD verified 2026-10-13).
+**Supersede baseline cũ:** `1059f6669482efac5b7956ef25d43996ca59d515` (2026-09-21).
 
-Refresh baseline: `a87784229e8f06369082cfcd0e36ec63352dadb7` (supersede baseline cũ `1059f6669482efac5b7956ef25d43996ca59d515` từ 2026-09-21).
-Authority: `docs/HRP_EXECUTION_REALIGNMENT_PLAN.md` §1, §17–§22, §46–§51.
-Báo cáo khảo sát song hành: vòng T1B (REALIGNMENT_PARTIAL).
+Báo cáo READ-ONLY. Theo [`docs/HRP_EXECUTION_REALIGNMENT_PLAN.md`](../../../docs/HRP_EXECUTION_REALIGNMENT_PLAN.md) §48 (Blocker Register) taxonomy.
 
-## Trạng thái các blocker cũ
+## 1. Trạng thái Blocker hiện tại (canonical)
 
-| ID | Severity | Affected Phase | Description (cập nhật) | Evidence (current main) | Owner | Status | Exit Condition | Task/Lane |
-|---|---|---|---|---|---|---|---|---|
-| **BLK-01** | `P0/HIGH` | P1 (Thin Recruitment Slice) | Lỗi RLS 42501 trên bare writer path. | Fixed 2026-09-21 bởi `tier1/hrp-v6-n2-aff-03b-rls-runtime-fix` (RLS + GUC). AFF-03B CLOSED. | Tier 1B | `CLOSED` (2026-09-21) | Đã PASS — `submitPublicIntake` không còn lỗi 42501. | `tier1/hrp-v6-n2-aff-03b-rls-runtime-fix` (AFF-03B) |
-| **BLK-02** | `P0/HIGH` | P0-A (Evidence Gateway) | Thiếu Storage Adapter cho tệp nhạy cảm (CCCD). | P0-A02 `EvidenceStorage` port (file `src/domains/evidence/evidence-storage.port.ts`) đã ACCEPTED_IMPLEMENTATION_VERIFIED. P0-A03 `LocalVpsEvidenceStorageAdapter` (file `src/domains/evidence/local-vps-evidence-storage.adapter.ts`) đã ACCEPTED_IMPLEMENTATION_VERIFIED. CHƯA có `storeEvidence` command (P0-A05), protected read (P0-A06), delete/quarantine (P0-A07), access audit (P0-A08), production/test environment guard integration-level (P0-A09), backup/restore runbook (P0-A10). | Tier 1B | `PARTIAL — IMPLEMENTED_NOT_PRODUCTION_WIRED` | Hoàn tất P0-A05..A10 + wire call site production + restore drill PASS. | `hrp-p0-a02-er001-evidence-storage-port/`, `hrp-p0-a03-er002-local-vps-evidence-storage-adapter/`, `hrp-p0-a04-er003-evidence-record-metadata/` (đã merge). Còn lại A05..A10 chưa có task docs. |
-| **BLK-03** | `P0/HIGH` | P0-B (VPS Boundary) — Realignment Plan §19 | Chưa có Production VPS Boundary. | VPS deploy workflow (`Deploy HRP to VPS`) đã chạy thành công nhiều lần (CI `38372807924` + VPS `38373171674` sau PR #134; `38279395808` sau PR #133; `38256227331` sau PR #132). Tuy nhiên `docs/ops/ENVIRONMENT_MATRIX.md` chưa tồn tại; boot-time fail-closed validation chưa thấy code (B03); Vercel safety guard chưa thấy (B04). | Owner / OP | `PARTIAL — DEPLOYED_NOT_DOCUMENTED` | Hoàn tất P0-B01..B04 + merge `ENVIRONMENT_MATRIX.md`. | Chưa có task docs chính thức. Branch `codex/hrp-vps-go-live-docs` (02/10) và `vps-image-retention-hotfix` (12/10) chưa merge. PR #93 (VPS public GHCR fix) đã merge 04/10. |
-| **BLK-04** | `P0/MEDIUM` | P0-C (HRP↔CRM Contract) — Realignment Plan §20 | Chưa có HRP↔CRM Contract Authority. | Internal idempotency ở `src/shared/integrity/idempotency.ts` (chỉ local). HRP internal DTOs ở `src/shared/types`. CHƯA có `IntegrationEventEnvelope`, `ActorRef/ConversationRef/ClientContactRef`, outbox table, shared contract authority. CRM repo không thể truy cập từ workspace HRP (gap report chỉ một chiều). | Owner | `OPEN` | T0 chốt contract mechanism (NPM package / OpenAPI / monorepo) + S2S auth (mTLS / JWT / Preshared). | Chưa có task docs. |
-| **BLK-05** | `P0/MEDIUM` | All | Thiếu Discovery Phase (0/6 Artifacts). | 6 file đã sinh tại `docs/discovery/realignment/` từ 2026-09-21 nhưng đã drift. Vòng T1B hiện refresh 6 file về baseline `a8778422`. | Tier 1B (refresh) | `REFRESH_IN_PROGRESS` (T1B, branch `codex/t1b-realignment-discovery-refresh-20261013`) | Commit + push + light audit. 6 file khớp `origin/main @ a8778422`. | `t1b-realignment-discovery-refresh-20261013` (lane hiện tại) |
-| **BLK-06** | `P2/MEDIUM` | V8/V9 | V8/V9 chưa được phép tự động thực thi. | Hierarchy đã chốt tại `HRP_EXECUTION_REALIGNMENT_PLAN.md` §1 + `PLANNER_HANDOVER.md`. T0 đã chốt 10 quyết định 13/10/2026 giữ nguyên boundary này. | Tier 0 | `CLOSED` | Đã chốt hierarchy; T0 vẫn giữ nguyên. | (none) |
+| ID | Mô tả | Loại | Trạng thái | Liên kết |
+|---|---|---|---|---|
+| **BLK-01** | P1-A thin slice deploy VPS path | `DEPLOY_RISK` | **CLOSED 2026-10-13** (P1-Final closeout PR #73; 6 run sau PR đều PASS) | [`./CURRENT_CI_COST_REPORT.md`](./CURRENT_CI_COST_REPORT.md) |
+| **BLK-02** | Evidence Gateway lifecycle/security chưa hoàn tất (P0-A05..A10 — A05 storeEvidence, A06 readEvidence, A07 quarantine, A08 evidence_access_log, A09 integration-level guard, A10 backup/restore runbook). Port + adapter + metadata đã có (A02..A04 ACCEPTED_IMPLEMENTATION_VERIFIED) | `SAFETY_P0` | **ACTIVE** (gate cho `REAL_EVIDENCE_STORAGE_ENABLED=true`) | [`./EVIDENCE_STORAGE_AUDIT.md`](./EVIDENCE_STORAGE_AUDIT.md) |
+| **BLK-03** | LaborProfile RLS 42501 runtime fix | `INTEGRATION_RUNTIME` | **CLOSED 2026-09-21** (`tier1/hrp-v6-n2-aff-03b-rls-runtime-fix`) | [`./THIN_SLICE_CAPABILITY_MATRIX.md`](./THIN_SLICE_CAPABILITY_MATRIX.md) Public Apply row |
+| **BLK-04** | M0 Production Safety Ready | `GOVERNANCE` | **PARTIAL** (xem chi tiết ở §3 dưới đây) | [`./EXECUTION_REALIGNMENT_DISCOVERY.md`](./EXECUTION_REALIGNMENT_DISCOVERY.md) §1 P0 tổng hợp |
+| **BLK-05** | NextAction capability matrix cũ ghi sai (`NOT_IMPLEMENTED`) | `DISCOVERY_DRIFT` | `REFRESH_READY_FOR_LIGHT_AUDIT` (đã refresh tại [`./THIN_SLICE_CAPABILITY_MATRIX.md`](./THIN_SLICE_CAPABILITY_MATRIX.md); chờ T0 LIGHT audit) | [`./THIN_SLICE_CAPABILITY_MATRIX.md`](./THIN_SLICE_CAPABILITY_MATRIX.md) |
+| **BLK-06** | AFF-03B RLS 42501 block | `INTEGRATION_RUNTIME` | **CLOSED 2026-09-21** (cùng task với BLK-03) | [`./THIN_SLICE_CAPABILITY_MATRIX.md`](./THIN_SLICE_CAPABILITY_MATRIX.md) |
+| **BLK-07** | CRM contract authority + S2S chưa có (P0-C/P0-D) | `INTEGRATION_P0` | **ACTIVE** (P0-C02..C06 + P0-D01..D04 NOT_STARTED/INSUFFICIENT_EVIDENCE; chờ T0 chốt contract distribution + S2S auth) | [`./CRM_CONTRACT_GAP_REPORT.md`](./CRM_CONTRACT_GAP_REPORT.md) |
+| **BLK-08** | P0-A và P0-B là 2 workstream chưa tách decision | `COORDINATION_PREREQUISITE` | **NON_BLOCKING_PLANNING** (coordination prerequisite, không phải product blocker; có thể chạy song song sau discovery refresh) | [`./EXECUTION_REALIGNMENT_DISCOVERY.md`](./EXECUTION_REALIGNMENT_DISCOVERY.md) §8 |
+| **BLK-09** | P3-B Recruiter Appearance Lite (V8.2 microsite) | `DEFERRED_BY_OWNER_WITH_TRIGGER` | **DEFERRED** (trigger mở: M1 pilot evidence + T0 quyết định mở P3; P3 chưa được mở) | [`./EXECUTION_REALIGNMENT_DISCOVERY.md`](./EXECUTION_REALIGNMENT_DISCOVERY.md) §2 P3 |
 
-## Blocker mới phát hiện từ vòng T1B refresh
+Tổng: 9 blockers tracked, 4 CLOSED (BLK-01, BLK-03, BLK-06, plus BLK-05 chờ audit), 1 PARTIAL (BLK-04), 2 ACTIVE (BLK-02, BLK-07), 1 DEFERRED (BLK-09), 1 NON_BLOCKING_PLANNING (BLK-08).
 
-| ID | Severity | Affected Phase | Description | Evidence | Owner | Status | Exit Condition | Task/Lane |
-|---|---|---|---|---|---|---|---|---|
-| **BLK-07** | `P1/MEDIUM` | P1 (M1 pilot) | M1 hiện ở trạng thái `CODE_COMPLETE_DEPLOYED_AWAITING_REAL_USER_PILOT`. Pilot chưa chạy. Pilot PHẢI tối thiểu hóa PII: synthetic data, không upload CCCD, mask screenshot, không thêm dependency mới. | T0 corrections COR-08; `docs/tasks/hrp-p1-final-release-safety-closeout/TASK.md` | Tier 1B + Owner | `OPEN` | Pilot M1 chạy với 1 recruiter thật + synthetic data + không CCCD. Pilot evidence gồm API timeline, screenshot masked, recruiter xác nhận bằng văn bản. | TBD (`hrp-m1-pilot-readiness/`) |
-| **BLK-08** | `P0/HIGH` | P0-A + P0-B | P0-A và P0-B chưa tách thành 2 workstream độc lập trong repo. T0 chốt 13/10/2026 cần tách. | T0 corrections COR-07 | Tier 1A + Tier 1B | `OPEN` | Mở `hrp-p0-b-vps-boundary/` (P0-B) và `hrp-p0-a-lifecycle-security/` (P0-A05..A10) như 2 task docs tách biệt. | TBD |
-| **BLK-09** | `P3/MEDIUM` | P3-B (Recruiter Appearance Lite) | Theme foundation (PR #133) + theme picker (PR #134) + contrast (PR #132) chỉ là public portal style foundation. KHÔNG đóng P3-B Recruiter Appearance Lite. | `docs/tasks/hrp-t1c-theme-foundation/`, `docs/tasks/hrp-t2-public-portal-theme-picker/`, PR #133 + #134 | Tier 1A (planning) | `OPEN` | Mở task docs Recruiter Appearance Lite riêng: accent color picker, layout preset, cover/avatar, section ordering, desktop/mobile preview. | TBD |
+## 2. M0 Production Safety Ready (BLK-04) chi tiết
 
-## Quy tắc cập nhật
+M0 trạng thái = `PARTIAL` (1 `REFRESHED_CURRENT_BASELINE_AWAITING_LIGHT_AUDIT` + 3 `ACCEPTED_IMPLEMENTATION_VERIFIED` + 5 `INSUFFICIENT_EVIDENCE` + 1 `NOT_STARTED` trong P0-A; P0-B/C/D/E còn nhiều mục `NOT_STARTED`/`INSUFFICIENT_EVIDENCE`).
 
-- Status chỉ dùng các giá trị: `OPEN`, `IN_PROGRESS`, `PARTIAL — <note>`, `REFRESH_IN_PROGRESS`, `CLOSED`, `SUPERSEDED`.
-- Khi một blocker đã hết hiệu lực nhưng thiếu evidence, KHÔNG tự đóng mà chuyển sang `PARTIAL` với ghi chú evidence còn thiếu.
-- Mỗi `PARTIAL` phải có evidence tham chiếu đến file/SHA/PR/run.
-- Khi thêm blocker mới, severity phải gán `P0/P1/P2/P3/P4/P5/M0..M5` theo phase ảnh hưởng.
+Chi tiết (xem [`./EXECUTION_REALIGNMENT_DISCOVERY.md`](./EXECUTION_REALIGNMENT_DISCOVERY.md) §1):
+
+- **P0-A (Evidence Gateway):** 1/10 REFRESHED, 3/10 ACCEPTED_IMPLEMENTATION, 5/10 INSUFFICIENT_EVIDENCE, 1/10 NOT_STARTED.
+- **P0-B (Deployment Boundary):** 0/4 ACCEPTED, 1/4 IN_PROGRESS, 2/4 INSUFFICIENT_EVIDENCE, 1/4 NOT_STARTED.
+- **P0-C (HRP↔CRM Contract):** 0/6 ACCEPTED, 1/6 IN_PROGRESS, 2/6 NOT_STARTED, 3/6 INSUFFICIENT_EVIDENCE.
+- **P0-D (S2S/Outbox):** 0/4 ACCEPTED, 0/4 IN_PROGRESS, 2/4 INSUFFICIENT_EVIDENCE, 2/4 NOT_STARTED.
+- **P0-E (CI/Governance):** 1/2 ACCEPTED_IMPLEMENTATION_VERIFIED (E02 Direct Fix class), 1/2 PARTIAL_IMPLEMENTATION_VERIFIED (E03 matrix thiếu).
+
+M0 KHÔNG đóng được cho đến khi:
+
+1. BLK-02 lifecycle/security hoàn tất (P0-A05..A10).
+2. BLK-07 CRM contract authority + S2S có (P0-C02..C06, P0-D01..D04).
+3. ENVIRONMENT_MATRIX.md publish (P0-B01).
+4. Vercel safety guard verified (P0-B04).
+5. P0-E03 matrix đầy đủ.
+
+## 3. M1 hai cấp evidence (theo T0 brief 2026-10-13 C-09)
+
+| Cấp | Trạng thái | Điều kiện | Ràng buộc |
+|---|---|---|---|
+| **`M1_PILOT_READY`** | `INSUFFICIENT_EVIDENCE` (chưa chạy pilot) | Recruiter thật thao tác; dữ liệu synthetic; KHÔNG có CCCD; workflow vận hành | Pilot phải tối thiểu hóa PII; KHÔNG bật `REAL_EVIDENCE_STORAGE_ENABLED`; KHÔNG thêm dependency mới; KHÔNG thay đổi schema/migration |
+| **`M1_ACCEPTED_PRODUCTION_VERIFIED`** | `INSUFFICIENT_EVIDENCE` (chưa đạt) | Một real controlled candidate/application flow; consent + PII tối thiểu; KHÔNG có CCCD; hoàn tất Placement không cần developer can thiệp | Cần pilot thật + placement lifecycle tự chạy + observation logs xác minh |
+
+Synthetic-only pilot KHÔNG tự đóng M1.
+
+## 4. P2/P3 unlock conditions (theo T0 brief 2026-10-13 C-10)
+
+Theo Realignment Plan, P2/P3 có unlock conditions **riêng** chứ không bị P0 blanket-block:
+
+- **P2-A (V8.0 Workspace Shell):** cần ActorContext, permissions, workspace navigation ổn định.
+- **P2-B (V8.2 Recruiter Microsite):** cần recruiter public profile, public JobPosting, public Apply, public security boundary.
+- **P3 (Recruiter Growth Slice):** mở bằng quyết định T0 + dependency riêng; M1 evidence là sequencing ưu tiên, KHÔNG phải blanket architecture dependency.
+- **P0-A** chỉ chặn phần sử dụng evidence thật (`REAL_EVIDENCE_STORAGE_ENABLED=true`).
+- **P0-C/D** chỉ chặn integration/CRM-dependent capability (M3, M5).
+
+## 5. Trình tự ưu tiên (theo T0 chốt 2026-10-13)
+
+1. Discovery refresh (lane này, `codex/t1b-realignment-discovery-refresh-20261013`) — chờ LIGHT audit.
+2. M1 pilot readiness — chạy pilot 1 recruiter thật + synthetic data + không CCCD.
+3. BLK-02 lifecycle/security (A05..A10) — song song với M1 pilot (không chặn pilot).
+4. BLK-07 contract + S2S — T0 chốt 2 cơ chế TBD; implementation sau.
+5. BLK-04 M0 — gom từ (3) + (4) + ENVIRONMENT_MATRIX + Vercel safety guard + P0-E03 matrix.
+6. P2-A/P2-B — T0 quyết mở cái nào trước; theo unlock conditions §4.
+7. P3-B — DEFERRED, chỉ mở sau khi M1 pilot xong + T0 quyết định.
+8. P4/P5 — chờ evidence real data.
+
+## 6. Delta so với baseline cũ
+
+| ID | Baseline cũ (2026-09-21) | Refreshed (2026-10-13) | Lý do |
+|---|---|---|---|
+| BLK-01 | ACTIVE (P1-A deploy risk) | CLOSED 2026-10-13 | P1-Final closeout PR #73 + 6 run PASS |
+| BLK-02 | "Thiếu Storage Adapter" | Evidence Gateway lifecycle/security chưa hoàn tất (A05..A10) | Adapter đã có (A03 ACCEPTED_IMPLEMENTATION_VERIFIED); chỉ thiếu lifecycle commands + audit + runbook |
+| BLK-03 | ACTIVE (RLS 42501 block AFF) | CLOSED 2026-09-21 | `tier1/hrp-v6-n2-aff-03b-rls-runtime-fix` merged |
+| BLK-04 | NOT_MEASURED | PARTIAL | P0-A/B/C/D/E đã đo đếm chi tiết |
+| BLK-05 | REFRESH_IN_PROGRESS | REFRESH_READY_FOR_LIGHT_AUDIT | 6 file refresh xong; chờ T0 LIGHT audit |
+| BLK-06 | ACTIVE (AFF-03B RLS) | CLOSED 2026-09-21 | cùng task với BLK-03 |
+| BLK-07 | — (chưa tồn tại) | ACTIVE (P0-C/D contract + S2S) | tách khỏi BLK-02 để theo dõi riêng |
+| BLK-08 | ACTIVE (workstream separation) | NON_BLOCKING_PLANNING (coordination prerequisite) | không phải product blocker; có thể chạy song song |
+| BLK-09 | ACTIVE (Appearance Lite chưa làm) | DEFERRED_BY_OWNER_WITH_TRIGGER | P3 chưa mở; trigger = M1 pilot evidence + T0 quyết định |
+
+## Kết luận
+
+- **Production blocker thật còn ACTIVE:** BLK-02 (Evidence Gateway lifecycle/security), BLK-07 (CRM contract + S2S).
+- **BLK-05** đã refresh xong, chờ T0 LIGHT audit chốt ACCEPTED.
+- **M1 pilot** không bị BLK-02 chặn vì P1 flow không yêu cầu evidence thật.
+- **P2/P3** không bị P0 blanket-block; unlock conditions riêng theo plan.
+
+## Liên kết
+
+- Realignment Plan: [`docs/HRP_EXECUTION_REALIGNMENT_PLAN.md`](../../../docs/HRP_EXECUTION_REALIGNMENT_PLAN.md) §48 (Blocker Register), §17 (P0-A), §19 (P0-B), §20 (P0-C), §21 (P0-D), §22 (P0-E), §10 (Architectural authority), §59 (Owner Decision Log)
+- Source evidence:
+  - [`src/domains/evidence/evidence-storage.port.ts`](../../../src/domains/evidence/evidence-storage.port.ts)
+  - [`src/domains/evidence/local-vps-evidence-storage.adapter.ts`](../../../src/domains/evidence/local-vps-evidence-storage.adapter.ts)
+  - [`prisma/schema.prisma`](../../../prisma/schema.prisma) (line 1873 `model EvidenceRecord`)
+  - [`prisma/migrations/20260924120000_er003_evidence_record_metadata/migration.sql`](../../../prisma/migrations/20260924120000_er003_evidence_record_metadata/migration.sql)
+  - [`src/shared/integrity/idempotency.ts`](../../../src/shared/integrity/idempotency.ts)
+- Discovery đồng hành: [`EXECUTION_REALIGNMENT_DISCOVERY.md`](./EXECUTION_REALIGNMENT_DISCOVERY.md), [`EVIDENCE_STORAGE_AUDIT.md`](./EVIDENCE_STORAGE_AUDIT.md), [`CRM_CONTRACT_GAP_REPORT.md`](./CRM_CONTRACT_GAP_REPORT.md), [`THIN_SLICE_CAPABILITY_MATRIX.md`](./THIN_SLICE_CAPABILITY_MATRIX.md), [`CURRENT_CI_COST_REPORT.md`](./CURRENT_CI_COST_REPORT.md)
