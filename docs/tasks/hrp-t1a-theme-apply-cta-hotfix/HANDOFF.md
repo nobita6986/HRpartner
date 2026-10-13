@@ -11,8 +11,8 @@
 | Audit mode | `NONE` |
 | Execution round | `3` (R0 round 1, R1 round 2, R2 round 3) |
 | Baseline | `5cfbca12e948c3a207f61db06fe7001c9cc248d2` |
-| Implementation SHA | `88e1221c6935a5c7c204a72bc12ada4d93b0b4fb` |
-| Implementation SHA note | HEAD = `88e1221c`; semantic code/test/probe ở `a22fd2b6` (commit trước); commit pin SHA + 1 cleanup là docs-only. |
+| Implementation SHA | `fa9f49fb` (HEAD sau R2) |
+| Implementation SHA note | HEAD = `fa9f49fb` (R2 commit: overlay 85%, body no opacity, real probe). |
 | Frozen delivery | `YES` |
 | Canonical gates | `NOT_REQUIRED` |
 | Audit eligibility | `NOT_REQUIRED` |
@@ -238,8 +238,16 @@ Báo cáo R0 trước đó ghi nhầm là "docs-only, 0 semantic delta" — đã
 - Update `docs/tasks/.../TASK.md` (v1.3) + `HANDOFF.md` (v1.3)
 - Probe scripts mới: `evidence/probe-state1-gradient.ps1` + `evidence/probe-state2-overlay.ps1` (exit 0, 5/5 PASS cả 2)
 
-### Commit R2 (sẽ thực hiện, pin SHA mới)
+### Commit R2 (đã thực hiện, pin SHA mới)
 
-R2 commit: thêm/sửa semantic 3 file + 2 probe script mới + update docs (v1.3). HEAD freeze mới sẽ được pin sau khi commit.
+R2 commit `fa9f49fb`: thêm/sửa semantic 3 file + 2 probe script mới + update docs (v1.3).
+
+- Sửa `src/domains/job-board/components/landing/hero.tsx`: overlay tăng từ `bg-primary-dark/55` → `bg-primary-dark/85`
+- Sửa `app/(portal)/page.tsx`: bỏ `opacity-90` ở body Hero
+- Viết lại `src/shared/theme/__tests__/hero-eyebrow-contrast.test.ts`: 26/26 PASS
+- Update `docs/tasks/.../TASK.md` (v1.3) + `HANDOFF.md` (v1.3)
+- Probe scripts mới: `evidence/probe-state1-gradient.ps1` + `evidence/probe-state2-overlay.ps1` (exit 0, 5/5 PASS cả 2)
+
+HEAD freeze R2 = `fa9f49fb`. Cả R1 (`bdcef0f8`) và R2 (`fa9f49fb`) đều là semantic commits, không docs-only.
 
 > Handoff status: `READY_FOR_REVIEW`
