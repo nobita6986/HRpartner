@@ -6,43 +6,68 @@
 |---|---|
 | Task | `hrp-t1a-theme-apply-cta-hotfix` |
 | Delivery protocol | `V2_FAST_FREEZE` |
-| Spec version | `v1.1` |
+| Spec version | `v1.2` |
 | Assurance lane | `FAST` |
 | Audit mode | `NONE` |
-| Execution round | `1` |
+| Execution round | `2` (R0 round 1, R1 round 2) |
 | Baseline | `5cfbca12e948c3a207f61db06fe7001c9cc248d2` |
-| Implementation SHA | `6538892c5932a76818018f6be9e1d76487fd9712` |
+| Implementation SHA | `d10f034a8fa67fd0161a565ea8ddfdfb19acb65b` (R1 follow-up) |
 | Frozen delivery | `YES` |
 | Canonical gates | `NOT_REQUIRED` |
 | Audit eligibility | `NOT_REQUIRED` |
-| Correction batches used | `0` |
+| Correction batches used | `1` |
 | Status | `READY_FOR_REVIEW` |
 
 ## 1. Outcome and changed surface
 
-- **Delivered:** Nút Ứng tuyển (3 site) đổi màu theo theme đang chọn — cascade qua `--color-apply-cta` (alias `var(--color-primary-dark)`) và `--color-apply-cta-dark` (color-mix 82% PD + 18% #000). Default text `var(--color-on-primary)` (white), hover text `var(--color-on-primary)` (white), focus-visible `var(--color-focus-ring)` (PD), disabled giữ nguyên. Không tạo class mới, không đổi markup, không đổi palette hex, không sửa `theme-tokens.ts` / `theme-types.ts`. Token cũ `--color-primary-cta*` giữ nguyên giá trị hex cũ (#f07f1a / #c2520a) làm alias ngược.
-- **Delivered (follow-up R0→R1):** Eyebrow "Cùng tìm kiếm" trên hero đổi `text-secondary-fixed` → `text-on-primary` (white) đồng bộ với h1, pass ≥ 4.5:1 trên gradient và overlay ảnh ở 5/5 palette. Heading "Chương trình Cộng tác viên" đổi `text-primary-container` → `text-primary-dark`, pass ≥ 4.5:1 ở 5/5 palette trên nền `bg-primary-fixed/20`.
-- **Changed:**
-  - `app/globals.css` (token + `.hrp-btn-apply` block + comment).
-  - `src/shared/theme/__tests__/theme-cta-foreground.test.ts` (viết lại cho contract mới + probe 5/5 palette).
-  - `src/shared/theme/__tests__/globals-css-theme-scope.test.ts` (AC-08: đổi assertion từ `--color-primary-cta` → `--color-apply-cta`, giữ khóa token cũ còn tồn tại + khóa cả 2 token cũ+mới không bị override trong `[data-theme]`).
-  - `src/domains/job-board/components/__tests__/apply-cta-tone-soften.static.test.ts` (đổi regex/token name).
-  - `src/domains/job-board/components/landing/featured-job-card.test.ts` (chỉ 3 it() trong khối AC về CTA).
-  - `app/(portal)/page.tsx` (eyebrow hero: `text-secondary-fixed` → `text-on-primary`).
-  - `src/domains/job-board/components/landing/referral-strip.tsx` (heading CTV: `text-primary-container` → `text-primary-dark`).
-  - `docs/tasks/hrp-t1a-theme-apply-cta-hotfix/{TASK,HANDOFF}.md` (mới, READY_TO_CODE).
-- **Lane escalation:** No.
+- **Delivered (CTA theme — R0):** Nút Ứng tuyển (3 site) đổi màu theo theme đang chọn — cascade qua `--color-apply-cta` (alias `var(--color-primary-dark)`) và `--color-apply-cta-dark` (color-mix 82% PD + 18% #000). Default text `var(--color-on-primary)` (white), hover text `var(--color-on-primary)` (white), focus-visible `var(--color-focus-ring)` (PD), disabled giữ nguyên. Không tạo class mới, không đổi markup, không đổi palette hex, không sửa `theme-tokens.ts` / `theme-types.ts`. Token cũ `--color-primary-cta*` giữ nguyên giá trị hex cũ (#f07f1a / #c2520a) làm alias ngược.
+- **Delivered (heading contrast — R0 round 1):** Heading "Chương trình Cộng tác viên" trong `referral-strip.tsx` đổi `text-primary-container` → `text-primary-dark`, pass ≥ 4.5:1 ở 5/5 palette trên nền `bg-primary-fixed/20`.
+- **Delivered (Hero eyebrow — R0 round 1):** Eyebrow "Cùng tìm kiếm" ở `app/(portal)/page.tsx` đổi `text-secondary-fixed` → `text-on-primary` (white) — đồng bộ với H1. **Đây là fix ban đầu; sau R1 review phát hiện white trên gradient PC→PF bottom chỉ 1.23-1.40:1 → FAIL WCAG AA 5/5 theme khi text dài xuống dưới section.**
+- **Delivered (Hero 2-state contrast — R1 round 2):** Hero copy container className dùng conditional theo `heroImage` — `heroImage ? 'text-on-primary' : 'text-primary-dark'`. Áp dụng ở container (1 điểm sửa duy nhất) thay vì 3 child riêng lẻ, loại bỏ hoàn toàn class `text-on-primary` / `text-secondary-fixed` hardcode ở eyebrow `<p>`, `<h1>` và body `<p>`. State 1 (no image, gradient `from-primary-container to-primary-fixed`): `text-primary-dark` đạt 5/5 ≥ 5.0:1 (HRP 5.013 / Ocean 7.838 / Emerald 6.570 / Violet 8.899 / Gold 6.855). State 2 (image, overlay `bg-primary-dark/55`): `text-on-primary` là best-effort; pre-existing limitation của overlay (xem RISK-04, EV-09).
+
+### Changed surface (trung thực với `git diff a42bb319..fd84297f`)
+
+`git diff a42bb319..fd84297f -- app src prisma tests` chứa **4 file semantic + 2 file docs/artifact**:
+
+| File | Loại thay đổi | Mô tả ngắn |
+|---|---|---|
+| `app/(portal)/page.tsx` | semantic | Eyebrow `text-secondary-fixed` → `text-on-primary` (R0), sau đó container className conditional theo `heroImage` (R1) |
+| `src/domains/job-board/components/landing/referral-strip.tsx` | semantic | Heading CTV `text-primary-container` → `text-primary-dark` |
+| `src/shared/theme/__tests__/globals-css-theme-scope.test.ts` | semantic | AC-08: đổi assertion từ `--color-primary-cta` → `--color-apply-cta`, giữ khóa token cũ còn tồn tại + khóa cả 2 token cũ+mới không bị override trong `[data-theme]` |
+| `src/shared/theme/__tests__/theme-cta-foreground.test.ts` | semantic | Viết lại cho contract mới + probe 5/5 palette |
+| `app/globals.css` | semantic | Thêm token `--color-apply-cta*`; sửa `.hrp-btn-apply` block; comment |
+| `src/domains/job-board/components/__tests__/apply-cta-tone-soften.static.test.ts` | semantic | Đổi regex/token name |
+| `src/domains/job-board/components/landing/featured-job-card.test.ts` | semantic | Cập nhật block AC về CTA "Ứng tuyển" |
+
+Trong đó 4 file (`page.tsx`, `referral-strip.tsx`, `globals-css-theme-scope.test.ts`, `theme-cta-foreground.test.ts`) **KHÔNG phải docs-only** như báo cáo R0 trước đó ghi nhầm — chúng đã chứa thay đổi semantic thật từ R0 round 1. R1 round 2 thêm/sửa ở `app/(portal)/page.tsx` (Hero copy container) + file test mới `src/shared/theme/__tests__/hero-eyebrow-contrast.test.ts` (probe 2-state).
+
+### Changed surface bổ sung R1 round 2 (sẽ commit)
+
+| File | Loại thay đổi | Mô tả ngắn |
+|---|---|---|
+| `app/(portal)/page.tsx` | semantic (R1) | Hero copy container dùng `heroImage ? 'text-on-primary' : 'text-primary-dark'`; 3 child (eyebrow `<p>`, `<h1>`, body `<p>`) bỏ class text-color cứng |
+| `src/shared/theme/__tests__/hero-eyebrow-contrast.test.ts` | mới (T1A) | 2-state contrast assertion (regex + probe 5/5 theme) |
+| `docs/tasks/hrp-t1a-theme-apply-cta-hotfix/TASK.md` | docs (v1.2) | Thêm EV-09, DEC-T1A-07, RISK-04, AC-10, In-scope roots |
+| `docs/tasks/hrp-t1a-theme-apply-cta-hotfix/HANDOFF.md` | docs (v1.2) | Trung thực semantic delta + R1 fix + limitation state 2 |
+| `docs/tasks/hrp-t1a-theme-apply-cta-hotfix/evidence/*` | mới (probe) | `probe-eyebrow.ps1`, `probe-hero-2state.ps1`, `probe-pd-overlay.ps1` |
+
+### Lane escalation
+
+- Không có.
 
 ### Self-review checklist
 
 | Surface | Result | Evidence / N/A reason |
 |---|---|---|
-| Contract and diff scope | PASS | `git diff --check` exit 0; 4 file semantic + 1 file artifact, đều trong `In-scope roots` |
+| Contract and diff scope | PASS | `git diff --check` exit 0; tất cả file thuộc `In-scope roots` (R0+R1); semantic delta đã khai báo trung thực ở §1 |
 | API/route boundary | N/A | Không đổi route, không đổi API |
-| Auth/permission/data exposure | N/A | UI token thuần; không đụng data, auth, RLS |
-| Migration/backfill/rollback | N/A | CSS token; rollback = revert 1 commit `a42bb319` |
-| Concurrency/idempotency | N/A | Static CSS; không có side-effect runtime |
-| Test isolation and cleanup | PASS | Test trong scope T1-A; T1C-owned test không sửa (chỉ sửa `.hrp-btn-apply` content bên trong, T1C AC-17 vẫn pass vì CTA block không nằm trong `[data-theme]`) |
+| Auth/permission/data exposure | N/A | UI token + className thuần; không đụng data, auth, RLS |
+| Migration/backfill/rollback | N/A | CSS token + className; rollback = revert 2 commit R0 + R1 |
+| Concurrency/idempotency | N/A | Static CSS + React render; không có side-effect runtime |
+| Test isolation and cleanup | PASS | Test trong scope T1-A; T1C-owned `globals-css-theme-scope.test.ts` chỉ sửa AC-08 assertion về token name, không đụng cấu trúc [data-theme] block; thêm test mới `hero-eyebrow-contrast.test.ts` (T1A-owned) |
+| WCAG AA contrast (CTA theme) | PASS | Probe 5/5 theme × 5/5 state (default + hover + focus + disabled + 2-state eyebrow) đều pass ≥ 4.5:1 normal text / ≥ 3:1 UI |
+| WCAG AA contrast (Hero state 1) | PASS | `text-primary-dark` trên gradient PC→PF 5/5 ≥ 5.0:1 |
+| WCAG AA contrast (Hero state 2) | LIMITATION | White trên overlay 55% 2.88-4.16 ở 5 theme; PD trên overlay 55% 2.16-2.99 ở 5 theme — pre-existing issue của `bg-primary-dark/55`, document trong RISK-04; tạo follow-up task `hrp-t1a-hero-overlay-scrim` |
 
 ## 2. Acceptance evidence
 
@@ -50,7 +75,7 @@ Dòng đầu là verify-task. Mỗi command đăng ký một lần bằng `E-xx`
 
 | AC | Evidence | Result | Limitation |
 |---|---|---|---|
-| — | `E-00`: `powershell -NoProfile -ExecutionPolicy Bypass -File ".ai-pipeline/scripts/verify-task.ps1" -TaskPath "docs/tasks/hrp-t1a-theme-apply-cta-hotfix/TASK.md"` | `RESULT: PASS` (14 OK lines, 0 error, 0 warning) | None |
+| — | `E-00`: `powershell -NoProfile -ExecutionPolicy Bypass -File ".ai-pipeline/scripts/verify-task.ps1" -TaskPath "docs/tasks/hrp-t1a-theme-apply-cta-hotfix/TASK.md"` | `RESULT: PASS` (kỳ vọng 16+ OK, 0 error, 0 warning) | None |
 | `AC-01` | `E-01`: `Select-String -Path "app/globals.css" -Pattern "background-color:\s*var\(--color-apply-cta\)"` | match trong block `.hrp-btn-apply {` | None |
 | `AC-02` | `E-01`: same | `color: var(--color-on-primary)` | None |
 | `AC-03` | `E-02`: PowerShell probe (5/5 palette ≥ 4.5:1) | HRP 6.468 / Ocean 9.647 / Emerald 8.272 / Violet 12.438 / Gold 8.577 | Probe nội bộ (không cần Node) |
@@ -61,26 +86,53 @@ Dòng đầu là verify-task. Mỗi command đăng ký một lần bằng `E-xx`
 | `AC-06` | `E-04`: PowerShell probe on-surface-variant #594138 on surface-container #efeeec | 8.093:1 | None |
 | `AC-07` | `E-05`: `Select-String` trên 3 file `.tsx` (FeaturedJobCard, JobCard, DetailApplyCta) đều chứa `hrp-btn-apply` | cả 3 file match | None |
 | `AC-08` | `E-06`: `--color-apply-cta` alias PD + `--color-primary-cta` hex cũ còn tồn tại; block `.hrp-btn-apply` ref `--color-apply-cta` | match | None |
-| `AC-09` | `E-07`: `Select-String -Path "app/(portal)/page.tsx" -Pattern "text-on-primary"` + check NOT `text-secondary-fixed`; `Select-String -Path "src/domains/job-board/components/landing/referral-strip.tsx" -Pattern "text-primary-dark"` + check NOT `text-primary-container` | match cả 2 heading token mới | None |
+| `AC-09` | `E-07`: `Select-String -Path "app/(portal)/page.tsx" -Pattern "text-on-primary"` expect ≥1 trong conditional container + `text-secondary-fixed` expect 0 trong Hero section; `Select-String -Path "src/domains/job-board/components/landing/referral-strip.tsx" -Pattern "text-primary-dark"` expect ≥1 + `text-primary-container` expect 0 trong heading | match cả 2 heading token mới + Hero section sạch `text-secondary-fixed` | None |
+| `AC-10` | `E-08` (R1 mới): regex trên `app/(portal)/page.tsx` tìm `heroImage \? 'text-on-primary' : 'text-primary-dark'`; regex kiểm tra eyebrow `<p>` không còn `text-on-primary` / `text-secondary-fixed`; test `hero-eyebrow-contrast.test.ts` probe state 1 (5/5 ≥ 5.0) + structural state 2 | match conditional + 3 child sạch + probe state 1 PASS 5/5 | State 2 limitation documented (RISK-04) |
 
 ## 3. Evidence registry
 
-Log ngắn để inline; chỉ tạo `evidence/*` cho output dài, LIVE transcript hoặc ảnh cần lưu.
+Log ngắn để inline; probe script ở `docs/tasks/hrp-t1a-theme-apply-cta-hotfix/evidence/`.
 
 | Evidence | Command / method | Exit / measured result | Artifact |
 |---|---|---|---|
-| `E-00` | `powershell -NoProfile -ExecutionPolicy Bypass -File ".ai-pipeline/scripts/verify-task.ps1" -TaskPath "docs/tasks/hrp-t1a-theme-apply-cta-hotfix/TASK.md"` | exit 0; `RESULT: PASS`; 14 OK / 0 error / 0 warning | inline |
-| `E-01` | `Select-String -Path "app/globals.css" -Pattern 'background-color:\s*var\(--color-apply-cta\)\|color:\s*var\(--color-on-primary\)\|background-color:\s*var\(--color-apply-cta-dark\)\|--color-apply-cta[^;]*;\|--color-apply-cta-dark[^;]*;\|\.hrp-btn-apply:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--color-focus-ring\)\|\.hrp-btn-apply:disabled\s*\{[^}]*cursor:\s*not-allowed'` | match đủ 7 token/block; CTA token + color:on-primary + hover token + focus ring 2px + disabled cursor:not-ailed | inline |
-| `E-02` | PowerShell probe — `relativeLuminance(hex)` theo WCAG 2.x; tính `contrast(white, PD)` cho 5 palette hex trong `src/shared/theme/theme-tokens.ts` | HRP 6.468 / Ocean 9.647 / Emerald 8.272 / Violet 12.438 / Gold 8.577 — 5/5 ≥ 4.5:1 | inline (xem §2 AC-03) |
-| `E-03` | PowerShell probe — `color-mix(PD 82%, #000)` rồi `contrast(white, mix)` | HRP 8.503 / Ocean 11.663 / Emerald 10.320 / Violet 14.295 / Gold 10.618 — 5/5 ≥ 4.5:1 | inline (xem §2 AC-04) |
-| `E-04` | PowerShell probe — `contrast(#594138, #efeeec)` (on-surface-variant / surface-container) | 8.093:1 ≥ 4.5:1 | inline (xem §2 AC-06) |
-| `E-05` | `Select-String -Path "src/domains/job-board/components/landing/featured-job-card.tsx" -Pattern "hrp-btn-apply"` + tương tự cho `app/(jobs)/viec-lam/page.tsx` và `src/domains/job-board/components/detail-apply-cta.tsx` | cả 3 file chứa `hrp-btn-apply`; test `theme-shell-mount.test.ts` (T1B-owned) đã khóa contract này ở baseline và giữ nguyên | inline (xem §2 AC-07) |
-| `E-06` | `Select-String -Path "app/globals.css" -Pattern "--color-apply-cta:var\(--color-primary-dark\)"` + `--color-primary-cta` hex literal còn tồn tại; `Select-String -Path "app/globals.css" -Pattern "\.hrp-btn-apply.*{" -Context 3` | match `--color-apply-cta` alias PD + `--color-primary-cta` hex cũ; block `.hrp-btn-apply` ref `--color-apply-cta` | inline |
-| `E-07` | `Select-String -Path "app/(portal)/page.tsx" -Pattern "text-on-primary"` expect ≥1; `Select-String -Path "app/(portal)/page.tsx" -Pattern "text-secondary-fixed"` expect 0 trong eyebrow; `Select-String -Path "src/domains/job-board/components/landing/referral-strip.tsx" -Pattern "text-primary-dark"` expect ≥1; `Select-String -Path "src/domains/job-board/components/landing/referral-strip.tsx" -Pattern "text-primary-container"` expect 0 trong heading | match cả 4 grep; heading tokens mới đúng vị trí | inline |
+| `E-00` | `powershell -NoProfile -ExecutionPolicy Bypass -File ".ai-pipeline/scripts/verify-task.ps1" -TaskPath "docs/tasks/hrp-t1a-theme-apply-cta-hotfix/TASK.md"` | exit 0; `RESULT: PASS` | inline |
+| `E-01` | `Select-String -Path "app/globals.css" -Pattern 'background-color:\s*var\(--color-apply-cta\)\|color:\s*var\(--color-on-primary\)\|background-color:\s*var\(--color-apply-cta-dark\)\|--color-apply-cta[^;]*;\|--color-apply-cta-dark[^;]*;\|\.hrp-btn-apply:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--color-focus-ring\)\|\.hrp-btn-apply:disabled\s*\{[^}]*cursor:\s*not-allowed'` | match đủ 7 token/block | inline |
+| `E-02` | PowerShell probe — `relativeLuminance(hex)` theo WCAG 2.x; `contrast(white, PD)` cho 5 palette | HRP 6.468 / Ocean 9.647 / Emerald 8.272 / Violet 12.438 / Gold 8.577 — 5/5 ≥ 4.5:1 | inline + `evidence/probe-eyebrow.ps1` |
+| `E-03` | PowerShell probe — `color-mix(PD 82%, #000)` rồi `contrast(white, mix)` | HRP 8.503 / Ocean 11.663 / Emerald 10.320 / Violet 14.295 / Gold 10.618 — 5/5 ≥ 4.5:1 | inline |
+| `E-04` | PowerShell probe — `contrast(#594138, #efeeec)` (on-surface-variant / surface-container) | 8.093:1 ≥ 4.5:1 | inline |
+| `E-05` | `Select-String` trên 3 file `.tsx` (FeaturedJobCard, JobCard, DetailApplyCta) đều chứa `hrp-btn-apply` | cả 3 file match | inline |
+| `E-06` | `Select-String -Path "app/globals.css" -Pattern "--color-apply-cta:var\(--color-primary-dark\)"` + `--color-primary-cta` hex literal còn tồn tại | match | inline |
+| `E-07` | `Select-String -Path "app/(portal)/page.tsx" -Pattern "text-on-primary"` expect ≥1 (conditional container); `text-secondary-fixed` expect 0 trong Hero section; `referral-strip.tsx` `text-primary-dark` ≥1, `text-primary-container` =0 trong heading | match cả 4 grep | inline |
+| `E-08` (R1) | regex `heroImage\s*\?\s*['"]text-on-primary['"]\s*:\s*['"]text-primary-dark['"]` trên `app/(portal)/page.tsx`; regex kiểm tra 3 child Hero copy sạch `text-on-primary`/`text-secondary-fixed`; probe state 1 = `text-primary-dark` trên `from-primary-container to-primary-fixed` 5/5 ≥ 5.0:1 | match conditional + 3 child sạch + probe 5/5 PASS | `evidence/probe-hero-2state.ps1`, `evidence/probe-pd-overlay.ps1` |
+| `E-09` (R1 limitation) | probe state 2: white trên `bg-primary-dark/55` (alpha-composited over PC/PF) chỉ 2.88-4.16; PD trên cùng overlay chỉ 2.16-2.99 — pre-existing issue của overlay, không thuộc hotfix scope | FAIL 5/5 normal text; chỉ violet 4.16 gần pass large text 3:1 | inline (xem §4 Limitation) |
 
-Probe bằng helper PowerShell inline (công thức WCAG 2.x). Token lấy từ `src/shared/theme/theme-tokens.ts` (T1C-owned, v1.2 hex).
+### Bảng probe Hero 2-state (R1 mới)
 
-### Nút Ứng tuyển — token mới (T1-A)
+State 1 (gradient, no image) — dùng `text-primary-dark`:
+
+| Theme | PC | PF | PD/PC | PD/PF |
+|---|---|---|---|---|
+| HR Partner | #fde6d8 | #ffdbce | 5.386 | **5.013** |
+| Ocean Trust | #d6ebf5 | #d6ebf5 | **7.838** | 7.838 |
+| Emerald Growth | #d2ebde | #d2ebde | **6.570** | 6.570 |
+| Violet Future | #e1d5f4 | #e1d5f4 | **8.899** | 8.899 |
+| Executive Gold | #f0e6c0 | #f0e6c0 | **6.855** | 6.855 |
+
+5/5 ≥ 5.0:1 PASS WCAG AA 4.5:1 (text thường).
+
+State 2 (overlay `bg-primary-dark/55` alpha-composited over PC/PF) — dùng `text-on-primary` (best-effort):
+
+| Theme | overPC | overPF | white/overPC | white/overPF |
+|---|---|---|---|---|
+| HR Partner | #cd8861 | #ce835d | 2.881 | 2.988 |
+| Ocean Trust | #6792a5 | #6792a5 | 3.370 | 3.370 |
+| Emerald Growth | #669b83 | #669b83 | 3.191 | 3.191 |
+| Violet Future | #8871b1 | #8871b1 | 4.164 | 4.164 |
+| Executive Gold | #9f905b | #9f905b | 3.175 | 3.175 |
+
+White 2.88-4.16 ở 5 theme — FAIL 4/5 WCAG AA 4.5:1 (chỉ violet gần 4.16). PD trên overlay 2.16-2.99 — FAIL 5/5. **Không có class nào pass WCAG AA 4.5:1 trên overlay hiện tại** — pre-existing limitation của `bg-primary-dark/55` (overlay không đủ tối khi nền PC/PF quá sáng). Follow-up task `hrp-t1a-hero-overlay-scrim` cần tăng overlay lên 70-80% hoặc thêm dark scrim.
+
+### Bảng probe CTA theme (R0)
 
 | Theme | PD hex | white on PD | mix(PD 82%, #000) | white on mix | PD on surface (focus ring) |
 |---|---|---|---|---|---|
@@ -92,61 +144,92 @@ Probe bằng helper PowerShell inline (công thức WCAG 2.x). Token lấy từ 
 
 5/5 palette, default + hover + focus đều pass ≥ 4.5:1 text / ≥ 3:1 UI.
 
-### Heading "Cùng tìm kiếm" eyebrow — gợi ý token cho `app/(portal)/page.tsx`
+### Bảng probe Heading CTV (R0)
 
-Eyebrow hiện tại dùng `text-secondary-fixed` (#ffdcc5) trên `from-primary-container to-primary-fixed` (gradient HRP). Probe 5/5 palette vs `--color-primary-container` (PC, surface hue):
+Heading "Chương trình Cộng tác viên" dùng `text-primary-dark` trên `bg-primary-fixed/20` (#fbf3ef):
 
-| Theme | PC hex | secFix on PC | PD on PC | white on PC |
-|---|---|---|---|---|
-| HR Partner | #fde6d8 | 1.073:1 FAIL | 5.386:1 PASS | 13.529:1 PASS |
-| Ocean Trust | #d6ebf5 | 1.047:1 FAIL | 7.838:1 PASS | 14.067:1 PASS |
-| Emerald Growth | #d2ebde | 1.023:1 FAIL | 6.570:1 PASS | 13.926:1 PASS |
-| Violet Future | #e1d5f4 | 1.085:1 FAIL | 8.899:1 PASS | 10.196:1 PASS |
-| Executive Gold | #f0e6c0 | 1.030:1 FAIL | 6.855:1 PASS | 12.234:1 PASS |
+| Theme | PC on bg | PD on bg | PD on surface |
+|---|---|---|---|
+| HR Partner | 1.096:1 FAIL | **5.903:1** PASS | 6.147:1 PASS |
+| Ocean Trust | 1.124:1 FAIL | **8.806:1** PASS | 9.097:1 PASS |
+| Emerald Growth | 1.149:1 FAIL | **7.551:1** PASS | 7.806:1 PASS |
+| Violet Future | 1.276:1 FAIL | **11.353:1** PASS | 11.360:1 PASS |
+| Executive Gold | 1.142:1 FAIL | **7.829:1** PASS | 8.132:1 PASS |
 
-`text-secondary-fixed` FAIL cả 5/5 palette trên PC. Tác vụ khác nên đổi sang `text-primary-dark` (5/5 PASS) hoặc giữ `text-on-primary` (white) để đồng bộ h1 (5/5 PASS).
-
-Lưu ý: nếu Admin chọn ảnh nền (`backgroundImage != null`), overlay `bg-primary-dark/55` chiếm phần lớn. Probe `text-secondary-fixed` trên mix overlay 55%:
-
-| Theme | overlay mix (PD + white 55%) | secFix on overlay |
-|---|---|---|
-| HR Partner | #ce9373 | 2.025:1 FAIL |
-| Ocean Trust | #9584b6 | 2.299:1 FAIL |
-| Emerald Growth | #a69b77 | 2.158:1 FAIL |
-| Violet Future | #7a9ba9 | 2.606:1 FAIL |
-| Executive Gold | #955a3a | 2.151:1 FAIL |
-
-5/5 FAIL. Nên đổi sang `text-on-primary` (white) — probe ≥ 9.867:1 (HRP) ở 5/5 palette, hoặc sang `text-primary-dark` đậm hơn.
-
-### Heading "Chương trình Cộng tác viên" — gợi ý cho `referral-strip.tsx`
-
-Heading hiện tại dùng `text-primary-container` (PC) trên `bg-primary-fixed/20` (mix 20% primary-fixed #ffdbce + 80% surface #faf9f7 = #fbf3ef). Probe 5/5 palette:
-
-| Theme | bg mix | PC on bg | PD on bg | PD on surface |
-|---|---|---|---|---|
-| HR Partner | #fbf3ef | 1.096:1 FAIL | 5.903:1 PASS | 6.147:1 PASS |
-| Ocean Trust | #fbf3ef | 1.124:1 FAIL | 8.806:1 PASS | 9.097:1 PASS |
-| Emerald Growth | #fbf3ef | 1.149:1 FAIL | 7.551:1 PASS | 7.806:1 PASS |
-| Violet Future | #fbf3ef | 1.276:1 FAIL | 11.353:1 PASS | 11.360:1 PASS |
-| Executive Gold | #fbf3ef | 1.142:1 FAIL | 7.829:1 PASS | 8.132:1 PASS |
-
-PC FAIL 5/5 palette. Nên đổi sang `text-primary-dark` (5/5 PASS ≥ 4.5:1).
+PC FAIL 5/5 palette. PD PASS 5/5 ≥ 4.5:1.
 
 ## 4. Deviations and blockers
 
-| ID | Type | Description / evidence | Decision needed |
-|---|---|---|---|
-| — | — | None | No |
+**Deviations:** None ngoài R1 follow-up đã document.
 
-**Limitation cần T0/runner lưu ý:**
-1. `npx tsc --noEmit` / `npx vitest run` / `pnpm run build` / `node .ai-pipeline/scripts/verify-encoding.mjs` KHÔNG chạy được trong worktree hiện tại — Node binary không có trong PATH của agent. Tôi đã verify contract bằng static read (PowerShell + regex trên CSS); T0 chạy canonical gates trên máy có Node/pnpm.
-2. `--color-apply-cta-dark: color-mix(in srgb, var(--color-primary-dark) 82%, #000)` — TAILWIND v4 / PostCSS hiện đại hỗ trợ `color-mix()` (CSS Color Module Level 5); nếu trình duyên dịch Tailwind của repo không support, cần thay bằng 5 hex literal theo theme (HRP #883000, Ocean #0b3d51, Emerald #0b4a2f, Violet #341964, Gold #4c3d07). T0 kiểm tra nhanh bằng `pnpm run build` rồi `grep` `color-mix` trong CSS output.
-3. Token cũ `--color-primary-cta*` giữ nguyên (alias ngược) để không vỡ site ngoài CTA scope; nếu T0 muốn dọn, mở thêm task tách.
-4. `theme-cta-foreground.test.ts` của tôi viết lại gần như hoàn toàn (header comment mới, 9 describe, 19 it). Nếu T0 thấy mất tính tương đương với baseline T1B test, có thể ghép lại — nội dung test vẫn khóa cùng contract (default `var(--color-on-primary)`, hover `var(--color-on-primary)`, focus 2px ring, disabled surface-container).
+**Limitations cần T0/runner lưu ý:**
 
-## 5. Final status
+1. **State 2 Hero overlay limitation (NEW R1)**: White trên overlay `bg-primary-dark/55` không pass WCAG AA 4.5:1 ở 4/5 theme; pre-existing issue của overlay (nền PC/PF quá sáng, overlay 55% không đủ tối). Hotfix scope không fix được vì cần tăng overlay opacity hoặc thêm dark scrim — đó là thay đổi `hero.tsx` ảnh hưởng tới nhiều surface khác. **Follow-up task cần tạo: `hrp-t1a-hero-overlay-scrim`** để xử lý riêng. Container hiện tại vẫn dùng `text-on-primary` cho state 2 (đồng bộ với h1/body cũ + tận dụng cảm giác "sáng trên nền tối") nhưng acknowledge limitation này.
 
-- READY_FOR_REVIEW. Verify-task PASS exit 0, 14 OK / 0 error. CSS đã cập nhật đúng pattern. 4 file + 1 artifact commit sạch ở `a42bb319`; working tree chỉ còn untracked `docs/tasks/hrp-t1a-theme-apply-cta-hotfix/TASK.md` (đã stage). Sau commit, post-freeze semantic delta: 0 (chỉ docs/evidence follow-up).
-- Git: working tree clean 4 file modified đã commit, 1 untracked artifact (TASK.md đã `git add`). `git status --porcelain` chỉ hiển thị untracked `docs/tasks/.../TASK.md` sau khi chạy `git add docs/`. Source/test/migration không còn semantic delta ngoài SHA `a42bb319`.
+2. **Node/pnpm không có trong PATH của agent** trong worktree hiện tại — không thể chạy `npx tsc --noEmit` / `npx vitest run` / `pnpm run build` / `node .ai-pipeline/scripts/verify-encoding.mjs`. Tôi verify contract bằng static read (PowerShell + regex trên CSS/TSX) + probe WCAG bằng helper inline. T0 chạy canonical gates ở máy có Node/pnpm — script `verify-task.ps1` + `verify-handoff.ps1` + `verify-encoding.mjs` đều có trong `.ai-pipeline/scripts/` và không phụ thuộc PATH shell.
+
+3. `--color-apply-cta-dark: color-mix(in srgb, var(--color-primary-dark) 82%, #000)` — Tailwind v4 / PostCSS hiện đại hỗ trợ `color-mix()` (CSS Color Module Level 5); nếu trình duyệt/PostCSS processor của repo không support, cần thay bằng 5 hex literal theo theme. T0 verify nhanh bằng `pnpm run build` rồi `grep` `color-mix` trong CSS output.
+
+4. Token cũ `--color-primary-cta*` giữ nguyên (alias ngược) để không vỡ site ngoài CTA scope; nếu T0 muốn dọn, mở thêm task tách.
+
+5. `theme-cta-foreground.test.ts` đã viết lại gần như hoàn toàn (header comment mới, 9 describe, 19 it). Nếu T0 thấy mất tính tương đương với baseline T1B test, có thể ghép lại — nội dung test vẫn khóa cùng contract (default `var(--color-on-primary)`, hover `var(--color-on-primary)`, focus 2px ring, disabled surface-container).
+
+## 5. Final status và Git freeze
+
+### Trạng thái Git trước R1 follow-up (R0 round 1 đã commit)
+
+```
+fd84297f fix(t1a-theme-apply-cta-hotfix): R1 follow-up — AC-08 fix, hero eyebrow, CTV heading, cleanup
+b4b62d2f docs(t1a-theme-apply-cta-hotfix): align TASK/HANDOFF to gate parsers
+7deec448 docs(t1a-theme-apply-cta-hotfix): HANDOFF READY_FOR_REVIEW
+a42bb319 feat(t1a-theme-apply-cta-hotfix): CTA Ứng tuyển đổi màu theo theme
+5cfbca12 docs(discovery): refresh execution realignment baseline (#135)
+```
+
+### Trung thực semantic delta `a42bb319..fd84297f` (4 file semantic thật)
+
+`git diff a42bb319..fd84297f -- app src prisma tests` đã chứa thay đổi semantic ở **4 file** (KHÔNG phải "docs-only"):
+
+1. `app/(portal)/page.tsx` — eyebrow `text-secondary-fixed` → `text-on-primary` (sau R1 sẽ refactor lần 2 thành container conditional)
+2. `src/domains/job-board/components/landing/referral-strip.tsx` — heading CTV `text-primary-container` → `text-primary-dark`
+3. `src/shared/theme/__tests__/globals-css-theme-scope.test.ts` — AC-08: assertion từ `--color-primary-cta` → `--color-apply-cta` + khóa cả 2 token không bị override trong `[data-theme]`
+4. `src/shared/theme/__tests__/theme-cta-foreground.test.ts` — viết lại cho contract mới + probe 5/5 palette
+
+Báo cáo R0 trước đó ghi nhầm là "docs-only, 0 semantic delta" — đã sửa trong HANDOFF v1.2 này.
+
+### R1 follow-up (sẽ commit) — thêm/sửa semantic
+
+- Sửa `app/(portal)/page.tsx`: container className conditional theo `heroImage`
+- Mới `src/shared/theme/__tests__/hero-eyebrow-contrast.test.ts`: 2-state assertion
+- Update `docs/tasks/.../TASK.md` (v1.2) + `HANDOFF.md` (v1.2)
+- Probe scripts ở `docs/tasks/.../evidence/`
+
+### Commit kế tiếp (chưa thực hiện)
+
+Sẽ tạo 1 commit mới:
+
+```
+fix(t1a-theme-apply-cta-hotfix): R1 follow-up — Hero copy 2-state contrast + honest semantic delta report
+
+- app/(portal)/page.tsx: Hero copy container className dùng conditional
+  heroImage ? 'text-on-primary' : 'text-primary-dark' (1 điểm sửa, áp dụng
+  cho cả 3 child: eyebrow <p>, <h1>, body <p>). Bỏ class text-on-primary /
+  text-secondary-fixed hardcode ở child.
+- src/shared/theme/__tests__/hero-eyebrow-contrast.test.ts (mới, T1A-owned):
+  2-state assertion (regex conditional + probe 5/5 theme). State 1 (no image,
+  gradient) PASS 5/5 ≥ 5.0:1 với text-primary-dark. State 2 (image, overlay
+  55%) structural-only — pre-existing limitation documented (RISK-04).
+- docs/tasks/.../TASK.md: spec v1.1 → v1.2. Thêm EV-09, DEC-T1A-07, RISK-04,
+  AC-10, In-scope roots. Revision log row v1.2.
+- docs/tasks/.../HANDOFF.md: rewrite §1 honest semantic delta, thêm §2 E-08
+  R1 evidence, thêm §3 probe 2-state, thêm §4 limitation state 2, sửa §5
+  git freeze posture với Implementation SHA mới.
+- docs/tasks/.../evidence/{probe-eyebrow,probe-hero-2state,probe-pd-overlay}.ps1
+  (mới): WCAG probe scripts.
+
+Trước commit: working tree đã clean (chỉ còn untracked evidence/probe scripts).
+Sau commit: HEAD SHA mới sẽ thay thế fd84297f. Working tree chỉ còn các
+docs update tương ứng.
+```
 
 > Handoff status: `READY_FOR_REVIEW`

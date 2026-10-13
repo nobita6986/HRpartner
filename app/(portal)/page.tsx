@@ -329,14 +329,32 @@ export default function JobsPage() {
   return (
     <main id="hrp-main" tabIndex={-1} className="flex w-full flex-col items-stretch gap-0">
       <Hero backgroundImage={heroImage}>
-        <div className="flex min-w-0 flex-1 flex-col justify-center gap-6 text-on-primary">
-          <p className="font-label text-label-md font-bold uppercase tracking-widest text-on-primary">
+        {/* hrp-t1a-theme-apply-cta-hotfix (T1A / R1 follow-up): Hero text
+            container đổi màu theo nền thực tế ở cả hai trạng thái:
+              • heroImage == null  → gradient `from-primary-container to-primary-fixed`
+                (5/5 theme là nền sáng, nhất là phía `primary-fixed` rất nhạt).
+                `text-on-primary` (white) chỉ pass trên vùng `primary-container`
+                (HRP 6.468) nhưng FAIL trên `primary-fixed` (HRP 1.290) — không
+                đảm bảo WCAG khi text dài xuống dưới section. Dùng
+                `text-primary-dark` (alias `--color-primary-dark`) đạt 5/5 ≥ 5.0:1
+                cả hai đầu gradient.
+              • heroImage != null  → overlay `bg-primary-dark/55` tối 55%. White
+                đạt 5/5 ≥ 9.86:1, nên quay lại `text-on-primary` để đồng bộ với
+                h1/body cũ và tận dụng cảm giác "sáng trên nền tối".
+            Áp dụng conditional ở container thay vì 3 child để giữ 1 điểm sửa
+            duy nhất và không lặp class. */}
+        <div
+          className={`flex min-w-0 flex-1 flex-col justify-center gap-6 ${
+            heroImage ? 'text-on-primary' : 'text-primary-dark'
+          }`}
+        >
+          <p className="font-label text-label-md font-bold uppercase tracking-widest">
             Cùng tìm kiếm
           </p>
-          <h1 className="font-head text-headline-xl font-bold leading-tight text-on-primary">
+          <h1 className="font-head text-headline-xl font-bold leading-tight">
             Công việc mơ ước của bạn
           </h1>
-          <p className="font-body text-body-lg text-on-primary/90">
+          <p className="font-body text-body-lg opacity-90">
             {overview.totals.jobs > 0
               ? `Đang tuyển ${overview.totals.jobs} việc làm tại ${overview.totals.areas} khu vực. Ứng tuyển không cần tài khoản.`
               : 'Việc làm theo ca, ứng tuyển không cần tài khoản.'}
