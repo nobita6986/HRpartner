@@ -155,16 +155,25 @@ describe('RQ-01 R2: state 1 (heroImage == null, gradient) — ≥ 4.5:1 ở cả
   }
 
   it('R2: page.tsx body Hero KHÔNG còn `opacity-90` (HRP body = 4.24 < 4.5 trước R2)', () => {
-    const heroIdx = PAGE_TSX.indexOf('<Hero backgroundImage={heroImage}>');
-    expect(heroIdx).toBeGreaterThan(0);
-    const after = PAGE_TSX.slice(heroIdx, heroIdx + 2500);
     // Body cũ: <p className="font-body text-body-lg opacity-90">
     // R2: <p className="font-body text-body-lg">
-    const bodyMatch = after.match(/<p[^>]*className="[^"]*"[^>]*>\s*Đang tuyển|Việc làm theo ca/);
-    expect(bodyMatch, 'Hero body phải tồn tại').not.toBeNull();
-    expect(bodyMatch![0], 'Hero body không được có opacity-N class (R2)').not.toMatch(
-      /\bopacity-\d+\b/,
-    );
+    //
+    // R3 (T0 R2 follow-up): regex cũ dùng `Đang tuyển|Việc làm theo ca`
+    // chỉ khớp text literal, nên `bodyMatch[0]` có thể là nhánh conditional
+    // không chứa className → miss. Anchor bằng className canonical
+    // `font-body text-body-lg` (cho phép thêm token phía sau như
+    // `opacity-90`) rồi assert KHÔNG có token `opacity-N` trong className.
+    const bodyRe = /<p\b([^>]*\bclassName="font-body text-body-lg[^"]*"[^>]*)>([\s\S]*?)<\/p>/;
+    const bodyMatch = PAGE_TSX.match(bodyRe);
+    expect(bodyMatch, 'Hero body <p> với className "font-body text-body-lg…" phải tồn tại').not.toBeNull();
+    const attrs = bodyMatch![1] ?? '';
+    const classMatch = attrs.match(/className="([^"]*)"/);
+    expect(classMatch, 'Hero body phải có className').not.toBeNull();
+    const className = classMatch![1]!;
+    expect(
+      className,
+      `Hero body className="${className}" không được có token opacity-N (R2)`,
+    ).not.toMatch(/\bopacity-\d+\b/);
   });
 
   it('R2: HRP body (worst case 5/5) PD on PF ≥ 4.5:1 (no opacity)', () => {
@@ -174,18 +183,38 @@ describe('RQ-01 R2: state 1 (heroImage == null, gradient) — ≥ 4.5:1 ở cả
     expect(r, `HRP PD/PF ratio=${r.toFixed(3)}`).toBeGreaterThanOrEqual(4.5);
   });
 
-  it('R2 regression: nếu page.tsx vô tình thêm opacity-90 lại, HRP body sẽ FAIL — assert effective text color', () => {
-    // Nếu một lý do nào đó dev đặt lại opacity-90 ở body, tính lại màu
-    // hiệu dụng vẫn phải đạt 4.5:1. Nếu dưới 4.5 thì test fail — bắt
-    // buộc phải probe (dùng 0 opacity vì R2 đã bỏ). Đây là guard
-    // semantic: probe hiệu dụng sau opacity (nếu có).
+  it('R2 regression: probe effective text color từ opacity THỰC TẾ trong className body — fail nếu opacity-90 quay lại', () => {
+    // R3 (T0 R2 follow-up): bản cũ dùng opacity cố định 1.0, không thật
+    // sự đọc từ className. Parse opacity thực tế từ className của <p>
+    // body (anchor bằng `font-body text-body-lg`); nếu không có token
+    // `opacity-N` thì opacity = 1.0. Probe HRP worst-case (PD on PF);
+    // bất kỳ opacity < 1.0 nào sẽ làm ratio tụt xuống < 4.5 (HRP body
+    // = 4.24 với opacity-90) → test phải FAIL — bắt buộc dev phải giữ
+    // body ở opacity 1.0.
+    const bodyRe = /<p\b([^>]*\bclassName="font-body text-body-lg[^"]*"[^>]*)>([\s\S]*?)<\/p>/;
+    const bodyMatch = PAGE_TSX.match(bodyRe);
+    expect(bodyMatch, 'Hero body <p> với className "font-body text-body-lg…" phải tồn tại').not.toBeNull();
+    const attrs = bodyMatch![1] ?? '';
+    const classMatch = attrs.match(/className="([^"]*)"/);
+    expect(classMatch, 'Hero body phải có className').not.toBeNull();
+    const className = classMatch![1]!;
+    const opacityToken = className.match(/\bopacity-(\d+)\b/);
+    const opacity = opacityToken ? Number(opacityToken[1]) / 100 : 1.0;
+    expect(
+      Number.isFinite(opacity) && opacity > 0 && opacity <= 1,
+      `opacity thực tế phải trong (0, 1]; parsed=${opacity} className="${className}"`,
+    ).toBe(true);
+    // HRP worst case: PD trên PF (gradient bottom). Trước R2 body có
+    // opacity-90 → eff = mix(PD, PF, 0.9) → contrast = 4.24 (< 4.5 FAIL).
+    // Sau R2 không có opacity-N → opacity = 1.0 → eff = PD nguyên bản →
+    // contrast = 5.01 (≥ 4.5 PASS).
     const text = '#a63b00'; // HRP PD
-    const bg = '#ffdbce'; // HRP PF (worst endpoint)
-    const effective = effectiveTextColor(text, bg, 1.0);
+    const bg = '#ffdbce'; // HRP PF (gradient bottom — worst endpoint)
+    const effective = effectiveTextColor(text, bg, opacity);
     const r = contrast(effective, bg);
     expect(
       r,
-      `HRP effPD/PF ratio=${r.toFixed(3)} (eff=${effective}) phải ≥ 4.5`,
+      `HRP effPD/PF ratio=${r.toFixed(3)} (opacity=${opacity} parsed-from-className="${className}", eff=${effective}) phải ≥ 4.5`,
     ).toBeGreaterThanOrEqual(4.5);
   });
 });
