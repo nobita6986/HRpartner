@@ -11,7 +11,7 @@
 | Audit mode | `NONE` |
 | Execution round | `2` (R0 round 1, R1 round 2) |
 | Baseline | `5cfbca12e948c3a207f61db06fe7001c9cc248d2` |
-| Implementation SHA | `d10f034a8fa67fd0161a565ea8ddfdfb19acb65b` (R1 follow-up) |
+| Implementation SHA | `a22fd2b6f1ecffee5044f553198d8d576be22f02` (R1 follow-up — final) |
 | Frozen delivery | `YES` |
 | Canonical gates | `NOT_REQUIRED` |
 | Audit eligibility | `NOT_REQUIRED` |
