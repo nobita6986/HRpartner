@@ -11,7 +11,7 @@
 | Audit mode | LIGHT |
 | Audit reason | Theme picker là surface công khai, mount ở 2 public shell, đụng 6 theme-sensitive sites + CTA foreground contract. CRITICAL + LIGHT theo lane matrix (đối xứng T1C). |
 | Baseline | `2b07d9de1310fdf08f85c996eeed1df659a5f91f` |
-| Implementation SHA | `535b53fcb34e139d19236e60c7881343024b07fb` (HEAD) |
+| Implementation SHA | `22e60602ce6963f266834a3be96c574b69c07663` (HEAD) |
 | Frozen delivery | YES |
 | Canonical gates | PASS |
 | Correction batches used | 0 |
@@ -151,7 +151,7 @@ T1B đã implement full theme picker + contrast accessibility completion cho pub
 
 | ID | Evidence | Path / Command | Result |
 |---|---|---|---|
-| E-01 | Implementation SHA | `git rev-parse HEAD` | `535b53fcb34e139d19236e60c7881343024b07fb` |
+| E-01 | Implementation SHA | `git rev-parse HEAD` | `22e60602ce6963f266834a3be96c574b69c07663` |
 | E-02 | Full unit suite | `npx vitest run --config vitest.unit.config.ts` | 5366/5366 pass (9 skipped) |
 | E-03 | Targeted theme unit | `npx vitest run --config vitest.unit.config.ts 'src/shared/theme'` | 132/132 pass (74 T1C + 58 T1B) |
 | E-04 | Typecheck | `pnpm exec tsc --noEmit` | 0 errors |
