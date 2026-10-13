@@ -15,7 +15,7 @@
 | Frozen delivery | YES |
 | Canonical gates | PASS |
 | Correction batches used | 0 |
-| Execution round | 0 |
+| Execution round | 1 |
 | Branch | `codex/t1b-public-theme-picker-contrast` |
 | Worktree | `C:\CodeApp\HrP-t1b-public-theme-picker-contrast` |
 | Status | READY_FOR_AUDIT |
