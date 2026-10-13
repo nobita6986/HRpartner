@@ -11,11 +11,11 @@
 | Audit mode | LIGHT |
 | Audit reason | Theme picker là surface công khai, mount ở 2 public shell, đụng 6 theme-sensitive sites + CTA foreground contract. CRITICAL + LIGHT theo lane matrix (đối xứng T1C). |
 | Baseline | `2b07d9de1310fdf08f85c996eeed1df659a5f91f` |
-| Implementation SHA | `0947b84bde963507440d1f2c79d9ed4e268adbe2` (HEAD) |
+| Implementation SHA | `535b53fcb34e139d19236e60c7881343024b07fb` (HEAD) |
 | Frozen delivery | YES |
 | Canonical gates | PASS |
 | Correction batches used | 0 |
-| Current execution round | 0 |
+| Execution round | 0 |
 | Branch | `codex/t1b-public-theme-picker-contrast` |
 | Worktree | `C:\CodeApp\HrP-t1b-public-theme-picker-contrast` |
 | Status | READY_FOR_AUDIT |
@@ -71,7 +71,7 @@ T1B đã implement full theme picker + contrast accessibility completion cho pub
 
 | ID | Expectation | Method | Result |
 |---|---|---|---|
-| AC-00 | `verify-task.ps1` RESULT: PASS (Tier 1 preflight) | `pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-t1b-public-theme-picker-contrast/TASK.md` (E-07) | **PASS** (12/12 checks OK) |
+| AC-00 | `verify-task.ps1` RESULT: PASS (Tier 1 preflight) | `pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-t1b-public-theme-picker-contrast/TASK.md` (E-07) | **RESULT: PASS** (12/12 checks OK) |
 | AC-01 | ThemePicker mount 2× trong GlobalNavbar (desktop + mobile) | `theme-shell-mount.test.ts` (E-03) | **PASS** (1 test) |
 | AC-02 | 5 dòng hiển thị đúng thứ tự HRP → Ocean → Emerald → Violet → Executive | `theme-picker.test.ts` structural (E-03) | **PASS** (THEMES order) |
 | AC-03 | (portal)/layout.tsx có ThemeScope wrap | `theme-shell-mount.test.ts` (E-03) | **PASS** (1 test) |
@@ -151,7 +151,7 @@ T1B đã implement full theme picker + contrast accessibility completion cho pub
 
 | ID | Evidence | Path / Command | Result |
 |---|---|---|---|
-| E-01 | Implementation SHA | `git rev-parse HEAD` | `0947b84bde963507440d1f2c79d9ed4e268adbe2` |
+| E-01 | Implementation SHA | `git rev-parse HEAD` | `535b53fcb34e139d19236e60c7881343024b07fb` |
 | E-02 | Full unit suite | `npx vitest run --config vitest.unit.config.ts` | 5366/5366 pass (9 skipped) |
 | E-03 | Targeted theme unit | `npx vitest run --config vitest.unit.config.ts 'src/shared/theme'` | 132/132 pass (74 T1C + 58 T1B) |
 | E-04 | Typecheck | `pnpm exec tsc --noEmit` | 0 errors |
@@ -161,9 +161,9 @@ T1B đã implement full theme picker + contrast accessibility completion cho pub
 | E-08 | Handoff contract gate | `pwsh .ai-pipeline/scripts/verify-handoff.ps1 -TaskPath .../TASK.md -HandoffPath .../HANDOFF.md` | PASS (this run) |
 | E-09 | Whitespace check | `git diff --check` | exit 0 |
 | E-10 | Build | `pnpm run build` | exit 0 (route list đầy đủ) |
-| E-11 | Contrast probe white-on-PD | `theme-sites-c7-pd.test.ts` | HRP 6.468 / Ocean 9.647 / Emerald 8.272 / Violet 12.438 / Executive 8.577 |
-| E-12 | Contrast probe CTA default | `theme-cta-foreground.test.ts` | ~7.4:1 (`#1a1c1b` on `#f07f1a`) |
-| E-13 | Contrast probe CTA hover | `theme-cta-foreground.test.ts` | ~7.0:1 (`#ffffff` on `#c2520a`) |
+| E-11 | Contrast probe white-on-PD | `npx vitest run --config vitest.unit.config.ts src/shared/theme/__tests__/theme-sites-c7-pd.test.ts` | HRP 6.468 / Ocean 9.647 / Emerald 8.272 / Violet 12.438 / Executive 8.577 (5 tests passed) |
+| E-12 | Contrast probe CTA default | `npx vitest run --config vitest.unit.config.ts src/shared/theme/__tests__/theme-cta-foreground.test.ts -t "default"` | ~7.4:1 (2 tests passed) |
+| E-13 | Contrast probe CTA hover | `npx vitest run --config vitest.unit.config.ts src/shared/theme/__tests__/theme-cta-foreground.test.ts -t "hover"` | ~7.0:1 (1 test passed) |
 | E-14 | T1C foundation integrity | `git diff 2b07d9de..HEAD -- src/shared/theme/theme-types.ts src/shared/theme/theme-tokens.ts` | 0 diff |
 | E-15 | Admin route integrity | `grep -rE 'theme-scope|theme-picker' -- app/admin/` | 0 match |
 
