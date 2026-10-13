@@ -1,0 +1,3 @@
+grep -n "THEMES\.map\|getTheme\|primary.*primaryDark.*primaryContainer" src/shared/theme/theme-picker.tsx
+
+src/shared/theme/theme-picker.tsx:37:import { DEFAULT_THEME_KEY, getTheme, THEMES, type ThemeKey } from './theme-types'; src/shared/theme/theme-picker.tsx:61:  const t = getTheme(themeKey); src/shared/theme/theme-picker.tsx:135:    const idx = THEMES.findIndex((t) => t.key === currentKey); src/shared/theme/theme-picker.tsx:192:        setHighlightIndex((i) => (i + 1) % THEMES.length); src/shared/theme/theme-picker.tsx:195:        setHighlightIndex((i) => (i - 1 + THEMES.length) % THEMES.length);

@@ -1,0 +1,21 @@
+node.exe : [33mThe CJS build of Vite's Node API is deprecated. See
+https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+At C:\CodeApp\HrP-t1b-public-theme-picker-contrast\node_modules\.bin\vitest.ps1:24 char:5
++     & "node$exe"  "$basedir/../vitest/vitest.mjs" $args
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([33mThe CJS bu...e details.[39m:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+
+ RUN  v2.1.9 C:/CodeApp/HrP-t1b-public-theme-picker-contrast
+
+ Γ£ô src/domains/job-board/public-ui-premium.static.test.ts (68 tests) 18ms
+ Γ£ô src/domains/job-board/components/landing/featured-job-card.test.ts (106 tests) 15ms
+ Γ£ô src/shared/ui/design-tokens.static.test.ts (12 tests) 33ms
+ Γ£ô src/shared/theme/__tests__/globals-css-theme-scope.test.ts (19 tests) 14ms
+ Γ£ô src/shared/theme/__tests__/contrast-probe.test.ts (40 tests) 9ms
+
+ Test Files  5 passed (5)
+      Tests  245 passed (245)
+   Start at  15:23:30
+   Duration  1.23s (transform 91ms, setup 0ms, collect 190ms, tests 88ms, environment 1ms, prepare 275ms)

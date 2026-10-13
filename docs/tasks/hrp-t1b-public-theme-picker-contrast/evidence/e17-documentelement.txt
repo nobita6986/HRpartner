@@ -1,0 +1,6 @@
+git grep -n "document.documentElement" -- src/shared/theme/theme-scope.tsx
+exit=1 (no matches)
+
+Measurement: theme-scope.tsx renders <div data-theme={...}> and never touches
+document.documentElement. This ensures <html> is unaffected by theme switching.
+app/layout.tsx (root) also has no data-theme attribute.

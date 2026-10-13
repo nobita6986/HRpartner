@@ -1,0 +1,25 @@
+node.exe : [33mThe CJS build of Vite's Node API is deprecated. See
+https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+At C:\CodeApp\HrP-t1b-public-theme-picker-contrast\node_modules\.bin\vitest.ps1:24 char:5
++     & "node$exe"  "$basedir/../vitest/vitest.mjs" $args
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([33mThe CJS bu...e details.[39m:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+
+ RUN  v2.1.9 C:/CodeApp/HrP-t1b-public-theme-picker-contrast
+
+ Γ£ô src/shared/theme/__tests__/globals-css-theme-scope.test.ts (19 tests) 8ms
+ Γ£ô src/shared/theme/__tests__/contrast-probe.test.ts (40 tests) 6ms
+ Γ£ô src/shared/theme/__tests__/theme-cta-foreground.test.ts (9 tests) 3ms
+ Γ£ô src/shared/theme/__tests__/theme-sites-c7-pd.test.ts (12 tests) 3ms
+ Γ£ô src/shared/theme/__tests__/theme-types.test.ts (15 tests) 5ms
+ Γ£ô src/shared/theme/__tests__/theme-storage.test.ts (9 tests) 4ms
+ Γ£ô src/shared/theme/__tests__/theme-picker.test.ts (14 tests) 12ms
+ Γ£ô src/shared/theme/__tests__/theme-shell-mount.test.ts (8 tests) 5ms
+ Γ£ô src/shared/theme/__tests__/theme-scope.test.ts (6 tests) 8ms
+
+ Test Files  9 passed (9)
+      Tests  132 passed (132)
+   Start at  15:23:28
+   Duration  1.93s (transform 97ms, setup 0ms, collect 245ms, tests 53ms, environment 1ms, prepare 480ms)

@@ -13,14 +13,20 @@
 import { GlobalNavbar } from '@/app/components/GlobalNavbar';
 import { GlobalFooter } from '@/app/components/GlobalFooter';
 import { FloatingChatActions } from '@/app/components/FloatingChatActions';
+import { ThemeScope } from '@/src/shared/theme/theme-scope';
 
 export default function PublicJobDetailLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex flex-col min-h-screen bg-background">
-      <GlobalNavbar />
-      <main className="flex-1">{children}</main>
-      <GlobalFooter />
-      <FloatingChatActions />
-    </div>
+    // t1b-public-theme-picker-contrast (DEC-04): wrap root <div> với
+    // <ThemeScope> để cùng key với (portal) shell → theme persist khi
+    // user navigate / ↔ /viec-lam.
+    <ThemeScope>
+      <div className="flex flex-col min-h-screen bg-background">
+        <GlobalNavbar />
+        <main className="flex-1">{children}</main>
+        <GlobalFooter />
+        <FloatingChatActions />
+      </div>
+    </ThemeScope>
   );
 }

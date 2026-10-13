@@ -132,18 +132,18 @@ describe('app/globals.css — [data-theme] contract (T1C v1.2)', () => {
     }
   });
 
-  // AC-09: .apply-btn và .pub-btn-primary vẫn dùng --color-primary bg (T1C giữ nguyên, T1B sẽ migrate)
-  it('AC-09: .apply-btn vẫn dùng --color-primary bg (T1B-owned)', () => {
+  // AC-09 (post-T1B): .apply-btn và .pub-btn-primary đã migrate sang --color-primary-dark
+  it('AC-09: .apply-btn dùng --color-primary-dark bg (T1B-migrated)', () => {
     const m = css.match(/\.apply-btn\s*\{[^}]*\}/);
     if (m) {
-      expect(m[0]).toMatch(/var\(--color-primary\)/);
+      expect(m[0]).toMatch(/var\(--color-primary-dark\)/);
     }
   });
 
-  it('AC-09: .pub-btn-primary vẫn dùng --color-primary bg (T1B-owned)', () => {
+  it('AC-09: .pub-btn-primary dùng --color-primary-dark bg (T1B-migrated)', () => {
     const m = css.match(/\.pub-btn-primary\s*\{[^}]*\}/);
     if (m) {
-      expect(m[0]).toMatch(/var\(--color-primary\)/);
+      expect(m[0]).toMatch(/var\(--color-primary-dark\)/);
     }
   });
 

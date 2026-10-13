@@ -1,0 +1,4 @@
+git grep -rn "ThemeScope\|ThemePicker" app/admin/
+exit=1 (no matches found)
+
+0 ThemeScope or ThemePicker references in app/admin/

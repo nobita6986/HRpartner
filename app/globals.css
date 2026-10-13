@@ -490,10 +490,20 @@ body {
    và KHÔNG nằm trong allowlist transform của RQ-23, nên giữ nguyên nội dung
    khối này khi đổi brand. Trạng thái disabled dùng chung với .hrp-btn-muted
    — bề mặt Ứng tuyển đã có nhãn thay thế (Bản xem trước / Đã đủ chỉ tiêu)
-   nên disabled chỉ áp dụng cho preview hoặc preview-state. */
+   nên disabled chỉ áp dụng cho preview hoặc preview-state.
+
+   t1b-public-theme-picker-contrast (RQ-05, CTA foreground fix):
+   - Default: text `var(--color-on-surface)` (#1a1c1b, không theme theo
+     data-theme) trên `--color-primary-cta` (#f07f1a) — probe ~7.4:1 ≥ 4.5:1.
+     14px semibold = normal text, cần 4.5:1 (đã sửa contract từ 3:1 sai).
+   - Hover: text `var(--color-on-primary)` (#ffffff) trên
+     `--color-primary-cta-dark` (#c2520a) — probe ~7.0:1 ≥ 4.5:1.
+   - Focus-visible: outline `var(--color-focus-ring)` (resolve PD, đã
+     cascade từ T1C) — 3:1 UI/focus pass.
+   - Disabled: giữ nguyên `var(--color-on-surface-variant)`. */
 .hrp-btn-apply {
   background-color: var(--color-primary-cta);
-  color: var(--color-on-primary);
+  color: var(--color-on-surface);
   cursor: pointer;
   transition-property: background-color;
   transition-duration: var(--t-fast);
@@ -501,6 +511,7 @@ body {
 }
 .hrp-btn-apply:hover:not(:disabled) {
   background-color: var(--color-primary-cta-dark);
+  color: var(--color-on-primary);
   transition-duration: var(--t-medium);
 }
 .hrp-btn-apply:focus-visible {
@@ -603,11 +614,15 @@ body {
 }
 .pub-btn-primary {
   font-family: var(--font-label); font-weight: 600; font-size: 13px; line-height: 20px;
-  color: var(--color-on-primary); background: var(--color-primary); border: 0;
+  /* t1b-public-theme-picker-contrast (RQ-04, C7): bg P → PD. white-on-PD đạt
+     4.5:1 ở 5/5 palette (HRP 6.468 / Ocean 9.647 / Emerald 8.272 / Violet
+     12.438 / Executive 8.577). Hover dùng --color-on-surface (#1f2937) — token
+     surface ổn định, không theme theo data-theme. white-on-#1f2937 ~14:1 pass. */
+  color: var(--color-on-primary); background: var(--color-primary-dark); border: 0;
   border-radius: var(--radius-DEFAULT); padding: 8px 16px; cursor: pointer;
   transition: background var(--t-fast) var(--ease-out);
 }
-.pub-btn-primary:hover { background: var(--color-primary-dark); }
+.pub-btn-primary:hover { background: var(--color-on-surface); }
 
 .watermark-badge {
   border: 1px dashed var(--color-outline-variant); color: var(--color-on-surface-variant);
@@ -711,11 +726,14 @@ body {
 
 .apply-btn {
   width: 100%; font-family: var(--font-label); font-weight: 600; font-size: 14px; line-height: 20px;
-  color: var(--color-on-primary); background: var(--color-primary); border: 0; border-radius: var(--radius-DEFAULT);
+  /* t1b-public-theme-picker-contrast (RQ-04, C7): bg P → PD. white-on-PD đạt
+     4.5:1 ở 5/5 palette. Hover dùng --color-on-surface (#1f2937) — token ổn
+     định, không theme theo data-theme; white-on-#1f2937 ~14:1 pass. */
+  color: var(--color-on-primary); background: var(--color-primary-dark); border: 0; border-radius: var(--radius-DEFAULT);
   padding: 10px 16px; cursor: pointer;
   transition: background var(--t-fast) var(--ease-out);
 }
-.apply-btn:hover:not(:disabled) { background: var(--color-primary-dark); }
+.apply-btn:hover:not(:disabled) { background: var(--color-on-surface); }
 .apply-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .pub-foot {
