@@ -97,21 +97,26 @@ describe('t2-apply-cta-tone: 3 nơi dùng chung class .hrp-btn-apply', () => {
 });
 
 describe('t2-apply-cta-tone: globals.css khai token va class dung chung', () => {
-  it('@theme block khai --color-primary-cta (softer warm orange)', () => {
-    // 2 token moi phai nam trong @theme, truoc :root alias block (test khac).
+  it('@theme block khai --color-apply-cta (alias theme) + --color-primary-cta (alias ngược)', () => {
+    // hrp-t1a-theme-apply-cta-hotfix (RQ-01): migrate từ
+    // --color-primary-cta* cố định sang --color-apply-cta* alias
+    // var(--color-primary-dark) để cascade theo theme. Token cũ
+    // --color-primary-cta* vẫn còn (alias ngược) để không vỡ site cũ.
+    expect(GLOBALS_CSS).toContain('--color-apply-cta: var(--color-primary-dark)');
+    expect(GLOBALS_CSS).toContain('--color-apply-cta-dark:');
     expect(GLOBALS_CSS).toContain('--color-primary-cta: #f07f1a');
     expect(GLOBALS_CSS).toContain('--color-primary-cta-dark: #c2520a');
   });
 
-  it('.hrp-btn-apply dung var(--color-primary-cta) lam background', () => {
+  it('.hrp-btn-apply dung var(--color-apply-cta) lam background', () => {
     expect(GLOBALS_CSS).toMatch(
-      /\.hrp-btn-apply\s*\{[^}]*background-color:\s*var\(--color-primary-cta\)/,
+      /\.hrp-btn-apply\s*\{[^}]*background-color:\s*var\(--color-apply-cta\)/,
     );
   });
 
-  it('.hrp-btn-apply:hover dung var(--color-primary-cta-dark)', () => {
+  it('.hrp-btn-apply:hover dung var(--color-apply-cta-dark)', () => {
     expect(GLOBALS_CSS).toMatch(
-      /\.hrp-btn-apply:hover:not\(:disabled\)\s*\{[^}]*background-color:\s*var\(--color-primary-cta-dark\)/,
+      /\.hrp-btn-apply:hover:not\(:disabled\)\s*\{[^}]*background-color:\s*var\(--color-apply-cta-dark\)/,
     );
   });
 
