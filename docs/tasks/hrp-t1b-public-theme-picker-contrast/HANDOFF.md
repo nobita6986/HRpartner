@@ -11,14 +11,14 @@
 | Audit mode | LIGHT |
 | Audit reason | Theme picker là surface công khai, mount ở 2 public shell, đụng 6 theme-sensitive sites + CTA foreground contract. CRITICAL + LIGHT theo lane matrix (đối xứng T1C). |
 | Baseline | `2b07d9de1310fdf08f85c996eeed1df659a5f91f` |
-| Implementation SHA | `8b6f0e02` (HEAD) — feature commit `210c2751` + doc commit `8b6f0e02` |
+| Implementation SHA | `0947b84bde963507440d1f2c79d9ed4e268adbe2` (HEAD) |
 | Frozen delivery | YES |
 | Canonical gates | PASS |
 | Correction batches used | 0 |
-| Execution round | 0 |
+| Current execution round | 0 |
 | Branch | `codex/t1b-public-theme-picker-contrast` |
 | Worktree | `C:\CodeApp\HrP-t1b-public-theme-picker-contrast` |
-| Status | READY_FOR_REVIEW |
+| Status | READY_FOR_AUDIT |
 | Audit eligibility | ELIGIBLE |
 
 ## 1. Outcome Summary
@@ -57,7 +57,12 @@ T1B đã implement full theme picker + contrast accessibility completion cho pub
 | STEP-04 — 6 site migrate (RQ-04) | GlobalNavbar desktop+mobile, login-form, ve-chung-toi, .apply-btn, .pub-btn-primary → `--color-primary-dark` | DONE. | `app/components/GlobalNavbar.tsx`, `app/login/login-form.tsx`, `app/(portal)/ve-chung-toi/page.tsx`, `app/globals.css` |
 | STEP-05 — .hrp-btn-apply CTA foreground fix (RQ-05) | Default `var(--color-on-surface)`, hover `var(--color-on-primary)`, focus ring, disabled surface-variant | DONE. | `app/globals.css` (line 502-528) |
 | STEP-06 — Mount ThemeScope (RQ-02) | (portal) + (jobs)/viec-lam wrap | DONE. | `app/(portal)/layout.tsx`, `app/(jobs)/viec-lam/layout.tsx` |
-| STEP-07..12 — 6 T1B test files (RQ-07) | theme-storage, theme-picker, theme-scope, theme-sites-c7-pd, theme-cta-foreground, theme-shell-mount | DONE. 58 tests. | `src/shared/theme/__tests__/` |
+| STEP-07 — theme-storage.test.ts (RQ-07) | read/write/clear + invalid + unavailable | DONE. 9 tests. | `src/shared/theme/__tests__/theme-storage.test.ts:1-115` |
+| STEP-08 — theme-picker.test.ts (RQ-07) | structural + SSR smoke | DONE. 14 tests. | `src/shared/theme/__tests__/theme-picker.test.ts:1-105` |
+| STEP-09 — theme-scope.test.ts (RQ-07) | structural + SSR smoke | DONE. 6 tests. | `src/shared/theme/__tests__/theme-scope.test.ts:1-60` |
+| STEP-10 — theme-sites-c7-pd.test.ts (RQ-07) | 6 site dùng PD + 5 palette probe | DONE. 12 tests. | `src/shared/theme/__tests__/theme-sites-c7-pd.test.ts:1-125` |
+| STEP-11 — theme-cta-foreground.test.ts (RQ-07) | .hrp-btn-apply default/hover/focus/disabled | DONE. 9 tests. | `src/shared/theme/__tests__/theme-cta-foreground.test.ts:1-115` |
+| STEP-12 — theme-shell-mount.test.ts (RQ-07) | 2 shell có + admin không + html không + 3 site CTA chung class | DONE. 8 tests. | `src/shared/theme/__tests__/theme-shell-mount.test.ts:1-100` |
 | STEP-13 — Test guard cập nhật (RQ-06, RQ-09) | T1C AC-09 (P→PD), PR #132 contract fix, protected SHA | DONE. | `src/shared/theme/__tests__/globals-css-theme-scope.test.ts`, `src/domains/job-board/components/landing/featured-job-card.test.ts`, `src/domains/job-board/public-ui-premium.static.test.ts` |
 | STEP-14 — Gates | typecheck, lint, vitest, encoding, task-verify, handoff-verify | PASS. Full unit 5366/5366. | Below evidence registry |
 | STEP-15 — Commit | 1 feature commit (`210c2751`) + 1 doc commit (`8b6f0e02`) | DONE. | `git log -2 --oneline` |
@@ -66,31 +71,32 @@ T1B đã implement full theme picker + contrast accessibility completion cho pub
 
 | ID | Expectation | Method | Result |
 |---|---|---|---|
-| AC-01 | ThemePicker mount 2× trong GlobalNavbar (desktop + mobile) | `theme-shell-mount.test.ts` | **PASS** (1 test) |
-| AC-02 | 5 dòng hiển thị đúng thứ tự HRP → Ocean → Emerald → Violet → Executive | `theme-picker.test.ts` structural | **PASS** (THEMES order) |
-| AC-03 | (portal)/layout.tsx có ThemeScope wrap | `theme-shell-mount.test.ts` | **PASS** (1 test) |
-| AC-04 | (jobs)/viec-lam/layout.tsx có ThemeScope wrap | `theme-shell-mount.test.ts` | **PASS** (1 test) |
-| AC-05 | Cả 2 shell đọc cùng key → theme persist | Manual review code (storage key) | **PASS** (storage key = 'hrp.theme') |
-| AC-06 | app/admin/layout.tsx KHÔNG có ThemeScope | `theme-shell-mount.test.ts` | **PASS** (no import) |
-| AC-07 | `<html>` KHÔNG có data-theme | `theme-scope.test.ts` structural + `app/layout.tsx` review | **PASS** |
-| AC-08 | Trigger có `aria-haspopup`, `aria-expanded`, accessible name | `theme-picker.test.ts` structural | **PASS** (3 tests) |
-| AC-09 | Keyboard nav (Enter/Space, Escape, Arrow Up/Down) | `theme-picker.test.ts` structural | **PASS** (3 tests) |
-| AC-10 | Focus return to trigger on close | `theme-picker.test.ts` structural (rAF) | **PASS** |
-| AC-11 | `menu + menuitemradio` + `aria-checked` | `theme-picker.test.ts` structural | **PASS** (2 tests) |
-| AC-12 | `prefers-reduced-motion` tôn trọng | Review (không thêm animation mới) | **PASS** |
-| AC-13 | Mobile không overflow (max-w + overflow-y) | `theme-picker.test.ts` structural | **PASS** |
-| AC-14 | 6 site dùng `var(--color-primary-dark)` cho background | `theme-sites-c7-pd.test.ts` | **PASS** (6 tests) |
-| AC-15 | white-on-PD ≥ 4.5:1 ở 5/5 palette | `theme-sites-c7-pd.test.ts` probe (HRP 6.468 / Ocean 9.647 / Emerald 8.272 / Violet 12.438 / Executive 8.577) | **PASS** (5 tests) |
-| AC-16 | `.hrp-btn-apply` default `var(--color-on-surface)` + probe ≥ 4.5:1 | `theme-cta-foreground.test.ts` (~7.4:1) | **PASS** (2 tests) |
-| AC-17 | `.hrp-btn-apply` hover `var(--color-on-primary)` + probe ≥ 4.5:1 | `theme-cta-foreground.test.ts` (~7.0:1) | **PASS** (2 tests) |
-| AC-18 | 3 site CTA dùng chung `.hrp-btn-apply` | `theme-shell-mount.test.ts` (FeaturedJobCard, JobCard, DetailApplyCta) | **PASS** (3 tests) |
-| AC-19 | T1C guard AC-09 update: `.apply-btn` + `.pub-btn-primary` dùng PD | `globals-css-theme-scope.test.ts` | **PASS** (2 tests) |
-| AC-20 | T1C tests cũ khác giữ nguyên + pass | Full vitest `src/shared/theme` | **PASS** (74/74 T1C) |
-| AC-21 | 0 inline script, 0 cookie, 0 CSP change | Review code (không có) | **PASS** |
-| AC-22 | 0 dark mode, 0 status color override | Review `[data-theme]` block | **PASS** (chỉ override 5 brand token) |
-| AC-23 | 0 edit to `theme-types.ts` / `theme-tokens.ts` | `git diff` | **PASS** (unmodified) |
-| AC-24 | 0 ThemePicker ở admin route | Review `app/admin/**` | **PASS** |
-| AC-25 | Out-of-scope guards: status color, dark mode, schema | RQ-09 (out-of-scope) | **PASS** (verified) |
+| AC-00 | `verify-task.ps1` RESULT: PASS (Tier 1 preflight) | `pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-t1b-public-theme-picker-contrast/TASK.md` (E-07) | **PASS** (12/12 checks OK) |
+| AC-01 | ThemePicker mount 2× trong GlobalNavbar (desktop + mobile) | `theme-shell-mount.test.ts` (E-03) | **PASS** (1 test) |
+| AC-02 | 5 dòng hiển thị đúng thứ tự HRP → Ocean → Emerald → Violet → Executive | `theme-picker.test.ts` structural (E-03) | **PASS** (THEMES order) |
+| AC-03 | (portal)/layout.tsx có ThemeScope wrap | `theme-shell-mount.test.ts` (E-03) | **PASS** (1 test) |
+| AC-04 | (jobs)/viec-lam/layout.tsx có ThemeScope wrap | `theme-shell-mount.test.ts` (E-03) | **PASS** (1 test) |
+| AC-05 | Cả 2 shell đọc cùng key → theme persist | Manual review code (storage key) (E-14) | **PASS** (storage key = 'hrp.theme') |
+| AC-06 | app/admin/layout.tsx KHÔNG có ThemeScope | `theme-shell-mount.test.ts` (E-03) | **PASS** (no import) |
+| AC-07 | `<html>` KHÔNG có data-theme | `theme-scope.test.ts` structural + `app/layout.tsx` review (E-03) | **PASS** |
+| AC-08 | Trigger có `aria-haspopup`, `aria-expanded`, accessible name | `theme-picker.test.ts` structural (E-03) | **PASS** (3 tests) |
+| AC-09 | Keyboard nav (Enter/Space, Escape, Arrow Up/Down) | `theme-picker.test.ts` structural (E-03) | **PASS** (3 tests) |
+| AC-10 | Focus return to trigger on close | `theme-picker.test.ts` structural (rAF) (E-03) | **PASS** |
+| AC-11 | `menu + menuitemradio` + `aria-checked` | `theme-picker.test.ts` structural (E-03) | **PASS** (2 tests) |
+| AC-12 | `prefers-reduced-motion` tôn trọng | Review (không thêm animation mới) (E-14) | **PASS** |
+| AC-13 | Mobile không overflow (max-w + overflow-y) | `theme-picker.test.ts` structural (E-03) | **PASS** |
+| AC-14 | 6 site dùng `var(--color-primary-dark)` cho background | `theme-sites-c7-pd.test.ts` (E-03) | **PASS** (6 tests) |
+| AC-15 | white-on-PD ≥ 4.5:1 ở 5/5 palette | `theme-sites-c7-pd.test.ts` probe; evidence E-11 (`theme-sites-c7-pd.test.ts`) — HRP 6.468 / Ocean 9.647 / Emerald 8.272 / Violet 12.438 / Executive 8.577 | **PASS** (5 tests) |
+| AC-16 | `.hrp-btn-apply` default `var(--color-on-surface)` + probe ≥ 4.5:1 | `theme-cta-foreground.test.ts`; evidence E-12 (`theme-cta-foreground.test.ts`) — ~7.4:1 | **PASS** (2 tests) |
+| AC-17 | `.hrp-btn-apply` hover `var(--color-on-primary)` + probe ≥ 4.5:1 | `theme-cta-foreground.test.ts`; evidence E-13 (`theme-cta-foreground.test.ts`) — ~7.0:1 | **PASS** (2 tests) |
+| AC-18 | 3 site CTA dùng chung `.hrp-btn-apply` | `theme-shell-mount.test.ts` (E-03) — FeaturedJobCard, JobCard, DetailApplyCta | **PASS** (3 tests) |
+| AC-19 | T1C guard AC-09 update: `.apply-btn` + `.pub-btn-primary` dùng PD | `globals-css-theme-scope.test.ts` (E-03) | **PASS** (2 tests) |
+| AC-20 | T1C tests cũ khác giữ nguyên + pass | Full vitest `src/shared/theme` (E-03) | **PASS** (74/74 T1C) |
+| AC-21 | 0 inline script, 0 cookie, 0 CSP change | Review code (không có) (E-15) | **PASS** |
+| AC-22 | 0 dark mode, 0 status color override | Review `[data-theme]` block (E-15) | **PASS** (chỉ override 5 brand token) |
+| AC-23 | 0 edit to `theme-types.ts` / `theme-tokens.ts` | `git diff` (E-14) | **PASS** (unmodified) |
+| AC-24 | 0 ThemePicker ở admin route | Review `app/admin/**` (E-15) | **PASS** |
+| AC-25 | Out-of-scope guards: status color, dark mode, schema | RQ-09 (out-of-scope) (E-15) | **PASS** (verified) |
 
 ## 4. Changed Deliverables
 
@@ -145,7 +151,7 @@ T1B đã implement full theme picker + contrast accessibility completion cho pub
 
 | ID | Evidence | Path / Command | Result |
 |---|---|---|---|
-| E-01 | Implementation SHA | `git rev-parse HEAD` | `8b6f0e02` (feature: `210c2751`) |
+| E-01 | Implementation SHA | `git rev-parse HEAD` | `0947b84bde963507440d1f2c79d9ed4e268adbe2` |
 | E-02 | Full unit suite | `npx vitest run --config vitest.unit.config.ts` | 5366/5366 pass (9 skipped) |
 | E-03 | Targeted theme unit | `npx vitest run --config vitest.unit.config.ts 'src/shared/theme'` | 132/132 pass (74 T1C + 58 T1B) |
 | E-04 | Typecheck | `pnpm exec tsc --noEmit` | 0 errors |
@@ -165,7 +171,7 @@ T1B đã implement full theme picker + contrast accessibility completion cho pub
 
 | Round | Status | Note |
 |---|---|---|
-| 0 | READY_FOR_REVIEW | v1.0: T1B thực hiện toàn bộ scope (theme picker + 6 site migrate + CTA fix). Implementation feature commit `210c2751`, doc commit `8b6f0e02` (HEAD). Tất cả 9 gates pass. Awaiting push + PR. |
+| 0 | READY_FOR_AUDIT | v1.0: T1B thực hiện toàn bộ scope (theme picker + 6 site migrate + CTA fix). Implementation feature commit `210c2751`, doc commit HEAD `0947b84b`. Tất cả 9 gates pass. Awaiting push + PR. |
 
 ## 8. Next steps for T0
 
@@ -183,4 +189,4 @@ T1B đã implement full theme picker + contrast accessibility completion cho pub
 - **Dark mode** vẫn không tồn tại (out of scope, không nằm trong RQ nào).
 - **CTA token hotfix** (`--color-primary-cta` 2.708:1 ở baseline) đã được sửa trong T1B này — không còn separate T2 hotfix.
 
-Handoff status: READY_FOR_REVIEW
+Handoff status: READY_FOR_AUDIT
