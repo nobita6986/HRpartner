@@ -11,7 +11,7 @@
 | Audit mode | LIGHT |
 | Audit reason | Theme picker là surface công khai, mount ở 2 public shell, đụng 6 theme-sensitive sites + CTA foreground contract. CRITICAL + LIGHT theo lane matrix (đối xứng T1C). |
 | Baseline | `2b07d9de1310fdf08f85c996eeed1df659a5f91f` |
-| Implementation SHA | `22e60602ce6963f266834a3be96c574b69c07663` (HEAD) |
+| Implementation SHA | `22e60602ce6963f266834a3be96c574b69c07663` |
 | Frozen delivery | YES |
 | Canonical gates | PASS |
 | Correction batches used | 0 |
