@@ -114,20 +114,25 @@ describe('app/globals.css — [data-theme] contract (T1C v1.2)', () => {
     expect(css).not.toMatch(/\.dark\b/);
   });
 
-  // AC-08: .hrp-btn-apply vẫn dùng --color-primary-cta (T1C không override CTA)
-  it('AC-08: .hrp-btn-apply vẫn dùng --color-primary-cta', () => {
-    // Khối CSS gốc có thể thay đổi qua PR khác; kiểm tra CTA token vẫn được tham chiếu
-    expect(css).toMatch(/--color-primary-cta:\s*#[0-9a-f]{6}\s*;/);
-    // Khối .hrp-btn-apply sử dụng var(--color-primary-cta)
+  // AC-08: .hrp-btn-apply dùng --color-apply-cta (T1A migrated từ --color-primary-cta)
+  // Token cũ --color-primary-cta giữ nguyên (alias ngược) để không vỡ site cũ.
+  it('AC-08: .hrp-btn-apply dùng --color-apply-cta (T1A migrated)', () => {
+    // T1A đã migrate nguồn màu CTA sang --color-apply-cta (alias var(--color-primary-dark)).
+    // Token cũ --color-primary-cta vẫn tồn tại (alias ngược) — xác nhận ở dòng dưới.
+    expect(css).toMatch(/--color-apply-cta:\s*var\(--color-primary-dark\)/);
+    expect(css).toMatch(/--color-primary-cta:\s*#[0-9a-f]{6}/);
+    // Khối .hrp-btn-apply sử dụng var(--color-apply-cta)
     const m = css.match(/\.hrp-btn-apply\s*\{[^}]*\}/);
     if (m) {
-      expect(m[0]).toMatch(/--color-primary-cta/);
+      expect(m[0]).toMatch(/--color-apply-cta/);
     }
   });
 
-  it('AC-08: --color-primary-cta* token không bị override trong [data-theme] block', () => {
+  it('AC-08: --color-primary-cta* và --color-apply-cta* không bị override trong [data-theme] block', () => {
+    // T1A: cả 4 token CTA (cũ + mới) không được override trong [data-theme].
     const re = /\[data-theme=['"]?([a-z-]+)['"]?\]\s*\{([^}]*)\}/g;
     for (const m of css.matchAll(re)) {
+      expect(m[2], `[data-theme="${m[1]}"] should not override --color-apply-cta*`).not.toMatch(/--color-apply-cta/);
       expect(m[2], `[data-theme="${m[1]}"] should not override --color-primary-cta*`).not.toMatch(/--color-primary-cta/);
     }
   });

@@ -570,33 +570,37 @@ describe('AC-23: CTA Ung tuyen dung class dung chung .hrp-btn-apply (t2-apply-ct
     expect(btnBlock).toContain('hrp-btn-apply');
   });
 
-  it('.hrp-btn-apply resolve token --color-primary-cta (softer warm orange) trong globals.css', () => {
-    // Class .hrp-btn-apply phai background-color: var(--color-primary-cta)
+  it('.hrp-btn-apply resolve token --color-apply-cta (alias theme) trong globals.css', () => {
+    // Class .hrp-btn-apply phai background-color: var(--color-apply-cta)
     // de khong phu thuoc tailwind utility. Verify bang cach doc globals.css.
+    // hrp-t1a-theme-apply-cta-hotfix: token --color-apply-cta alias
+    // var(--color-primary-dark) de cascade theo 5 theme.
     const globals = readFileSync(join(process.cwd(), 'app/globals.css'), 'utf8').replace(/\r\n/g, '\n');
-    expect(globals).toContain('--color-primary-cta: #f07f1a');
-    expect(globals).toContain('--color-primary-cta-dark: #c2520a');
-    expect(globals).toMatch(/\.hrp-btn-apply\s*\{[^}]*--color-primary-cta/);
-    expect(globals).toMatch(/\.hrp-btn-apply:hover:not\(:disabled\)\s*\{[^}]*--color-primary-cta-dark/);
+    expect(globals).toContain('--color-apply-cta: var(--color-primary-dark)');
+    expect(globals).toContain('--color-apply-cta-dark:');
+    expect(globals).toMatch(/\.hrp-btn-apply\s*\{[^}]*--color-apply-cta/);
+    expect(globals).toMatch(/\.hrp-btn-apply:hover:not\(:disabled\)\s*\{[^}]*--color-apply-cta-dark/);
   });
 
-  it('.hrp-btn-apply color la --color-on-surface (text dam cho default CTA, 4.5:1+ voi --color-primary-cta)', () => {
-    // t1b-public-theme-picker-contrast (RQ-05, AC-16): PR #132 sai khi dung
-    // var(--color-on-primary) (white) o default — white-on-#f07f1a chi dat
-    // ~3:1, 14px semibold = normal text can 4.5:1. T1B doi default sang
-    // var(--color-on-surface) (#1a1c1b dam) — probe ~7.4:1 pass 4.5:1.
-    // Hover moi dung var(--color-on-primary) vi #c2520a dat ~7:1.
+  it('.hrp-btn-apply color la --color-on-primary (white) — cascade theo theme, 4.5:1+', () => {
+    // t1a-theme-apply-cta-hotfix (RQ-01, AC-02/03): CTA đổi sang nguồn
+    // theme (var(--color-primary-dark)) thay vì primary brand cam. White
+    // text trên PD đạt 5/5 palette ≥ 4.5:1 (HRP 6.468 / Ocean 9.647 /
+    // Emerald 8.272 / Violet 12.438 / Gold 8.577). PR #132 / T1B từng để
+    // --color-on-surface (đậm, default state) trên --color-primary-cta
+    // (softer orange) — pass 4.5:1 nhưng không cascade theo theme.
     const globals = readFileSync(join(process.cwd(), 'app/globals.css'), 'utf8').replace(/\r\n/g, '\n');
-    expect(globals).toMatch(/\.hrp-btn-apply\s*\{[^}]*color:\s*var\(--color-on-surface\)/);
-    // Hover van dung white (var(--color-on-primary)) cho pass 4.5:1 voi #c2520a
+    expect(globals).toMatch(/\.hrp-btn-apply\s*\{[^}]*color:\s*var\(--color-on-primary\)/);
+    // Hover cũng dùng on-primary (white) trên mix 82% PD + 18% black
     expect(globals).toMatch(/\.hrp-btn-apply:hover:not\(:disabled\)\s*\{[^}]*color:\s*var\(--color-on-primary\)/);
   });
 
-  it('token --color-primary-cta van resolve duoc', () => {
-    // Sanity: token moi da duoc khai trong @theme.
+  it('token --color-apply-cta van resolve duoc qua var(--color-primary-dark)', () => {
+    // Sanity: token moi da duoc khai trong @theme, alias theo PD.
     const globals = readFileSync(join(process.cwd(), 'app/globals.css'), 'utf8').replace(/\r\n/g, '\n');
     expect(globals).toContain('--color-primary: #f26522');
-    expect(globals).toContain('--color-primary-cta');
+    expect(globals).toContain('--color-apply-cta');
+    expect(globals).toContain('--color-primary-dark: #a63b00');
   });
 });
 

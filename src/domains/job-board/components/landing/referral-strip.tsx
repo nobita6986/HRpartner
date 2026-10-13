@@ -25,7 +25,7 @@ export function ReferralStrip() {
           {/* Y10.8+: bỏ eyebrow "Cơ hội mới" — chỉ giữ heading + subheading. */}
           <h2
             id="hrp-ctv-heading"
-            className="font-head text-headline-xl font-bold text-primary-container"
+            className="font-head text-headline-xl font-bold text-primary-dark"
           >
             Chương trình Cộng tác viên
           </h2>

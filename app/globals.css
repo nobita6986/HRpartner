@@ -21,6 +21,21 @@
   --color-primary-cta: #f07f1a;
   --color-primary-cta-dark: #c2520a;
 
+  /* hrp-t1a-theme-apply-cta-hotfix (RQ-01): CTA phản ánh theme đang chọn.
+     Alias `var(--color-primary-dark)` (cascading từ 5 `[data-theme='...']`
+     block T1C đã chốt) nên nút đổi màu theo theme ở cả 3 site mà không cần
+     thêm block theme mới. Default dùng PD (không phải P) vì white-on-P ở
+     HRP chỉ 3.153:1 — fail 4.5:1 cho 14px semibold (normal text). White
+     on PD đạt 5/5 palette ≥ 4.5:1 (HRP 6.468 / Ocean 9.647 / Emerald 8.272
+     / Violet 12.438 / Gold 8.577). Hover dùng mix 82% PD + 18% black cho
+     white-on-mix ≥ 4.5:1 ở 5/5 palette (8.503..14.295). */
+  --color-apply-cta: var(--color-primary-dark);
+  /* Hover dùng color-mix(in srgb, PD 82%, #000) — TỰ cascade theo theme
+     qua var(--color-primary-dark), không cần thêm block [data-theme] mới.
+     5/5 palette: HRP #883000 (8.503:1), Ocean #0b3d51 (11.663:1),
+     Emerald #0b4a2f (10.320:1), Violet #341964 (14.295:1), Gold #4c3d07 (10.618:1). */
+  --color-apply-cta-dark: color-mix(in srgb, var(--color-primary-dark) 82%, #000);
+
   /* Surface / neutral */
   --color-background: #faf9f7;
   --color-surface-warm: #faf9f7;
@@ -493,24 +508,31 @@ body {
    nên disabled chỉ áp dụng cho preview hoặc preview-state.
 
    t1b-public-theme-picker-contrast (RQ-05, CTA foreground fix):
-   - Default: text `var(--color-on-surface)` (#1a1c1b, không theme theo
-     data-theme) trên `--color-primary-cta` (#f07f1a) — probe ~7.4:1 ≥ 4.5:1.
-     14px semibold = normal text, cần 4.5:1 (đã sửa contract từ 3:1 sai).
+   - Default: text `var(--color-on-primary)` (#ffffff) trên
+     `--color-apply-cta` (alias `var(--color-primary-dark)`, cascade theo
+     theme) — white-on-PD 5/5 palette ≥ 4.5:1 (HRP 6.468 / Ocean 9.647 /
+     Emerald 8.272 / Violet 12.438 / Gold 8.577).
    - Hover: text `var(--color-on-primary)` (#ffffff) trên
-     `--color-primary-cta-dark` (#c2520a) — probe ~7.0:1 ≥ 4.5:1.
+     `--color-apply-cta-dark` (color-mix PD 82% + #000) — 5/5 palette
+     ≥ 8.5:1, pass 4.5:1 với biên độ lớn.
    - Focus-visible: outline `var(--color-focus-ring)` (resolve PD, đã
      cascade từ T1C) — 3:1 UI/focus pass.
-   - Disabled: giữ nguyên `var(--color-on-surface-variant)`. */
+   - Disabled: giữ nguyên `var(--color-on-surface-variant)`.
+
+   hrp-t1a-theme-apply-cta-hotfix (RQ-01): thay 2 token
+   `--color-primary-cta*` (cố định cam HRP) bằng `--color-apply-cta*`
+   (alias token theme). 3 site FeaturedJobCard / JobCard / DetailApplyCta
+   dùng chung class `.hrp-btn-apply` nên tự đồng bộ theo theme. */
 .hrp-btn-apply {
-  background-color: var(--color-primary-cta);
-  color: var(--color-on-surface);
+  background-color: var(--color-apply-cta);
+  color: var(--color-on-primary);
   cursor: pointer;
   transition-property: background-color;
   transition-duration: var(--t-fast);
   transition-timing-function: var(--ease-out);
 }
 .hrp-btn-apply:hover:not(:disabled) {
-  background-color: var(--color-primary-cta-dark);
+  background-color: var(--color-apply-cta-dark);
   color: var(--color-on-primary);
   transition-duration: var(--t-medium);
 }

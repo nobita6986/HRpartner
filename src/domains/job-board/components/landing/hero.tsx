@@ -49,11 +49,16 @@ export function Hero({ children, className = '', backgroundImage = null }: HeroP
       />
       {/* hrp-t2-public-site-hotfix (T2 / STEP-06): overlay tối hơn khi có
          ảnh nền để giữ WCAG AA contrast cho text-on-primary. Khi không
-         có ảnh, overlay rỗng (v1). */}
+         có ảnh, overlay rỗng (v1).
+         hrp-t1a-theme-apply-cta-hotfix (T1A / R2): tăng overlay từ
+         `bg-primary-dark/55` (R1 — white/over 2.88-4.16, 4/5 FAIL) lên
+         `bg-primary-dark/85` (R2 probe — white/over 4.95-9.92, 5/5 PASS).
+         Ảnh vẫn thấy qua 15% primary-fixed/primary-container còn lại
+         (giữ visual context). */}
       {backgroundImage ? (
         <div
           aria-hidden="true"
-          className="absolute inset-0 bg-primary-dark/55"
+          className="absolute inset-0 bg-primary-dark/85"
         />
       ) : null}
       {/* RQ-10 / DEC-14 (VIS-06): inner container max-w-7xl (đồng bộ với SearchSection + body)
