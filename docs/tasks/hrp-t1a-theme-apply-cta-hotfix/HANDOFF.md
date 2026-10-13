@@ -11,8 +11,8 @@
 | Audit mode | `NONE` |
 | Execution round | `3` (R0 round 1, R1 round 2, R2 round 3) |
 | Baseline | `5cfbca12e948c3a207f61db06fe7001c9cc248d2` |
-| Implementation SHA | `fa9f49fb` (HEAD sau R2) |
-| Implementation SHA note | HEAD = `fa9f49fb` (R2 commit: overlay 85%, body no opacity, real probe). |
+| Implementation SHA | `fa9f49fb081f486bbb6a854440c6cf09066978f2` |
+| Implementation SHA note | HEAD = `3023d79d45a54de72454c210662e5cde86fffdf5` (R2 pin SHA). Semantic R2 = `fa9f49fb081f486bbb6a854440c6cf09066978f2` (overlay 85%, body no opacity, real probe). |
 | Frozen delivery | `YES` |
 | Canonical gates | `NOT_REQUIRED` |
 | Audit eligibility | `NOT_REQUIRED` |
