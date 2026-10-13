@@ -102,21 +102,28 @@ describe('t2-apply-cta-tone: globals.css khai token va class dung chung', () => 
     // --color-primary-cta* cố định sang --color-apply-cta* alias
     // var(--color-primary-dark) để cascade theo theme. Token cũ
     // --color-primary-cta* vẫn còn (alias ngược) để không vỡ site cũ.
+    //
+    // hrp-t1a-cta-theme-cascade-hotfix (RQ-01): phát hiện alias ở :root
+    // bị "đóng băng" do CSS spec early resolution; CTA thực sự dùng trực
+    // tiếp var(--color-primary-dark) trong property value. Token
+    // --color-apply-cta* vẫn giữ ở :root cho backward compat.
     expect(GLOBALS_CSS).toContain('--color-apply-cta: var(--color-primary-dark)');
     expect(GLOBALS_CSS).toContain('--color-apply-cta-dark:');
     expect(GLOBALS_CSS).toContain('--color-primary-cta: #f07f1a');
     expect(GLOBALS_CSS).toContain('--color-primary-cta-dark: #c2520a');
   });
 
-  it('.hrp-btn-apply dung var(--color-apply-cta) lam background', () => {
+  it('.hrp-btn-apply dung var(--color-primary-dark) lam background (lazy cascade)', () => {
+    // Sau hrp-t1a-cta-theme-cascade-hotfix: dùng trực tiếp var(--color-primary-dark)
+    // thay vì --color-apply-cta để nhận đúng giá trị từ [data-theme=...] scope.
     expect(GLOBALS_CSS).toMatch(
-      /\.hrp-btn-apply\s*\{[^}]*background-color:\s*var\(--color-apply-cta\)/,
+      /\.hrp-btn-apply\s*\{[^}]*background-color:\s*var\(--color-primary-dark\)/,
     );
   });
 
-  it('.hrp-btn-apply:hover dung var(--color-apply-cta-dark)', () => {
+  it('.hrp-btn-apply:hover dung color-mix(in srgb, var(--color-primary-dark) 82%, #000)', () => {
     expect(GLOBALS_CSS).toMatch(
-      /\.hrp-btn-apply:hover:not\(:disabled\)\s*\{[^}]*background-color:\s*var\(--color-apply-cta-dark\)/,
+      /\.hrp-btn-apply:hover:not\(:disabled\)\s*\{[^}]*background-color:\s*color-mix\(in srgb,\s*var\(--color-primary-dark\)\s*82%,\s*#000\)/,
     );
   });
 

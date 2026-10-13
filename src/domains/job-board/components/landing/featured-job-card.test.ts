@@ -575,11 +575,18 @@ describe('AC-23: CTA Ung tuyen dung class dung chung .hrp-btn-apply (t2-apply-ct
     // de khong phu thuoc tailwind utility. Verify bang cach doc globals.css.
     // hrp-t1a-theme-apply-cta-hotfix: token --color-apply-cta alias
     // var(--color-primary-dark) de cascade theo 5 theme.
+    //
+    // hrp-t1a-cta-theme-cascade-hotfix: alias ở :root bị "đóng băng" do
+    // CSS spec early resolution; CTA giờ dùng TRỰC TIẾP
+    // var(--color-primary-dark) trong property value để nhận đúng giá
+    // trị từ [data-theme=...] ancestor.
     const globals = readFileSync(join(process.cwd(), 'app/globals.css'), 'utf8').replace(/\r\n/g, '\n');
     expect(globals).toContain('--color-apply-cta: var(--color-primary-dark)');
     expect(globals).toContain('--color-apply-cta-dark:');
-    expect(globals).toMatch(/\.hrp-btn-apply\s*\{[^}]*--color-apply-cta/);
-    expect(globals).toMatch(/\.hrp-btn-apply:hover:not\(:disabled\)\s*\{[^}]*--color-apply-cta-dark/);
+    expect(globals).toMatch(/\.hrp-btn-apply\s*\{[^}]*background-color:\s*var\(--color-primary-dark\)/);
+    expect(globals).toMatch(
+      /\.hrp-btn-apply:hover:not\(:disabled\)\s*\{[^}]*background-color:\s*color-mix\(in srgb,\s*var\(--color-primary-dark\)\s*82%/,
+    );
   });
 
   it('.hrp-btn-apply color la --color-on-primary (white) — cascade theo theme, 4.5:1+', () => {

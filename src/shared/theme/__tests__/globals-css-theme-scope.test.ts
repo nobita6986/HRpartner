@@ -116,15 +116,20 @@ describe('app/globals.css — [data-theme] contract (T1C v1.2)', () => {
 
   // AC-08: .hrp-btn-apply dùng --color-apply-cta (T1A migrated từ --color-primary-cta)
   // Token cũ --color-primary-cta giữ nguyên (alias ngược) để không vỡ site cũ.
-  it('AC-08: .hrp-btn-apply dùng --color-apply-cta (T1A migrated)', () => {
-    // T1A đã migrate nguồn màu CTA sang --color-apply-cta (alias var(--color-primary-dark)).
-    // Token cũ --color-primary-cta vẫn tồn tại (alias ngược) — xác nhận ở dòng dưới.
+  it('AC-08: .hrp-btn-apply dùng var(--color-primary-dark) (T1A cascade-hotfix migrated)', () => {
+    // T1A cta-theme-cascade-hotfix: dùng TRỰC TIẾP var(--color-primary-dark) trong
+    // property value (lazy resolution tại scope áp dụng) thay vì alias
+    // --color-apply-cta ở :root (early resolution, bị freeze HRP dark).
+    // Token --color-apply-cta vẫn còn ở :root cho backward compat.
     expect(css).toMatch(/--color-apply-cta:\s*var\(--color-primary-dark\)/);
     expect(css).toMatch(/--color-primary-cta:\s*#[0-9a-f]{6}/);
-    // Khối .hrp-btn-apply sử dụng var(--color-apply-cta)
+    // Khối .hrp-btn-apply sử dụng var(--color-primary-dark) TRỰC TIẾP
     const m = css.match(/\.hrp-btn-apply\s*\{[^}]*\}/);
     if (m) {
-      expect(m[0]).toMatch(/--color-apply-cta/);
+      expect(m[0]).toMatch(/var\(--color-primary-dark\)/);
+      // Regression guard: KHÔNG được reference --color-apply-cta trong .hrp-btn-apply
+      // (tránh tái diễn pitfall early resolution).
+      expect(m[0]).not.toMatch(/--color-apply-cta/);
     }
   });
 
@@ -202,6 +207,9 @@ describe('app/globals.css — [data-theme] contract (T1C v1.2)', () => {
   });
 
   // RQ-11: T1C không thêm token mới ngoài 5 brand token trong [data-theme]
+  // Lưu ý: T1A cta-theme-cascade-hotfix giữ --color-apply-cta* ở :root làm alias
+  // ngược (backward compat); KHÔNG override trong [data-theme]. Set allowlist
+  // không cần mở rộng vì rule này kiểm tra [data-theme] block, không phải :root.
   it('RQ-11: [data-theme] chỉ override 5 brand token, không thêm token mới', () => {
     const re = /\[data-theme=['"]?([a-z-]+)['"]?\]\s*\{([^}]*)\}/g;
     const allowed = new Set([

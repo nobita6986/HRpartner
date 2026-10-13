@@ -1,17 +1,21 @@
 /**
  * theme-cta-foreground.test.ts — .hrp-btn-apply default + hover probe.
  *
- * Owned by T1A (`hrp-t1a-theme-apply-cta-hotfix`) per TASK §In-scope roots.
- * Baseline: `5cfbca12`. Spec: `v1.0`.
+ * Owned by T1A (`hrp-t1a-theme-apply-cta-hotfix` + `hrp-t1a-cta-theme-cascade-hotfix`).
+ * Baseline: `5cfbca12` (theme-apply-cta-hotfix), `c0d32c8a` (cta-theme-cascade-hotfix).
+ * Spec: `v1.0`.
  *
  * Contract migration (PR #133 T1B đã sửa 3:1 → 4.5:1 cho text 14px semibold;
  * PR #135 T1A nâng cấp nguồn màu CTA từ `--color-primary-cta*` cố định
  * sang `--color-apply-cta*` alias theo `var(--color-primary-dark)` để cascade
- * theo 5 theme T1C đã chốt):
- *   - Default: text `var(--color-on-primary)` (white) trên `--color-apply-cta`
- *     (alias `var(--color-primary-dark)`, 5/5 palette ≥ 4.5:1).
+ * theo 5 theme T1C đã chốt — nhưng phát hiện pitfall: alias ở `:root` bị
+ * "đóng băng" thành HRP dark do early resolution của `var()` substitution
+ * trong custom property definition):
+ *   - Default: text `var(--color-on-primary)` (white) trên `var(--color-primary-dark)`
+ *     (5/5 palette ≥ 4.5:1).
  *   - Hover: text `var(--color-on-primary)` (white) trên
- *     `--color-apply-cta-dark` (color-mix PD 82% + #000, 5/5 palette ≥ 4.5:1).
+ *     `color-mix(in srgb, var(--color-primary-dark) 82%, #000)`
+ *     (5/5 palette ≥ 4.5:1).
  *   - Focus: outline 2px `var(--color-focus-ring)` (UI ≥ 3:1 5/5 palette).
  *   - Disabled: `var(--color-on-surface-variant)` trên `var(--color-surface-container)`
  *     (8.093:1 ≥ 4.5:1).
@@ -47,10 +51,10 @@ function contrast(hex1: string, hex2: string): number {
 }
 
 describe('RQ-01: .hrp-btn-apply default color theo theme (AC-01, AC-02)', () => {
-  it('AC-01: default background dùng var(--color-apply-cta) (alias theme)', () => {
+  it('AC-01: default background dùng var(--color-primary-dark) (lazy cascade theme)', () => {
     const m = GLOBALS_CSS.match(/\.hrp-btn-apply\s*\{[^}]*\}/);
     expect(m).not.toBeNull();
-    expect(m![0]).toMatch(/background-color:\s*var\(--color-apply-cta\)/);
+    expect(m![0]).toMatch(/background-color:\s*var\(--color-primary-dark\)/);
   });
 
   it('AC-02: default color dùng var(--color-on-primary) (white)', () => {
@@ -59,18 +63,32 @@ describe('RQ-01: .hrp-btn-apply default color theo theme (AC-01, AC-02)', () => 
     expect(m![0]).toMatch(/color:\s*var\(--color-on-primary\)/);
   });
 
-  it('AC-01: token --color-apply-cta alias về var(--color-primary-dark) (cascade theme)', () => {
+  it('AC-01: token --color-apply-cta vẫn còn ở :root (alias ngược, không cascade qua theme)', () => {
+    // T1A giữ --color-apply-cta: var(--color-primary-dark) ở :root cho backward
+    // compat. Pitfall đã được document — token này KHÔNG cascade theo theme
+    // vì early resolution. CTA thực sự dùng trực tiếp var(--color-primary-dark).
     const m = GLOBALS_CSS.match(/--color-apply-cta:\s*([^;]+);/);
     expect(m).not.toBeNull();
     expect(m![1]).toMatch(/var\(--color-primary-dark\)/);
   });
+
+  it('AC-08: .hrp-btn-apply KHÔNG dùng --color-apply-cta (tránh tái diễn pitfall)', () => {
+    // Lưu ý: regex phải bám vào rule bắt đầu ở đầu dòng, không phải
+    // `.hrp-btn-apply` xuất hiện trong comment phía trên.
+    const m = GLOBALS_CSS.match(/^\.hrp-btn-apply\s*\{[^}]*\}/m);
+    expect(m).not.toBeNull();
+    // Tất cả rule của .hrp-btn-apply không được reference --color-apply-cta.
+    expect(m![0]).not.toMatch(/--color-apply-cta/);
+  });
 });
 
 describe('RQ-01: .hrp-btn-apply hover state', () => {
-  it('AC-04: hover background dùng var(--color-apply-cta-dark) (color-mix PD 82% + #000)', () => {
+  it('AC-04: hover background dùng color-mix(in srgb, var(--color-primary-dark) 82%, #000)', () => {
     const m = GLOBALS_CSS.match(/\.hrp-btn-apply:hover:not\(:disabled\)\s*\{[^}]*\}/);
     expect(m).not.toBeNull();
-    expect(m![0]).toMatch(/background-color:\s*var\(--color-apply-cta-dark\)/);
+    expect(m![0]).toMatch(
+      /background-color:\s*color-mix\(in srgb,\s*var\(--color-primary-dark\)\s*82%,\s*#000\)/,
+    );
   });
 
   it('AC-04: hover color dùng var(--color-on-primary) (white)', () => {
