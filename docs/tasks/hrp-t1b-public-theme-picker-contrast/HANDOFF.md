@@ -11,7 +11,7 @@
 | Audit mode | LIGHT |
 | Audit reason | Theme picker là surface công khai, mount ở 2 public shell, đụng 6 theme-sensitive sites + CTA foreground contract. CRITICAL + LIGHT theo lane matrix (đối xứng T1C). |
 | Baseline | `2b07d9de1310fdf08f85c996eeed1df659a5f91f` |
-| Implementation SHA | `856871cf616e0a8cf730977c3bea51667bdf1c6f` |
+| Implementation SHA | `9dce4fdfb93efbd344087f60539d786dafab717a` |
 | Frozen delivery | YES |
 | Canonical gates | PASS |
 | Correction batches used | 0 |
@@ -43,7 +43,7 @@ T1B đã implement full theme picker + contrast accessibility completion cho pub
 - ThemePicker KHÔNG mount ở admin route
 
 **Handoff cho T0 (audit):**
-- Implementation SHA `210c2751` frozen
+- Semantic feature SHA `210c2751`; frozen Implementation/E-01 SHA `9dce4fdfb93efbd344087f60539d786dafab717a`
 - Toàn bộ canonical gates (E-01..E-09) PASS
 - Contrast probe 5/5 palette pass white-on-PD
 
@@ -87,8 +87,8 @@ T1B đã implement full theme picker + contrast accessibility completion cho pub
 | AC-13 | Mobile không overflow (max-w + overflow-y) | `theme-picker.test.ts` structural (E-03) | **PASS** |
 | AC-14 | 6 site dùng `var(--color-primary-dark)` cho background | `theme-sites-c7-pd.test.ts` (E-03) | **PASS** (6 tests) |
 | AC-15 | white-on-PD ≥ 4.5:1 ở 5/5 palette | `theme-sites-c7-pd.test.ts` probe; evidence E-11 (`theme-sites-c7-pd.test.ts`) — HRP 6.468 / Ocean 9.647 / Emerald 8.272 / Violet 12.438 / Executive 8.577 | **PASS** (5 tests) |
-| AC-16 | `.hrp-btn-apply` default `var(--color-on-surface)` + probe ≥ 4.5:1 | `theme-cta-foreground.test.ts`; evidence E-12 (`theme-cta-foreground.test.ts`) — ~7.4:1 | **PASS** (2 tests) |
-| AC-17 | `.hrp-btn-apply` hover `var(--color-on-primary)` + probe ≥ 4.5:1 | `theme-cta-foreground.test.ts`; evidence E-13 (`theme-cta-foreground.test.ts`) — ~7.0:1 | **PASS** (2 tests) |
+| AC-16 | `.hrp-btn-apply` default `var(--color-on-surface)` + probe ≥ 4.5:1 | `theme-cta-foreground.test.ts`; evidence E-12 (`theme-cta-foreground.test.ts`) — 6.327:1 | **PASS** (2 tests) |
+| AC-17 | `.hrp-btn-apply` hover `var(--color-on-primary)` + probe ≥ 4.5:1 | `theme-cta-foreground.test.ts`; evidence E-13 (`theme-cta-foreground.test.ts`) — 4.661:1 | **PASS** (2 tests) |
 | AC-18 | 3 site CTA dùng chung `.hrp-btn-apply` | `theme-shell-mount.test.ts` (E-03) — FeaturedJobCard, JobCard, DetailApplyCta | **PASS** (3 tests) |
 | AC-19 | T1C guard AC-09 update: `.apply-btn` + `.pub-btn-primary` dùng PD | `globals-css-theme-scope.test.ts` (E-03) | **PASS** (2 tests) |
 | AC-20 | T1C tests cũ khác giữ nguyên + pass | Full vitest `src/shared/theme` (E-03) | **PASS** (74/74 T1C) |
@@ -162,8 +162,8 @@ T1B đã implement full theme picker + contrast accessibility completion cho pub
 | E-09 | Whitespace check | `git diff --check` | exit 0 |
 | E-10 | Build | `pnpm run build` | exit 0 (route list đầy đủ) |
 | E-11 | Contrast probe white-on-PD | `npx vitest run --config vitest.unit.config.ts src/shared/theme/__tests__/theme-sites-c7-pd.test.ts` | HRP 6.468 / Ocean 9.647 / Emerald 8.272 / Violet 12.438 / Executive 8.577 (5 tests passed) |
-| E-12 | Contrast probe CTA default | `npx vitest run --config vitest.unit.config.ts src/shared/theme/__tests__/theme-cta-foreground.test.ts -t "default"` | ~7.4:1 (2 tests passed) |
-| E-13 | Contrast probe CTA hover | `npx vitest run --config vitest.unit.config.ts src/shared/theme/__tests__/theme-cta-foreground.test.ts -t "hover"` | ~7.0:1 (1 test passed) |
+| E-12 | Contrast probe CTA default | `npx vitest run --config vitest.unit.config.ts src/shared/theme/__tests__/theme-cta-foreground.test.ts -t "default"` | 6.327:1 (2 tests passed) |
+| E-13 | Contrast probe CTA hover | `npx vitest run --config vitest.unit.config.ts src/shared/theme/__tests__/theme-cta-foreground.test.ts -t "hover"` | 4.661:1 (1 test passed) |
 | E-14 | T1C foundation integrity | `git diff 2b07d9de..HEAD -- src/shared/theme/theme-types.ts src/shared/theme/theme-tokens.ts` | 0 diff |
 | E-15 | Admin route integrity | `grep -rE 'theme-scope|theme-picker' -- app/admin/` | 0 match |
 
