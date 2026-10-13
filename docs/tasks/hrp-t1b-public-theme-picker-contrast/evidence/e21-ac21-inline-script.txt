@@ -1,0 +1,5 @@
+git grep -rn "<script\|document.cookie" app/components/GlobalNavbar.tsx app/login/login-form.tsx app/\(portal\)/ve-chung-toi/page.tsx app/\(portal\)/layout.tsx app/\(jobs\)/viec-lam/layout.tsx src/shared/theme/theme-scope.tsx src/shared/theme/theme-picker.tsx src/shared/theme/theme-storage.ts
+exit=1 (0 matches — no inline script or document.cookie access found)
+
+Measurement: Grep across all 8 T1B-owned surface files for <script> tags and document.cookie access.
+Result: 0 matches. No inline script tags, no cookie access.

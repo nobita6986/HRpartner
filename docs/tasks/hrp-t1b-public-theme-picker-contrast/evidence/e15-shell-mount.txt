@@ -1,0 +1,3 @@
+grep -n "ThemeScope" app/\(portal\)/layout.tsx app/\(jobs\)/viec-lam/layout.tsx
+
+app/(jobs)/viec-lam/layout.tsx:16:import { ThemeScope } from '@/src/shared/theme/theme-scope'; app/(jobs)/viec-lam/layout.tsx:21:    // <ThemeScope> ─æß╗â c├╣ng key vß╗¢i (portal) shell ΓåÆ theme persist khi app/(jobs)/viec-lam/layout.tsx:23:    <ThemeScope> app/(jobs)/viec-lam/layout.tsx:30:    </ThemeScope> app/(portal)/layout.tsx:5:import { ThemeScope } from '@/src/shared/theme/theme-scope'; app/(portal)/layout.tsx:14:    // <ThemeScope> ─æß╗â gß║»n data-theme. ThemeScope KH├öNG ß║únh h╞░ß╗ƒng <html> app/(portal)/layout.tsx:16:    <ThemeScope> app/(portal)/layout.tsx:28:    </ThemeScope>

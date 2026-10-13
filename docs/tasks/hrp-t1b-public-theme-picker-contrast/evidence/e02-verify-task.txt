@@ -1,0 +1,18 @@
+TASK CONTRACT GATE
+  subject: docs/tasks/hrp-t1b-public-theme-picker-contrast/TASK.md
+
+  [OK]   A-01 all 11 required sections present.
+  [OK]   A-02 control fields present (status: READY_FOR_EXECUTION).
+  [OK]   A-02 assurance lane: CRITICAL.
+  [OK]   A-02 audit mode: LIGHT.
+  [OK]   A-02 audit selection has a recorded reason.
+  [OK]   T-10 Build vs adopt decision is explicit: N/A.
+  [OK]   T-11 Build vs automate decision is explicit: N/A.
+  [OK]   T-09 V2 READY_TO_CODE gate is closed: decisions, environment, baseline and correction budget are valid.
+  [OK]   A-05 8 requirement(s) traceable to STEP and AC.
+  [OK]   T-01 1 referenced npm script(s) all exist.
+  [OK]   T-03 no AC proves scope with a bare 'git diff'.
+  [OK]   T-06 no plaintext secret in TASK.md.
+  [OK]   T-07 control fields unchanged against HEAD.
+
+RESULT: PASS. TASK contract is ready for execution.

@@ -1,0 +1,10 @@
+grep -c "animation\|transition" src/shared/theme/theme-picker.tsx
+exit=0
+count=3 (these are in the file header JSDoc comment, not CSS animation declarations)
+
+git grep -c "prefers-reduced-motion" -- app/globals.css
+exit=1 (0 matches — no new prefers-reduced-motion blocks added by T1B)
+
+Measurement: T1B does not add any CSS animation or transition property declarations.
+The picker uses existing transition classes from Tailwind (transition-colors, transition-transform)
+which are pre-existing at baseline. No new @media (prefers-reduced-motion) blocks added.

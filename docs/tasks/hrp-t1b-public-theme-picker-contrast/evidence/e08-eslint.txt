@@ -1,0 +1,12 @@
+
+C:\CodeApp\HrP-t1b-public-theme-picker-contrast\app\components\GlobalNavbar.tsx
+  78:10  warning  'mobileOpen' is assigned a value but never used. Allowed unused vars must match /^_/u     @typescript-eslint/no-unused-vars
+  78:22  warning  'setMobileOpen' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+C:\CodeApp\HrP-t1b-public-theme-picker-contrast\app\globals.css
+  0:0  warning  File ignored because no matching configuration was supplied
+
+C:\CodeApp\HrP-t1b-public-theme-picker-contrast\src\domains\job-board\public-ui-premium.static.test.ts
+  52:7  warning  'AREAS_SRC' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+Γ£û 4 problems (0 errors, 4 warnings)

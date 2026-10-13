@@ -1,0 +1,6 @@
+git grep -n "data-theme.*color-success\|data-theme.*color-error\|data-theme.*color-warning\|data-theme.*color-info" -- app/globals.css
+exit=1 (no matches — 0 status color overrides in [data-theme] blocks)
+
+Measurement: [data-theme] CSS blocks in app/globals.css cover only the 5 T1C brand tokens
+(primary, primaryDark, primarySoft, primaryContainer, surface). Status/success/error/warning
+tokens are NOT overridden in any [data-theme] block.

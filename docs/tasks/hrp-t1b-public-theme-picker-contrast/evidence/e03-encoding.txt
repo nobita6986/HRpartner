@@ -1,0 +1,12 @@
+UTF-8 NO-BOM GATE
+  [OK]   docs/tasks/hrp-t1b-public-theme-picker-contrast/evidence/e01-verify-handoff.txt
+  [OK]   docs/tasks/hrp-t1b-public-theme-picker-contrast/evidence/e02-verify-task.txt
+  [OK]   docs/tasks/hrp-t1b-public-theme-picker-contrast/evidence/e03-encoding.txt
+  [OK]   docs/tasks/hrp-t1b-public-theme-picker-contrast/evidence/e04-diff-check.txt
+  [OK]   docs/tasks/hrp-t1b-public-theme-picker-contrast/evidence/e05-theme-tests.txt
+  [OK]   docs/tasks/hrp-t1b-public-theme-picker-contrast/evidence/e06-regression-tests.txt
+  [OK]   docs/tasks/hrp-t1b-public-theme-picker-contrast/evidence/e07-typecheck.txt
+  [OK]   docs/tasks/hrp-t1b-public-theme-picker-contrast/evidence/e08-eslint.txt
+  [OK]   docs/tasks/hrp-t1b-public-theme-picker-contrast/evidence/e09-contrast-probe.js
+  [FAIL] docs/tasks/hrp-t1b-public-theme-picker-contrast/evidence/e09-contrast-probe.txt - UTF-16 BOM is forbidden; use UTF-8 without BOM
+RESULT: FAIL (1 encoding failure(s) across 10 checked text file(s)).

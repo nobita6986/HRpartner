@@ -1,0 +1,1 @@
+git diff 9dce4fdf -- prisma/schema.prisma vercel.json Dockerfile middleware.ts

@@ -1,0 +1,10 @@
+=== WCAG 2.x Contrast: onPrimary on primaryDark ===
+hrp: 6.468:1
+ocean-trust: 9.647:1
+emerald-growth: 8.272:1
+violet-future: 12.438:1
+executive-gold: 8.577:1
+
+=== CTA foreground contrast ===
+default: 6.327:1 (#1a1c1b on #f07f1a)
+hover: 4.661:1 (#ffffff on #c2520a)

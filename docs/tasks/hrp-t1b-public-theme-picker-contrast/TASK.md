@@ -13,7 +13,7 @@
 | Audit mode | `LIGHT` |
 | Audit reason | Theme picker là surface công khai, mount ở 2 public shell, đụng 6 theme-sensitive sites + CTA foreground contract. CRITICAL + LIGHT theo lane matrix (đối xứng T1C). |
 | Spec version | `v1.0` |
-| Status | `READY_FOR_EXECUTION` |
+| Status | `ACCEPTED` |
 | Planner | `Tier 1` |
 | Baseline | `2b07d9de1310fdf08f85c996eeed1df659a5f91f` |
 | Baseline note | origin/main @ PR #133 — T1C (theme foundation) |
@@ -25,8 +25,9 @@
 | Forbidden paths | `src/shared/theme/theme-types.ts`, `src/shared/theme/theme-tokens.ts` (T1C-owned, READ-ONLY), `app/admin/**`, `prisma/schema.prisma`, `vercel.json`, `middleware.ts`, `Dockerfile`, status color tokens, dark mode |
 | Required gates | `pnpm exec tsc --noEmit`; `pnpm exec eslint` trên surface thay đổi; `npx vitest run` (targeted + full unit); `pnpm run build`; `node .ai-pipeline/scripts/verify-encoding.mjs`; `pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-t1b-public-theme-picker-contrast/TASK.md`; `pwsh .ai-pipeline/scripts/verify-handoff.ps1 -HandoffPath docs/tasks/hrp-t1b-public-theme-picker-contrast/HANDOFF.md`; `git diff --check` |
 | Current execution round | `0` |
-| Current audit round | `0` |
-| Next gate | `LIGHT: /deliver /audit /resolve` |
+| Current audit round | `1` |
+| Audit verdict | `PASS — accepted by T0` (25/25 AC PASS; 0 blocking findings; canonical audit gate exit 0 with one documented LIGHT-audit SKIP warning) |
+| Next gate | `MERGE_PR_134` |
 
 ## 1. Outcome
 
@@ -170,6 +171,7 @@ Bảng decision log chi tiết:
   - Q1 (CTA foreground): probe ≥ 4.5:1 ở 2 state (DEC-T1B-01).
   - Q2 (worktree): tạo mới từ `2b07d9de` (DEC-T1B-02).
   - Q3 (snapshot): đọc canonical source từ repo (DEC-T1B-03).
+- **Audit round 1 resolution**: T0 chấp nhận verdict `PASS` tại audit target `9e969450b785fc917d0a5cacaa7d2552f95a5be5`; 25/25 AC PASS, không có P0/P1/P2, F-1/F-2 đã đóng bằng docs-only correction và F-3 là informational đã được ghi nhận. Không mở correction batch.
 - **Open issues**: KHÔNG.
 
 ## 10. Revision Log
@@ -179,3 +181,4 @@ Bảng decision log chi tiết:
 | 0 | 2026-10-13 | T1 | Author TASK.md v1.0 | READY_FOR_EXECUTION |
 | 0 | 2026-10-13 | T1 | Implementation: theme-storage, theme-scope, theme-picker, 6 site migrate, .hrp-btn-apply fix, 6 T1B test mới, update 2 T1C guard | 132/132 theme tests + 5366/5366 full unit pass |
 | 0 | 2026-10-13 | T1 | Gates 1-9 all pass (encoding, typecheck, lint, build, unit, task contract) | Awaiting HANDOFF + push + PR |
+| 1 | 2026-10-13 | T0/T1 | Adopt Tier 3 LIGHT audit artifact; ghi Planner Resolution, audit round 1 và verdict PASS | ACCEPTED — ready to merge PR #134 |
