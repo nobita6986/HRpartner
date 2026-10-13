@@ -171,7 +171,7 @@ T1B đã implement full theme picker + contrast accessibility completion cho pub
 
 | Round | Status | Note |
 |---|---|---|
-| 0 | READY_FOR_AUDIT | v1.0: T1B thực hiện toàn bộ scope (theme picker + 6 site migrate + CTA fix). Implementation feature commit `210c2751`, doc commit HEAD `0947b84b`. Tất cả 9 gates pass. Awaiting push + PR. |
+| 1 | READY_FOR_AUDIT | v1.0: T1B thực hiện toàn bộ scope (theme picker + 6 site migrate + CTA fix). Implementation feature commit `210c2751`, doc commits `0947b84b` → `3df68b27` → `60af36e8` (final HEAD). Tất cả 9 gates pass. Awaiting push + PR. |
 
 ## 8. Next steps for T0
 
