@@ -11,7 +11,7 @@
 | Audit mode | LIGHT |
 | Audit reason | Theme picker là surface công khai, mount ở 2 public shell, đụng 6 theme-sensitive sites + CTA foreground contract. CRITICAL + LIGHT theo lane matrix (đối xứng T1C). |
 | Baseline | `2b07d9de1310fdf08f85c996eeed1df659a5f91f` |
-| Implementation SHA | `210c2751` |
+| Implementation SHA | `8b6f0e02` (HEAD) — feature commit `210c2751` + doc commit `8b6f0e02` |
 | Frozen delivery | YES |
 | Canonical gates | PASS |
 | Correction batches used | 0 |
@@ -60,7 +60,7 @@ T1B đã implement full theme picker + contrast accessibility completion cho pub
 | STEP-07..12 — 6 T1B test files (RQ-07) | theme-storage, theme-picker, theme-scope, theme-sites-c7-pd, theme-cta-foreground, theme-shell-mount | DONE. 58 tests. | `src/shared/theme/__tests__/` |
 | STEP-13 — Test guard cập nhật (RQ-06, RQ-09) | T1C AC-09 (P→PD), PR #132 contract fix, protected SHA | DONE. | `src/shared/theme/__tests__/globals-css-theme-scope.test.ts`, `src/domains/job-board/components/landing/featured-job-card.test.ts`, `src/domains/job-board/public-ui-premium.static.test.ts` |
 | STEP-14 — Gates | typecheck, lint, vitest, encoding, task-verify, handoff-verify | PASS. Full unit 5366/5366. | Below evidence registry |
-| STEP-15 — Commit | 1 feature commit (`210c2751`) | DONE. | `git log -1 --oneline` |
+| STEP-15 — Commit | 1 feature commit (`210c2751`) + 1 doc commit (`8b6f0e02`) | DONE. | `git log -2 --oneline` |
 
 ## 3. Acceptance Evidence
 
@@ -145,7 +145,7 @@ T1B đã implement full theme picker + contrast accessibility completion cho pub
 
 | ID | Evidence | Path / Command | Result |
 |---|---|---|---|
-| E-01 | Implementation SHA | `git rev-parse HEAD` | `210c2751` |
+| E-01 | Implementation SHA | `git rev-parse HEAD` | `8b6f0e02` (feature: `210c2751`) |
 | E-02 | Full unit suite | `npx vitest run --config vitest.unit.config.ts` | 5366/5366 pass (9 skipped) |
 | E-03 | Targeted theme unit | `npx vitest run --config vitest.unit.config.ts 'src/shared/theme'` | 132/132 pass (74 T1C + 58 T1B) |
 | E-04 | Typecheck | `pnpm exec tsc --noEmit` | 0 errors |
@@ -165,7 +165,7 @@ T1B đã implement full theme picker + contrast accessibility completion cho pub
 
 | Round | Status | Note |
 |---|---|---|
-| 0 | READY_FOR_REVIEW | v1.0: T1B thực hiện toàn bộ scope (theme picker + 6 site migrate + CTA fix). Implementation `210c2751`. Tất cả 9 gates pass. Awaiting push + PR. |
+| 0 | READY_FOR_REVIEW | v1.0: T1B thực hiện toàn bộ scope (theme picker + 6 site migrate + CTA fix). Implementation feature commit `210c2751`, doc commit `8b6f0e02` (HEAD). Tất cả 9 gates pass. Awaiting push + PR. |
 
 ## 8. Next steps for T0
 
