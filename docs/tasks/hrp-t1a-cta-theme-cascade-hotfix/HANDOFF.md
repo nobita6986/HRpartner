@@ -78,7 +78,7 @@ Kết quả:
 | `src/domains/job-board/components/__tests__/apply-cta-tone-soften.static.test.ts` | M (test) | Regex match cho rule `.hrp-btn-apply` và `:hover` block. |
 | `src/domains/job-board/components/landing/featured-job-card.test.ts` | M (test) | AC-23 test CTA dùng `.hrp-btn-apply`. |
 | `src/shared/theme/__tests__/globals-css-theme-scope.test.ts` | M (test) | AC-08: rule dùng `var(--color-primary-dark)`; AC-09: alias giữ ở `:root`. |
-| `src/shared/theme/__tests__/theme-cta-cascade-resolve.test.ts` | A (test) | Mới: 9 tests regression runtime (rule + 5 theme scope). |
+| `src/shared/theme/__tests__/theme-cta-cascade-resolve.test.ts` | A (test) | Mới: 9 source-contract assertions (rule + 5 theme scope); không kiểm tra computed style runtime. |
 | `docs/tasks/hrp-t1a-cta-theme-cascade-hotfix/TASK.md` | A (doc) | Task contract v1.0. |
 | `docs/tasks/hrp-t1a-cta-theme-cascade-hotfix/HANDOFF.md` | A (doc) | File này. |
 
@@ -101,7 +101,7 @@ Pre-existing issues ngoài scope (KHÔNG sửa, đã document):
 | E-03 | 3 site use class | `featured-job-card.tsx:198`, `app/(jobs)/viec-lam/page.tsx:405`, `detail-apply-cta.tsx:47` | `git grep -n 'hrp-btn-apply' src/domains/job-board/components/landing/featured-job-card.tsx 'app/(jobs)/viec-lam/page.tsx' src/domains/job-board/components/detail-apply-cta.tsx` | exit 0, 3 lines match |
 | E-04 | vitest theme-cta-foreground + globals-css-theme-scope | full test output | `node node_modules/vitest/dist/cli.js run --config vitest.unit.config.ts src/shared/theme/__tests__/theme-cta-foreground.test.ts src/shared/theme/__tests__/globals-css-theme-scope.test.ts` | exit 0, 32 tests pass |
 | E-05 | vitest globals-css-theme-scope AC-08/09 (alias ở `:root`, no override in theme) | full test output | `node node_modules/vitest/dist/cli.js run --config vitest.unit.config.ts src/shared/theme/__tests__/globals-css-theme-scope.test.ts` | exit 0, all pass |
-| E-06 | vitest theme-cta-cascade-resolve (regression runtime, 5 theme scope) | `src/shared/theme/__tests__/theme-cta-cascade-resolve.test.ts` | `node node_modules/vitest/dist/cli.js run --config vitest.unit.config.ts src/shared/theme/__tests__/theme-cta-cascade-resolve.test.ts` | exit 0, 9 tests pass |
+| E-06 | vitest theme-cta-cascade-resolve (source-contract regression, 5 theme scope) | `src/shared/theme/__tests__/theme-cta-cascade-resolve.test.ts` | `node node_modules/vitest/dist/cli.js run --config vitest.unit.config.ts src/shared/theme/__tests__/theme-cta-cascade-resolve.test.ts` | exit 0, 9 tests pass |
 | E-07 | tsc --noEmit (typecheck) | terminal output | `node node_modules/typescript/bin/tsc --noEmit` | exit 0, 0 errors |
 | E-08 | verify-encoding.mjs (UTF-8 strict) | terminal output | `node .ai-pipeline/scripts/verify-encoding.mjs` | exit 0, PASS, 8 files strict UTF-8 no BOM |
 | E-09 | next build (production) | `.next/` artifacts | `node node_modules/next/dist/bin/next build` | exit 0, compiled CSS `.next/static/css/3154ad5a4ad92791.css` contains `.hrp-btn-apply{background-color:var(--color-primary-dark)}` (dynamic ref intact) |
@@ -130,7 +130,7 @@ Theo FAST lane matrix, `Audit mode: NONE` chỉ yêu cầu Tier 1 self-review t�
 | Self-review (3 risks) | PASS (3 risks addressed) |
 | Pre-existing failures | Documented (§5 PRX-01); không block |
 | Browser test | SKIPPED theo user directive ("Không dùng trình duyệt hoặc tự kiểm soát trình duyệt") |
-| Build runtime probe (jsdom) | SKIPPED (jsdom không fully support CSS var lazy cascade; source grep + compiled CSS inspection thay thế) |
+| jsdom computed-style probe | SKIPPED (jsdom không fully support CSS var lazy cascade; source-contract tests + compiled CSS inspection thay thế, không chứng minh computed style runtime) |
 
 **Tier 1 verdict: READY_FOR_REVIEW.** Chưa push, chưa merge vào `main` theo user directive.
 
@@ -138,7 +138,7 @@ Theo FAST lane matrix, `Audit mode: NONE` chỉ yêu cầu Tier 1 self-review t�
 
 | Gate | Reason |
 |---|---|
-| Browser-side runtime probe | User directive: không dùng browser. Thay bằng source grep + compiled CSS inspection + regression test 5 theme scope. |
+| Computed-style runtime probe | Không chạy browser/runtime probe theo yêu cầu; thay bằng source-contract test + kiểm tra compiled CSS. Các bước này không xác nhận computed style runtime. |
 | Browser visual verification | User directive + task scope (CSS rule only, không visual). |
 | Tier 3 audit | Audit mode NONE theo FAST lane; Tier 1 self-review đã cover 3 risks. |
 | Merge / push / deploy | User directive: "không merge, push hoặc deploy". |

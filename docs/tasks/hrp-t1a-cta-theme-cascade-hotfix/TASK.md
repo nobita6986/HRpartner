@@ -39,7 +39,7 @@
 - Nút **Ứng tuyển** ở 3 vị trí (FeaturedJobCard trên trang chủ, JobCard trên `/viec-lam`, DetailApplyCta trên `/viec-lam/{slug}`) hiển thị đúng màu theo theme đang chọn (HR Partner / Ocean Trust / Emerald Growth / Violet Future / Executive Gold). Cả 3 nút dùng chung class `.hrp-btn-apply` (single source of truth trong `app/globals.css`) — chỉ đổi CSS rule bên trong, không tạo class mới.
 - Default + hover + focus-visible + disabled của `.hrp-btn-apply` giữ nguyên contract: `background-color: var(--color-primary-dark)` (default), `color-mix(in srgb, var(--color-primary-dark) 82%, #000)` (hover), `outline 2px var(--color-focus-ring)` (focus), `var(--color-surface-container)` (disabled).
 - Mặc định + hover + focus-visible + disabled của `.hrp-btn-apply` đọc rõ ở 5/5 palette (default ≥ 4.5:1, hover ≥ 4.5:1, focus ring ≥ 3:1).
-- Regression test mới phát hiện được bug scope này: assert `getComputedStyle(button).backgroundColor` tại `[data-theme=ocean-trust]` != HRP dark hex.
+- Regression source-contract mới khóa rule `.hrp-btn-apply` dùng trực tiếp `var(--color-primary-dark)` và xác nhận 5 theme scope khai báo đúng; build CSS được kiểm tra để xác nhận dynamic reference còn nguyên. Không assert `getComputedStyle()` hoặc computed style runtime.
 
 ### 1.2 Non-goals
 
@@ -78,10 +78,10 @@ Mỗi requirement có row riêng. STEP ID tường minh (không dùng range).
 | ID | Decision | Status |
 |---|---|---|
 | `DEC-T1A-09` | **Bỏ alias trung gian** `--color-apply-cta*`. `.hrp-btn-apply` dùng trực tiếp `var(--color-primary-dark)` (default) và `color-mix(in srgb, var(--color-primary-dark) 82%, #000)` (hover). Lý do: CSS spec — `var()` trong property value là lazy resolution, resolve tại scope áp dụng; `var()` định nghĩa custom property là early resolution tại scope khai báo. Tránh được pitfall freeze tại `:root`. | `CHOSEN` |
-| `DEC-T1A-10` | Giữ token `--color-apply-cta*` trong `:root` (alias ngược) cho backward compat với code/site ngoài `.hrp-btn-apply` nếu có; KHÔNG override trong `[data-theme]` (vẫn cascade theo `--color-primary-dark`). Comment trong source giải thích rõ pitfall. | `CHOSEN` |
+| `DEC-T1A-10` | Giữ token `--color-apply-cta*` trong `:root` cho backward compatibility nếu code/site ngoài `.hrp-btn-apply` đang tham chiếu. Alias root KHÔNG cascade theo `[data-theme]`; CTA không dùng alias này. Không override alias trong theme blocks. Comment trong source ghi rõ pitfall. | `CHOSEN` |
 | `DEC-T1A-11` | Cập nhật test `theme-cta-foreground.test.ts`: thay match `var(--color-apply-cta)` literal bằng match `var(--color-primary-dark)` trong `.hrp-btn-apply`. Giữ nguyên probe 5/5 palette hex. | `CHOSEN` |
 | `DEC-T1A-12` | Cập nhật test `globals-css-theme-scope.test.ts`: RQ-11 allowlist bổ sung `--color-apply-cta*` (vì DEC-T1A-10 quyết định giữ token này ở `:root`, không cần override theme). AC-08 thêm regression guard: `var(--color-primary-dark)` xuất hiện trong `.hrp-btn-apply` (tránh tái diễn pitfall). | `CHOSEN` |
-| `DEC-T1A-13` | Thêm regression test runtime mới: `theme-cta-cascade-resolve.test.ts` — dùng jsdom + actual CSS (compiled từ build) parse `--color-primary-dark` tại scope `[data-theme=ocean-trust]` và assert browser-resolved value khác HRP dark. | `CHOSEN` |
+| `DEC-T1A-13` | Thêm source-contract regression test `theme-cta-cascade-resolve.test.ts`: khóa rule `.hrp-btn-apply` dùng trực tiếp `var(--color-primary-dark)` và kiểm tra 5 theme scope khai báo đúng màu; kiểm tra build CSS riêng để xác nhận tham chiếu động còn nguyên. Không assert computed style runtime. | `CHOSEN` |
 | `DEC-T1A-14` | `Audit mode: NONE` theo FAST lane matrix; Tier 1 self-review tối đa 3 rủi ro trọng yếu trong HANDOFF. | `CHOSEN` |
 
 ### 3.1 Build vs Adopt
@@ -115,7 +115,7 @@ Thực hiện tuần tự gate (1→8). Gate sau chỉ chạy nếu gate trướ
 | 1 | Edit `app/globals.css` | Trong khối `.hrp-btn-apply`: default `background-color: var(--color-primary-dark)`; hover `background-color: color-mix(in srgb, var(--color-primary-dark) 82%, #000)`. Comment thay thế chú thích cũ giải thích pitfall. | Sửa CSS rule dùng trực tiếp `var()` lazy reference. |
 | 2 | Update `theme-cta-foreground.test.ts` | Thay regex match `var(--color-apply-cta)` → `var(--color-primary-dark)`; thêm test mới: `.hrp-btn-apply` không được reference `--color-apply-cta` (alias cũ) tránh regress về pitfall. | Bảo vệ contract mới. |
 | 3 | Update `globals-css-theme-scope.test.ts` | RQ-11 allowlist thêm `--color-apply-cta*`. AC-08 thêm regression: `.hrp-btn-apply` chứa `var(--color-primary-dark)`. | Bảo vệ contract khỏi regress. |
-| 4 | Thêm `theme-cta-cascade-resolve.test.ts` | Dùng jsdom load compiled CSS (`.next/static/css/b8108ef683929a1c.css`) + DOM với `<div data-theme="ocean-trust">` chứa `<button class="hrp-btn-apply">`. Probe: tại computed style của button, `background-color` phải khác HRP dark (assert NOT `#a63b00`). | Regression test runtime bắt pitfall scope. |
+| 4 | Thêm `theme-cta-cascade-resolve.test.ts` | Test source contract: rule `.hrp-btn-apply` tham chiếu trực tiếp `var(--color-primary-dark)` và mỗi theme scope khai báo đúng hex. Kiểm tra CSS sau build riêng để xác nhận dynamic `var()` còn nguyên. | Regression guard cho source contract; không kiểm tra computed style runtime. |
 | 5 | Targeted tests (sau) | Cùng lệnh gate trong `Required gates` | Tất cả pass. |
 | 6 | Typecheck | `npx tsc --noEmit` | 0 errors. |
 | 7 | Encoding | `node .ai-pipeline/scripts/verify-encoding.mjs` | UTF-8 NO BOM. |
@@ -138,7 +138,7 @@ Thực hiện tuần tự gate (1→8). Gate sau chỉ chạy nếu gate trướ
 | `AC-07` | 3 site (FeaturedJobCard, /viec-lam JobCard, DetailApplyCta) đều dùng class `hrp-btn-apply` (không tạo class mới) | `Select-String` trên 3 file `.tsx`; static test đã có |
 | `AC-08` | `.hrp-btn-apply` KHÔNG chứa `var(--color-apply-cta)` (tránh tái diễn pitfall); chứa `var(--color-primary-dark)` | Grep `app/globals.css`; test `theme-cta-foreground.test.ts` + `globals-css-theme-scope.test.ts` |
 | `AC-09` | Token cũ `--color-apply-cta*` vẫn tồn tại ở `:root` (alias ngược), KHÔNG override trong `[data-theme]` | Grep `app/globals.css`; test `globals-css-theme-scope.test.ts` |
-| `AC-10` | Regression runtime test: tại `<div data-theme="ocean-trust">`, computed `background-color` của `.hrp-btn-apply` KHÁC HRP dark `#a63b00`; tương tự cho 4 theme còn lại | Test `theme-cta-cascade-resolve.test.ts` dùng jsdom |
+| `AC-10` | Source regression guard: rule `.hrp-btn-apply` dùng trực tiếp `var(--color-primary-dark)` (không qua alias root) và 5 theme scope khai báo giá trị đúng; CSS production sau build giữ dynamic reference | Vitest `theme-cta-cascade-resolve.test.ts` + kiểm tra artifact CSS của build (E-09). Không xác nhận computed style trong browser/runtime. |
 
 ### 6.2 Traceability
 
@@ -152,9 +152,9 @@ Thực hiện tuần tự gate (1→8). Gate sau chỉ chạy nếu gate trướ
 |---|---|---|
 | `RISK-01` | Token `--color-primary-cta*` đang dùng ở nhiều chỗ ngoài `.hrp-btn-apply`; nếu vô tình xóa alias ngược sẽ vỡ test/visuals cũ. | T1-A KHÔNG xóa `--color-primary-cta*`; KHÔNG xóa `--color-apply-cta*` alias. Chỉ sửa rule `.hrp-btn-apply`. |
 | `RISK-02` | Test trong phạm vi ownership (theme-cta-foreground, globals-css-theme-scope) đang lock contract cũ. Nếu update sai sót có thể miss guard. | Đọc comment + probe từng test trước khi sửa; chạy targeted suite sau từng patch. |
-| `RISK-03` | `color-mix(in srgb, var(--color-primary-dark) 82%, #000)` trong `.hrp-btn-apply:hover` — Lightning CSS / Tailwind v4 đã chứng minh resolve tĩnh thành hex khi ở `:root` (`--color-apply-cta-dark: #883000` trong build output). Khi đặt trực tiếp trong property value (không qua custom property), browser phải resolve dynamic. | Verify bằng runtime test `theme-cta-cascade-resolve.test.ts` (assert hover tại `[data-theme=ocean-trust]` cũng đổi màu, không chỉ default). |
+| `RISK-03` | Hover dùng `color-mix(in srgb, var(--color-primary-dark) 82%, #000)` trực tiếp trong rule; không có computed-style runtime probe. | Build CSS artifact E-09 xác nhận dynamic `var(--color-primary-dark)` còn nguyên; test source-contract pin rule hover. Việc resolve computed style trong browser chưa được xác minh tự động. |
 | `RISK-04` | Test `globals-css-theme-scope.test.ts` là T1C-owned, đụng RQ-11 allowlist 5 brand token. Việc thêm `--color-apply-cta*` vào allowlist có thể bị Tier 3 reject. | Mitigation: comment trong test giải thích `--color-apply-cta*` được thêm vì token cũ được DEC-T1A-10 quyết định giữ (không vì cascade mới qua `[data-theme]`). Tài liệu rõ ràng trong HANDOFF. |
-| `RISK-05` | jsdom không fully support CSS variable lazy resolution (test runtime có thể không phản ánh browser thật). | Mitigation: nếu jsdom fail resolve, dùng `getComputedStyle(...).getPropertyValue('--color-primary-dark')` trên button để assert `--color-primary-dark` resolved đúng tại scope (gián tiếp chứng minh `.hrp-btn-apply { background: var(--color-primary-dark) }` sẽ nhận đúng). Có 2 lớp guard: (a) source grep `var(--color-primary-dark)`, (b) runtime probe `--color-primary-dark` tại theme scope. |
+| `RISK-05` | Không có automated computed-style runtime assertion; test hiện tại kiểm tra source contract và theme declarations, không mô phỏng CSS cascade của browser. | Giới hạn được ghi rõ; build output xác nhận dynamic var còn nguyên. Không dùng jsdom làm bằng chứng runtime. Nếu cần runtime proof tự động, bổ sung browser-capable test ở vòng riêng khi được cho phép. |
 
 ## 8. Open Questions
 
