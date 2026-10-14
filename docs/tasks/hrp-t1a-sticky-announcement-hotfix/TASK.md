@@ -15,8 +15,7 @@
 | Spec version | `v1.0` |
 | Status | `READY_FOR_REVIEW` (implementation SHA `e592a7ac`; awaiting T0 push/merge approval) |
 | Planner | `Tier 1` |
-| Baseline | `c0d32c8a29daf2b94325b3c0cef08bb79409f235` (origin/main, post-PR #136) |
-| Baseline note | User directive tham chiếu SHA `efbfca6321b7f1b1c69904b4cd283a859be1a67d` không tồn tại trong repo (`git rev-parse efbfca6... -> bad object`). Origin/main HEAD thực tế tại thời điểm lập task = `c0d32c8a` (Merge PR #136). Tier 1 dùng `c0d32c8a` làm baseline, lưu ý lên Tier 0 trong HANDOFF § Baseline note. |
+| Baseline | `c0d32c8a29daf2b94325b3c0cef08bb79409f235` |
 | Contract gate | `READY_TO_CODE` |
 | Decision state | `CLOSED` |
 | Test environment | `READY` |
