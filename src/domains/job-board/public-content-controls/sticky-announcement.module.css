@@ -129,6 +129,29 @@
 
 /* ─── Animation: BLINK ────────────────────────────────────────────── */
 
+/*
+ * T1A hotfix (R2): the original BLINK animation only changed the
+ * opacity of the ::before pseudo-element (the background overlay).
+ * When an admin configures `backgroundOpacity` < 50%, the ::before is
+ * nearly invisible and the blink is imperceptible — this is what the
+ * user reported as "desktop không thấy hiệu ứng, mobile thấy"
+ * (desktop configs usually use lower backgroundOpacity to keep the
+ * bar out of the way of content).
+ *
+ * R1 attempted to fix this by adding a `border-color` flash on the
+ * wrapper, but the wrapper rule never declared a border (no
+ * `border-width` or `border-style`), so the `border-color` change had
+ * no visible effect. R2 fixes this by using `box-shadow: inset` as the
+ * second visual cue: a 0 → 2px inset shadow at 0% / 100% → 50% that
+ * paints a thin ring inside the wrapper regardless of `border` or
+ * `backgroundOpacity`. Inset box-shadow does NOT cause layout shift
+ * (it is painted within the element's existing content area), and the
+ * width is `0` when the keyframe is disabled, so the bar's natural
+ * look is preserved when BLINK is off. The ::before opacity blink is
+ * preserved as the signature cue; the new `box-shadow` cue runs in
+ * parallel on the wrapper so BLINK stays visible at any
+ * backgroundOpacity from 0% to 100%.
+ */
 @keyframes hrpStickyAnnouncementBlink {
   0%,
   100% {
@@ -139,8 +162,34 @@
   }
 }
 
+@keyframes hrpStickyAnnouncementBlinkRing {
+  0%,
+  100% {
+    /*
+     * A 0px shadow renders nothing — equivalent to no ring. Using
+     * spread (4th value) keeps the shadow's edge crisp and lets the
+     * keyframe interpolate smoothly between 0 and 2px.
+     */
+    box-shadow: inset 0 0 0 0
+      color-mix(in srgb, var(--color-on-primary) 0%, transparent);
+  }
+  50% {
+    box-shadow: inset 0 0 0 2px
+      color-mix(in srgb, var(--color-on-primary) 85%, transparent);
+  }
+}
+
 .hrpStickyAnnouncementAnimBlink {
-  animation: none;
+  /*
+   * The BlinkRing keyframe animates a 0 → 2px inset box-shadow ring
+   * that is always visible regardless of `backgroundOpacity` (the
+   * ring is drawn ON TOP of the ::before overlay, not behind it).
+   * `box-shadow: inset 0 0 0 0 transparent` is the "off" state — it
+   * renders nothing but still claims no layout space. The bar's
+   * outer look is preserved when BLINK is not active.
+   */
+  box-shadow: inset 0 0 0 0 transparent;
+  animation: hrpStickyAnnouncementBlinkRing 1.4s ease-in-out infinite;
 }
 
 .hrpStickyAnnouncementAnimBlink::before {
@@ -226,6 +275,7 @@
 /* ─── Reduced motion override (must be last) ──────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {
+  .hrpStickyAnnouncementAnimBlink,
   .hrpStickyAnnouncementAnimBlink::before,
   .hrpStickyAnnouncementMessageMarquee {
     animation: none;
@@ -240,5 +290,39 @@
     width: auto;
     white-space: normal;
     overflow-wrap: anywhere;
+  }
+}
+
+/*
+ * T1A hotfix: pause-on-hover for BLINK and MARQUEE.
+ *
+ * The user reported that mouse users couldn't read the message while the
+ * animation was running. Pausing on hover (and resuming on un-hover) lets
+ * the user stop the marquee / blink and read the message at their own
+ * pace. Pause uses `animation-play-state: paused` so the keyframe state
+ * is preserved — resume continues from the exact frame the user paused
+ * at, not from t=0.
+ *
+ * Gated behind `@media (hover: hover) and (pointer: fine)` so that touch
+ * devices and coarse-pointer devices (phones, tablets) NEVER pause the
+ * banner. A touch user tapping the bar should not have the animation
+ * "stuck" because there is no real mouseenter/mouseleave event. iOS
+ * Safari with a connected Magic Keyboard will report `hover: hover`
+ * and `pointer: fine` — in that case the user genuinely has hover
+ * capability and pause is the correct behavior.
+ *
+ * The MARQUEE message's `animation` is set INLINE by the JS effect
+ * (`messageEl.style.animation = "${name} ${duration}s linear infinite"`)
+ * — that shorthand does NOT include `animation-play-state`, so the
+ * stylesheet `:hover { animation-play-state: paused }` rule below is
+ * applied by the CSS cascade (the inline shorthand only sets the four
+ * longhand properties it declares, leaving the others to the
+ * stylesheet).
+ */
+@media (hover: hover) and (pointer: fine) {
+  .hrpStickyAnnouncement:hover .hrpStickyAnnouncementAnimBlink,
+  .hrpStickyAnnouncement:hover .hrpStickyAnnouncementAnimBlink::before,
+  .hrpStickyAnnouncement:hover .hrpStickyAnnouncementMessageMarquee {
+    animation-play-state: paused;
   }
 }

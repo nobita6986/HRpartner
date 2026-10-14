@@ -116,12 +116,19 @@ export function GlobalFooter() {
               BẢN ĐỒ
             </h3>
             <div className="overflow-hidden rounded-2xl border border-outline-variant">
+              {/*
+                T1A hotfix: thay iframe OpenStreetMap bằng Google Maps embed.
+                Endpoint `https://maps.google.com/maps?q=...&output=embed` là
+                public embed, KHÔNG cần API key, giữ nguyên toạ độ marker
+                21.314035, 105.680883. Khi user click vào iframe sẽ mở tab
+                mới ở maps.google.com (Google ToS).
+              */}
               <iframe
                 title="HRP Việt Nam - Bản đồ"
                 width="100%"
                 height="220"
                 loading="lazy"
-                src="https://www.openstreetmap.org/export/embed.html?bbox=105.679%2C21.312%2C105.682%2C21.316&layer=mapnik&marker=21.314035%2C105.680883"
+                src="https://maps.google.com/maps?q=21.314035,105.680883&hl=vi&z=15&output=embed"
               />
             </div>
           </div>
