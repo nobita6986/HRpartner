@@ -205,15 +205,19 @@ describe('sticky-announcement.module.css — animation + reduced-motion invarian
     expect(css).toMatch(/@keyframes\s+hrpStickyAnnouncementMarquee/);
   });
 
-  it('applies BLINK opacity to the background pseudo-element and a border-flash to the wrapper (T1A hotfix)', () => {
-    // T1A hotfix: the wrapper now ALSO animates `border-color` (a second
-    // visual cue that is visible regardless of `backgroundOpacity`).
-    // The ::before opacity blink is preserved as the signature cue;
-    // the wrapper `animation` is no longer `none` — it is the
-    // `hrpStickyAnnouncementBlinkBorder` keyframe.
+  it('applies BLINK opacity to the background pseudo-element and an inset ring flash to the wrapper (T1A hotfix R2)', () => {
+    // T1A hotfix (R2): the wrapper now ALSO animates a `box-shadow: inset`
+    // ring (a second visual cue that is visible regardless of
+    // `backgroundOpacity` and is NOT dependent on a border declaration).
+    // R1 used `border-color` but the wrapper had no `border-width` /
+    // `border-style` so the change was invisible; R2 uses `box-shadow:
+    // inset 0 0 0 2px var(--color-on-primary)` (via `color-mix`) so the
+    // ring is always painted inside the element's content area
+    // (no layout shift). The ::before opacity blink is preserved as the
+    // signature cue.
     const css = readText(cssFile!);
     expect(css).toMatch(/\.hrpStickyAnnouncementAnimBlink::before\s*\{\s*animation:\s*hrpStickyAnnouncementBlink/);
-    expect(css).toMatch(/\.hrpStickyAnnouncementAnimBlink\s*\{[^}]*animation:\s*hrpStickyAnnouncementBlinkBorder/);
+    expect(css).toMatch(/\.hrpStickyAnnouncementAnimBlink\s*\{[^}]*animation:\s*hrpStickyAnnouncementBlinkRing/);
     expect(css).toMatch(/--sticky-background-opacity/);
     expect(css).toMatch(/box-shadow:\s*0 -2px 8px color-mix\(in srgb, rgb\(0 0 0 \/ 8%\) var\(--sticky-background-opacity\), transparent\)/);
     // The marquee `animation` declaration is NOT in CSS — it is applied
@@ -474,46 +478,77 @@ describe('Zod schemas — single source of truth', () => {
 });
 
 /*
- * T1A hotfix `hrp-t1a-sticky-announcement-hotfix`:
+ * T1A hotfix `hrp-t1a-sticky-announcement-hotfix` (R2):
  * static fences for the BLINK visual-cue #2 and the hover-pause
  * mechanism. The fences lock in:
- *   - The wrapper carries a border-flash keyframe so BLINK is
- *     visible at any `backgroundOpacity` (regression for the
- *     "desktop không thấy hiệu ứng" report).
+ *   - The wrapper carries a `box-shadow: inset` ring-flash keyframe
+ *     so BLINK is visible at any `backgroundOpacity` and is NOT
+ *     dependent on a border declaration (R1 used `border-color`,
+ *     which was a no-op because the wrapper never declared
+ *     `border-width` / `border-style`).
  *   - The hover-pause CSS rule lives inside a `@media (hover: hover)
- *     and (pointer: fine)` block so touch devices are never paused.
+ *     and (pointer: fine)` block so touch devices are never paused
+ *     by the stylesheet.
+ *   - The TSX has a JS-side mirror of the same media query
+ *     (`canPauseOnHover`) that gates the inline
+ *     `style.animationPlayState` write so touch devices never
+ *     receive a paused animation from React 19's synthetic
+ *     `mouseover` mapping.
  *   - The reduced-motion override still wins over hover-pause so
  *     accessibility behavior is preserved.
- *   - The TSX wires onMouseEnter / onMouseLeave on the wrapper.
+ *   - The TSX wires onMouseEnter / onMouseLeave on the wrapper, but
+ *     only when `canPauseOnHover` is true.
  */
-describe('T1A hotfix — BLINK visual cue #2 (border flash) invariants', () => {
-  it('declares a keyframe `hrpStickyAnnouncementBlinkBorder` for the wrapper border flash', () => {
+describe('T1A hotfix — BLINK visual cue #2 (inset ring flash) invariants', () => {
+  it('R2: declares a keyframe `hrpStickyAnnouncementBlinkRing` for the wrapper ring flash', () => {
     const css = readText(cssFile!);
-    expect(css).toMatch(/@keyframes\s+hrpStickyAnnouncementBlinkBorder/);
-    // The keyframe must animate `border-color` (NOT `opacity` or
-    // `background-color`) so it is visible regardless of
-    // `backgroundOpacity` and does not collide with the existing
-    // `hrpStickyAnnouncementBlink` keyframe on `::before`.
+    expect(css).toMatch(/@keyframes\s+hrpStickyAnnouncementBlinkRing/);
+    // R2 cue: the keyframe must animate a `box-shadow: inset ...` ring
+    // (NOT `border-color` — R1 used `border-color` but the wrapper
+    // had no `border-width` / `border-style` so the change was
+    // invisible; that regression is now locked out by this fence).
+    // We assert on the `box-shadow: inset` longhand, the spread
+    // component (a non-zero pixel value at 50% is what makes the
+    // ring actually visible), and the use of `var(--color-on-primary)`
+    // so the ring uses the theme-aware foreground token (works on
+    // every palette, light or dark theme).
     const keyframe =
       css.match(
-        /@keyframes\s+hrpStickyAnnouncementBlinkBorder\s*\{([\s\S]*?)\n\}/,
+        /@keyframes\s+hrpStickyAnnouncementBlinkRing\s*\{([\s\S]*?)\n\}/,
       )?.[1] ?? '';
-    expect(keyframe).toMatch(/border-color:/);
-    expect(keyframe).not.toMatch(/\bopacity\s*:/);
+    expect(keyframe).toMatch(/box-shadow:\s*inset/);
+    expect(keyframe).toMatch(/var\(--color-on-primary\)/);
+    // The keyframe MUST go from a 0px ring to a >0px ring at 50%
+    // (otherwise nothing is visible). We assert the 50% block has a
+    // spread of at least 1px.
+    const fiftyBlock = keyframe.match(/50%\s*\{([^}]*)\}/)?.[1] ?? '';
+    expect(fiftyBlock).toMatch(/inset\s+0\s+0\s+0\s+[1-9]\d*px/);
+    // The keyframe MUST NOT animate `border-color` (R1 regression).
+    expect(keyframe).not.toMatch(/\bborder-color\s*:/);
   });
 
-  it('applies the border-flash keyframe to the BLINK wrapper class (not ::before)', () => {
+  it('R2: applies the ring-flash keyframe to the BLINK wrapper class (not ::before)', () => {
     const css = readText(cssFile!);
-    // The rule must be on the wrapper class itself, not on a child
-    // pseudo-element. The previous `animation: none` declaration on
-    // the wrapper was removed in T1A to make room for the border
-    // flash; the original `animation: none` fence therefore changes
-    // shape but the spirit (no opacity animation on the wrapper) is
-    // preserved by the `hrpStickyAnnouncementBlinkBorder` keyframe
-    // (which only animates border-color).
     expect(css).toMatch(
-      /\.hrpStickyAnnouncementAnimBlink\s*\{[^}]*animation:\s*hrpStickyAnnouncementBlinkBorder/s,
+      /\.hrpStickyAnnouncementAnimBlink\s*\{[^}]*animation:\s*hrpStickyAnnouncementBlinkRing/s,
     );
+  });
+
+  it('R2: BLINK wrapper declares a default `box-shadow: inset 0 0 0 0 transparent` so the bar looks unchanged when BLINK is off', () => {
+    const css = readText(cssFile!);
+    // Without a default `box-shadow` declaration, browsers apply
+    // `box-shadow: none` which does NOT animate to/from a value in
+    // a keyframe that sets `box-shadow` (the property is missing
+    // entirely from the cascade at the "off" state, so the
+    // interpolation has no start point). The wrapper must declare a
+    // zero-spread transparent inset shadow as the base value so the
+    // BlinkRing keyframe can interpolate from `0 0 0 0 transparent`
+    // to `0 0 0 2px ... 85%` and back.
+    const rule =
+      css.match(
+        /\.hrpStickyAnnouncementAnimBlink\s*\{([^}]*)\}/,
+      )?.[1] ?? '';
+    expect(rule).toMatch(/box-shadow:\s*inset\s+0\s+0\s+0\s+0\s+transparent/);
   });
 
   it('keeps the `::before` opacity blink (signature BLINK behavior)', () => {
@@ -638,6 +673,62 @@ describe('T1A hotfix — TSX onMouseEnter / onMouseLeave wiring', () => {
     // Variable name is pinned so the test fails if a future refactor
     // renames it (the test would otherwise silently keep passing).
     expect(code).toMatch(/const\s+\[\s*isHovered\s*,\s*setIsHovered\s*\]/);
+  });
+
+  it('R2: component declares a `canPauseOnHover` useState (JS-side touch gate)', () => {
+    const code = readText(tsxFile!);
+    // The variable name is pinned so a future refactor that drops
+    // the gate (or renames it) fails this fence. Default is `false`
+    // so we never pause before the media-query effect confirms the
+    // user agent has hover capability.
+    expect(code).toMatch(/useState(?:\s*<[^>]+>)?\s*\(\s*false\s*\)/);
+    expect(code).toMatch(/const\s+\[\s*canPauseOnHover\s*,\s*setCanPauseOnHover\s*\]/);
+  });
+
+  it('R2: a useEffect reads `matchMedia("(hover: hover) and (pointer: fine)")` and feeds `canPauseOnHover`', () => {
+    const code = readText(tsxFile!);
+    // The gate effect must query the same media query the CSS rule
+    // uses. The literal string is checked to lock in the exact
+    // query so a typo in either the CSS or the JS is caught.
+    expect(code).toMatch(
+      /window\.matchMedia\(\s*['"`]\(hover:\s*hover\)\s+and\s+\(pointer:\s*fine\)['"`]\s*\)/,
+    );
+    // The effect must update the state — we assert by the
+    // `setCanPauseOnHover` setter being called inside an effect
+    // body (paired with the matches getter).
+    expect(code).toMatch(/setCanPauseOnHover\(\s*mql\.matches\s*\)/);
+  });
+
+  it('R2: marquee-pause effect short-circuits when `!canPauseOnHover` (touch-safe inline pause)', () => {
+    const code = readText(tsxFile!);
+    // The marquee-pause effect (the one that writes
+    // `animationPlayState`) must check `canPauseOnHover` and reset
+    // the inline state to `''` (empty) when false. Without this
+    // gate, a touch tap that fires React 19's synthetic `mouseover`
+    // would still pause the marquee even though the CSS pause
+    // rule is gated.
+    const effectMatch = code.match(
+      /useEffect\(\s*\(\s*\)\s*=>\s*\{[\s\S]*?el\.style\.animationPlayState\s*=\s*isHovered\s*\?[\s\S]*?\}\s*,\s*\[[^\]]*canPauseOnHover[^\]]*\]\s*\)/,
+    );
+    expect(effectMatch).not.toBeNull();
+    // The effect body must reset the inline state to '' when
+    // `!canPauseOnHover`. We assert the literal branch.
+    expect(code).toMatch(
+      /if\s*\(\s*!\s*showMarqueeTrack\s*\|\|\s*!\s*canPauseOnHover\s*\)/,
+    );
+  });
+
+  it('R2: onMouseEnter / onMouseLeave are gated by `canPauseOnHover` so touch never flips `isHovered`', () => {
+    const code = readText(tsxFile!);
+    // The wrapper must attach the hover handlers ONLY when
+    // `canPauseOnHover` is true. We assert by the conditional
+    // expression in the JSX (`canPauseOnHover ? () => ... : undefined`).
+    expect(code).toMatch(
+      /onMouseEnter=\{canPauseOnHover\s*\?\s*\(\s*\)\s*=>\s*setIsHovered\(true\)\s*:\s*undefined\}/,
+    );
+    expect(code).toMatch(
+      /onMouseLeave=\{canPauseOnHover\s*\?\s*\(\s*\)\s*=>\s*setIsHovered\(false\)\s*:\s*undefined\}/,
+    );
   });
 
   it('AC-07: a useEffect toggles `animationPlayState` on the marquee message when isHovered changes', () => {

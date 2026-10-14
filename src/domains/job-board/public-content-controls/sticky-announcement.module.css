@@ -130,16 +130,26 @@
 /* ─── Animation: BLINK ────────────────────────────────────────────── */
 
 /*
- * T1A hotfix: the original BLINK animation only changed the opacity of
- * the ::before pseudo-element (the background overlay). When an admin
- * configures `backgroundOpacity` < 50%, the ::before is nearly invisible
- * and the blink is imperceptible — this is what the user reported as
- * "desktop không thấy hiệu ứng, mobile thấy" (desktop configs usually
- * use lower backgroundOpacity to avoid covering content). The fix adds
- * a SECOND visual cue on the WRAPPER itself: a border-color flash that
- * is always visible regardless of backgroundOpacity. The ::before
- * opacity animation is preserved (signature behavior); the new keyframe
- * runs in parallel on the wrapper so BLINK stays visible at any
+ * T1A hotfix (R2): the original BLINK animation only changed the
+ * opacity of the ::before pseudo-element (the background overlay).
+ * When an admin configures `backgroundOpacity` < 50%, the ::before is
+ * nearly invisible and the blink is imperceptible — this is what the
+ * user reported as "desktop không thấy hiệu ứng, mobile thấy"
+ * (desktop configs usually use lower backgroundOpacity to keep the
+ * bar out of the way of content).
+ *
+ * R1 attempted to fix this by adding a `border-color` flash on the
+ * wrapper, but the wrapper rule never declared a border (no
+ * `border-width` or `border-style`), so the `border-color` change had
+ * no visible effect. R2 fixes this by using `box-shadow: inset` as the
+ * second visual cue: a 0 → 2px inset shadow at 0% / 100% → 50% that
+ * paints a thin ring inside the wrapper regardless of `border` or
+ * `backgroundOpacity`. Inset box-shadow does NOT cause layout shift
+ * (it is painted within the element's existing content area), and the
+ * width is `0` when the keyframe is disabled, so the bar's natural
+ * look is preserved when BLINK is off. The ::before opacity blink is
+ * preserved as the signature cue; the new `box-shadow` cue runs in
+ * parallel on the wrapper so BLINK stays visible at any
  * backgroundOpacity from 0% to 100%.
  */
 @keyframes hrpStickyAnnouncementBlink {
@@ -152,23 +162,34 @@
   }
 }
 
-@keyframes hrpStickyAnnouncementBlinkBorder {
+@keyframes hrpStickyAnnouncementBlinkRing {
   0%,
   100% {
-    border-color: color-mix(in srgb, var(--color-on-primary) 65%, transparent);
+    /*
+     * A 0px shadow renders nothing — equivalent to no ring. Using
+     * spread (4th value) keeps the shadow's edge crisp and lets the
+     * keyframe interpolate smoothly between 0 and 2px.
+     */
+    box-shadow: inset 0 0 0 0
+      color-mix(in srgb, var(--color-on-primary) 0%, transparent);
   }
   50% {
-    border-color: color-mix(in srgb, var(--color-on-primary) 25%, transparent);
+    box-shadow: inset 0 0 0 2px
+      color-mix(in srgb, var(--color-on-primary) 85%, transparent);
   }
 }
 
 .hrpStickyAnnouncementAnimBlink {
-  /* Border is normally transparent so it doesn't change the bar's look
-   * when BLINK is not active. The BlinkBorder keyframe animates the
-   * alpha to make the border flash on/off, providing a second visual
-   * cue alongside the ::before opacity blink. */
-  border-color: transparent;
-  animation: hrpStickyAnnouncementBlinkBorder 1.4s ease-in-out infinite;
+  /*
+   * The BlinkRing keyframe animates a 0 → 2px inset box-shadow ring
+   * that is always visible regardless of `backgroundOpacity` (the
+   * ring is drawn ON TOP of the ::before overlay, not behind it).
+   * `box-shadow: inset 0 0 0 0 transparent` is the "off" state — it
+   * renders nothing but still claims no layout space. The bar's
+   * outer look is preserved when BLINK is not active.
+   */
+  box-shadow: inset 0 0 0 0 transparent;
+  animation: hrpStickyAnnouncementBlinkRing 1.4s ease-in-out infinite;
 }
 
 .hrpStickyAnnouncementAnimBlink::before {

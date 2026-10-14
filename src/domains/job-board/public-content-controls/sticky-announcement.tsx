@@ -82,6 +82,24 @@ export function StickyAnnouncement({
   const [mounted, setMounted] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  /*
+   * T1A hotfix (R2): `canPauseOnHover` is a *JS-side* gate that mirrors
+   * the CSS `@media (hover: hover) and (pointer: fine)` block. R1
+   * attached `onMouseEnter` / `onMouseLeave` unconditionally and only
+   * gated the CSS pause rules by media query — but React 19 maps
+   * touch sequences to synthetic `mouseover` / `mouseout` events on
+   * some browsers, which means a touch tap could fire
+   * `setIsHovered(true)` and the inline effect that writes
+   * `style.animationPlayState = 'paused'` would set it regardless of
+   * the CSS gate. The JS gate here ensures the touch path never
+   * pauses the marquee, by reading the same media query the CSS uses
+   * and short-circuiting the inline pause effect (and the JS state
+   * itself) when the user agent reports `hover: none` or
+   * `pointer: coarse`. Default `false` (conservative: do not pause
+   * until the effect confirms hover capability), flipped to `true`
+   * after mount when `(hover: hover) and (pointer: fine)` matches.
+   */
+  const [canPauseOnHover, setCanPauseOnHover] = useState(false);
   const marqueeViewportRef = useRef<HTMLDivElement | null>(null);
   const marqueeMessageRef = useRef<HTMLSpanElement | null>(null);
 
@@ -141,6 +159,36 @@ export function StickyAnnouncement({
     return undefined;
   }, []);
 
+  /*
+   * T1A hotfix (R2): JS-side mirror of the CSS
+   * `@media (hover: hover) and (pointer: fine)` gate. This effect
+   * reads the same media query the CSS pause rules use and exposes
+   * it to the JSX as `canPauseOnHover`. The state is consumed in:
+   *   - the wrapper's `onMouseEnter` / `onMouseLeave` handlers (which
+   *     become no-ops when `canPauseOnHover` is false, so a touch
+   *     tap that fires synthetic mouse events does not flip
+   *     `isHovered` to true);
+   *   - the marquee-pause effect (which short-circuits when
+   *     `canPauseOnHover` is false, so the inline
+   *     `style.animationPlayState` is never set to `paused` on
+   *     touch devices).
+   * Default `false` is conservative: until the effect runs we cannot
+   * confirm the user agent supports hover, so we do not pause. The
+   * effect runs synchronously after mount, so the gate flips to
+   * `true` within one frame on a real desktop.
+   */
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+    const mql = window.matchMedia('(hover: hover) and (pointer: fine)');
+    const update = () => setCanPauseOnHover(mql.matches);
+    update();
+    if (typeof mql.addEventListener === 'function') {
+      mql.addEventListener('change', update);
+      return () => mql.removeEventListener('change', update);
+    }
+    return undefined;
+  }, []);
+
   // `showMarqueeTrack` is hoisted BEFORE the marquee-shift effect so the
   // effect can depend on it without hitting a TDZ on the very first
   // render (which is what the server-render tests exercise).
@@ -148,7 +196,7 @@ export function StickyAnnouncement({
     normalized.animation === 'MARQUEE' && message.length > 0 && !prefersReducedMotion;
 
   /*
-   * T1A hotfix: pause MARQUEE animation when the user hovers the bar
+   * T1A hotfix (R2): pause MARQUEE animation when the user hovers the bar
    * (mouseenter) and resume on mouseleave. Pause is applied INLINE on
    * the message element via `animationPlayState` because the animation
    * itself is also applied inline (the JS effect writes
@@ -160,10 +208,19 @@ export function StickyAnnouncement({
    * in `sticky-announcement.module.css` covers BLINK and MARQUEE in
    * stylesheet form; this effect is the inline equivalent for
    * MARQUEE so that pause works even when the marquee animation is
-   * inline-applied. On non-hover media (touch), the hover state still
-   * updates via onMouseEnter, but the message element gets no inline
-   * `animationPlayState` because this effect short-circuits when
-   * `showMarqueeTrack` is false OR when `isHovered` is false.
+   * inline-applied.
+   *
+   * R2 adds the `canPauseOnHover` gate to short-circuit the inline
+   * `style.animationPlayState` write when the user agent reports
+   * `hover: none` or `pointer: coarse` (i.e. touch / coarse pointer
+   * devices). The CSS pause rule is gated by the same media query,
+   * but inline `style.*` writes are not — without the gate, a touch
+   * tap that fires a synthetic `mouseover` would still set
+   * `animationPlayState = 'paused'` and freeze the marquee. The
+   * wrapper's `onMouseEnter` / `onMouseLeave` handlers also
+   * short-circuit on `!canPauseOnHover` so the React state
+   * `isHovered` stays `false` and the effect does not need to
+   * re-evaluate.
    *
    * BLINK pause is handled entirely by the stylesheet `:hover` rule
    * (the wrapper class is always applied when `animation === 'BLINK'`),
@@ -173,14 +230,16 @@ export function StickyAnnouncement({
     if (typeof window === 'undefined') return;
     const el = marqueeMessageRef.current;
     if (!el) return;
-    if (!showMarqueeTrack) {
-      // When the marquee is not active, leave the inline state empty
-      // so the stylesheet (or absence of animation) wins.
+    if (!showMarqueeTrack || !canPauseOnHover) {
+      // When the marquee is not active, or when the user agent has
+      // no hover capability, leave the inline state empty so the
+      // stylesheet (or absence of animation) wins. On touch, the
+      // element is NEVER paused.
       el.style.animationPlayState = '';
       return;
     }
     el.style.animationPlayState = isHovered ? 'paused' : 'running';
-  }, [isHovered, showMarqueeTrack, normalized.animation]);
+  }, [isHovered, showMarqueeTrack, canPauseOnHover, normalized.animation]);
 
   // T1C CORRECTION 1/1 (v1.2): the marquee message must start fully outside
   // the right edge of the viewport and exit fully off the left edge. The
@@ -398,8 +457,8 @@ export function StickyAnnouncement({
         fontClass,
       ].join(' ')}
       style={announcementStyle}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={canPauseOnHover ? () => setIsHovered(true) : undefined}
+      onMouseLeave={canPauseOnHover ? () => setIsHovered(false) : undefined}
     >
       {normalized.dismissible ? (
         <button
