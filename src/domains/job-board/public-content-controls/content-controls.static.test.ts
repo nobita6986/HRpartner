@@ -205,15 +205,23 @@ describe('sticky-announcement.module.css — animation + reduced-motion invarian
     expect(css).toMatch(/@keyframes\s+hrpStickyAnnouncementMarquee/);
   });
 
-  it('applies BLINK opacity to the background pseudo-element, not the container', () => {
+  it('applies BLINK opacity to the background pseudo-element and a border-flash to the wrapper (T1A hotfix)', () => {
+    // T1A hotfix: the wrapper now ALSO animates `border-color` (a second
+    // visual cue that is visible regardless of `backgroundOpacity`).
+    // The ::before opacity blink is preserved as the signature cue;
+    // the wrapper `animation` is no longer `none` — it is the
+    // `hrpStickyAnnouncementBlinkBorder` keyframe.
     const css = readText(cssFile!);
     expect(css).toMatch(/\.hrpStickyAnnouncementAnimBlink::before\s*\{\s*animation:\s*hrpStickyAnnouncementBlink/);
-    expect(css).toMatch(/\.hrpStickyAnnouncementAnimBlink\s*\{\s*animation:\s*none/);
+    expect(css).toMatch(/\.hrpStickyAnnouncementAnimBlink\s*\{[^}]*animation:\s*hrpStickyAnnouncementBlinkBorder/);
     expect(css).toMatch(/--sticky-background-opacity/);
     expect(css).toMatch(/box-shadow:\s*0 -2px 8px color-mix\(in srgb, rgb\(0 0 0 \/ 8%\) var\(--sticky-background-opacity\), transparent\)/);
     // The marquee `animation` declaration is NOT in CSS — it is applied
     // inline by the marquee effect after the px distances are measured.
     // v1.2 fence for this contract lives below in the v1.2 describe block.
+    // The wrapper rule for the BAR itself (not the BLINK-specific
+    // animation class) must NOT carry an `opacity:` declaration so the
+    // text remains fully opaque at any backgroundOpacity.
     for (const selector of [
       '.hrpStickyAnnouncement',
       '.hrpStickyAnnouncementCta',
@@ -462,5 +470,181 @@ describe('Zod schemas — single source of truth', () => {
     const code = readText(typesFile!);
     // Look for a `.regex(` call inside the contentRevision field block.
     expect(code).toMatch(/contentRevision[\s\S]*?\.regex\(/);
+  });
+});
+
+/*
+ * T1A hotfix `hrp-t1a-sticky-announcement-hotfix`:
+ * static fences for the BLINK visual-cue #2 and the hover-pause
+ * mechanism. The fences lock in:
+ *   - The wrapper carries a border-flash keyframe so BLINK is
+ *     visible at any `backgroundOpacity` (regression for the
+ *     "desktop không thấy hiệu ứng" report).
+ *   - The hover-pause CSS rule lives inside a `@media (hover: hover)
+ *     and (pointer: fine)` block so touch devices are never paused.
+ *   - The reduced-motion override still wins over hover-pause so
+ *     accessibility behavior is preserved.
+ *   - The TSX wires onMouseEnter / onMouseLeave on the wrapper.
+ */
+describe('T1A hotfix — BLINK visual cue #2 (border flash) invariants', () => {
+  it('declares a keyframe `hrpStickyAnnouncementBlinkBorder` for the wrapper border flash', () => {
+    const css = readText(cssFile!);
+    expect(css).toMatch(/@keyframes\s+hrpStickyAnnouncementBlinkBorder/);
+    // The keyframe must animate `border-color` (NOT `opacity` or
+    // `background-color`) so it is visible regardless of
+    // `backgroundOpacity` and does not collide with the existing
+    // `hrpStickyAnnouncementBlink` keyframe on `::before`.
+    const keyframe =
+      css.match(
+        /@keyframes\s+hrpStickyAnnouncementBlinkBorder\s*\{([\s\S]*?)\n\}/,
+      )?.[1] ?? '';
+    expect(keyframe).toMatch(/border-color:/);
+    expect(keyframe).not.toMatch(/\bopacity\s*:/);
+  });
+
+  it('applies the border-flash keyframe to the BLINK wrapper class (not ::before)', () => {
+    const css = readText(cssFile!);
+    // The rule must be on the wrapper class itself, not on a child
+    // pseudo-element. The previous `animation: none` declaration on
+    // the wrapper was removed in T1A to make room for the border
+    // flash; the original `animation: none` fence therefore changes
+    // shape but the spirit (no opacity animation on the wrapper) is
+    // preserved by the `hrpStickyAnnouncementBlinkBorder` keyframe
+    // (which only animates border-color).
+    expect(css).toMatch(
+      /\.hrpStickyAnnouncementAnimBlink\s*\{[^}]*animation:\s*hrpStickyAnnouncementBlinkBorder/s,
+    );
+  });
+
+  it('keeps the `::before` opacity blink (signature BLINK behavior)', () => {
+    const css = readText(cssFile!);
+    expect(css).toMatch(
+      /\.hrpStickyAnnouncementAnimBlink::before\s*\{[^}]*animation:\s*hrpStickyAnnouncementBlink\s/m,
+    );
+  });
+});
+
+describe('T1A hotfix — hover-pause CSS invariants', () => {
+  it('declares a `@media (hover: hover) and (pointer: fine)` block', () => {
+    const css = readText(cssFile!);
+    expect(css).toMatch(
+      /@media\s+\(hover:\s*hover\)\s+and\s+\(pointer:\s*fine\)\s*\{/,
+    );
+  });
+
+  it('AC-03: pause-on-hover rule for BLINK `::before` exists inside the hover media', () => {
+    const css = readText(cssFile!);
+    // The CSS groups all three hover-pause selectors under one rule
+    // body: `.hrpStickyAnnouncement:hover .hrpStickyAnnouncementAnimBlink,
+    // .hrpStickyAnnouncement:hover .hrpStickyAnnouncementAnimBlink::before,
+    // .hrpStickyAnnouncement:hover .hrpStickyAnnouncementMessageMarquee {
+    //   animation-play-state: paused;
+    // }`. The `::before` selector is one item in a comma-separated
+    // selector list, so we assert that it appears in the file inside
+    // the `@media (hover: hover) and (pointer: fine)` block together
+    // with the `animation-play-state: paused` declaration in the same
+    // rule body. We match the WHOLE rule body (selector list + body)
+    // and assert both pieces are present.
+    const mediaBlocks = css.match(
+      /@media\s+\(hover:\s*hover\)\s+and\s+\(pointer:\s*fine\)\s*\{([\s\S]*?)\n\}\s*(?:\n|$)/g,
+    );
+    expect(mediaBlocks).not.toBeNull();
+    const block = mediaBlocks![0];
+    expect(block).toMatch(/\.hrpStickyAnnouncement:hover\s+\.hrpStickyAnnouncementAnimBlink::before/);
+    expect(block).toMatch(/animation-play-state:\s*paused/);
+  });
+
+  it('AC-04: pause-on-hover rule for the BLINK wrapper class (border flash) exists', () => {
+    const css = readText(cssFile!);
+    const mediaBlocks = css.match(
+      /@media\s+\(hover:\s*hover\)\s+and\s+\(pointer:\s*fine\)\s*\{([\s\S]*?)\n\}\s*(?:\n|$)/g,
+    );
+    expect(mediaBlocks).not.toBeNull();
+    const block = mediaBlocks![0];
+    // The wrapper class appears without `::before` suffix.
+    expect(block).toMatch(/\.hrpStickyAnnouncement:hover\s+\.hrpStickyAnnouncementAnimBlink(?![:\w-])/);
+    expect(block).toMatch(/animation-play-state:\s*paused/);
+  });
+
+  it('AC-04: pause-on-hover rule for the MARQUEE message exists', () => {
+    const css = readText(cssFile!);
+    const mediaBlocks = css.match(
+      /@media\s+\(hover:\s*hover\)\s+and\s+\(pointer:\s*fine\)\s*\{([\s\S]*?)\n\}\s*(?:\n|$)/g,
+    );
+    expect(mediaBlocks).not.toBeNull();
+    const block = mediaBlocks![0];
+    expect(block).toMatch(/\.hrpStickyAnnouncement:hover\s+\.hrpStickyAnnouncementMessageMarquee/);
+    expect(block).toMatch(/animation-play-state:\s*paused/);
+  });
+
+  it('AC-05: hover-pause rules are gated by `@media (hover: hover) and (pointer: fine)` so touch devices are not paused', () => {
+    const css = readText(cssFile!);
+    // The three hover-pause selectors (BLINK wrapper, BLINK ::before,
+    // MARQUEE message) share a single rule body in the CSS, so we
+    // assert each selector appears inside the @media block and the
+    // shared rule body has `animation-play-state: paused`.
+    const mediaBlocks = css.match(
+      /@media\s+\(hover:\s*hover\)\s+and\s+\(pointer:\s*fine\)\s*\{([\s\S]*?)\n\}\s*(?:\n|$)/g,
+    );
+    expect(mediaBlocks).not.toBeNull();
+    expect(mediaBlocks!.length).toBeGreaterThan(0);
+    const block = mediaBlocks![0];
+    expect(block).toMatch(/\.hrpStickyAnnouncement:hover\s+\.hrpStickyAnnouncementAnimBlink(?![:\w-])/);
+    expect(block).toMatch(/\.hrpStickyAnnouncement:hover\s+\.hrpStickyAnnouncementAnimBlink::before/);
+    expect(block).toMatch(/\.hrpStickyAnnouncement:hover\s+\.hrpStickyAnnouncementMessageMarquee/);
+    expect(block).toMatch(/animation-play-state:\s*paused/);
+  });
+
+  it('AC-05: reduced-motion override still pins `animation: none` for BLINK wrapper, ::before, and MARQUEE message', () => {
+    const css = readText(cssFile!);
+    expect(css).toMatch(/@media\s+\(prefers-reduced-motion:\s*reduce\)/);
+    // The reduced-motion block: capture content between the first `{`
+    // after the media query and the LAST `}` of that media block. We
+    // do this by matching the full block greedily (no nested
+    // `prefers-reduced-motion` queries in this file, so the last `}`
+    // is the close of the @media block).
+    const reducedBlock =
+      css.match(
+        /@media\s+\(prefers-reduced-motion:\s*reduce\)\s*\{([\s\S]*?)\n\}/,
+      )?.[1] ?? '';
+    // T1A extended the list to also cover the new border-flash wrapper
+    // animation, so all three selectors must appear with `animation: none`.
+    expect(reducedBlock).toMatch(
+      /\.hrpStickyAnnouncementAnimBlink[\s\S]*?animation:\s*none/,
+    );
+    expect(reducedBlock).toMatch(
+      /\.hrpStickyAnnouncementAnimBlink::before[\s\S]*?animation:\s*none/,
+    );
+    expect(reducedBlock).toMatch(
+      /\.hrpStickyAnnouncementMessageMarquee[\s\S]*?animation:\s*none/,
+    );
+  });
+});
+
+describe('T1A hotfix — TSX onMouseEnter / onMouseLeave wiring', () => {
+  it('AC-06: wrapper carries onMouseEnter and onMouseLeave attributes', () => {
+    const code = readText(tsxFile!);
+    expect(code).toMatch(/onMouseEnter=\{[^}]*setIsHovered\(true\)/);
+    expect(code).toMatch(/onMouseLeave=\{[^}]*setIsHovered\(false\)/);
+  });
+
+  it('AC-06: component declares a `isHovered` useState', () => {
+    const code = readText(tsxFile!);
+    // Match the boolean `useState` initializer regardless of whether
+    // the explicit generic is present (TSX may elide the generic in
+    // some builds). The important invariant is the destructured tuple
+    // name `[isHovered, setIsHovered]`.
+    expect(code).toMatch(/const\s+\[\s*isHovered\s*,\s*setIsHovered\s*\]\s*=\s*useState(?:\s*<[^>]+>)?\s*\(\s*false\s*\)/);
+    // Variable name is pinned so the test fails if a future refactor
+    // renames it (the test would otherwise silently keep passing).
+    expect(code).toMatch(/const\s+\[\s*isHovered\s*,\s*setIsHovered\s*\]/);
+  });
+
+  it('AC-07: a useEffect toggles `animationPlayState` on the marquee message when isHovered changes', () => {
+    const code = readText(tsxFile!);
+    // The effect must reference `marqueeMessageRef.current` (or
+    // `messageEl`) and set `animationPlayState` based on `isHovered`.
+    expect(code).toMatch(/isHovered\s*\?\s*['"]paused['"]\s*:\s*['"]running['"]/);
+    expect(code).toMatch(/marqueeMessageRef/);
   });
 });

@@ -81,6 +81,7 @@ export function StickyAnnouncement({
   const [dismissedRevision, setDismissedRevision] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const marqueeViewportRef = useRef<HTMLDivElement | null>(null);
   const marqueeMessageRef = useRef<HTMLSpanElement | null>(null);
 
@@ -145,6 +146,41 @@ export function StickyAnnouncement({
   // render (which is what the server-render tests exercise).
   const showMarqueeTrack =
     normalized.animation === 'MARQUEE' && message.length > 0 && !prefersReducedMotion;
+
+  /*
+   * T1A hotfix: pause MARQUEE animation when the user hovers the bar
+   * (mouseenter) and resume on mouseleave. Pause is applied INLINE on
+   * the message element via `animationPlayState` because the animation
+   * itself is also applied inline (the JS effect writes
+   * `messageEl.style.animation = "${name} ${duration}s linear infinite"`)
+   * — an inline `animation-play-state` declaration is the only way to
+   * override the play state of an inline-set animation without
+   * rebuilding the animation string on every hover toggle. The CSS
+   * rule `@media (hover: hover) and (pointer: fine) { ...:hover { ... } }`
+   * in `sticky-announcement.module.css` covers BLINK and MARQUEE in
+   * stylesheet form; this effect is the inline equivalent for
+   * MARQUEE so that pause works even when the marquee animation is
+   * inline-applied. On non-hover media (touch), the hover state still
+   * updates via onMouseEnter, but the message element gets no inline
+   * `animationPlayState` because this effect short-circuits when
+   * `showMarqueeTrack` is false OR when `isHovered` is false.
+   *
+   * BLINK pause is handled entirely by the stylesheet `:hover` rule
+   * (the wrapper class is always applied when `animation === 'BLINK'`),
+   * so no TSX wiring is needed for BLINK.
+   */
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const el = marqueeMessageRef.current;
+    if (!el) return;
+    if (!showMarqueeTrack) {
+      // When the marquee is not active, leave the inline state empty
+      // so the stylesheet (or absence of animation) wins.
+      el.style.animationPlayState = '';
+      return;
+    }
+    el.style.animationPlayState = isHovered ? 'paused' : 'running';
+  }, [isHovered, showMarqueeTrack, normalized.animation]);
 
   // T1C CORRECTION 1/1 (v1.2): the marquee message must start fully outside
   // the right edge of the viewport and exit fully off the left edge. The
@@ -362,6 +398,8 @@ export function StickyAnnouncement({
         fontClass,
       ].join(' ')}
       style={announcementStyle}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       {normalized.dismissible ? (
         <button

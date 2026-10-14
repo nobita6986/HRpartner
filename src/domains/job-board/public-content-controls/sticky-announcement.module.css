@@ -129,6 +129,19 @@
 
 /* ─── Animation: BLINK ────────────────────────────────────────────── */
 
+/*
+ * T1A hotfix: the original BLINK animation only changed the opacity of
+ * the ::before pseudo-element (the background overlay). When an admin
+ * configures `backgroundOpacity` < 50%, the ::before is nearly invisible
+ * and the blink is imperceptible — this is what the user reported as
+ * "desktop không thấy hiệu ứng, mobile thấy" (desktop configs usually
+ * use lower backgroundOpacity to avoid covering content). The fix adds
+ * a SECOND visual cue on the WRAPPER itself: a border-color flash that
+ * is always visible regardless of backgroundOpacity. The ::before
+ * opacity animation is preserved (signature behavior); the new keyframe
+ * runs in parallel on the wrapper so BLINK stays visible at any
+ * backgroundOpacity from 0% to 100%.
+ */
 @keyframes hrpStickyAnnouncementBlink {
   0%,
   100% {
@@ -139,8 +152,23 @@
   }
 }
 
+@keyframes hrpStickyAnnouncementBlinkBorder {
+  0%,
+  100% {
+    border-color: color-mix(in srgb, var(--color-on-primary) 65%, transparent);
+  }
+  50% {
+    border-color: color-mix(in srgb, var(--color-on-primary) 25%, transparent);
+  }
+}
+
 .hrpStickyAnnouncementAnimBlink {
-  animation: none;
+  /* Border is normally transparent so it doesn't change the bar's look
+   * when BLINK is not active. The BlinkBorder keyframe animates the
+   * alpha to make the border flash on/off, providing a second visual
+   * cue alongside the ::before opacity blink. */
+  border-color: transparent;
+  animation: hrpStickyAnnouncementBlinkBorder 1.4s ease-in-out infinite;
 }
 
 .hrpStickyAnnouncementAnimBlink::before {
@@ -226,6 +254,7 @@
 /* ─── Reduced motion override (must be last) ──────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {
+  .hrpStickyAnnouncementAnimBlink,
   .hrpStickyAnnouncementAnimBlink::before,
   .hrpStickyAnnouncementMessageMarquee {
     animation: none;
@@ -240,5 +269,39 @@
     width: auto;
     white-space: normal;
     overflow-wrap: anywhere;
+  }
+}
+
+/*
+ * T1A hotfix: pause-on-hover for BLINK and MARQUEE.
+ *
+ * The user reported that mouse users couldn't read the message while the
+ * animation was running. Pausing on hover (and resuming on un-hover) lets
+ * the user stop the marquee / blink and read the message at their own
+ * pace. Pause uses `animation-play-state: paused` so the keyframe state
+ * is preserved — resume continues from the exact frame the user paused
+ * at, not from t=0.
+ *
+ * Gated behind `@media (hover: hover) and (pointer: fine)` so that touch
+ * devices and coarse-pointer devices (phones, tablets) NEVER pause the
+ * banner. A touch user tapping the bar should not have the animation
+ * "stuck" because there is no real mouseenter/mouseleave event. iOS
+ * Safari with a connected Magic Keyboard will report `hover: hover`
+ * and `pointer: fine` — in that case the user genuinely has hover
+ * capability and pause is the correct behavior.
+ *
+ * The MARQUEE message's `animation` is set INLINE by the JS effect
+ * (`messageEl.style.animation = "${name} ${duration}s linear infinite"`)
+ * — that shorthand does NOT include `animation-play-state`, so the
+ * stylesheet `:hover { animation-play-state: paused }` rule below is
+ * applied by the CSS cascade (the inline shorthand only sets the four
+ * longhand properties it declares, leaving the others to the
+ * stylesheet).
+ */
+@media (hover: hover) and (pointer: fine) {
+  .hrpStickyAnnouncement:hover .hrpStickyAnnouncementAnimBlink,
+  .hrpStickyAnnouncement:hover .hrpStickyAnnouncementAnimBlink::before,
+  .hrpStickyAnnouncement:hover .hrpStickyAnnouncementMessageMarquee {
+    animation-play-state: paused;
   }
 }
