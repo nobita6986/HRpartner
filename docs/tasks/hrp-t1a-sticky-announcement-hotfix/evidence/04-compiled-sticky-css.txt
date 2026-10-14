@@ -57,4 +57,3 @@
 @keyframes sticky-announcement_hrpStickyAnnouncementMarquee__0pucR{0%{transform:translateX(var(--marquee-shift-start,0))}to{transform:translateX(calc(-1 * var(--marquee-shift-end, 0px)))}}
 
 ---
-

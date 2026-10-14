@@ -1,11 +1,11 @@
-vitest.cmd : [33mThe CJS build of Vite's Node API is deprecated. See 
+vitest.cmd : [33mThe CJS build of Vite's Node API is deprecated. See
 https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
 At C:\Users\Admin\AppData\Local\Temp\ps-script-66f019c7-3cb9-4c29-a88d-c5488dfeb496.ps1:85 char:73
 + ... nt-hotfix'; & 'D:\CodeApp\HRP\node_modules\.bin\vitest.cmd' run --rep ...
 +                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     + CategoryInfo          : NotSpecified: ([33mThe CJS bu...e details.[39m:String) [], RemoteException
     + FullyQualifiedErrorId : NativeCommandError
- 
+
 
  RUN  v2.1.9 D:/CodeApp/HrP-worktrees/t1a-sticky-announcement-hotfix
 
@@ -188,4 +188,3 @@ At C:\Users\Admin\AppData\Local\Temp\ps-script-66f019c7-3cb9-4c29-a88d-c5488dfeb
       Tests  174 passed (174)
    Start at  09:03:12
    Duration  1.55s (transform 124ms, setup 0ms, collect 442ms, tests 146ms, environment 394ms, prepare 179ms)
-
