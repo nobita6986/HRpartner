@@ -21,19 +21,38 @@
   --color-primary-cta: #f07f1a;
   --color-primary-cta-dark: #c2520a;
 
-  /* hrp-t1a-theme-apply-cta-hotfix (RQ-01): CTA phản ánh theme đang chọn.
-     Alias `var(--color-primary-dark)` (cascading từ 5 `[data-theme='...']`
-     block T1C đã chốt) nên nút đổi màu theo theme ở cả 3 site mà không cần
-     thêm block theme mới. Default dùng PD (không phải P) vì white-on-P ở
-     HRP chỉ 3.153:1 — fail 4.5:1 cho 14px semibold (normal text). White
-     on PD đạt 5/5 palette ≥ 4.5:1 (HRP 6.468 / Ocean 9.647 / Emerald 8.272
-     / Violet 12.438 / Gold 8.577). Hover dùng mix 82% PD + 18% black cho
-     white-on-mix ≥ 4.5:1 ở 5/5 palette (8.503..14.295). */
+  /* hrp-t1a-cta-theme-cascade-hotfix (RQ-01): CTA phản ánh theme đang chọn.
+     Tại sao KHÔNG dùng `--color-apply-cta: var(--color-primary-dark)` làm
+     trung gian: theo CSS Custom Properties spec §2.1
+     (https://www.w3.org/TR/css-variables-1/#substitute-a-var), khi một
+     custom property được khai báo với value là TOÀN BỘ `var()`, tham chiếu
+     bên trong được resolve TẠI THỜI ĐIỂM KHAI BÁO (early resolution) —
+     tức là `--color-apply-cta` bị "đóng băng" thành giá trị của
+     `--color-primary-dark` tại scope khai báo (root scope = HRP dark
+     `#a63b00`) và KHÔNG nhận override từ `[data-theme=ocean-trust]` set
+     `--color-primary-dark: #0d4a63`. Đây là pitfall kinh điển của CSS
+     variables khi khai báo alias xuyên theme.
+
+     Vì vậy `.hrp-btn-apply` (xem dòng 535) dùng TRỰC TIẾP
+     `var(--color-primary-dark)` trong property value — `var()` reference
+     bên trong property value là LAZY resolution tại scope áp dụng, nên
+     nhận đúng giá trị từ `[data-theme=...]` ancestor.
+
+     Token `--color-apply-cta*` được GIỮ ở đây làm alias ngược cho code/site
+     ngoài `.hrp-btn-apply` nếu có tham chiếu (backward compat). KHÔNG
+     override trong `[data-theme]` block — đã được AC-09 trong
+     `globals-css-theme-scope.test.ts` khóa. */
   --color-apply-cta: var(--color-primary-dark);
-  /* Hover dùng color-mix(in srgb, PD 82%, #000) — TỰ cascade theo theme
-     qua var(--color-primary-dark), không cần thêm block [data-theme] mới.
-     5/5 palette: HRP #883000 (8.503:1), Ocean #0b3d51 (11.663:1),
-     Emerald #0b4a2f (10.320:1), Violet #341964 (14.295:1), Gold #4c3d07 (10.618:1). */
+  /* Hover dùng `color-mix(in srgb, var(--color-primary-dark) 82%, #000)`.
+     Lightning CSS (Tailwind v4 compiler) resolve tĩnh giá trị tại compile
+     time thành hex (HRP #883000) khi nằm trong khai báo custom property ở
+     root scope, nên KHÔNG cascade theo theme. Fix tương tự alias trên:
+     `.hrp-btn-apply:hover` (xem dòng 540) dùng TRỰC TIẾP `color-mix()`
+     với `var(--color-primary-dark)` để browser resolve dynamic tại
+     scope áp dụng.
+     5/5 palette mix: HRP #883000 (8.503:1), Ocean #0b3d51 (11.663:1),
+     Emerald #0b4a2f (10.320:1), Violet #341964 (14.295:1),
+     Gold #4c3d07 (10.618:1). */
   --color-apply-cta-dark: color-mix(in srgb, var(--color-primary-dark) 82%, #000);
 
   /* Surface / neutral */
@@ -522,9 +541,18 @@ body {
    hrp-t1a-theme-apply-cta-hotfix (RQ-01): thay 2 token
    `--color-primary-cta*` (cố định cam HRP) bằng `--color-apply-cta*`
    (alias token theme). 3 site FeaturedJobCard / JobCard / DetailApplyCta
-   dùng chung class `.hrp-btn-apply` nên tự đồng bộ theo theme. */
+   dùng chung class `.hrp-btn-apply` nên tự đồng bộ theo theme.
+
+   hrp-t1a-cta-theme-cascade-hotfix (RQ-01): dùng TRỰC TIẾP
+   `var(--color-primary-dark)` trong property value (không qua alias
+   `--color-apply-cta`). Lý do: `var()` trong property value là LAZY
+   resolution tại scope áp dụng, nên nhận đúng giá trị từ
+   `[data-theme=...]` ancestor. Ngược lại, `--color-apply-cta:
+   var(--color-primary-dark)` ở `:root` là EARLY resolution (đóng băng
+   thành HRP dark), bug cũ đã được sửa bằng cách bỏ trung gian.
+   Xem chi tiết pitfall ở comment của `--color-apply-cta` (dòng ~23). */
 .hrp-btn-apply {
-  background-color: var(--color-apply-cta);
+  background-color: var(--color-primary-dark);
   color: var(--color-on-primary);
   cursor: pointer;
   transition-property: background-color;
@@ -532,7 +560,7 @@ body {
   transition-timing-function: var(--ease-out);
 }
 .hrp-btn-apply:hover:not(:disabled) {
-  background-color: var(--color-apply-cta-dark);
+  background-color: color-mix(in srgb, var(--color-primary-dark) 82%, #000);
   color: var(--color-on-primary);
   transition-duration: var(--t-medium);
 }
