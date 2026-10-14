@@ -1,9 +1,3 @@
-﻿UTF-8 NO-BOM GATE
-  [OK]   app/components/GlobalFooter.test.tsx
-  [OK]   app/components/GlobalFooter.tsx
+UTF-8 NO-BOM GATE
   [OK]   docs/tasks/hrp-t1a-sticky-announcement-hotfix/TASK.md
-  [OK]   src/domains/job-board/public-content-controls/content-controls.static.test.ts
-  [OK]   src/domains/job-board/public-content-controls/sticky-announcement.module.css
-  [OK]   src/domains/job-board/public-content-controls/sticky-announcement.mount.test.tsx
-  [OK]   src/domains/job-board/public-content-controls/sticky-announcement.tsx
-RESULT: PASS (7 changed text file(s), strict UTF-8 without BOM).
+RESULT: PASS (1 changed text file(s), strict UTF-8 without BOM).

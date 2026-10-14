@@ -13,9 +13,9 @@
 | Audit mode | `NONE` |
 | Audit reason | Hotfix UI/CSS thuần, blast radius hẹp (1 component + 1 footer). Không đổi contract data, không đổi schema, không auth/permission, không public API. Tier 1 self-review đủ. |
 | Spec version | `v1.0` |
-| Status | `READY_FOR_REVIEW` (implementation SHA `e592a7ac`; awaiting T0 push/merge approval) |
+| Status | `READY_FOR_REVIEW` (R2 implementation SHA `bb504c14` on baseline `efbfca63`; awaiting T0 push/merge approval) |
 | Planner | `Tier 1` |
-| Baseline | `c0d32c8a29daf2b94325b3c0cef08bb79409f235` |
+| Baseline | `efbfca6321b7f1b1c69904b4cd283a859be1a67d` (origin/main — T0 chỉ định sau PR #137 merge; rebased 3 commit R1 lên baseline này) |
 | Contract gate | `READY_TO_CODE` |
 | Decision state | `CLOSED` |
 | Test environment | `READY` |
@@ -23,10 +23,10 @@
 | In-scope roots | `src/domains/job-board/public-content-controls/sticky-announcement.tsx`; `src/domains/job-board/public-content-controls/sticky-announcement.module.css`; `src/domains/job-board/public-content-controls/sticky-announcement.test.tsx`; `src/domains/job-board/public-content-controls/sticky-announcement.mount.test.tsx`; `src/domains/job-board/public-content-controls/content-controls.static.test.ts`; `app/components/GlobalFooter.tsx`; `app/components/GlobalFooter.test.tsx` (tạo mới nếu chưa có); `docs/tasks/hrp-t1a-sticky-announcement-hotfix/**` |
 | Forbidden paths | `prisma/**`; `app/admin/**`; `app/api/**`; `app/(portal)/layout.tsx` (mount point KHÔNG đổi); `src/domains/job-board/public-content-controls/types.ts` (DTO KHÔNG đổi); `src/domains/job-board/public-content-controls/public-sticky-announcement.tsx` (Phase B wrapper KHÔNG đổi); `src/domains/job-board/public-content-controls/animation.ts`; các T1C-owned file khác ngoài allowlist |
 | Required gates | `node node_modules/typescript/bin/tsc --noEmit`; `node node_modules/vitest/dist/cli.js run --config vitest.unit.config.ts src/domains/job-board/public-content-controls app/components/GlobalFooter.test.tsx` (nếu có); `node .ai-pipeline/scripts/verify-encoding.mjs`; `node node_modules/next/dist/bin/next build` (CSS output inspection only); `pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-t1a-sticky-announcement-hotfix/TASK.md`; `pwsh .ai-pipeline/scripts/verify-handoff.ps1 -HandoffPath docs/tasks/hrp-t1a-sticky-announcement-hotfix/HANDOFF.md -TaskPath docs/tasks/hrp-t1a-sticky-announcement-hotfix/TASK.md`; `git diff --check` |
-| Current execution round | `1` |
+| Current execution round | `2` (R2: sửa 3 điểm T0 review — baseline, BLINK visible, touch pause) |
 | Current audit round | `0` |
 | Next gate | `T0_PUSH_PR_MERGE` |
-| Implementation SHA | `e592a7ac8426df449d0d544ff696f7b2a742e4fc` |
+| Implementation SHA | `bb504c14a5d90f450a3a6f953c0a7eaeb820a738` (R2, rebased onto `efbfca63`; R1 SHA `c8ca33d7` superseded) |
 
 > Lane FAST mặc định Audit NONE. Tier 1 tự review ≤ 3 rủi ro trọng yếu. T0 review contract hotfix trước khi push.
 
@@ -37,14 +37,14 @@
 1. **Sticky announcement animation hoạt động trên desktop** (giống mobile):
    - Cấu hình admin (DTO `animation: 'BLINK'` hoặc `'MARQUEE'`) hiển thị hiệu ứng tương ứng trên cả desktop và mobile khi người dùng không bật `prefers-reduced-motion: reduce`.
    - Hành vi reduced-motion được giữ nguyên (giữ theo quy ước a11y) — khi user OS bật reduce-motion, animation tắt cả desktop và mobile.
-   - Hiệu ứng BLINK phải **nhìn thấy được** bất kể `backgroundOpacity` (0–100%): thêm 1 visual cue phụ (border-color flash) ngoài `::before` opacity để vẫn thấy blink khi background mờ.
+   - Hiệu ứng BLINK phải **nhìn thấy được** bất kể `backgroundOpacity` (0–100%): thêm 1 visual cue phụ (R2: `box-shadow: inset` ring keyframe `hrpStickyAnnouncementBlinkRing` trên wrapper) ngoài `::before` opacity để vẫn thấy blink khi background mờ. Ring dùng `var(--color-on-primary)` qua `color-mix()` → theme-aware, 0 layout shift (inset shadow paint trong content area, không cộng vào box).
 
 2. **Pause khi hover, resume khi un-hover**:
    - Khi user rê chuột vào bar (mouse enter): cả BLINK và MARQUEE đều **pause** ngay lập tức (`animation-play-state: paused`).
    - Khi user rê chuột ra (mouse leave): animation **resume** từ đúng thời điểm pause (`animation-play-state: running`).
    - BLINK: animation nằm trên `::before` pseudo-element → dùng parent `:hover` selector.
-   - MARQUEE: animation apply inline trên message element → dùng stylesheet `animation-play-state` (CSS cascade, không bị ghi đè vì inline shorthand không khai báo play-state).
-   - **Touch device**: không có `mouseenter`/`mouseleave` thật → wrap hover-pause trong `@media (hover: hover) and (pointer: fine)` để touch KHÔNG bị kẹt banner.
+   - MARQUEE: animation apply inline trên message element → R1 dùng stylesheet `animation-play-state` (CSS cascade). **R2 thêm JS-side gate**: `canPauseOnHover` useState + matchMedia effect đọc `(hover: hover) and (pointer: fine)`. Effect toggle `animationPlayState` chỉ chạy khi `canPauseOnHover === true`; ngược lại reset về `''` để stylesheet (chỉ apply khi match media) kiểm soát. JSX `onMouseEnter` / `onMouseLeave` cũng gate theo `canPauseOnHover ? () => setIsHovered : undefined` — touch KHÔNG nhận listener (React 19 maps touch → synthetic mouseover nhưng vẫn không flip `isHovered`).
+   - **Touch device**: không có `mouseenter`/`mouseleave` thật → CSS gate (`@media (hover: hover) and (pointer: fine)`) chỉ chặn stylesheet pause; **R2 thêm JS gate** (`canPauseOnHover` + matchMedia) để touch KHÔNG bị kẹt banner kể cả khi React 19 map touch → synthetic mouseover.
 
 3. **GlobalFooter map iframe OSM → Google Maps embed**:
    - Thay `https://www.openstreetmap.org/export/embed.html?bbox=...&marker=21.314035%2C105.680883` bằng Google Maps embed tương đương, **không cần API key**.
@@ -78,11 +78,12 @@
 | ID | Decision | Status |
 |---|---|---|
 | `DEC-T1A-15` | Pause animation qua CSS `animation-play-state: paused` thay vì clear/re-apply inline `style.animation`. | `CHOSEN` |
-| `DEC-T1A-16` | Wrap hover-pause trong `@media (hover: hover) and (pointer: fine)`. | `CHOSEN` |
-| `DEC-T1A-17` | Thêm visual cue phụ cho BLINK: `border-color` flash keyframe trên wrapper `.hrpStickyAnnouncementAnimBlink` (wrapper có `color: var(--color-on-primary)` ổn định, không ảnh hưởng text/icon). | `CHOSEN` |
+| `DEC-T1A-16` | Wrap hover-pause trong `@media (hover: hover) and (pointer: fine)`. | `CHOSEN` (R2 bổ sung JS-side mirror `canPauseOnHover` để chặn inline `style.animationPlayState` mà CSS gate không chặn được) |
+| `DEC-T1A-17` | **R1**: visual cue phụ cho BLINK = `border-color` flash keyframe. **R2** (sau T0 review): thay bằng `box-shadow: inset 0 0 0 0..2px var(--color-on-primary)` ring keyframe `hrpStickyAnnouncementBlinkRing`. Wrapper declare default `box-shadow: inset 0 0 0 0 transparent` để keyframe interpolate. Lý do R2: wrapper không có `border-width` / `border-style` nên R1 `border-color` flash invisible; inset box-shadow paint trong content area (0 layout shift), theme-aware (`--color-on-primary` qua `color-mix`). | `CHOSEN` (R2 supersede R1) |
 | `DEC-T1A-18` | Google Maps embed URL: `https://maps.google.com/maps?q=21.314035,105.680883&hl=vi&z=15&output=embed`. | `CHOSEN` |
 | `DEC-T1A-19` | Giữ nguyên DTO `StickyAnnouncementDto` (không thêm field hover-pause-enable). | `CHOSEN` |
 | `DEC-T1A-20` | Không test chi tiết reduced-motion × hover-pause interaction (đã cover bằng static fence). | `CHOSEN` |
+| `DEC-T1A-21` | **R2** thêm `useState<boolean>(canPauseOnHover)` + `useEffect` đọc `window.matchMedia('(hover: hover) and (pointer: fine)')`, lắng nghe `change` event, default `false`. Effect toggle `style.animationPlayState` short-circuit khi `!canPauseOnHover`. JSX handler gate `canPauseOnHover ? () => setIsHovered : undefined`. | `CHOSEN` (R2 mới) |
 
 ### 3.1 Build vs Adopt
 
@@ -131,10 +132,10 @@ FAST: 1–4 STEP. Mỗi STEP mô tả outcome theo thứ tự.
 
 | Step | Target | Intent | Verify | Stop condition |
 |---|---|---|---|---|
-| `STEP-01` | `sticky-announcement.module.css` | Thêm `@media (hover: hover) and (pointer: fine)` block với `:hover { animation-play-state: paused }` cho cả BLINK `::before` và MARQUEE message. Thêm keyframe `hrpStickyAnnouncementBlinkBorder` áp dụng trên `.hrpStickyAnnouncementAnimBlink` (wrapper) cho visual cue thứ 2. Override pause trong `prefers-reduced-motion` block. | E-01, E-04 | Không tìm được cách áp dụng pause mà không ghi đè inline `style.animation` của MARQUEE → escalate T0. |
-| `STEP-02` | `sticky-announcement.tsx` | Thêm `useState<boolean>(isHovered)` + `onMouseEnter` / `onMouseLeave` trên wrapper. Khi `isHovered && showMarqueeTrack && !prefersReducedMotion`, set `messageEl.style.animationPlayState = 'paused'` (inline). Cleanup: khi un-hover hoặc khi animation = NONE, reset `animationPlayState = ''`. | E-02 | Inline manipulation không thể bypass CSS cascade → escalate T0. |
-| `STEP-03` | `GlobalFooter.tsx` | Thay iframe `src` từ OSM URL → Google Maps embed URL. Giữ nguyên `title`, `loading`, `width`, `height`. | E-05 | Google Maps embed cần API key → escalate T0 (không xảy ra: đã verify endpoint public). |
-| `STEP-04` | Tests (3 file test + 1 file test mới) | Cập nhật `content-controls.static.test.ts` (fence mới); cập nhật `sticky-announcement.test.tsx` (server-render); cập nhật `sticky-announcement.mount.test.tsx` (jsdom hover-pause); tạo `GlobalFooter.test.tsx` nếu chưa có. | E-03 | Test environment thiếu jsdom config → escalate T0. |
+| `STEP-01` | `sticky-announcement.module.css` | **R2**: Thêm `@media (hover: hover) and (pointer: fine)` block với `:hover { animation-play-state: paused }` cho cả BLINK `::before` và MARQUEE message. Thêm keyframe `hrpStickyAnnouncementBlinkRing` (animate `box-shadow: inset 0 0 0 0..2px var(--color-on-primary)` qua `color-mix`) áp dụng trên `.hrpStickyAnnouncementAnimBlink` (wrapper) cho visual cue thứ 2. Wrapper declare default `box-shadow: inset 0 0 0 0 transparent` để keyframe interpolate. Override pause trong `prefers-reduced-motion` block (animation: none cho cả BlinkRing keyframe, ::before, message). **R1 đã thử `hrpStickyAnnouncementBlinkBorder` (border-color) nhưng wrapper không có border → invisible; R2 chuyển sang box-shadow inset.** | E-01, E-04 | Không tìm được cách áp dụng pause mà không ghi đè inline `style.animation` của MARQUEE → escalate T0. |
+| `STEP-02` | `sticky-announcement.tsx` | **R2**: Thêm `useState<boolean>(isHovered)` + `useState<boolean>(canPauseOnHover)` (default `false`). Thêm `useEffect` đọc `window.matchMedia('(hover: hover) and (pointer: fine)')`, listen `change`, feed `canPauseOnHover`. Wrapper `onMouseEnter` / `onMouseLeave` chỉ attach khi `canPauseOnHover === true` (gate qua JSX expression). Marquee-pause effect short-circuit khi `!showMarqueeTrack || !canPauseOnHover` (reset `animationPlayState = ''`); ngược lại set `'paused' | 'running'` theo `isHovered`. | E-02 | JS-side gate không đủ (CSS-side vẫn gate stylesheet) → escalate T0. |
+| `STEP-03` | `GlobalFooter.tsx` | R1 thay iframe `src` từ OSM URL → Google Maps embed URL. R2 không đổi. Giữ nguyên `title`, `loading`, `width`, `height`. | E-05 | Google Maps embed cần API key → escalate T0 (không xảy ra: đã verify endpoint public). |
+| `STEP-04` | Tests (3 file test + 1 file test mới) | **R2**: cập nhật `content-controls.static.test.ts` (đổi fence từ `BlinkBorder` sang `BlinkRing`, thêm fence `canPauseOnHover` useState + matchMedia effect + pause effect gate + JSX handler gate); cập nhật `sticky-announcement.test.tsx` (server-render); thêm helper `withMatchMedia` top-level trong `sticky-announcement.mount.test.tsx` (per-query shim cho cả reduced-motion và hover query), cập nhật test cũ dùng helper mới, thêm 4 R2 test (touch MARQUEE không pause; touch BLINK không attach handler; desktop BLINK attach handler; reduced-motion vẫn detach); giữ `app/components/GlobalFooter.test.tsx` (R1 đã tạo). | E-03 | Test environment thiếu jsdom config → escalate T0. |
 
 ## 6. Acceptance
 
@@ -143,13 +144,13 @@ FAST: 1–4 STEP. Mỗi STEP mô tả outcome theo thứ tự.
 | AC | Pass condition | Verification method |
 |---|---|---|
 | `AC-01` | `.hrpStickyAnnouncementAnimBlink::before` vẫn được animate (regression fence cho signature BLINK behavior). | E-04 (static fence) |
-| `AC-02` | `.hrpStickyAnnouncementAnimBlink` (wrapper) có thêm 1 animation visual cue thứ 2 (border flash keyframe) để visible khi `backgroundOpacity` thấp. | E-04 (static fence) |
+| `AC-02` | `.hrpStickyAnnouncementAnimBlink` (wrapper) có 1 animation visual cue thứ 2 (R2: `box-shadow: inset 0 0 0 0..2px var(--color-on-primary)` ring keyframe `hrpStickyAnnouncementBlinkRing`) để visible khi `backgroundOpacity` thấp. Wrapper rule declare default `box-shadow: inset 0 0 0 0 transparent` để keyframe interpolate (không có default thì `box-shadow: none` không animate). | E-04 (static fence) |
 | `AC-03` | CSS rule `.hrpStickyAnnouncement:hover .hrpStickyAnnouncementAnimBlink::before { animation-play-state: paused }` tồn tại bên trong `@media (hover: hover) and (pointer: fine)`. | E-04 (static fence) |
 | `AC-04` | CSS rule tương tự cho MARQUEE message `.hrpStickyAnnouncementMessageMarquee`. | E-04 (static fence) |
 | `AC-05` | `prefers-reduced-motion: reduce` block vẫn set `animation: none` cho cả BLINK và MARQUEE (regression fence). | E-04 (static fence) |
 | `AC-06` | TSX có `onMouseEnter` / `onMouseLeave` trên wrapper, set state `isHovered`. | E-02 (mount test) |
 | `AC-07` | Khi `isHovered && showMarqueeTrack && !prefersReducedMotion`, message element có `style.animationPlayState === 'paused'`. | E-02 (mount test) |
-| `AC-08` | Touch device simulation (`window.matchMedia('(hover: hover)')` trả `false`): hover handler fire nhưng `style.animationPlayState` KHÔNG set. | E-02 (mount test) |
+| `AC-08` | **R2**: Touch device simulation (`window.matchMedia('(hover: hover) and (pointer: fine)')` trả `false`): (a) wrapper KHÔNG attach `onMouseEnter` / `onMouseLeave` listener (React 19 omits khi JSX expression resolve `undefined`, verified qua `__reactProps$` cache); (b) `style.animationPlayState` KHÔNG bao giờ được set thành `'paused'` kể cả khi touch fire synthetic mouseover; (c) BLINK animation class `hrpStickyAnnouncementAnimBlink` vẫn apply (no scroll lock, no visible state change). | E-02 (mount test) |
 | `AC-09` | `app/components/GlobalFooter.tsx` iframe `src` chứa `https://maps.google.com/maps?q=21.314035%2C105.680883`. | E-05 (footer test) |
 | `AC-10` | Text địa chỉ cột 1 giữ nguyên nguyên văn `Khu đất DV Tân Ngọc, Thống Nhất, Bắc Kế, Xã Bình Tuyền, Tỉnh Phú Thọ, Việt Nam`. | E-05 (footer test) |
 | `AC-11` | `app/(portal)/layout.tsx` KHÔNG bị đổi (regression fence: file not in diff). | E-06 (`git diff --stat`) |
@@ -170,11 +171,12 @@ FAST: 1–4 STEP. Mỗi STEP mô tả outcome theo thứ tự.
 
 | ID | Risk | Mitigation / rollback |
 |---|---|---|
-| `RISK-01` | Inline `style.animation` shorthand trên MARQUEE message ghi đè stylesheet `animation-play-state`. | MARQUEE inline chỉ set `${name} ${duration}s linear infinite` (không có `animation-play-state`), nên stylesheet `:hover { animation-play-state: paused }` vẫn apply theo CSS cascade. Verify bằng compiled CSS inspection (`evidence/04-compiled-sticky-css.txt`). |
+| `RISK-01` | Inline `style.animation` shorthand trên MARQUEE message ghi đè stylesheet `animation-play-state`. | MARQUEE inline chỉ set `${name} ${duration}s linear infinite` (không có `animation-play-state`), nên stylesheet `:hover { animation-play-state: paused }` vẫn apply theo CSS cascade. **R2 bổ sung**: khi touch (`!canPauseOnHover`), inline effect reset `animationPlayState = ''` để stylesheet (chỉ apply khi media match) kiểm soát — touch hoàn toàn không bị pause. Verify bằng compiled CSS inspection (`evidence/04-compiled-sticky-css.txt`) + mount test touch branch. |
 | `RISK-02` | `@media (hover: hover)` không match trên browser cũ (IE11, Safari < 13.4). | Repo target Next 15, React 19, Tailwind 4 — modern browsers. Browser support 2026 đủ. Không cần polyfill. |
 | `RISK-03` | Google Maps embed bị rate-limit hoặc chặn ở một số network. | External resource, không phải API key. Nếu chặn thì iframe trắng (giống OSM). User directive chấp nhận. |
 | `RISK-04` | `output=embed` parameter bị Google deprecate. | Public embed ổn định 10+ năm. Nếu deprecate, chuyển sang variant URL. Đã verify. |
 | `RISK-05` | Touch device có `hover: hover` khi kết nối mouse (iPad + Magic Keyboard). | Khi đó user có hover thật → pause là behavior mong muốn. Không gây vấn đề. |
+| `RISK-06` | **R2 mới**: `box-shadow: inset 0 0 0 0 transparent` mặc định có thể gây subtle visual artifact ở browser cũ. | Đã verify browser support: Chrome 10+, Firefox 4+, Safari 5.1+. Tailwind 4 + Next 15 target 2026 browsers. Không có artifact. |
 
 ## 8. Open Questions
 
@@ -193,7 +195,9 @@ Tier 1 append sau review/audit. Audit NONE resolve trực tiếp từ HANDOFF.
 | Spec version | Date | Change | Reason |
 |---|---|---|---|
 | `v1.0` | 2026-10-14 | Initial contract | Hotfix scope: pause-on-hover, visible BLINK, OSM→Google Maps. |
-| `v1.0` | 2026-10-14 | Status: READY_TO_CODE → READY_FOR_REVIEW; added Implementation SHA + Evidence index. | Implementation committed at `e592a7ac`; gates pass. |
+| `v1.0` | 2026-10-14 | Status: READY_TO_CODE → READY_FOR_REVIEW (R1); added Implementation SHA `e592a7ac` + Evidence index. | R1 implementation: `border-color` flash keyframe; CSS-only touch gate. Gates pass on R1. |
+| `v1.0` | 2026-10-14 | T0 review: R1 chưa đạt. 3 vấn đề: (1) baseline sai (clone cũ chưa fetch PR #137), (2) `border-color` flash invisible (wrapper không có `border-width` / `border-style`), (3) CSS-only gate không chặn inline `style.animationPlayState` khi touch fire synthetic mouseover. | T0 review feedback. |
+| `v1.0` | 2026-10-14 | **R2 update**: (1) Baseline updated `c0d32c8a` → `efbfca6321b7f1b1c69904b4cd283a859be1a67d` (origin/main sau PR #137). Rebase R1 commits lên baseline mới. (2) Thay keyframe `hrpStickyAnnouncementBlinkBorder` (border-color, invisible) → `hrpStickyAnnouncementBlinkRing` (box-shadow: inset 0 0 0 0..2px var(--color-on-primary), visible mọi `backgroundOpacity`, 0 layout shift). (3) Thêm `canPauseOnHover` useState + matchMedia effect (`(hover: hover) and (pointer: fine)`), gate inline `style.animationPlayState` và JSX `onMouseEnter` / `onMouseLeave` ở TSX. Implementation SHA: `bb504c14` (R2). R1 SHA `c8ca33d7` superseded. | T0 review correction. |
 
 ## 11. Evidence index (informational, không thuộc template V2)
 
@@ -201,7 +205,7 @@ Tier 1 đã capture evidence trong `docs/tasks/hrp-t1a-sticky-announcement-hotfi
 
 | File | Description | Tied to AC |
 |---|---|---|
-| `01-vitest-targeted.log` | Targeted vitest run: 11 file, 245 test pass (148 static fence + 15 server-render + 10 mount + 18 revision + 17 url-safety + 13 dto-projection + 6 footer + 5 use-public-content + 2 news-section + 7 animation + 4 news-section-gate). | AC-01..AC-08, AC-09, AC-10 |
-| `02-encoding-verify.log` | `verify-encoding.mjs`: 7 file changed text, strict UTF-8 without BOM, RESULT PASS. | regression fence (AC-13) |
-| `03-typecheck.log` | `tsc --noEmit`: 0 errors. | regression fence |
-| `04-compiled-sticky-css.txt` | Compiled CSS for the sticky announcement module (extracted from `.next/static/css/fa95e596bd9d7205.css`). Confirms: `hrpStickyAnnouncementBlinkBorder` keyframe with `border-color` animation; `.hrpStickyAnnouncementAnimBlink` wrapper rule; `@media (hover: hover) and (pointer: fine)` with `animation-play-state: paused` for all 3 selectors; `@media (prefers-reduced-motion: reduce)` override with `animation: none` for all 3 selectors. | AC-01..AC-05, AC-09 (CSS) |
+| `01-vitest-targeted.log` | R2 targeted vitest run: 3 file (sticky-announcement.mount.test.tsx + content-controls.static.test.ts + GlobalFooter.test.tsx), 174/174 pass. Bao gồm: 8 dismiss-flow test (regression), 9 hover-pause test (1 desktop pause/resume, 1 touch MARQUEE no-pause, 1 touch BLINK no-handler, 1 desktop BLINK has-handler, 1 BLINK preserved on touch, 1 reduced-motion detachment, 1 BLINK no-crash on hover, 1 animation=NONE unaffected), 17+ static fence cho BlinkRing keyframe + canPauseOnHover + JSX gate, 7 GlobalFooter Google Maps test. | AC-01..AC-08, AC-09, AC-10 |
+| `02-encoding-verify.log` | R2 `verify-encoding.mjs`: 4 file changed text, strict UTF-8 without BOM, RESULT PASS. | regression fence (AC-13) |
+| `03-typecheck.log` | R2 `tsc --noEmit`: 0 errors. | regression fence |
+| `04-compiled-sticky-css.txt` | R2 compiled CSS for the sticky announcement module (extracted from `.next/static/css/<hash>.css`). Confirms: `hrpStickyAnnouncementBlinkRing` keyframe với `box-shadow: inset 0 0 0 0 transparent` (0%) → `0 0 0 2px color-mix(var(--color-on-primary) 85% transparent)` (50%) → back; `.hrpStickyAnnouncementAnimBlink` wrapper rule declare default `box-shadow: inset 0 0 0 0 transparent` + animation `hrpStickyAnnouncementBlinkRing 1.4s ease-in-out infinite`; `@media (hover: hover) and (pointer: fine)` với `animation-play-state: paused` cho cả Blink wrapper + ::before + MARQUEE; `@media (prefers-reduced-motion: reduce)` override `animation: none` cho cả 3 selector (kèm BlinkRing). | AC-01..AC-05 |
