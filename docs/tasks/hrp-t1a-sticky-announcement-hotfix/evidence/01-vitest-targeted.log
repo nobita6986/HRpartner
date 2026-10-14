@@ -1,0 +1,52 @@
+﻿node.exe : [33mThe CJS build of Vite's Node API is deprecated. See 
+https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+At C:\Users\Admin\AppData\Local\Temp\ps-script-1f5f60c7-0fb8-45be-863b-6eed8c213af9.ps1:84 char:138
++ ...  $env:Path; & node D:\CodeApp\HRP\node_modules\vitest\dist\cli.js run ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([33mThe CJS bu...e details.[39m:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+ RUN  v2.1.9 D:/CodeApp/HrP-worktrees/t1a-sticky-announcement-hotfix
+
+ Γ£ô src/domains/job-board/public-content-controls/content-controls.static.test.ts (148 tests) 28ms
+ Γ£ô src/domains/job-board/public-content-controls/sticky-announcement.test.tsx (15 tests) 18ms
+ Γ£ô src/domains/job-board/public-content-controls/revision.test.ts (18 tests) 5ms
+ Γ£ô src/domains/job-board/public-content-controls/url-safety.test.ts (17 tests) 5ms
+ Γ£ô src/domains/job-board/public-content-controls/__tests__/dto-projection.test.ts (13 tests) 6ms
+ Γ£ô app/components/GlobalFooter.test.tsx (6 tests) 24ms
+ Γ£ô src/domains/job-board/public-content-controls/__tests__/news-section-wrapper.test.tsx (2 tests) 10ms
+ Γ£ô src/domains/job-board/public-content-controls/animation.test.ts (7 tests) 3ms
+ Γ£ô src/domains/job-board/public-content-controls/news-section-gate.test.ts (4 tests) 2ms
+ Γ£ô src/domains/job-board/public-content-controls/sticky-announcement.mount.test.tsx (10 tests) 59ms
+stderr | src/domains/job-board/public-content-controls/__tests__/use-public-content-controls.test.tsx > 
+usePublicContentControls (Phase B / UI2) > returns the open defaults before the first fetch resolves
+The current testing environment is not configured to support act(...)
+
+stderr | src/domains/job-board/public-content-controls/__tests__/use-public-content-controls.test.tsx > 
+usePublicContentControls (Phase B / UI2) > returns newsSectionEnabled=false when the API says so
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | src/domains/job-board/public-content-controls/__tests__/use-public-content-controls.test.tsx > 
+usePublicContentControls (Phase B / UI2) > projects a valid stickyAnnouncement
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | src/domains/job-board/public-content-controls/__tests__/use-public-content-controls.test.tsx > 
+usePublicContentControls (Phase B / UI2) > falls back to defaults on HTTP failure
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | src/domains/job-board/public-content-controls/__tests__/use-public-content-controls.test.tsx > 
+usePublicContentControls (Phase B / UI2) > falls back to defaults on network error
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+ Γ£ô src/domains/job-board/public-content-controls/__tests__/use-public-content-controls.test.tsx (5 tests) 19ms
+
+ Test Files  11 passed (11)
+      Tests  245 passed (245)
+   Start at  08:30:21
+   Duration  4.18s (transform 209ms, setup 0ms, collect 1.16s, tests 178ms, environment 831ms, prepare 675ms)
+
