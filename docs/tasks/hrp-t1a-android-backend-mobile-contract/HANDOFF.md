@@ -6,22 +6,23 @@
 |---|---|
 | Task | `hrp-t1a-android-backend-mobile-contract` |
 | Delivery protocol | `V2_FAST_FREEZE` |
-| Spec version | `v1.2` |
+| Spec version | `v1.3` |
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
 | Execution round | `1` |
 | Baseline | `51195c3bb3410b49f49531f6cc841a2a2832ada1` |
-| Implementation SHA | `1e5a57d16d1ac07af27b1eab3342539ef834a538` |
+| Implementation SHA | `9dc296160f0499fc3c54d8b40f955a68fe12bb35` |
 | Frozen delivery | `YES` |
 | Canonical gates | `PASS` |
 | Audit eligibility | `ELIGIBLE` |
 | Correction batches used | `1` |
 | Status | `READY_FOR_AUDIT` |
 
-> **DELTA (correction batch 1/1 — SHA `1e5a57d1` thay cho `2067f4be`):** audit finding đóng bằng đúng một batch:
-> 1. **MUST-FIX (finding 1)** — RLS `timesheet_lines` (migration SECTION 6): policy FOR ALL giờ GIỮ NGUYÊN m14 (không nhánh WORKER — USING của FOR ALL áp cho DELETE, WITH CHECK không áp, worker sẽ xoá được line của chính mình); nhánh WORKER read-only chuyển sang policy riêng `hrp_timesheet_line_worker_read` AS PERMISSIVE **FOR SELECT**. Final assertion 3 kiểm tra mới: FOR-ALL không chứa `hrp_worker_visible_for`; đúng một policy SELECT permissive có nhánh self; không policy DELETE (polcmd='d') chứa nhánh worker.
+> **DELTA (correction batch 1/1 — SHA `9dc29616`, cộng delta `1e5a57d1` thay cho `2067f4be`):** audit finding đóng bằng đúng một batch:
+> 1. **MUST-FIX (finding 1)** — RLS `timesheet_lines` (migration SECTION 6): policy FOR ALL giờ GIỮ NGUYÊN m14 (không nhánh WORKER — USING của FOR ALL áp cho DELETE, WITH CHECK không áp, worker sẽ xoá được line của chính mình); nhánh WORKER read-only chuyển sang policy riêng `hrp_timesheet_line_worker_read` AS PERMISSIVE **FOR SELECT**. Final assertion 3 kiểm tra mới: FOR-ALL không chứa `hrp_worker_visible_for`; đúng một policy SELECT permissive có nhánh self; không policy chứa nhánh worker với `polcmd IN ('d','*')`.
 > 2. **SHOULD-FIX (finding 2)** — `resolveTicketCreateAuth` map SessionUser bằng `toSessionUser` + `extractRequestMeta` trên ctx đã verify; bỏ lượt `getAuthContext` lặp (byte-compatible, một lần verify/request).
-> Unchanged surface khác: KHÔNG đổi (DELTA audit chỉ soi hai vùng này + ảnh hưởng trực tiếp); re-run đầy đủ gates (typecheck, targeted 16 tests, test:unit 348/5481, lint, `git diff --cached --check`).
+> 3. **DELTA recheck fix** — assertion cuối quét `p.polcmd IN ('d','*')` thay vì chỉ 'd': pg_policy lưu FOR ALL với `polcmd = '*'` nên policy FOR ALL khác tên (legacy/manual) chứa nhánh WORKER sẽ bị sót nếu chỉ quét 'd'; static test thêm regression guard cho assert-block.
+> Unchanged surface khác: KHÔNG đổi (DELTA audit chỉ soi migration assertion + ảnh hưởng trực tiếp); re-run gates (targeted 11 tests incl. static regression, `git diff --cached --check`; full lane đã PASS tại batch 1/1 — sql-only delta không chạm src/test).
 
 ## 1. Outcome and changed surface
 
@@ -69,7 +70,7 @@
 | `E-03` | `... src/shared/auth/login-projection.route.test.ts` + `src/domains/security/single-domain-consolidation.test.ts` | pass (4 + 17 tests) | evidence/ac02-04-06-10-targeted-tests.txt |
 | `E-04` | `... src/shared/auth/push-register-device.route.test.ts` | pass (7 tests) | evidence/ac02-04-06-10-targeted-tests.txt |
 | `E-05` | `node node_modules/prisma/build/index.js validate && ... generate` (DATABASE_URL dummy validate-only — KHÔNG đụng DB) | exit 0; "Schema valid"; client generated | evidence/ac05-prisma-validate-generate.txt |
-| `E-06` | `node node_modules/vitest/vitest.mjs run --config vitest.unit.config.ts src/shared/auth/mobile-device-token.rls.static.test.ts` | pass (7 tests — gồm assertion audit-fix FOR-SELECT riêng + không DELETE-by-worker) | evidence/correction-targeted-tests.txt |
+| `E-06` | `node node_modules/vitest/vitest.mjs run --config vitest.unit.config.ts src/shared/auth/mobile-device-token.rls.static.test.ts` | pass (7 tests — gồm assertion audit-fix FOR-SELECT riêng + regression `polcmd IN ('d','*')`) | evidence/delta-assertion-tests.txt |
 | `E-07` | `... src/shared/auth/worker-attendance.route.test.ts` | pass (6 tests) | evidence/ac02-04-06-10-targeted-tests.txt |
 | `E-08` | `... src/shared/auth/worker-tickets-create.route.test.ts` | pass (5 tests) | evidence/ac02-04-06-10-targeted-tests.txt |
 | `E-09` | `... src/shared/auth/jobs-alias.route.test.ts` | pass (5 tests) | evidence/ac02-04-06-10-targeted-tests.txt |

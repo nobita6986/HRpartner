@@ -1,10 +1,10 @@
 HANDOFF SUBSTANCE GATE
   subject: docs/tasks/hrp-t1a-android-backend-mobile-contract/HANDOFF.md (against docs/tasks/hrp-t1a-android-backend-mobile-contract/TASK.md)
 
-  [OK]   H-01 HANDOFF.md size 15735 bytes.
+  [OK]   H-01 HANDOFF.md size 16132 bytes.
   [OK]   H-01 HANDOFF.md is recoverable from git (tracked=True staged=False).
   [OK]   H-02 all 6 required sections present (compact).
-  [OK]   H-03 spec version v1.2 matches TASK.
+  [OK]   H-03 spec version v1.3 matches TASK.
   [OK]   H-03 assurance lane CRITICAL matches TASK.
   [OK]   H-16 V2 delivery pins a resolvable frozen SHA with no later semantic delta.
   [OK]   H-04 section 3 opens with verify-task.ps1 RESULT: PASS.
