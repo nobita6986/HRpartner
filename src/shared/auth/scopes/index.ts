@@ -31,6 +31,7 @@ import {
   buildTicketScope,
   buildAttendanceEventScope,
   buildSiteScope,
+  buildTimesheetLineScope,
 } from './worker-portal.scope';
 import { buildClientStatementScope, buildPayrollConfigScope } from './finance.scope';
 
@@ -56,6 +57,8 @@ export const SCOPE_REGISTRY: Record<string, ScopeBuilder> = {
   Ticket: buildTicketScope,
   AttendanceEvent: buildAttendanceEventScope,
   Site: buildSiteScope,
+  // T1A Android contract (TASK DEC-06) — WORKER READ-ONLY self trên timesheet line.
+  TimesheetLine: buildTimesheetLineScope,
   // V5-M1-06d — finance global-read L1 capability (RQ-07 / DEC-11 / DEC-12).
   // ClientStatement(+Line): margin aggregate cần L1 thật; PayrollConfig: ACCOUNTANT global-read.
   ClientStatement: buildClientStatementScope,
@@ -77,6 +80,7 @@ export {
   buildTicketScope,
   buildAttendanceEventScope,
   buildSiteScope,
+  buildTimesheetLineScope,
   buildClientStatementScope,
   buildPayrollConfigScope,
 };

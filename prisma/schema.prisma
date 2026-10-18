@@ -186,6 +186,9 @@ model User {
   // P0-A04 / ER-003 — EvidenceRecord creator (nullable FK; RESTRICT on delete).
   evidenceRecordsCreated   EvidenceRecord[] @relation("EvidenceRecordCreatedBy")
 
+  // T1A Android backend contract — FCM device tokens của user (cascade khi User bị xóa).
+  mobileDeviceTokens MobileDeviceToken[]
+
   @@index([role, isActive])
   @@map("users")
 }
@@ -1506,6 +1509,33 @@ model PushSubscription {
   @@unique([userId, endpoint], name: "userId_endpoint")
   @@index([userId])
   @@map("push_subscriptions")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MOBILE DEVICE TOKEN — T1A Android backend mobile contract (additive)
+// FCM token per (user, device). Unique (userId, fcmToken) giữ idempotent
+// re-register từ POST /api/push/register-device. FK ON DELETE CASCADE theo
+// directive T0: xóa User thì token thiết bị của user bị dọn. Phạm vi CASCADE
+// CHỈ bảng này — không thay đổi delete posture của bất kỳ bảng khác.
+// RLS FORCE: chỉ chủ sở hữu token (user_id = app.user_id) hoặc role hệ thống
+// pattern hiện hành {ADMIN, HR_MANAGER, DIRECTOR} được đọc/ghi — xem migration
+// 20261018120000_mobile_device_token_with_rls.
+// ═══════════════════════════════════════════════════════════════════════════
+
+model MobileDeviceToken {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  fcmToken   String   @map("fcm_token")
+  deviceType String   @default("ANDROID") @map("device_type") // ANDROID | IOS
+  model      String?  @map("model")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, fcmToken], name: "userId_fcmToken")
+  @@index([userId])
+  @@map("mobile_device_tokens")
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

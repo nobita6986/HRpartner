@@ -43,7 +43,13 @@ const HOSTILE_WORKER = {
   createdAt: new Date('2026-08-28T00:00:00.000Z'),
 };
 
-const fakeTx = () => ({ worker: { findUnique: mocks.findUnique } });
+const fakeTx = () => ({
+  worker: { findUnique: mocks.findUnique },
+  // T1A assignment summary đọc cùng tx (projectAssignment + sites) — null-line
+  // để projection test không phụ thuộc assignment data.
+  projectAssignment: { findFirst: vi.fn().mockResolvedValue(null) },
+  site: { findMany: vi.fn().mockResolvedValue([]) },
+});
 // query workerId khác self để chứng minh nó bị BỎ QUA (identity = ctx.workerId).
 const req = () => new NextRequest('http://localhost/api/workers/me?workerId=OTHER-999');
 

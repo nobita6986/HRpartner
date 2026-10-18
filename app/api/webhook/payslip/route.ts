@@ -13,6 +13,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cache } from '@/src/lib/cache';
 import { AuthSessionError, getAuthContext } from '@/src/shared/auth/auth-context';
 import { verifyInternalApiKey } from '@/src/shared/auth/internal-webhook-auth';
+import {
+  isPlainObject,
+  toFiniteNumber,
+  projectPayslipForResponse,
+} from '@/src/domains/payroll/payslip-projection';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -46,13 +51,9 @@ function cacheKeyFor(workerId: string, periodYear: string | number, periodMonth:
 }
 
 // ── V5-M1-09A allowlist projection (RQ-08, DEC-09) ──────────────────────────
-// Payslip là JSON cache (không phải Prisma). DTO strict schema, KHÔNG cho cache-extra đi ké.
-const isPlainObject = (v: unknown): v is Record<string, unknown> =>
-  typeof v === 'object' && v !== null && !Array.isArray(v);
-const toFiniteNumber = (v: unknown): number => {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : 0;
-};
+// T1A: projection GET + primitive được extract sang
+// `src/domains/payroll/payslip-projection.ts` dùng chung với
+// GET /api/worker/payroll/latest (mobile contract). Shape giữ nguyên.
 
 /** POST: chuẩn hoá payload TRƯỚC khi cache — chỉ giữ field allowlist (loại field lạ). */
 function normalizePayslipForCache(slip: PayslipItem): PayslipItem {
@@ -65,21 +66,6 @@ function normalizePayslipForCache(slip: PayslipItem): PayslipItem {
     deductions: isPlainObject(slip.deductions) ? (slip.deductions as Record<string, number>) : {},
     earned: isPlainObject(slip.earned) ? (slip.earned as Record<string, number>) : {},
     computedAt: slip.computedAt == null ? '' : String(slip.computedAt),
-  };
-}
-
-/** GET: DTO allowlist — TOLERANT với cache thiếu field (partial). Không bao giờ throw. */
-function projectPayslipForResponse(raw: unknown) {
-  const r = isPlainObject(raw) ? raw : {};
-  return {
-    workerId: r.workerId == null ? null : String(r.workerId),
-    periodMonth: r.periodMonth == null ? null : toFiniteNumber(r.periodMonth),
-    periodYear: r.periodYear == null ? null : toFiniteNumber(r.periodYear),
-    grossSalary: r.grossSalary == null ? null : toFiniteNumber(r.grossSalary),
-    netSalary: r.netSalary == null ? null : toFiniteNumber(r.netSalary),
-    deductions: isPlainObject(r.deductions) ? r.deductions : {},
-    earned: isPlainObject(r.earned) ? r.earned : {},
-    computedAt: r.computedAt == null ? null : String(r.computedAt),
   };
 }
 

@@ -36,6 +36,12 @@ vi.mock('@/src/lib/db', () => ({ getPrisma: mockGetPrisma }));
 vi.mock('@/src/shared/auth/password', () => ({ verifyPassword: mockVerifyPassword }));
 vi.mock('@/src/shared/auth/jwt', () => ({ signJwt: mockSignJwt, JWT_TTL_SECONDS: 28800 }));
 vi.mock('@/src/shared/auth/preauth-db', () => ({ findUserForLogin: mockFindUser }));
+// T1A (TASK DEC-02): worker summary query — mock trả null (không Worker profile),
+// body shape mở rộng được assert ở đúng test (login projection).
+const mockLoadWorkerSelfSummary = vi.hoisted(() => vi.fn());
+vi.mock('@/src/shared/auth/worker-assignment-summary', () => ({
+  loadWorkerSelfSummary: mockLoadWorkerSelfSummary,
+}));
 
 import { middleware } from '@/middleware';
 import { POST as loginPOST } from '@/app/api/auth/login/route';
@@ -67,6 +73,8 @@ beforeEach(() => {
   mockVerifyPassword.mockReset();
   mockSignJwt.mockReset();
   mockSignJwt.mockResolvedValue(FAKE_TOKEN);
+  mockLoadWorkerSelfSummary.mockReset();
+  mockLoadWorkerSelfSummary.mockResolvedValue(null);
 });
 
 afterEach(() => {
@@ -182,12 +190,19 @@ describe('C) login POST — same-origin landing + host-only cookie', () => {
     mockVerifyPassword.mockResolvedValue(true);
   }
 
-  it('portal role → relative redirectTo + single host-only cookie (dev: no Secure, no Domain)', async () => {
+  it('portal role → relative redirectTo + host-only cookie (dev: no Secure, no Domain)', async () => {
     grantUser('VENDOR_ADMIN');
     const res = await loginPOST(loginReq({ phone: '0900000001', password: 'pw' }));
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body).toEqual({ ok: true, redirectTo: '/vendor' });
+    // T1A (TASK DEC-02): body mở rộng token/role/user; VENDOR_ADMIN KHÔNG có key worker.
+    expect(body).toEqual({
+      ok: true,
+      redirectTo: '/vendor',
+      token: FAKE_TOKEN,
+      role: 'VENDOR_ADMIN',
+      user: { id: 'u1', role: 'VENDOR_ADMIN' },
+    });
 
     const cookies = setCookies(res);
     expect(cookies).toHaveLength(1);
@@ -212,7 +227,14 @@ describe('C) login POST — same-origin landing + host-only cookie', () => {
     grantUser('ADMIN');
     const res = await loginPOST(loginReq({ phone: '1', password: 'p' }));
     const body = await res.json();
-    expect(body).toEqual({ ok: true, redirectTo: '/admin' });
+    // T1A (TASK DEC-02): body mở rộng token/role/user; ADMIN KHÔNG có key worker.
+    expect(body).toEqual({
+      ok: true,
+      redirectTo: '/admin',
+      token: FAKE_TOKEN,
+      role: 'ADMIN',
+      user: { id: 'u1', role: 'ADMIN' },
+    });
     expect(setCookies(res)).toHaveLength(1);
   });
 

@@ -8,6 +8,17 @@
  * Cookie phát host-only (KHÔNG Domain=.hrpartner.vn); đồng thời xoá cookie domain-scoped cũ
  * trong giai đoạn chuyển đổi (DEC-03). Sai/khóa/malformed → 401 JSON, message chung KHÔNG
  * lộ tài khoản tồn tại hay không. KHÔNG log password/token dưới mọi hình thức.
+ *
+ * T1A Android mobile contract (TASK DEC-02): response JSON mở rộng
+ *   { token, role, user, worker } —
+ *   - token: JWT đã sign (khác cookie — client giữ trong secure storage);
+ *   - user:  summary {id, name, phone, role} (preauth projection MỞ RỘNG có chủ đích);
+ *   - worker: CHỈ role WORKER — summary {id, fullName, assignment, department: null}
+ *     dựng qua loadWorkerSelfSummary (GUC WORKER self, userId verified từ login);
+ *     role khác KHÔNG có key worker.
+ *   - department: null LUÔN (schema không có department canonical — không tự gán
+ *     workLocation/projectName; blocker BLK-03 cho T0).
+ * Hành vi web giữ nguyên: ok/redirectTo + cả 2 Set-Cookie như cũ.
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -16,6 +27,7 @@ import { verifyPassword } from '@/src/shared/auth/password';
 import { signJwt, JWT_TTL_SECONDS } from '@/src/shared/auth/jwt';
 import { AUTH_COOKIE_NAME } from '@/src/shared/auth/user';
 import { findUserForLogin } from '@/src/shared/auth/preauth-db';
+import { loadWorkerSelfSummary } from '@/src/shared/auth/worker-assignment-summary';
 import { getLandingPath } from '@/src/shared/routing/portal-landing';
 import { error as logError, warn as logWarn } from '@/src/shared/observability/logger';
 
@@ -84,8 +96,40 @@ export async function POST(req: NextRequest) {
     const token = await signJwt(user.id, user.role);
     const redirectTo = getLandingPath(user.role); // same-origin relative path | null (internal roles)
 
+    // T1A (DEC-02): worker summary chỉ cho role WORKER; userId đã verify bằng
+    // password. Query fail => login KHÔNG chặn: trả worker null + logWarn
+    // (client bổ sung qua GET /api/workers/me). KHÔNG log giá trị nào của user.
+    let workerSummary: Awaited<ReturnType<typeof loadWorkerSelfSummary>> = null;
+    if (user.role === 'WORKER') {
+      try {
+        workerSummary = await loadWorkerSelfSummary(user.id);
+      } catch (e) {
+        logWarn('auth.login.worker_summary_failed', null, {
+          route: '/api/auth/login',
+          outcome: 'worker_summary_query_error',
+          errorCode:
+            typeof e === 'object' && e !== null && 'code' in e ? String(e.code) : 'UNCLASSIFIED',
+        });
+      }
+    }
+
     const res = NextResponse.json({
       ok: true,
+      token,
+      role: user.role,
+      user: {
+        id: user.id,
+        name: user.name,
+        phone: user.phone,
+        role: user.role,
+      },
+      ...(user.role === 'WORKER'
+        ? {
+            worker: workerSummary
+              ? { id: workerSummary.id, fullName: workerSummary.fullName, assignment: workerSummary.assignment, department: null }
+              : null,
+          }
+        : {}),
       ...(redirectTo ? { redirectTo } : {}),
     });
 
