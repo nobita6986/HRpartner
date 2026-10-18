@@ -282,7 +282,10 @@ BEGIN
   --       DELETE => worker xoá line của mình.
   --   (b) policy `hrp_timesheet_line_worker_read` FOR SELECT PERMISSIVE đúng
   --       một lần, có nhánh worker self (hrp_worker_visible_for).
-  --   (c) KHÔNG có bất kỳ policy DELETE (polcmd='d') nào chứa nhánh worker.
+  --   (c) KHÔNG có bất kỳ policy DELETE (polcmd='d') hay FOR ALL (polcmd='*')
+  --       nào chứa nhánh worker (audit delta fix: assertion ban đầu chỉ quét
+  --       'd' ⇒ sót policy FOR ALL chứa nhánh WORKER — pg_policy lưu FOR ALL
+  --       với polcmd='*' — worker vẫn xoá được line qua policy đó).
   IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'timesheet_lines') THEN
     SELECT count(*) INTO v_ts_policy
       FROM pg_policy p
@@ -312,10 +315,10 @@ BEGIN
         JOIN pg_class c ON c.oid = p.polrelid
         JOIN pg_namespace n ON n.oid = c.relnamespace
       WHERE n.nspname = 'public' AND c.relname = 'timesheet_lines'
-        AND p.polcmd = 'd'
+        AND p.polcmd IN ('d', '*')
         AND p.polqual::text LIKE '%hrp_worker_visible_for%';
     IF v_ts_policy <> 0 THEN
-      RAISE EXCEPTION 'mobile_device_token_with_rls assertion failed: timesheet_lines must have NO DELETE policy with WORKER branch. Migration rolled back.', v_ts_policy;
+      RAISE EXCEPTION 'mobile_device_token_with_rls assertion failed: timesheet_lines must have NO DELETE (d) or FOR ALL (*) policy exposing the WORKER branch (audit delta: FOR ALL stores polcmd = ''*''). Migration rolled back.', v_ts_policy;
     END IF;
   END IF;
 END

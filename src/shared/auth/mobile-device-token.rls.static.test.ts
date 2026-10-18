@@ -64,8 +64,12 @@ describe('migration 20261018120000_mobile_device_token_with_rls (AC-06)', () => 
     expect(workerReadBlock).toMatch(/hrp_session_role\(\) = 'WORKER'/);
     expect(workerReadBlock).toMatch(/hrp_worker_visible_for\(timesheet_lines\.worker_id\)/);
 
-    // Không có policy DELETE nào chứa nhánh worker (worker không xoá line).
+    // Không có policy DELETE hay FOR ALL nào chứa nhánh worker (worker không
+    // xoá line qua cả hai cmd — AUDIT DELTA: pg_policy lưu FOR ALL với polcmd
+    // = '*', chỉ quét 'd' sẽ bỏ sót policy FOR ALL khác tên).
     expect(sql).toContain('DROP POLICY IF EXISTS hrp_timesheet_line_worker_read ON timesheet_lines');
+    const assertBlock = sql.split('SECTION 7')[1] ?? '';
+    expect(assertBlock).toContain("p.polcmd IN ('d', '*')");
   });
 
   it('không phải migration dữ liệu: không INSERT/UPDATE/DELETE/GRANT', () => {
