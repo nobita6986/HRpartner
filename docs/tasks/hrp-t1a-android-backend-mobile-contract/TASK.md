@@ -12,7 +12,7 @@
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
 | Audit reason | Lane CRITICAL (auth/RLS/schema/migration) → mặc định LIGHT; T3 audit trên exact frozen SHA sau khi T1 tự review. |
-| Spec version | `v1.1` |
+| Spec version | `v1.2` |
 | Status | `READY_FOR_EXECUTION` |
 | Planner | `Tier 1` |
 | Baseline | `51195c3bb3410b49f49531f6cc841a2a2832ada1` |
@@ -205,6 +205,7 @@
 | Round | Decision | Reason |
 |---|---|---|
 | 0 | Tier 1 tự review toàn changed surface trước freeze: route/API boundary, migration/RLS safety, auth/permission, concurrency/idempotency, test isolation, diff scope. | Correction budget 1; LIGHT audit sau freeze. |
+| 1 | Audit correction batch 1/1: (1) MUST-FIX timesheet_lines RLS — tách nhánh WORKER khỏi policy FOR ALL sang `FOR SELECT` riêng; (2) SHOULD-FIX resolveTicketCreateAuth — map SessionUser tại chỗ, bỏ xác thực kép. Đóng cả hai finding bằng một batch, không mở lại unchanged surface. | Verdict audit "fix 1 trước khi ship"; T1 xác minh finding 1 đúng (USING áp cho DELETE, WITH CHECK không áp), thực hiện cả hai trong cùng batch; re-run đầy đủ gates. |
 
 ## 10. Revision Log
 
@@ -212,3 +213,4 @@
 |---|---|---|---|
 | `v1.0` | 2026-10-18 | Initial contract | Initial |
 | `v1.1` | 2026-10-18 | DEC-02/03: assignment location trả `sites[]` (nhiều site per project thay vì một site); DEC-04: `device_type` NOT NULL default 'ANDROID' (không nullable); cleanup wording DEC-06/07. | Điều chỉnh khi triển khai trước khi đóng round — đúng quyền Tier 1 (§Quyền tự quyết tier1.md), không đổi outcome/boundary. |
+| `v1.2` | 2026-10-18 | Audit correction batch 1/1: DEC-06 — RLS `timesheet_lines` tách nhánh WORKER sang policy `FOR SELECT` riêng (`hrp_timesheet_line_worker_read`); policy FOR ALL giữ nguyên m14 (nhánh WORKER trong FOR ALL mở DELETE vì USING áp cho DELETE còn WITH CHECK không áp). DEC-07 — `resolveTicketCreateAuth` map SessionUser bằng `toSessionUser` trên ctx đã verify (bỏ xác thực kép mỗi POST). | Audit finding MUST-FIX (DELETE exposure) + SHOULD-FIX (double auth query); kết hợp PERMISSIVE: SELECT = m14 OR worker self, ghi/xoá vẫn thuộc m14. |

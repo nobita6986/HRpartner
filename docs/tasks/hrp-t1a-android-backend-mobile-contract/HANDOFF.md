@@ -6,21 +6,26 @@
 |---|---|
 | Task | `hrp-t1a-android-backend-mobile-contract` |
 | Delivery protocol | `V2_FAST_FREEZE` |
-| Spec version | `v1.1` |
+| Spec version | `v1.2` |
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
 | Execution round | `1` |
 | Baseline | `51195c3bb3410b49f49531f6cc841a2a2832ada1` |
-| Implementation SHA | `2067f4be1841f41c0ba7d6c7f605c847547ad7dd` |
+| Implementation SHA | `1e5a57d16d1ac07af27b1eab3342539ef834a538` |
 | Frozen delivery | `YES` |
 | Canonical gates | `PASS` |
 | Audit eligibility | `ELIGIBLE` |
-| Correction batches used | `0` |
+| Correction batches used | `1` |
 | Status | `READY_FOR_AUDIT` |
+
+> **DELTA (correction batch 1/1 — SHA `1e5a57d1` thay cho `2067f4be`):** audit finding đóng bằng đúng một batch:
+> 1. **MUST-FIX (finding 1)** — RLS `timesheet_lines` (migration SECTION 6): policy FOR ALL giờ GIỮ NGUYÊN m14 (không nhánh WORKER — USING của FOR ALL áp cho DELETE, WITH CHECK không áp, worker sẽ xoá được line của chính mình); nhánh WORKER read-only chuyển sang policy riêng `hrp_timesheet_line_worker_read` AS PERMISSIVE **FOR SELECT**. Final assertion 3 kiểm tra mới: FOR-ALL không chứa `hrp_worker_visible_for`; đúng một policy SELECT permissive có nhánh self; không policy DELETE (polcmd='d') chứa nhánh worker.
+> 2. **SHOULD-FIX (finding 2)** — `resolveTicketCreateAuth` map SessionUser bằng `toSessionUser` + `extractRequestMeta` trên ctx đã verify; bỏ lượt `getAuthContext` lặp (byte-compatible, một lần verify/request).
+> Unchanged surface khác: KHÔNG đổi (DELTA audit chỉ soi hai vùng này + ảnh hưởng trực tiếp); re-run đầy đủ gates (typecheck, targeted 16 tests, test:unit 348/5481, lint, `git diff --cached --check`).
 
 ## 1. Outcome and changed surface
 
-- **Delivered:** backend mobile contract cho HRP Android theo TASK v1.1 — (1) `MobileDeviceToken` + migration forward-only idempotent (unique `(user_id, fcm_token)`, FK users CASCADE, FORCE RLS: owner self + {ADMIN, HR_MANAGER, DIRECTOR}); (2) Bearer-first fail-closed token resolver (middleware + API cùng nguồn); (3) login JSON mở rộng token/role/user/worker(+assignment, `department: null`) giữ nguyên web cookie; (4) `POST /api/push/register-device` WORKER-only, userId server-derived, không log/echo token; (5) `GET /api/workers/me` + `assignment` (employeeCode/position/location từ Assignment→Project/Site/Slot); (6) `GET /api/worker/attendance` `month`/`year` + regularHours/OT lấy từ `TimesheetLine` (L1 builder self + RLS policy thêm nhánh WORKER READ-ONLY, WITH CHECK giữ admin); (7) `POST /api/worker/tickets` TÁI SỬ DỤNG nguyên workflow `POST /api/tickets` (validation/audit/history/notification/idempotency) qua shared handler với self force; (8) `GET /api/jobs` alias `search`→`q`, `zone`→`area`; (9) `GET /api/worker/payroll/latest?period=YYYY-MM` đọc payslip cache (projection allowlist dùng chung với webhook); (10) `scripts/ops/seed-sites-android-contract.sql` — artifact idempotent 4 site, preflight fail-closed theo 4 project ID.
+- **Delivered:** backend mobile contract cho HRP Android theo TASK v1.2 — (1) `MobileDeviceToken` + migration forward-only idempotent (unique `(user_id, fcm_token)`, FK users CASCADE, FORCE RLS: owner self + {ADMIN, HR_MANAGER, DIRECTOR}); (2) Bearer-first fail-closed token resolver (middleware + API cùng nguồn); (3) login JSON mở rộng token/role/user/worker(+assignment, `department: null`) giữ nguyên web cookie; (4) `POST /api/push/register-device` WORKER-only, userId server-derived, không log/echo token; (5) `GET /api/workers/me` + `assignment` (employeeCode/position/location từ Assignment→Project/Site/Slot); (6) `GET /api/worker/attendance` `month`/`year` + regularHours/OT lấy từ `TimesheetLine` (L1 builder self + RLS: policy FOR ALL giữ m14 + policy `FOR SELECT` riêng read-only self cho WORKER — audit fix, DELETE bị chặn); (7) `POST /api/worker/tickets` TÁI SỬ DỤNG nguyên workflow `POST /api/tickets` (validation/audit/history/notification/idempotency) qua shared handler với self force, xác thực một lần/request (audit fix); (8) `GET /api/jobs` alias `search`→`q`, `zone`→`area`; (9) `GET /api/worker/payroll/latest?period=YYYY-MM` đọc payslip cache (projection allowlist dùng chung với webhook); (10) `scripts/ops/seed-sites-android-contract.sql` — artifact idempotent 4 site, preflight fail-closed theo 4 project ID.
 - **Not delivered:** gửi FCM; mobile apply/CTV referral flow (BLK-01/02); canonical `department` (BLK-03); áp dụng migration/SQL lên DB (T0/operator áp riêng); chỉnh sửa Android (`D:\CodeApp\hr-partner` chỉ đọc: xác nhận contract `DeviceRegistrationRequest {token, deviceType, model}`, `LoginResponse {token, role, user}`).
 - **Changed:** `prisma/schema.prisma` + `prisma/migrations/20261018120000_mobile_device_token_with_rls/` (STEP-01); `src/shared/auth/user.ts` + `app/api/auth/login/route.ts` + `src/shared/auth/preauth-db.ts` (STEP-02/03); `app/api/push/register-device/route.ts` + `src/shared/auth/worker-assignment-summary.ts` + `app/api/workers/me/route.ts` (STEP-03); `app/api/worker/attendance/route.ts` + `app/api/worker/tickets/route.ts` + `app/api/tickets/route.ts` + `app/api/jobs/route.ts` + `app/api/worker/payroll/latest/route.ts` + `src/shared/auth/ticket-create-handler.ts` + `src/domains/payroll/payslip-projection.ts` + `src/shared/auth/scopes/*` (STEP-04); `scripts/ops/seed-sites-android-contract.sql` (STEP-05); tests theo từng STEP.
 - **Lane escalation:** No.
@@ -29,10 +34,10 @@
 
 | Surface | Result | Evidence / N/A reason |
 |---|---|---|
-| Contract and diff scope | `PASS` | `git diff --stat` chỉ đụng In-scope roots của TASK v1.1; kết quả nằm trong STEP-01..05 + tests; không đụng forbidden paths (`app/api/jobs/apply/route.ts` không đổi — vẫn POST 410, test `jobs-alias.route.test.ts` bảo vệ). |
+| Contract and diff scope | `PASS` | `git diff --stat` chỉ đụng In-scope roots của TASK v1.2; kết quả nằm trong STEP-01..05 + tests + correction batch; không đụng forbidden paths (`app/api/jobs/apply/route.ts` không đổi — vẫn POST 410, test `jobs-alias.route.test.ts` bảo vệ). |
 | API/route boundary | `PASS` | Routes mới đều qua `getAuthContext`; ownership/self từ `ctx.userId`/`ctx.workerId`; ticket route tái dùng `handleTicketCreateFromRequest` + `ticketsErrorResponse` (cùng taxonomy); không route nào nhận identity từ client. |
 | Auth/permission/data exposure | `PASS` | Bearer-first fail-closed test AC-02 (Bearer sai scheme + cookie hợp lệ ⇒ null ⇒ 401); register-device/payroll WORKER-only; FCM token không echo/log (test assert JSON + console.error không chứa token); timesheet_lines chỉ mở READ-ONLY self (WITH CHECK giữ admin-only); payslip cache-extra bị strip bởi projection allowlist (test). |
-| Migration/backfill/rollback | `PASS` | Migration forward-only, idempotent (IF NOT EXISTS/DROP IF EXISTS), final assertion introspection (table/unique/FK-CASCADE/FORCE-RLS/policy/WORKER-branch) ⇒ rollback tự nhiên nếu thiếu; SHIP-ONLY — CHƯA áp lên DB nào (xem BLK-05). |
+| Migration/backfill/rollback | `PASS` | Migration forward-only, idempotent (IF NOT EXISTS/DROP IF EXISTS), final assertion introspection (table/unique/FK-CASCADE/FORCE-RLS/policy + audit-fix: FOR-ALL không WORKER, SELECT-only policy riêng, không DELETE policy worker) ⇒ rollback tự nhiên nếu thiếu; SHIP-ONLY — CHƯA áp lên DB nào (xem BLK-05). |
 | Concurrency/idempotency | `PASS` | Register-device upsert unique `(userId, fcmToken)` ⇒ re-register idempotent; ticket idempotency `withIdempotency` giữ nguyên qua shared handler; checkins không đổi. |
 | Test isolation and cleanup | `PASS` | Mọi route test mock prisma/ctx/cache — không DB; unit lane 5481 tests xanh (evidence E-11); `git status --porcelain` sau freeze chỉ còn docs/evidence. |
 
@@ -40,8 +45,8 @@
 
 | AC | Evidence | Result | Limitation |
 |---|---|---|---|
-| — | `pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-t1a-android-backend-mobile-contract/TASK.md` | `RESULT: PASS` (TASK v1.1) | None |
-| `AC-01` | `E-01` | verify-task.ps1 PASS, 0 error 0 warning | None |
+| — | `pwsh .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-t1a-android-backend-mobile-contract/TASK.md` | `RESULT: PASS` (TASK v1.2) | None |
+| `AC-01` | `E-01` | verify-task.ps1 PASS, 0 error 0 warning (TASK v1.2) | None |
 | `AC-02` | `node node_modules/vitest/vitest.mjs run --config vitest.unit.config.ts src/shared/auth/user.test.ts` (E-02) | 6 tests passed: bearer-first ưu tiên, sai-scheme fail-closed (null kể cả cookie hợp lệ), cookie-only khi không header | None |
 | `AC-03` | `node node_modules/vitest/vitest.mjs run --config vitest.unit.config.ts src/shared/auth/login-projection.route.test.ts src/domains/security/single-domain-consolidation.test.ts` (E-03) | 21 tests passed: WORKER nhận token/role/user/worker{assignment, department: null}, cả 2 Set-Cookie vẫn phát; PM/ADMIN không có key worker; summary lỗi ⇒ worker null login không chặn; password sai 401 | None |
 | `AC-04` | `node node_modules/vitest/vitest.mjs run --config vitest.unit.config.ts src/shared/auth/push-register-device.route.test.ts` (E-04) | 7 tests passed: 401/403/400; upsert scoped (ctx.userId, token); không echo/log token; body userId lạ bị bỏ | None |
@@ -59,12 +64,12 @@
 
 | Evidence | Command / method | Exit / measured result | Artifact |
 |---|---|---|---|
-| `E-01` | `powershell -ExecutionPolicy Bypass -File .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-t1a-android-backend-mobile-contract/TASK.md` | exit 0; `RESULT: PASS` (TASK v1.1, 15 OK) | evidence/ac01-verify-task.txt |
+| `E-01` | `powershell -ExecutionPolicy Bypass -File .ai-pipeline/scripts/verify-task.ps1 -TaskPath docs/tasks/hrp-t1a-android-backend-mobile-contract/TASK.md` | exit 0; `RESULT: PASS` (TASK v1.2, 15 OK) | evidence/ac01-verify-task.txt |
 | `E-02` | `node node_modules/vitest/vitest.mjs run --config vitest.unit.config.ts src/shared/auth/user.test.ts` | pass (6 tests) | evidence/ac02-04-06-10-targeted-tests.txt |
 | `E-03` | `... src/shared/auth/login-projection.route.test.ts` + `src/domains/security/single-domain-consolidation.test.ts` | pass (4 + 17 tests) | evidence/ac02-04-06-10-targeted-tests.txt |
 | `E-04` | `... src/shared/auth/push-register-device.route.test.ts` | pass (7 tests) | evidence/ac02-04-06-10-targeted-tests.txt |
 | `E-05` | `node node_modules/prisma/build/index.js validate && ... generate` (DATABASE_URL dummy validate-only — KHÔNG đụng DB) | exit 0; "Schema valid"; client generated | evidence/ac05-prisma-validate-generate.txt |
-| `E-06` | `... src/shared/auth/mobile-device-token.rls.static.test.ts` | pass (7 tests) | evidence/ac02-04-06-10-targeted-tests.txt |
+| `E-06` | `node node_modules/vitest/vitest.mjs run --config vitest.unit.config.ts src/shared/auth/mobile-device-token.rls.static.test.ts` | pass (7 tests — gồm assertion audit-fix FOR-SELECT riêng + không DELETE-by-worker) | evidence/correction-targeted-tests.txt |
 | `E-07` | `... src/shared/auth/worker-attendance.route.test.ts` | pass (6 tests) | evidence/ac02-04-06-10-targeted-tests.txt |
 | `E-08` | `... src/shared/auth/worker-tickets-create.route.test.ts` | pass (5 tests) | evidence/ac02-04-06-10-targeted-tests.txt |
 | `E-09` | `... src/shared/auth/jobs-alias.route.test.ts` | pass (5 tests) | evidence/ac02-04-06-10-targeted-tests.txt |
