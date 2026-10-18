@@ -17,6 +17,7 @@
  *    trả, hoặc cả range khi truyền month+year).
  */
 import { NextRequest, NextResponse } from 'next/server';
+import type { Prisma } from '@prisma/client';
 import { getAuthContext } from '@/src/shared/auth/auth-context';
 import { getPrisma } from '@/src/lib/db';
 import { withAuthorizedDbReadOnly } from '@/src/shared/auth/with-authorized-db';
@@ -106,19 +107,36 @@ export async function GET(req: NextRequest) {
       // T1A DEC-06: giờ chuẩn/OT theo TimesheetLine (RQ-06). Self-scope qua L1
       // builder (TimesheetLine) + RLS (migration 20261018120000...). Aggregate
       // theo workDate — KHÔNG suy diễn từ check-in/out timestamps.
-      const hoursAgg = await tx.timesheetLine.groupBy({
-        by: ['workDate'],
-        where: {
-          workerId: ctx.workerId,
-          ...(workDateRange ? { workDate: workDateRange } : {}),
-        },
-        _sum: {
-          regularHours: true,
-          ot15Hours: true,
-          ot20Hours: true,
-          ot30Hours: true,
-        },
-      });
+      //
+      // T0 CORRECTION (audit round 2 — TASK v1.4): khi KHÔNG có month/year,
+      // chỉ aggregate các ngày CÓ TRONG eventRows đang trả về (≤ limit ngày
+      // distinct) — không quét toàn bộ lịch sử chỉ để tính totals; eventRows
+      // rỗng ⇒ aggregate + totals = 0 (skip query). Có month/year ⇒ giữ
+      // aggregate TRÊN TOÀN RANGE như hiện hành (totals tháng nguyên vẹn).
+      const eventDateKeys = Array.from(
+        new Set(eventRows.map((e) => e.workDate.toISOString().split('T')[0])),
+      );
+      const lineWorkDate: Prisma.TimesheetLineWhereInput['workDate'] | undefined =
+        workDateRange ??
+        (eventDateKeys.length > 0
+          ? { in: eventDateKeys.map((k) => new Date(`${k}T00:00:00.000Z`)) }
+          : undefined);
+      const hoursAgg =
+        lineWorkDate === undefined
+          ? []
+          : await tx.timesheetLine.groupBy({
+              by: ['workDate'],
+              where: {
+                workerId: ctx.workerId,
+                workDate: lineWorkDate,
+              },
+              _sum: {
+                regularHours: true,
+                ot15Hours: true,
+                ot20Hours: true,
+                ot30Hours: true,
+              },
+            });
 
       return { events: eventRows, hoursByDate: hoursAgg };
     }));

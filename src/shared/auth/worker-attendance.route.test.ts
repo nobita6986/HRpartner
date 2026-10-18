@@ -44,7 +44,10 @@ const EVENTS = [
   },
 ];
 
-const HOURS = [
+// TimesheetLine dataset NIÊM YẾT: gồm dòng cũ NGOÀI eventRows (audit round 2 —
+// phải KHÔNG làm tăng totals khi không truyền period) và dòng giữa tháng
+// (không có event — CHỈ được tính khi aggregate theo toàn range month/year).
+const LINES = [
   {
     workDate: new Date('2026-09-02T00:00:00.000Z'),
     _sum: { regularHours: '8.00', ot15Hours: '2.00', ot20Hours: '0.00', ot30Hours: '0.00' },
@@ -53,7 +56,31 @@ const HOURS = [
     workDate: new Date('2026-09-03T00:00:00.000Z'),
     _sum: { regularHours: '4.50', ot15Hours: '0.00', ot20Hours: '1.50', ot30Hours: '0.00' },
   },
+  {
+    workDate: new Date('2026-09-15T00:00:00.000Z'),
+    _sum: { regularHours: '2.00', ot15Hours: '0.00', ot20Hours: '0.00', ot30Hours: '1.00' },
+  },
+  {
+    workDate: new Date('2026-01-15T00:00:00.000Z'),
+    _sum: { regularHours: '3.00', ot15Hours: '1.00', ot20Hours: '0.00', ot30Hours: '0.00' },
+  },
 ];
+
+function matchesRange(row: (typeof LINES)[number], workDate: Record<string, Date | Date[] | undefined>): boolean {
+  if (Array.isArray(workDate.in)) return workDate.in.some((d) => d.getTime() === row.workDate.getTime());
+  if (workDate.gte instanceof Date || workDate.lt instanceof Date) {
+    if (workDate.gte && row.workDate.getTime() < (workDate.gte as Date).getTime()) return false;
+    if (workDate.lt && row.workDate.getTime() >= (workDate.lt as Date).getTime()) return false;
+    return true;
+  }
+  return false;
+}
+
+/** Mock groupBy tôn trọng where.workDate (in / gte-lt) như Prisma sẽ làm. */
+function groupByRespectingFilter(arg: { where: { workerId?: unknown; workDate?: Record<string, Date | Date[] | undefined> } }) {
+  const workDate = arg.where.workDate ?? {};
+  return LINES.filter((row) => matchesRange(row, workDate));
+}
 
 const getReq = (query = '') => new NextRequest(`http://localhost/api/worker/attendance${query}`);
 
@@ -62,7 +89,9 @@ describe('GET /api/worker/attendance (AC-07)', () => {
     vi.clearAllMocks();
     vi.spyOn(console, 'error').mockImplementation(() => {});
     mocks.findMany.mockResolvedValue(EVENTS);
-    mocks.groupBy.mockResolvedValue(HOURS);
+    mocks.groupBy.mockImplementation((arg: Parameters<typeof groupByRespectingFilter>[0]) =>
+      Promise.resolve(groupByRespectingFilter(arg)),
+    );
   });
 
   it('unauth → 401', async () => {
@@ -103,13 +132,44 @@ describe('GET /api/worker/attendance (AC-07)', () => {
     expect(where.workDate).toBeUndefined();
     expect(where.workerId).toBe('w1');
 
-    // groupBy scope self + aggregate đúng cột.
+    // groupBy scope self + aggregate đúng cột; scope dates = `in` các ngày
+    // CÓ trong eventRows (audit round 2: không quét toàn bộ lịch sử).
     const gby = mocks.groupBy.mock.calls[0][0];
     expect(gby.where.workerId).toBe('w1');
+    expect(gby.where.workDate.in).toEqual([
+      new Date('2026-09-02T00:00:00.000Z'),
+      new Date('2026-09-03T00:00:00.000Z'),
+    ]);
     expect(gby._sum).toEqual({ regularHours: true, ot15Hours: true, ot20Hours: true, ot30Hours: true });
   });
 
-  it('month/year đủ cặp → filter workDate UTC range đúng', async () => {
+  it('REGRESSION (audit round 2): TimesheetLine ở ngày cũ ngoài eventRows KHÔNG làm tăng totals khi không có period', async () => {
+    mocks.getAuthContext.mockResolvedValue({ userId: 'u1', role: 'WORKER', workerId: 'w1' });
+    const res = await GET(getReq());
+    expect(res.status).toBe(200);
+    const json = await res.json();
+
+    // LINES có dòng 2026-01-15 (regular 3.0, ot 1.0) — nếu aggregate quét toàn
+    // lịch sử, totals sẽ là 16.5/5.5. Đúng: chỉ ngày của eventRows ⇒ 12.5/3.5.
+    expect(json.totals).toEqual({ regularHours: 12.5, otHours: 3.5 });
+    expect(json.totals.regularHours).toBeLessThan(16.5);
+    // items của event không "ké" giờ của dòng cũ.
+    expect(json.items.every((it: { workDate: string }) => it.workDate !== '2026-01-15')).toBe(true);
+  });
+
+  it('REGRESSION (audit round 2): eventRows rỗng ⇒ aggregate + totals = 0, không groupBy', async () => {
+    mocks.getAuthContext.mockResolvedValue({ userId: 'u1', role: 'WORKER', workerId: 'w1' });
+    mocks.findMany.mockResolvedValue([]);
+    const res = await GET(getReq());
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.items).toEqual([]);
+    expect(json.total).toBe(0);
+    expect(json.totals).toEqual({ regularHours: 0, otHours: 0 });
+    expect(mocks.groupBy).not.toHaveBeenCalled();
+  });
+
+  it('month/year đủ cặp → filter workDate UTC range đúng; totals tính TOÀN RANGE (kể cả ngày không event)', async () => {
     mocks.getAuthContext.mockResolvedValue({ userId: 'u1', role: 'WORKER', workerId: 'w1' });
     const res = await GET(getReq('?month=9&year=2026'));
     expect(res.status).toBe(200);
@@ -120,6 +180,11 @@ describe('GET /api/worker/attendance (AC-07)', () => {
     const gby = mocks.groupBy.mock.calls[0][0];
     expect(gby.where.workDate.gte.toISOString()).toBe('2026-09-01T00:00:00.000Z');
     expect(gby.where.workDate.lt.toISOString()).toBe('2026-10-01T00:00:00.000Z');
+
+    // Full-range: gồm dòng 09-15 (không event): regular 12.5+2=14.5, ot 3.5+1=4.5.
+    // Dòng 01-15 vẫn ngoài range.
+    const json = await res.json();
+    expect(json.totals).toEqual({ regularHours: 14.5, otHours: 4.5 });
   });
 
   it('thiếu 1 trong 2 (chỉ month) → 400 KHÔNG query', async () => {
