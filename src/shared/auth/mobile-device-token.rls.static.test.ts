@@ -48,11 +48,24 @@ describe('migration 20261018120000_mobile_device_token_with_rls (AC-06)', () => 
     expect(withCheckPart).toMatch(/user_id = hrp_session_user_id\(\)/);
   });
 
-  it('timesheet_lines policy có nhánh WORKER read-only (DEC-06)', () => {
-    expect(sql).toMatch(/hrp_timesheet_line_scope ON timesheet_lines/);
-    expect(sql).toMatch(
-      /OR \(hrp_session_role\(\) = 'WORKER'[\s\S]*?hrp_worker_visible_for\(timesheet_lines\.worker_id\)/,
-    );
+  it('timesheet_lines: nhánh WORKER ở policy FOR SELECT RIÊNG (audit fix — DELETE bị chặn)', () => {
+    // AUDIT FIX (correction batch 1/1): policy FOR ALL phải khớp m14 — KHÔNG có
+    // nhánh WORKER (USING của FOR ALL áp cả DELETE; WITH CHECK không chặn DELETE).
+    const m14PolicyBlock = sql
+      .split('CREATE POLICY hrp_timesheet_line_scope ON timesheet_lines')[1]
+      ?.split(';')[0] ?? '';
+    expect(m14PolicyBlock).not.toContain('hrp_worker_visible_for');
+
+    // Policy SELECT riêng duy nhất mang nhánh worker self.
+    const workerReadBlock = sql
+      .split('CREATE POLICY hrp_timesheet_line_worker_read ON timesheet_lines')[1]
+      ?.split(';')[0] ?? '';
+    expect(workerReadBlock).toContain('AS PERMISSIVE FOR SELECT');
+    expect(workerReadBlock).toMatch(/hrp_session_role\(\) = 'WORKER'/);
+    expect(workerReadBlock).toMatch(/hrp_worker_visible_for\(timesheet_lines\.worker_id\)/);
+
+    // Không có policy DELETE nào chứa nhánh worker (worker không xoá line).
+    expect(sql).toContain('DROP POLICY IF EXISTS hrp_timesheet_line_worker_read ON timesheet_lines');
   });
 
   it('không phải migration dữ liệu: không INSERT/UPDATE/DELETE/GRANT', () => {

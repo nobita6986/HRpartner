@@ -13,9 +13,17 @@ import { NextRequest } from 'next/server';
 
 const mocks = vi.hoisted(() => ({
   getAuthContext: vi.fn(),
-  getTicketAuth: vi.fn(),
   createTicket: vi.fn(),
   dbContext: vi.fn(),
+}));
+
+const SESSION_WORKER = vi.hoisted(() => ({
+  id: 'u1',
+  role: 'WORKER',
+  workerId: 'w1',
+  name: 'W',
+  ipAddress: null,
+  userAgent: null,
 }));
 
 vi.mock('@/src/shared/auth/auth-context', () => ({
@@ -23,13 +31,15 @@ vi.mock('@/src/shared/auth/auth-context', () => ({
   AuthSessionError: class AuthSessionError extends Error {},
 }));
 
-vi.mock('@/src/shared/auth/ticket-route-helpers', async (importOriginal) => {
-  const actual = (await importOriginal()) as Record<string, unknown>;
-  return {
-    ...actual,
-    getTicketAuth: mocks.getTicketAuth,
-  };
-});
+// AUDIT FIX: handler map SessionUser từ ctx (session-adapter) — không gọi
+// getTicketAuth nữa. Mock adapter để sessionUser Work với ctx đủ fields.
+vi.mock('@/src/shared/auth/session-adapter', () => ({
+  toSessionUser: (ctx: { userId: string; role: string }) =>
+    ctx.role === 'WORKER'
+      ? { ...SESSION_WORKER, id: ctx.userId }
+      : { id: ctx.userId, role: ctx.role },
+  extractRequestMeta: () => ({}),
+}));
 
 vi.mock('@/src/lib/db', () => ({ getPrisma: () => ({ __raw: true }) }));
 vi.mock('@/src/shared/auth/with-db-context', () => ({
@@ -52,15 +62,6 @@ const postReq = (body: unknown) =>
     headers: { 'content-type': 'application/json' },
   });
 
-const SESSION_WORKER = {
-  id: 'u1',
-  role: 'WORKER',
-  workerId: 'w1',
-  name: 'W',
-  ipAddress: null,
-  userAgent: null,
-};
-
 const validBody = { type: 'OTHER', title: 'Xin nghỉ', description: 'Ốm' };
 
 describe('POST /api/worker/tickets (AC-08 — reuse POST /api/tickets workflow)', () => {
@@ -68,7 +69,6 @@ describe('POST /api/worker/tickets (AC-08 — reuse POST /api/tickets workflow)'
     vi.clearAllMocks();
     mocks.createTicket.mockResolvedValue({ id: 't1' });
     mocks.dbContext.mockImplementation((cb: (t: unknown) => unknown) => cb({ id: 'tx' }));
-    mocks.getTicketAuth.mockResolvedValue({ sessionUser: SESSION_WORKER });
   });
 
   it('role khác WORKER → 403', async () => {

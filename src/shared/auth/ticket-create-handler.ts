@@ -15,11 +15,12 @@
  *    'POST:/api/tickets' cho cả 2 route (same canonical workflow).
  *  - Lỗi → ticketsErrorResponse (taxonomy hiện hành).
  *
- * Tầng رسید ghi record: withDbContext (L2 GUC theo AuthContext) — như hiện hành.
+ * Tầng ghi record: withDbContext (L2 GUC theo AuthContext) — như hiện hành.
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { TicketService } from '@/src/domains/attendance/ticket.service';
-import { getTicketAuth, getIdempotencyKey, ticketsErrorResponse } from '@/src/shared/auth/ticket-route-helpers';
+import { getIdempotencyKey, ticketsErrorResponse } from '@/src/shared/auth/ticket-route-helpers';
+import { toSessionUser, extractRequestMeta } from '@/src/shared/auth/session-adapter';
 import { getPrisma } from '@/src/lib/db';
 import { withIdempotency } from '@/src/shared/integrity/idempotency';
 import { withDbContext } from '@/src/shared/auth/with-db-context';
@@ -109,14 +110,19 @@ export async function handleTicketCreateFromRequest(
 }
 
 /**
- * Auth glue: AuthContext + sessionUser mapping dùng chung (ticket-route-helpers).
- * Export cho POST /api/worker/tickets để KHÔNG gọi getAuthContext hai lần.
+ * Auth glue: AuthContext verify MỘT lần rồi map SessionUser tại chỗ.
+ *
+ * AUDIT FIX (correction batch 1/1): trước đây gọi `getTicketAuth(req)` — nó
+ * gọi lại `getAuthContext` bên trong ⇒ mỗi POST xác thực cùng request 2 lần
+ * (2 lần truy vấn User/Worker). Giờ dùng `toSessionUser` + `extractRequestMeta`
+ * trực tiếp trên ctx đã có (cùng mapping bằng `requireTicketAuth` không
+ * permission-code — hành vi byte-compatible, chỉ bỏ truy vấn lặp).
  */
 export async function resolveTicketCreateAuth(
   req: NextRequest,
 ): Promise<{ ctx: AuthContext; sessionUser: SessionUser }> {
   const ctx = await getAuthContext(req);
-  const { sessionUser } = await getTicketAuth(req);
+  const sessionUser = toSessionUser(ctx, extractRequestMeta(req));
   return { ctx, sessionUser };
 }
 

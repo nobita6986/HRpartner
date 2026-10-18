@@ -153,13 +153,21 @@ END
 $$;
 
 -- ---------------------------------------------------------------------------
--- SECTION 6 — timesheet_lines: policy bổ sung nhánh READ-ONLY WORKER (T1A
--- TASK DEC-06 / RQ-06). Canonical cũ là m14 (20260830214139 RLS matrix repair,
--- policy: USING = period-scope qua {ADMIN,HR_MANAGER,HR_STAFF,...}/PM).
--- Mới: giữ nguyên thành phần cũ + OR (role WORKER AND worker_id IS NOT NULL AND
--- hrp_worker_visible_for(worker_id)) => WORKER chỉ đọc line của CHÍNH MÌNH.
--- WITH CHECK GIỮ NGUYÊN (admin/PM — WORKER KHÔNG ghi được line).
--- Idempotent: DROP legacy/m14 + CREATE đúng semantics mới.
+-- SECTION 6 — timesheet_lines: READ-ONLY self WORKER (T1A TASK DEC-06 / RQ-06).
+--
+-- AUDIT FIX (correction batch 1/1): policy FOR ALL để USING áp cho cả DELETE
+-- (WITH CHECK KHÔNG áp cho DELETE) — nhánh WORKER trong FOR ALL vì thế mở
+-- DELETE cho worker trên connection runtime (app_user_writer có DELETE
+-- privilege). Fix:
+--   (6a) policy `hrp_timesheet_line_scope` GIỮ NGUYÊN ĐÚNG m14
+--        (20260830214139 RLS matrix repair) — KHÔNG thêm nhánh WORKER;
+--   (6b) policy RIÊNG `hrp_timesheet_line_worker_read` AS PERMISSIVE
+--        FOR SELECT: nhánh WORKER read-only self (SELECT-only — không cho
+--        DELETE/UPDATE/INSERT vì USING của policy này chỉ tồn tại với cmd='r').
+--   PERMISSIVE USING kết hợp OR: SELECT = m14 OR worker self;
+--   UPDATE/INSERT = m14 WITH CHECK (admin/PM) — WORKER vẫn không ghi;
+--   DELETE = m14 USING (không có nhánh WORKER) — WORKER bị chặn.
+-- Idempotent: DROP legacy + CREATE đúng semantics mới.
 -- ---------------------------------------------------------------------------
 DO $$
 BEGIN
@@ -167,8 +175,8 @@ BEGIN
     ALTER TABLE timesheet_lines ENABLE ROW LEVEL SECURITY;
     ALTER TABLE timesheet_lines FORCE ROW LEVEL SECURITY;
 
+    -- (6a) policy ALL giữ nguyên m14 — WORKER KHÔNG xuất hiện ở đây.
     DROP POLICY IF EXISTS hrp_timesheet_line_scope ON timesheet_lines;
-
     CREATE POLICY hrp_timesheet_line_scope ON timesheet_lines
       AS PERMISSIVE FOR ALL
       TO app_user_writer, app_user
@@ -181,10 +189,6 @@ BEGIN
               OR (hrp_session_role() = 'PM' AND p.project_id IS NOT NULL AND hrp_project_visible_for(p.project_id))
             )
         )
-        -- T1A: WORKER read-only self (L1 builder buildTimesheetLineScope mirrors).
-        OR (hrp_session_role() = 'WORKER'
-            AND timesheet_lines.worker_id IS NOT NULL
-            AND hrp_worker_visible_for(timesheet_lines.worker_id))
       )
       WITH CHECK (
         EXISTS (
@@ -195,6 +199,18 @@ BEGIN
               OR (hrp_session_role() = 'PM' AND p.project_id IS NOT NULL AND hrp_project_visible_for(p.project_id))
             )
         )
+      );
+
+    -- (6b) policy FOR SELECT riêng — READ-ONLY self, BẮT buộc tách khỏi FOR ALL
+    -- (USING cả FOR DELETE ⇒ worker xoá line của chính mình — audit finding 1).
+    DROP POLICY IF EXISTS hrp_timesheet_line_worker_read ON timesheet_lines;
+    CREATE POLICY hrp_timesheet_line_worker_read ON timesheet_lines
+      AS PERMISSIVE FOR SELECT
+      TO app_user_writer, app_user
+      USING (
+        hrp_session_role() = 'WORKER'
+        AND timesheet_lines.worker_id IS NOT NULL
+        AND hrp_worker_visible_for(timesheet_lines.worker_id)
       );
   END IF;
 END$$;
@@ -260,18 +276,47 @@ BEGIN
     RAISE EXCEPTION 'mobile_device_token_with_rls assertion failed: hrp_mobile_device_token_scope policy missing or duplicated (count=%). Migration rolled back.', v_policy;
   END IF;
 
-  -- T1A DEC-06: timesheet_lines policy phải chứa nhánh WORKER
-  -- (hrp_worker_visible_for) ở USING (polqual) khi bảng tồn tại.
-  SELECT count(*) INTO v_ts_policy
-    FROM pg_policy p
-      JOIN pg_class c ON c.oid = p.polrelid
-      JOIN pg_namespace n ON n.oid = c.relnamespace
-    WHERE n.nspname = 'public' AND c.relname = 'timesheet_lines'
-      AND p.polname = 'hrp_timesheet_line_scope'
-      AND p.polqual::text LIKE '%hrp_worker_visible_for%';
-  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'timesheet_lines')
-     AND v_ts_policy <> 1 THEN
-    RAISE EXCEPTION 'mobile_device_token_with_rls assertion failed: timesheet_lines policy must include WORKER self-read branch (hrp_worker_visible_for in USING). Migration rolled back.', v_ts_policy;
+  -- AUDIT FIX (T1A correction batch 1/1): timesheet_lines —
+  --   (a) policy FOR ALL `hrp_timesheet_line_scope` ĐÚNG m14: KHÔNG được chứa
+  --       nhánh WORKER (hrp_worker_visible_for) — nếu có, USING cũng áp cho
+  --       DELETE => worker xoá line của mình.
+  --   (b) policy `hrp_timesheet_line_worker_read` FOR SELECT PERMISSIVE đúng
+  --       một lần, có nhánh worker self (hrp_worker_visible_for).
+  --   (c) KHÔNG có bất kỳ policy DELETE (polcmd='d') nào chứa nhánh worker.
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'timesheet_lines') THEN
+    SELECT count(*) INTO v_ts_policy
+      FROM pg_policy p
+        JOIN pg_class c ON c.oid = p.polrelid
+        JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'public' AND c.relname = 'timesheet_lines'
+        AND p.polname = 'hrp_timesheet_line_scope'
+        AND p.polqual::text LIKE '%hrp_worker_visible_for%';
+    IF v_ts_policy <> 0 THEN
+      RAISE EXCEPTION 'mobile_device_token_with_rls assertion failed: timesheet_lines FOR ALL policy must NOT include WORKER branch (DELETE exposure). Migration rolled back.', v_ts_policy;
+    END IF;
+
+    SELECT count(*) INTO v_ts_policy
+      FROM pg_policy p
+        JOIN pg_class c ON c.oid = p.polrelid
+        JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'public' AND c.relname = 'timesheet_lines'
+        AND p.polname = 'hrp_timesheet_line_worker_read'
+        AND p.polpermissive = true
+        AND p.polqual::text LIKE '%hrp_worker_visible_for%';
+    IF v_ts_policy <> 1 THEN
+      RAISE EXCEPTION 'mobile_device_token_with_rls assertion failed: timesheet_lines must have exactly one PERMISSIVE FOR SELECT policy with WORKER self-read branch (count=%). Migration rolled back.', v_ts_policy;
+    END IF;
+
+    SELECT count(*) INTO v_ts_policy
+      FROM pg_policy p
+        JOIN pg_class c ON c.oid = p.polrelid
+        JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'public' AND c.relname = 'timesheet_lines'
+        AND p.polcmd = 'd'
+        AND p.polqual::text LIKE '%hrp_worker_visible_for%';
+    IF v_ts_policy <> 0 THEN
+      RAISE EXCEPTION 'mobile_device_token_with_rls assertion failed: timesheet_lines must have NO DELETE policy with WORKER branch. Migration rolled back.', v_ts_policy;
+    END IF;
   END IF;
 END
 $$;
