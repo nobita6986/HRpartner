@@ -1,0 +1,30 @@
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+[1m[7m[36m RUN [39m[27m[22m [36mv2.1.9 [39m[90mD:/CodeApp/HrP-worktrees/android-backend-mobile-contract[39m
+
+ [32m✓[39m src/shared/security/required-relation-sweep.static.test.ts [2m([22m[2m11 tests[22m[2m)[22m[33m 991[2mms[22m[39m
+   [33m[2m✓[22m[39m quan hệ BẮT BUỘC trên bảng bị RLS che: tập vị trí select là một tập ĐÓNG[2m > [22mmệnh đề BA: tập vị trí select KHỚP CHÍNH XÁC tám dòng còn lại sau STEP-06 (EV-03, AC-04) [33m465[2mms[22m[39m
+   [33m[2m✓[22m[39m quan hệ BẮT BUỘC trên bảng bị RLS che: tập vị trí select là một tập ĐÓNG[2m > [22mphép quét phủ cả app/, chứng minh bằng chính ba dòng app/api trong kết quả (AC-04) [33m465[2mms[22m[39m
+[90mstderr[2m | src/domains/security/single-domain-consolidation.test.ts[2m > [22m[2mC) login POST — same-origin landing + host-only cookie[2m > [22m[2mbad credentials / locked / malformed → 401 INVALID_CREDENTIALS and NO cookie
+[22m[39m{"schemaVersion":"1.0","timestamp":"2026-10-18T14:58:09.714Z","level":"warn","event":"auth.login.denied","requestId":null,"meta":{"route":"/api/auth/login","outcome":"user_not_found"}}
+{"schemaVersion":"1.0","timestamp":"2026-10-18T14:58:09.716Z","level":"warn","event":"auth.login.denied","requestId":null,"meta":{"route":"/api/auth/login","outcome":"password_mismatch"}}
+
+ [32m✓[39m src/domains/security/single-domain-consolidation.test.ts [2m([22m[2m17 tests[22m[2m)[22m[90m 31[2mms[22m[39m
+ [32m✓[39m src/shared/auth/webhook-payslip.route.test.ts [2m([22m[2m21 tests[22m[2m)[22m[90m 28[2mms[22m[39m
+ [32m✓[39m src/shared/auth/worker-portal.route.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 15[2mms[22m[39m
+ [32m✓[39m src/shared/auth/worker-attendance.route.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+ [32m✓[39m src/domains/security/workers-me.projection.route.test.ts [2m([22m[2m17 tests[22m[2m)[22m[90m 15[2mms[22m[39m
+ [32m✓[39m src/shared/auth/login-projection.route.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [32m✓[39m src/shared/auth/push-register-device.route.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+ [32m✓[39m src/shared/auth/worker-tickets-create.route.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [32m✓[39m src/shared/auth/worker-payroll-latest.route.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+ [32m✓[39m src/shared/auth/jobs-alias.route.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+ [32m✓[39m src/shared/auth/mobile-device-token.rls.static.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m src/shared/auth/preauth-db.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+ [32m✓[39m src/shared/auth/user.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m14 passed[39m[22m[90m (14)[39m
+[2m      Tests [22m [1m[32m120 passed[39m[22m[90m (120)[39m
+[2m   Start at [22m 21:58:07
+[2m   Duration [22m 7.15s[2m (transform 473ms, setup 0ms, collect 2.48s, tests 1.17s, environment 2ms, prepare 1.16s)[22m
+
