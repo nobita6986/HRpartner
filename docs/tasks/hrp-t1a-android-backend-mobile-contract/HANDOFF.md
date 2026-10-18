@@ -6,23 +6,26 @@
 |---|---|
 | Task | `hrp-t1a-android-backend-mobile-contract` |
 | Delivery protocol | `V2_FAST_FREEZE` |
-| Spec version | `v1.3` |
+| Spec version | `v1.4` |
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
 | Execution round | `1` |
 | Baseline | `51195c3bb3410b49f49531f6cc841a2a2832ada1` |
-| Implementation SHA | `9dc296160f0499fc3c54d8b40f955a68fe12bb35` |
+| Implementation SHA | `932745de578e279b46f1d00fe34260c8a9fd5cf7` |
 | Frozen delivery | `YES` |
 | Canonical gates | `PASS` |
 | Audit eligibility | `ELIGIBLE` |
 | Correction batches used | `1` |
 | Status | `READY_FOR_AUDIT` |
 
-> **DELTA (correction batch 1/1 — SHA `9dc29616`, cộng delta `1e5a57d1` thay cho `2067f4be`):** audit finding đóng bằng đúng một batch:
-> 1. **MUST-FIX (finding 1)** — RLS `timesheet_lines` (migration SECTION 6): policy FOR ALL giờ GIỮ NGUYÊN m14 (không nhánh WORKER — USING của FOR ALL áp cho DELETE, WITH CHECK không áp, worker sẽ xoá được line của chính mình); nhánh WORKER read-only chuyển sang policy riêng `hrp_timesheet_line_worker_read` AS PERMISSIVE **FOR SELECT**. Final assertion 3 kiểm tra mới: FOR-ALL không chứa `hrp_worker_visible_for`; đúng một policy SELECT permissive có nhánh self; không policy chứa nhánh worker với `polcmd IN ('d','*')`.
-> 2. **SHOULD-FIX (finding 2)** — `resolveTicketCreateAuth` map SessionUser bằng `toSessionUser` + `extractRequestMeta` trên ctx đã verify; bỏ lượt `getAuthContext` lặp (byte-compatible, một lần verify/request).
-> 3. **DELTA recheck fix** — assertion cuối quét `p.polcmd IN ('d','*')` thay vì chỉ 'd': pg_policy lưu FOR ALL với `polcmd = '*'` nên policy FOR ALL khác tên (legacy/manual) chứa nhánh WORKER sẽ bị sót nếu chỉ quét 'd'; static test thêm regression guard cho assert-block.
-> Unchanged surface khác: KHÔNG đổi (DELTA audit chỉ soi migration assertion + ảnh hưởng trực tiếp); re-run gates (targeted 11 tests incl. static regression, `git diff --cached --check`; full lane đã PASS tại batch 1/1 — sql-only delta không chạm src/test).
+> **Correction budget note:** thực hiện `1` theo V2 (batch 1/1 tại `1e5a57d1`, delta `9dc29616`); correction BỔ SUNG thứ hai (attendance aggregate, `932745de`) là việc được T0 ủy quyền RIÊNG qua directive mới — vượt budget gốc, đã ghi rõ tại TASK Revision Log v1.4 + Planner Resolution round 3. T0 là người chấp nhận rủi ro mở rộng này.
+
+> **DELTA (correction batch 1/1 — SHA `932745de`, chuỗi: `2067f4be` → `1e5a57d1` → `9dc29616` → `932745de`):** audit finding đóng qua các commit sau:
+> 1. **MUST-FIX (finding 1, `1e5a57d1`)** — RLS `timesheet_lines` (migration SECTION 6): policy FOR ALL giờ GIỮ NGUYÊN m14 (không nhánh WORKER — USING của FOR ALL áp cho DELETE, WITH CHECK không áp, worker sẽ xoá được line của chính mình); nhánh WORKER read-only chuyển sang policy riêng `hrp_timesheet_line_worker_read` AS PERMISSIVE **FOR SELECT**. Final assertion 3 kiểm tra: FOR-ALL không chứa `hrp_worker_visible_for`; đúng một policy SELECT permissive có nhánh self; không policy chứa nhánh worker với `polcmd IN ('d','*')`.
+> 2. **SHOULD-FIX (finding 2, `1e5a57d1`)** — `resolveTicketCreateAuth` map SessionUser bằng `toSessionUser` + `extractRequestMeta` trên ctx đã verify; bỏ lượt `getAuthContext` lặp (byte-compatible, một lần verify/request).
+> 3. **DELTA recheck fix (`9dc29616`)** — assertion cuối quét `p.polcmd IN ('d','*')` thay vì chỉ 'd': pg_policy lưu FOR ALL với `polcmd = '*'` nên policy FOR ALL khác tên (legacy/manual) chứa nhánh WORKER sẽ bị sót nếu chỉ quét 'd'; static test thêm regression guard cho assert-block.
+> 4. **T0 correction bổ sung (`932745de`, audit round 2)** — `GET /api/worker/attendance`: khi KHÔNG có `month/year`, groupBy TimesheetLine chỉ aggregate các ngày `workDate IN` eventRows đang trả (≤ limit ngày distinct) — không quét toàn bộ lịch sử; eventRows rỗng ⇒ skip groupBy + totals = 0; có `month/year` giữ nguyên aggregate toàn range. Self-scope ctx.workerId + L1/RLS + response shape GIỮ NGUYÊN. Regression tests: dòng TimesheetLine ngày cũ ngoài eventRows không tăng totals (totals 12.5/3.5, không phải 16.5/5.5); month totals full-range gồm ngày không event (14.5/4.5); empty ⇒ 0 và không groupBy.
+> Unchanged surface khác: KHÔNG đổi.
 
 ## 1. Outcome and changed surface
 
@@ -53,11 +56,11 @@
 | `AC-04` | `node node_modules/vitest/vitest.mjs run --config vitest.unit.config.ts src/shared/auth/push-register-device.route.test.ts` (E-04) | 7 tests passed: 401/403/400; upsert scoped (ctx.userId, token); không echo/log token; body userId lạ bị bỏ | None |
 | `AC-05` | `node node_modules/prisma/build/index.js validate` + `generate` (E-05) | exit 0; "Schema valid"; client generated | Chạy offline (DATABASE_URL dummy validate-only; validate/generate không ghi DB) |
 | `AC-06` | `node node_modules/vitest/vitest.mjs run --config vitest.unit.config.ts src/shared/auth/mobile-device-token.rls.static.test.ts` (E-06) | 7 tests passed (FORCE RLS, unique, FK cascade, policy self, WORKER branch timesheet_lines, không INSERT/GRANT, idempotent) | Không chạy SQL trên DB (ship-only) |
-| `AC-07` | `node node_modules/vitest/vitest.mjs run --config vitest.unit.config.ts src/shared/auth/worker-attendance.route.test.ts` (E-07) | 6 tests passed: range UTC gte/lt đúng; totals từ aggregate TimesheetLine (regular 12.5, ot 3.5 — không suy diễn từ check-in/out); thiếu 1 param ⇒ 400 | None |
+| `AC-07` | `node node_modules/vitest/vitest.mjs run --config vitest.unit.config.ts src/shared/auth/worker-attendance.route.test.ts` (E-07) | 8 tests passed: range UTC gte/lt đúng; totals từ aggregate TimesheetLine (không suy diễn từ check-in/out); REGRESSION không-period: chỉ ngày eventRows (`workDate IN`), dòng cũ ngoài eventRows không tăng totals (12.5/3.5 ≠ 16.5/5.5); REGRESSION empty ⇒ 0, không groupBy; month/year full-range (14.5/4.5 gồm ngày không event); thiếu 1 param ⇒ 400 | None |
 | `AC-08` | `node node_modules/vitest/vitest.mjs run --config vitest.unit.config.ts src/shared/auth/worker-tickets-create.route.test.ts` (E-08) | 5 tests passed: 403 non-worker; 404 profile; body workerId khác self 403; thiếu ⇒ force self rồi `service.createTicket` qua `withDbContext` (cùng handler dùng chung) | None |
 | `AC-09` | `node node_modules/vitest/vitest.mjs run --config vitest.unit.config.ts src/shared/auth/jobs-alias.route.test.ts` (E-09) | 5 tests passed: alias map đúng; param gốc ưu tiên; không alias byte-compat; urgency 400; POST vẫn 410 | None |
 | `AC-10` | `node node_modules/vitest/vitest.mjs run --config vitest.unit.config.ts src/shared/auth/worker-payroll-latest.route.test.ts` (E-10) | 5 tests passed: 401/403/400; cache miss 404 key `payslip:w1:2026:09`; hit trả projection allowlist không leak cache-extra | Cache process-local — BLK-04/BLK-05 |
-| `AC-11` | `node node_modules/vitest/vitest.mjs run --config vitest.unit.config.ts` (E-11) | Test Files 348 passed; Tests 5481 passed | 9 skipped là skip operator đã tồn tại từ baseline `51195c3b` (không phải fail); reproducer chạy lại đúng command này trên baseline đã cho cùng kết quả (evidence/ac11-test-unit.txt) |
+| `AC-11` | `node node_modules/vitest/vitest.mjs run --config vitest.unit.config.ts` (E-11) | Test Files 348 passed; Tests 5483 passed | 9 skipped là skip operator đã tồn tại từ baseline `51195c3b` (không phải fail); reproducer chạy lại đúng command này trên baseline đã cho cùng kết quả (evidence/ac11-test-unit.txt) |
 | `AC-12` | `node node_modules/typescript/bin/tsc --noEmit` + `git diff --cached --check` (E-12) | exit 0 / exit 0 | None |
 | `AC-13` | Đọc `scripts/ops/seed-sites-android-contract.sql`: 4 DO-block preflight raise khi thiếu project; `git diff` xác nhận không nằm trong prisma/migrations (E-13) | 4 block pass review; không trong migration chain; không tự chạy | Pega/VinFast tọa độ phải operator điền (BLK-06) |
 
@@ -71,11 +74,11 @@
 | `E-04` | `... src/shared/auth/push-register-device.route.test.ts` | pass (7 tests) | evidence/ac02-04-06-10-targeted-tests.txt |
 | `E-05` | `node node_modules/prisma/build/index.js validate && ... generate` (DATABASE_URL dummy validate-only — KHÔNG đụng DB) | exit 0; "Schema valid"; client generated | evidence/ac05-prisma-validate-generate.txt |
 | `E-06` | `node node_modules/vitest/vitest.mjs run --config vitest.unit.config.ts src/shared/auth/mobile-device-token.rls.static.test.ts` | pass (7 tests — gồm assertion audit-fix FOR-SELECT riêng + regression `polcmd IN ('d','*')`) | evidence/delta-assertion-tests.txt |
-| `E-07` | `... src/shared/auth/worker-attendance.route.test.ts` | pass (6 tests) | evidence/ac02-04-06-10-targeted-tests.txt |
+| `E-07` | `node node_modules/vitest/vitest.mjs run --config vitest.unit.config.ts src/shared/auth/worker-attendance.route.test.ts` | pass (8 tests, round-2 correction) | evidence/round2-targeted-tests.txt |
 | `E-08` | `... src/shared/auth/worker-tickets-create.route.test.ts` | pass (5 tests) | evidence/ac02-04-06-10-targeted-tests.txt |
 | `E-09` | `... src/shared/auth/jobs-alias.route.test.ts` | pass (5 tests) | evidence/ac02-04-06-10-targeted-tests.txt |
 | `E-10` | `... src/shared/auth/worker-payroll-latest.route.test.ts` | pass (5 tests) | evidence/ac02-04-06-10-targeted-tests.txt |
-| `E-11` | `node node_modules/vitest/vitest.mjs run --config vitest.unit.config.ts` | Test Files 348 passed; Tests 5481 passed / 9 skipped | evidence/ac11-test-unit.txt |
+| `E-11` | `node node_modules/vitest/vitest.mjs run --config vitest.unit.config.ts` | Test Files 348 passed; Tests 5483 passed / 9 skipped | evidence/ac11-test-unit.txt |
 | `E-12` | `node node_modules/typescript/bin/tsc --noEmit` + `git diff --cached --check` | exit 0 / exit 0 | evidence/ac12-typecheck.txt |
 | `E-13` | Đọc `scripts/ops/seed-sites-android-contract.sql` (4 DO-block, preflight raise khi thiếu project/coord NULL) | 4 block pass review; không trong migration chain | scripts/ops/seed-sites-android-contract.sql file:1-164 |
 

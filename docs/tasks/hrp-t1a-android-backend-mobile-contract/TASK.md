@@ -12,7 +12,7 @@
 | Assurance lane | `CRITICAL` |
 | Audit mode | `LIGHT` |
 | Audit reason | Lane CRITICAL (auth/RLS/schema/migration) → mặc định LIGHT; T3 audit trên exact frozen SHA sau khi T1 tự review. |
-| Spec version | `v1.3` |
+| Spec version | `v1.4` |
 | Status | `READY_FOR_EXECUTION` |
 | Planner | `Tier 1` |
 | Baseline | `51195c3bb3410b49f49531f6cc841a2a2832ada1` |
@@ -207,6 +207,7 @@
 | 0 | Tier 1 tự review toàn changed surface trước freeze: route/API boundary, migration/RLS safety, auth/permission, concurrency/idempotency, test isolation, diff scope. | Correction budget 1; LIGHT audit sau freeze. |
 | 1 | Audit correction batch 1/1: (1) MUST-FIX timesheet_lines RLS — tách nhánh WORKER khỏi policy FOR ALL sang `FOR SELECT` riêng; (2) SHOULD-FIX resolveTicketCreateAuth — map SessionUser tại chỗ, bỏ xác thực kép. Đóng cả hai finding bằng một batch, không mở lại unchanged surface. | Verdict audit "fix 1 trước khi ship"; T1 xác minh finding 1 đúng (USING áp cho DELETE, WITH CHECK không áp), thực hiện cả hai trong cùng batch; re-run đầy đủ gates. |
 | 2 | Audit DELTA recheck: assertion (c) của migration mở từ `polcmd='d'` sang `polcmd IN ('d','*')` (pg_policy lưu FOR ALL với '*'), static test thêm regression guard. | Auditor delta finding: chỉ quét 'd' sẽ sót policy FOR ALL chứa nhánh WORKER; đóng bằng fix assertion + regression test, policy behavior không đổi. |
+| 3 | T0 correction bổ sung (audit round 2, scope hẹp `app/api/worker/attendance/route.ts`): aggregate TimesheetLine khi KHÔNG có period chỉ chạy trên các ngày của eventRows (`workDate IN`, ≤ limit distinct); eventRows rỗng ⇒ 0; có period giữ full-range. 2 regression tests + 1 empty test thêm; test tháng/năm giữ nguyên để bảo đảm tổng tháng full-range. | Correction budget 1 đã dùng hết tại round 1 — đây là correction BỔ SUNG được T0 ủy quyền (markdown này ghi rõ tại Revision Log v1.4); re-run targeted attendance tests + typecheck + full unit lane. |
 
 ## 10. Revision Log
 
@@ -216,3 +217,4 @@
 | `v1.1` | 2026-10-18 | DEC-02/03: assignment location trả `sites[]` (nhiều site per project thay vì một site); DEC-04: `device_type` NOT NULL default 'ANDROID' (không nullable); cleanup wording DEC-06/07. | Điều chỉnh khi triển khai trước khi đóng round — đúng quyền Tier 1 (§Quyền tự quyết tier1.md), không đổi outcome/boundary. |
 | `v1.2` | 2026-10-18 | Audit correction batch 1/1: DEC-06 — RLS `timesheet_lines` tách nhánh WORKER sang policy `FOR SELECT` riêng (`hrp_timesheet_line_worker_read`); policy FOR ALL giữ nguyên m14 (nhánh WORKER trong FOR ALL mở DELETE vì USING áp cho DELETE còn WITH CHECK không áp). DEC-07 — `resolveTicketCreateAuth` map SessionUser bằng `toSessionUser` trên ctx đã verify (bỏ xác thực kép mỗi POST). | Audit finding MUST-FIX (DELETE exposure) + SHOULD-FIX (double auth query); kết hợp PERMISSIVE: SELECT = m14 OR worker self, ghi/xoá vẫn thuộc m14. |
 | `v1.3` | 2026-10-18 | Audit DELTA recheck: final assertion của migration (c) quét `p.polcmd IN ('d','*')` thay vì chỉ 'd' — pg_policy lưu FOR ALL với polcmd='*', policy FOR ALL khác tên (legacy/manual) chứa nhánh WORKER sẽ bị sót nếu chỉ quét 'd'. Static test bổ sung assertion hồi quy cho assert-block này. | Auditor finding "còn một điểm cần sửa trước khi áp migration"; không đổi behavior policy, chỉ mở assertion + regression guard. |
+| `v1.4` | 2026-10-18 | T0 correction bổ sung (audit round 2) — DEC-06 attendance aggregate: khi không có `month/year`, groupBy TimesheetLine chỉ chạy trên các ngày `workDate IN` eventRows đang trả (≤ limit ngày distinct), eventRows rỗng ⇒ skip query + totals 0; có `month/year` giữ aggregate toàn range. Regression tests: dòng cũ ngoài eventRows không tăng totals; month totals tính full-range (ngày không event được cộng); empty ⇒ 0. | Finding T0 "aggregate khi không có period quét toàn bộ lịch sử, totals lệch so với items"; scope hẹp chỉ attendance route — T0 ủy quyền extra correction VUỘT correction budget gốc (budget 1 đã dùng tại v1.2/v1.3). |
