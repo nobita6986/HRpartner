@@ -70,6 +70,8 @@ describe('migration 20261018120000_mobile_device_token_with_rls (AC-06)', () => 
     expect(sql).toContain('DROP POLICY IF EXISTS hrp_timesheet_line_worker_read ON timesheet_lines');
     const assertBlock = sql.split('SECTION 7')[1] ?? '';
     expect(assertBlock).toContain("p.polcmd IN ('d', '*')");
+    expect(sql.match(/pg_get_expr\(p\.polqual, p\.polrelid\) LIKE '%hrp_worker_visible_for%'/g)).toHaveLength(3);
+    expect(sql).not.toContain('p.polqual::text LIKE');
   });
 
   it('không phải migration dữ liệu: không INSERT/UPDATE/DELETE/GRANT', () => {

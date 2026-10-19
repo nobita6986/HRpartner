@@ -293,7 +293,7 @@ BEGIN
         JOIN pg_namespace n ON n.oid = c.relnamespace
       WHERE n.nspname = 'public' AND c.relname = 'timesheet_lines'
         AND p.polname = 'hrp_timesheet_line_scope'
-        AND p.polqual::text LIKE '%hrp_worker_visible_for%';
+        AND pg_get_expr(p.polqual, p.polrelid) LIKE '%hrp_worker_visible_for%';
     IF v_ts_policy <> 0 THEN
       RAISE EXCEPTION 'mobile_device_token_with_rls assertion failed: timesheet_lines FOR ALL policy must NOT include WORKER branch (DELETE exposure, count=%). Migration rolled back.', v_ts_policy;
     END IF;
@@ -305,7 +305,7 @@ BEGIN
       WHERE n.nspname = 'public' AND c.relname = 'timesheet_lines'
         AND p.polname = 'hrp_timesheet_line_worker_read'
         AND p.polpermissive = true
-        AND p.polqual::text LIKE '%hrp_worker_visible_for%';
+        AND pg_get_expr(p.polqual, p.polrelid) LIKE '%hrp_worker_visible_for%';
     IF v_ts_policy <> 1 THEN
       RAISE EXCEPTION 'mobile_device_token_with_rls assertion failed: timesheet_lines must have exactly one PERMISSIVE FOR SELECT policy with WORKER self-read branch (count=%). Migration rolled back.', v_ts_policy;
     END IF;
@@ -316,7 +316,7 @@ BEGIN
         JOIN pg_namespace n ON n.oid = c.relnamespace
       WHERE n.nspname = 'public' AND c.relname = 'timesheet_lines'
         AND p.polcmd IN ('d', '*')
-        AND p.polqual::text LIKE '%hrp_worker_visible_for%';
+        AND pg_get_expr(p.polqual, p.polrelid) LIKE '%hrp_worker_visible_for%';
     IF v_ts_policy <> 0 THEN
       RAISE EXCEPTION 'mobile_device_token_with_rls assertion failed: timesheet_lines must have NO DELETE (d) or FOR ALL (*) policy exposing the WORKER branch (audit delta: FOR ALL stores polcmd = ''*'', count=%). Migration rolled back.', v_ts_policy;
     END IF;
