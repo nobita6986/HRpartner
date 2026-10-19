@@ -124,7 +124,7 @@ export async function GET(req: NextRequest) {
       return Promise.all([
         tx.user.findMany({
           where,
-          select: { id: true, name: true, phone: true, role: true, vendorId: true, isActive: true, createdAt: true },
+          select: { id: true, name: true, phone: true, phoneVerified: true, role: true, vendorId: true, isActive: true, createdAt: true },
           orderBy: { createdAt: 'desc' },
           take,
           skip,
@@ -132,7 +132,7 @@ export async function GET(req: NextRequest) {
         tx.user.count({ where }),
       ]);
     });
-    return NextResponse.json({ users: rows, total, take, skip });
+    return NextResponse.json({ users: rows, total, take, skip }, { headers: { 'Cache-Control': 'no-store' } });
   } catch {
     console.error('[api/admin/users GET] query failed');
     return NextResponse.json({ error: 'INTERNAL', message: 'Failed to query users' }, { status: 500 });

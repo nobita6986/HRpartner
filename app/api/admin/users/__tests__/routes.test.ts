@@ -357,11 +357,12 @@ describe('POST /api/admin/users', () => {
 describe('GET /api/admin/users (sanity)', () => {
   it('trả về { users, total, take, skip } với filter cơ bản', async () => {
     setAuth('ADMIN');
+    const findMany = vi.fn(async () => []);
     mocks.withAuthorizedDb.mockImplementation(
       (_p: unknown, _c: unknown, cb: any) =>
         cb({
           user: {
-            findMany: async () => [],
+            findMany,
             count: async () => 0,
           },
         }),
@@ -370,9 +371,13 @@ describe('GET /api/admin/users (sanity)', () => {
       new NextRequest('http://localhost/api/admin/users?isActive=true'),
     );
     expect(res.status).toBe(200);
+    expect(res.headers.get('cache-control')).toBe('no-store');
     const d = await res.json();
     expect(d.users).toEqual([]);
     expect(d.total).toBe(0);
+    expect(findMany).toHaveBeenCalledWith(expect.objectContaining({
+      select: expect.objectContaining({ phoneVerified: true }),
+    }));
   });
 
   it('403 khi role không phải ADMIN', async () => {
