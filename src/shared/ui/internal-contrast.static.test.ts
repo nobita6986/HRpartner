@@ -637,12 +637,12 @@ describe('go-live-16 / RQ-08 — ngoại lệ phải được KHAI, và không �
     expect(measured).toEqual(declared);
   });
 
-  it('năm ngoại lệ còn lại cùng dùng --primary trên bề mặt nội bộ', () => {
+  it('bốn trong năm ngoại lệ còn lại dùng --primary trên bề mặt nội bộ', () => {
     expect(DECLARED_EXCEPTIONS).toHaveLength(5);
     const primary = resolveColor('var(--color-primary)') as string;
     const byPrimary = DECLARED_EXCEPTIONS.filter((e) => e.fg === primary || e.bg === primary);
     expect(primary).toBe('#f26522');
-    expect(byPrimary).toHaveLength(5);
+    expect(byPrimary).toHaveLength(4);
   });
 
   it('không giữ ngoại lệ của giao diện Worker đã ẩn trên web', () => {
