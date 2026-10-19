@@ -11,7 +11,7 @@ import { RATE_LIMIT_RULES } from '@/src/shared/security/rate-limit-port';
 import { enforceRateLimits } from '@/src/shared/security/rate-limit-guard';
 import { readCappedJson } from '@/src/shared/security/request-body';
 import { AuthSessionError, getAuthContext } from '@/src/shared/auth/auth-context';
-import { withDbContext } from '@/src/shared/auth/with-db-context';
+import { getAuthenticatedApplyAccount } from '@/src/domains/applications/authenticated-apply-account';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -149,10 +149,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       if (ctx.role !== 'WORKER') {
         return NextResponse.json({ error: 'FORBIDDEN', message: 'Tài khoản này không thể nộp hồ sơ ứng tuyển.' }, { status: 403 });
       }
-      const account = await withDbContext(getPrisma(), ctx, (tx) => tx.user.findUnique({
-        where: { id: ctx.userId },
-        select: { name: true, phone: true },
-      }));
+      const account = await getAuthenticatedApplyAccount(ctx);
       if (!account?.name || !account.phone) {
         return NextResponse.json({ error: 'PROFILE_INCOMPLETE', message: 'Tài khoản cần có họ tên và số điện thoại để ứng tuyển.' }, { status: 422 });
       }
