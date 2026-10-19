@@ -10,6 +10,9 @@
  * 404: worker không tồn tại (đã tạo user nhưng chưa có worker profile — edge case).
  *
  * L1 + L2 đều pass. Response chỉ chứa CHÍNH MÌNH.
+ * T1A Android contract (TASK DEC-03): response thêm `assignment` = assignment
+ * hiện hành (ACTIVE) của worker — employeeCode/position/location truy nguyên từ
+ * Assignment → Project/Site/Slot; null khi không có assignment.
  * V5-M1-09A (DEC-05): action='SELF_PROFILE' → WORKER LUÔN thấy CCCD/bank của chính mình
  *   (canSeeSensitive=true, không cần CAN_VIEW_WORKER_SENSITIVE). cccdChipData vẫn LUÔN
  *   bị omit khỏi HTTP kể cả self. Response đi qua allowlist DTO (projectWorker).
@@ -21,6 +24,7 @@ import { resolveEffectivePermissions } from '@/src/shared/auth/permission-resolv
 import { withDbContext } from '@/src/shared/auth/with-db-context';
 import { AuthScopeError } from '@/src/shared/auth/with-auth-scope';
 import { projectWorker } from '@/src/shared/auth/worker-projection';
+import { loadWorkerSelfSummaryInTx, type WorkerAssignmentSummary } from '@/src/shared/auth/worker-assignment-summary';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -61,12 +65,21 @@ export async function GET(req: NextRequest) {
   const prisma = getPrisma();
 
   let row;
+  let assignment: WorkerAssignmentSummary | null = null;
   try {
     row = await withDbContext(prisma, ctx, async (tx) => {
       // L2 RLS qua GUC. L1: chỉ chính mình, không cần scope registry.
-      return tx.worker.findUnique({
+      const workerRow = await tx.worker.findUnique({
         where: { id: ctx.workerId },
       });
+      // T1A Android contract (TASK DEC-03): assignment hiện hành đọc trong CÙNG
+      // transaction GUC self — employeeCode/position/location truy nguyên từ
+      // Assignment → Project/Site/Slot; KHÔNG tự gán department (null phía client route).
+      if (workerRow) {
+        const summary = await loadWorkerSelfSummaryInTx(tx, ctx.userId);
+        assignment = summary?.assignment ?? null;
+      }
+      return workerRow;
     });
   } catch (e) {
     if (e instanceof AuthScopeError) {
@@ -95,5 +108,5 @@ export async function GET(req: NextRequest) {
   const hasSensitive = effPerms.has('CAN_VIEW_WORKER_SENSITIVE');
 
   const projected = projectWorker(row, { hasSensitivePermission: hasSensitive, action: 'SELF_PROFILE' });
-  return NextResponse.json({ worker: projected });
+  return NextResponse.json({ worker: projected, assignment });
 }

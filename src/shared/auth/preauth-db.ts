@@ -15,10 +15,16 @@
  */
 import type { PrismaClient, SystemRole } from '@prisma/client';
 
-/** Projection cố định cho login — không mở rộng nếu không có yêu cầu contract mới. */
+/**
+ * Projection cố định cho login — không mở rộng nếu không có yêu cầu contract mới.
+ * T1A Android contract (TASK DEC-02): thêm `name` + `phone` cho user summary JSON
+ * trong response /api/auth/login (mobile client dựng profile card ngay sau login).
+ */
 export interface PreAuthLoginUser {
   id: string;
   role: SystemRole;
+  name: string | null;
+  phone: string | null;
   isActive: boolean;
   passwordHash: string | null;
 }
@@ -31,7 +37,7 @@ export async function findUserForLogin(
     await tx.$executeRaw`SELECT set_config('app.role', 'ADMIN', true)`;
     return tx.user.findFirst({
       where: { phone },
-      select: { id: true, role: true, isActive: true, passwordHash: true },
+      select: { id: true, role: true, isActive: true, passwordHash: true, name: true, phone: true },
     });
   });
 }

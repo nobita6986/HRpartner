@@ -1,0 +1,615 @@
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+[1m[7m[36m RUN [39m[27m[22m [36mv2.1.9 [39m[90mD:/CodeApp/HrP-worktrees/android-backend-mobile-contract[39m
+
+ [32m✓[39m src/domains/evidence/local-vps-evidence-storage.adapter.test.ts [2m([22m[2m62 tests[22m[2m | [22m[33m9 skipped[39m[2m)[22m[90m 244[2mms[22m[39m
+ [32m✓[39m src/domains/talent/recruiter-workbench.read-service.test.ts [2m([22m[2m73 tests[22m[2m)[22m[90m 28[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/public-ui-premium.static.test.ts [2m([22m[2m68 tests[22m[2m)[22m[90m 21[2mms[22m[39m
+ [32m✓[39m src/domains/applications/marketplace-inventory.static.test.ts [2m([22m[2m47 tests[22m[2m)[22m[90m 67[2mms[22m[39m
+ [32m✓[39m src/domains/talent/recruiter-workbench.placement-actions.fetch.test.ts [2m([22m[2m50 tests[22m[2m)[22m[90m 19[2mms[22m[39m
+ [32m✓[39m src/domains/talent/recruiter-workbench.placement-actions.test.tsx [2m([22m[2m67 tests[22m[2m)[22m[90m 37[2mms[22m[39m
+ [32m✓[39m src/shared/security/required-relation-sweep.static.test.ts [2m([22m[2m11 tests[22m[2m)[22m[33m 918[2mms[22m[39m
+   [33m[2m✓[22m[39m quan hệ BẮT BUỘC trên bảng bị RLS che: tập vị trí select là một tập ĐÓNG[2m > [22mmệnh đề BA: tập vị trí select KHỚP CHÍNH XÁC tám dòng còn lại sau STEP-06 (EV-03, AC-04) [33m429[2mms[22m[39m
+   [33m[2m✓[22m[39m quan hệ BẮT BUỘC trên bảng bị RLS che: tập vị trí select là một tập ĐÓNG[2m > [22mphép quét phủ cả app/, chứng minh bằng chính ba dòng app/api trong kết quả (AC-04) [33m424[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/public-card-truth.test.ts [2m([22m[2m27 tests[22m[2m)[22m[90m 25[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/components/landing/featured-job-card.test.ts [2m([22m[2m106 tests[22m[2m)[22m[90m 21[2mms[22m[39m
+ [32m✓[39m src/domains/applications/conversion.service.test.ts [2m([22m[2m29 tests[22m[2m)[22m[90m 27[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/order.service.test.ts [2m([22m[2m38 tests[22m[2m)[22m[90m 40[2mms[22m[39m
+ [32m✓[39m src/domains/talent/placement.service.test.ts [2m([22m[2m23 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [32m✓[39m src/domains/talent/placement.route-helpers.test.ts [2m([22m[2m26 tests[22m[2m)[22m[90m 32[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/public-content-controls/content-controls.static.test.ts [2m([22m[2m153 tests[22m[2m)[22m[90m 34[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/assignment-placement.service.test.ts [2m([22m[2m73 tests[22m[2m)[22m[90m 32[2mms[22m[39m
+ [32m✓[39m src/shared/ui/internal-contrast.static.test.ts [2m([22m[2m21 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/job-posting-media.service.test.ts [2m([22m[2m33 tests[22m[2m)[22m[90m 103[2mms[22m[39m
+ [32m✓[39m src/domains/applications/marketplace-apply.routes.test.ts [2m([22m[2m36 tests[22m[2m)[22m[90m 104[2mms[22m[39m
+ [32m✓[39m app/api/admin/jobs/job-postings/[id]/route.test.ts [2m([22m[2m53 tests[22m[2m)[22m[90m 87[2mms[22m[39m
+ [32m✓[39m src/domains/talent/recruiter-workbench.derive.test.ts [2m([22m[2m50 tests[22m[2m)[22m[90m 16[2mms[22m[39m
+ [32m✓[39m src/domains/talent/recruiter-assignment.manager.component.test.tsx [2m([22m[2m33 tests[22m[2m)[22m[90m 67[2mms[22m[39m
+ [32m✓[39m src/domains/talent/recruiter-assignment.routes.test.ts [2m([22m[2m22 tests[22m[2m)[22m[90m 75[2mms[22m[39m
+ [32m✓[39m src/domains/admin/user-management.service.test.ts [2m([22m[2m30 tests[22m[2m)[22m[90m 201[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/public-settings.test.ts [2m([22m[2m41 tests[22m[2m)[22m[90m 101[2mms[22m[39m
+ [32m✓[39m src/domains/talent/recruiter-workbench.placement-actions.states.test.ts [2m([22m[2m59 tests[22m[2m)[22m[90m 84[2mms[22m[39m
+ [32m✓[39m src/shared/auth/vendor-object-scope.m1-08.route.test.ts [2m([22m[2m36 tests[22m[2m)[22m[90m 161[2mms[22m[39m
+ [32m✓[39m src/domains/commission/golden.test.ts [2m([22m[2m10 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+ [32m✓[39m src/shared/toolchain/vitest-default-lane.static.test.ts [2m([22m[2m15 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m app/api/admin/users/__tests__/routes.test.ts [2m([22m[2m21 tests[22m[2m)[22m[90m 30[2mms[22m[39m
+ [32m✓[39m src/domains/reconciliation/reconciliation-unit.test.ts [2m([22m[2m16 tests[22m[2m)[22m[90m 22[2mms[22m[39m
+ [32m✓[39m app/admin/recruiter-workbench/page.test.ts [2m([22m[2m28 tests[22m[2m)[22m[90m 283[2mms[22m[39m
+ [32m✓[39m src/domains/crm/__tests__/project-management.service.test.ts [2m([22m[2m44 tests[22m[2m)[22m[90m 23[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/job-opening-activation.service.test.ts [2m([22m[2m24 tests[22m[2m)[22m[90m 31[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/public-board-architecture.test.ts [2m([22m[2m17 tests[22m[2m)[22m[90m 73[2mms[22m[39m
+[90mstderr[2m | src/domains/staffing/assignment-placement.routes.test.ts[2m > [22m[2mPOST /api/admin/assignments/preview — HR_STAFF fail-closed (B-02)[2m > [22m[2mHR_STAFF + missing order assignment → fails closed, previewPlacement NOT called
+[22m[39m[api/admin/assignments/preview] error: TypeError: tx.$executeRawUnsafe is not a function
+    at acquireOrderAdvisoryLock [90m(D:\CodeApp\HrP-worktrees\android-backend-mobile-contract\[39msrc\domains\talent\recruiter-assignment.service.ts:138:12[90m)[39m
+    at Module.assertRecruiterAndHandlingDualAuthorityForPlacement [90m(D:\CodeApp\HrP-worktrees\android-backend-mobile-contract\[39msrc\domains\talent\recruiter-assignment.service.ts:1018:9[90m)[39m
+    at [90mD:\CodeApp\HrP-worktrees\android-backend-mobile-contract\[39mapp\api\admin\assignments\preview\route.ts:115:15
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+
+ [32m✓[39m src/domains/staffing/assignment-placement.routes.test.ts [2m([22m[2m45 tests[22m[2m)[22m[90m 64[2mms[22m[39m
+ [32m✓[39m src/domains/attendance/ticket.service.test.ts [2m([22m[2m16 tests[22m[2m)[22m[90m 22[2mms[22m[39m
+ [32m✓[39m src/shared/auth/api-boundary.static.test.ts [2m([22m[2m27 tests[22m[2m)[22m[90m 45[2mms[22m[39m
+ [32m✓[39m src/domains/talent/placement.commands.test.ts [2m([22m[2m15 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+[90mstdout[2m | src/shared/observability/logger.test.ts[2m > [22m[2mSchema — AC-03[2m > [22m[2msink can be reset to default without throwing
+[22m[39m{"schemaVersion":"1.0","timestamp":"2026-10-18T16:01:22.915Z","level":"info","event":"after_reset","requestId":"req","meta":{}}
+
+ [32m✓[39m src/shared/observability/logger.test.ts [2m([22m[2m73 tests[22m[2m)[22m[90m 19[2mms[22m[39m
+ [32m✓[39m app/api/projects/[id]/__tests__/route.test.ts [2m([22m[2m44 tests[22m[2m)[22m[90m 65[2mms[22m[39m
+ [32m✓[39m src/shared/ui/role-guard/role-guard-layout.test.ts [2m([22m[2m36 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+ [32m✓[39m src/domains/workforce/__tests__/worker.service.test.ts [2m([22m[2m41 tests[22m[2m)[22m[90m 47[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/submission.service.test.ts [2m([22m[2m15 tests[22m[2m)[22m[90m 18[2mms[22m[39m
+ [32m✓[39m src/domains/applications/marketplace-browse.routes.test.ts [2m([22m[2m13 tests[22m[2m)[22m[90m 47[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/transfer.service.test.ts [2m([22m[2m14 tests[22m[2m)[22m[90m 15[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/public-listing.static.test.ts [2m([22m[2m32 tests[22m[2m)[22m[90m 18[2mms[22m[39m
+ [32m✓[39m src/shared/ui/role-guard/active-nav-helper.test.ts [2m([22m[2m35 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+ [32m✓[39m src/domains/media/__tests__/media.service.test.ts [2m([22m[2m39 tests[22m[2m)[22m[90m 21[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/public-ui-token-parity.static.test.ts [2m([22m[2m15 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+[90mstderr[2m | app/api/staffing/orders/[id]/route.test.ts[2m > [22m[2mCORRECTION 1/1 — DELETE /api/staffing/orders/[id] idempotency + auth[2m > [22m[2m500 khi service throw error không xác định (không phải StaffingOrderServiceError)
+[22m[39m[api/staffing/orders/[id]] error: Error: boom
+    at [90mD:\CodeApp\HrP-worktrees\android-backend-mobile-contract\[39mapp\api\staffing\orders\[id]\route.test.ts:271:49
+    at [90mfile:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:146:14
+    at [90mfile:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:533:11
+    at runWithTimeout [90m(file:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:39:7[90m)[39m
+    at runTest [90m(file:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1056:17[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at runSuite [90m(file:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1205:15[90m)[39m
+    at runSuite [90m(file:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1205:15[90m)[39m
+    at runFiles [90m(file:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1262:5[90m)[39m
+    at startTests [90m(file:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1271:3[90m)[39m
+
+ [32m✓[39m app/api/staffing/orders/[id]/route.test.ts [2m([22m[2m21 tests[22m[2m)[22m[90m 34[2mms[22m[39m
+ [32m✓[39m app/api/admin/staffing/job-openings/[id]/open/route.test.ts [2m([22m[2m20 tests[22m[2m)[22m[90m 35[2mms[22m[39m
+ [32m✓[39m app/admin/staffing-orders/__tests__/order-detail-role-visibility.static.test.ts [2m([22m[2m29 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+ [32m✓[39m app/api/admin/staffing/job-openings/[id]/classify/route.test.ts [2m([22m[2m16 tests[22m[2m)[22m[90m 58[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/client-company-projection.test.ts [2m([22m[2m11 tests[22m[2m)[22m[90m 40[2mms[22m[39m
+ [32m✓[39m src/domains/referrals/attribution-redirect.service.test.ts [2m([22m[2m22 tests[22m[2m)[22m[90m 45[2mms[22m[39m
+ [32m✓[39m src/domains/talent/handling-assignment.service.test.ts [2m([22m[2m18 tests[22m[2m)[22m[90m 21[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/e2e-staffing-narrative.integration.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 20[2mms[22m[39m
+ [32m✓[39m src/domains/applications/placement-panel.test.ts [2m([22m[2m26 tests[22m[2m)[22m[90m 51[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/job-posting-authoring.service.test.ts [2m([22m[2m33 tests[22m[2m)[22m[90m 28[2mms[22m[39m
+ [32m✓[39m src/shared/observability/middleware.test.ts [2m([22m[2m24 tests[22m[2m)[22m[90m 36[2mms[22m[39m
+[90mstdout[2m | src/domains/talent/recruiter-placement.routes-transitions.test.ts[2m > [22m[2mPOST /api/admin/recruiter/placements/[id]/actions/{confirm,effective,fail,cancel}[2m > [22m[2mhappy path — active handler (B-08 success contract)[2m > [22m[2mconfirm: HR_STAFF → 200 CONFIRMED, adapter invoked with derived placementId + actorId
+[22m[39m{"schemaVersion":"1.0","timestamp":"2026-10-18T16:01:35.657Z","level":"info","event":"recruiter_placement.command.success","requestId":"e9b76fe5-fa8e-44b3-8d34-464e18cd1f96","meta":{"route":"POST:/api/admin/recruiter/placements/[id]/actions/confirm","method":"POST","status":200,"actorRole":"HR_STAFF","resourceType":"[REDACTED]","outcome":"success","detail":{"command":"[REDACTED]","placementId":"[REDACTED]","replayed":false}}}
+
+[90mstdout[2m | src/domains/talent/recruiter-placement.routes-transitions.test.ts[2m > [22m[2mPOST /api/admin/recruiter/placements/[id]/actions/{confirm,effective,fail,cancel}[2m > [22m[2mhappy path — active handler (B-08 success contract)[2m > [22m[2mfail: HR_STAFF → 200 FAILED
+[22m[39m{"schemaVersion":"1.0","timestamp":"2026-10-18T16:01:35.670Z","level":"info","event":"recruiter_placement.command.success","requestId":"3ed3375b-eb22-4543-b237-07c6c302f641","meta":{"route":"POST:/api/admin/recruiter/placements/[id]/actions/fail","method":"POST","status":200,"actorRole":"HR_STAFF","resourceType":"[REDACTED]","outcome":"success","detail":{"command":"[REDACTED]","placementId":"[REDACTED]","replayed":false}}}
+
+[90mstdout[2m | src/domains/talent/recruiter-placement.routes-transitions.test.ts[2m > [22m[2mPOST /api/admin/recruiter/placements/[id]/actions/{confirm,effective,fail,cancel}[2m > [22m[2mhappy path — active handler (B-08 success contract)[2m > [22m[2mcancel: HR_STAFF → 200 CANCELLED
+[22m[39m{"schemaVersion":"1.0","timestamp":"2026-10-18T16:01:35.674Z","level":"info","event":"recruiter_placement.command.success","requestId":"b1c90f70-514b-4b2d-bdd8-210b8033c9c2","meta":{"route":"POST:/api/admin/recruiter/placements/[id]/actions/cancel","method":"POST","status":200,"actorRole":"HR_STAFF","resourceType":"[REDACTED]","outcome":"success","detail":{"command":"[REDACTED]","placementId":"[REDACTED]","replayed":false}}}
+
+[90mstdout[2m | src/domains/talent/recruiter-placement.routes-transitions.test.ts[2m > [22m[2mPOST /api/admin/recruiter/placements/[id]/actions/{confirm,effective,fail,cancel}[2m > [22m[2mhappy path — active handler (B-08 success contract)[2m > [22m[2meffective: HR_STAFF + valid evidence → 200 EFFECTIVE
+[22m[39m{"schemaVersion":"1.0","timestamp":"2026-10-18T16:01:35.681Z","level":"info","event":"recruiter_placement.command.success","requestId":"6999f943-c730-45c7-9fce-eb441f76301b","meta":{"route":"POST:/api/admin/recruiter/placements/[id]/actions/effective","method":"POST","status":200,"actorRole":"HR_STAFF","resourceType":"[REDACTED]","outcome":"success","detail":{"command":"[REDACTED]","placementId":"[REDACTED]","replayed":false}}}
+
+[90mstderr[2m | src/domains/talent/recruiter-placement.routes-transitions.test.ts[2m > [22m[2mPOST /api/admin/recruiter/placements/[id]/actions/{confirm,effective,fail,cancel}[2m > [22m[2mdual-authority fail-closed (B-08 revoked / non-handler contract)[2m > [22m[2mconfirm — revoked recruiter: adapter throws NO_ACTIVE_ORDER_ASSIGNMENT → 403 + canonical envelope, no canonical service call
+[22m[39m{"schemaVersion":"1.0","timestamp":"2026-10-18T16:01:35.685Z","level":"warn","event":"recruiter_placement.command.recruiter_error","requestId":"9802bd2f-84f4-4934-9905-00d68aee1d8e","meta":{"route":"POST:/api/admin/recruiter/placements/[id]/actions/confirm","method":"POST","status":403,"actorRole":"HR_STAFF","resourceType":"[REDACTED]","outcome":"recruiter_error","errorCode":"[REDACTED]","detail":{"command":"[REDACTED]","placementId":"[REDACTED]"}}}
+
+[90mstderr[2m | src/domains/talent/recruiter-placement.routes-transitions.test.ts[2m > [22m[2mPOST /api/admin/recruiter/placements/[id]/actions/{confirm,effective,fail,cancel}[2m > [22m[2mdual-authority fail-closed (B-08 revoked / non-handler contract)[2m > [22m[2mfail — revoked recruiter: adapter throws NO_ACTIVE_ORDER_ASSIGNMENT → 403 + canonical envelope, no canonical service call
+[22m[39m{"schemaVersion":"1.0","timestamp":"2026-10-18T16:01:35.688Z","level":"warn","event":"recruiter_placement.command.recruiter_error","requestId":"8d5ac1c6-7378-4051-b38a-76c947a868a1","meta":{"route":"POST:/api/admin/recruiter/placements/[id]/actions/fail","method":"POST","status":403,"actorRole":"HR_STAFF","resourceType":"[REDACTED]","outcome":"recruiter_error","errorCode":"[REDACTED]","detail":{"command":"[REDACTED]","placementId":"[REDACTED]"}}}
+
+[90mstderr[2m | src/domains/talent/recruiter-placement.routes-transitions.test.ts[2m > [22m[2mPOST /api/admin/recruiter/placements/[id]/actions/{confirm,effective,fail,cancel}[2m > [22m[2mdual-authority fail-closed (B-08 revoked / non-handler contract)[2m > [22m[2mcancel — revoked recruiter: adapter throws NO_ACTIVE_ORDER_ASSIGNMENT → 403 + canonical envelope, no canonical service call
+[22m[39m{"schemaVersion":"1.0","timestamp":"2026-10-18T16:01:35.690Z","level":"warn","event":"recruiter_placement.command.recruiter_error","requestId":"7eaf1c48-2be0-4ca7-b66e-c1f4c6eee6a8","meta":{"route":"POST:/api/admin/recruiter/placements/[id]/actions/cancel","method":"POST","status":403,"actorRole":"HR_STAFF","resourceType":"[REDACTED]","outcome":"recruiter_error","errorCode":"[REDACTED]","detail":{"command":"[REDACTED]","placementId":"[REDACTED]"}}}
+
+[90mstderr[2m | src/domains/talent/recruiter-placement.routes-transitions.test.ts[2m > [22m[2mPOST /api/admin/recruiter/placements/[id]/actions/{confirm,effective,fail,cancel}[2m > [22m[2mdual-authority fail-closed (B-08 revoked / non-handler contract)[2m > [22m[2mconfirm — handling claim revoked: NO_ACTIVE_ASSIGNMENT → 403
+[22m[39m{"schemaVersion":"1.0","timestamp":"2026-10-18T16:01:35.692Z","level":"warn","event":"recruiter_placement.command.recruiter_error","requestId":"124a21e0-35b9-4406-bdb2-7575685fd422","meta":{"route":"POST:/api/admin/recruiter/placements/[id]/actions/confirm","method":"POST","status":403,"actorRole":"HR_STAFF","resourceType":"[REDACTED]","outcome":"recruiter_error","errorCode":"[REDACTED]","detail":{"command":"[REDACTED]","placementId":"[REDACTED]"}}}
+
+[90mstderr[2m | src/domains/talent/recruiter-placement.routes-transitions.test.ts[2m > [22m[2mPOST /api/admin/recruiter/placements/[id]/actions/{confirm,effective,fail,cancel}[2m > [22m[2mdual-authority fail-closed (B-08 revoked / non-handler contract)[2m > [22m[2meffective — missing evidence → 400 VALIDATION from body parser (no canonical service)
+[22m[39m{"schemaVersion":"1.0","timestamp":"2026-10-18T16:01:35.694Z","level":"warn","event":"recruiter_placement.command.validation_failed","requestId":"6f018468-3e7c-4441-b6ff-96d02e198819","meta":{"route":"POST:/api/admin/recruiter/placements/[id]/actions/effective","method":"POST","actorRole":"HR_STAFF","resourceType":"[REDACTED]","outcome":"validation_failed","errorCode":"VALIDATION","detail":{"command":"[REDACTED]"}}}
+
+[90mstderr[2m | src/domains/talent/recruiter-placement.routes-transitions.test.ts[2m > [22m[2mPOST /api/admin/recruiter/placements/[id]/actions/{confirm,effective,fail,cancel}[2m > [22m[2mrole gate (HR_STAFF only)[2m > [22m[2mconfirm — role ADMIN → 403 ROLE_NOT_PERMITTED, adapter never invoked
+[22m[39m{"schemaVersion":"1.0","timestamp":"2026-10-18T16:01:35.696Z","level":"warn","event":"recruiter_placement.command.forbidden","requestId":"14b0d58f-1529-4bd4-b6ca-5a5470c4697e","meta":{"route":"POST:/api/admin/recruiter/placements/[id]/actions/confirm","method":"POST","actorRole":"ADMIN","resourceType":"[REDACTED]","outcome":"forbidden","errorCode":"ROLE_NOT_PERMITTED","detail":{"command":"[REDACTED]"}}}
+
+[90mstderr[2m | src/domains/talent/recruiter-placement.routes-transitions.test.ts[2m > [22m[2mPOST /api/admin/recruiter/placements/[id]/actions/{confirm,effective,fail,cancel}[2m > [22m[2mrole gate (HR_STAFF only)[2m > [22m[2mconfirm — role HR_MANAGER → 403 ROLE_NOT_PERMITTED, adapter never invoked
+[22m[39m{"schemaVersion":"1.0","timestamp":"2026-10-18T16:01:35.697Z","level":"warn","event":"recruiter_placement.command.forbidden","requestId":"85968fe6-b475-4f69-bde9-fe38ff5ace2f","meta":{"route":"POST:/api/admin/recruiter/placements/[id]/actions/confirm","method":"POST","actorRole":"HR_MANAGER","resourceType":"[REDACTED]","outcome":"forbidden","errorCode":"ROLE_NOT_PERMITTED","detail":{"command":"[REDACTED]"}}}
+
+[90mstderr[2m | src/domains/talent/recruiter-placement.routes-transitions.test.ts[2m > [22m[2mPOST /api/admin/recruiter/placements/[id]/actions/{confirm,effective,fail,cancel}[2m > [22m[2mrole gate (HR_STAFF only)[2m > [22m[2mconfirm — role DIRECTOR → 403 ROLE_NOT_PERMITTED, adapter never invoked
+[22m[39m{"schemaVersion":"1.0","timestamp":"2026-10-18T16:01:35.698Z","level":"warn","event":"recruiter_placement.command.forbidden","requestId":"3d645132-7dd5-4c54-ba03-9d9cbb9d6143","meta":{"route":"POST:/api/admin/recruiter/placements/[id]/actions/confirm","method":"POST","actorRole":"DIRECTOR","resourceType":"[REDACTED]","outcome":"forbidden","errorCode":"ROLE_NOT_PERMITTED","detail":{"command":"[REDACTED]"}}}
+
+[90mstderr[2m | src/domains/talent/recruiter-placement.routes-transitions.test.ts[2m > [22m[2mPOST /api/admin/recruiter/placements/[id]/actions/{confirm,effective,fail,cancel}[2m > [22m[2mrole gate (HR_STAFF only)[2m > [22m[2mconfirm — role PM → 403 ROLE_NOT_PERMITTED, adapter never invoked
+[22m[39m{"schemaVersion":"1.0","timestamp":"2026-10-18T16:01:35.698Z","level":"warn","event":"recruiter_placement.command.forbidden","requestId":"0de4edec-104f-4fa9-b9b6-01afff745592","meta":{"route":"POST:/api/admin/recruiter/placements/[id]/actions/confirm","method":"POST","actorRole":"PM","resourceType":"[REDACTED]","outcome":"forbidden","errorCode":"ROLE_NOT_PERMITTED","detail":{"command":"[REDACTED]"}}}
+
+[90mstderr[2m | src/domains/talent/recruiter-placement.routes-transitions.test.ts[2m > [22m[2mPOST /api/admin/recruiter/placements/[id]/actions/{confirm,effective,fail,cancel}[2m > [22m[2mrole gate (HR_STAFF only)[2m > [22m[2mconfirm — role SALE → 403 ROLE_NOT_PERMITTED, adapter never invoked
+[22m[39m{"schemaVersion":"1.0","timestamp":"2026-10-18T16:01:35.699Z","level":"warn","event":"recruiter_placement.command.forbidden","requestId":"b170c843-eec6-41f6-8300-8172faa877d0","meta":{"route":"POST:/api/admin/recruiter/placements/[id]/actions/confirm","method":"POST","actorRole":"SALE","resourceType":"[REDACTED]","outcome":"forbidden","errorCode":"ROLE_NOT_PERMITTED","detail":{"command":"[REDACTED]"}}}
+
+[90mstderr[2m | src/domains/talent/recruiter-placement.routes-transitions.test.ts[2m > [22m[2mPOST /api/admin/recruiter/placements/[id]/actions/{confirm,effective,fail,cancel}[2m > [22m[2mrole gate (HR_STAFF only)[2m > [22m[2mconfirm — role VENDOR_ADMIN → 403 ROLE_NOT_PERMITTED, adapter never invoked
+[22m[39m{"schemaVersion":"1.0","timestamp":"2026-10-18T16:01:35.699Z","level":"warn","event":"recruiter_placement.command.forbidden","requestId":"10a695a9-2fd2-4f54-8800-c41595e7cb73","meta":{"route":"POST:/api/admin/recruiter/placements/[id]/actions/confirm","method":"POST","actorRole":"VENDOR_ADMIN","resourceType":"[REDACTED]","outcome":"forbidden","errorCode":"ROLE_NOT_PERMITTED","detail":{"command":"[REDACTED]"}}}
+
+[90mstderr[2m | src/domains/talent/recruiter-placement.routes-transitions.test.ts[2m > [22m[2mPOST /api/admin/recruiter/placements/[id]/actions/{confirm,effective,fail,cancel}[2m > [22m[2mrole gate (HR_STAFF only)[2m > [22m[2mconfirm — role CTV → 403 ROLE_NOT_PERMITTED, adapter never invoked
+[22m[39m{"schemaVersion":"1.0","timestamp":"2026-10-18T16:01:35.699Z","level":"warn","event":"recruiter_placement.command.forbidden","requestId":"fa7cee7a-7756-4ff3-bf07-c32ae15ff0aa","meta":{"route":"POST:/api/admin/recruiter/placements/[id]/actions/confirm","method":"POST","actorRole":"CTV","resourceType":"[REDACTED]","outcome":"forbidden","errorCode":"ROLE_NOT_PERMITTED","detail":{"command":"[REDACTED]"}}}
+
+[90mstderr[2m | src/domains/talent/recruiter-placement.routes-transitions.test.ts[2m > [22m[2mPOST /api/admin/recruiter/placements/[id]/actions/{confirm,effective,fail,cancel}[2m > [22m[2mrole gate (HR_STAFF only)[2m > [22m[2mconfirm — role WORKER → 403 ROLE_NOT_PERMITTED, adapter never invoked
+[22m[39m{"schemaVersion":"1.0","timestamp":"2026-10-18T16:01:35.700Z","level":"warn","event":"recruiter_placement.command.forbidden","requestId":"b14ed154-8265-4dae-938b-40d181d7b619","meta":{"route":"POST:/api/admin/recruiter/placements/[id]/actions/confirm","method":"POST","actorRole":"WORKER","resourceType":"[REDACTED]","outcome":"forbidden","errorCode":"ROLE_NOT_PERMITTED","detail":{"command":"[REDACTED]"}}}
+
+[90mstderr[2m | src/domains/talent/recruiter-placement.routes-transitions.test.ts[2m > [22m[2mPOST /api/admin/recruiter/placements/[id]/actions/{confirm,effective,fail,cancel}[2m > [22m[2mauth + idempotency + validation[2m > [22m[2mconfirm — 401 returned before any DB or adapter call
+[22m[39m{"schemaVersion":"1.0","timestamp":"2026-10-18T16:01:35.701Z","level":"warn","event":"recruiter_placement.command.auth_failed","requestId":"1e8cf1d8-c319-41fb-924d-4779a0b0bc84","meta":{"route":"POST:/api/admin/recruiter/placements/[id]/actions/confirm","method":"POST","resourceType":"[REDACTED]","outcome":"auth_failed","errorCode":"NO_TOKEN","detail":{"command":"[REDACTED]"}}}
+
+[90mstderr[2m | src/domains/talent/recruiter-placement.routes-transitions.test.ts[2m > [22m[2mPOST /api/admin/recruiter/placements/[id]/actions/{confirm,effective,fail,cancel}[2m > [22m[2mauth + idempotency + validation[2m > [22m[2mconfirm — missing Idempotency-Key → 400 IDEMPOTENCY_REQUIRED
+[22m[39m{"schemaVersion":"1.0","timestamp":"2026-10-18T16:01:35.701Z","level":"warn","event":"recruiter_placement.command.idempotency_missing","requestId":"b9df81c0-25ba-4874-b743-da9295e19ae9","meta":{"route":"POST:/api/admin/recruiter/placements/[id]/actions/confirm","method":"POST","actorRole":"HR_STAFF","resourceType":"[REDACTED]","outcome":"idempotency_missing","errorCode":"[REDACTED]","detail":{"command":"[REDACTED]"}}}
+
+[90mstderr[2m | src/domains/talent/recruiter-placement.routes-transitions.test.ts[2m > [22m[2mPOST /api/admin/recruiter/placements/[id]/actions/{confirm,effective,fail,cancel}[2m > [22m[2mauth + idempotency + validation[2m > [22m[2mconfirm — non-UUID v4 placementId → 400 VALIDATION
+[22m[39m{"schemaVersion":"1.0","timestamp":"2026-10-18T16:01:35.702Z","level":"warn","event":"recruiter_placement.command.validation_failed","requestId":"f5257d7a-e6d5-4d2d-853e-0153ae64f402","meta":{"route":"POST:/api/admin/recruiter/placements/[id]/actions/confirm","method":"POST","actorRole":"HR_STAFF","resourceType":"[REDACTED]","outcome":"validation_failed","errorCode":"VALIDATION","detail":{"command":"[REDACTED]"}}}
+
+[90mstderr[2m | src/domains/talent/recruiter-placement.routes-transitions.test.ts[2m > [22m[2mPOST /api/admin/recruiter/placements/[id]/actions/{confirm,effective,fail,cancel}[2m > [22m[2mauth + idempotency + validation[2m > [22m[2mconfirm — non-empty body → 400 VALIDATION (strict allowlist)
+[22m[39m{"schemaVersion":"1.0","timestamp":"2026-10-18T16:01:35.703Z","level":"warn","event":"recruiter_placement.command.validation_failed","requestId":"7b2d6583-9cde-470c-b036-ce29ab94226b","meta":{"route":"POST:/api/admin/recruiter/placements/[id]/actions/confirm","method":"POST","actorRole":"HR_STAFF","resourceType":"[REDACTED]","outcome":"validation_failed","errorCode":"VALIDATION","detail":{"command":"[REDACTED]"}}}
+
+[90mstderr[2m | src/domains/talent/recruiter-placement.routes-transitions.test.ts[2m > [22m[2mPOST /api/admin/recruiter/placements/[id]/actions/{confirm,effective,fail,cancel}[2m > [22m[2mauth + idempotency + validation[2m > [22m[2meffective — missing evidence → 400 VALIDATION, adapter never invoked
+[22m[39m{"schemaVersion":"1.0","timestamp":"2026-10-18T16:01:35.704Z","level":"warn","event":"recruiter_placement.command.validation_failed","requestId":"7890286b-8c2c-4dbe-ad2d-f041e8cf1efe","meta":{"route":"POST:/api/admin/recruiter/placements/[id]/actions/effective","method":"POST","actorRole":"HR_STAFF","resourceType":"[REDACTED]","outcome":"validation_failed","errorCode":"VALIDATION","detail":{"command":"[REDACTED]"}}}
+
+[90mstderr[2m | src/domains/talent/recruiter-placement.routes-transitions.test.ts[2m > [22m[2mPOST /api/admin/recruiter/placements/[id]/actions/{confirm,effective,fail,cancel}[2m > [22m[2mauth + idempotency + validation[2m > [22m[2meffective — bad ISO-8601 evidence.clientAcknowledgedAt → 400 VALIDATION
+[22m[39m{"schemaVersion":"1.0","timestamp":"2026-10-18T16:01:35.705Z","level":"warn","event":"recruiter_placement.command.validation_failed","requestId":"245909a2-c6a0-4cf2-8bb6-c28443186cae","meta":{"route":"POST:/api/admin/recruiter/placements/[id]/actions/effective","method":"POST","actorRole":"HR_STAFF","resourceType":"[REDACTED]","outcome":"validation_failed","errorCode":"VALIDATION","detail":{"command":"[REDACTED]"}}}
+
+ [32m✓[39m src/domains/talent/recruiter-placement.routes-transitions.test.ts [2m([22m[2m23 tests[22m[2m)[22m[90m 66[2mms[22m[39m
+ [32m✓[39m src/shared/auth/permission-resolver.test.ts [2m([22m[2m82 tests[22m[2m)[22m[90m 18[2mms[22m[39m
+ [32m✓[39m src/domains/applications/aff03-public-intake.service.test.ts [2m([22m[2m20 tests[22m[2m)[22m[90m 24[2mms[22m[39m
+[90mstderr[2m | src/domains/security/single-domain-consolidation.test.ts[2m > [22m[2mC) login POST — same-origin landing + host-only cookie[2m > [22m[2mbad credentials / locked / malformed → 401 INVALID_CREDENTIALS and NO cookie
+[22m[39m{"schemaVersion":"1.0","timestamp":"2026-10-18T16:01:37.265Z","level":"warn","event":"auth.login.denied","requestId":null,"meta":{"route":"/api/auth/login","outcome":"user_not_found"}}
+{"schemaVersion":"1.0","timestamp":"2026-10-18T16:01:37.269Z","level":"warn","event":"auth.login.denied","requestId":null,"meta":{"route":"/api/auth/login","outcome":"password_mismatch"}}
+
+ [32m✓[39m src/domains/security/single-domain-consolidation.test.ts [2m([22m[2m17 tests[22m[2m)[22m[90m 91[2mms[22m[39m
+[90mstderr[2m | app/api/workers/__tests__/route-get-patch-delete.test.ts[2m > [22m[2mDELETE /api/workers/[id][2m > [22m[2mnon-WorkerServiceError (Prisma) → 500 với message chung tiếng Việt, KHÔNG leak e.message
+[22m[39m[api/workers/[id] DELETE] error: Error: P2002: Unique constraint failed on the fields: (`userId`)
+    at Proxy.<anonymous> [90m(D:\CodeApp\HrP-worktrees\android-backend-mobile-contract\[39mapp\api\workers\__tests__\route-get-patch-delete.test.ts:376:13[90m)[39m
+    at Proxy.mockCall [90m(file:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+spy@2.1.9/node_modules/[4m@vitest/spy[24m/dist/index.js:61:17[90m)[39m
+    at Proxy.spy [90m(file:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/tinyspy@3.0.2/node_modules/[4mtinyspy[24m/dist/index.js:45:80[90m)[39m
+    at [90mD:\CodeApp\HrP-worktrees\android-backend-mobile-contract\[39mapp\api\workers\[id]\route.ts:261:7
+    at Proxy.<anonymous> [90m(D:\CodeApp\HrP-worktrees\android-backend-mobile-contract\[39mapp\api\workers\__tests__\route-get-patch-delete.test.ts:117:65[90m)[39m
+    at Proxy.mockCall [90m(file:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+spy@2.1.9/node_modules/[4m@vitest/spy[24m/dist/index.js:61:17[90m)[39m
+    at Proxy.spy [90m(file:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/tinyspy@3.0.2/node_modules/[4mtinyspy[24m/dist/index.js:45:80[90m)[39m
+    at Module.DELETE [90m(D:\CodeApp\HrP-worktrees\android-backend-mobile-contract\[39mapp\api\workers\[id]\route.ts:260:26[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at [90mD:\CodeApp\HrP-worktrees\android-backend-mobile-contract\[39mapp\api\workers\__tests__\route-get-patch-delete.test.ts:382:17
+
+ [32m✓[39m app/api/workers/__tests__/route-get-patch-delete.test.ts [2m([22m[2m17 tests[22m[2m)[22m[90m 91[2mms[22m[39m
+ [32m✓[39m src/pwa/pwa-icons.test.ts [2m([22m[2m13 tests[22m[2m)[22m[90m 43[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/public-listing.params.test.ts [2m([22m[2m24 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+ [32m✓[39m app/admin/labor-profiles/__tests__/labor-profiles-separation.static.test.ts [2m([22m[2m30 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+ [32m✓[39m app/api/admin/recruiter-workbench/route.test.ts [2m([22m[2m19 tests[22m[2m)[22m[90m 28[2mms[22m[39m
+ [32m✓[39m src/domains/talent/recruiter-placement.adapter.test.ts [2m([22m[2m10 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [32m✓[39m app/admin/job-openings/[id]/job-opening-actions.test.tsx [2m([22m[2m17 tests[22m[2m)[22m[90m 46[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/public-detail.static.test.ts [2m([22m[2m23 tests[22m[2m)[22m[90m 31[2mms[22m[39m
+ [32m✓[39m src/shared/toolchain/tsc-program-boundary.static.test.ts [2m([22m[2m12 tests[22m[2m)[22m[90m 18[2mms[22m[39m
+ [32m✓[39m src/domains/talent/labor-profile.update-service.test.ts [2m([22m[2m19 tests[22m[2m)[22m[90m 29[2mms[22m[39m
+ [32m✓[39m src/domains/talent/recruiter-workbench.placement-actions.unavailable.test.ts [2m([22m[2m78 tests[22m[2m)[22m[90m 81[2mms[22m[39m
+ [32m✓[39m src/shared/security/rate-limit-config.test.ts [2m([22m[2m24 tests[22m[2m)[22m[90m 38[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/transfer.routes.test.ts [2m([22m[2m31 tests[22m[2m)[22m[90m 160[2mms[22m[39m
+ [32m✓[39m src/shared/theme/__tests__/hero-eyebrow-contrast.test.ts [2m([22m[2m26 tests[22m[2m)[22m[90m 20[2mms[22m[39m
+ [32m✓[39m src/shared/security/rate-limit-guard.test.ts [2m([22m[2m13 tests[22m[2m)[22m[90m 57[2mms[22m[39m
+ [32m✓[39m app/admin/jobs/job-postings/__tests__/job-postings-ui-truth.static.test.ts [2m([22m[2m21 tests[22m[2m)[22m[90m 40[2mms[22m[39m
+ [32m✓[39m src/domains/talent/recruiter-assignment.ui.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 487[2mms[22m[39m
+   [33m[2m✓[22m[39m P1-A0.4 F-08 UI surface — static guards[2m > [22mF-08/1 NO self-claim-order UI exists in admin/ (only canonical submission-claim) [33m336[2mms[22m[39m
+ [32m✓[39m src/domains/talent/placement.commands.routes.test.ts [2m([22m[2m54 tests[22m[2m)[22m[90m 215[2mms[22m[39m
+ [32m✓[39m src/shared/auth/projects-master.route.test.ts [2m([22m[2m28 tests[22m[2m)[22m[90m 40[2mms[22m[39m
+ [32m✓[39m app/admin/job-openings/[id]/page.test.tsx [2m([22m[2m15 tests[22m[2m)[22m[90m 184[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/job-posting-list.service.test.ts [2m([22m[2m32 tests[22m[2m)[22m[90m 35[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/4role-jobboard.integration.test.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 25[2mms[22m[39m
+ [32m✓[39m src/domains/evidence/evidence-storage.port.test.ts [2m([22m[2m17 tests[22m[2m)[22m[90m 28[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/components/landing/__tests__/sections-policy.test.ts [2m([22m[2m28 tests[22m[2m)[22m[90m 21[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/components/detail/__tests__/detail-sections-policy.test.ts [2m([22m[2m34 tests[22m[2m)[22m[90m 15[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/components/landing/__tests__/stamp-overlay.test.ts [2m([22m[2m26 tests[22m[2m)[22m[90m 34[2mms[22m[39m
+ [32m✓[39m src/domains/attendance/4role-attendance.integration.test.ts [2m([22m[2m12 tests[22m[2m)[22m[90m 21[2mms[22m[39m
+ [32m✓[39m app/api/admin/labor-profiles/__tests__/route-patch.test.ts [2m([22m[2m26 tests[22m[2m)[22m[90m 122[2mms[22m[39m
+ [32m✓[39m app/admin/projects/__tests__/projects-role-visibility.static.test.ts [2m([22m[2m16 tests[22m[2m)[22m[90m 21[2mms[22m[39m
+ [32m✓[39m src/shared/integrity/idempotency.test.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 61[2mms[22m[39m
+ [32m✓[39m src/shared/auth/with-auth-scope.test.ts [2m([22m[2m39 tests[22m[2m)[22m[90m 47[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/referral-guard.canonical.test.ts [2m([22m[2m23 tests[22m[2m)[22m[90m 39[2mms[22m[39m
+ [32m✓[39m src/domains/admin/overview-metrics.service.test.ts [2m([22m[2m34 tests[22m[2m)[22m[90m 35[2mms[22m[39m
+[90mstderr[2m | app/api/admin/jobs/job-postings/route.test.ts[2m > [22m[2mPOST /api/admin/jobs/job-postings — route contract[2m > [22m[2mreturns 500 INTERNAL when an unmapped error type escapes — never swallows silently
+[22m[39m[api/admin/jobs/job-postings POST] error: Error: boom-unknown
+    at [90mD:\CodeApp\HrP-worktrees\android-backend-mobile-contract\[39mapp\api\admin\jobs\job-postings\route.test.ts:269:64
+    at [90mfile:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:146:14
+    at [90mfile:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:533:11
+    at runWithTimeout [90m(file:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:39:7[90m)[39m
+    at runTest [90m(file:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1056:17[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at runSuite [90m(file:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1205:15[90m)[39m
+    at runSuite [90m(file:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1205:15[90m)[39m
+    at runFiles [90m(file:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1262:5[90m)[39m
+    at startTests [90m(file:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1271:3[90m)[39m
+
+ [32m✓[39m app/api/admin/jobs/job-postings/route.test.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 147[2mms[22m[39m
+ [32m✓[39m src/shared/ui/design-tokens.static.test.ts [2m([22m[2m12 tests[22m[2m)[22m[90m 122[2mms[22m[39m
+ [32m✓[39m src/shared/ui/role-guard/__tests__/admin-nav-phase4-menu-labor-order.static.test.ts [2m([22m[2m25 tests[22m[2m)[22m[90m 25[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/job-posting-error-map.test.ts [2m([22m[2m40 tests[22m[2m)[22m[90m 42[2mms[22m[39m
+ [32m✓[39m src/domains/applications/application-queue.service.test.ts [2m([22m[2m22 tests[22m[2m)[22m[90m 45[2mms[22m[39m
+ [32m✓[39m src/domains/talent/recruiter-placement.routes.test.ts [2m([22m[2m21 tests[22m[2m)[22m[90m 113[2mms[22m[39m
+ [32m✓[39m src/domains/talent/labor-profile.service.test.ts [2m([22m[2m17 tests[22m[2m)[22m[90m 26[2mms[22m[39m
+ [32m✓[39m app/admin/recruiter-workbench/_components/RecruiterWorkbenchTable.test.ts [2m([22m[2m15 tests[22m[2m)[22m[33m 378[2mms[22m[39m
+[90mstdout[2m | src/domains/applications/aff03-public-intake.route.test.ts[2m > [22m[2mPOST /api/public/intake (route layer)[2m > [22m[2mreturns 201 with standard DTO on success path (no cookie)
+[22m[39m{"schemaVersion":"1.0","timestamp":"2026-10-18T16:02:22.002Z","level":"info","event":"talent.intake.public.create","requestId":"1b2afad0-f48c-405b-a5b4-3590a9bf7cef","meta":{"route":"POST:/api/public/intake","outcome":"NEW_PROFILE","detail":{"attributionBound":false}}}
+
+[90mstdout[2m | src/domains/applications/aff03-public-intake.route.test.ts[2m > [22m[2mPOST /api/public/intake (route layer)[2m > [22m[2mreturns 201 with valid cookie (attribution resolved to ACTIVE row)
+[22m[39m{"schemaVersion":"1.0","timestamp":"2026-10-18T16:02:22.013Z","level":"info","event":"talent.intake.public.create","requestId":"ee93996c-ced2-4b07-b69f-c061e12c348d","meta":{"route":"POST:/api/public/intake","outcome":"NEW_PROFILE","detail":{"attributionBound":true}}}
+
+[90mstdout[2m | src/domains/applications/aff03-public-intake.route.test.ts[2m > [22m[2mPOST /api/public/intake (route layer)[2m > [22m[2mreturns 400 on consent missing
+[22m[39m{"schemaVersion":"1.0","timestamp":"2026-10-18T16:02:22.048Z","level":"info","event":"talent.intake.public.create","requestId":"e57931f2-303a-4bd3-89da-6da813adc6cd","meta":{"route":"POST:/api/public/intake","outcome":"NEW_PROFILE","detail":{"attributionBound":false}}}
+
+[90mstderr[2m | src/domains/applications/aff03-public-intake.route.test.ts[2m > [22m[2mPOST /api/public/intake (route layer)[2m > [22m[2mreturns 500 on unclassified error
+[22m[39m{"schemaVersion":"1.0","timestamp":"2026-10-18T16:02:22.082Z","level":"warn","event":"talent.intake.public.error","requestId":"a7f56425-192f-4833-ac4d-5c2f0ee8e697","meta":{"route":"POST:/api/public/intake","outcome":"unhandled","errorCode":"UNCLASSIFIED"}}
+
+ [32m✓[39m src/domains/applications/aff03-public-intake.route.test.ts [2m([22m[2m12 tests[22m[2m)[22m[90m 133[2mms[22m[39m
+ [32m✓[39m src/domains/attendance/e2e-attendance-narrative.integration.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 15[2mms[22m[39m
+ [32m✓[39m src/shared/theme/__tests__/globals-css-theme-scope.test.ts [2m([22m[2m19 tests[22m[2m)[22m[90m 32[2mms[22m[39m
+ [32m✓[39m app/admin/jobs/job-postings/[id]/__tests__/publish-gating.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[33m 344[2mms[22m[39m
+[90mstderr[2m | app/api/admin/jobs/job-postings/[id]/media/assign/media-assign.route.test.ts[2m > [22m[2mPOST /api/admin/jobs/job-postings/[id]/media/assign — route contract[2m > [22m[2m500 INTERNAL for unmapped error
+[22m[39m[api/admin/jobs/job-postings/[id]/media/assign POST] error: Error: db down
+    at [90mD:\CodeApp\HrP-worktrees\android-backend-mobile-contract\[39mapp\api\admin\jobs\job-postings\[id]\media\assign\media-assign.route.test.ts:270:53
+    at [90mfile:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:146:14
+    at [90mfile:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:533:11
+    at runWithTimeout [90m(file:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:39:7[90m)[39m
+    at runTest [90m(file:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1056:17[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at runSuite [90m(file:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1205:15[90m)[39m
+    at runSuite [90m(file:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1205:15[90m)[39m
+    at runFiles [90m(file:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1262:5[90m)[39m
+    at startTests [90m(file:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1271:3[90m)[39m
+
+ [32m✓[39m app/api/admin/jobs/job-postings/[id]/media/assign/media-assign.route.test.ts [2m([22m[2m14 tests[22m[2m)[22m[90m 281[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/mp1.contract.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 33[2mms[22m[39m
+ [32m✓[39m src/shared/business-code/__tests__/business-code.test.ts [2m([22m[2m29 tests[22m[2m)[22m[90m 47[2mms[22m[39m
+ [32m✓[39m src/shared/security/public-surface-limiter.static.test.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 28[2mms[22m[39m
+ [32m✓[39m src/shared/observability/error-reporter.test.ts [2m([22m[2m14 tests[22m[2m)[22m[90m 44[2mms[22m[39m
+ [32m✓[39m src/domains/applications/security-boundary.aff03b.test.ts [2m([22m[2m13 tests[22m[2m)[22m[90m 54[2mms[22m[39m
+ [32m✓[39m src/shared/ui/editor/JobPostingRichTextEditor.test.tsx [2m([22m[2m11 tests[22m[2m)[22m[90m 103[2mms[22m[39m
+ [32m✓[39m app/(jobs)/viec-lam/__tests__/pagination-integration.test.ts [2m([22m[2m16 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+ [32m✓[39m src/shared/auth/vendor-submissions.route.test.ts [2m([22m[2m11 tests[22m[2m)[22m[90m 57[2mms[22m[39m
+ [32m✓[39m src/shared/content/job-posting-rich-text/__tests__/validator.test.ts [2m([22m[2m29 tests[22m[2m)[22m[90m 14[2mms[22m[39m
+ [32m✓[39m src/domains/media/youtube.test.ts [2m([22m[2m43 tests[22m[2m)[22m[90m 29[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/public-board-route-json.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 35[2mms[22m[39m
+ [32m✓[39m src/domains/referrals/attribution-redirect.route.test.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 28[2mms[22m[39m
+ [32m✓[39m app/admin/labor-profiles/__tests__/labor-profiles-list-table.static.test.ts [2m([22m[2m11 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m app/admin/settings/homepage-settings-patch.test.ts [2m([22m[2m15 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+ [32m✓[39m src/shared/auth/worker-attendance.route.test.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 32[2mms[22m[39m
+ [32m✓[39m src/domains/applications/tracking-pii-containment.static.test.ts [2m([22m[2m11 tests[22m[2m)[22m[90m 14[2mms[22m[39m
+ [32m✓[39m app/admin/jobs/job-postings/[id]/__tests__/editor-shell.f8.test.ts [2m([22m[2m12 tests[22m[2m)[22m[90m 19[2mms[22m[39m
+ [32m✓[39m src/shared/observability/correlation-id.test.ts [2m([22m[2m28 tests[22m[2m)[22m[90m 28[2mms[22m[39m
+ [32m✓[39m src/domains/security/statements-list.projection.route.test.ts [2m([22m[2m17 tests[22m[2m)[22m[90m 44[2mms[22m[39m
+[90mstderr[2m | app/api/admin/jobs/job-postings/[id]/media/reorder/media-reorder.route.test.ts[2m > [22m[2mPOST /api/admin/jobs/job-postings/[id]/media/reorder — route contract[2m > [22m[2m500 INTERNAL for unmapped error
+[22m[39m[api/admin/jobs/job-postings/[id]/media/reorder POST] error: Error: db down
+    at [90mD:\CodeApp\HrP-worktrees\android-backend-mobile-contract\[39mapp\api\admin\jobs\job-postings\[id]\media\reorder\media-reorder.route.test.ts:224:55
+    at [90mfile:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:146:14
+    at [90mfile:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:533:11
+    at runWithTimeout [90m(file:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:39:7[90m)[39m
+    at runTest [90m(file:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1056:17[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at runSuite [90m(file:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1205:15[90m)[39m
+    at runSuite [90m(file:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1205:15[90m)[39m
+    at runFiles [90m(file:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1262:5[90m)[39m
+    at startTests [90m(file:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1271:3[90m)[39m
+
+ [32m✓[39m app/api/admin/jobs/job-postings/[id]/media/reorder/media-reorder.route.test.ts [2m([22m[2m13 tests[22m[2m)[22m[90m 231[2mms[22m[39m
+ [32m✓[39m src/shared/ui/role-guard/__tests__/admin-nav-phase4-people-section.static.test.ts [2m([22m[2m15 tests[22m[2m)[22m[90m 22[2mms[22m[39m
+ [32m✓[39m prisma/__tests__/placement-case-invariant.test.ts [2m([22m[2m17 tests[22m[2m)[22m[90m 16[2mms[22m[39m
+ [32m✓[39m src/shared/security/request-body.test.ts [2m([22m[2m13 tests[22m[2m)[22m[90m 96[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/job-posting-stamps-eligibility.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [32m✓[39m src/shared/security/rate-limit-adapters.test.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 32[2mms[22m[39m
+ [32m✓[39m app/admin/workers/[id]/__tests__/worker-delete-button.static.test.ts [2m([22m[2m17 tests[22m[2m)[22m[90m 15[2mms[22m[39m
+[90mstdout[2m | src/domains/talent/admin.intake.staff.route.test.ts[2m > [22m[2mPOST /api/admin/intake/staff — N1 intake writer round 2[2m > [22m[2mPOST: role=ADMIN → 201 với ctx.userId làm actorId
+[22m[39m{"schemaVersion":"1.0","timestamp":"2026-10-18T16:02:51.767Z","level":"info","event":"talent.intake.create","requestId":null,"meta":{"route":"POST:/api/admin/intake/staff","actorRole":"ADMIN","resourceType":"[REDACTED]","outcome":"NEW_PROFILE"}}
+
+[90mstdout[2m | src/domains/talent/admin.intake.staff.route.test.ts[2m > [22m[2mPOST /api/admin/intake/staff — N1 intake writer round 2[2m > [22m[2mPOST: role=HR_MANAGER → 201 với ctx.userId làm actorId
+[22m[39m{"schemaVersion":"1.0","timestamp":"2026-10-18T16:02:51.774Z","level":"info","event":"talent.intake.create","requestId":null,"meta":{"route":"POST:/api/admin/intake/staff","actorRole":"HR_MANAGER","resourceType":"[REDACTED]","outcome":"NEW_PROFILE"}}
+
+[90mstdout[2m | src/domains/talent/admin.intake.staff.route.test.ts[2m > [22m[2mPOST /api/admin/intake/staff — N1 intake writer round 2[2m > [22m[2mPOST: role=HR_STAFF → 201 với ctx.userId làm actorId
+[22m[39m{"schemaVersion":"1.0","timestamp":"2026-10-18T16:02:51.777Z","level":"info","event":"talent.intake.create","requestId":null,"meta":{"route":"POST:/api/admin/intake/staff","actorRole":"HR_STAFF","resourceType":"[REDACTED]","outcome":"NEW_PROFILE"}}
+
+ [32m✓[39m src/domains/talent/admin.intake.staff.route.test.ts [2m([22m[2m17 tests[22m[2m)[22m[90m 68[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/job-opening-read.service.test.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 22[2mms[22m[39m
+ [32m✓[39m src/shared/auth/clients-master.route.test.ts [2m([22m[2m19 tests[22m[2m)[22m[90m 58[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/public-content-controls/sticky-announcement.test.tsx [2m([22m[2m15 tests[22m[2m)[22m[90m 42[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/public-detail.service.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 29[2mms[22m[39m
+ [32m✓[39m app/api/admin/labor-profiles/[id]/handling-assignments/route.test.ts [2m([22m[2m15 tests[22m[2m)[22m[90m 37[2mms[22m[39m
+ [32m✓[39m src/domains/talent/labor-profile.read-service.test.ts [2m([22m[2m11 tests[22m[2m)[22m[90m 27[2mms[22m[39m
+ [32m✓[39m src/domains/security/response-projection.static.test.ts [2m([22m[2m20 tests[22m[2m)[22m[90m 32[2mms[22m[39m
+ [32m✓[39m app/api/admin/media/confirm/route.test.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 48[2mms[22m[39m
+ [32m✓[39m app/__tests__/app-router.dynamic-segment-collision.test.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 180[2mms[22m[39m
+ [32m✓[39m src/shared/theme/__tests__/theme-cta-foreground.test.ts [2m([22m[2m18 tests[22m[2m)[22m[90m 16[2mms[22m[39m
+ [32m✓[39m src/shared/security/f9-hr-staff-posting-write-rls.static.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 23[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/__tests__/job-posting-publish-contract.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 21[2mms[22m[39m
+ [32m✓[39m src/pwa/favicon-asset.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 16[2mms[22m[39m
+ [32m✓[39m src/domains/talent/intake-writer.service.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 17[2mms[22m[39m
+ [32m✓[39m app/admin/workers/[id]/__tests__/worker-detail-sections.static.test.ts [2m([22m[2m17 tests[22m[2m)[22m[90m 34[2mms[22m[39m
+ [32m✓[39m src/domains/security/portal-domains.integration.test.ts [2m([22m[2m49 tests[22m[2m)[22m[90m 27[2mms[22m[39m
+ [32m✓[39m src/domains/security/workers-projection.contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 33[2mms[22m[39m
+ [32m✓[39m src/shared/theme/__tests__/contrast-probe.test.ts [2m([22m[2m40 tests[22m[2m)[22m[90m 37[2mms[22m[39m
+ [32m✓[39m src/shared/security/f9b-slot-opening-binding-primitive.static.test.ts [2m([22m[2m21 tests[22m[2m)[22m[90m 52[2mms[22m[39m
+ [32m✓[39m app/admin/projects/[id]/__tests__/project-terminology.test.ts [2m([22m[2m15 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/components/__tests__/apply-cta-tone-soften.static.test.ts [2m([22m[2m11 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+ [32m✓[39m prisma/seed-portal-demo-password.static.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 24[2mms[22m[39m
+ [32m✓[39m src/shared/integrity/outbox.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 30[2mms[22m[39m
+ [32m✓[39m src/domains/payroll/calculateVietnameseTaxes.test.ts [2m([22m[2m16 tests[22m[2m)[22m[90m 24[2mms[22m[39m
+ [32m✓[39m src/shared/auth/worker-projection.test.ts [2m([22m[2m15 tests[22m[2m)[22m[90m 35[2mms[22m[39m
+ [32m✓[39m app/admin/staffing/__tests__/staffing-terminology.static.test.ts [2m([22m[2m14 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+ [32m✓[39m src/domains/audit/audit-logs.read-service.test.ts [2m([22m[2m17 tests[22m[2m)[22m[90m 25[2mms[22m[39m
+ [32m✓[39m src/shared/projection/manifest.test.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 15[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/public-fail-closed.integration.test.ts [2m([22m[2m20 tests[22m[2m)[22m[90m 28[2mms[22m[39m
+ [32m✓[39m src/shared/auth/with-authorized-db.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+ [32m✓[39m prisma/referral-attribution-aff03-writer-policy.static.test.ts [2m([22m[2m11 tests[22m[2m)[22m[90m 21[2mms[22m[39m
+[90mstderr[2m | app/api/admin/jobs/job-postings/[id]/media/[assignmentId]/cover/media-cover.route.test.ts[2m > [22m[2mPOST /api/admin/jobs/job-postings/[id]/media/[assignmentId]/cover — route contract[2m > [22m[2m500 INTERNAL for unmapped error
+[22m[39m[api/admin/jobs/job-postings/[id]/media/[assignmentId]/cover POST] error: Error: db down
+    at [90mD:\CodeApp\HrP-worktrees\android-backend-mobile-contract\[39mapp\api\admin\jobs\job-postings\[id]\media\[assignmentId]\cover\media-cover.route.test.ts:173:56
+    at [90mfile:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:146:14
+    at [90mfile:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:533:11
+    at runWithTimeout [90m(file:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:39:7[90m)[39m
+    at runTest [90m(file:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1056:17[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at runSuite [90m(file:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1205:15[90m)[39m
+    at runSuite [90m(file:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1205:15[90m)[39m
+    at runFiles [90m(file:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1262:5[90m)[39m
+    at startTests [90m(file:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1271:3[90m)[39m
+
+ [32m✓[39m app/api/admin/jobs/job-postings/[id]/media/[assignmentId]/cover/media-cover.route.test.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 197[2mms[22m[39m
+[90mstderr[2m | app/api/admin/jobs/job-postings/[id]/media/media-list.route.test.ts[2m > [22m[2mGET /api/admin/jobs/job-postings/[id]/media — route contract[2m > [22m[2m500 INTERNAL for unmapped error
+[22m[39m[api/admin/jobs/job-postings/[id]/media GET] error: Error: boom
+    at [90mD:\CodeApp\HrP-worktrees\android-backend-mobile-contract\[39mapp\api\admin\jobs\job-postings\[id]\media\media-list.route.test.ts:161:49
+    at [90mfile:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:146:14
+    at [90mfile:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:533:11
+    at runWithTimeout [90m(file:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:39:7[90m)[39m
+    at runTest [90m(file:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1056:17[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at runSuite [90m(file:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1205:15[90m)[39m
+    at runSuite [90m(file:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1205:15[90m)[39m
+    at runFiles [90m(file:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1262:5[90m)[39m
+    at startTests [90m(file:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1271:3[90m)[39m
+
+ [32m✓[39m app/api/admin/jobs/job-postings/[id]/media/media-list.route.test.ts [2m([22m[2m10 tests[22m[2m)[22m[90m 210[2mms[22m[39m
+ [32m✓[39m src/shared/auth/webhook-payslip.route.test.ts [2m([22m[2m21 tests[22m[2m)[22m[90m 48[2mms[22m[39m
+ [32m✓[39m app/admin/jobs/__tests__/admin-jobs-terminology.static.test.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+[90mstderr[2m | src/domains/job-board/hero-slides-service.test.ts[2m > [22m[2mbuildHeroSlidesPublic[2m > [22m[2mreturns [] when JSON parse fails (length mismatch)
+[22m[39m[public-settings] hero_slides JSON parse fail; fallback [] —  Array must contain exactly 5 element(s)
+
+ [32m✓[39m src/domains/job-board/hero-slides-service.test.ts [2m([22m[2m13 tests[22m[2m)[22m[90m 34[2mms[22m[39m
+ [32m✓[39m src/domains/talent/placement.lifecycle.test.ts [2m([22m[2m23 tests[22m[2m)[22m[90m 20[2mms[22m[39m
+ [32m✓[39m app/admin/jobs/job-postings/__tests__/job-postings-list-linkage.static.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [32m✓[39m src/domains/applications/application.service.test.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 27[2mms[22m[39m
+ [32m✓[39m app/admin/jobs/job-postings/__tests__/job-postings-terminology.static.test.ts [2m([22m[2m13 tests[22m[2m)[22m[90m 21[2mms[22m[39m
+ [32m✓[39m app/admin/jobs/job-postings/[id]/__tests__/youtube-card.test.tsx [2m([22m[2m14 tests[22m[2m)[22m[90m 48[2mms[22m[39m
+ [32m✓[39m app/api/workers/[id]/__tests__/route-delete-500.static.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 24[2mms[22m[39m
+ [32m✓[39m src/shared/auth/attendance-adjustments.route.test.ts [2m([22m[2m25 tests[22m[2m)[22m[90m 49[2mms[22m[39m
+ [32m✓[39m src/domains/applications/tracking-mask.routes.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 35[2mms[22m[39m
+ [32m✓[39m prisma/migrations-permission-hygiene.static.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 19[2mms[22m[39m
+ [32m✓[39m app/admin/recruiter-workbench/_components/FilterChips.test.ts [2m([22m[2m11 tests[22m[2m)[22m[90m 90[2mms[22m[39m
+ [32m✓[39m src/domains/security/statements-generate.projection.route.test.ts [2m([22m[2m16 tests[22m[2m)[22m[90m 140[2mms[22m[39m
+ [32m✓[39m src/shared/ui/font-google-ban.static.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 298[2mms[22m[39m
+ [32m✓[39m app/admin/jobs/job-postings/[id]/__tests__/media-card.test.tsx [2m([22m[2m9 tests[22m[2m)[22m[90m 79[2mms[22m[39m
+ [32m✓[39m src/shared/auth/worker-portal.route.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 38[2mms[22m[39m
+ [32m✓[39m src/shared/privacy/mask.test.ts [2m([22m[2m12 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+ [32m✓[39m src/domains/security/security-matrix-portals.test.ts [2m([22m[2m18 tests[22m[2m)[22m[90m 23[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/public-select.static.test.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+ [32m✓[39m src/domains/security/workers-me.projection.route.test.ts [2m([22m[2m17 tests[22m[2m)[22m[90m 42[2mms[22m[39m
+ [32m✓[39m src/domains/applications/application-detail-mp3.test.ts [2m([22m[2m16 tests[22m[2m)[22m[90m 37[2mms[22m[39m
+ [32m✓[39m app/admin/settings/__tests__/admin-settings-form.ui2.test.ts [2m([22m[2m12 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/public-content-controls/revision.test.ts [2m([22m[2m18 tests[22m[2m)[22m[90m 21[2mms[22m[39m
+ [32m✓[39m app/admin/staffing-orders/__tests__/edit-order-modal-slot-hide.static.test.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+ [32m✓[39m src/shared/auth/login-projection.route.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 19[2mms[22m[39m
+ [32m✓[39m src/domains/talent/placement.resolution.test.ts [2m([22m[2m10 tests[22m[2m)[22m[90m 15[2mms[22m[39m
+ [32m✓[39m src/shared/auth/vendors-master.route.test.ts [2m([22m[2m13 tests[22m[2m)[22m[90m 44[2mms[22m[39m
+ [32m✓[39m app/admin/jobs/__tests__/jobs-terminology.static.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+ [32m✓[39m src/shared/auth/disputes.route.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 32[2mms[22m[39m
+[90mstdout[2m | src/domains/security/ctv-withdrawals.projection.route.test.ts[2m > [22m[2mPOST /api/ctv/withdrawals — self DTO omit ctvId (AC-08)[2m > [22m[2mCTV → 201, DTO omit ctvId; owner = session (KHÔNG nhận ctvId từ body)
+[22m[39m[withdrawals] created wd-1
+
+ [32m✓[39m src/domains/security/ctv-withdrawals.projection.route.test.ts [2m([22m[2m27 tests[22m[2m)[22m[90m 64[2mms[22m[39m
+ [32m✓[39m app/api/admin/homepage-settings/route.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 275[2mms[22m[39m
+ [32m✓[39m src/shared/theme/__tests__/theme-sites-c7-pd.test.ts [2m([22m[2m12 tests[22m[2m)[22m[90m 26[2mms[22m[39m
+ [32m✓[39m src/shared/auth/push-register-device.route.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 69[2mms[22m[39m
+ [32m✓[39m src/domains/applications/screening.service.test.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 27[2mms[22m[39m
+ [32m✓[39m src/domains/applications/apply-helpers.test.ts [2m([22m[2m12 tests[22m[2m)[22m[90m 123[2mms[22m[39m
+ [32m✓[39m app/admin/labor-profiles/__tests__/labor-profiles-terminology.static.test.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [32m✓[39m app/admin/__tests__/admin-bvp-font.static.test.ts [2m([22m[2m17 tests[22m[2m)[22m[90m 26[2mms[22m[39m
+ [32m✓[39m src/shared/integrity/state-machine.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+[90mstderr[2m | app/api/admin/jobs/job-postings/[id]/media/[assignmentId]/media-detach.route.test.ts[2m > [22m[2mDELETE /api/admin/jobs/job-postings/[id]/media/[assignmentId] — route contract[2m > [22m[2m500 INTERNAL for unmapped error
+[22m[39m[api/admin/jobs/job-postings/[id]/media/[assignmentId] DELETE] error: Error: db down
+    at [90mD:\CodeApp\HrP-worktrees\android-backend-mobile-contract\[39mapp\api\admin\jobs\job-postings\[id]\media\[assignmentId]\media-detach.route.test.ts:132:55
+    at [90mfile:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:146:14
+    at [90mfile:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:533:11
+    at runWithTimeout [90m(file:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:39:7[90m)[39m
+    at runTest [90m(file:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1056:17[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at runSuite [90m(file:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1205:15[90m)[39m
+    at runSuite [90m(file:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1205:15[90m)[39m
+    at runFiles [90m(file:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1262:5[90m)[39m
+    at startTests [90m(file:///D:/CodeApp/HrP-worktrees/android-backend-mobile-contract/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@2.1.9/node_modules/[4m@vitest/runner[24m/dist/index.js:1271:3[90m)[39m
+
+ [32m✓[39m app/api/admin/jobs/job-postings/[id]/media/[assignmentId]/media-detach.route.test.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 215[2mms[22m[39m
+ [32m✓[39m app/admin/recruiter-workbench/_components/PaginationControls.test.ts [2m([22m[2m11 tests[22m[2m)[22m[90m 48[2mms[22m[39m
+ [32m✓[39m app/admin/recruiter-workbench/_lib/parse-filter.test.ts [2m([22m[2m16 tests[22m[2m)[22m[90m 16[2mms[22m[39m
+ [32m✓[39m src/shared/auth/with-public-db.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 24[2mms[22m[39m
+ [32m✓[39m src/domains/media/media-alt.test.ts [2m([22m[2m13 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+ [32m✓[39m app/admin/recruiter-workbench/_components/NextActionBadge.test.ts [2m([22m[2m12 tests[22m[2m)[22m[90m 40[2mms[22m[39m
+ [32m✓[39m src/shared/auth/worker-tickets-create.route.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 19[2mms[22m[39m
+ [32m✓[39m app/admin/users/__tests__/user-management.client.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[90m 95[2mms[22m[39m
+ [32m✓[39m src/shared/ui/admin-detail-foundation.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 14[2mms[22m[39m
+ [32m✓[39m src/shared/auth/statements-margin.route.test.ts [2m([22m[2m17 tests[22m[2m)[22m[90m 33[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/public-content-controls/url-safety.test.ts [2m([22m[2m17 tests[22m[2m)[22m[90m 14[2mms[22m[39m
+ [32m✓[39m app/admin/recruiter-workbench/_components/SortDropdown.test.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 40[2mms[22m[39m
+ [32m✓[39m src/shared/theme/__tests__/theme-types.test.ts [2m([22m[2m15 tests[22m[2m)[22m[90m 20[2mms[22m[39m
+ [32m✓[39m src/domains/referrals/redirect-token.test.ts [2m([22m[2m11 tests[22m[2m)[22m[90m 23[2mms[22m[39m
+ [32m✓[39m src/shared/theme/__tests__/theme-cta-cascade-resolve.test.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+ [32m✓[39m src/shared/theme/__tests__/theme-storage.test.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+ [32m✓[39m src/shared/http/pagination.test.ts [2m([22m[2m26 tests[22m[2m)[22m[90m 14[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/job-posting-stamps-mapping.test.ts [2m([22m[2m11 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+ [32m✓[39m src/domains/media/__tests__/safe-render.test.ts [2m([22m[2m16 tests[22m[2m)[22m[90m 38[2mms[22m[39m
+ [32m✓[39m src/domains/projects/__tests__/project-ui.test.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 42[2mms[22m[39m
+ [32m✓[39m src/domains/attendance/taxonomy-unit.test.ts [2m([22m[2m14 tests[22m[2m)[22m[90m 25[2mms[22m[39m
+ [32m✓[39m src/domains/audit/api-admin-audit-logs.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 32[2mms[22m[39m
+ [32m✓[39m app/admin/recruiter-workbench/_components/PrimaryActions.test.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 47[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/__tests__/job-opening-ui.test.ts [2m([22m[2m10 tests[22m[2m)[22m[90m 14[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/public-content-controls/__tests__/dto-projection.test.ts [2m([22m[2m13 tests[22m[2m)[22m[90m 20[2mms[22m[39m
+ [32m✓[39m src/shared/auth/mobile-device-token.rls.static.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+ [32m✓[39m src/domains/workforce/__tests__/worker-delete-error-labels.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+ [32m✓[39m src/shared/auth/auth-context.test.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+ [32m✓[39m src/domains/talent/placement-case.service.test.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+ [32m✓[39m src/shared/auth/cron-routes.route.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 36[2mms[22m[39m
+ [32m✓[39m app/admin/workers/__tests__/workers-terminology.static.test.ts [2m([22m[2m10 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+ [32m✓[39m src/shared/theme/__tests__/theme-picker.test.ts [2m([22m[2m14 tests[22m[2m)[22m[90m 34[2mms[22m[39m
+ [32m✓[39m src/shared/theme/__tests__/theme-shell-mount.test.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+ [32m✓[39m app/admin/media/__tests__/media-library-no-folder-ui.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+ [32m✓[39m src/shared/auth/projects-clients-master.route.test.ts [2m([22m[2m27 tests[22m[2m)[22m[90m 130[2mms[22m[39m
+ [32m✓[39m src/shared/integrity/audit.test.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 22[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/talent-pool.repo.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [32m✓[39m src/domains/admin/workers-route.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 31[2mms[22m[39m
+ [32m✓[39m app/admin/workers/__tests__/worker-list-columns.static.test.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [32m✓[39m src/shared/auth/push-subscribe.route.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 28[2mms[22m[39m
+ [32m✓[39m prisma/migrations/20261004230000_ui2_public_content_controls/migration.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+ [32m✓[39m src/shared/ui/floating-chat-actions.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+ [32m✓[39m src/shared/observability/integration-preflight.env-readiness.static.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 17[2mms[22m[39m
+ [32m✓[39m app/admin/workers/__tests__/workers-list-cta.test.tsx [2m([22m[2m9 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [32m✓[39m src/shared/content/job-posting-rich-text/__tests__/renderer.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[90m 25[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/__tests__/job-posting-ui.test.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+[90mstderr[2m | app/admin/jobs/job-postings/[id]/__tests__/media-picker.test.tsx[2m > [22m[2mMediaPicker (render shape — global pool)[2m > [22m[2mrenders both library + upload tabs when open; no folder select
+[22m[39mReceived `true` for a non-boolean attribute `jsx`.
+
+If you want to write it to the DOM, pass a string instead: jsx="true" or jsx={value.toString()}.
+
+ [32m✓[39m app/admin/jobs/job-postings/[id]/__tests__/media-picker.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[90m 40[2mms[22m[39m
+ [32m✓[39m app/admin/job-openings/__tests__/job-openings-terminology.static.test.ts [2m([22m[2m10 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+ [32m✓[39m src/shared/auth/worker-payroll-latest.route.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 20[2mms[22m[39m
+ [32m✓[39m src/domains/applications/conversion.routes.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 21[2mms[22m[39m
+ [32m✓[39m src/shared/auth/scopes/ctv-account-scope.test.ts [2m([22m[2m13 tests[22m[2m)[22m[90m 14[2mms[22m[39m
+ [32m✓[39m src/domains/applications/screening.routes.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 35[2mms[22m[39m
+ [32m✓[39m src/domains/applications/security-boundary.aff03c.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [32m✓[39m prisma/migrations/20261005200000_jp_youtube_video_id/migration.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 16[2mms[22m[39m
+ [32m✓[39m src/domains/commission/ctv-summary.route.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 29[2mms[22m[39m
+[90mstderr[2m | src/shared/auth/require-permission.test.ts[2m > [22m[2mrequirePermission (RQ-05, DEC-05)[2m > [22m[2mWORKER thiếu CAN_APPROVE_PAYROLL → throw AuthError PERMISSION_DENIED
+[22m[39m{"evt":"permission_denied","userId":"u-w-1","role":"WORKER","requiredCode":"CAN_APPROVE_PAYROLL"}
+{"evt":"permission_denied","userId":"u-w-1","role":"WORKER","requiredCode":"CAN_APPROVE_PAYROLL"}
+
+[90mstderr[2m | src/shared/auth/require-permission.test.ts[2m > [22m[2mrequireAnyPermission[2m > [22m[2mkhông code nào pass → throw PERMISSION_DENIED
+[22m[39m{"evt":"permission_denied_any","userId":"u-w-1","role":"WORKER","requiredCodes":["CAN_APPROVE_PAYROLL","CAN_EDIT_CONTRACT"]}
+
+ [32m✓[39m src/shared/auth/require-permission.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 118[2mms[22m[39m
+ [32m✓[39m src/domains/talent/admin.labor-profiles.route.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 28[2mms[22m[39m
+[90mstderr[2m | app/admin/recruiter-workbench/_components/AgeCell.test.ts[2m > [22m[2mAgeCell[2m > [22m[2mhandles negative or NaN ageHours defensively
+[22m[39mReceived NaN for the `data-age-hours` attribute. If this is expected, cast the value to a string.
+
+ [32m✓[39m app/admin/recruiter-workbench/_components/AgeCell.test.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 32[2mms[22m[39m
+ [32m✓[39m src/domains/commission/ledger.service.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 19[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/job-opening-status.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+ [32m✓[39m src/shared/auth/jobs-alias.route.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 23[2mms[22m[39m
+ [32m✓[39m app/admin/labor-profiles/__tests__/labor-profile-list-columns.static.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [32m✓[39m app/admin/__tests__/operator-terminology.static.test.ts [2m([22m[2m15 tests[22m[2m)[22m[33m 319[2mms[22m[39m
+ [32m✓[39m prisma/referral-attribution-migration.static.test.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+ [32m✓[39m src/domains/crm/client-read.service.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/components/detail/youtube-embed.test.tsx [2m([22m[2m8 tests[22m[2m)[22m[90m 29[2mms[22m[39m
+ [32m✓[39m src/shared/auth/public-read-guc.static.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+ [32m✓[39m src/shared/utils/date-boundary.test.ts [2m([22m[2m12 tests[22m[2m)[22m[90m 140[2mms[22m[39m
+ [32m✓[39m src/shared/auth/finance-scope.test.ts [2m([22m[2m27 tests[22m[2m)[22m[90m 22[2mms[22m[39m
+ [32m✓[39m src/shared/i18n/__tests__/glossary.static.test.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+ [32m✓[39m src/shared/auth/payroll.route.test.ts [2m([22m[2m15 tests[22m[2m)[22m[90m 26[2mms[22m[39m
+ [32m✓[39m src/shared/ui/status-badge/status-badge.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[90m 38[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/job-posting-stamps.static.test.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+[90mstderr[2m | src/shared/ui/sheet/slide-out-drawer.test.tsx[2m > [22m[2mSlideOutDrawer (shared primitive)[2m > [22m[2mSD-A02: close button aria-label is "Đóng" without U+FFFD
+[22m[39mReceived `true` for a non-boolean attribute `jsx`.
+
+If you want to write it to the DOM, pass a string instead: jsx="true" or jsx={value.toString()}.
+
+ [32m✓[39m src/shared/ui/sheet/slide-out-drawer.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[90m 41[2mms[22m[39m
+ [32m✓[39m src/domains/applications/status-machine.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 22[2mms[22m[39m
+ [32m✓[39m src/shared/auth/jwt.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 77[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/__tests__/staffing-order-ui.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 18[2mms[22m[39m
+ [32m✓[39m app/admin/users/__tests__/users-terminology.static.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [32m✓[39m app/components/GlobalFooter.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[90m 66[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/__tests__/recruiter-assignment-ui.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m src/shared/auth/cron-auth.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/public-content-controls/__tests__/news-section-wrapper.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[90m 27[2mms[22m[39m
+ [32m✓[39m src/shared/auth/preauth-db.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+ [32m✓[39m app/admin/settings/__tests__/settings-terminology.static.test.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m app/admin/media/__tests__/media-responsive.static.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m src/shared/auth/scopes/project.scope.test.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [32m✓[39m src/shared/auth/permission-catalog.test.ts [2m([22m[2m8 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+ [32m✓[39m src/shared/auth/internal-webhook-auth.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 47[2mms[22m[39m
+ [32m✓[39m src/shared/auth/session-adapter.test.ts [2m([22m[2m30 tests[22m[2m)[22m[90m 35[2mms[22m[39m
+ [32m✓[39m src/shared/theme/__tests__/theme-scope.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 37[2mms[22m[39m
+ [32m✓[39m src/shared/content/job-posting-rich-text/__tests__/profile.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+ [32m✓[39m app/admin/recruiter-workbench/_components/HandlerChip.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 22[2mms[22m[39m
+ [32m✓[39m src/domains/labor-profile/__tests__/labor-profile-ui.test.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m src/shared/auth/debug.route.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 24[2mms[22m[39m
+ [32m✓[39m app/admin/workers/[id]/__tests__/worker-delete-toast.static.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/job-opening-status-card.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 25[2mms[22m[39m
+ [32m✓[39m src/shared/i18n/__tests__/action-dictionary.static.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [32m✓[39m src/shared/i18n/__tests__/role-labels.static.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/public-content-controls/animation.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+ [32m✓[39m app/admin/media/__tests__/media-terminology.static.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m app/admin/_components/UnderDevelopment.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[90m 26[2mms[22m[39m
+ [32m✓[39m src/domains/staffing/referral-guard.service.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+ [32m✓[39m src/domains/talent/handling-assignment.security.test.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/components/landing/hero-slides-public-render.static.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m src/shared/i18n/__tests__/attendance-labels.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [32m✓[39m src/domains/talent/normalize.test.ts [2m([22m[2m11 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m src/domains/security/debug-route.contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 57[2mms[22m[39m
+ [32m✓[39m src/domains/talent/jobs.apply.route.test.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 21[2mms[22m[39m
+ [32m✓[39m app/api/public/homepage-settings/route.test.ts [2m([22m[2m1 test[22m[2m)[22m[90m 200[2mms[22m[39m
+ [32m✓[39m app/admin/settings/__tests__/hero-pickers-no-folder.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m src/domains/crm/project-read.service.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+ [32m✓[39m src/domains/talent/__tests__/identity-verification-ui.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m src/shared/auth/user.test.ts [2m([22m[2m6 tests[22m[2m)[22m[90m 17[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/components/landing/referral-strip-layout.static.test.ts [2m([22m[2m5 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m src/shared/auth/me.route.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 23[2mms[22m[39m
+ [32m✓[39m src/shared/i18n/__tests__/form-dictionary.static.test.ts [2m([22m[2m3 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m src/db/engine-set-config.static.test.ts [2m([22m[2m1 test[22m[2m)[22m[90m 215[2mms[22m[39m
+ [32m✓[39m src/shared/i18n/__tests__/reconciliation-labels.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+ [32m✓[39m app/admin/tickets/__tests__/tickets-terminology.static.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 16[2mms[22m[39m
+ [32m✓[39m app/admin/clients/__tests__/clients-terminology.static.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/public-content-controls/news-section-gate.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+ [32m✓[39m src/domains/media/media-ui.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 15[2mms[22m[39m
+ [32m✓[39m app/admin/reconciliation/__tests__/reconciliation-terminology.static.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/homepage-chat-links-migration.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 4[2mms[22m[39m
+ [32m✓[39m app/admin/payroll/__tests__/payroll-terminology.static.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m app/admin/attendance/__tests__/attendance-terminology.static.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m src/db/engine-client.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 113[2mms[22m[39m
+ [32m✓[39m src/lib/db.test.ts [2m([22m[2m1 test[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m src/domains/admin/user-management.actions.static.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m src/shared/utils/money.test.ts [2m([22m[2m4 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+ [32m✓[39m app/admin/commission/__tests__/commission-terminology.static.test.ts [2m([22m[2m1 test[22m[2m)[22m[90m 5[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/homepage-phone-link-migration.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+ [32m✓[39m app/admin/settings/_components/settings-tabs.test.tsx [2m([22m[2m1 test[22m[2m)[22m[90m 27[2mms[22m[39m
+ [32m✓[39m app/admin/vendors/__tests__/vendors-terminology.static.test.ts [2m([22m[2m1 test[22m[2m)[22m[90m 6[2mms[22m[39m
+ [32m✓[39m src/domains/workforce/__tests__/worker-ui.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m src/shared/auth/password.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 593[2mms[22m[39m
+   [33m[2m✓[22m[39m password helpers (bcryptjs — RQ-02)[2m > [22mlogin sai mật khẩu bị từ chối [33m337[2mms[22m[39m
+ [32m✓[39m src/domains/job-board/public-content-controls/sticky-announcement.mount.test.tsx [2m([22m[2m15 tests[22m[2m)[22m[90m 286[2mms[22m[39m
+ [32m✓[39m src/shared/ui/editor/JobPostingRichTextEditor.mount.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 457[2mms[22m[39m
+[90mstderr[2m | src/domains/job-board/public-content-controls/__tests__/use-public-content-controls.test.tsx[2m > [22m[2musePublicContentControls (Phase B / UI2)[2m > [22m[2mreturns the open defaults before the first fetch resolves
+[22m[39mThe current testing environment is not configured to support act(...)
+
+[90mstderr[2m | src/domains/job-board/public-content-controls/__tests__/use-public-content-controls.test.tsx[2m > [22m[2musePublicContentControls (Phase B / UI2)[2m > [22m[2mreturns newsSectionEnabled=false when the API says so
+[22m[39mThe current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+[90mstderr[2m | src/domains/job-board/public-content-controls/__tests__/use-public-content-controls.test.tsx[2m > [22m[2musePublicContentControls (Phase B / UI2)[2m > [22m[2mprojects a valid stickyAnnouncement
+[22m[39mThe current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+[90mstderr[2m | src/domains/job-board/public-content-controls/__tests__/use-public-content-controls.test.tsx[2m > [22m[2musePublicContentControls (Phase B / UI2)[2m > [22m[2mfalls back to defaults on HTTP failure
+[22m[39mThe current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+[90mstderr[2m | src/domains/job-board/public-content-controls/__tests__/use-public-content-controls.test.tsx[2m > [22m[2musePublicContentControls (Phase B / UI2)[2m > [22m[2mfalls back to defaults on network error
+[22m[39mThe current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+ [32m✓[39m src/domains/job-board/public-content-controls/__tests__/use-public-content-controls.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[90m 61[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m348 passed[39m[22m[90m (348)[39m
+[2m      Tests [22m [1m[32m5483 passed[39m[22m[2m | [22m[33m9 skipped[39m[90m (5492)[39m
+[2m   Start at [22m 23:00:56
+[2m   Duration [22m 321.69s[2m (transform 14.02s, setup 0ms, collect 71.81s, tests 17.67s, environment 5.69s, prepare 87.32s)[22m
+

@@ -29,12 +29,17 @@ export async function GET(req: NextRequest) {
   }
   const urgency = urgencyRaw as 'URGENT' | undefined;
 
+  // T1A Android contract (TASK DEC-08): alias `search`→`q`, `zone`→`area`.
+  // Param gốc ưu tiên khi cả hai cùng truyền; không param ⇒ undefined (byte-compatible).
+  const q = searchParams.get('q') ?? searchParams.get('search') ?? undefined;
+  const area = searchParams.get('area') ?? searchParams.get('zone') ?? undefined;
+
   const prisma = getPrisma();
   // go-live-04 / RQ-03: principal công khai MKT + transaction read-only. `$transaction`
   // trần ở đây chính là defect P0 làm bề mặt việc làm trả 0 dòng dưới FORCE RLS.
   const projection = await withPublicDb(prisma, (tx) => listPublicJobProjection(tx, {
-    q: searchParams.get('q') ?? undefined,
-    area: searchParams.get('area') ?? undefined,
+    q,
+    area,
     shift: searchParams.get('shift') ?? undefined,
     shiftTypes: searchParams.getAll('shiftType'),
     jobTypes: searchParams.getAll('jobType'),

@@ -87,6 +87,33 @@ export function buildAttendanceEventScope(ctx: AuthContext): Prisma.AttendanceEv
 }
 
 /**
+ * TimesheetLine scope — T1A Android backend mobile contract (TASK DEC-06):
+ * WORKER chỉ ĐỌC timesheet line của CHÍNH MÌNH (workerId = ctx.workerId,
+ * server-derived). CHỈ READ — ghi timesheet là việc HR (RLS WITH CHECK giữ
+ * admin-only trong migration 20261018120000...; policy chỉ mở USING branch
+ * WORKER). ADMIN/HR_MANAGER/DIRECTOR passthrough khớp RLS root; role khác
+ * DENY_BY_DEFAULT.
+ */
+export function buildTimesheetLineScope(ctx: AuthContext): Prisma.TimesheetLineWhereInput {
+  switch (ctx.role) {
+    case 'ADMIN':
+    case 'HR_MANAGER':
+    case 'DIRECTOR':
+      return {};
+
+    case 'WORKER':
+      return { workerId: ctx.workerId ?? '__no_worker_ctx__' };
+
+    default:
+      throw new AuthScopeError(
+        'DENY_BY_DEFAULT',
+        `Role ${ctx.role} không có scope đọc TimesheetLine`,
+        { userId: ctx.userId, role: ctx.role },
+      );
+  }
+}
+
+/**
  * Site scope — visibility đi theo project (`hrp_project_visible_for`). Dùng lại
  * buildProjectScope qua relation `project`. WORKER thấy site của project public
  * hoặc project có assignment ACTIVE của mình; geofence read còn AND thêm điều kiện

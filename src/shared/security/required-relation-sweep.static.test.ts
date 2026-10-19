@@ -275,6 +275,17 @@ const EXPECTED_HITS = [
   'src/domains/talent/labor-profile.read-service.ts:204 project',
   'src/domains/talent/labor-profile.read-service.ts:225 project',
   'src/domains/talent/labor-profile.read-service.ts:231 project',
+  // T1A ANDROID BACKEND MOBILE CONTRACT (2026-10-18):
+  // `worker-assignment-summary.ts` đọc assignment hiện hành cho login/
+  // workers/me — select `project` quan hệ BẮT BUỘC ProjectAssignment→Project.
+  // RLS-covered: loadWorkerSelfSummaryInTx chạy mọi query trong CÙNG
+  // `withDbContext` GUC WORKER self; tổ hợp `hrp_worker_visible_for` +
+  // `hrp_project_visible_for` (branch WORKER qua ACTIVE assignment —
+  // migration 20260816211000_s1_rls_project) giới hạn đúng project worker
+  // được thấy; sites đọc bằng cùng scope. Shipped migration
+  // 20261018120000_mobile_device_token_with_rls không thêm dòng dang (bảng
+  // mới mobile_device_tokens FK users — `users` KHÔNG trong tập RLS).
+  'src/shared/auth/worker-assignment-summary.ts:98 project',
 ] as const;
 
 interface SourceEntry {
@@ -541,7 +552,10 @@ describe('quan hệ BẮT BUỘC trên bảng bị RLS che: tập vị trí sele
     // T1B-OPS PRE-P2 WORKER OPERATIONS HOTFIX (2026-10-07): thêm 6 entry mới
     // (`worker.service.ts:796 project` + 5 entry `labor-profile.read-service.ts:project`
     // cho 6 cột vận hành mới của LaborProfile). Tổng src = 50.
-    expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(50);
+    // T1A ANDROID BACKEND MOBILE CONTRACT (2026-10-18): thêm 1 entry mới
+    // (`worker-assignment-summary.ts:98 project`) — assignment summary cho
+    // login/workers/me đọc dưới GUC WORKER self. Tổng src = 51.
+    expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(51);
   });
 });
 

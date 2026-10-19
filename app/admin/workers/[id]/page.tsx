@@ -9,6 +9,7 @@ import { Breadcrumb } from '@/src/shared/ui/navigation/breadcrumb';
 import { WorkerEditForm } from './worker-edit-form';
 import { WorkerStatusForm } from './worker-status-form';
 import { WorkerDeleteButton } from './worker-delete-button';
+import { WorkerAccountLink } from './worker-account-link';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -266,6 +267,9 @@ export default async function WorkerDetailPage({ params }: { params: Promise<{ i
                 ))}
               </ul>
             </div>
+          )}
+          {session.role === 'ADMIN' && (
+            <WorkerAccountLink workerId={detail.id} accountUserId={detail.accountUserId} />
           )}
         </Section>
       </div>

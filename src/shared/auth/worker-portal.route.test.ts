@@ -17,6 +17,7 @@ const mocks = vi.hoisted(() => ({
   attendanceFindMany: vi.fn(),
   siteFindMany: vi.fn(),
   attendanceCreate: vi.fn(),
+  timesheetGroupBy: vi.fn(),
 }));
 
 vi.mock('@/src/shared/auth/auth-context', () => ({ getAuthContext: mocks.getAuthContext }));
@@ -26,6 +27,8 @@ vi.mock('@/src/shared/auth/with-authorized-db', () => ({
     cb({
       ticket: { findMany: mocks.ticketFindMany },
       attendanceEvent: { findMany: mocks.attendanceFindMany },
+      // T1A DEC-06: attendance route query thêm aggregate giờ chuẩn/OT từ TimesheetLine.
+      timesheetLine: { groupBy: mocks.timesheetGroupBy },
     }),
 }));
 vi.mock('@/src/shared/auth/with-system-db', () => ({
@@ -58,6 +61,7 @@ describe('worker portal — self scope + server-derived owner (DEC-03/04)', () =
     mocks.attendanceFindMany.mockResolvedValue([]);
     mocks.siteFindMany.mockResolvedValue([]);
     mocks.attendanceCreate.mockResolvedValue({ id: 'evt-1' });
+    mocks.timesheetGroupBy.mockResolvedValue([]);
   });
 
   it('tickets: thiếu workerId → 403 NOT_A_WORKER, KHÔNG query', async () => {
