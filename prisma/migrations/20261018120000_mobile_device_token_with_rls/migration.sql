@@ -295,7 +295,7 @@ BEGIN
         AND p.polname = 'hrp_timesheet_line_scope'
         AND p.polqual::text LIKE '%hrp_worker_visible_for%';
     IF v_ts_policy <> 0 THEN
-      RAISE EXCEPTION 'mobile_device_token_with_rls assertion failed: timesheet_lines FOR ALL policy must NOT include WORKER branch (DELETE exposure). Migration rolled back.', v_ts_policy;
+      RAISE EXCEPTION 'mobile_device_token_with_rls assertion failed: timesheet_lines FOR ALL policy must NOT include WORKER branch (DELETE exposure, count=%). Migration rolled back.', v_ts_policy;
     END IF;
 
     SELECT count(*) INTO v_ts_policy
@@ -318,7 +318,7 @@ BEGIN
         AND p.polcmd IN ('d', '*')
         AND p.polqual::text LIKE '%hrp_worker_visible_for%';
     IF v_ts_policy <> 0 THEN
-      RAISE EXCEPTION 'mobile_device_token_with_rls assertion failed: timesheet_lines must have NO DELETE (d) or FOR ALL (*) policy exposing the WORKER branch (audit delta: FOR ALL stores polcmd = ''*''). Migration rolled back.', v_ts_policy;
+      RAISE EXCEPTION 'mobile_device_token_with_rls assertion failed: timesheet_lines must have NO DELETE (d) or FOR ALL (*) policy exposing the WORKER branch (audit delta: FOR ALL stores polcmd = ''*'', count=%). Migration rolled back.', v_ts_policy;
     END IF;
   END IF;
 END
