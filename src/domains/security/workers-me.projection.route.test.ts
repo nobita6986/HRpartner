@@ -17,6 +17,9 @@ const mocks = vi.hoisted(() => ({
   resolvePerms: vi.fn(),
   withDbContext: vi.fn(),
   findUnique: vi.fn(),
+  userFindUnique: vi.fn(),
+  assignmentFindFirst: vi.fn(),
+  siteFindMany: vi.fn(),
 }));
 
 vi.mock('@/src/lib/db', () => ({ getPrisma: () => ({}) }));
@@ -40,6 +43,8 @@ const HOSTILE_WORKER = {
   bankAccount: '1234567890',
   bankName: 'Synthetic Bank',
   cccdChipData: 'RAW-CHIP-CANARY',
+  profileStatus: 'VERIFIED',
+  employmentStatus: 'ACTIVE',
   createdAt: new Date('2026-08-28T00:00:00.000Z'),
 };
 
@@ -47,8 +52,9 @@ const fakeTx = () => ({
   worker: { findUnique: mocks.findUnique },
   // T1A assignment summary đọc cùng tx (projectAssignment + sites) — null-line
   // để projection test không phụ thuộc assignment data.
-  projectAssignment: { findFirst: vi.fn().mockResolvedValue(null) },
-  site: { findMany: vi.fn().mockResolvedValue([]) },
+  projectAssignment: { findFirst: mocks.assignmentFindFirst },
+  site: { findMany: mocks.siteFindMany },
+  user: { findUnique: mocks.userFindUnique },
 });
 // query workerId khác self để chứng minh nó bị BỎ QUA (identity = ctx.workerId).
 const req = () => new NextRequest('http://localhost/api/workers/me?workerId=OTHER-999');
@@ -57,6 +63,9 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.withDbContext.mockImplementation((_p: unknown, _c: unknown, cb: (tx: unknown) => unknown) => cb(fakeTx()));
   mocks.findUnique.mockResolvedValue(HOSTILE_WORKER);
+  mocks.userFindUnique.mockResolvedValue({ phoneVerified: true });
+  mocks.assignmentFindFirst.mockResolvedValue(null);
+  mocks.siteFindMany.mockResolvedValue([]);
   mocks.resolvePerms.mockResolvedValue(new Set<string>()); // KHÔNG có CAN_VIEW_WORKER_SENSITIVE
 });
 
@@ -87,6 +96,31 @@ describe('GET /api/workers/me — self projection (AC-03 / DEC-05)', () => {
     const json = await res.json();
     expect(json.worker).not.toHaveProperty('cccdChipData');
     expect(json.worker.cccdNumber).toBe('012345678901');
+  });
+
+  it('returns Admin-confirmed site GPS and enables check-in only for a verified active assignment', async () => {
+    mocks.getAuthContext.mockResolvedValue({ userId: 'usr-self', role: 'WORKER', workerId: 'worker-self-1' });
+    mocks.assignmentFindFirst.mockResolvedValue({
+      id: 'assignment-1', projectId: 'project-1', employeeCode: 'HRP-001',
+      employmentType: 'FULL_TIME', workSetting: null,
+      validFrom: new Date('2026-10-01T00:00:00Z'), validTo: null,
+      project: { name: 'Project', code: 'P1' }, staffingOrderSlot: { positionTitle: 'Worker' },
+    });
+    mocks.siteFindMany.mockResolvedValue([{
+      id: 'site-1', name: 'Factory', latitude: '21.4', longitude: '105.8', radiusMeters: 500,
+      geoConfirmedAt: new Date('2026-10-18T00:00:00Z'),
+    }]);
+    const res = await GET(req());
+    const json = await res.json();
+    expect(res.status).toBe(200);
+    expect(json.assignment.sites[0].geoConfirmedAt).toBe('2026-10-18T00:00:00.000Z');
+    expect(json.mobileAccess).toEqual({
+      phoneVerified: true,
+      hasActiveAssignment: true,
+      hasConfiguredSiteGps: true,
+      siteGeofenceNotConfigured: false,
+      canCheckIn: true,
+    });
   });
 
   it('WORKER thiếu workerId → 404, KHÔNG chạm DB', async () => {

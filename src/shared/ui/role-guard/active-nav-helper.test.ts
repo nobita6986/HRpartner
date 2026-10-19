@@ -28,6 +28,7 @@ const ADMIN_NAV_FIXTURE: readonly NavHrefItem[] = [
   { href: '/admin/clients' },
   { href: '/admin/vendors' },
   { href: '/admin/tickets' },
+  { href: '/admin/worker-mobile' },
   { href: '/admin/attendance' },
   { href: '/admin/commission/policies' },
   { href: '/admin/commission/ledger' },

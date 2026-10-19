@@ -88,10 +88,10 @@ export async function GET(req: NextRequest) {
     // Boundary canonical (L1 AttendanceEvent self-scope + L2 RLS GUC). `workerId`
     // suy ra từ server (ctx.workerId) — không nhận từ client (DEC-03).
     ({ events, hoursByDate } = await withAuthorizedDbReadOnly(prisma, ctx, async (tx) => {
-      const eventRows = await tx.attendanceEvent.findMany({
+      const eventRowsRaw = await tx.attendanceEvent.findMany({
         where: { workerId: ctx.workerId, ...(workDateRange ? { workDate: workDateRange } : {}) },
         orderBy: { workDate: 'desc' },
-        take: limit,
+        take: limit * 2,
         select: {
           id: true,
           workDate: true,
@@ -101,8 +101,34 @@ export async function GET(req: NextRequest) {
           geofenceResult: true,
           status: true,
           shiftCode: true,
+          mobileAction: true,
         },
       });
+
+      // Mobile writes one immutable event per tap; preserve the existing one-row-per-day DTO.
+      const mobileDays = new Map<string, (typeof eventRowsRaw)[number]>();
+      const eventRows = eventRowsRaw.filter((event) => {
+        if (event.mobileAction !== 'CHECK_IN' && event.mobileAction !== 'CHECK_OUT') return true;
+        const key = event.workDate.toISOString().slice(0, 10);
+        const current = mobileDays.get(key);
+        if (!current) {
+          mobileDays.set(key, { ...event });
+        } else {
+          mobileDays.set(key, {
+            ...current,
+            id: current.mobileAction === 'CHECK_IN' ? current.id : event.mobileAction === 'CHECK_IN' ? event.id : current.id,
+            checkInTime: current.checkInTime ?? event.checkInTime,
+            checkOutTime: current.checkOutTime ?? event.checkOutTime,
+            geofenceResult: current.geofenceResult === 'OUTSIDE' || event.geofenceResult === 'OUTSIDE'
+              ? 'OUTSIDE'
+              : current.geofenceResult ?? event.geofenceResult,
+          });
+        }
+        return false;
+      });
+      eventRows.push(...mobileDays.values());
+      eventRows.sort((a, b) => b.workDate.getTime() - a.workDate.getTime());
+      eventRows.splice(limit);
 
       // T1A DEC-06: giờ chuẩn/OT theo TimesheetLine (RQ-06). Self-scope qua L1
       // builder (TimesheetLine) + RLS (migration 20261018120000...). Aggregate

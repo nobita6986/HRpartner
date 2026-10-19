@@ -27,6 +27,7 @@ export interface WorkerAssignmentSite {
   latitude: number | null;
   longitude: number | null;
   radiusMeters: number;
+  geoConfirmedAt: string | null;
 }
 
 export interface WorkerAssignmentSummary {
@@ -46,6 +47,8 @@ export interface WorkerAssignmentSummary {
 export interface WorkerSelfSummary {
   id: string;
   fullName: string | null;
+  profileStatus: string;
+  employmentStatus: string;
   assignment: WorkerAssignmentSummary | null;
 }
 
@@ -78,14 +81,20 @@ export async function loadWorkerSelfSummaryInTx(
 ): Promise<WorkerSelfSummary | null> {
   const worker = await tx.worker.findUnique({
     where: { accountUserId: userId },
-    select: { id: true, fullName: true },
+    select: { id: true, fullName: true, profileStatus: true, employmentStatus: true },
   });
   if (!worker) return null;
 
   // Assignment hiện hành: ACTIVE, một worker chỉ một ACTIVE tại một thời điểm
   // (isPrimary invariant G14) — mới nhất nếu có nhiều (defensive ordering).
+  const now = new Date();
   const assignment = (await tx.projectAssignment.findFirst({
-    where: { workerId: worker.id, status: 'ACTIVE' },
+    where: {
+      workerId: worker.id,
+      status: 'ACTIVE',
+      validFrom: { lte: now },
+      OR: [{ validTo: null }, { validTo: { gt: now } }],
+    },
     orderBy: [{ validFrom: 'desc' }, { createdAt: 'desc' }],
     select: {
       id: true,
@@ -101,7 +110,13 @@ export async function loadWorkerSelfSummaryInTx(
   })) as ProjectAssignmentWithSummary | null;
 
   if (!assignment) {
-    return { id: worker.id, fullName: worker.fullName, assignment: null };
+    return {
+      id: worker.id,
+      fullName: worker.fullName,
+      profileStatus: worker.profileStatus,
+      employmentStatus: worker.employmentStatus,
+      assignment: null,
+    };
   }
 
   // Sites của project hiện hành (check-in geofence dùng đến list này; profile
@@ -109,12 +124,14 @@ export async function loadWorkerSelfSummaryInTx(
   const sites = await tx.site.findMany({
     where: { projectId: assignment.projectId },
     orderBy: [{ createdAt: 'asc' }],
-    select: { id: true, name: true, latitude: true, longitude: true, radiusMeters: true },
+      select: { id: true, name: true, latitude: true, longitude: true, radiusMeters: true, geoConfirmedAt: true },
   });
 
   return {
     id: worker.id,
     fullName: worker.fullName,
+    profileStatus: worker.profileStatus,
+    employmentStatus: worker.employmentStatus,
     assignment: {
       id: assignment.id,
       projectId: assignment.projectId,
@@ -132,6 +149,7 @@ export async function loadWorkerSelfSummaryInTx(
         latitude: decimalToNumber(s.latitude),
         longitude: decimalToNumber(s.longitude),
         radiusMeters: s.radiusMeters,
+        geoConfirmedAt: serializeDate(s.geoConfirmedAt),
       })),
     },
   };

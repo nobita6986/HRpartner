@@ -66,6 +66,10 @@ export async function GET(req: NextRequest) {
 
   let row;
   let assignment: WorkerAssignmentSummary | null = null;
+  let phoneVerified = false;
+  let profileStatus: string | null = null;
+  let employmentStatus: string | null = null;
+  let hasConfiguredSiteGps = false;
   try {
     row = await withDbContext(prisma, ctx, async (tx) => {
       // L2 RLS qua GUC. L1: chỉ chính mình, không cần scope registry.
@@ -78,7 +82,14 @@ export async function GET(req: NextRequest) {
       if (workerRow) {
         const summary = await loadWorkerSelfSummaryInTx(tx, ctx.userId);
         assignment = summary?.assignment ?? null;
+        profileStatus = summary?.profileStatus ?? null;
+        employmentStatus = summary?.employmentStatus ?? null;
+        hasConfiguredSiteGps = Boolean(summary?.assignment?.sites.some((site) =>
+          site.latitude !== null && site.longitude !== null && site.geoConfirmedAt !== null,
+        ));
       }
+      const user = await tx.user.findUnique({ where: { id: ctx.userId }, select: { phoneVerified: true } });
+      phoneVerified = Boolean(user?.phoneVerified);
       return workerRow;
     });
   } catch (e) {
@@ -108,5 +119,17 @@ export async function GET(req: NextRequest) {
   const hasSensitive = effPerms.has('CAN_VIEW_WORKER_SENSITIVE');
 
   const projected = projectWorker(row, { hasSensitivePermission: hasSensitive, action: 'SELF_PROFILE' });
-  return NextResponse.json({ worker: projected, assignment });
+  const hasActiveAssignment = Boolean(assignment);
+  const siteGeofenceNotConfigured = hasActiveAssignment && !hasConfiguredSiteGps;
+  return NextResponse.json({
+    worker: projected,
+    assignment,
+    mobileAccess: {
+      phoneVerified,
+      hasActiveAssignment,
+      hasConfiguredSiteGps,
+      siteGeofenceNotConfigured,
+      canCheckIn: profileStatus === 'VERIFIED' && employmentStatus === 'ACTIVE' && hasActiveAssignment && hasConfiguredSiteGps,
+    },
+  });
 }

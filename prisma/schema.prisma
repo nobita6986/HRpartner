@@ -142,6 +142,8 @@ model User {
   name         String?
   role         SystemRole // V4.14 G22 — enum 13 role (ADMIN = root bất khả tước §15.1)
   vendorId     String?  @map("vendor_id")
+  phoneVerified Boolean @default(false) @map("phone_verified")
+  phoneVerifiedAt DateTime? @map("phone_verified_at")
   isActive     Boolean  @default(true) @map("is_active")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
@@ -188,6 +190,13 @@ model User {
 
   // T1A Android backend contract — FCM device tokens của user (cascade khi User bị xóa).
   mobileDeviceTokens MobileDeviceToken[]
+  // T1A GPS contract — Admin/BoD identity cho lần xác nhận cấu hình GPS của Site (nullable).
+  geoConfirmedSites Site[] @relation("SiteGeoConfirmedBy")
+  feedbackItems Feedback[] @relation("FeedbackOwner")
+  feedbackResponses Feedback[] @relation("FeedbackResponder")
+  workerReferrals WorkerReferral[] @relation("WorkerReferrer")
+  reviewedWorkerReferrals WorkerReferral[] @relation("WorkerReferralReviewer")
+  publishedReferralPolicies ReferralProgramPolicy[] @relation("ReferralPolicyPublisher")
 
   @@index([role, isActive])
   @@map("users")
@@ -614,9 +623,17 @@ model Site {
   latitude      Decimal? @db.Decimal(10, 7)
   longitude     Decimal? @db.Decimal(10, 7)
   radiusMeters  Int      @default(200) @map("radius_meters") // geofence default 200m [CẦN CHỐT theo site]
+  // T1A GPS contract — metadata "Admin/BoD đã xác nhận cấu hình GPS hợp lệ".
+  // Check-in chỉ đọc được config *confirmed* (lat+lng + marker); mặc định
+  // radiusMeters=200 KHÔNG tự động coi là confirmed. Migration:
+  // 20261019010000_site_gps_confirmation (additive, ship-only).
+  geoConfirmedAt   DateTime? @map("geo_confirmed_at")
+  geoConfirmedById String?   @map("geo_confirmed_by_id")
   createdAt     DateTime @default(now()) @map("created_at")
 
   project Project @relation(fields: [projectId], references: [id])
+  geoConfirmedBy User? @relation("SiteGeoConfirmedBy", fields: [geoConfirmedById], references: [id], onDelete: SetNull)
+  attendanceEvents AttendanceEvent[]
 
   @@index([projectId])
   @@map("sites")
@@ -694,6 +711,7 @@ model CandidateSubmission {
   sourceClaims  SourceClaim[]
   statusHistory ApplicationStatusHistory[] // MP-2 RQ-01/RQ-06
   assignment    ProjectAssignment? // MP-3C RQ-01: at most one initial placement per submission
+  workerReferral WorkerReferral?
   placements    Placement[]         @relation("SubmissionPlacements") // N3: source submission (nullable)
 
   @@index([vendorId, phone]) // V4.5 G13: bỏ unique để nộp LẠI cùng người cho nhu cầu khác — chống trùng bằng Referral Guard
@@ -903,6 +921,8 @@ model AttendanceEvent {
   workerId        String?   @map("worker_id")
   projectId       String?   @map("project_id")
   assignmentId    String?   @map("assignment_id")
+  siteId          String?   @map("site_id")
+  mobileAction    String?   @map("mobile_action") // CHECK_IN | CHECK_OUT; null for existing web/import rows
   workDate        DateTime  @map("work_date") @db.Date
   checkInTime     String?   @map("check_in_time")
   checkOutTime    String?   @map("check_out_time")
@@ -911,6 +931,7 @@ model AttendanceEvent {
   capturedAt      DateTime? @map("captured_at") // thời điểm tại nguồn (thiết bị/máy)
   receivedAt      DateTime  @default(now()) @map("received_at") // thời điểm server nhận — risk flag nếu lệch > 15'
   importBatchId   String?   @map("import_batch_id")
+  site            Site?     @relation(fields: [siteId], references: [id], onDelete: SetNull)
   // GPS evidence (P1 portals — DEC-03)
   gpsLatitude     Decimal?  @map("gps_latitude") @db.Decimal(10, 7)
   gpsLongitude    Decimal?  @map("gps_longitude") @db.Decimal(10, 7)
@@ -919,8 +940,108 @@ model AttendanceEvent {
   createdAt       DateTime  @default(now()) @map("created_at")
 
   @@unique([source, externalEventId]) // re-import idempotent
+  @@unique([workerId, workDate, mobileAction], name: "attendance_events_worker_day_mobile_action_key")
   @@index([workerId, workDate])
+  @@index([siteId])
   @@map("attendance_events")
+}
+
+enum FeedbackStatus {
+  RECEIVED
+  IN_REVIEW
+  RESOLVED
+  REJECTED
+}
+
+model Feedback {
+  id            String         @id @default(uuid())
+  userId        String         @map("user_id")
+  category      String
+  content       String         @db.Text
+  status        FeedbackStatus @default(RECEIVED)
+  adminResponse String?        @map("admin_response") @db.Text
+  respondedById String?        @map("responded_by_id")
+  respondedAt   DateTime?      @map("responded_at")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+
+  user        User  @relation("FeedbackOwner", fields: [userId], references: [id], onDelete: Restrict)
+  respondedBy User? @relation("FeedbackResponder", fields: [respondedById], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+  @@map("feedbacks")
+}
+
+enum WorkerReferralStatus {
+  SUBMITTED
+  IN_REVIEW
+  QUALIFIED
+  REWARD_APPROVED
+  PAID
+  REJECTED
+}
+
+enum ReferralBenefitStatus {
+  NONE
+  PENDING_APPROVAL
+  APPROVED
+  PAID
+  CANCELLED
+}
+
+model ReferralProgramPolicy {
+  id                      String    @id @default(uuid())
+  policyVersion           String    @unique @map("policy_version")
+  title                   String
+  isEnabled               Boolean   @default(false) @map("is_enabled")
+  eligibilityCriteria     String    @map("eligibility_criteria") @db.Text
+  successEventDescription String    @map("success_event_description") @db.Text
+  rewardPolicyDescription String    @map("reward_policy_description") @db.Text
+  termsAndConditions      String    @map("terms_and_conditions") @db.Text
+  effectiveFrom           DateTime? @map("effective_from")
+  effectiveUntil          DateTime? @map("effective_until")
+  publishedById           String?   @map("published_by_id")
+  publishedAt             DateTime? @map("published_at")
+  createdAt               DateTime  @default(now()) @map("created_at")
+  updatedAt               DateTime  @updatedAt @map("updated_at")
+
+  publishedBy User?            @relation("ReferralPolicyPublisher", fields: [publishedById], references: [id], onDelete: SetNull)
+  referrals   WorkerReferral[]
+
+  @@map("referral_program_policies")
+}
+
+model WorkerReferral {
+  id                      String                @id @default(uuid())
+  referrerUserId          String                @map("referrer_user_id")
+  referredNameCiphertext  String                @map("referred_name_ciphertext")
+  referredPhoneCiphertext String                @map("referred_phone_ciphertext")
+  referredPhoneLookupHash String                @map("referred_phone_lookup_hash")
+  jobInterest             String?               @map("job_interest")
+  consentToContact        Boolean               @map("consent_to_contact")
+  consentedAt             DateTime              @map("consented_at")
+  policyVersionId         String                @map("policy_version_id")
+  status                  WorkerReferralStatus  @default(SUBMITTED)
+  candidateSubmissionId   String?               @unique @map("candidate_submission_id")
+  benefitStatus           ReferralBenefitStatus @default(NONE) @map("benefit_status")
+  benefitAmountVnd        BigInt?               @map("benefit_amount_vnd")
+  reconciliationNote      String?               @map("reconciliation_note") @db.Text
+  reviewedById            String?               @map("reviewed_by_id")
+  reviewedAt              DateTime?             @map("reviewed_at")
+  paidAt                  DateTime?             @map("paid_at")
+  createdAt               DateTime              @default(now()) @map("created_at")
+  updatedAt               DateTime              @updatedAt @map("updated_at")
+
+  referrerUser User                  @relation("WorkerReferrer", fields: [referrerUserId], references: [id], onDelete: Restrict)
+  policy       ReferralProgramPolicy @relation(fields: [policyVersionId], references: [id], onDelete: Restrict)
+  submission   CandidateSubmission?  @relation(fields: [candidateSubmissionId], references: [id], onDelete: SetNull)
+  reviewedBy   User?                 @relation("WorkerReferralReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([referrerUserId, createdAt])
+  @@index([referredPhoneLookupHash])
+  @@index([status, createdAt])
+  @@map("worker_referrals")
 }
 
 model TimesheetPeriod {

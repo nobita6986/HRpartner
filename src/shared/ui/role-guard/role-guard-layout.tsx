@@ -200,6 +200,7 @@ export const ADMIN_NAV_PHASE4: NavItem[] = [
   // matching page renders an "Under Development" placeholder so direct URL
   // access never exposes the operational UI.
   { href: '/admin/tickets', label: 'Phản ánh / Tạm ứng', icon: ClipboardList, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'ACCOUNTANT'], section: 'development' },
+  { href: '/admin/worker-mobile', label: 'Góp ý / Giới thiệu NLĐ', icon: FileText, roles: ['ADMIN', 'DIRECTOR', 'HR_MANAGER'], section: 'development' },
   { href: '/admin/attendance', label: 'Chấm công', icon: FileText, roles: ['ADMIN', 'HR_STAFF', 'HR_MANAGER', 'PM', 'ACCOUNTANT'], section: 'development' },
   { href: '/admin/reconciliation', label: 'Đối soát', icon: Wallet, roles: ['ADMIN', 'HR_MANAGER', 'ACCOUNTANT'], section: 'development' },
   { href: '/admin/payroll', label: 'Tính lương', icon: Wallet, roles: ['ADMIN', 'HR_MANAGER', 'ACCOUNTANT'], section: 'development' },
