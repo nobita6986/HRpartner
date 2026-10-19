@@ -28,6 +28,7 @@ interface UserRow {
   id: string;
   name: string | null;
   phone: string | null;
+  phoneVerified: boolean;
   role: string;
   vendorId: string | null;
   isActive: boolean;
@@ -102,6 +103,10 @@ export default function UserManagementClient() {
   const [modalLoading, setModalLoading] = useState(false);
   const [editing, setEditing] = useState<UserRow | null>(null);
   const [pendingAction, setPendingAction] = useState<UserRow | null>(null);
+  const [phoneVerificationUser, setPhoneVerificationUser] = useState<UserRow | null>(null);
+  const [phoneVerificationReason, setPhoneVerificationReason] = useState('');
+  const [phoneVerificationError, setPhoneVerificationError] = useState('');
+  const [phoneVerificationLoading, setPhoneVerificationLoading] = useState(false);
 
   // One-time password reveal — chỉ hiển thị 1 lần ở modal "create".
   const [revealedPassword, setRevealedPassword] = useState<string | null>(null);
@@ -114,7 +119,7 @@ export default function UserManagementClient() {
       if (isActiveFilter) params.set('isActive', isActiveFilter);
       if (roleFilter) params.set('role', roleFilter);
       if (search.trim()) params.set('search', search.trim());
-      const r = await fetch(`/api/admin/users?${params}`);
+      const r = await fetch(`/api/admin/users?${params}`, { cache: 'no-store' });
       if (!r.ok) {
         if (r.status === 401) {
           setError('Vui lòng đăng nhập.');
@@ -288,6 +293,28 @@ export default function UserManagementClient() {
     }
   };
 
+  const submitManualPhoneVerification = async () => {
+    if (!phoneVerificationUser || !phoneVerificationReason.trim()) return;
+    setPhoneVerificationLoading(true);
+    setPhoneVerificationError('');
+    try {
+      const response = await fetch(`/api/admin/users/${encodeURIComponent(phoneVerificationUser.id)}/phone-verification`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ reason: phoneVerificationReason.trim() }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Không thể xác nhận số điện thoại.');
+      setPhoneVerificationUser(null);
+      setPhoneVerificationReason('');
+      await load();
+    } catch (error) {
+      setPhoneVerificationError(error instanceof Error ? error.message : 'Không thể xác nhận số điện thoại.');
+    } finally {
+      setPhoneVerificationLoading(false);
+    }
+  };
+
   return (
     <div style={{ background: 'var(--surface)' }} className="px-6 py-8 lg:px-8">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
@@ -297,6 +324,9 @@ export default function UserManagementClient() {
           </h1>
           <p style={{ color: 'var(--on-surface-variant)' }} className="mt-1 text-sm">
             Quản lý tài khoản người dùng, vai trò và trạng thái hoạt động.
+          </p>
+          <p style={{ color: 'var(--on-surface-variant)' }} className="mt-1 max-w-3xl text-xs">
+            Đăng ký trên ứng dụng chỉ tạo tài khoản đăng nhập. Muốn dùng chấm công, cần tiếp nhận hồ sơ Worker, xác minh, phân công dự án rồi liên kết tài khoản tại chi tiết Worker.
           </p>
         </div>
         <button
@@ -380,7 +410,7 @@ export default function UserManagementClient() {
                   borderBottom: '1px solid var(--outline-variant)',
                 }}
               >
-                {['Mã người dùng', 'Tên', 'Điện thoại', 'Vai trò', 'Mã nhà cung cấp', 'Trạng thái', 'Ngày tạo', 'Thao tác'].map(
+                {['Mã người dùng', 'Tên', 'Điện thoại', 'Xác minh SĐT', 'Vai trò', 'Mã nhà cung cấp', 'Trạng thái', 'Ngày tạo', 'Thao tác'].map(
                   (h) => (
                     <th
                       key={h}
@@ -408,6 +438,23 @@ export default function UserManagementClient() {
                   </td>
                   <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">
                     {u.phone ?? '—'}
+                  </td>
+                  <td className="px-4 py-3 text-xs">
+                    {u.role !== 'WORKER' ? '—' : u.phoneVerified ? 'Đã xác minh' : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPhoneVerificationUser(u);
+                          setPhoneVerificationReason('');
+                          setPhoneVerificationError('');
+                        }}
+                        data-testid={`verify-phone-${u.id}`}
+                        className="rounded border px-2 py-1"
+                        style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
+                      >
+                        Xác nhận thủ công
+                      </button>
+                    )}
                   </td>
                   <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">
                     {roleLabel(u.role)}
@@ -512,6 +559,35 @@ export default function UserManagementClient() {
           onSubmit={submitReactivate}
           onClose={closeModal}
         />
+      )}
+      {phoneVerificationUser && (
+        <ModalShell title={`Xác nhận SĐT ${phoneVerificationUser.phone ?? ''}`} onClose={() => setPhoneVerificationUser(null)}>
+          <p className="mb-3 text-sm" style={{ color: 'var(--on-surface-variant)' }}>
+            Thao tác này bỏ qua OTP. Chỉ xác nhận sau khi Admin đã kiểm tra quyền sở hữu số điện thoại; thao tác sẽ được ghi vào nhật ký kiểm toán.
+          </p>
+          <Field label="Lý do xác nhận" required>
+            <input
+              value={phoneVerificationReason}
+              onChange={(event) => setPhoneVerificationReason(event.target.value)}
+              required
+              maxLength={500}
+              className="w-full rounded border px-3 py-2 text-sm"
+            />
+          </Field>
+          {phoneVerificationError && <p role="alert" className="mt-2 text-sm" style={{ color: 'var(--error)' }}>{phoneVerificationError}</p>}
+          <div className="mt-4 flex justify-end gap-2">
+            <button type="button" onClick={() => setPhoneVerificationUser(null)} className="rounded border px-3 py-1.5 text-sm">Hủy</button>
+            <button
+              type="button"
+              onClick={submitManualPhoneVerification}
+              disabled={phoneVerificationLoading || !phoneVerificationReason.trim()}
+              className="rounded px-3 py-1.5 text-sm font-semibold disabled:opacity-50"
+              style={{ background: 'var(--primary)', color: 'var(--on-primary)' }}
+            >
+              {phoneVerificationLoading ? 'Đang xác nhận…' : 'Xác nhận số điện thoại'}
+            </button>
+          </div>
+        </ModalShell>
       )}
     </div>
   );
