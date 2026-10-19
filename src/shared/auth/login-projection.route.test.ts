@@ -68,7 +68,7 @@ describe('POST /api/auth/login — T1A mobile projection (TASK DEC-02)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.signJwt.mockResolvedValue('jwt-token-123');
-    mocks.getLandingPath.mockReturnValue('/worker');
+    mocks.getLandingPath.mockReturnValue('/');
   });
 
   it('WORKER hợp lệ: JSON có token + user summary + worker summary (assignment + department null), cookie vẫn phát', async () => {
