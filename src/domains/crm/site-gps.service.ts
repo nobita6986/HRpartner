@@ -120,7 +120,8 @@ function hasCoordinateProvided(v: NumericLike): boolean {
 function parseRadius(
   value: NumericLike, fieldLabel: 'radiusMeters',
 ): { value: number | null } | { error: string } {
-  if (value === undefined || value === null) return { value: null };
+  if (value === undefined) return { value: null };
+  if (value === null) return { error: `${fieldLabel} phải là số nguyên dương.` };
   let num: number;
   if (typeof value === 'number') num = value;
   else if (typeof value === 'string') {
@@ -204,7 +205,7 @@ export function validateSiteGpsCreatePayload(raw: unknown): SiteGpsValidationRes
   };
 }
 
-/** Update Site: ít nhất một field; lat/lng both-or-neither; radius optional. */
+/** Update Site: ít nhất một field; lat/lng both-or-neither; tọa độ mới cần radius tường minh. */
 export function validateSiteGpsUpdatePayload(raw: unknown): SiteGpsValidationResult<SiteGpsUpdateInput> {
   if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) {
     return { ok: false, error: 'Body phải là object JSON.' };
@@ -229,6 +230,10 @@ export function validateSiteGpsUpdatePayload(raw: unknown): SiteGpsValidationRes
 
   if (body.latitude !== undefined) { out.latitude = latRes.value; anyKnown = true; }
   if (body.longitude !== undefined) { out.longitude = lngRes.value; anyKnown = true; }
+
+  if (out.latitude != null && body.radiusMeters === undefined) {
+    return { ok: false, error: 'radiusMeters là bắt buộc khi cập nhật tọa độ để xác nhận đầy đủ cấu hình GPS.' };
+  }
 
   const radiusRes = parseRadius(body.radiusMeters as NumericLike, 'radiusMeters');
   if ('error' in radiusRes) return { ok: false, error: radiusRes.error };
@@ -375,8 +380,8 @@ export async function createSiteForProject(
  * Cập nhật địa chỉ/tọa độ/bán kính của Site thuộc Project (T0 B4).
  * - Site phải thuộc Project từ route param — không tin site ID client gửi chéo.
  * - T0 CORRECTION (confirm markers): markers CHỈ được set khi payload CÓ
- *   tường minh đủ latitude + longitude (dạng giá trị hợp lệ) — tức Admin
- *   chủ động (re-)configure toạ độ trong lần save này. Cập nhật TỪNG PHẦN
+ *   tường minh latitude + longitude + radiusMeters hợp lệ — tức Admin chủ động
+ *   (re-)configure đầy đủ cấu hình geofence trong lần save này. Cập nhật TỪNG PHẦN
  *   (chỉ radius / chỉ address) GIỮ NGUYÊN marker hiện tại ⇒ Site legacy
  *   chưa xác nhận giữ trạng thái chưa xác nhận; site đã xác nhận giữ marker.
  * - Bỏ toạ độ (lat + lng null) ⇒ clear markers.
@@ -407,13 +412,16 @@ export async function updateSiteGps(
   const before = toSiteGpsDto(existing);
 
   // T0 CORRECTION — explicit-confirm rule:
-  //   - hasValidCoords = payload lần này CÓ tường minh cả latitude + longitude
-  //     (cả hai là giá trị hợp lệ, không null) ⇒ markers set;
+  //   - hasValidCoords = payload lần này CÓ tường minh latitude + longitude
+  //     hợp lệ và radiusMeters ⇒ markers set;
   //   - coordsCleared (cả hai null) ⇒ markers clear;
   //   - cập nhật từng phần (chỉ radius / chỉ address) ⇒ markers GIỮ NGUYÊN
   //     (legacy UNCONFIRMED giữ UNCONFIRMED; CONFIRMED vẫn CONFIRMED).
   const coordsProvidedExplicitly = input.latitude !== undefined && input.longitude !== undefined;
-  const hasValidCoords = coordsProvidedExplicitly && input.latitude != null && input.longitude != null;
+  const hasValidCoords = coordsProvidedExplicitly
+    && input.latitude != null
+    && input.longitude != null
+    && input.radiusMeters !== undefined;
   const coordsCleared = coordsProvidedExplicitly && input.latitude == null && input.longitude == null;
 
   const updated = await tx.site.update({
@@ -423,8 +431,8 @@ export async function updateSiteGps(
       ...(input.latitude !== undefined ? { latitude: input.latitude } : {}),
       ...(input.longitude !== undefined ? { longitude: input.longitude } : {}),
       ...(input.radiusMeters !== undefined ? { radiusMeters: input.radiusMeters } : {}),
-      // Confirm markers (T0 correction): CHỈ set khi Admin chủ động xác nhận
-      // đầy đủ toạ độ trong payload này; partial update giữ nguyên marker.
+      // Confirm markers (T0 correction): CHỈ set khi Admin gửi đủ tọa độ + bán kính;
+      // partial update giữ nguyên marker.
       geoConfirmedAt: hasValidCoords ? new Date() : coordsCleared ? null : existing.geoConfirmedAt,
       geoConfirmedById: hasValidCoords ? ctx.userId : coordsCleared ? null : existing.geoConfirmedById,
     },

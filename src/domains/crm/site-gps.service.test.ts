@@ -182,6 +182,15 @@ describe('validateSiteGpsUpdatePayload (AC-03)', () => {
       expect(r.value.radiusMeters).toBe(500);
     }
   });
+
+  it('tọa độ mới bắt buộc có radiusMeters tường minh; radius null bị từ chối', () => {
+    const missingRadius = validateSiteGpsUpdatePayload({ latitude: 21.49, longitude: 105.83 });
+    expect(missingRadius.ok).toBe(false);
+    if (!missingRadius.ok) expect(missingRadius.error).toContain('radiusMeters là bắt buộc');
+
+    expect(validateSiteGpsUpdatePayload({ latitude: 21.49, longitude: 105.83, radiusMeters: 800 }).ok).toBe(true);
+    expect(validateSiteGpsUpdatePayload({ radiusMeters: null }).ok).toBe(false);
+  });
 });
 
 function expectAuditRoleError(fn: () => Promise<unknown>): Promise<void> {
@@ -234,6 +243,18 @@ describe('updateSiteGps (AC-02 + AC-04)', () => {
     expect(out.gpsStatus).toBe('UNCONFIRMED');
   });
 
+  it('REGRESSION (T0 follow-up): cập nhật tọa độ thiếu radius → VALIDATION trước khi query/update/audit', async () => {
+    const siteFindFirst = vi.fn();
+    const siteUpdate = vi.fn();
+    const tx = makeTx({ siteFindFirst, siteUpdate });
+
+    await expect(updateSiteGps(tx, actor('ADMIN'), 'p1', 'site-1', { latitude: 21.49, longitude: 105.83 }))
+      .rejects.toMatchObject({ code: 'VALIDATION' });
+    expect(siteFindFirst).not.toHaveBeenCalled();
+    expect(siteUpdate).not.toHaveBeenCalled();
+    expect(mocks.auditLogCreate).not.toHaveBeenCalled();
+  });
+
   it('REGRESSION (T0 correction): partial update CHỈ address trên site CONFIRMED → markers giữ nguyên', async () => {
     const confirmedAt = new Date('2026-10-19T00:00:00.000Z');
     const siteUpdate = vi.fn().mockResolvedValue({
@@ -259,12 +280,13 @@ describe('updateSiteGps (AC-02 + AC-04)', () => {
     expect(data.address).toBe('Địa chỉ mới');
   });
 
-  it('update tường minh đủ lat+lng (Admin re-configure toạ độ) → markers set + audit GPS_UPDATE', async () => {
-    // T0 correction: chỉ payload CÓ cả hai toạ độ hợp lệ mới confirm.
+  it('update tường minh đủ lat+lng+radius (Admin re-configure geofence) → markers set + audit GPS_UPDATE', async () => {
+    // T0 correction: chỉ payload CÓ cả tọa độ và radius hợp lệ mới confirm.
     const siteUpdate = vi.fn().mockResolvedValue({
       ...EXISTING_SITE,
       latitude: '21.4900' as unknown as Prisma.Decimal,
       longitude: '105.8300' as unknown as Prisma.Decimal,
+      radiusMeters: 900,
       geoConfirmedAt: new Date('2026-10-19T00:00:00.000Z'),
       geoConfirmedById: 'admin-1',
     });
@@ -274,13 +296,14 @@ describe('updateSiteGps (AC-02 + AC-04)', () => {
       actor('DIRECTOR'),
       'p1',
       'site-1',
-      { latitude: '21.49', longitude: '105.83' },
+      { latitude: '21.49', longitude: '105.83', radiusMeters: 900 },
     );
 
     expect(siteUpdate).toHaveBeenCalledTimes(1);
     const data = (siteUpdate.mock.calls[0][0] as { data: Record<string, unknown> }).data;
     expect(data.geoConfirmedAt).toBeInstanceOf(Date);
     expect(data.geoConfirmedById).toBe('admin-1');
+    expect(data.radiusMeters).toBe(900);
     expect(out.gpsStatus).toBe('CONFIRMED');
 
     // audit cùng tx: GPS_UPDATE diff before/after (create arg = { data: row })
