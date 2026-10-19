@@ -96,7 +96,8 @@ const AUTH_MARKER_NAMES = [
 const AUTH_MARKER_CALL_RE = new RegExp(
   '\\b(?:' + AUTH_MARKER_NAMES.join('|') + ')\\s*\\(',
 );
-// Ba route marketplace ẩn danh có chủ đích: 1 canonical apply + 2 stub 410.
+// Các route public có chủ đích: marketplace intake/apply, cùng đăng ký tài khoản
+// (được bảo vệ bằng rate limit và không cần phiên đăng nhập).
 // N2-2 link-capture (Decision A): GET /r/[code] canonical redirect with signed
 // cookie (rate-limit + engine-context gate = auth-equivalent). No anonymous POST.
 // AFF-03 apply-attribution: POST /api/public/intake — anonymous, identity comes
@@ -107,6 +108,7 @@ const MARKETPLACE_ANON = [
   'app/api/jobs/route.ts',
   'app/api/jobs/apply/route.ts',
   'app/api/public/intake/route.ts',
+  'app/api/auth/register/route.ts',
 ];
 // Vòng đời phiên: login xác thực credential, logout chỉ xoá cookie (không ghi business).
 const SESSION_ROUTES = ['app/api/auth/login/route.ts', 'app/api/auth/logout/route.ts'];

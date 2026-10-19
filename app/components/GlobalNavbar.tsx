@@ -282,19 +282,16 @@ export function GlobalNavbar() {
                 >
                   Đăng nhập
                 </Link>
-                <button
-                  type="button"
-                  aria-disabled="true"
-                  title="Đang phát triển"
-                  tabIndex={-1}
-                  // hrp-t2-public-paging-tone-hotfix (RQ-06): thu nhỏ button
+                <Link
+                  href="/register"
+                  // hrp-t2-public-paging-tone-hotfix (RQ-06): thu nhỏ link
                   // Đăng ký desktop để cân với menu. Trước: `px-5 min-h-11`
                   // (44px cao, padding 20px ngang) — quá to so với nav links
                   // 16px text + h-16 (64px) navbar. Sau: `px-3 min-h-9` (36px
                   // cao, padding 12px ngang) — gọn hơn nhưng vẫn đủ min-h
                   // 36px để pass touch target. Giữ nguyên `font-semibold`
                   // (cỡ chữ) + label "Đăng ký" + color tokens.
-                  className="hrp-focus font-semibold px-3 min-h-9 inline-flex items-center rounded-lg cursor-not-allowed opacity-70"
+                  className="hrp-focus font-semibold px-3 min-h-9 inline-flex items-center rounded-lg"
                   // t1b-public-theme-picker-contrast (RQ-04, C7): background
                   // --color-primary → --color-primary-dark để white-on-PD
                   // đạt 4.5:1 ở 5/5 palette (HRP 6.468 / Ocean 9.647 /
@@ -302,7 +299,7 @@ export function GlobalNavbar() {
                   style={{ backgroundColor: 'var(--color-primary-dark)', color: 'var(--color-on-primary)' }}
                 >
                   Đăng ký
-                </button>
+                </Link>
                 {/* t1b-public-theme-picker-contrast (RQ-01, AC-01): ThemePicker
                     mount ngay sau nút Đăng ký desktop. Component đọc
                     data-theme từ ancestor (ThemeScope wrap public shell). */}
@@ -420,22 +417,19 @@ export function GlobalNavbar() {
                   >
                     Đăng nhập
                   </Link>
-                  <button
-                    type="button"
-                    aria-disabled="true"
-                    title="Đang phát triển"
-                    tabIndex={-1}
+                  <Link
+                    href="/register"
                     // hrp-t2-public-paging-tone-hotfix (RQ-07): thu nhỏ
-                    // button Đăng ký mobile. Trước: `px-4 min-h-11` (44px
+                    // link Đăng ký mobile. Trước: `px-4 min-h-11` (44px
                     // cao) — Sau: `px-3 min-h-9` (36px cao) đồng bộ với
                     // desktop. Giữ nguyên `font-semibold` + label + color.
                     // t1b-public-theme-picker-contrast (RQ-04, C7): bg P → PD.
-                    className="hrp-focus flex items-center justify-center px-3 min-h-9 font-semibold rounded-lg cursor-not-allowed opacity-70"
+                    className="hrp-focus flex items-center justify-center px-3 min-h-9 font-semibold rounded-lg"
                     style={{ backgroundColor: 'var(--color-primary-dark)', color: 'var(--color-on-primary)' }}
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Đăng ký
-                  </button>
+                  </Link>
                   {/* t1b-public-theme-picker-contrast (AC-01): ThemePicker
                       trong mobile menu, ở vị trí tương ứng sau nút Đăng ký.
                       Mobile menu đóng khi user chọn nav link hoặc nhấn

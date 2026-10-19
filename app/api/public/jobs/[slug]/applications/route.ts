@@ -10,6 +10,8 @@ import { clientIpFromHeaders } from '@/src/shared/security/rate-limit-identity';
 import { RATE_LIMIT_RULES } from '@/src/shared/security/rate-limit-port';
 import { enforceRateLimits } from '@/src/shared/security/rate-limit-guard';
 import { readCappedJson } from '@/src/shared/security/request-body';
+import { AuthSessionError, getAuthContext } from '@/src/shared/auth/auth-context';
+import { getAuthenticatedApplyAccount } from '@/src/domains/applications/authenticated-apply-account';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -138,7 +140,35 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     );
   }
 
-  const normalizedPhone = normalizePhone(body.phone);
+  let applicantName = body.fullName ?? '';
+  let applicantPhone = body.phone ?? '';
+  const hasSessionCredential = req.headers.has('authorization') || req.cookies.has('hrp_session');
+  if (hasSessionCredential) {
+    try {
+      const ctx = await getAuthContext(req);
+      if (ctx.role !== 'WORKER') {
+        return NextResponse.json({ error: 'FORBIDDEN', message: 'Tài khoản này không thể nộp hồ sơ ứng tuyển.' }, { status: 403 });
+      }
+      const account = await getAuthenticatedApplyAccount(ctx);
+      if (!account?.name || !account.phone) {
+        return NextResponse.json({ error: 'PROFILE_INCOMPLETE', message: 'Tài khoản cần có họ tên và số điện thoại để ứng tuyển.' }, { status: 422 });
+      }
+      applicantName = account.name;
+      applicantPhone = account.phone;
+    } catch (error) {
+      if (error instanceof AuthSessionError) {
+        return NextResponse.json({ error: 'UNAUTHORIZED', message: 'Phiên đăng nhập không hợp lệ.' }, { status: 401 });
+      }
+      return NextResponse.json({ error: 'INTERNAL', message: 'Không thể xác minh tài khoản ứng tuyển.' }, { status: 500 });
+    }
+  } else if (!applicantName.trim() || !applicantPhone.trim()) {
+    return NextResponse.json(
+      { error: 'VALIDATION', message: 'Vui lòng nhập họ tên và số điện thoại để ứng tuyển.' },
+      { status: 400, headers: { 'Cache-Control': 'no-store' } },
+    );
+  }
+
+  const normalizedPhone = normalizePhone(applicantPhone);
   if (normalizedPhone.length > 0) {
     const phoneDenied = await enforceRateLimits({
       buckets: [{ rule: RATE_LIMIT_RULES.APPLY_PHONE, value: normalizedPhone }],
@@ -168,8 +198,8 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       submitPublicApplication(tx, {
         slug,
         // slotId omitted → RPC picks the deterministic next available slot from the chain.
-        fullName: body.fullName ?? '',
-        phone: body.phone ?? '',
+        fullName: applicantName,
+        phone: applicantPhone,
         cccdNumber: body.cccdNumber ?? null,
         dateOfBirth: body.dateOfBirth ?? null,
         gender: body.gender ?? null,

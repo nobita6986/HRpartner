@@ -30,6 +30,7 @@ import { findUserForLogin } from '@/src/shared/auth/preauth-db';
 import { loadWorkerSelfSummary } from '@/src/shared/auth/worker-assignment-summary';
 import { getLandingPath } from '@/src/shared/routing/portal-landing';
 import { error as logError, warn as logWarn } from '@/src/shared/observability/logger';
+import { normalizePhone } from '@/src/domains/applications/apply-helpers';
 
 const loginSchema = z.object({
   phone: z.string().trim().min(1),
@@ -69,7 +70,9 @@ export async function POST(req: NextRequest) {
     // projection CO DINH. Route KHONG con raw $transaction/set_config (khong nam
     // allowlist static gate). verifyPassword + signJwt GIU NGUYEN (DEC-11: khong viet
     // lai auth flow, chi boc DB access).
-    const user = await findUserForLogin(prisma, phone);
+    const exactUser = await findUserForLogin(prisma, phone);
+    const normalizedPhone = normalizePhone(phone);
+    const user = exactUser ?? (normalizedPhone !== phone ? await findUserForLogin(prisma, normalizedPhone) : null);
 
     // Fail-closed: không có user / isActive=false / chưa có passwordHash → từ chối chung
     if (!user || !user.isActive || !user.passwordHash) {
