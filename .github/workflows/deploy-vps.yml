@@ -1,10 +1,6 @@
 name: Deploy HRP to VPS
 
 on:
-  workflow_run:
-    workflows: [CI]
-    types: [completed]
-    branches: [main]
   workflow_dispatch:
     inputs:
       commit_sha:
@@ -22,9 +18,7 @@ concurrency:
 
 jobs:
   release:
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
+    if: github.actor == github.repository_owner
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: production
@@ -36,10 +30,9 @@ jobs:
         shell: bash
         env:
           REQUESTED_SHA: ${{ inputs.commit_sha }}
-          WORKFLOW_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
           set -euo pipefail
-          sha="${REQUESTED_SHA:-${WORKFLOW_SHA:-}}"
+          sha="${REQUESTED_SHA:-}"
           if [ -z "$sha" ]; then
             sha="$(git ls-remote https://github.com/${GITHUB_REPOSITORY}.git refs/heads/main | cut -f1)"
           fi
