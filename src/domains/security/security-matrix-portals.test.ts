@@ -112,8 +112,8 @@ describe('P1 Portal security matrix — scope checks', () => {
 
   describe('Landing path for portals (V5-GO-LIVE-01, DEC-01/02 — single origin)', () => {
     // Post-login landing is a SAME-ORIGIN relative path per role — NOT a subdomain.
-    it('WORKER → /worker', () => {
-      expect(getLandingPath('WORKER')).toBe('/worker');
+    it('WORKER → /', () => {
+      expect(getLandingPath('WORKER')).toBe('/');
     });
     it('VENDOR_ADMIN → /vendor', () => {
       expect(getLandingPath('VENDOR_ADMIN')).toBe('/vendor');

@@ -92,10 +92,10 @@ export function GlobalNavbar() {
   const checkAuth = useCallback(async () => {
     setAuthLoading(true);
     try {
-      const res = await fetch('/api/me');
+      const res = await fetch('/api/me', { cache: 'no-store' });
       if (res.ok) {
-        const data = await res.json();
-        setUser(data.user ?? null);
+        const data: AuthUser = await res.json();
+        setUser(data);
       } else {
         setUser(null);
       }

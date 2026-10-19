@@ -29,7 +29,7 @@ const PORTAL_ROLES: Array<[string, string]> = [
   ['ADMIN', '/admin'],
   ['VENDOR_ADMIN', '/vendor'],
   ['VENDOR_STAFF', '/vendor'],
-  ['WORKER', '/worker'],
+  ['WORKER', '/'],
   ['CTV', '/ctv'],
 ];
 const INTERNAL_ROLES = [

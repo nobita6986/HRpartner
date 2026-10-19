@@ -9,9 +9,9 @@
  * nên nút chính của chính nó sống ở `3.153:1` với bộ test xanh `100%`. Hai lỗi
  * ngược dấu, cùng một nguyên nhân: tập cặp màu không được đọc từ nguồn.
  *
- * File này đọc CẢ BA bề mặt nội bộ, trích mọi cặp chữ-nền có thật trong cây
+ * File này đọc các bề mặt nội bộ còn hiển thị trên web, trích mọi cặp chữ-nền có thật trong cây
  * JSX, lấy nền của đúng thẻ bao quanh, và tự tính tỉ số. Thêm một dòng chữ mờ
- * vào ba tệp đó là hàng rào ĐỎ, không cần ai cập nhật danh sách.
+ * vào các tệp đó là hàng rào ĐỎ, không cần ai cập nhật danh sách.
  *
  * Bốn quy tắc đo, cả bốn đều là bài học đã trả giá:
  *   1. Nền lấy từ khối `@theme` của `app/globals.css`, KHÔNG ghim trong test
@@ -29,7 +29,7 @@ import { join } from 'node:path';
 import { describe, it, expect } from 'vitest';
 
 const CSS = 'app/globals.css';
-const SURFACES = ['app/worker/page.tsx', 'app/ctv/page.tsx', 'app/login/login-form.tsx'] as const;
+const SURFACES = ['app/ctv/page.tsx', 'app/login/login-form.tsx'] as const;
 
 const read = (rel: string): string => readFileSync(join(process.cwd(), rel), 'utf8').replace(/\r\n/g, '\n');
 
@@ -448,15 +448,13 @@ if (process.env.CONTRAST_TABLE === '1') {
 // ---------------------------------------------------------------------------
 
 /**
- * Sáu cặp DƯỚI ngưỡng mà contract 16 không cho sửa. Cả sáu đều là vi phạm THẬT,
- * đo được, và cả sáu đều nằm ngoài `§4.2` — `§4.2` chỉ mở đúng `worker:341`,
- * `worker:358` và `ctv:273`. `RISK-05` phạt đúng hành vi sửa ngoài phạm vi, nên
- * Tier 2 KHAI ra thay vì tự sửa hoặc tự im.
+ * Năm cặp DƯỚI ngưỡng còn lại trên các bề mặt nội bộ đang hiển thị. Chúng được
+ * khai tường minh để khi số đo thay đổi thì hàng rào bắt buộc cập nhật theo.
  *
- * Năm trong sáu cặp là cùng một nguyên nhân: bề mặt NỘI BỘ vẫn dùng
+ * Các cặp là cùng một nguyên nhân: bề mặt NỘI BỘ vẫn dùng
  * `--primary` (`#f26522`), đúng token mà go-live-08 đã đo được `3.153:1` và
  * go-live-15 đã thay bằng `--primary-dark` cho bề mặt CÔNG KHAI. Lượt thay đó
- * không đi vào `worker` và `ctv`. Máy quét ở `EV-10` không thấy chúng vì nó chỉ
+ * còn ở `ctv`. Máy quét ở `EV-10` không thấy chúng vì nó chỉ
  * đọc chuỗi hex, còn năm chỗ này viết bằng `var()`.
  *
  * Bảng này được KHOÁ theo cả tỉ số: sửa xong một chỗ mà quên xoá dòng tương ứng
@@ -472,14 +470,6 @@ interface DeclaredException {
 }
 
 const DECLARED_EXCEPTIONS: DeclaredException[] = [
-  {
-    file: 'app/worker/page.tsx',
-    line: 229,
-    fg: '#f26522',
-    bg: '#ffffff',
-    ratio: '3.153',
-    note: 'Nhãn tab ĐANG chọn: var(--primary) trên nền white của chính nút, 14px. Sửa đúng: --primary-dark.',
-  },
   {
     file: 'app/ctv/page.tsx',
     line: 150,
@@ -602,44 +592,24 @@ describe('go-live-16 / RQ-09 — tập nền đọc từ @theme, không ghim tro
   });
 });
 
-describe('go-live-16 / RQ-08 — hàng rào phủ cả ba bề mặt theo cặp chữ-nền', () => {
-  it('trích được cặp ở CẢ BA tệp, không chỉ ở tệp vừa sửa', () => {
+describe('go-live-16 / RQ-08 — hàng rào phủ mọi bề mặt nội bộ còn hiển thị', () => {
+  it('trích được cặp ở mọi tệp được theo dõi', () => {
     for (const f of SURFACES) {
       expect(ALL_PAIRS.filter((p) => p.file === f).length).toBeGreaterThan(0);
     }
   });
 
-  it('số cặp đo được lớn hơn nhiều so với ba dòng mà round này sửa', () => {
-    // Ba dòng đã sửa: worker:341, worker:358, ctv:273. Nếu con số này tụt về ~3
+  it('số cặp đo được lớn hơn nhiều so với các dòng mà round này sửa', () => {
+    // Nếu con số này tụt về ~3
     // thì bộ trích đã hỏng và hàng rào quay lại đúng điểm mù của EV-10.
     expect(ALL_PAIRS.length).toBeGreaterThanOrEqual(20);
   });
 
   it('có đo những chỗ round này KHÔNG chạm — nền thật, không phải nền ghim', () => {
-    // worker:307 pill nguồn chấm công: #475569 trên nền #f1f5f9 của chính nó.
-    const pill = ALL_PAIRS.find((p) => p.file === 'app/worker/page.tsx' && p.fg === '#475569');
-    expect(pill).toBeDefined();
-    expect((pill as Pair).bg).toBe('#f1f5f9');
-
     // ctv:268/:269 panel số dư: nền #f0fdf4 của thẻ bao quanh, không phải nền trang.
     const balance = ALL_PAIRS.find((p) => p.file === 'app/ctv/page.tsx' && p.fg === '#15803d');
     expect(balance).toBeDefined();
     expect((balance as Pair).bg).toBe('#f0fdf4');
-  });
-
-  it('RQ-01 — hai dòng chữ mờ ở worker đã lên 9.383:1 trên thẻ trắng', () => {
-    // Đúng hai dòng mà §4.2 mở: :341 và :358. Nền của cả hai là thẻ card ở :335
-    // (`background: 'white'`), một literal nên không đổi theo bất kỳ @theme nào.
-    for (const line of [341, 358]) {
-      const p = ALL_PAIRS.find((q) => q.file === 'app/worker/page.tsx' && q.line === line);
-      expect(p, `không trích được cặp nào ở worker:${line}`).toBeDefined();
-      expect((p as Pair).fg).toBe('#594138');
-      expect((p as Pair).bg).toBe('#ffffff');
-      expect(round3((p as Pair).ratio)).toBe('9.383');
-      expect((p as Pair).px).toBe(12);
-    }
-    // Không còn một cặp nào mang màu cũ, kể cả ở nhánh dự phòng đã phân giải.
-    expect(ALL_PAIRS.some((p) => p.fg === '#94a3b8')).toBe(false);
   });
 
   it('RQ-02 — số nợ hoa hồng ở ctv đã lên 5.906:1 trên panel #fef2f2', () => {
@@ -651,7 +621,7 @@ describe('go-live-16 / RQ-08 — hàng rào phủ cả ba bề mặt theo cặp 
     expect((debt as Pair).threshold).toBe(4.5); // 18px đậm CHƯA phải chữ lớn
   });
 
-  it('mọi cặp chữ-nền của ba bề mặt đạt ngưỡng của cỡ chữ đó', () => {
+  it('mọi cặp chữ-nền của các bề mặt còn hiển thị đạt ngưỡng của cỡ chữ đó', () => {
     const open = violationsOf(ALL_PAIRS).filter((p) => !isDeclared(p));
     expect(open.map(describePair)).toEqual([]);
   });
@@ -667,16 +637,16 @@ describe('go-live-16 / RQ-08 — ngoại lệ phải được KHAI, và không �
     expect(measured).toEqual(declared);
   });
 
-  it('sáu ngoại lệ, năm trong đó cùng một nguyên nhân --primary trên bề mặt nội bộ', () => {
-    expect(DECLARED_EXCEPTIONS).toHaveLength(6);
+  it('bốn trong năm ngoại lệ còn lại dùng --primary trên bề mặt nội bộ', () => {
+    expect(DECLARED_EXCEPTIONS).toHaveLength(5);
     const primary = resolveColor('var(--color-primary)') as string;
     const byPrimary = DECLARED_EXCEPTIONS.filter((e) => e.fg === primary || e.bg === primary);
     expect(primary).toBe('#f26522');
-    expect(byPrimary).toHaveLength(5);
+    expect(byPrimary).toHaveLength(4);
   });
 
-  it('mọi ngoại lệ nằm NGOÀI ba dòng mà §4.2 mở cho round này', () => {
-    const inScope = ['app/worker/page.tsx:341', 'app/worker/page.tsx:358', 'app/ctv/page.tsx:273'];
+  it('không giữ ngoại lệ của giao diện Worker đã ẩn trên web', () => {
+    const inScope = ['app/worker/page.tsx:229'];
     for (const e of DECLARED_EXCEPTIONS) {
       expect(inScope).not.toContain(`${e.file}:${e.line}`);
     }

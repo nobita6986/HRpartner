@@ -25,7 +25,7 @@ export const ROLE_LANDING_PATH: Readonly<Record<string, string>> = {
   ADMIN: '/admin',
   VENDOR_ADMIN: '/vendor',
   VENDOR_STAFF: '/vendor',
-  WORKER: '/worker',
+  WORKER: '/',
   CTV: '/ctv',
 };
 
