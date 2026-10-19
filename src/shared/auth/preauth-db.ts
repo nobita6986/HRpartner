@@ -62,7 +62,7 @@ export async function createUnverifiedWorkerAccount(
 
   return prisma.$transaction(async (tx) => {
     await tx.$executeRaw`SELECT set_config('app.role', 'ADMIN', true)`;
-    await tx.$queryRaw(Prisma.sql`SELECT pg_advisory_xact_lock(hashtextextended(${normalizedPhone}, 0))`);
+    await tx.$executeRaw(Prisma.sql`SELECT pg_advisory_xact_lock(hashtextextended(${normalizedPhone}, 0))`);
 
     const duplicate = await tx.$queryRaw<Array<{ id: string }>>(Prisma.sql`
       SELECT id FROM public.users

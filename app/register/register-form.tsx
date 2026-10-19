@@ -17,6 +17,7 @@ export default function RegisterForm() {
     setError('');
     if (password !== confirmPassword) return setError('Mật khẩu xác nhận chưa khớp.');
     if (password.length < 8) return setError('Mật khẩu cần có ít nhất 8 ký tự.');
+    if (!/^0\d{9}$/.test(phone)) return setError('Số điện thoại gồm 10 chữ số, bắt đầu bằng 0; không nhập +84.');
 
     setLoading(true);
     try {
@@ -59,7 +60,7 @@ export default function RegisterForm() {
           </div>
           <div>
             <label htmlFor="register-phone" className="mb-1.5 block text-sm font-medium" style={{ color: 'var(--color-on-surface-variant)' }}>Số điện thoại</label>
-            <input id="register-phone" type="tel" inputMode="tel" autoComplete="tel" required maxLength={20} value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="0912345678" className="block min-h-11 w-full rounded-xl px-4 text-sm outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]" style={{ border: '1px solid var(--color-outline-variant)', background: 'var(--color-surface-container-low)', color: 'var(--color-on-surface)' }} />
+            <input id="register-phone" type="tel" inputMode="numeric" autoComplete="tel-national" required minLength={10} maxLength={10} pattern="0[0-9]{9}" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="0912345678" className="block min-h-11 w-full rounded-xl px-4 text-sm outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]" style={{ border: '1px solid var(--color-outline-variant)', background: 'var(--color-surface-container-low)', color: 'var(--color-on-surface)' }} />
           </div>
           <div>
             <label htmlFor="register-password" className="mb-1.5 block text-sm font-medium" style={{ color: 'var(--color-on-surface-variant)' }}>Mật khẩu</label>

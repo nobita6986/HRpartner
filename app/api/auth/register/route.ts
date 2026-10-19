@@ -10,7 +10,6 @@ import { clientIpFromHeaders } from '@/src/shared/security/rate-limit-identity';
 import { RATE_LIMIT_RULES } from '@/src/shared/security/rate-limit-port';
 import { enforceRateLimits } from '@/src/shared/security/rate-limit-guard';
 import { readCappedJson } from '@/src/shared/security/request-body';
-import { normalizePhone } from '@/src/domains/applications/apply-helpers';
 import { error as logError } from '@/src/shared/observability/logger';
 
 export const dynamic = 'force-dynamic';
@@ -18,7 +17,7 @@ export const runtime = 'nodejs';
 
 const routeClass = 'POST /api/auth/register';
 const schema = z.object({
-  phone: z.string().trim().min(8).max(20).regex(/^[0-9+()\-\s]+$/),
+  phone: z.string().regex(/^0\d{9}$/),
   password: z.string().min(8).max(128),
   fullName: z.string().trim().min(1).max(200),
 }).strict();
@@ -42,10 +41,9 @@ export async function POST(req: NextRequest) {
     return errorResponse(status, status === 413 ? 'PAYLOAD_TOO_LARGE' : status === 415 ? 'UNSUPPORTED_MEDIA_TYPE' : 'INVALID_JSON', 'Không thể đọc dữ liệu đăng ký.');
   }
   const parsed = schema.safeParse(read.value);
-  if (!parsed.success) return errorResponse(400, 'VALIDATION_ERROR', 'Vui lòng kiểm tra họ tên, số điện thoại và mật khẩu (tối thiểu 8 ký tự).');
+  if (!parsed.success) return errorResponse(400, 'VALIDATION_ERROR', 'Số điện thoại phải gồm 10 chữ số bắt đầu bằng 0; vui lòng kiểm tra họ tên và mật khẩu (tối thiểu 8 ký tự).');
 
-  const phone = normalizePhone(parsed.data.phone);
-  if (!/^0\d{9}$/.test(phone)) return errorResponse(400, 'VALIDATION_ERROR', 'Số điện thoại Việt Nam không hợp lệ.');
+  const phone = parsed.data.phone;
 
   const phoneDenied = await enforceRateLimits({
     buckets: [{ rule: RATE_LIMIT_RULES.APPLY_PHONE, value: phone }],
