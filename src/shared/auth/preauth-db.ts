@@ -52,7 +52,7 @@ export class PublicRegistrationError extends Error {
   }
 }
 
-/** Public phone signup: serialize by canonical phone; the expression unique index is the final race guard. */
+/** Public phone signup: serialize by canonical phone and check duplicates without constraining legacy contact data. */
 export async function createUnverifiedWorkerAccount(
   prisma: PrismaClient,
   input: { phone: string; fullName: string; password: string },

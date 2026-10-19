@@ -136,7 +136,7 @@ enum CandidateSubmissionStatus {
 
 model User {
   id           String   @id @default(uuid())
-  phone        String? // V4.2: liên hệ; normalized uniqueness is enforced by the expression index migration.
+  phone        String? // V4.2: thông tin liên hệ có thể thay đổi, không phải định danh duy nhất.
   passwordHash String?  @map("password_hash") // V4.2 (ADR-007): argon2/bcrypt — đặt lúc đăng ký
   affCode      String?  @unique @map("aff_code") // V4.5 G13 — link giới thiệu CTV/Sale (first-click wins)
   name         String?
