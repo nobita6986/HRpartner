@@ -50,23 +50,80 @@ function haversine(lat1: number, lng1: number, lat2: number, lng2: number): numb
 }
 
 /**
- * Geofence CHỈ trên Site thuộc project có assignment ACTIVE của chính worker
- * (DEC-04). `workerId` suy ra từ server. Chạy trên `tx` đã set context.
+ * Đọc Site của assignment ACTIVE (server-derived `workerId`) và đánh giá
+ * cấu hình GPS (T0 directive hrp-t1a-android-gps-project-site-config §6).
+ *
+ * - Chỉ Site HỢP LỆ mới dùng để tính geofence: lat + lng không null VÀ
+ *   `geoConfirmedAt` không null (Admin/BoD đã lưu cấu hình từ Admin panel).
+ *   KHÔNG biến `null` thành toạ độ (0,0) — haversine chỉ chạy trên row valid.
+ * - Trả về trạng thái discriminator cho route:
+ *     'NOT_CONFIGURED'  ⇒ không có Site hợp lệ (hoặc không thuộc assignment
+ *                          ACTIVE) ⇒ route phải fail-closed, KHÔNG create event.
+ *     'INSIDE' | 'OUTSIDE' ⇒ config hợp lệ + GPS được cung cấp.
+ *     'NO_GPS'           ⇒ config hợp lệ nhưng body không GPS (giữ behavior
+ *                          hiện hành: event với geofenceResult null).
  */
-async function checkGeofence(
+interface SiteGeoRow {
+  latitude: unknown;
+  longitude: unknown;
+  radiusMeters: number;
+  geoConfirmedAt: Date | null;
+}
+
+/**
+ * Config gate (T0 §6 — fail-closed): đọc Site của assignment ACTIVE
+ * (server-derived `workerId`) và đánh giá cấu hình GPS.
+ *
+ * - Chỉ Site HỢP LỆ được dùng cho geofence: lat + lng không null VÀ
+ *   `geoConfirmedAt` không null (Admin/BoD đã lưu cấu hình từ Admin panel).
+ *   KHÔNG biến `null` thành toạ độ (0,0) — filter trước, haversine chỉ chạy
+ *   trên row valid (see `checkGeofenceForConfirmedSites`).
+ * - 'NOT_CONFIGURED' ⇒ không có Site hợp lệ (sites rỗng / toạ độ thiếu /
+ *   chưa Admin xác nhận) ⇒ route fail-closed, KHÔNG tạo event. 'NONE' như
+ *   một "kết quả geofence" không còn xuất hiện (trạng thái NONE không hợp lệ).
+ * - 'NO_GPS' ⇒ config hợp lệ nhưng body không GPS (giữ behavior hiện hành:
+ *   event với geofenceResult null).
+ */
+async function evaluateGeofenceConfig(
   tx: Prisma.TransactionClient,
   workerId: string,
-  lat: number,
-  lng: number,
-): Promise<'INSIDE' | 'OUTSIDE' | 'NONE'> {
+): Promise<{ status: 'NOT_CONFIGURED' | 'NO_GPS' }> {
   const sites = await tx.site.findMany({
     where: {
       project: { assignments: { some: { status: 'ACTIVE', workerId } } },
     },
-    select: { latitude: true, longitude: true, radiusMeters: true },
-  });
-  if (sites.length === 0) return 'NONE';
-  for (const site of sites) {
+    select: { latitude: true, longitude: true, radiusMeters: true, geoConfirmedAt: true },
+  }) as unknown as SiteGeoRow[];
+
+  const validSites = sites.filter((s) =>
+    s.latitude != null && s.longitude != null && s.geoConfirmedAt != null,
+  );
+  if (validSites.length === 0) return { status: 'NOT_CONFIGURED' };
+  return { status: 'NO_GPS' };
+}
+
+/**
+ * Geofence TRÊN các Site ĐÃ ĐƯỢC ADMIN XÁC NHẬN (marker + toạ độ đủ) của
+ * assignment ACTIVE (DEC-04 + T0 §6). `workerId` suy ra từ server. Chạy trên
+ * `tx` đã set context.
+ */
+async function checkGeofenceForConfirmedSites(
+  tx: Prisma.TransactionClient,
+  workerId: string,
+  lat: number,
+  lng: number,
+): Promise<'INSIDE' | 'OUTSIDE'> {
+  const sites = await tx.site.findMany({
+    where: {
+      project: { assignments: { some: { status: 'ACTIVE', workerId } } },
+    },
+    select: { latitude: true, longitude: true, radiusMeters: true, geoConfirmedAt: true },
+  }) as unknown as SiteGeoRow[];
+
+  const validSites = sites.filter((s) =>
+    s.latitude != null && s.longitude != null && s.geoConfirmedAt != null,
+  );
+  for (const site of validSites) {
     const distance = haversine(lat, lng, Number(site.latitude), Number(site.longitude));
     if (distance <= (site.radiusMeters ?? 200)) return 'INSIDE';
   }
@@ -105,10 +162,19 @@ export async function POST(req: NextRequest) {
 
   try {
     // Geofence read (scoped) + attendance INSERT trong CÙNG transaction hệ thống.
-    const { eventId, geofenceResult, riskFlag } = await withSystemDb(prisma, SYSTEM_CHECKIN, async (tx) => {
-      let geofence: 'INSIDE' | 'OUTSIDE' | 'NONE' | undefined;
+    const result = await withSystemDb(prisma, SYSTEM_CHECKIN, async (tx) => {
+      // Global sites của assignment ACTIVE + config gate (T0 §6 — fail-closed):
+      // lat/lng null được lọc bỏ (KHÔNG (0,0)), site chưa Admin xác nhận bị
+      // loại ⇒ NONE không bao giờ phát sinh; thiếu config ⇒ NO EVENT + 422.
+      const configStatus = await evaluateGeofenceConfig(tx, workerId);
+
+      if (configStatus.status === 'NOT_CONFIGURED') {
+        return { configStatus } as const;
+      }
+
+      let geofence: 'INSIDE' | 'OUTSIDE' | null = null;
       if (hasGps) {
-        geofence = await checkGeofence(tx, workerId, data.gpsLatitude!, data.gpsLongitude!);
+        geofence = await checkGeofenceForConfirmedSites(tx, workerId, data.gpsLatitude!, data.gpsLongitude!);
       }
       const event = await tx.attendanceEvent.create({
         data: {
@@ -124,22 +190,43 @@ export async function POST(req: NextRequest) {
           gpsLatitude: data.gpsLatitude != null ? data.gpsLatitude.toString() : null,
           gpsLongitude: data.gpsLongitude != null ? data.gpsLongitude.toString() : null,
           gpsAccuracyMeters: data.gpsAccuracyMeters ?? null,
-          geofenceResult: geofence ?? null,
+          geofenceResult: geofence,
         },
         select: { id: true },
       });
-      return { eventId: event.id, geofenceResult: geofence, riskFlag: geofence === 'OUTSIDE' };
+      return {
+        configStatus,
+        eventId: event.id,
+        geofenceResult: geofence,
+        riskFlag: geofence === 'OUTSIDE',
+      } as const;
     });
+
+    // T0 §6: fail-closed — site chưa cấu hình/xác nhận hoặc worker không thuộc
+    // assignment ACTIVE nào có site hợp lệ ⇒ KHÔNG ghi event.
+    // HTTP 422 (không dùng 503) vì web worker page hiện coi 503 là tín hiệu
+    // OFFLINE (queueOffline). Gap contract đã ghi HANDOFF cho T0 chốt.
+    if (result.configStatus.status === 'NOT_CONFIGURED') {
+      return NextResponse.json(
+        {
+          error: 'SITE_GEOFENCE_NOT_CONFIGURED',
+          message:
+            'Site nhà máy của phân công ACTIVE chưa có tọa độ GPS hợp lệ hoặc chưa được Admin/BoD xác nhận. Vui lòng liên hệ Admin cấu hình GPS trong Admin panel rồi thử lại.',
+        },
+        { status: 422 },
+      );
+    }
 
     return NextResponse.json({
       ok: true,
-      id: eventId,
-      message: riskFlag ? 'Chấm công thành công (cảnh báo: ngoài khu vực)' : 'Chấm công thành công!',
-      riskFlag,
-      geofenceResult,
+      id: 'eventId' in result ? result.eventId : null,
+      message: result.riskFlag ? 'Chấm công thành công (cảnh báo: ngoài khu vực)' : 'Chấm công thành công!',
+      riskFlag: result.riskFlag,
+      geofenceResult: result.geofenceResult,
     });
-  } catch (err: any) {
-    if (err?.code === 'P2002') {
+  } catch (err: unknown) {
+    const errorCode = typeof err === 'object' && err !== null && 'code' in err ? String((err as { code: unknown }).code) : undefined;
+    if (errorCode === 'P2002') {
       // Idempotent — đã ghi nhận (payloadHash trùng).
       return NextResponse.json({
         ok: true,

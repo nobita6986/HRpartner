@@ -188,6 +188,8 @@ model User {
 
   // T1A Android backend contract — FCM device tokens của user (cascade khi User bị xóa).
   mobileDeviceTokens MobileDeviceToken[]
+  // T1A GPS contract — Admin/BoD identity cho lần xác nhận cấu hình GPS của Site (nullable).
+  geoConfirmedSites Site[] @relation("SiteGeoConfirmedBy")
 
   @@index([role, isActive])
   @@map("users")
@@ -614,9 +616,16 @@ model Site {
   latitude      Decimal? @db.Decimal(10, 7)
   longitude     Decimal? @db.Decimal(10, 7)
   radiusMeters  Int      @default(200) @map("radius_meters") // geofence default 200m [CẦN CHỐT theo site]
+  // T1A GPS contract — metadata "Admin/BoD đã xác nhận cấu hình GPS hợp lệ".
+  // Check-in chỉ đọc được config *confirmed* (lat+lng + marker); mặc định
+  // radiusMeters=200 KHÔNG tự động coi là confirmed. Migration:
+  // 20261019010000_site_gps_confirmation (additive, ship-only).
+  geoConfirmedAt   DateTime? @map("geo_confirmed_at")
+  geoConfirmedById String?   @map("geo_confirmed_by_id")
   createdAt     DateTime @default(now()) @map("created_at")
 
   project Project @relation(fields: [projectId], references: [id])
+  geoConfirmedBy User? @relation("SiteGeoConfirmedBy", fields: [geoConfirmedById], references: [id], onDelete: SetNull)
 
   @@index([projectId])
   @@map("sites")

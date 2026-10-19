@@ -1,4 +1,6 @@
-import { Prisma } from '@prisma/client';
+import type { Prisma } from '@prisma/client';
+import type { SiteGpsDto } from './site-gps.service';
+import { listProjectSites } from './site-gps.service';
 
 export interface ProjectDetailStaffingOrderDto {
   id: string;
@@ -121,6 +123,9 @@ export interface ProjectManagementDto {
     submissionsCount: number;
     sitesCount: number;
   };
+  // T1A GPS contract (hrp-t1a-android-gps-project-site-config): Site DTO với
+  // trạng thái xác nhận GPS (CONFIRMED/UNCONFIRMED/MISSING_GEO) cho admin panel.
+  sites: SiteGpsDto[];
 }
 
 /**
@@ -167,10 +172,12 @@ export async function getProjectForManagement(
 
   if (!project) return null;
 
-  const [assignmentsCount, submissionsCount, sitesCount] = await Promise.all([
+  // T1A GPS contract: fetch sites một lần với trạng thái xác nhận GPS —
+  // vừa thay thế cũ `tx.site.count`, vừa nuôi admin GPS section (RQ-02/05).
+  const [assignmentsCount, submissionsCount, sites] = await Promise.all([
     tx.projectAssignment.count({ where: { projectId: id } }),
     tx.candidateSubmission.count({ where: { projectId: id } }),
-    tx.site.count({ where: { projectId: id } }),
+    listProjectSites(tx, id),
   ]);
 
   return {
@@ -187,6 +194,7 @@ export async function getProjectForManagement(
     isPublic: project.isPublic,
     clientCompany: project.clientCompany,
     staffingOrders: project.staffingOrders,
-    metrics: { assignmentsCount, submissionsCount, sitesCount },
+    metrics: { assignmentsCount, submissionsCount, sitesCount: sites.length },
+    sites,
   };
 }

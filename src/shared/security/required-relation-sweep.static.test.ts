@@ -77,6 +77,15 @@ const EXPECTED_HITS = [
   'app/api/projects/route.ts:56 clientCompany',
   'app/api/vendor/orders/route.ts:44 project',
   'app/api/vendor/submissions/route.ts:62 project',
+  // hrp-t1a-android-gps-project-site-config (2026-10-19): geofence config gate
+  // trong POST /api/worker/checkins đọc Site theo relation filter
+  // `project: { assignments: { some: { status: 'ACTIVE', workerId } } }` —
+  // `project` là quan hệ BẮT BUỘC trong schema `Site` → sweep flags. Read-only
+  // query chạy trong `withSystemDb` GUC hệ thống; chỉ Site của assignment
+  // ACTIVE của chính worker được đọc (server-derived workerId), predicate
+  // `hrp_project_visible_for` RLS backstop; kết quả chỉ dùng nội bộ để gate,
+  // KHÔNG trả client.
+  'app/api/worker/checkins/route.ts:118 project',
   'src/domains/applications/application-queue.service.ts:183 project',
   'src/domains/applications/application-queue.service.ts:216 project',
   // AFF-04 STEP-02: re-read canonical ReferralAttribution via LaborProfile on
@@ -88,7 +97,7 @@ const EXPECTED_HITS = [
   // select block. Sweep target is unchanged.
   'src/domains/applications/conversion.service.ts:131 laborProfile',
   'src/domains/crm/client-read.service.ts:80 staffingOrder',
-  'src/domains/crm/project-read.service.ts:40 clientCompany',
+  'src/domains/crm/project-read.service.ts:42 clientCompany',
   // T1A PRE-P2 PROJECT MANAGEMENT HOTFIX (2026-10-06): `getProjectForManagement`
   // thêm `clientCompany` select (mirror pattern của `getProjectDetail`) để
   // render tên khách hàng trên header trang quản trị. Line shift từ
@@ -97,7 +106,7 @@ const EXPECTED_HITS = [
   // hệ BẮT BUỘC trong schema `Project` — sweep đếm là đúng, an toàn vì RLS
   // `hrp_client_company_visible_for` đã lọc theo role khi đi qua
   // `withDbContext` (ADMIN/HR_MANAGER/HR_STAFF/PM đều thoả).
-  'src/domains/crm/project-read.service.ts:152 clientCompany',
+  'src/domains/crm/project-read.service.ts:157 clientCompany',
   // P1-A0.5 STEP-10 (hrp-p1-a0-5-job-opening-readiness): additive DTO fields
   // (`serviceModel`, `placementCount`, order status/deadline, slot validTo/capacity).
   // Line numbers shifted 41 → 86 and 46 → 94 because the new fields were added
@@ -469,7 +478,10 @@ describe('quan hệ BẮT BUỘC trên bảng bị RLS che: tập vị trí sele
    */
   it('phép quét phủ cả app/, chứng minh bằng chính ba dòng app/api trong kết quả (AC-04)', () => {
     const hits = sweep(scanned, fields);
-    expect(hits.filter((hit) => hit.startsWith('app/api/'))).toHaveLength(3);
+    // hrp-t1a-android-gps-project-site-config (2026-10-19): +1 dòng
+    // `app/api/worker/checkins/route.ts:118 project` (geofence config gate đọc
+    // Site qua relation filter, read-only, withSystemDb) ⇒ 3 → 4 app/api hits.
+    expect(hits.filter((hit) => hit.startsWith('app/api/'))).toHaveLength(4);
     // Sau STEP-06 (4 dòng RỦI RO được sửa): 5 src. Sau AV2 commit e7ee2c8 (2026-09-13):
     // +4 dòng ở src/domains/staffing/job-posting-list.service.ts → 9 src. Tổng 12.
     // +4 dòng ở src/domains/crm và staffing W3 → 13 src. Tổng 16.
@@ -555,6 +567,7 @@ describe('quan hệ BẮT BUỘC trên bảng bị RLS che: tập vị trí sele
     // T1A ANDROID BACKEND MOBILE CONTRACT (2026-10-18): thêm 1 entry mới
     // (`worker-assignment-summary.ts:98 project`) — assignment summary cho
     // login/workers/me đọc dưới GUC WORKER self. Tổng src = 51.
+    // hrp-t1a-android-gps-project-site-config (2026-10-19) chỉ thêm entry app/api.
     expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(51);
   });
 });

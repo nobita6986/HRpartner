@@ -14,10 +14,18 @@
  *   - Mỗi nhu cầu tuyển dụng link tới `/admin/staffing-orders/{id}`; vị trí
  *     cần tuyển chỉ link khi route detail thực sự tồn tại.
  *
- * Không sửa schema/RLS; backend authority ở
- *   - PUT   /api/projects/[id]   (`ADMIN_ROLES = ADMIN,PM,HR_MANAGER`)
- *   - PATCH /api/projects/[id]   (`PROJECT_UPDATE_ROLES`)
- *   - DELETE /api/projects/[id]  (`PROJECT_DELETE_ROLES = ADMIN`)
+ * hrp-t1a-android-gps-project-site-config (GPS section):
+ *   - Section "Cấu hình GPS (Geofence)" mount như SIBLING `ProjectGpsClient`
+ *     (project-gps-client.tsx) — không đụng project-detail-client.tsx.
+ *   - `canConfig` mirror `PROJECT_GEO_CONFIG_ROLES` (ADMIN/DIRECTOR) từ
+ *     `site-gps.service` — KHÔNG mở cho HR_MANAGER/PM.
+ *   - Dữ liệu Site/`gpsStatus` từ `getProjectForManagement` (`sites` DTO).
+ *
+ * Backend authority ở
+ *   - PUT   /api/projects/[id]              (`ADMIN_ROLES = ADMIN,PM,HR_MANAGER`)
+ *   - PATCH /api/projects/[id]              (`PROJECT_UPDATE_ROLES`)
+ *   - DELETE /api/projects/[id]             (`PROJECT_DELETE_ROLES = ADMIN`)
+ *   - POST/PUT /api/projects/[id]/sites/**  (`PROJECT_GEO_CONFIG_ROLES = ADMIN,DIRECTOR`)
  */
 
 import { notFound, redirect } from 'next/navigation';
@@ -30,10 +38,12 @@ import {
   PROJECT_DELETE_ROLES,
   PROJECT_UPDATE_ROLES,
 } from '@/src/domains/crm/project-management.service';
+import { PROJECT_GEO_CONFIG_ROLES } from '@/src/domains/crm/site-gps.service';
 import {
   ProjectDetailClient,
   type ProjectCapability,
 } from './project-detail-client';
+import { ProjectGpsClient, type GpsConfigCapability } from './project-gps-client';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -53,6 +63,13 @@ const VIEW_ROLES = new Set([
 export const metadata = {
   title: 'Dự án - HRPartner Admin',
 };
+
+/** GPS write capability — mirror PROJECT_GEO_CONFIG_ROLES (ADMIN/DIRECTOR). */
+function deriveGpsConfigCapability(role: string): GpsConfigCapability {
+  return {
+    canConfig: (PROJECT_GEO_CONFIG_ROLES as ReadonlyArray<string>).includes(role),
+  };
+}
 
 /**
  * Xác định route detail `/admin/job-openings/[id]` có tồn tại hay không.
@@ -111,14 +128,27 @@ export default async function ProjectDetailPage(props: {
   }
 
   const capability = deriveProjectCapability(session.role);
+  const gpsCapability = deriveGpsConfigCapability(session.role);
   const detailRouteExists = await jobOpeningDetailRouteExists();
 
   return (
-    <ProjectDetailClient
-      project={project}
-      capability={capability}
-      role={session.role}
-      jobOpeningDetailRouteExists={detailRouteExists}
-    />
+    <>
+      <ProjectDetailClient
+        project={project}
+        capability={capability}
+        role={session.role}
+        jobOpeningDetailRouteExists={detailRouteExists}
+      />
+      {/* T1A GPS: section Cấu hình GPS (Geofence) — readonly banner cho role
+          ngoài ADMIN/DIRECTOR. */}
+      <div className="px-6 pb-8 lg:px-8 lg:pb-10" style={{ background: 'var(--surface)' }}>
+        <ProjectGpsClient
+          projectId={project.id}
+          projectCode={project.code}
+          sites={project.sites}
+          capability={gpsCapability}
+        />
+      </div>
+    </>
   );
 }
