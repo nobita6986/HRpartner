@@ -157,7 +157,11 @@ function parseText(value: unknown, fieldLabel: 'name' | 'address', maxLength: nu
 
 export type SiteGpsValidationResult<T> = { ok: true; value: T } | { ok: false; error: string };
 
-/** Create Site: cần name; lat/lng both-or-neither; radius optional (default 200). */
+/**
+ * Create Site: cần name; lat/lng both-or-neither; radius BẮT BUỘC Admin nhập
+ * tường minh (T0 correction: KHÔNG tự dùng default 200 làm bằng chứng xác nhận
+ * GPS — markers chỉ đặt khi payload create có đủ tọa độ + radius hợp lệ).
+ */
 export function validateSiteGpsCreatePayload(raw: unknown): SiteGpsValidationResult<SiteGpsCreateInput> {
   if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) {
     return { ok: false, error: 'Body phải là object JSON.' };
@@ -181,10 +185,13 @@ export function validateSiteGpsCreatePayload(raw: unknown): SiteGpsValidationRes
   const lngRes = parseCoordinate(body.longitude as NumericLike, 'longitude', SITE_GPS_LIMITS.longitudeMin, SITE_GPS_LIMITS.longitudeMax);
   if ('error' in lngRes) return { ok: false, error: lngRes.error };
 
+  // T0 correction: radius BẮT BUỘC tường minh khi tạo Site (không default 200).
+  if (body.radiusMeters === undefined) {
+    return { ok: false, error: 'radiusMeters là bắt buộc khi tạo Site — Admin phải chủ động chọn bán kính geofence (không dùng giá trị mặc định).' };
+  }
   const radiusRes = parseRadius(body.radiusMeters as NumericLike, 'radiusMeters');
   if ('error' in radiusRes) return { ok: false, error: radiusRes.error };
 
-  const radius = radiusRes.value ?? 200;
   return {
     ok: true,
     value: {
@@ -192,7 +199,7 @@ export function validateSiteGpsCreatePayload(raw: unknown): SiteGpsValidationRes
       address: addressRes.value,
       latitude: latRes.value,
       longitude: lngRes.value,
-      radiusMeters: radius,
+      radiusMeters: radiusRes.value!,
     },
   };
 }
@@ -367,7 +374,12 @@ export async function createSiteForProject(
 /**
  * Cập nhật địa chỉ/tọa độ/bán kính của Site thuộc Project (T0 B4).
  * - Site phải thuộc Project từ route param — không tin site ID client gửi chéo.
- * - Save có toạ độ hợp lệ ⇒ set confirm markers; bỏ toạ độ (lat+lng null) ⇒ clear.
+ * - T0 CORRECTION (confirm markers): markers CHỈ được set khi payload CÓ
+ *   tường minh đủ latitude + longitude (dạng giá trị hợp lệ) — tức Admin
+ *   chủ động (re-)configure toạ độ trong lần save này. Cập nhật TỪNG PHẦN
+ *   (chỉ radius / chỉ address) GIỮ NGUYÊN marker hiện tại ⇒ Site legacy
+ *   chưa xác nhận giữ trạng thái chưa xác nhận; site đã xác nhận giữ marker.
+ * - Bỏ toạ độ (lat + lng null) ⇒ clear markers.
  * Caller PHẢI mở transaction qua `withDbContext`.
  */
 export async function updateSiteGps(
@@ -393,9 +405,16 @@ export async function updateSiteGps(
   }
 
   const before = toSiteGpsDto(existing);
-  const willHaveCoords =
-    (input.latitude !== undefined ? input.latitude : before.latitude) != null &&
-    (input.longitude !== undefined ? input.longitude : before.longitude) != null;
+
+  // T0 CORRECTION — explicit-confirm rule:
+  //   - hasValidCoords = payload lần này CÓ tường minh cả latitude + longitude
+  //     (cả hai là giá trị hợp lệ, không null) ⇒ markers set;
+  //   - coordsCleared (cả hai null) ⇒ markers clear;
+  //   - cập nhật từng phần (chỉ radius / chỉ address) ⇒ markers GIỮ NGUYÊN
+  //     (legacy UNCONFIRMED giữ UNCONFIRMED; CONFIRMED vẫn CONFIRMED).
+  const coordsProvidedExplicitly = input.latitude !== undefined && input.longitude !== undefined;
+  const hasValidCoords = coordsProvidedExplicitly && input.latitude != null && input.longitude != null;
+  const coordsCleared = coordsProvidedExplicitly && input.latitude == null && input.longitude == null;
 
   const updated = await tx.site.update({
     where: { id: siteId },
@@ -404,9 +423,10 @@ export async function updateSiteGps(
       ...(input.latitude !== undefined ? { latitude: input.latitude } : {}),
       ...(input.longitude !== undefined ? { longitude: input.longitude } : {}),
       ...(input.radiusMeters !== undefined ? { radiusMeters: input.radiusMeters } : {}),
-      // Confirm markers: set khi cấu hình toạ độ hợp lệ; clear khi bỏ toạ độ.
-      geoConfirmedAt: willHaveCoords ? new Date() : null,
-      geoConfirmedById: willHaveCoords ? ctx.userId : null,
+      // Confirm markers (T0 correction): CHỈ set khi Admin chủ động xác nhận
+      // đầy đủ toạ độ trong payload này; partial update giữ nguyên marker.
+      geoConfirmedAt: hasValidCoords ? new Date() : coordsCleared ? null : existing.geoConfirmedAt,
+      geoConfirmedById: hasValidCoords ? ctx.userId : coordsCleared ? null : existing.geoConfirmedById,
     },
     select: SITE_GPS_SELECT,
   });

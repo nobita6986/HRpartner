@@ -92,6 +92,11 @@ function validateLatLongFields(
 
 function validateRadiusField(radiusText: string): { valid: true; radius: number } | { valid: false; error: string } {
   const radiusNorm = radiusText.trim();
+  // T0 correction: bán kính là trường Admin phải chủ động nhập/chọn —
+  // để trống (không prefill giá trị mặc định) ⇒ báo lỗi, không tự 200.
+  if (radiusNorm === '') {
+    return { valid: false, error: 'Bán kính geofence là bắt buộc — Admin phải chủ động chọn bán kính (không dùng giá trị mặc định).' };
+  }
   if (!/^\d+$/.test(radiusNorm)) {
     return { valid: false, error: 'Bán kính geofence phải là số nguyên dương.' };
   }
@@ -125,7 +130,8 @@ function SiteFormModal({
   const [address, setAddress] = useState(site?.address ?? '');
   const [latText, setLatText] = useState(site?.latitude == null ? '' : String(site.latitude));
   const [lngText, setLngText] = useState(site?.longitude == null ? '' : String(site.longitude));
-  const [radiusText, setRadiusText] = useState(String(site?.radiusMeters ?? 200));
+  // T0 correction: create KHÔNG prefill 200 — Admin phải chủ động nhập bán kính.
+  const [radiusText, setRadiusText] = useState(site == null ? '' : String(site.radiusMeters));
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState('');
 
@@ -290,13 +296,14 @@ function SiteFormModal({
             </label>
           </div>
           <label className="mb-3 block text-sm">
-            <span style={{ color: 'var(--on-surface-variant)' }}>Bán kính geofence (mét) *</span>
+            <span style={{ color: 'var(--on-surface-variant)' }}>Bán kính geofence (mét) * — Admin phải chủ động chọn</span>
             <input
               type="text"
               inputMode="numeric"
               value={radiusText}
               onChange={(e) => setRadiusText(e.target.value)}
               data-testid="site-gps-radius"
+              placeholder="vd 800"
               className="mt-1 w-32 rounded border px-2 py-1"
               style={inputStyle}
             />

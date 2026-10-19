@@ -118,19 +118,22 @@ describe('validateSiteGpsCreatePayload (AC-03)', () => {
     expect(validateSiteGpsCreatePayload({ ...base, radiusMeters: 2000 }).ok).toBe(true);
   });
 
-  it('radius omit → default 200 (schema default; chưa confirmed vì thiếu marker)', () => {
-    const r = validateSiteGpsCreatePayload({ name: 'X' });
-    expect(r.ok).toBe(true);
-    if (r.ok) {
-      expect(r.value.radiusMeters).toBe(200);
-      expect(r.value.latitude).toBeNull();
-      expect(r.value.longitude).toBeNull();
+  it('REGRESSION (T0 correction): create thiếu radiusMeters → VALIDATION, KHÔNG default 200', () => {
+    const r = validateSiteGpsCreatePayload({ name: 'X', latitude: 21.5, longitude: 105.8 });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.error).toContain('radiusMeters là bắt buộc');
+      expect(r.error).not.toContain('200');
     }
+    // Không toạ độ cũng phải nhập radius tường minh (Admin chủ động chọn).
+    const r2 = validateSiteGpsCreatePayload({ name: 'X' });
+    expect(r2.ok).toBe(false);
+    if (!r2.ok) expect(r2.error).toContain('radiusMeters là bắt buộc');
   });
 
   it('thiếu name / name quá dài → lỗi', () => {
-    expect(validateSiteGpsCreatePayload({ latitude: 0, longitude: 0 }).ok).toBe(false);
-    expect(validateSiteGpsCreatePayload({ name: 'a'.repeat(201), latitude: 0, longitude: 0 }).ok).toBe(false);
+    expect(validateSiteGpsCreatePayload({ latitude: 0, longitude: 0, radiusMeters: 200 }).ok).toBe(false);
+    expect(validateSiteGpsCreatePayload({ name: 'a'.repeat(201), latitude: 0, longitude: 0, radiusMeters: 200 }).ok).toBe(false);
   });
 
   it('unknown field bị strip (không throw)', () => {
@@ -210,35 +213,84 @@ describe('updateSiteGps (AC-02 + AC-04)', () => {
       .toMatchObject({ code: 'VALIDATION' });
   });
 
-  it('update hợp lệ → update row + set confirm markers + audit GPS_UPDATE before/after', async () => {
+  it('REGRESSION (T0 correction): partial update CHỈ radius trên site legacy UNCONFIRMED → markers GIỮ NGUYÊN (null), không confirm', async () => {
+    // EXISTING_SITE: coords có (21.4925/105.8239) nhưng geoConfirmedAt = null (legacy).
     const siteUpdate = vi.fn().mockResolvedValue({
       ...EXISTING_SITE,
       radiusMeters: 900,
-      geoConfirmedAt: new Date('2026-10-19T00:00:00.000Z'),
-      geoConfirmedById: 'admin-1',
+      // marker vẫn null — service KHÔNG set trong partial update.
+      geoConfirmedAt: null,
+      geoConfirmedById: null,
     });
     const tx = makeTx({ siteUpdate });
     const out = await updateSiteGps(tx, actor('DIRECTOR'), 'p1', 'site-1', { radiusMeters: 900 });
 
-    // update payload: chỉ radius + markers set (coords giữ nguyên).
+    const data = (siteUpdate.mock.calls[0][0] as { data: Record<string, unknown> }).data;
+    // markers KHÔNG bị set (giữ nguyên null của legacy).
+    expect(data.geoConfirmedAt).toBeNull();
+    expect(data.geoConfirmedById).toBeNull();
+    expect(data.radiusMeters).toBe(900);
+    expect(data.latitude).toBeUndefined(); // partial: không đụng coords
+    expect(out.gpsStatus).toBe('UNCONFIRMED');
+  });
+
+  it('REGRESSION (T0 correction): partial update CHỈ address trên site CONFIRMED → markers giữ nguyên', async () => {
+    const confirmedAt = new Date('2026-10-19T00:00:00.000Z');
+    const siteUpdate = vi.fn().mockResolvedValue({
+      ...EXISTING_SITE,
+      address: 'Địa chỉ mới',
+      geoConfirmedAt: confirmedAt,
+      geoConfirmedById: 'admin-1',
+    });
+    const tx = makeTx({
+      siteFindFirst: vi.fn().mockResolvedValue({
+        ...EXISTING_SITE,
+        geoConfirmedAt: confirmedAt,
+        geoConfirmedById: 'admin-1',
+      }),
+      siteUpdate,
+    });
+    await updateSiteGps(tx, actor('ADMIN'), 'p1', 'site-1', { address: 'Địa chỉ mới' });
+
+    const data = (siteUpdate.mock.calls[0][0] as { data: Record<string, unknown> }).data;
+    // markers giữ nguyên giá trị hiện có (không clear, không re-stamp).
+    expect(data.geoConfirmedAt).toBe(confirmedAt);
+    expect(data.geoConfirmedById).toBe('admin-1');
+    expect(data.address).toBe('Địa chỉ mới');
+  });
+
+  it('update tường minh đủ lat+lng (Admin re-configure toạ độ) → markers set + audit GPS_UPDATE', async () => {
+    // T0 correction: chỉ payload CÓ cả hai toạ độ hợp lệ mới confirm.
+    const siteUpdate = vi.fn().mockResolvedValue({
+      ...EXISTING_SITE,
+      latitude: '21.4900' as unknown as Prisma.Decimal,
+      longitude: '105.8300' as unknown as Prisma.Decimal,
+      geoConfirmedAt: new Date('2026-10-19T00:00:00.000Z'),
+      geoConfirmedById: 'admin-1',
+    });
+    const tx = makeTx({ siteUpdate });
+    const out = await updateSiteGps(
+      tx,
+      actor('DIRECTOR'),
+      'p1',
+      'site-1',
+      { latitude: '21.49', longitude: '105.83' },
+    );
+
     expect(siteUpdate).toHaveBeenCalledTimes(1);
     const data = (siteUpdate.mock.calls[0][0] as { data: Record<string, unknown> }).data;
     expect(data.geoConfirmedAt).toBeInstanceOf(Date);
     expect(data.geoConfirmedById).toBe('admin-1');
-
     expect(out.gpsStatus).toBe('CONFIRMED');
-    expect(out.radiusMeters).toBe(900);
 
     // audit cùng tx: GPS_UPDATE diff before/after (create arg = { data: row })
     expect(mocks.auditLogCreate).toHaveBeenCalledTimes(1);
     const auditArg = mocks.auditLogCreate.mock.calls[0][0] as {
-      data: { action: string; entityType: string; entityId: string; diff: { before: { radiusMeters: number }; after: { radiusMeters: number } } };
+      data: { action: string; entityType: string; entityId: string };
     };
     expect(auditArg.data.action).toBe('GPS_UPDATE');
     expect(auditArg.data.entityType).toBe('Site');
     expect(auditArg.data.entityId).toBe('site-1');
-    expect(auditArg.data.diff.before.radiusMeters).toBe(800);
-    expect(auditArg.data.diff.after.radiusMeters).toBe(900);
   });
 
   it('clear coords (lat + lng null) → columns + markers null (audit diff ghi rõ)', async () => {
@@ -268,8 +320,9 @@ describe('createSiteForProject (AC-05)', () => {
 
   it('project không tồn tại → NOT_FOUND, không create', async () => {
     const tx = makeTx({ projectFindUnique: vi.fn().mockResolvedValue(null) });
-    await expect(createSiteForProject(tx, actor('ADMIN'), 'px', { name: 'S', latitude: 1, longitude: 1 })).rejects
-      .toMatchObject({ code: 'NOT_FOUND' });
+    await expect(
+      createSiteForProject(tx, actor('ADMIN'), 'px', { name: 'S', latitude: 1, longitude: 1, radiusMeters: 500 }),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
   });
 
   it('VALIDATION khi name thiếu', async () => {
@@ -311,7 +364,7 @@ describe('createSiteForProject (AC-05)', () => {
     expect(auditArg.data.diff.before).toBeNull();
   });
 
-  it('create không coords → MISSING_GEO, không markers', async () => {
+  it('create không coords → MISSING_GEO, không markers (radius vẫn bắt buộc tường minh)', async () => {
     const siteCreate = vi.fn().mockResolvedValue({
       id: 'site-new',
       projectId: 'p1',
@@ -324,10 +377,12 @@ describe('createSiteForProject (AC-05)', () => {
       geoConfirmedById: null,
     });
     const tx = makeTx({ siteCreate });
-    const out = await createSiteForProject(tx, actor('DIRECTOR'), 'p1', { name: 'Site chưa GPS' });
+    // Radius phải có trong payload (Admin chủ động chọn) — T0 correction.
+    const out = await createSiteForProject(tx, actor('DIRECTOR'), 'p1', { name: 'Site chưa GPS', radiusMeters: 200 });
     const data = (siteCreate.mock.calls[0][0] as { data: Record<string, unknown> }).data;
     expect(data.geoConfirmedAt).toBeUndefined();
     expect(data.geoConfirmedById).toBeUndefined();
+    expect(data.radiusMeters).toBe(200);
     expect(out.gpsStatus).toBe('MISSING_GEO');
   });
 });
