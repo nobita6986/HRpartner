@@ -85,7 +85,7 @@ describe('POST /api/auth/login — T1A mobile projection (TASK DEC-02)', () => {
     expect(json.ok).toBe(true);
     expect(json.token).toBe('jwt-token-123');
     expect(json.role).toBe('WORKER');
-    expect(json.redirectTo).toBe('/worker');
+    expect(json.redirectTo).toBe('/');
     expect(json.user).toEqual({ id: 'u1', name: 'Nguyễn A', phone: '0900000000', role: 'WORKER' });
     expect(json.worker).toEqual({
       id: 'w1',

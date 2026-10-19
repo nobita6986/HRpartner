@@ -216,9 +216,9 @@ describe('C) login POST — same-origin landing + host-only cookie', () => {
     expect(c).not.toContain('Secure'); // dev is http
   });
 
-  it('WORKER → /worker, CTV → /ctv', async () => {
+  it('WORKER → /, CTV → /ctv', async () => {
     grantUser('WORKER');
-    expect((await (await loginPOST(loginReq({ phone: '1', password: 'p' }))).json()).redirectTo).toBe('/worker');
+    expect((await (await loginPOST(loginReq({ phone: '1', password: 'p' }))).json()).redirectTo).toBe('/');
     grantUser('CTV');
     expect((await (await loginPOST(loginReq({ phone: '1', password: 'p' }))).json()).redirectTo).toBe('/ctv');
   });
