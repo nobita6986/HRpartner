@@ -294,7 +294,7 @@ const EXPECTED_HITS = [
   // được thấy; sites đọc bằng cùng scope. Shipped migration
   // 20261018120000_mobile_device_token_with_rls không thêm dòng dang (bảng
   // mới mobile_device_tokens FK users — `users` KHÔNG trong tập RLS).
-  'src/shared/auth/worker-assignment-summary.ts:98 project',
+  'src/shared/auth/worker-assignment-summary.ts:107 project',
 ] as const;
 
 interface SourceEntry {

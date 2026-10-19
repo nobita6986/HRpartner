@@ -82,6 +82,13 @@ const SECTION_CARDS = [
     href: '/admin/tickets',
     description: 'Xử lý đề nghị của người lao động: khiếu nại giờ công, nghỉ phép, tạm ứng lương.',
   },
+  {
+    id: 'worker-mobile',
+    label: 'Góp ý / Giới thiệu NLĐ',
+    group: 'Người',
+    href: '/admin/worker-mobile',
+    description: 'Tiếp nhận góp ý, quản lý chính sách và theo dõi giới thiệu người làm từ ứng dụng NLĐ.',
+  },
   // ── BỐ TRÍ ──
   {
     id: 'attendance',

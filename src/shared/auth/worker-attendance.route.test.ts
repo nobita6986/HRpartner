@@ -113,7 +113,8 @@ describe('GET /api/worker/attendance (AC-07)', () => {
     const json = await res.json();
 
     // TimesheetLine aggregate: 8 regular + (2+1.5) OT.
-    expect(json.items[0]).toMatchObject({
+    expect(json.items[0]).toMatchObject({ id: 'e2', workDate: '2026-09-03', regularHours: 4.5, otHours: 1.5 });
+    expect(json.items[1]).toMatchObject({
       id: 'e1',
       workDate: '2026-09-02',
       shift: 'CA1',
@@ -121,11 +122,10 @@ describe('GET /api/worker/attendance (AC-07)', () => {
       regularHours: 8,
       otHours: 2,
     });
-    expect(json.items[1]).toMatchObject({ id: 'e2', regularHours: 4.5, otHours: 1.5 });
     expect(json.totals).toEqual({ regularHours: 12.5, otHours: 3.5 });
 
     // KHÔNG suy diễn từ giờ vào/ra: otHours == aggregate TimesheetLine, không tính từ 18:30-08:00.
-    expect(json.items[0].otHours).toBe(2);
+    expect(json.items[1].otHours).toBe(2);
 
     // where event không có workDate range.
     const where = mocks.findMany.mock.calls[0][0].where;
@@ -137,8 +137,8 @@ describe('GET /api/worker/attendance (AC-07)', () => {
     const gby = mocks.groupBy.mock.calls[0][0];
     expect(gby.where.workerId).toBe('w1');
     expect(gby.where.workDate.in).toEqual([
-      new Date('2026-09-02T00:00:00.000Z'),
       new Date('2026-09-03T00:00:00.000Z'),
+      new Date('2026-09-02T00:00:00.000Z'),
     ]);
     expect(gby._sum).toEqual({ regularHours: true, ot15Hours: true, ot20Hours: true, ot30Hours: true });
   });
