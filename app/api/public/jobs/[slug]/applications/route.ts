@@ -11,6 +11,7 @@ import { RATE_LIMIT_RULES } from '@/src/shared/security/rate-limit-port';
 import { enforceRateLimits } from '@/src/shared/security/rate-limit-guard';
 import { readCappedJson } from '@/src/shared/security/request-body';
 import { AuthSessionError, getAuthContext } from '@/src/shared/auth/auth-context';
+import { withDbContext } from '@/src/shared/auth/with-db-context';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -148,10 +149,10 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       if (ctx.role !== 'WORKER') {
         return NextResponse.json({ error: 'FORBIDDEN', message: 'Tài khoản này không thể nộp hồ sơ ứng tuyển.' }, { status: 403 });
       }
-      const account = await getPrisma().user.findUnique({
+      const account = await withDbContext(getPrisma(), ctx, (tx) => tx.user.findUnique({
         where: { id: ctx.userId },
         select: { name: true, phone: true },
-      });
+      }));
       if (!account?.name || !account.phone) {
         return NextResponse.json({ error: 'PROFILE_INCOMPLETE', message: 'Tài khoản cần có họ tên và số điện thoại để ứng tuyển.' }, { status: 422 });
       }
@@ -164,7 +165,10 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'INTERNAL', message: 'Không thể xác minh tài khoản ứng tuyển.' }, { status: 500 });
     }
   } else if (!applicantName.trim() || !applicantPhone.trim()) {
-    return badRequest('Vui lòng nhập họ tên và số điện thoại để ứng tuyển.');
+    return NextResponse.json(
+      { error: 'VALIDATION', message: 'Vui lòng nhập họ tên và số điện thoại để ứng tuyển.' },
+      { status: 400, headers: { 'Cache-Control': 'no-store' } },
+    );
   }
 
   const normalizedPhone = normalizePhone(applicantPhone);
