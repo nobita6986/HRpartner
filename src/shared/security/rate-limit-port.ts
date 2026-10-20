@@ -17,6 +17,8 @@ export type RateLimitSurface =
   | 'TRACKING_CODE'
   | 'APPLY_IP'
   | 'APPLY_PHONE'
+  | 'PHONE_OTP_SEND_IP'
+  | 'PHONE_OTP_VERIFY_IP'
   // N2-2 link-capture (DEC-03/DEC-04 of hrp-v6-n2-aff-02-link-capture).
   // One order tighter than TRACKING_IP because the public write path is
   // anonymous — abuse vector is higher than a self-service read.
@@ -46,6 +48,8 @@ export const RATE_LIMIT_RULES = {
   TRACKING_CODE: { surface: 'TRACKING_CODE', subject: 'tracking-code', limit: 10, windowSec: 60 },
   APPLY_IP: { surface: 'APPLY_IP', subject: 'ip', limit: 10, windowSec: 600 },
   APPLY_PHONE: { surface: 'APPLY_PHONE', subject: 'phone', limit: 5, windowSec: 3600 },
+  PHONE_OTP_SEND_IP: { surface: 'PHONE_OTP_SEND_IP', subject: 'ip', limit: 10, windowSec: 600 },
+  PHONE_OTP_VERIFY_IP: { surface: 'PHONE_OTP_VERIFY_IP', subject: 'ip', limit: 20, windowSec: 600 },
   // N2-2 link-capture (hrp-v6-n2-aff-02-link-capture, DEC-04). These are
   // intentionally smaller than TRACKING_* because the public capture route
   // is a WRITE path that inserts attribution rows, not a self-service read.

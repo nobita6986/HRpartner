@@ -190,6 +190,8 @@ model User {
 
   // T1A Android backend contract — FCM device tokens của user (cascade khi User bị xóa).
   mobileDeviceTokens MobileDeviceToken[]
+  phoneOtpChallenge PhoneOtpChallenge?
+  updatedEtrustOtpCredentials EtrustOtpCredential[]
   // T1A GPS contract — Admin/BoD identity cho lần xác nhận cấu hình GPS của Site (nullable).
   geoConfirmedSites Site[] @relation("SiteGeoConfirmedBy")
   feedbackItems Feedback[] @relation("FeedbackOwner")
@@ -1657,6 +1659,36 @@ model MobileDeviceToken {
   @@unique([userId, fcmToken], name: "userId_fcmToken")
   @@index([userId])
   @@map("mobile_device_tokens")
+}
+
+model PhoneOtpChallenge {
+  userId              String   @id @map("user_id")
+  codeHash            String   @map("code_hash")
+  phoneHash           String   @map("phone_hash")
+  expiresAt           DateTime @map("expires_at")
+  cooldownUntil       DateTime @map("cooldown_until")
+  sendWindowStartedAt DateTime @map("send_window_started_at")
+  sendsInWindow       Int      @default(1) @map("sends_in_window")
+  attempts            Int      @default(0)
+  isSent              Boolean  @default(false) @map("is_sent")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("phone_otp_challenges")
+}
+
+model EtrustOtpCredential {
+  id                  String   @id @default("primary")
+  apiKeyCiphertext    String   @map("api_key_ciphertext")
+  secretKeyCiphertext String   @map("secret_key_ciphertext")
+  updatedByUserId     String?  @map("updated_by_user_id")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  updatedBy User? @relation(fields: [updatedByUserId], references: [id], onDelete: SetNull)
+
+  @@map("etrust_otp_credentials")
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

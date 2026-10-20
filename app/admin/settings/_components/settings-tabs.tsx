@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 
-export type SettingsTabId = 'homepage' | 'announcement' | 'contact';
+export type SettingsTabId = 'homepage' | 'announcement' | 'contact' | 'otp';
 
 interface SettingsTabsProps {
   active: SettingsTabId;
@@ -31,6 +31,11 @@ const TAB_SPECS: readonly TabSpec[] = [
     id: 'contact',
     label: 'Liên hệ công khai',
     description: 'Số điện thoại, Zalo OA và Messenger.',
+  },
+  {
+    id: 'otp',
+    label: 'Tích hợp OTP',
+    description: 'Quản lý cặp API key/secret ETrust.',
   },
 ];
 

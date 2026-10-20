@@ -33,7 +33,7 @@ import { applyRlsContext } from './rls-context';
 import type { DbContextCallback } from './with-db-context';
 
 /** Mục đích của tiến trình hệ thống — chỉ để nhãn/telemetry, không đổi hành vi. */
-export type SystemPurpose = 'CRON' | 'CHECKIN' | 'DEDUP';
+export type SystemPurpose = 'CRON' | 'CHECKIN' | 'DEDUP' | 'PHONE_OTP';
 
 /**
  * Danh tính hệ thống ổn định. `userId` là id `system:*` (KHÔNG phải user thật);
@@ -70,6 +70,13 @@ export const SYSTEM_DEDUP: SystemPrincipal = {
   userId: 'system:dedup',
   role: 'ADMIN',
   purpose: 'DEDUP',
+};
+
+/** Phone OTP transaction — operations remain explicitly scoped to one user id. */
+export const SYSTEM_PHONE_OTP: SystemPrincipal = {
+  userId: 'system:phone-otp',
+  role: 'ADMIN',
+  purpose: 'PHONE_OTP',
 };
 
 /**
