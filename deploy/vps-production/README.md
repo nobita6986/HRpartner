@@ -16,6 +16,11 @@ the Node.js port from being exposed directly to the Internet.
 Runtime secrets live only in `/etc/hrp/secrets/production.env` and
 `/etc/hrp/secrets/rate-limit.env`. The database owner URL is isolated in
 `/etc/hrp/secrets/migration.env` and is never passed to `hrp-app`.
+The ETrust encryption key is retained as the `ETRUST_CREDENTIALS_ENCRYPTION_KEY`
+secret in the GitHub `production` environment and can be synchronized to a VPS
+with the owner-only `Configure ETrust encryption key on VPS` workflow. Keep that
+same key when moving the database to another VPS so saved provider credentials
+remain decryptable.
 
 ## Release flow
 
