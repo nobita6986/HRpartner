@@ -1,0 +1,58 @@
+name: Configure ETrust encryption key on VPS
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_sha:
+        description: Full 40-character main commit SHA whose image to run
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: hrp-production-deploy
+  cancel-in-progress: false
+
+jobs:
+  configure:
+    if: github.actor == github.repository_owner
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    steps:
+      - name: Validate image SHA and key
+        shell: bash
+        env:
+          RELEASE_SHA: ${{ inputs.commit_sha }}
+          ENCRYPTION_KEY: ${{ secrets.ETRUST_CREDENTIALS_ENCRYPTION_KEY }}
+        run: |
+          set -euo pipefail
+          [[ "$RELEASE_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo '::error::full commit SHA required'; exit 1; }
+          [[ "$ENCRYPTION_KEY" =~ ^[a-fA-F0-9]{64}$ ]] || { echo '::error::production encryption key is missing or invalid'; exit 1; }
+
+      - name: Configure pinned SSH host
+        shell: bash
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
+
+      - name: Store key in VPS secret file and restart release
+        shell: bash
+        env:
+          RELEASE_SHA: ${{ inputs.commit_sha }}
+          ENCRYPTION_KEY: ${{ secrets.ETRUST_CREDENTIALS_ENCRYPTION_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          set -euo pipefail
+          image="ghcr.io/nobita6986/hrpartner:$RELEASE_SHA"
+          printf '%s' "$ENCRYPTION_KEY" | ssh -T "$VPS_USER@$VPS_HOST" "docker pull '$image' && sudo -n /usr/local/sbin/hrp-check-migrations '$image' && docker run --rm -i --user 0:0 --volume /etc/hrp/secrets:/run-secrets --entrypoint node '$image' /app/scripts/ops/set-production-env-key.mjs /run-secrets/production.env && sudo -n /opt/hrp/deploy-production.sh '$image'"

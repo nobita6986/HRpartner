@@ -50,6 +50,7 @@ COPY --from=builder --chown=hrp:hrp /app/node_modules ./node_modules
 COPY --from=builder --chown=hrp:hrp /app/.next ./.next
 COPY --from=builder --chown=hrp:hrp /app/public ./public
 COPY --from=builder --chown=hrp:hrp /app/prisma ./prisma
+COPY --from=builder --chown=hrp:hrp /app/scripts/ops/set-production-env-key.mjs ./scripts/ops/set-production-env-key.mjs
 
 USER hrp
 
