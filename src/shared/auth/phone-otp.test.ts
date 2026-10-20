@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { matchesPhoneOtpDigest, newPhoneOtp, phoneDigest, phoneOtpDigest, readEtrustOtpConfig, sendEtrustOtp } from './phone-otp';
+import { getEtrustOtpTemplates, matchesPhoneOtpDigest, newPhoneOtp, phoneDigest, phoneOtpDigest, readEtrustOtpConfig, sendEtrustOtp } from './phone-otp';
 
 const config = { apiKey: 'synthetic-key', secretKey: 'synthetic-secret', oaid: 'synthetic-oaid', templateId: 'synthetic-template', brandname: 'synthetic-brand' };
 
@@ -35,5 +35,18 @@ describe('phone OTP safety', () => {
 
     vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ CodeResult: '500' }), { status: 200 })));
     await expect(sendEtrustOtp(config, '0912345678', '001234')).resolves.toBe(false);
+  });
+
+  it('queries active normal and priority templates without returning credentials', async () => {
+    const fetch = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      const payload = JSON.parse(String(init?.body));
+      expect(payload).toMatchObject({ ApiKey: config.apiKey, SecretKey: config.secretKey, OAId: config.oaid });
+      return new Response(JSON.stringify({ templates: [{ TempID: `template-${payload.SmsType}` }] }), { status: 200 });
+    });
+    vi.stubGlobal('fetch', fetch);
+    const result = await getEtrustOtpTemplates(config.apiKey, config.secretKey, config.oaid);
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(JSON.stringify(result)).not.toContain(config.secretKey);
+    expect(result).toEqual({ normal: { templates: [{ TempID: 'template-25' }] }, priority: { templates: [{ TempID: 'template-24' }] } });
   });
 });

@@ -1,6 +1,7 @@
 import { createHmac, randomInt, randomUUID, timingSafeEqual } from 'node:crypto';
 
 export const PHONE_OTP_ENDPOINT = 'https://api-tinnhan.etrust.vn/MainService.svc/json/MultiChannelMessage/';
+export const PHONE_OTP_TEMPLATE_ENDPOINT = 'https://api-tinnhan.etrust.vn/MainService.svc/json/GetTemplate/';
 export const PHONE_OTP_TTL_MS = 5 * 60 * 1000;
 export const PHONE_OTP_COOLDOWN_SECONDS = 60;
 export const PHONE_OTP_SEND_WINDOW_MS = 60 * 60 * 1000;
@@ -62,4 +63,19 @@ export async function sendEtrustOtp(config: EtrustOtpConfig, phone: string, code
   } catch {
     return false;
   }
+}
+
+export async function getEtrustOtpTemplates(apiKey: string, secretKey: string, oaid: string): Promise<{ normal: unknown; priority: unknown }> {
+  const get = async (smsType: '24' | '25') => {
+    const response = await fetch(PHONE_OTP_TEMPLATE_ENDPOINT, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ ApiKey: apiKey, SecretKey: secretKey, OAId: oaid, SmsType: smsType }),
+      signal: AbortSignal.timeout(8_000),
+    });
+    if (!response.ok) throw new Error('ETrust template lookup failed');
+    return response.json() as Promise<unknown>;
+  };
+  const [normal, priority] = await Promise.all([get('25'), get('24')]);
+  return { normal, priority };
 }
