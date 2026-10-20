@@ -1,0 +1,2 @@
+ALTER TABLE etrust_otp_credentials
+  ADD COLUMN IF NOT EXISTS oaid TEXT NOT NULL DEFAULT '';

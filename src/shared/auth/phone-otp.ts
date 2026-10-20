@@ -15,8 +15,8 @@ export interface EtrustOtpConfig {
   brandname: string;
 }
 
-export function readEtrustOtpConfig(apiKey: string, secretKey: string, env: Record<string, string | undefined> = process.env): EtrustOtpConfig | null {
-  const { ETRUST_OAID: oaid, ETRUST_TEMPLATE_ID: templateId, ETRUST_BRANDNAME: brandname } = env;
+export function readEtrustOtpConfig(apiKey: string, secretKey: string, oaid: string, env: Record<string, string | undefined> = process.env): EtrustOtpConfig | null {
+  const { ETRUST_TEMPLATE_ID: templateId, ETRUST_BRANDNAME: brandname } = env;
   if (![apiKey, secretKey, oaid, templateId, brandname].every((value) => value?.trim())) return null;
   return { apiKey: apiKey.trim(), secretKey: secretKey.trim(), oaid: oaid!.trim(), templateId: templateId!.trim(), brandname: brandname!.trim() };
 }

@@ -7,7 +7,9 @@ afterEach(() => vi.unstubAllGlobals());
 
 describe('phone OTP safety', () => {
   it('requires complete ETrust config and generates six digits including leading zeroes', () => {
-    expect(readEtrustOtpConfig('', '', { ETRUST_OAID: 'oaid' })).toBeNull();
+    expect(readEtrustOtpConfig('', '', 'oaid', { ETRUST_TEMPLATE_ID: 'template', ETRUST_BRANDNAME: 'brand' })).toBeNull();
+    expect(readEtrustOtpConfig('key', 'secret', '', { ETRUST_TEMPLATE_ID: 'template', ETRUST_BRANDNAME: 'brand' })).toBeNull();
+    expect(readEtrustOtpConfig('key', 'secret', ' oaid ', { ETRUST_TEMPLATE_ID: ' template ', ETRUST_BRANDNAME: ' brand ' })).toEqual({ apiKey: 'key', secretKey: 'secret', oaid: 'oaid', templateId: 'template', brandname: 'brand' });
     expect(newPhoneOtp()).toMatch(/^\d{6}$/);
   });
 
