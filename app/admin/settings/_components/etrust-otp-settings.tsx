@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 
 interface Status {
   configured: boolean;
+  oaid: string;
   encryptionKeyConfigured: boolean;
   templateConfigured: boolean;
 }
@@ -12,6 +13,7 @@ export function EtrustOtpSettings() {
   const [status, setStatus] = useState<Status | null>(null);
   const [apiKey, setApiKey] = useState('');
   const [secretKey, setSecretKey] = useState('');
+  const [oaid, setOaid] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -20,7 +22,7 @@ export function EtrustOtpSettings() {
     try {
       const response = await fetch('/api/admin/settings/etrust-otp', { cache: 'no-store' });
       const result = await response.json();
-      if (response.ok) setStatus(result.data);
+      if (response.ok) { setStatus(result.data); setOaid(result.data.oaid ?? ''); }
       else setError(result?.error?.message ?? 'Không đọc được trạng thái cấu hình.');
     } catch {
       setError('Không đọc được trạng thái cấu hình.');
@@ -37,7 +39,7 @@ export function EtrustOtpSettings() {
       const response = await fetch('/api/admin/settings/etrust-otp', {
         method: 'PUT',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ apiKey, secretKey }),
+        body: JSON.stringify({ apiKey, secretKey, oaid }),
       });
       const result = await response.json();
       if (!response.ok) {
@@ -46,7 +48,7 @@ export function EtrustOtpSettings() {
       }
       setApiKey('');
       setSecretKey('');
-      setMessage('Đã lưu cặp credentials mã hóa. Giá trị bí mật không được hiển thị lại.');
+      setMessage('Đã lưu credentials mã hóa và Zalo OA ID. Giá trị bí mật không được hiển thị lại.');
       await refresh();
     } catch {
       setError('Không lưu được cấu hình ETrust.');
@@ -73,8 +75,12 @@ export function EtrustOtpSettings() {
           Secret key mới
           <input type="password" autoComplete="new-password" value={secretKey} onChange={(event) => setSecretKey(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') event.preventDefault(); }} className="mt-1 min-h-11 w-full rounded-lg border bg-white px-3 text-sm" style={{ borderColor: 'var(--outline-variant)', color: 'var(--on-surface)' }} />
         </label>
+        <label className="block text-sm font-medium md:col-span-2" style={{ color: 'var(--on-surface)' }}>
+          Zalo OA ID
+          <input type="text" autoComplete="off" value={oaid} onChange={(event) => setOaid(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') event.preventDefault(); }} className="mt-1 min-h-11 w-full rounded-lg border bg-white px-3 text-sm" style={{ borderColor: 'var(--outline-variant)', color: 'var(--on-surface)' }} />
+        </label>
       </div>
-      <button type="button" onClick={save} disabled={busy || !apiKey.trim() || !secretKey.trim()} className="mt-4 min-h-11 rounded-lg px-4 text-sm font-semibold text-white disabled:opacity-50" style={{ background: 'var(--color-primary-dark)' }}>
+      <button type="button" onClick={save} disabled={busy || !apiKey.trim() || !secretKey.trim() || !oaid.trim()} className="mt-4 min-h-11 rounded-lg px-4 text-sm font-semibold text-white disabled:opacity-50" style={{ background: 'var(--color-primary-dark)' }}>
         {busy ? 'Đang lưu…' : 'Lưu / thay cặp credentials'}
       </button>
       {message && <p role="status" className="mt-3 text-sm" style={{ color: 'var(--color-success, #087f5b)' }}>{message}</p>}

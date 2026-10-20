@@ -11,7 +11,7 @@ import { writeAuditLog } from '@/src/shared/integrity/audit';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 const noStore = { 'Cache-Control': 'no-store' };
-const schema = z.object({ apiKey: z.string().trim().min(1).max(500), secretKey: z.string().trim().min(1).max(500) }).strict();
+const schema = z.object({ apiKey: z.string().trim().min(1).max(500), secretKey: z.string().trim().min(1).max(500), oaid: z.string().trim().regex(/^\d+$/).max(100) }).strict();
 
 function fail(status: number, code: string, message: string) {
   return NextResponse.json({ ok: false, error: { code, message } }, { status, headers: noStore });
@@ -29,10 +29,10 @@ async function requireAdmin(req: NextRequest) {
 export async function GET(req: NextRequest) {
   if (!await requireAdmin(req)) return fail(403, 'FORBIDDEN', 'Chỉ quản trị viên được cấu hình OTP.');
   try {
-    const credentials = await withSystemDb(getPrisma(), SYSTEM_PHONE_OTP, (tx) => tx.etrustOtpCredential.findUnique({ where: { id: 'primary' }, select: { updatedAt: true } }));
+    const credentials = await withSystemDb(getPrisma(), SYSTEM_PHONE_OTP, (tx) => tx.etrustOtpCredential.findUnique({ where: { id: 'primary' }, select: { oaid: true, updatedAt: true } }));
     const encryptionKeyConfigured = /^[0-9a-f]{64}$/i.test(process.env.ETRUST_CREDENTIALS_ENCRYPTION_KEY ?? '');
-    const templateConfigured = Boolean(readEtrustOtpConfig('configured', 'configured'));
-    return NextResponse.json({ ok: true, data: { configured: Boolean(credentials), encryptionKeyConfigured, templateConfigured, updatedAt: credentials?.updatedAt.toISOString() ?? null } }, { headers: noStore });
+    const templateConfigured = Boolean(readEtrustOtpConfig('configured', 'configured', credentials?.oaid ?? ''));
+    return NextResponse.json({ ok: true, data: { configured: Boolean(credentials), oaid: credentials?.oaid ?? '', encryptionKeyConfigured, templateConfigured, updatedAt: credentials?.updatedAt.toISOString() ?? null } }, { headers: noStore });
   } catch {
     return fail(503, 'SETTINGS_UNAVAILABLE', 'Không thể đọc trạng thái cấu hình OTP.');
   }
@@ -44,16 +44,16 @@ export async function PUT(req: NextRequest) {
   const read = await readCappedJson<Record<string, unknown>>(req);
   if (!read.ok) return fail(read.response.status, 'VALIDATION_ERROR', 'Dữ liệu cấu hình không hợp lệ.');
   const parsed = schema.safeParse(read.value);
-  if (!parsed.success) return fail(400, 'VALIDATION_ERROR', 'Cần nhập cả API key và secret key.');
+  if (!parsed.success) return fail(400, 'VALIDATION_ERROR', 'Cần nhập API key, secret key và Zalo OA ID.');
   if (!/^[0-9a-f]{64}$/i.test(process.env.ETRUST_CREDENTIALS_ENCRYPTION_KEY ?? '')) return fail(503, 'SETTINGS_UNAVAILABLE', 'Máy chủ chưa cấu hình khóa mã hóa credentials.');
   try {
     const saved = await withSystemDb(getPrisma(), SYSTEM_PHONE_OTP, async (tx) => {
       const existed = await tx.etrustOtpCredential.findUnique({ where: { id: 'primary' }, select: { id: true } });
       const row = await tx.etrustOtpCredential.upsert({
         where: { id: 'primary' },
-        create: { id: 'primary', apiKeyCiphertext: encryptEtrustCredential(parsed.data.apiKey), secretKeyCiphertext: encryptEtrustCredential(parsed.data.secretKey), updatedByUserId: ctx.userId },
-        update: { apiKeyCiphertext: encryptEtrustCredential(parsed.data.apiKey), secretKeyCiphertext: encryptEtrustCredential(parsed.data.secretKey), updatedByUserId: ctx.userId },
-        select: { updatedAt: true },
+        create: { id: 'primary', apiKeyCiphertext: encryptEtrustCredential(parsed.data.apiKey), secretKeyCiphertext: encryptEtrustCredential(parsed.data.secretKey), oaid: parsed.data.oaid, updatedByUserId: ctx.userId },
+        update: { apiKeyCiphertext: encryptEtrustCredential(parsed.data.apiKey), secretKeyCiphertext: encryptEtrustCredential(parsed.data.secretKey), oaid: parsed.data.oaid, updatedByUserId: ctx.userId },
+        select: { oaid: true, updatedAt: true },
       });
       await writeAuditLog({
         prisma: tx,
@@ -61,12 +61,12 @@ export async function PUT(req: NextRequest) {
         entityType: 'IntegrationCredential',
         entityId: 'etrust-otp',
         action: existed ? 'CREDENTIALS_ROTATED' : 'CREDENTIALS_CONFIGURED',
-        diff: { before: { configured: Boolean(existed) }, after: { configured: true } },
+        diff: { before: { configured: Boolean(existed) }, after: { configured: true, oaid: parsed.data.oaid } },
         reason: 'ETrust OTP credentials changed in Admin settings.',
       });
       return row;
     });
-    return NextResponse.json({ ok: true, data: { configured: true, updatedAt: saved.updatedAt.toISOString() } }, { headers: noStore });
+    return NextResponse.json({ ok: true, data: { configured: true, oaid: saved.oaid, updatedAt: saved.updatedAt.toISOString() } }, { headers: noStore });
   } catch {
     return fail(503, 'SETTINGS_UNAVAILABLE', 'Không thể lưu cấu hình OTP.');
   }

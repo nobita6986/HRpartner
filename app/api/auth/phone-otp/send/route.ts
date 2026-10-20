@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
   try {
     const credentials = await withSystemDb(prisma, SYSTEM_PHONE_OTP, (tx) => tx.etrustOtpCredential.findUnique({ where: { id: 'primary' } }));
     if (!credentials) return fail(503, 'OTP_SERVICE_UNAVAILABLE', 'Quản trị viên chưa cấu hình nhà cung cấp OTP.');
-    config = readEtrustOtpConfig(decryptEtrustCredential(credentials.apiKeyCiphertext), decryptEtrustCredential(credentials.secretKeyCiphertext));
+    config = readEtrustOtpConfig(decryptEtrustCredential(credentials.apiKeyCiphertext), decryptEtrustCredential(credentials.secretKeyCiphertext), credentials.oaid);
   } catch {
     return fail(503, 'OTP_SERVICE_UNAVAILABLE', 'Dịch vụ xác thực OTP đang tạm thời gián đoạn.');
   }

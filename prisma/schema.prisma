@@ -1683,6 +1683,7 @@ model EtrustOtpCredential {
   id                  String   @id @default("primary")
   apiKeyCiphertext    String   @map("api_key_ciphertext")
   secretKeyCiphertext String   @map("secret_key_ciphertext")
+  oaid                String   @default("")
   updatedByUserId     String?  @map("updated_by_user_id")
   updatedAt           DateTime @updatedAt @map("updated_at")
 
