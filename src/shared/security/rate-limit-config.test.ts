@@ -72,6 +72,8 @@ describe('DEC-04 — launch rule matrix', () => {
     expect(RATE_LIMIT_RULES.TRACKING_CODE).toEqual({ surface: 'TRACKING_CODE', subject: 'tracking-code', limit: 10, windowSec: 60 });
     expect(RATE_LIMIT_RULES.APPLY_IP).toEqual({ surface: 'APPLY_IP', subject: 'ip', limit: 10, windowSec: 600 });
     expect(RATE_LIMIT_RULES.APPLY_PHONE).toEqual({ surface: 'APPLY_PHONE', subject: 'phone', limit: 5, windowSec: 3600 });
+    expect(RATE_LIMIT_RULES.PHONE_OTP_SEND_IP).toEqual({ surface: 'PHONE_OTP_SEND_IP', subject: 'ip', limit: 10, windowSec: 600 });
+    expect(RATE_LIMIT_RULES.PHONE_OTP_VERIFY_IP).toEqual({ surface: 'PHONE_OTP_VERIFY_IP', subject: 'ip', limit: 20, windowSec: 600 });
   });
 
   it('DEC-07: unknown bucket bị chia /4 và không bao giờ xuống dưới 1', () => {

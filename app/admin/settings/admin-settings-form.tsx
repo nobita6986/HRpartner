@@ -52,6 +52,7 @@ import { actionLabel } from '@/src/shared/i18n/action-dictionary';
 import { HeroImagePicker } from './_components/hero-image-picker';
 import { HeroSlidesEditor, type HeroSlideSlot } from './_components/hero-slides-editor';
 import { SettingsTabs, type SettingsTabId } from './_components/settings-tabs';
+import { EtrustOtpSettings } from './_components/etrust-otp-settings';
 
 const STICKY_TEXT_COLOR_LABELS: Readonly<Record<StickyTextColor, string>> = {
   'on-primary': 'Trên nền màu chính',
@@ -931,6 +932,8 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
         </div>
         )}
 
+        {activeTab === 'otp' && <EtrustOtpSettings />}
+
         {/* ── UI2 / Phase B — News section toggle ───────────────────────── */}
         {activeTab === 'homepage' && (
         <div
@@ -1330,7 +1333,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
           </div>
         )}
 
-        <div className="mt-6 flex flex-wrap items-center justify-end gap-3">
+        {activeTab !== 'otp' && <div className="mt-6 flex flex-wrap items-center justify-end gap-3">
           <p style={{ color: 'var(--on-surface-variant)' }} className="text-xs">
             {unavailableReason
               ? 'Chưa thể chỉnh sửa vì dữ liệu cài đặt chưa sẵn sàng.'
@@ -1356,7 +1359,7 @@ export default function AdminSettingsForm({ initialSettings, unavailableReason }
             {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             {actionLabel('save')}
           </button>
-        </div>
+        </div>}
       </form>
 
     </div>
