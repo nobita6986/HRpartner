@@ -16,8 +16,10 @@
  *     select quan hệ bắt buộc qua bảng bật RLS (tuân thủ required-relation-sweep).
  */
 
+import { randomBytes } from 'node:crypto';
 import { Prisma } from '@prisma/client';
 import type { AuthContext } from '@/src/shared/auth/auth-context';
+import { hashPassword } from '@/src/shared/auth/password';
 import { nextBusinessCode } from '@/src/shared/business-code/business-code';
 import { writeAuditLog } from '@/src/shared/integrity/audit';
 import { enqueueOutbox } from '@/src/shared/integrity/outbox';
@@ -107,6 +109,15 @@ export interface CandidateUserOptionDto {
   matchedByPhone: boolean;
 }
 
+export interface MatchingLaborProfileSummaryDto {
+  id: string;
+  fullName: string | null;
+  phone: string | null;
+  identityVerification: string;
+  completeness: string;
+  workerId: string | null;
+}
+
 export interface UserOnboardingContextDto {
   user: {
     id: string;
@@ -118,7 +129,54 @@ export interface UserOnboardingContextDto {
   };
   linkedWorker: LinkedWorkerSummaryDto | null;
   matchingWorkers: LinkedWorkerSummaryDto[];
+  matchingLaborProfile?: MatchingLaborProfileSummaryDto | null;
   openSlots: OpenSlotOptionDto[];
+}
+
+export interface LaborProfileOnboardingContextDto {
+  laborProfile: {
+    id: string;
+    fullName: string | null;
+    phone: string | null;
+    cccdNumber: string | null;
+    identityVerification: string;
+    completeness: string;
+    workerId: string | null;
+  };
+  linkedWorker: LinkedWorkerSummaryDto | null;
+  matchingWorkers: LinkedWorkerSummaryDto[];
+  linkedUser: CandidateUserOptionDto | null;
+  matchingUsers: CandidateUserOptionDto[];
+  openSlots: OpenSlotOptionDto[];
+}
+
+export interface OnboardLaborProfileByAdminInput {
+  laborProfileId: string;
+  userId?: string | null;
+  createAccountIfMissing?: boolean;
+  verifyPhone?: boolean;
+  workerId?: string | null;
+  slotId?: string | null;
+  employeeCode?: string | null;
+  employmentType?: string | null;
+  workSetting?: string | null;
+  replaceActiveAssignment?: boolean;
+  allowPhoneUpdate?: boolean;
+  reason: string;
+}
+
+export interface OnboardLaborProfileResultDto {
+  laborProfileId: string;
+  userId: string | null;
+  accountCreated: boolean;
+  temporaryPassword: string | null;
+  phoneVerified: boolean;
+  workerId: string;
+  workerCode: string;
+  workerCreated: boolean;
+  profileStatus: string;
+  employmentStatus: string;
+  assignment: ActiveAssignmentSummaryDto | null;
 }
 
 export interface WorkerAccountContextDto {
@@ -366,15 +424,23 @@ async function hydrateWorkersWithActiveAssignment(
  * Tương thích ngược hoàn toàn với các unit test chỉ mock `tx.user`.
  */
 export async function enrichUsersWithWorkerSummary<
-  T extends { id: string; role: string },
+  T extends { id: string; role: string; phone?: string | null },
 >(
   tx: Prisma.TransactionClient,
   users: T[],
-): Promise<Array<T & { workerProfile?: LinkedWorkerSummaryDto | null }>> {
+): Promise<
+  Array<
+    T & {
+      workerProfile?: LinkedWorkerSummaryDto | null;
+      matchingLaborProfile?: MatchingLaborProfileSummaryDto | null;
+    }
+  >
+> {
   if (users.length === 0 || !tx.worker?.findMany) {
     return users;
   }
-  const workerUserIds = users.filter((u) => u.role === 'WORKER').map((u) => u.id);
+  const workerUsers = users.filter((u) => u.role === 'WORKER');
+  const workerUserIds = workerUsers.map((u) => u.id);
   if (workerUserIds.length === 0) {
     return users;
   }
@@ -397,9 +463,83 @@ export async function enrichUsersWithWorkerSummary<
     if (w.accountUserId) byAccountId.set(w.accountUserId, w);
   }
 
+  const profileByUserId = new Map<string, MatchingLaborProfileSummaryDto>();
+  if (tx.laborProfile?.findMany) {
+    const allPhoneVariants = new Set<string>();
+    const allNormNoZero = new Set<string>();
+    for (const u of workerUsers) {
+      if (u.phone) {
+        for (const p of phoneCandidates(u.phone)) allPhoneVariants.add(p);
+        const norm = normalizePhone(u.phone);
+        const noZero = norm.replace(/^0/, '');
+        if (noZero) allNormNoZero.add(noZero);
+        if (norm) allNormNoZero.add(norm);
+      }
+    }
+    const linkedWorkerIds = hydrated.map((w) => w.id);
+    const orClauses: Prisma.LaborProfileWhereInput[] = [];
+    if (linkedWorkerIds.length > 0) {
+      orClauses.push({ workerId: { in: linkedWorkerIds } });
+    }
+    if (allPhoneVariants.size > 0) {
+      orClauses.push({ phone: { in: [...allPhoneVariants] } });
+    }
+    if (allNormNoZero.size > 0) {
+      orClauses.push({ normalizedPhone: { in: [...allNormNoZero] } });
+    }
+
+    if (orClauses.length > 0) {
+      const profiles = await tx.laborProfile.findMany({
+        where: { OR: orClauses },
+        select: {
+          id: true,
+          fullName: true,
+          phone: true,
+          identityVerification: true,
+          completeness: true,
+          workerId: true,
+        },
+        orderBy: { updatedAt: 'desc' },
+      });
+
+      const profileByWorkerId = new Map<string, MatchingLaborProfileSummaryDto>();
+      const profileByNormPhone = new Map<string, MatchingLaborProfileSummaryDto>();
+      for (const lp of profiles) {
+        if (lp.workerId && !profileByWorkerId.has(lp.workerId)) {
+          profileByWorkerId.set(lp.workerId, lp);
+        }
+        if (lp.phone) {
+          const norm = normalizePhone(lp.phone);
+          if (norm && !profileByNormPhone.has(norm)) {
+            profileByNormPhone.set(norm, lp);
+          }
+        }
+      }
+
+      for (const u of workerUsers) {
+        const w = byAccountId.get(u.id);
+        if (w && profileByWorkerId.has(w.id)) {
+          profileByUserId.set(u.id, profileByWorkerId.get(w.id)!);
+          continue;
+        }
+        if (u.phone) {
+          const norm = normalizePhone(u.phone);
+          const matched = profileByNormPhone.get(norm);
+          if (matched) {
+            profileByUserId.set(u.id, matched);
+          }
+        }
+      }
+    }
+  }
+
   return users.map((u) =>
     u.role === 'WORKER'
-      ? { ...u, workerProfile: byAccountId.get(u.id) ?? null }
+      ? {
+          ...u,
+          workerProfile: byAccountId.get(u.id) ?? null,
+          matchingLaborProfile: profileByUserId.get(u.id) ?? null,
+        }
       : u,
   );
 }
@@ -466,12 +606,44 @@ export async function getUserOnboardingContext(
         })
       : [];
   const matchingWorkers = await hydrateWorkersWithActiveAssignment(tx, matchingRaw);
+
+  let matchingLaborProfile: MatchingLaborProfileSummaryDto | null = null;
+  if (tx.laborProfile?.findFirst) {
+    const normPhone = user.phone ? normalizePhone(user.phone) : '';
+    const normNoZero = normPhone.replace(/^0/, '');
+    const lpOr: Prisma.LaborProfileWhereInput[] = [];
+    if (linkedWorker?.id) {
+      lpOr.push({ workerId: linkedWorker.id });
+    }
+    if (phones.length > 0) {
+      lpOr.push({ phone: { in: phones } });
+    }
+    if (normNoZero) {
+      lpOr.push({ normalizedPhone: { in: [normNoZero, normPhone] } });
+    }
+    if (lpOr.length > 0) {
+      matchingLaborProfile = await tx.laborProfile.findFirst({
+        where: { OR: lpOr },
+        select: {
+          id: true,
+          fullName: true,
+          phone: true,
+          identityVerification: true,
+          completeness: true,
+          workerId: true,
+        },
+        orderBy: { updatedAt: 'desc' },
+      });
+    }
+  }
+
   const openSlots = await listOpenSlotsForAdmin(tx);
 
   return {
     user,
     linkedWorker: linkedWorker ?? null,
     matchingWorkers,
+    matchingLaborProfile,
     openSlots,
   };
 }
@@ -1151,11 +1323,33 @@ export async function onboardWorkerAccountByAdmin(
   }
 
   if (!worker) {
+    let candidateFullName = user.name?.trim() || normPhone;
+    if (tx.laborProfile?.findFirst) {
+      const phones = phoneCandidates(user.phone);
+      const normNoZero = normPhone.replace(/^0/, '');
+      const existingLp = await tx.laborProfile.findFirst({
+        where: {
+          OR: [
+            ...(phones.length > 0 ? [{ phone: { in: phones } }] : []),
+            ...(normNoZero ? [{ normalizedPhone: { in: [normNoZero, normPhone] } }] : []),
+          ],
+        },
+        select: { fullName: true },
+        orderBy: { updatedAt: 'desc' },
+      });
+      if (
+        existingLp?.fullName &&
+        (!user.name || user.name.trim() === '' || user.name.trim() === normPhone)
+      ) {
+        candidateFullName = existingLp.fullName.trim();
+      }
+    }
+
     const workerCode = await nextBusinessCode(tx, 'WORKER_USER_ID');
     worker = await tx.worker.create({
       data: {
         userId: workerCode,
-        fullName: user.name?.trim() || normPhone,
+        fullName: candidateFullName,
         phone: normPhone,
         profileStatus: 'VERIFIED',
         employmentStatus: 'ACTIVE',
@@ -1565,3 +1759,638 @@ export async function unlinkWorkerAccountByAdmin(
 
   return { workerId: worker.id, unlinkedUserId: previousUserId };
 }
+
+/**
+ * Lấy ngữ cảnh tài khoản đăng nhập App, hồ sơ Worker và vị trí tuyển dụng mở
+ * cho một Hồ sơ ứng viên (`LaborProfile`) tại `/admin/labor-profiles/[id]`.
+ */
+export async function getLaborProfileOnboardingContext(
+  tx: Prisma.TransactionClient,
+  ctx: AuthContext,
+  laborProfileId: string,
+): Promise<LaborProfileOnboardingContextDto> {
+  assertAdmin(ctx);
+
+  const laborProfile = await tx.laborProfile.findUnique({
+    where: { id: laborProfileId },
+    select: {
+      id: true,
+      fullName: true,
+      phone: true,
+      cccdNumber: true,
+      identityVerification: true,
+      completeness: true,
+      workerId: true,
+    },
+  });
+  if (!laborProfile) {
+    throw new WorkerOnboardingError('NOT_FOUND', 404, 'Không tìm thấy hồ sơ ứng viên.');
+  }
+
+  let linkedWorker: LinkedWorkerSummaryDto | null = null;
+  if (laborProfile.workerId) {
+    const wRaw = await tx.worker.findUnique({
+      where: { id: laborProfile.workerId },
+      select: {
+        id: true,
+        userId: true,
+        fullName: true,
+        phone: true,
+        profileStatus: true,
+        employmentStatus: true,
+        accountUserId: true,
+      },
+    });
+    if (wRaw) {
+      const [hydrated] = await hydrateWorkersWithActiveAssignment(tx, [wRaw]);
+      linkedWorker = hydrated ?? null;
+    }
+  }
+
+  const phones = phoneCandidates(laborProfile.phone);
+  const normProfilePhone = laborProfile.phone ? normalizePhone(laborProfile.phone) : '';
+
+  const matchingWorkersRaw =
+    phones.length > 0
+      ? await tx.worker.findMany({
+          where: {
+            phone: { in: phones },
+            ...(linkedWorker ? { id: { not: linkedWorker.id } } : {}),
+          },
+          select: {
+            id: true,
+            userId: true,
+            fullName: true,
+            phone: true,
+            profileStatus: true,
+            employmentStatus: true,
+            accountUserId: true,
+          },
+          take: 10,
+        })
+      : [];
+  const matchingWorkers = await hydrateWorkersWithActiveAssignment(tx, matchingWorkersRaw);
+
+  let linkedUser: CandidateUserOptionDto | null = null;
+  if (linkedWorker?.accountUserId) {
+    const u = await tx.user.findUnique({
+      where: { id: linkedWorker.accountUserId },
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        phoneVerified: true,
+        isActive: true,
+      },
+    });
+    if (u) {
+      linkedUser = { ...u, matchedByPhone: true };
+    }
+  }
+
+  const linkedWorkers = await tx.worker.findMany({
+    where: { accountUserId: { not: null } },
+    select: { id: true, accountUserId: true },
+  });
+  const takenUserIds = new Set(
+    linkedWorkers
+      .filter((w) => !linkedWorker || w.id !== linkedWorker.id)
+      .map((w) => w.accountUserId)
+      .filter((v): v is string => Boolean(v)),
+  );
+
+  const userCandidatesRaw = await tx.user.findMany({
+    where: {
+      role: 'WORKER',
+      ...(phones.length > 0
+        ? { OR: [{ phone: { in: phones } }, { isActive: true }] }
+        : { isActive: true }),
+    },
+    select: {
+      id: true,
+      name: true,
+      phone: true,
+      phoneVerified: true,
+      isActive: true,
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 50,
+  });
+
+  const matchingUsers: CandidateUserOptionDto[] = userCandidatesRaw
+    .filter((u) => !takenUserIds.has(u.id))
+    .map((u) => {
+      const normUserPhone = u.phone ? normalizePhone(u.phone) : '';
+      const matchedByPhone = Boolean(
+        (normProfilePhone && normUserPhone && normProfilePhone === normUserPhone) ||
+          (u.phone && phones.includes(u.phone)),
+      );
+      return {
+        id: u.id,
+        name: u.name,
+        phone: u.phone,
+        phoneVerified: u.phoneVerified,
+        isActive: u.isActive,
+        matchedByPhone,
+      };
+    })
+    .sort((a, b) => Number(b.matchedByPhone) - Number(a.matchedByPhone));
+
+  const openSlots = await listOpenSlotsForAdmin(tx);
+
+  return {
+    laborProfile,
+    linkedWorker,
+    matchingWorkers,
+    linkedUser,
+    matchingUsers,
+    openSlots,
+  };
+}
+
+/**
+ * Thao tác toàn trình từ phía `/admin/labor-profiles/[id]` (Hồ sơ ứng viên):
+ *   1. Tìm tài khoản đăng nhập App (`User` role=WORKER) theo SĐT ứng viên (hoặc theo `userId`),
+ *      hoặc tự động khởi tạo tài khoản đăng nhập App (cấp mật khẩu tạm thời) nếu `createAccountIfMissing = true`.
+ *   2. Xác minh SĐT thủ công (`phoneVerified = true`) cho tài khoản đăng nhập App.
+ *   3. Tạo mới hoặc kích hoạt hồ sơ Người lao động chuẩn (`Worker` USR-EMP-xxx, `VERIFIED` / `ACTIVE`)
+ *      và liên kết hai chiều `LaborProfile.workerId = Worker.id` & `Worker.accountUserId = User.id`.
+ *   4. Đảm bảo `SourceClaim` (`HRP_DIRECT` / `HR_ADDED`).
+ *   5. Nếu Admin chọn `slotId`, phân công trực tiếp vào Dự án / Vị trí tuyển dụng (`ProjectAssignment` ACTIVE).
+ */
+export async function onboardLaborProfileByAdmin(
+  tx: Prisma.TransactionClient,
+  ctx: AuthContext,
+  input: OnboardLaborProfileByAdminInput,
+  requestMeta: { ipAddress?: string | null; userAgent?: string | null } = {},
+): Promise<OnboardLaborProfileResultDto> {
+  assertAdmin(ctx);
+  const reason = requireReason(input.reason);
+
+  const laborProfile = await tx.laborProfile.findUnique({
+    where: { id: input.laborProfileId },
+    select: {
+      id: true,
+      fullName: true,
+      phone: true,
+      cccdNumber: true,
+      identityVerification: true,
+      completeness: true,
+      workerId: true,
+    },
+  });
+  if (!laborProfile) {
+    throw new WorkerOnboardingError('NOT_FOUND', 404, 'Không tìm thấy hồ sơ ứng viên.');
+  }
+
+  const normProfilePhone = laborProfile.phone ? normalizePhone(laborProfile.phone) : '';
+  const phones = phoneCandidates(laborProfile.phone);
+  const now = new Date();
+
+  // 1. Tìm Worker hiện có (nếu đã gắn với LaborProfile hoặc truyền vào)
+  let worker = laborProfile.workerId
+    ? await tx.worker.findUnique({
+        where: { id: laborProfile.workerId },
+        select: {
+          id: true,
+          userId: true,
+          fullName: true,
+          phone: true,
+          profileStatus: true,
+          employmentStatus: true,
+          accountUserId: true,
+        },
+      })
+    : null;
+
+  if (!worker && input.workerId) {
+    worker = await tx.worker.findUnique({
+      where: { id: input.workerId },
+      select: {
+        id: true,
+        userId: true,
+        fullName: true,
+        phone: true,
+        profileStatus: true,
+        employmentStatus: true,
+        accountUserId: true,
+      },
+    });
+    if (!worker) {
+      throw new WorkerOnboardingError('NOT_FOUND', 404, 'Không tìm thấy hồ sơ Worker được chọn.');
+    }
+  }
+
+  // 2. Xác định tài khoản đăng nhập App (User role=WORKER)
+  let targetUser: {
+    id: string;
+    name: string | null;
+    phone: string | null;
+    phoneVerified: boolean;
+    role: string;
+    isActive: boolean;
+  } | null = null;
+  let accountCreated = false;
+  let temporaryPassword: string | null = null;
+
+  const explicitUserId = input.userId?.trim() || worker?.accountUserId || null;
+  if (explicitUserId) {
+    targetUser = await tx.user.findUnique({
+      where: { id: explicitUserId },
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        phoneVerified: true,
+        role: true,
+        isActive: true,
+      },
+    });
+    if (!targetUser) {
+      throw new WorkerOnboardingError('NOT_FOUND', 404, 'Không tìm thấy tài khoản đăng nhập được chọn.');
+    }
+  } else if (phones.length > 0) {
+    targetUser = await tx.user.findFirst({
+      where: {
+        role: 'WORKER',
+        phone: { in: phones },
+      },
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        phoneVerified: true,
+        role: true,
+        isActive: true,
+      },
+    });
+  }
+
+  if (targetUser) {
+    if (targetUser.role !== 'WORKER' || !targetUser.isActive) {
+      throw new WorkerOnboardingError(
+        'USER_NOT_READY',
+        409,
+        'Tài khoản trùng số điện thoại không phải vai trò WORKER hoặc đang bị vô hiệu hóa.',
+      );
+    }
+
+    const otherWorkerWithAccount = await tx.worker.findFirst({
+      where: {
+        accountUserId: targetUser.id,
+        ...(worker ? { id: { not: worker.id } } : {}),
+      },
+      select: {
+        id: true,
+        userId: true,
+        fullName: true,
+        phone: true,
+        profileStatus: true,
+        employmentStatus: true,
+        accountUserId: true,
+      },
+    });
+    if (otherWorkerWithAccount) {
+      if (!worker) {
+        worker = otherWorkerWithAccount;
+      } else {
+        throw new WorkerOnboardingError(
+          'ALREADY_LINKED',
+          409,
+          `Tài khoản đăng nhập này đã được gắn với hồ sơ NLĐ khác (${otherWorkerWithAccount.userId}).`,
+        );
+      }
+    }
+
+    if ((input.verifyPhone ?? true) && !targetUser.phoneVerified) {
+      await tx.user.update({
+        where: { id: targetUser.id },
+        data: { phoneVerified: true, phoneVerifiedAt: now },
+      });
+      await writeAuditLog({
+        prisma: tx,
+        actor: { id: ctx.userId, role: ctx.role, ...requestMeta },
+        entityType: 'User',
+        entityId: targetUser.id,
+        action: 'PHONE_VERIFIED_MANUALLY',
+        diff: { before: { phoneVerified: false }, after: { phoneVerified: true } },
+        reason,
+        metadata: {
+          method: 'ADMIN_LABOR_PROFILE_ONBOARD',
+          laborProfileId: laborProfile.id,
+        },
+      });
+      targetUser.phoneVerified = true;
+    }
+  } else if (input.createAccountIfMissing) {
+    if (!normProfilePhone) {
+      throw new WorkerOnboardingError(
+        'VALIDATION_ERROR',
+        400,
+        'Hồ sơ ứng viên chưa có số điện thoại hợp lệ để tạo tài khoản đăng nhập App.',
+      );
+    }
+    const existingAnyRole = await tx.user.findFirst({
+      where: { phone: { in: phones } },
+      select: { id: true, role: true },
+    });
+    if (existingAnyRole) {
+      throw new WorkerOnboardingError(
+        'USER_NOT_READY',
+        409,
+        `Số điện thoại ${normProfilePhone} đã thuộc tài khoản hệ thống vai trò ${existingAnyRole.role}.`,
+      );
+    }
+
+    temporaryPassword = randomBytes(9).toString('base64url');
+    const passwordHash = await hashPassword(temporaryPassword);
+    targetUser = await tx.user.create({
+      data: {
+        phone: normProfilePhone,
+        name: laborProfile.fullName?.trim() || normProfilePhone,
+        passwordHash,
+        role: 'WORKER',
+        isActive: true,
+        phoneVerified: true,
+        phoneVerifiedAt: now,
+      },
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        phoneVerified: true,
+        role: true,
+        isActive: true,
+      },
+    });
+    accountCreated = true;
+
+    await writeAuditLog({
+      prisma: tx,
+      actor: { id: ctx.userId, role: ctx.role, ...requestMeta },
+      entityType: 'User',
+      entityId: targetUser.id,
+      action: 'USER_CREATED_BY_ADMIN_ONBOARD',
+      diff: {
+        before: null,
+        after: {
+          phone: targetUser.phone,
+          name: targetUser.name,
+          role: 'WORKER',
+          phoneVerified: true,
+        },
+      },
+      reason,
+      metadata: {
+        laborProfileId: laborProfile.id,
+      },
+    });
+  }
+
+  // 3. Tìm hoặc tạo mới Worker chuẩn và liên kết với LaborProfile + User
+  if (!worker && phones.length > 0) {
+    const phoneMatches = await tx.worker.findMany({
+      where: {
+        accountUserId: null,
+        phone: { in: phones },
+      },
+      select: {
+        id: true,
+        userId: true,
+        fullName: true,
+        phone: true,
+        profileStatus: true,
+        employmentStatus: true,
+        accountUserId: true,
+      },
+      take: 2,
+    });
+    if (phoneMatches.length === 1) {
+      worker = phoneMatches[0];
+    }
+  }
+
+  let workerCreated = false;
+  const effectivePhone =
+    normProfilePhone ||
+    (targetUser?.phone ? normalizePhone(targetUser.phone) : '') ||
+    laborProfile.phone ||
+    null;
+  const effectiveName =
+    laborProfile.fullName?.trim() ||
+    targetUser?.name?.trim() ||
+    effectivePhone ||
+    'Người lao động';
+
+  if (!worker) {
+    const workerCode = await nextBusinessCode(tx, 'WORKER_USER_ID');
+    worker = await tx.worker.create({
+      data: {
+        userId: workerCode,
+        fullName: effectiveName,
+        phone: effectivePhone,
+        profileStatus: 'VERIFIED',
+        employmentStatus: 'ACTIVE',
+        riskStatus: 'NORMAL',
+        accountUserId: targetUser?.id ?? null,
+        ownerId: ctx.userId,
+        assignedToId: ctx.userId,
+      },
+      select: {
+        id: true,
+        userId: true,
+        fullName: true,
+        phone: true,
+        profileStatus: true,
+        employmentStatus: true,
+        accountUserId: true,
+      },
+    });
+    workerCreated = true;
+
+    await writeAuditLog({
+      prisma: tx,
+      actor: { id: ctx.userId, role: ctx.role, ...requestMeta },
+      entityType: 'Worker',
+      entityId: worker.id,
+      action: 'WORKER_CREATED_BY_ADMIN_ONBOARD',
+      diff: {
+        before: null,
+        after: {
+          userId: worker.userId,
+          fullName: worker.fullName,
+          phone: worker.phone,
+          profileStatus: 'VERIFIED',
+          employmentStatus: 'ACTIVE',
+          accountUserId: worker.accountUserId,
+        },
+      },
+      reason,
+      metadata: {
+        laborProfileId: laborProfile.id,
+        linkedUserId: targetUser?.id ?? null,
+      },
+    });
+  } else {
+    if (
+      targetUser &&
+      worker.accountUserId &&
+      worker.accountUserId !== targetUser.id
+    ) {
+      throw new WorkerOnboardingError(
+        'ALREADY_LINKED',
+        409,
+        'Hồ sơ NLĐ này đã gắn với một tài khoản đăng nhập khác.',
+      );
+    }
+    const prevAccountUserId = worker.accountUserId;
+    const prevProfileStatus = worker.profileStatus;
+    const prevEmploymentStatus = worker.employmentStatus;
+    const nextAccountUserId = targetUser?.id ?? worker.accountUserId;
+
+    worker = await tx.worker.update({
+      where: { id: worker.id },
+      data: {
+        accountUserId: nextAccountUserId,
+        profileStatus: 'VERIFIED',
+        employmentStatus: 'ACTIVE',
+        ...(worker.fullName ? {} : { fullName: effectiveName }),
+        ...(!worker.phone && effectivePhone ? { phone: effectivePhone } : {}),
+      },
+      select: {
+        id: true,
+        userId: true,
+        fullName: true,
+        phone: true,
+        profileStatus: true,
+        employmentStatus: true,
+        accountUserId: true,
+      },
+    });
+
+    if (prevAccountUserId !== nextAccountUserId && nextAccountUserId) {
+      await writeAuditLog({
+        prisma: tx,
+        actor: { id: ctx.userId, role: ctx.role, ...requestMeta },
+        entityType: 'Worker',
+        entityId: worker.id,
+        action: 'LOGIN_ACCOUNT_LINKED',
+        diff: {
+          before: { accountUserId: prevAccountUserId },
+          after: { accountUserId: nextAccountUserId },
+        },
+        reason,
+        metadata: {
+          laborProfileId: laborProfile.id,
+          linkedUserId: nextAccountUserId,
+        },
+      });
+    } else if (prevProfileStatus !== 'VERIFIED' || prevEmploymentStatus !== 'ACTIVE') {
+      await writeAuditLog({
+        prisma: tx,
+        actor: { id: ctx.userId, role: ctx.role, ...requestMeta },
+        entityType: 'Worker',
+        entityId: worker.id,
+        action: 'WORKER_ACTIVATED_BY_ADMIN',
+        diff: {
+          before: { profileStatus: prevProfileStatus, employmentStatus: prevEmploymentStatus },
+          after: { profileStatus: 'VERIFIED', employmentStatus: 'ACTIVE' },
+        },
+        reason,
+        metadata: { laborProfileId: laborProfile.id },
+      });
+    }
+  }
+
+  // 4. Liên kết LaborProfile -> Worker và cập nhật trạng thái xác minh
+  const normNoZero = effectivePhone ? normalizePhone(effectivePhone).replace(/^0/, '') : '';
+  await tx.laborProfile.update({
+    where: { id: laborProfile.id },
+    data: {
+      workerId: worker.id,
+      identityVerification: 'VERIFIED',
+      completeness: 'SUFFICIENT',
+      ...(normNoZero ? { normalizedPhone: normNoZero } : {}),
+    },
+  });
+
+  await writeAuditLog({
+    prisma: tx,
+    actor: { id: ctx.userId, role: ctx.role, ...requestMeta },
+    entityType: 'LaborProfile',
+    entityId: laborProfile.id,
+    action: 'LABOR_PROFILE_ONBOARDED_BY_ADMIN',
+    diff: {
+      before: {
+        workerId: laborProfile.workerId,
+        identityVerification: laborProfile.identityVerification,
+      },
+      after: {
+        workerId: worker.id,
+        identityVerification: 'VERIFIED',
+        accountUserId: worker.accountUserId,
+      },
+    },
+    reason,
+    metadata: {
+      workerId: worker.id,
+      workerCode: worker.userId,
+      userId: worker.accountUserId,
+      accountCreated,
+    },
+  });
+
+  // 5. Đảm bảo SourceClaim chuẩn
+  if (tx.sourceClaim) {
+    const acceptedClaim = await tx.sourceClaim.findFirst({
+      where: { workerId: worker.id, accepted: true },
+      select: { id: true },
+    });
+    if (!acceptedClaim) {
+      await tx.sourceClaim.create({
+        data: {
+          workerId: worker.id,
+          claimType: 'HRP_DIRECT',
+          registrationChannel: 'HR_ADDED',
+          accepted: true,
+          acceptedBy: ctx.userId,
+          claimedBy: ctx.userId,
+        },
+        select: { id: true },
+      });
+    }
+  }
+
+  // 6. Phân công dự án nếu Admin chọn slotId
+  let assignment: ActiveAssignmentSummaryDto | null = null;
+  if (input.slotId && input.slotId.trim()) {
+    assignment = await assignWorkerToProjectSlotInTx(tx, ctx, {
+      workerId: worker.id,
+      laborProfileId: laborProfile.id,
+      slotId: input.slotId.trim(),
+      employeeCode: input.employeeCode ?? '',
+      employmentType: input.employmentType ?? 'HRP_EMPLOYED',
+      workSetting: input.workSetting ?? 'PHOTHONG',
+      replaceActiveAssignment: Boolean(input.replaceActiveAssignment),
+      reason,
+    });
+  } else {
+    const [hydrated] = await hydrateWorkersWithActiveAssignment(tx, [worker]);
+    assignment = hydrated?.activeAssignment ?? null;
+  }
+
+  return {
+    laborProfileId: laborProfile.id,
+    userId: targetUser?.id ?? worker.accountUserId ?? null,
+    accountCreated,
+    temporaryPassword,
+    phoneVerified: Boolean(targetUser?.phoneVerified),
+    workerId: worker.id,
+    workerCode: worker.userId,
+    workerCreated,
+    profileStatus: worker.profileStatus,
+    employmentStatus: worker.employmentStatus,
+    assignment,
+  };
+}
+

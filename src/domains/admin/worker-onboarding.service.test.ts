@@ -3,6 +3,7 @@ import type { AuthContext } from '@/src/shared/auth/auth-context';
 import {
   enrichUsersWithWorkerSummary,
   linkOrAssignWorkerAccountByAdmin,
+  onboardLaborProfileByAdmin,
   onboardWorkerAccountByAdmin,
   unlinkWorkerAccountByAdmin,
 } from './worker-onboarding.service';
@@ -53,6 +54,15 @@ function makeTx() {
         isActive: true,
         passwordHash: 'hashed',
       }),
+      findFirst: vi.fn().mockResolvedValue(null),
+      create: vi.fn().mockImplementation(async ({ data }: { data: Record<string, unknown> }) => ({
+        id: 'u-created-1',
+        name: data.name,
+        phone: data.phone,
+        phoneVerified: data.phoneVerified,
+        role: data.role,
+        isActive: data.isActive,
+      })),
       update: vi.fn().mockResolvedValue({}),
       findMany: vi.fn().mockResolvedValue([]),
     },
@@ -82,7 +92,17 @@ function makeTx() {
     },
     laborProfile: {
       findFirst: vi.fn().mockResolvedValue(null),
+      findUnique: vi.fn().mockResolvedValue({
+        id: 'lp-1',
+        fullName: 'Duc Nguyen',
+        phone: '0987654321',
+        cccdNumber: null,
+        identityVerification: 'UNVERIFIED',
+        completeness: 'MINIMAL',
+        workerId: null,
+      }),
       create: vi.fn().mockResolvedValue({ id: 'lp-1' }),
+      update: vi.fn().mockResolvedValue({ id: 'lp-1' }),
       updateMany: vi.fn().mockResolvedValue({ count: 1 }),
     },
     sourceClaim: {
@@ -314,5 +334,74 @@ describe('worker-onboarding.service', () => {
     const rows = [{ id: 'u1', role: 'WORKER' }];
     const out = await enrichUsersWithWorkerSummary({} as never, rows);
     expect(out).toEqual(rows);
+  });
+
+  it('onboardLaborProfileByAdmin: xác minh SĐT tài khoản đăng nhập App sẵn có + tạo Worker + liên kết LaborProfile + gán dự án', async () => {
+    const tx = makeTx();
+    tx.user.findFirst.mockResolvedValue({
+      id: 'u-worker-1',
+      name: 'Duc Nguyen',
+      phone: '0987654321',
+      phoneVerified: false,
+      role: 'WORKER',
+      isActive: true,
+    });
+
+    const result = await onboardLaborProfileByAdmin(tx as never, ADMIN_CTX, {
+      laborProfileId: 'lp-1',
+      slotId: 'slot-1',
+      employeeCode: 'NV-321',
+      employmentType: 'HRP_EMPLOYED',
+      workSetting: 'PHOTHONG',
+      reason: 'Duyệt ứng viên Duc Nguyen thành NLĐ HRP và gán dự án',
+    });
+
+    expect(result).toEqual({
+      laborProfileId: 'lp-1',
+      userId: 'u-worker-1',
+      accountCreated: false,
+      temporaryPassword: null,
+      phoneVerified: true,
+      workerId: 'w-new-1',
+      workerCode: 'USR-EMP-001',
+      workerCreated: true,
+      profileStatus: 'VERIFIED',
+      employmentStatus: 'ACTIVE',
+      assignment: expect.objectContaining({
+        id: 'asg-1',
+        projectCode: 'PRJ-001',
+        employeeCode: 'NV-321',
+      }),
+    });
+    expect(tx.user.update).toHaveBeenCalledWith({
+      where: { id: 'u-worker-1' },
+      data: { phoneVerified: true, phoneVerifiedAt: expect.any(Date) },
+    });
+    expect(tx.laborProfile.update).toHaveBeenCalledWith({
+      where: { id: 'lp-1' },
+      data: {
+        workerId: 'w-new-1',
+        identityVerification: 'VERIFIED',
+        completeness: 'SUFFICIENT',
+        normalizedPhone: '987654321',
+      },
+    });
+  });
+
+  it('onboardLaborProfileByAdmin: tự động khởi tạo tài khoản đăng nhập App (createAccountIfMissing=true) khi ứng viên chưa đăng ký trên App', async () => {
+    const tx = makeTx();
+    tx.user.findFirst.mockResolvedValue(null);
+
+    const result = await onboardLaborProfileByAdmin(tx as never, ADMIN_CTX, {
+      laborProfileId: 'lp-1',
+      createAccountIfMissing: true,
+      reason: 'Tạo tài khoản App và duyệt ứng viên thành NLĐ HRP',
+    });
+
+    expect(result.accountCreated).toBe(true);
+    expect(result.temporaryPassword).toBeTruthy();
+    expect(result.userId).toBe('u-created-1');
+    expect(result.phoneVerified).toBe(true);
+    expect(result.workerCode).toBe('USR-EMP-001');
   });
 });

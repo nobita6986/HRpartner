@@ -68,6 +68,15 @@ interface OpenSlotOption {
   projectRemaining: number;
 }
 
+interface MatchingLaborProfileSummary {
+  id: string;
+  fullName: string | null;
+  phone: string | null;
+  identityVerification: string;
+  completeness: string;
+  workerId: string | null;
+}
+
 interface UserOnboardingContext {
   user: {
     id: string;
@@ -79,6 +88,7 @@ interface UserOnboardingContext {
   };
   linkedWorker: LinkedWorkerSummary | null;
   matchingWorkers: LinkedWorkerSummary[];
+  matchingLaborProfile?: MatchingLaborProfileSummary | null;
   openSlots: OpenSlotOption[];
 }
 
@@ -92,6 +102,7 @@ interface UserRow {
   isActive: boolean;
   createdAt: string;
   workerProfile?: LinkedWorkerSummary | null;
+  matchingLaborProfile?: MatchingLaborProfileSummary | null;
 }
 
 interface UsersResponse {
@@ -508,7 +519,16 @@ export default function UserManagementClient() {
                     {u.id}
                   </td>
                   <td style={{ color: 'var(--on-surface)' }} className="px-4 py-3">
-                    {u.name ?? '—'}
+                    <div>{u.name ?? '—'}</div>
+                    {u.matchingLaborProfile?.fullName &&
+                      u.matchingLaborProfile.fullName !== u.name && (
+                        <div
+                          style={{ color: 'var(--on-surface-variant)' }}
+                          className="text-[11px]"
+                        >
+                          Ứng viên: {u.matchingLaborProfile.fullName}
+                        </div>
+                      )}
                   </td>
                   <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">
                     {u.phone ?? '—'}
@@ -604,6 +624,22 @@ export default function UserManagementClient() {
                             Chưa có phân công dự án
                           </div>
                         )}
+                      </div>
+                    ) : u.matchingLaborProfile ? (
+                      <div className="space-y-1">
+                        <div>
+                          <span style={{ color: 'var(--on-surface-variant)' }}>Hồ sơ ứng viên: </span>
+                          <a
+                            href={`/admin/labor-profiles/${u.matchingLaborProfile.id}`}
+                            style={{ color: 'var(--primary)' }}
+                            className="font-semibold hover:underline"
+                          >
+                            {u.matchingLaborProfile.fullName ?? 'Xem hồ sơ'}
+                          </a>
+                        </div>
+                        <div style={{ color: '#8d6e00' }} className="text-[11px]">
+                          Chưa duyệt thành NLĐ — bấm &ldquo;Gán dự án / NLĐ&rdquo;
+                        </div>
                       </div>
                     ) : (
                       <span style={{ color: 'var(--on-surface-variant)' }}>Chưa liên kết hồ sơ NLĐ</span>
@@ -1028,10 +1064,25 @@ function OnboardWorkerModal({
                 </select>
               </Field>
             ) : (
-              <div style={{ color: 'var(--on-surface-variant)' }}>
-                Chưa có hồ sơ NLĐ. Hệ thống sẽ <strong>tự động khởi tạo hồ sơ NLĐ mới</strong> (mã{' '}
-                <span className="font-mono">USR-EMP-xxx</span>), tạo Hồ sơ tiếp nhận và kích hoạt trạng thái{' '}
-                <strong>Đã xác minh / Đang làm việc</strong>.
+              <div style={{ color: 'var(--on-surface-variant)' }} className="space-y-1">
+                {context?.matchingLaborProfile ? (
+                  <div>
+                    Đã tìm thấy Hồ sơ ứng viên trùng SĐT:{' '}
+                    <a
+                      href={`/admin/labor-profiles/${context.matchingLaborProfile.id}`}
+                      style={{ color: 'var(--primary)' }}
+                      className="font-semibold hover:underline"
+                    >
+                      {context.matchingLaborProfile.fullName ?? context.matchingLaborProfile.phone}
+                    </a>
+                    .
+                  </div>
+                ) : null}
+                <div>
+                  Chưa có hồ sơ NLĐ. Hệ thống sẽ <strong>tự động khởi tạo hồ sơ NLĐ mới</strong> (mã{' '}
+                  <span className="font-mono">USR-EMP-xxx</span>), liên kết Hồ sơ ứng viên và kích hoạt trạng thái{' '}
+                  <strong>Đã xác minh / Đang làm việc</strong>.
+                </div>
               </div>
             )}
 
