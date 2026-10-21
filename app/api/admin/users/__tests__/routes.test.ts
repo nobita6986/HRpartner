@@ -376,8 +376,47 @@ describe('GET /api/admin/users (sanity)', () => {
     expect(d.users).toEqual([]);
     expect(d.total).toBe(0);
     expect(findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: { isActive: true },
       select: expect.objectContaining({ phoneVerified: true }),
     }));
+  });
+
+  it('KHÔNG gán where.isActive = false khi query không truyền tham số isActive (mặc định Tất cả)', async () => {
+    setAuth('ADMIN');
+    const findMany = vi.fn(async () => [
+      {
+        id: 'u-worker-1',
+        name: 'Duc Nguyen',
+        phone: '0987654321',
+        phoneVerified: false,
+        role: 'WORKER',
+        vendorId: null,
+        isActive: true,
+        createdAt: new Date('2026-04-20T00:00:00Z'),
+        updatedAt: new Date('2026-04-20T00:00:00Z'),
+      },
+    ]);
+    mocks.withAuthorizedDb.mockImplementation(
+      (_p: unknown, _c: unknown, cb: any) =>
+        cb({
+          user: {
+            findMany,
+            count: async () => 1,
+          },
+        }),
+    );
+    const res = await GETUsers(
+      new NextRequest('http://localhost/api/admin/users?take=50'),
+    );
+    expect(res.status).toBe(200);
+    const d = await res.json();
+    expect(d.users).toHaveLength(1);
+    expect(d.users[0].phone).toBe('0987654321');
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {},
+      }),
+    );
   });
 
   it('403 khi role không phải ADMIN', async () => {

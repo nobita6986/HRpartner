@@ -16,6 +16,7 @@ import {
 import { StatusBadge } from '@/src/shared/ui/status-badge';
 import { HandlingAssignmentManager } from './handling-assignment-manager';
 import { LaborProfileEditForm } from './labor-profile-edit-form';
+import { LaborProfileAccountOnboarding } from './labor-profile-account-onboarding';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -154,6 +155,11 @@ export default async function LaborProfileDetailPage({ params }: { params: Promi
           canSeeSensitive={canSeeSensitive}
         />
       ) : null}
+
+      <LaborProfileAccountOnboarding
+        laborProfileId={data.id}
+        role={session.role}
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Block 1: Nhận diện & độ tin cậy match */}

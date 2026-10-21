@@ -37,6 +37,7 @@ import {
   withSerializableUserManagementDb,
 } from '@/src/domains/admin/user-management.service';
 import { enrichUsersWithWorkerSummary } from '@/src/domains/admin/worker-onboarding.service';
+import { normalizePhone } from '@/src/domains/applications/apply-helpers';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -110,13 +111,19 @@ export async function GET(req: NextRequest) {
   const search = searchParams.get('search') ?? undefined;
 
   const where: Record<string, unknown> = {};
-  if (isActive !== undefined && isActive !== '') where.isActive = isActive === 'true';
+  if (isActive === 'true' || isActive === 'false') {
+    where.isActive = isActive === 'true';
+  }
   if (role) where.role = role;
   if (search) {
+    const trimmed = search.trim();
+    const normPhone = normalizePhone(trimmed);
+    const noZeroPhone = normPhone.replace(/^0/, '');
+    const phoneTerms = [...new Set([trimmed, normPhone, noZeroPhone].filter(Boolean))];
     where.OR = [
-      { id: { contains: search, mode: 'insensitive' } },
-      { name: { contains: search, mode: 'insensitive' } },
-      { phone: { contains: search, mode: 'insensitive' } },
+      { id: { contains: trimmed, mode: 'insensitive' } },
+      { name: { contains: trimmed, mode: 'insensitive' } },
+      ...phoneTerms.map((term) => ({ phone: { contains: term, mode: 'insensitive' as const } })),
     ];
   }
 

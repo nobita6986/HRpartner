@@ -65,7 +65,7 @@ export interface LaborProfileListEnrichedDto {
   applicationCount: number;
   handler: string | null;
   intakeSource: string | null;
-  intakeDate: string | null;
+  intakeDate: string | null; appAccount?: { id: string; phoneVerified: boolean; isActive: boolean } | null;
 }
 
 export interface LaborProfileListResponse {
@@ -268,6 +268,62 @@ export async function getLaborProfilesList(
     }
   }
 
+  const appAccountByProfile = new Map<
+    string,
+    { id: string; phoneVerified: boolean; isActive: boolean }
+  >();
+  if (items.length > 0 && tx.user?.findMany) {
+    const phoneLookupSet = new Set<string>();
+    for (const item of items) {
+      if (item.phone) {
+        const raw = item.phone.trim();
+        if (raw) phoneLookupSet.add(raw);
+        const normNoZero = normalizePhone(raw);
+        if (normNoZero) {
+          phoneLookupSet.add(normNoZero);
+          phoneLookupSet.add(normNoZero.startsWith('0') ? normNoZero : `0${normNoZero}`);
+        }
+      }
+    }
+    if (phoneLookupSet.size > 0) {
+      const matchedUsers = await tx.user.findMany({
+        where: {
+          role: 'WORKER',
+          phone: { in: [...phoneLookupSet] },
+        },
+        select: {
+          id: true,
+          phone: true,
+          phoneVerified: true,
+          isActive: true,
+        },
+      });
+      const userByNormPhone = new Map<
+        string,
+        { id: string; phoneVerified: boolean; isActive: boolean }
+      >();
+      for (const u of matchedUsers) {
+        if (u.phone) {
+          const norm = normalizePhone(u.phone) ?? u.phone.trim();
+          userByNormPhone.set(norm, {
+            id: u.id,
+            phoneVerified: u.phoneVerified,
+            isActive: u.isActive,
+          });
+        }
+      }
+      for (const item of items) {
+        if (item.phone) {
+          const norm = normalizePhone(item.phone) ?? item.phone.trim();
+          const u = userByNormPhone.get(norm);
+          if (u) {
+            appAccountByProfile.set(item.id, u);
+          }
+        }
+      }
+    }
+  }
+
   return {
     items: items.map((item) => {
       const latest = latestMap.get(item.id);
@@ -290,6 +346,7 @@ export async function getLaborProfilesList(
         handler: handlerByProfile.get(item.id) ?? null,
         intakeSource,
         intakeDate: intake ? intake.createdAt.toISOString() : item.createdAt.toISOString(),
+        appAccount: appAccountByProfile.get(item.id) ?? null,
       };
     }),
     total,

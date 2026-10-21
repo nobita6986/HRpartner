@@ -158,6 +158,11 @@ export default async function LaborProfilesPage({
                       <RowLink href={`/admin/labor-profiles/${profile.id}`}>
                         {profile.fullName || 'Chưa cập nhật'}
                       </RowLink>
+                      {profile.phone ? (
+                        <div className="mt-0.5 text-xs font-mono text-gray-500">
+                          {profile.phone}
+                        </div>
+                      ) : null}
                     </td>
                     <td className="px-6 py-4 text-xs">
                       {profile.latestJob
@@ -193,6 +198,21 @@ export default async function LaborProfilesPage({
                         >
                           {laborProfileCompletenessLabel(profile.completeness)}
                         </StatusBadge>
+                        {profile.appAccount ? (
+                          profile.appAccount.phoneVerified ? (
+                            <span className="inline-flex w-fit items-center rounded bg-emerald-50 px-1.5 py-0.5 text-[11px] font-medium text-emerald-700 border border-emerald-200">
+                              TK App: Đã xác minh SĐT
+                            </span>
+                          ) : (
+                            <span className="inline-flex w-fit items-center rounded bg-amber-50 px-1.5 py-0.5 text-[11px] font-medium text-amber-800 border border-amber-200">
+                              TK App: Chưa xác minh OTP
+                            </span>
+                          )
+                        ) : (
+                          <span className="text-[11px] text-gray-400">
+                            TK App: Chưa đăng ký
+                          </span>
+                        )}
                         {profile.intakeSource ? (
                           <span className="text-[11px] text-gray-500" title="Nguồn tiếp nhận">
                             Nguồn: {profile.intakeSource}
