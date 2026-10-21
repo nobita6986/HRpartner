@@ -30,6 +30,8 @@ interface ApplyFormData {
 // (slug-keyed + idempotency key + consent), không còn gọi legacy POST /api/jobs.
 const APPLY_ERRORS: Record<string, string> = {
   DUPLICATE_APPLICATION: 'Bạn đã ứng tuyển vị trí này rồi. Hãy dùng mã tra cứu để xem trạng thái.',
+  POSSIBLE_MATCH_NOT_RESOLVED:
+    'Thông tin ứng tuyển chưa khớp với hồ sơ đã ghi nhận trước đó. Vui lòng kiểm tra lại họ tên, số điện thoại hoặc số CCCD.',
   JOB_NOT_AVAILABLE: 'Vị trí này hiện không còn nhận hồ sơ.',
   CONSENT_REQUIRED: 'Vui lòng đồng ý cho phép xử lý thông tin.',
   IDEMPOTENCY_PAYLOAD_MISMATCH: 'Thông tin đã thay đổi so với lần gửi trước, vui lòng gửi lại.',
