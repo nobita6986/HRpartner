@@ -342,7 +342,11 @@ describe('RQ-05/RQ-09 — happy path giữ nguyên hợp đồng MP-2', () => {
     const res = await APPLY(applyRequest(validPayload), applyParams);
     expect(res.status).toBe(409);
     const json = await res.json();
-    expect(json).toEqual({ error: 'POSSIBLE_MATCH_NOT_RESOLVED', message: 'POSSIBLE_MATCH_NOT_RESOLVED' });
+    expect(json).toEqual({
+      error: 'POSSIBLE_MATCH_NOT_RESOLVED',
+      message:
+        'Thông tin ứng tuyển chưa khớp với hồ sơ đã ghi nhận trước đó. Vui lòng kiểm tra lại họ tên, số điện thoại hoặc số CCCD.',
+    });
     expect(JSON.stringify(json)).not.toContain(PHONE);
     expect(JSON.stringify(json)).not.toContain('candidate');
     expect(JSON.stringify(json)).not.toContain('laborProfile');

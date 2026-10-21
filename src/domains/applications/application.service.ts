@@ -18,6 +18,7 @@ import {
   generateTrackingCode,
   validateCvMetadata,
   mapApplySqlState,
+  POSSIBLE_MATCH_USER_MESSAGE,
   CvValidationError,
   type CvMetaInput,
 } from './apply-helpers';
@@ -190,7 +191,11 @@ export async function submitPublicApplication(
     if (err instanceof ApplicationServiceError) throw err;
     const mapped = mapApplySqlState(extractSqlState(err));
     if (mapped) {
-      throw new ApplicationServiceError(mapped.error, mapped.status, mapped.error);
+      const message =
+        mapped.error === 'POSSIBLE_MATCH_NOT_RESOLVED'
+          ? POSSIBLE_MATCH_USER_MESSAGE
+          : mapped.error;
+      throw new ApplicationServiceError(mapped.error, mapped.status, message);
     }
     throw err;
   }

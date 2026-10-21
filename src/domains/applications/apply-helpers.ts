@@ -147,6 +147,9 @@ export interface ApplyHttpError {
   error: string;
 }
 
+export const POSSIBLE_MATCH_USER_MESSAGE =
+  'Thông tin ứng tuyển chưa khớp với hồ sơ đã ghi nhận trước đó. Vui lòng kiểm tra lại họ tên, số điện thoại hoặc số CCCD.';
+
 export function mapApplySqlState(code: string | undefined): ApplyHttpError | null {
   switch (code) {
     case 'P0002':

@@ -246,9 +246,22 @@ describe('DEC-07 — client IP trust boundary', () => {
   it('CHỈ Vercel production mới trust x-forwarded-for first value', () => {
     const headers = new Headers({ 'x-forwarded-for': '203.0.113.9, 10.0.0.1' });
     expect(clientIpFromHeaders(headers, { VERCEL_ENV: 'production' })).toBe('203.0.113.9');
+    expect(clientIpFromHeaders(headers, { NODE_ENV: 'production' })).toBe('203.0.113.9');
     // preview/dev/test: header do client kiểm soát ⇒ gom vào unknown bucket.
     expect(clientIpFromHeaders(headers, { VERCEL_ENV: 'preview' })).toBe(UNKNOWN_CLIENT_BUCKET);
+    expect(clientIpFromHeaders(headers, { VERCEL_ENV: 'preview', NODE_ENV: 'production' })).toBe(
+      UNKNOWN_CLIENT_BUCKET,
+    );
     expect(clientIpFromHeaders(headers, { NODE_ENV: 'test' })).toBe(UNKNOWN_CLIENT_BUCKET);
+  });
+
+  it('VPS production (NODE_ENV=production) đọc cf-connecting-ip, x-forwarded-for và x-real-ip', () => {
+    const env = { NODE_ENV: 'production' };
+    expect(clientIpFromHeaders(new Headers({ 'cf-connecting-ip': '203.0.113.55' }), env)).toBe('203.0.113.55');
+    expect(clientIpFromHeaders(new Headers({ 'x-forwarded-for': '203.0.113.56, 172.18.0.1' }), env)).toBe(
+      '203.0.113.56',
+    );
+    expect(clientIpFromHeaders(new Headers({ 'x-real-ip': '203.0.113.57' }), env)).toBe('203.0.113.57');
   });
 
   it('malformed/absent IP ở production ⇒ unknown bucket cố định (không random)', () => {

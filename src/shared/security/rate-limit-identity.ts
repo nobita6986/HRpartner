@@ -8,6 +8,7 @@
 import { createHmac } from 'node:crypto';
 
 import {
+  isProductionEnv,
   RATE_LIMIT_KEY_VERSION,
   type EnvLike,
   type RateLimitRule,
@@ -25,13 +26,19 @@ export function isPlausibleIp(value: string): boolean {
 }
 
 /**
- * DEC-07 / EV-11: `x-forwarded-for` first value CHỈ được trust khi Vercel production
- * overwrite header (VERCEL_ENV === 'production'). Ngoài đó — kể cả preview/dev/test —
- * header do client kiểm soát nên gom hết vào `unknown` bucket (siết bởi
- * `tightenForUnknownSubject`), không tin, không random.
+ * DEC-07 / EV-11: proxy IP headers (`cf-connecting-ip`, `x-forwarded-for`, `x-real-ip`)
+ * chỉ được trust ở production (`VERCEL_ENV === 'production'` hoặc VPS Docker
+ * `NODE_ENV === 'production'` khi không đặt `VERCEL_ENV`). Ngoài đó — kể cả
+ * preview/dev/test — header do client kiểm soát nên gom hết vào `unknown` bucket
+ * (siết bởi `tightenForUnknownSubject`), không tin, không random.
  */
 export function clientIpFromHeaders(headers: Headers, env: EnvLike): string {
-  if (env.VERCEL_ENV !== 'production') return UNKNOWN_CLIENT_BUCKET;
+  const isTrustedProductionProxy = env.VERCEL_ENV
+    ? env.VERCEL_ENV === 'production'
+    : isProductionEnv(env);
+  if (!isTrustedProductionProxy) return UNKNOWN_CLIENT_BUCKET;
+  const cfIp = headers.get('cf-connecting-ip')?.trim() ?? '';
+  if (cfIp.length > 0 && isPlausibleIp(cfIp)) return cfIp;
   const forwarded = headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? '';
   if (forwarded.length > 0 && isPlausibleIp(forwarded)) return forwarded;
   const realIp = headers.get('x-real-ip')?.trim() ?? '';

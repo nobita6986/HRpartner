@@ -14,7 +14,7 @@ import {
   getPublicTracking,
   ApplicationServiceError,
 } from './application.service';
-import { CvValidationError } from './apply-helpers';
+import { CvValidationError, POSSIBLE_MATCH_USER_MESSAGE } from './apply-helpers';
 
 function makeDb(impl: (sql: string, params: unknown[]) => unknown) {
   return {
@@ -89,16 +89,17 @@ describe('submitPublicApplication', () => {
         clientVersion: 'test',
         meta: { code },
       });
-    const cases: Array<[string, number, string]> = [
-      ['P0011', 404, 'JOB_NOT_AVAILABLE'],
-      ['P0012', 409, 'DUPLICATE_APPLICATION'],
-      ['P0010', 409, 'IDEMPOTENCY_PAYLOAD_MISMATCH'],
-      ['P0002', 400, 'INVALID_INPUT'],
+    const cases: Array<[string, number, string, string]> = [
+      ['P0011', 404, 'JOB_NOT_AVAILABLE', 'JOB_NOT_AVAILABLE'],
+      ['P0012', 409, 'DUPLICATE_APPLICATION', 'DUPLICATE_APPLICATION'],
+      ['P0010', 409, 'IDEMPOTENCY_PAYLOAD_MISMATCH', 'IDEMPOTENCY_PAYLOAD_MISMATCH'],
+      ['P0014', 409, 'POSSIBLE_MATCH_NOT_RESOLVED', POSSIBLE_MATCH_USER_MESSAGE],
+      ['P0002', 400, 'INVALID_INPUT', 'INVALID_INPUT'],
     ];
-    for (const [sqlstate, status, error] of cases) {
+    for (const [sqlstate, status, error, message] of cases) {
       const db = makeDb(() => { throw mkErr(sqlstate); });
       await expect(submitPublicApplication(db as never, validInput))
-        .rejects.toMatchObject({ code: error, httpStatus: status });
+        .rejects.toMatchObject({ code: error, httpStatus: status, message });
     }
   });
 

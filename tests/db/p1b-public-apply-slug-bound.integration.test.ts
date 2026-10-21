@@ -205,7 +205,7 @@ beforeAll(async () => {
     },
   });
 
-  for (const suffix of ['happy', 'exact', 'possible', 'idem', 'race', 'duplicate', 'rollback', 'atomic']) {
+  for (const suffix of ['happy', 'multijob', 'exact', 'possible', 'idem', 'race', 'duplicate', 'rollback', 'atomic']) {
     await createChain(suffix);
   }
   await createChain('draft', 'DRAFT', 'OPEN');
@@ -241,7 +241,7 @@ afterAll(async () => {
 }, 120_000);
 
 describe.sequential('P1-B canonical slug-bound lifecycle', () => {
-  it('AC-01/03 happy NEW_PROFILE links submission, case, profile and initial history', async () => {
+  it('AC-01/03 happy NEW_PROFILE links submission, case, profile and initial history, and allows applying to a second job', async () => {
     const payload = input(chains.get('happy')!, 1);
     const result = await apply(payload);
     expect(Object.keys(result).sort()).toEqual(['status', 'trackingCode']);
@@ -252,6 +252,22 @@ describe.sequential('P1-B canonical slug-bound lifecycle', () => {
     expect(row.cccdNumber).toBe(payload.cccdNumber);
     expect(row.statusHistory).toHaveLength(1);
     expect(row.statusHistory[0]).toMatchObject({ fromStatus: null, toStatus: 'NEW', reason: 'PUBLIC_APPLY' });
+
+    const secondJobResult = await apply({
+      ...payload,
+      slug: chains.get('multijob')!.slug,
+      cccdNumber: null,
+      idempotencyKey: randomUUID(),
+    });
+    expect(secondJobResult.status).toBe('NEW');
+    expect(secondJobResult.trackingCode).not.toBe(result.trackingCode);
+    const allForApplicant = await admin.candidateSubmission.findMany({
+      where: { fullName: payload.fullName },
+      orderBy: { createdAt: 'asc' },
+    });
+    expect(allForApplicant).toHaveLength(2);
+    expect(allForApplicant[1]?.laborProfileId).toBe(row.laborProfileId);
+    expect(allForApplicant[1]?.placementCaseId).toBe(row.placementCaseId);
   });
 
   it('AC-02 EXACT_MATCH reuses LaborProfile and active PlacementCase', async () => {
