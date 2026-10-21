@@ -6,6 +6,11 @@ import { getPrisma } from '@/src/lib/db';
 import { SYSTEM_CHECKIN, withSystemDb } from '@/src/shared/auth/with-system-db';
 import { IdempotencyConflictError, withIdempotency } from '@/src/shared/integrity/idempotency';
 
+const HOUR_MS = 60 * 60 * 1000;
+const MIN_SHIFT_DURATION_MS = 6 * HOUR_MS;
+const MAX_SHIFT_DURATION_MS = 12 * HOUR_MS;
+const CHECK_IN_COOLDOWN_MS = 20 * HOUR_MS;
+
 const eventSchema = z.object({
   workDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   action: z.enum(['CHECK_IN', 'CHECK_OUT']),
@@ -18,6 +23,15 @@ const eventSchema = z.object({
 
 function responseError(code: string, message: string, status: number) {
   return NextResponse.json({ ok: false, error: { code, message, details: {} } }, { status });
+}
+
+function formatRemainingCooldown(remainingMs: number): string {
+  const totalMinutes = Math.max(1, Math.ceil(remainingMs / 60_000));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (hours > 0 && minutes > 0) return `${hours} giờ ${minutes} phút`;
+  if (hours > 0) return `${hours} giờ`;
+  return `${minutes} phút`;
 }
 
 function distanceMeters(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -96,11 +110,11 @@ export async function POST(req: NextRequest) {
             where: { source: 'GPS', externalEventId },
             select: { id: true, payloadHash: true, receivedAt: true },
           });
-          if (existing) {
-            const saved = existing.payloadHash === payloadHash
-              ? { kind: 'REPLAY' as const, id: existing.id, receivedAt: existing.receivedAt.toISOString() }
-              : { kind: 'DUPLICATE' as const };
-            return { body: saved, statusCode: 200 };
+          if (existing && existing.payloadHash === payloadHash) {
+            return {
+              body: { kind: 'REPLAY' as const, id: existing.id, receivedAt: existing.receivedAt.toISOString() },
+              statusCode: 200,
+            };
           }
 
           const assignment = await tx.projectAssignment.findFirst({
@@ -130,45 +144,142 @@ export async function POST(req: NextRequest) {
           ) <= site.radiusMeters);
           if (!matchingSite) return { body: { kind: 'OUT_OF_RANGE' as const }, statusCode: 200 };
 
-          if (event.action === 'CHECK_OUT') {
-            const checkInId = `mobile:${workerId}:${event.workDate}:CHECK_IN`;
-            const checkIn = await tx.attendanceEvent.findFirst({
-              where: { source: 'GPS', externalEventId: checkInId },
-              select: { id: true },
-            });
-            if (!checkIn) return { body: { kind: 'CHECK_IN_REQUIRED' as const }, statusCode: 200 };
+          const lastCheckIn = await tx.attendanceEvent.findFirst({
+            where: { workerId, source: 'GPS', mobileAction: 'CHECK_IN' },
+            orderBy: { receivedAt: 'desc' },
+            select: { id: true, workDate: true, receivedAt: true },
+          });
+
+          const lastCheckOut = lastCheckIn
+            ? await tx.attendanceEvent.findFirst({
+                where: {
+                  workerId,
+                  source: 'GPS',
+                  mobileAction: 'CHECK_OUT',
+                  receivedAt: { gte: lastCheckIn.receivedAt },
+                },
+                orderBy: { receivedAt: 'desc' },
+                select: { id: true, payloadHash: true, receivedAt: true },
+              })
+            : null;
+
+          let targetWorkDate = new Date(`${event.workDate}T00:00:00.000Z`);
+          let targetExternalEventId = externalEventId;
+
+          if (event.action === 'CHECK_IN') {
+            if (lastCheckIn) {
+              const elapsedSinceCheckInMs = now.getTime() - lastCheckIn.receivedAt.getTime();
+              if (!lastCheckOut) {
+                if (elapsedSinceCheckInMs <= MAX_SHIFT_DURATION_MS) {
+                  return { body: { kind: 'ACTIVE_SHIFT_ALREADY_RECORDED' as const }, statusCode: 200 };
+                }
+              } else {
+                const completedShiftDurationMs = lastCheckOut.receivedAt.getTime() - lastCheckIn.receivedAt.getTime();
+                const isValidCompletedShift =
+                  completedShiftDurationMs >= MIN_SHIFT_DURATION_MS &&
+                  completedShiftDurationMs <= MAX_SHIFT_DURATION_MS;
+                if (isValidCompletedShift && elapsedSinceCheckInMs < CHECK_IN_COOLDOWN_MS) {
+                  return {
+                    body: {
+                      kind: 'CHECK_IN_COOLDOWN_ACTIVE' as const,
+                      remainingMs: CHECK_IN_COOLDOWN_MS - elapsedSinceCheckInMs,
+                    },
+                    statusCode: 200,
+                  };
+                }
+              }
+            }
+          } else {
+            if (!lastCheckIn) {
+              return { body: { kind: 'CHECK_IN_REQUIRED' as const }, statusCode: 200 };
+            }
+            if (lastCheckOut) {
+              if (lastCheckOut.payloadHash === payloadHash) {
+                return {
+                  body: {
+                    kind: 'REPLAY' as const,
+                    id: lastCheckOut.id,
+                    receivedAt: lastCheckOut.receivedAt.toISOString(),
+                  },
+                  statusCode: 200,
+                };
+              }
+              return { body: { kind: 'CHECK_IN_REQUIRED' as const }, statusCode: 200 };
+            }
+
+            const shiftDurationMs = now.getTime() - lastCheckIn.receivedAt.getTime();
+            if (shiftDurationMs < MIN_SHIFT_DURATION_MS) {
+              return { body: { kind: 'CHECK_OUT_TOO_EARLY' as const }, statusCode: 200 };
+            }
+            if (shiftDurationMs > MAX_SHIFT_DURATION_MS) {
+              return { body: { kind: 'CHECK_OUT_TOO_LATE' as const }, statusCode: 200 };
+            }
+
+            targetWorkDate = lastCheckIn.workDate;
+            const targetWorkDateIso = targetWorkDate.toISOString().slice(0, 10);
+            targetExternalEventId = `mobile:${workerId}:${targetWorkDateIso}:CHECK_OUT`;
           }
 
+          const existingTarget =
+            targetExternalEventId === externalEventId
+              ? existing
+              : await tx.attendanceEvent.findFirst({
+                  where: { source: 'GPS', externalEventId: targetExternalEventId },
+                  select: { id: true, payloadHash: true, receivedAt: true },
+                });
+
           const capturedAt = new Date(event.capturedAt);
-          const row = await tx.attendanceEvent.create({
-            data: {
-              externalEventId,
-              source: 'GPS',
-              status: 'APPENDED',
-              workerId,
-              projectId: assignment.projectId,
-              assignmentId: assignment.id,
-              siteId: matchingSite.id,
-              mobileAction: event.action,
-              workDate: new Date(`${event.workDate}T00:00:00.000Z`),
-              checkInTime: event.action === 'CHECK_IN' ? formatRecordedAt(now) : null,
-              checkOutTime: event.action === 'CHECK_OUT' ? formatRecordedAt(now) : null,
-              payloadHash,
-              capturedAt,
-              gpsLatitude: String(event.gpsLatitude),
-              gpsLongitude: String(event.gpsLongitude),
-              gpsAccuracyMeters: Math.ceil(event.gpsAccuracyMeters),
-              geofenceResult: 'INSIDE',
-            },
-            select: { id: true, receivedAt: true },
-          });
+          const writeData = {
+            externalEventId: targetExternalEventId,
+            source: 'GPS',
+            status: 'APPENDED',
+            workerId,
+            projectId: assignment.projectId,
+            assignmentId: assignment.id,
+            siteId: matchingSite.id,
+            mobileAction: event.action,
+            workDate: targetWorkDate,
+            checkInTime: event.action === 'CHECK_IN' ? formatRecordedAt(now) : null,
+            checkOutTime: event.action === 'CHECK_OUT' ? formatRecordedAt(now) : null,
+            payloadHash,
+            capturedAt,
+            receivedAt: now,
+            gpsLatitude: String(event.gpsLatitude),
+            gpsLongitude: String(event.gpsLongitude),
+            gpsAccuracyMeters: Math.ceil(event.gpsAccuracyMeters),
+            geofenceResult: 'INSIDE',
+          };
+
+          const row = existingTarget
+            ? await tx.attendanceEvent.update({
+                where: { id: existingTarget.id },
+                data: writeData,
+                select: { id: true, receivedAt: true },
+              })
+            : await tx.attendanceEvent.create({
+                data: writeData,
+                select: { id: true, receivedAt: true },
+              });
           return { body: { kind: 'CREATED' as const, id: row.id, receivedAt: row.receivedAt.toISOString() }, statusCode: 201 };
         },
       });
       return result.body as {
-        kind: 'WORKER_NOT_READY' | 'NO_ASSIGNMENT' | 'SITE_NOT_CONFIGURED' | 'OUT_OF_RANGE' | 'CHECK_IN_REQUIRED' | 'DUPLICATE' | 'REPLAY' | 'CREATED';
+        kind:
+          | 'WORKER_NOT_READY'
+          | 'NO_ASSIGNMENT'
+          | 'SITE_NOT_CONFIGURED'
+          | 'OUT_OF_RANGE'
+          | 'CHECK_IN_REQUIRED'
+          | 'ACTIVE_SHIFT_ALREADY_RECORDED'
+          | 'CHECK_IN_COOLDOWN_ACTIVE'
+          | 'CHECK_OUT_TOO_EARLY'
+          | 'CHECK_OUT_TOO_LATE'
+          | 'DUPLICATE'
+          | 'REPLAY'
+          | 'CREATED';
         id?: string;
         receivedAt?: string;
+        remainingMs?: number;
       };
     });
 
@@ -177,6 +288,35 @@ export async function POST(req: NextRequest) {
     if (saved.kind === 'SITE_NOT_CONFIGURED') return responseError('SITE_GEOFENCE_NOT_CONFIGURED', 'Nhà máy chưa được Admin xác nhận cấu hình GPS.', 503);
     if (saved.kind === 'OUT_OF_RANGE') return responseError('GEOFENCE_OUT_OF_RANGE', 'Bạn đang ở ngoài vùng chấm công của nhà máy.', 422);
     if (saved.kind === 'CHECK_IN_REQUIRED') return responseError('CHECK_IN_REQUIRED', 'Cần ghi nhận Vào ca trước khi Tan ca.', 409);
+    if (saved.kind === 'ACTIVE_SHIFT_ALREADY_RECORDED') {
+      return responseError(
+        'ATTENDANCE_ACTION_ALREADY_RECORDED',
+        'Bạn đang trong ca làm việc. Vui lòng bấm Tan ca sau khi đủ 6h–12h kể từ lúc Vào ca.',
+        409,
+      );
+    }
+    if (saved.kind === 'CHECK_IN_COOLDOWN_ACTIVE') {
+      const waitText = formatRemainingCooldown(saved.remainingMs ?? 0);
+      return responseError(
+        'CHECK_IN_COOLDOWN_ACTIVE',
+        `Chưa đủ 20 giờ kể từ lần Vào ca trước. Vui lòng chờ thêm ${waitText} để Vào ca tiếp theo.`,
+        422,
+      );
+    }
+    if (saved.kind === 'CHECK_OUT_TOO_EARLY') {
+      return responseError(
+        'VALIDATION_ERROR',
+        'Chưa đủ thời gian tối thiểu 6 giờ kể từ lúc Vào ca để bấm Tan ca.',
+        422,
+      );
+    }
+    if (saved.kind === 'CHECK_OUT_TOO_LATE') {
+      return responseError(
+        'VALIDATION_ERROR',
+        'Ca làm việc đã quá 12 giờ chưa bấm Tan ca nên không được ghi nhận. Vui lòng bấm Vào ca để bắt đầu ca mới.',
+        422,
+      );
+    }
     if (saved.kind === 'DUPLICATE') return responseError('ATTENDANCE_ACTION_ALREADY_RECORDED', 'Thao tác này đã được ghi nhận trong ngày.', 409);
 
     return NextResponse.json({

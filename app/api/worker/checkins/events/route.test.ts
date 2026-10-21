@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   sites: vi.fn(),
   attendanceFindFirst: vi.fn(),
   attendanceCreate: vi.fn(),
+  attendanceUpdate: vi.fn(),
   idempotencyFindUnique: vi.fn(),
   idempotencyCreate: vi.fn(),
 }));
@@ -23,7 +24,11 @@ vi.mock('@/src/shared/auth/with-system-db', () => ({
     idempotencyKey: { findUnique: mocks.idempotencyFindUnique, create: mocks.idempotencyCreate },
     projectAssignment: { findFirst: mocks.assignment },
     site: { findMany: mocks.sites },
-    attendanceEvent: { findFirst: mocks.attendanceFindFirst, create: mocks.attendanceCreate },
+    attendanceEvent: {
+      findFirst: mocks.attendanceFindFirst,
+      create: mocks.attendanceCreate,
+      update: mocks.attendanceUpdate,
+    },
   }),
 }));
 
@@ -59,6 +64,7 @@ describe('POST /api/worker/checkins/events', () => {
     mocks.sites.mockResolvedValue([SITE]);
     mocks.attendanceFindFirst.mockResolvedValue(null);
     mocks.attendanceCreate.mockResolvedValue({ id: 'attendance-1', receivedAt: new Date('2026-10-19T01:15:00Z') });
+    mocks.attendanceUpdate.mockResolvedValue({ id: 'attendance-1-updated', receivedAt: new Date('2026-10-19T14:00:00Z') });
     mocks.idempotencyFindUnique.mockResolvedValue(null);
     mocks.idempotencyCreate.mockResolvedValue({});
   });
@@ -114,5 +120,183 @@ describe('POST /api/worker/checkins/events', () => {
     const response = await POST(req);
     expect(response.status).toBe(400);
     expect(mocks.assignment).not.toHaveBeenCalled();
+  });
+
+  it('rejects CHECK_OUT when elapsed time since CHECK_IN is under 6 hours (< 6h)', async () => {
+    const threeHoursAgo = new Date(Date.now() - 3 * 3_600_000);
+    mocks.attendanceFindFirst.mockImplementation((arg: { where?: { mobileAction?: string; externalEventId?: string } }) => {
+      if (arg.where?.mobileAction === 'CHECK_IN') {
+        return Promise.resolve({
+          id: 'checkin-1',
+          workDate: new Date('2026-10-19T00:00:00.000Z'),
+          receivedAt: threeHoursAgo,
+        });
+      }
+      return Promise.resolve(null);
+    });
+
+    const response = await POST(request({ ...BODY, action: 'CHECK_OUT' }));
+    expect(response.status).toBe(422);
+    expect(await response.json()).toMatchObject({
+      ok: false,
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: 'Chưa đủ thời gian tối thiểu 6 giờ kể từ lúc Vào ca để bấm Tan ca.',
+      },
+    });
+    expect(mocks.attendanceCreate).not.toHaveBeenCalled();
+  });
+
+  it('accepts CHECK_OUT when elapsed time since CHECK_IN is within 6h..12h and pairs workDate with openCheckIn', async () => {
+    const eightHoursAgo = new Date(Date.now() - 8 * 3_600_000);
+    mocks.attendanceFindFirst.mockImplementation((arg: { where?: { mobileAction?: string; externalEventId?: string } }) => {
+      if (arg.where?.mobileAction === 'CHECK_IN') {
+        return Promise.resolve({
+          id: 'checkin-1',
+          workDate: new Date('2026-10-18T00:00:00.000Z'),
+          receivedAt: eightHoursAgo,
+        });
+      }
+      return Promise.resolve(null);
+    });
+
+    const response = await POST(request({ ...BODY, workDate: '2026-10-19', action: 'CHECK_OUT' }));
+    expect(response.status).toBe(201);
+    expect(mocks.attendanceCreate).toHaveBeenCalledTimes(1);
+    expect(mocks.attendanceCreate.mock.calls[0][0].data).toMatchObject({
+      mobileAction: 'CHECK_OUT',
+      workDate: new Date('2026-10-18T00:00:00.000Z'),
+      externalEventId: 'mobile:worker-1:2026-10-18:CHECK_OUT',
+    });
+  });
+
+  it('rejects CHECK_OUT when elapsed time since CHECK_IN exceeds 12 hours (> 12h)', async () => {
+    const thirteenHoursAgo = new Date(Date.now() - 13 * 3_600_000);
+    mocks.attendanceFindFirst.mockImplementation((arg: { where?: { mobileAction?: string } }) => {
+      if (arg.where?.mobileAction === 'CHECK_IN') {
+        return Promise.resolve({
+          id: 'checkin-1',
+          workDate: new Date('2026-10-19T00:00:00.000Z'),
+          receivedAt: thirteenHoursAgo,
+        });
+      }
+      return Promise.resolve(null);
+    });
+
+    const response = await POST(request({ ...BODY, action: 'CHECK_OUT' }));
+    expect(response.status).toBe(422);
+    expect(await response.json()).toMatchObject({
+      ok: false,
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: 'Ca làm việc đã quá 12 giờ chưa bấm Tan ca nên không được ghi nhận. Vui lòng bấm Vào ca để bắt đầu ca mới.',
+      },
+    });
+    expect(mocks.attendanceCreate).not.toHaveBeenCalled();
+  });
+
+  it('rejects CHECK_IN while an open shift is still within 12 hours (<= 12h without CHECK_OUT)', async () => {
+    const fourHoursAgo = new Date(Date.now() - 4 * 3_600_000);
+    mocks.attendanceFindFirst.mockImplementation((arg: { where?: { mobileAction?: string; externalEventId?: string } }) => {
+      if (arg.where?.mobileAction === 'CHECK_IN') {
+        return Promise.resolve({
+          id: 'checkin-1',
+          workDate: new Date('2026-10-19T00:00:00.000Z'),
+          receivedAt: fourHoursAgo,
+        });
+      }
+      return Promise.resolve(null);
+    });
+
+    const response = await POST(request({ ...BODY, action: 'CHECK_IN' }));
+    expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({
+      ok: false,
+      error: {
+        code: 'ATTENDANCE_ACTION_ALREADY_RECORDED',
+        message: 'Bạn đang trong ca làm việc. Vui lòng bấm Tan ca sau khi đủ 6h–12h kể từ lúc Vào ca.',
+      },
+    });
+    expect(mocks.attendanceCreate).not.toHaveBeenCalled();
+  });
+
+  it('allows a new CHECK_IN when previous unclosed shift exceeded 12 hours (> 12h), updating same-day expired row', async () => {
+    const thirteenHoursAgo = new Date(Date.now() - 13 * 3_600_000);
+    mocks.attendanceFindFirst.mockImplementation((arg: { where?: { mobileAction?: string; externalEventId?: string } }) => {
+      if (arg.where?.externalEventId === 'mobile:worker-1:2026-10-19:CHECK_IN') {
+        return Promise.resolve({
+          id: 'expired-checkin-1',
+          payloadHash: 'old-hash',
+          receivedAt: thirteenHoursAgo,
+        });
+      }
+      if (arg.where?.mobileAction === 'CHECK_IN') {
+        return Promise.resolve({
+          id: 'expired-checkin-1',
+          workDate: new Date('2026-10-19T00:00:00.000Z'),
+          receivedAt: thirteenHoursAgo,
+        });
+      }
+      return Promise.resolve(null);
+    });
+
+    const response = await POST(request({ ...BODY, action: 'CHECK_IN' }));
+    expect(response.status).toBe(201);
+    expect(mocks.attendanceUpdate).toHaveBeenCalledTimes(1);
+    expect(mocks.attendanceCreate).not.toHaveBeenCalled();
+  });
+
+  it('enforces 20-hour cooldown from previous valid shift CHECK_IN (< 20h rejected, >= 20h allowed)', async () => {
+    const fifteenHoursAgo = new Date(Date.now() - 15 * 3_600_000);
+    const sevenHoursAgo = new Date(Date.now() - 7 * 3_600_000); // 8h valid shift
+    mocks.attendanceFindFirst.mockImplementation((arg: { where?: { mobileAction?: string } }) => {
+      if (arg.where?.mobileAction === 'CHECK_IN') {
+        return Promise.resolve({
+          id: 'checkin-prev',
+          workDate: new Date('2026-10-18T00:00:00.000Z'),
+          receivedAt: fifteenHoursAgo,
+        });
+      }
+      if (arg.where?.mobileAction === 'CHECK_OUT') {
+        return Promise.resolve({
+          id: 'checkout-prev',
+          payloadHash: 'prev-out',
+          receivedAt: sevenHoursAgo,
+        });
+      }
+      return Promise.resolve(null);
+    });
+
+    const earlyRes = await POST(request({ ...BODY, action: 'CHECK_IN' }));
+    expect(earlyRes.status).toBe(422);
+    const earlyJson = await earlyRes.json();
+    expect(earlyJson.error.code).toBe('CHECK_IN_COOLDOWN_ACTIVE');
+    expect(earlyJson.error.message).toContain('Chưa đủ 20 giờ kể từ lần Vào ca trước');
+    expect(mocks.attendanceCreate).not.toHaveBeenCalled();
+
+    // Now test >= 20h since previous CHECK_IN (21h ago, checkout 13h ago = 8h valid shift)
+    const twentyOneHoursAgo = new Date(Date.now() - 21 * 3_600_000);
+    const thirteenHoursAgo = new Date(Date.now() - 13 * 3_600_000);
+    mocks.attendanceFindFirst.mockImplementation((arg: { where?: { mobileAction?: string } }) => {
+      if (arg.where?.mobileAction === 'CHECK_IN') {
+        return Promise.resolve({
+          id: 'checkin-prev',
+          workDate: new Date('2026-10-18T00:00:00.000Z'),
+          receivedAt: twentyOneHoursAgo,
+        });
+      }
+      if (arg.where?.mobileAction === 'CHECK_OUT') {
+        return Promise.resolve({
+          id: 'checkout-prev',
+          payloadHash: 'prev-out',
+          receivedAt: thirteenHoursAgo,
+        });
+      }
+      return Promise.resolve(null);
+    });
+
+    const okRes = await POST(request({ ...BODY, action: 'CHECK_IN' }));
+    expect(okRes.status).toBe(201);
+    expect(mocks.attendanceCreate).toHaveBeenCalledTimes(1);
   });
 });
