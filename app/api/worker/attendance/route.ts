@@ -102,31 +102,83 @@ export async function GET(req: NextRequest) {
           status: true,
           shiftCode: true,
           mobileAction: true,
+          receivedAt: true,
         },
       });
 
-      // Mobile writes one immutable event per tap; preserve the existing one-row-per-day DTO.
-      const mobileDays = new Map<string, (typeof eventRowsRaw)[number]>();
-      const eventRows = eventRowsRaw.filter((event) => {
+      type RawEventRow = (typeof eventRowsRaw)[number];
+      type MergedEventRow = RawEventRow & { computedRegularHours?: number | null };
+
+      // Mobile writes one immutable event per tap; preserve the existing one-row-per-day DTO
+      // and evaluate the 6h-12h reward attendance shift rules from receivedAt timestamps.
+      const mobileGroups = new Map<string, { checkIn?: RawEventRow; checkOut?: RawEventRow }>();
+      const eventRows: MergedEventRow[] = eventRowsRaw.filter((event) => {
         if (event.mobileAction !== 'CHECK_IN' && event.mobileAction !== 'CHECK_OUT') return true;
         const key = event.workDate.toISOString().slice(0, 10);
-        const current = mobileDays.get(key);
-        if (!current) {
-          mobileDays.set(key, { ...event });
-        } else {
-          mobileDays.set(key, {
-            ...current,
-            id: current.mobileAction === 'CHECK_IN' ? current.id : event.mobileAction === 'CHECK_IN' ? event.id : current.id,
-            checkInTime: current.checkInTime ?? event.checkInTime,
-            checkOutTime: current.checkOutTime ?? event.checkOutTime,
-            geofenceResult: current.geofenceResult === 'OUTSIDE' || event.geofenceResult === 'OUTSIDE'
-              ? 'OUTSIDE'
-              : current.geofenceResult ?? event.geofenceResult,
-          });
+        const group = mobileGroups.get(key) ?? {};
+        if (event.mobileAction === 'CHECK_IN') {
+          if (!group.checkIn || (event.receivedAt && group.checkIn.receivedAt && event.receivedAt > group.checkIn.receivedAt)) {
+            group.checkIn = event;
+          }
+        } else if (event.mobileAction === 'CHECK_OUT') {
+          if (!group.checkOut || (event.receivedAt && group.checkOut.receivedAt && event.receivedAt > group.checkOut.receivedAt)) {
+            group.checkOut = event;
+          }
         }
+        mobileGroups.set(key, group);
         return false;
       });
-      eventRows.push(...mobileDays.values());
+
+      const nowMs = Date.now();
+      const HOUR_MS = 3_600_000;
+      for (const group of mobileGroups.values()) {
+        const inEvt = group.checkIn;
+        const rawOutEvt = group.checkOut;
+        const outEvt =
+          inEvt?.receivedAt && rawOutEvt?.receivedAt && rawOutEvt.receivedAt.getTime() < inEvt.receivedAt.getTime()
+            ? undefined
+            : rawOutEvt;
+        const base = (inEvt ?? outEvt)!;
+
+        let mergedStatus = 'PENDING';
+        let computedRegularHours = 0;
+
+        if (inEvt?.receivedAt && outEvt?.receivedAt) {
+          const durationHours = (outEvt.receivedAt.getTime() - inEvt.receivedAt.getTime()) / HOUR_MS;
+          if (durationHours >= 6 && durationHours <= 12) {
+            mergedStatus = 'APPROVED';
+            computedRegularHours = Math.round(durationHours * 10) / 10;
+          } else {
+            mergedStatus = 'ABSENT';
+            computedRegularHours = 0;
+          }
+        } else if (inEvt?.receivedAt && !outEvt) {
+          const elapsedHours = (nowMs - inEvt.receivedAt.getTime()) / HOUR_MS;
+          if (elapsedHours > 12) {
+            mergedStatus = 'ABSENT';
+            computedRegularHours = 0;
+          } else {
+            mergedStatus = 'PENDING';
+            computedRegularHours = 0;
+          }
+        } else {
+          mergedStatus = 'ABSENT';
+          computedRegularHours = 0;
+        }
+
+        eventRows.push({
+          ...base,
+          id: inEvt ? inEvt.id : outEvt!.id,
+          checkInTime: inEvt?.checkInTime ?? null,
+          checkOutTime: outEvt?.checkOutTime ?? null,
+          geofenceResult:
+            inEvt?.geofenceResult === 'OUTSIDE' || outEvt?.geofenceResult === 'OUTSIDE'
+              ? 'OUTSIDE'
+              : inEvt?.geofenceResult ?? outEvt?.geofenceResult ?? null,
+          status: mergedStatus,
+          computedRegularHours,
+        });
+      }
       eventRows.sort((a, b) => b.workDate.getTime() - a.workDate.getTime());
       eventRows.splice(limit);
 
@@ -190,6 +242,24 @@ export async function GET(req: NextRequest) {
   const items = events.map((r) => {
     const dateKey = r.workDate.toISOString().split('T')[0];
     const hours = hoursMap.get(dateKey) ?? null;
+    const isMobileShift = r.mobileAction === 'CHECK_IN' || r.mobileAction === 'CHECK_OUT';
+    let itemRegularHours: number | null;
+    let itemOtHours: number | null;
+    if (isMobileShift) {
+      if (r.status === 'APPROVED') {
+        itemRegularHours = hours ? hours.regularHours : (r.computedRegularHours ?? 0);
+        itemOtHours = hours ? hours.otHours : 0;
+        if (!hours && itemRegularHours > 0) {
+          totalRegular += itemRegularHours;
+        }
+      } else {
+        itemRegularHours = 0;
+        itemOtHours = 0;
+      }
+    } else {
+      itemRegularHours = hours?.regularHours ?? null;
+      itemOtHours = hours?.otHours ?? null;
+    }
     return {
       id: r.id,
       workDate: dateKey,
@@ -198,11 +268,11 @@ export async function GET(req: NextRequest) {
       source: r.source,
       geofenceResult: r.geofenceResult,
       riskFlag: r.geofenceResult === 'OUTSIDE',
-      // T1A DEC-06: shift/status + giờ chuẩn/OT từ TimesheetLine.
+      // T1A DEC-06: shift/status + giờ chuẩn/OT từ TimesheetLine (hoặc ca GPS 6h-12h hợp lệ).
       shift: r.shiftCode,
       status: r.status,
-      regularHours: hours?.regularHours ?? null,
-      otHours: hours?.otHours ?? null,
+      regularHours: itemRegularHours,
+      otHours: itemOtHours,
     };
   });
 
