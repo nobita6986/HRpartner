@@ -27,6 +27,7 @@ export interface PreAuthLoginUser {
   role: SystemRole;
   name: string | null;
   phone: string | null;
+  phoneVerified?: boolean;
   isActive: boolean;
   passwordHash: string | null;
 }
@@ -39,7 +40,7 @@ export async function findUserForLogin(
     await tx.$executeRaw`SELECT set_config('app.role', 'ADMIN', true)`;
     return tx.user.findFirst({
       where: { phone },
-      select: { id: true, role: true, isActive: true, passwordHash: true, name: true, phone: true },
+      select: { id: true, role: true, isActive: true, passwordHash: true, name: true, phone: true, phoneVerified: true },
     });
   });
 }

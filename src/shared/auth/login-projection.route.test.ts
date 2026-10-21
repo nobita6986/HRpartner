@@ -73,7 +73,7 @@ describe('POST /api/auth/login — T1A mobile projection (TASK DEC-02)', () => {
 
   it('WORKER hợp lệ: JSON có token + user summary + worker summary (assignment + department null), cookie vẫn phát', async () => {
     mocks.findUserForLogin.mockResolvedValue({
-      id: 'u1', role: 'WORKER', isActive: true, passwordHash: 'h', name: 'Nguyễn A', phone: '0900000000',
+      id: 'u1', role: 'WORKER', isActive: true, passwordHash: 'h', name: 'Nguyễn A', phone: '0900000000', phoneVerified: true,
     });
     mocks.verifyPassword.mockResolvedValue(true);
     mocks.loadWorkerSelfSummary.mockResolvedValue({ id: 'w1', fullName: 'Nguyễn A', assignment: ASSIGNMENT });
@@ -86,7 +86,7 @@ describe('POST /api/auth/login — T1A mobile projection (TASK DEC-02)', () => {
     expect(json.token).toBe('jwt-token-123');
     expect(json.role).toBe('WORKER');
     expect(json.redirectTo).toBe('/');
-    expect(json.user).toEqual({ id: 'u1', name: 'Nguyễn A', phone: '0900000000', role: 'WORKER' });
+    expect(json.user).toEqual({ id: 'u1', name: 'Nguyễn A', phone: '0900000000', role: 'WORKER', phoneVerified: true });
     expect(json.worker).toEqual({
       id: 'w1',
       fullName: 'Nguyễn A',

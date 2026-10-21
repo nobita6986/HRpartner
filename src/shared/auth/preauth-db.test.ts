@@ -35,7 +35,15 @@ describe('findUserForLogin (RQ-08 / DEC-13)', () => {
     // Projection cố định — KHÔNG select all.
     const arg = findFirst.mock.calls[0][0] as { where: { phone: string }; select: Record<string, boolean> };
     expect(arg.where).toEqual({ phone: '0900000000' });
-    expect(arg.select).toEqual({ id: true, role: true, isActive: true, passwordHash: true, name: true, phone: true });
+    expect(arg.select).toEqual({
+      id: true,
+      role: true,
+      isActive: true,
+      passwordHash: true,
+      name: true,
+      phone: true,
+      phoneVerified: true,
+    });
     expect(user).toMatchObject({ id: 'u1', role: 'WORKER' });
   });
 

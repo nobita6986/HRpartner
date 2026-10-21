@@ -125,6 +125,7 @@ export async function POST(req: NextRequest) {
         name: user.name,
         phone: user.phone,
         role: user.role,
+        ...(typeof user.phoneVerified === 'boolean' ? { phoneVerified: user.phoneVerified } : {}),
       },
       ...(user.role === 'WORKER'
         ? {

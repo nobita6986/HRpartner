@@ -86,7 +86,10 @@ describe('user-management.client — source contract', () => {
     // data-testid cho action bar (mỗi nút trên dòng user).
     expect(src).toContain('data-testid="open-create-user"');
     expect(src).toMatch(/data-testid=\{`verify-phone-\$\{u\.id\}`\}/);
+    expect(src).toMatch(/data-testid=\{`unverify-phone-\$\{u\.id\}`\}/);
+    expect(src).toMatch(/data-testid=\{`onboard-worker-\$\{u\.id\}`\}/);
     expect(src).toContain('/phone-verification');
+    expect(src).toContain('/onboard-worker');
     expect(src).toContain("cache: 'no-store'");
     expect(src).toMatch(/data-testid=\{`edit-\$\{u\.id\}`\}/);
     expect(src).toMatch(/data-testid=\{`(deactivate|reactivate)-\$\{u\.id\}`\}/);

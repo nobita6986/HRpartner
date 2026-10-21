@@ -9,7 +9,12 @@ import { writeAuditLog } from '@/src/shared/integrity/audit';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const schema = z.object({ reason: z.string().trim().min(1).max(500) }).strict();
+const schema = z
+  .object({
+    reason: z.string().trim().min(1).max(500),
+    verified: z.boolean().optional(),
+  })
+  .strict();
 
 export async function POST(
   req: NextRequest,
@@ -33,6 +38,7 @@ export async function POST(
     return NextResponse.json({ error: 'VALIDATION_ERROR', message: 'Cần nhập lý do xác nhận.' }, { status: 400 });
   }
 
+  const targetVerified = parsed.data.verified ?? true;
   const { id } = await params;
   const requestMeta = extractRequestMeta(req);
   try {
@@ -44,24 +50,26 @@ export async function POST(
       if (!user || user.role !== 'WORKER' || !user.phone || !user.isActive) {
         return { error: 'USER_NOT_ELIGIBLE' as const };
       }
-      if (user.phoneVerified) return { phoneVerified: true, unchanged: true };
+      if (user.phoneVerified === targetVerified) {
+        return { phoneVerified: targetVerified, unchanged: true };
+      }
 
-      const verifiedAt = new Date();
+      const verifiedAt = targetVerified ? new Date() : null;
       await tx.user.update({
         where: { id },
-        data: { phoneVerified: true, phoneVerifiedAt: verifiedAt },
+        data: { phoneVerified: targetVerified, phoneVerifiedAt: verifiedAt },
       });
       await writeAuditLog({
         prisma: tx,
         actor: { id: ctx.userId, role: ctx.role, ...requestMeta },
         entityType: 'User',
         entityId: id,
-        action: 'PHONE_VERIFIED_MANUALLY',
-        diff: { before: { phoneVerified: false }, after: { phoneVerified: true } },
+        action: targetVerified ? 'PHONE_VERIFIED_MANUALLY' : 'PHONE_UNVERIFIED_MANUALLY',
+        diff: { before: { phoneVerified: user.phoneVerified }, after: { phoneVerified: targetVerified } },
         reason: parsed.data.reason,
         metadata: { method: 'ADMIN_MANUAL' },
       });
-      return { phoneVerified: true, phoneVerifiedAt: verifiedAt.toISOString() };
+      return { phoneVerified: targetVerified, phoneVerifiedAt: verifiedAt ? verifiedAt.toISOString() : null };
     });
     if ('error' in result) {
       return NextResponse.json({ error: result.error, message: 'Chỉ tài khoản WORKER đang hoạt động có số điện thoại mới được xác nhận.' }, { status: 409 });

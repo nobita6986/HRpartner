@@ -51,6 +51,23 @@ describe('POST /api/admin/users/[id]/phone-verification', () => {
     }));
   });
 
+  it('admin hủy xác minh SĐT thủ công (verified=false) và ghi audit', async () => {
+    mocks.user.findUnique.mockResolvedValueOnce({ id: 'u1', role: 'WORKER', phone: '0987654321', phoneVerified: true, isActive: true });
+    const response = await POST(request({ reason: 'Thu hồi xác minh do nhầm SĐT', verified: false }), { params: Promise.resolve({ id: 'u1' }) });
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body).toEqual({ ok: true, phoneVerified: false, phoneVerifiedAt: null });
+    expect(mocks.user.update).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: 'u1' },
+      data: { phoneVerified: false, phoneVerifiedAt: null },
+    }));
+    expect(mocks.writeAuditLog).toHaveBeenCalledWith(expect.objectContaining({
+      action: 'PHONE_UNVERIFIED_MANUALLY',
+      reason: 'Thu hồi xác minh do nhầm SĐT',
+      diff: { before: { phoneVerified: true }, after: { phoneVerified: false } },
+    }));
+  });
+
   it('chặn tài khoản không phải WORKER hoặc không hoạt động', async () => {
     mocks.user.findUnique.mockResolvedValueOnce({ id: 'u1', role: 'ADMIN', phone: '0987654321', phoneVerified: false, isActive: true });
     const response = await POST(request({ reason: 'Kiểm tra' }), { params: Promise.resolve({ id: 'u1' }) });
