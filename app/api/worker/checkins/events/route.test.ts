@@ -18,7 +18,7 @@ vi.mock('@/src/lib/db', () => ({ getPrisma: () => ({}) }));
 vi.mock('@/src/shared/auth/with-system-db', () => ({
   SYSTEM_CHECKIN: { userId: 'system:checkin', role: 'ADMIN', purpose: 'CHECKIN' },
   withSystemDb: (_prisma: unknown, _principal: unknown, cb: (tx: unknown) => unknown) => cb({
-    $queryRaw: mocks.advisoryLock,
+    $executeRaw: mocks.advisoryLock,
     worker: { findUnique: mocks.worker },
     idempotencyKey: { findUnique: mocks.idempotencyFindUnique, create: mocks.idempotencyCreate },
     projectAssignment: { findFirst: mocks.assignment },
@@ -70,6 +70,7 @@ describe('POST /api/worker/checkins/events', () => {
       ok: true,
       data: { attendanceId: 'attendance-1', action: 'CHECK_IN', geofenceResult: 'INSIDE' },
     });
+    expect(mocks.advisoryLock).toHaveBeenCalledTimes(1);
     expect(mocks.attendanceCreate.mock.calls[0][0].data).toMatchObject({
       workerId: 'worker-1', projectId: 'project-1', assignmentId: 'assignment-1',
     });

@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
         requestBody: event,
         handler: async () => {
           const lockKey = `${workerId}:${event.workDate}`;
-          await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`;
+          await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`;
 
           const worker = await tx.worker.findUnique({
             where: { id: workerId },
@@ -195,7 +195,8 @@ export async function POST(req: NextRequest) {
     const errorCode = typeof error === 'object' && error !== null && 'code' in error
       ? String((error as { code: unknown }).code)
       : 'UNCLASSIFIED';
-    console.error('[worker/checkins/events] request failed:', { errorCode });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('[worker/checkins/events] request failed:', { errorCode, message: errorMessage });
     if (error instanceof IdempotencyConflictError) {
       return responseError('IDEMPOTENCY_CONFLICT', 'Idempotency-Key đã được dùng cho dữ liệu khác.', 409);
     }
