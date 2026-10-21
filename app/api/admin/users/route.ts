@@ -36,6 +36,7 @@ import {
   type CreateUserInput,
   withSerializableUserManagementDb,
 } from '@/src/domains/admin/user-management.service';
+import { enrichUsersWithWorkerSummary } from '@/src/domains/admin/worker-onboarding.service';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -121,7 +122,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const [rows, total] = await withAuthorizedDb(prisma, ctx, async (tx) => {
-      return Promise.all([
+      const [rawRows, count] = await Promise.all([
         tx.user.findMany({
           where,
           select: { id: true, name: true, phone: true, phoneVerified: true, role: true, vendorId: true, isActive: true, createdAt: true },
@@ -131,6 +132,8 @@ export async function GET(req: NextRequest) {
         }),
         tx.user.count({ where }),
       ]);
+      const enriched = await enrichUsersWithWorkerSummary(tx, rawRows);
+      return [enriched, count] as const;
     });
     return NextResponse.json({ users: rows, total, take, skip }, { headers: { 'Cache-Control': 'no-store' } });
   } catch {

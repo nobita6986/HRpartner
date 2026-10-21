@@ -12,8 +12,9 @@
  *   - Nút "Sửa" từng dòng → modal cập nhật name/phone/role.
  *   - Nút "Vô hiệu hóa" / "Kích hoạt lại" → confirm dialog gọi API
  *     /api/admin/users/[id]/deactivate hoặc /reactivate.
- *   - 4 error codes 409 (LAST_ADMIN_PROTECTED, SELF_DEMOTION_BLOCKED, ...) hiển
- *     thị thân thiện với người dùng (không leak SQL/stack).
+ *   - Nút "Xác nhận thủ công" / "Hủy xác minh" SĐT và "Gán dự án / NLĐ"
+ *     để Admin kiểm soát trọn vẹn luồng từ tài khoản đăng ký -> xác thực SĐT
+ *     -> tạo/liên kết hồ sơ NLĐ -> phân công vào dự án.
  *
  * Không lưu mật khẩu vào localStorage / state sau khi modal đóng. KHÔNG ghi
  * mật khẩu ra `console.*`.
@@ -24,6 +25,63 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { ROLE_LABELS, roleLabel } from '@/src/shared/i18n/role-labels';
 
+interface ActiveAssignmentSummary {
+  id: string;
+  projectId: string;
+  projectCode: string;
+  projectName: string;
+  staffingOrderId: string | null;
+  staffingOrderSlotId: string | null;
+  employeeCode: string;
+  employmentType: string;
+  workSetting: string | null;
+  validFrom: string;
+}
+
+interface LinkedWorkerSummary {
+  id: string;
+  userId: string;
+  fullName: string | null;
+  phone: string | null;
+  profileStatus: string;
+  employmentStatus: string;
+  accountUserId: string | null;
+  activeAssignment: ActiveAssignmentSummary | null;
+}
+
+interface OpenSlotOption {
+  slotId: string;
+  positionCode: string;
+  positionTitle: string;
+  workLocation: string | null;
+  slotsNeeded: number;
+  slotsFilled: number;
+  remaining: number;
+  staffingOrderId: string;
+  staffingOrderCode: string;
+  staffingOrderTitle: string;
+  projectId: string;
+  projectCode: string;
+  projectName: string;
+  projectQuota: number;
+  projectFilled: number;
+  projectRemaining: number;
+}
+
+interface UserOnboardingContext {
+  user: {
+    id: string;
+    name: string | null;
+    phone: string | null;
+    phoneVerified: boolean;
+    role: string;
+    isActive: boolean;
+  };
+  linkedWorker: LinkedWorkerSummary | null;
+  matchingWorkers: LinkedWorkerSummary[];
+  openSlots: OpenSlotOption[];
+}
+
 interface UserRow {
   id: string;
   name: string | null;
@@ -33,6 +91,7 @@ interface UserRow {
   vendorId: string | null;
   isActive: boolean;
   createdAt: string;
+  workerProfile?: LinkedWorkerSummary | null;
 }
 
 interface UsersResponse {
@@ -104,9 +163,12 @@ export default function UserManagementClient() {
   const [editing, setEditing] = useState<UserRow | null>(null);
   const [pendingAction, setPendingAction] = useState<UserRow | null>(null);
   const [phoneVerificationUser, setPhoneVerificationUser] = useState<UserRow | null>(null);
+  const [phoneVerificationTarget, setPhoneVerificationTarget] = useState<boolean>(true);
   const [phoneVerificationReason, setPhoneVerificationReason] = useState('');
   const [phoneVerificationError, setPhoneVerificationError] = useState('');
   const [phoneVerificationLoading, setPhoneVerificationLoading] = useState(false);
+
+  const [onboardUser, setOnboardUser] = useState<UserRow | null>(null);
 
   // One-time password reveal — chỉ hiển thị 1 lần ở modal "create".
   const [revealedPassword, setRevealedPassword] = useState<string | null>(null);
@@ -301,15 +363,18 @@ export default function UserManagementClient() {
       const response = await fetch(`/api/admin/users/${encodeURIComponent(phoneVerificationUser.id)}/phone-verification`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ reason: phoneVerificationReason.trim() }),
+        body: JSON.stringify({
+          reason: phoneVerificationReason.trim(),
+          verified: phoneVerificationTarget,
+        }),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Không thể xác nhận số điện thoại.');
+      if (!response.ok) throw new Error(data.message || 'Không thể cập nhật trạng thái xác minh số điện thoại.');
       setPhoneVerificationUser(null);
       setPhoneVerificationReason('');
       await load();
     } catch (error) {
-      setPhoneVerificationError(error instanceof Error ? error.message : 'Không thể xác nhận số điện thoại.');
+      setPhoneVerificationError(error instanceof Error ? error.message : 'Không thể cập nhật trạng thái xác minh số điện thoại.');
     } finally {
       setPhoneVerificationLoading(false);
     }
@@ -326,7 +391,7 @@ export default function UserManagementClient() {
             Quản lý tài khoản người dùng, vai trò và trạng thái hoạt động.
           </p>
           <p style={{ color: 'var(--on-surface-variant)' }} className="mt-1 max-w-3xl text-xs">
-            Đăng ký trên ứng dụng chỉ tạo tài khoản đăng nhập. Muốn dùng chấm công, cần tiếp nhận hồ sơ Worker, xác minh, phân công dự án rồi liên kết tài khoản tại chi tiết Worker.
+            Quản trị viên có thể xác minh số điện thoại thủ công (khi OTP gặp sự cố), khởi tạo hoặc liên kết hồ sơ người lao động và gán trực tiếp vào dự án ngay tại bảng này.
           </p>
         </div>
         <button
@@ -410,17 +475,26 @@ export default function UserManagementClient() {
                   borderBottom: '1px solid var(--outline-variant)',
                 }}
               >
-                {['Mã người dùng', 'Tên', 'Điện thoại', 'Xác minh SĐT', 'Vai trò', 'Mã nhà cung cấp', 'Trạng thái', 'Ngày tạo', 'Thao tác'].map(
-                  (h) => (
-                    <th
-                      key={h}
-                      style={{ color: 'var(--on-surface-variant)' }}
-                      className="px-4 py-3 text-left font-semibold"
-                    >
-                      {h}
-                    </th>
-                  ),
-                )}
+                {[
+                  'Mã người dùng',
+                  'Tên',
+                  'Điện thoại',
+                  'Xác minh SĐT',
+                  'Vai trò',
+                  'Hồ sơ NLĐ / Dự án',
+                  'Mã nhà cung cấp',
+                  'Trạng thái',
+                  'Ngày tạo',
+                  'Thao tác',
+                ].map((h) => (
+                  <th
+                    key={h}
+                    style={{ color: 'var(--on-surface-variant)' }}
+                    className="px-4 py-3 text-left font-semibold"
+                  >
+                    {h}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
@@ -440,11 +514,37 @@ export default function UserManagementClient() {
                     {u.phone ?? '—'}
                   </td>
                   <td className="px-4 py-3 text-xs">
-                    {u.role !== 'WORKER' ? '—' : u.phoneVerified ? 'Đã xác minh' : (
+                    {u.role !== 'WORKER' ? (
+                      '—'
+                    ) : u.phoneVerified ? (
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span
+                          style={{ background: '#e8f5e9', color: '#197a56' }}
+                          className="rounded-full px-2 py-0.5 font-semibold"
+                        >
+                          Đã xác minh
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPhoneVerificationUser(u);
+                            setPhoneVerificationTarget(false);
+                            setPhoneVerificationReason('');
+                            setPhoneVerificationError('');
+                          }}
+                          data-testid={`unverify-phone-${u.id}`}
+                          className="rounded border px-1.5 py-0.5 text-[11px]"
+                          style={{ borderColor: 'var(--outline)', color: 'var(--on-surface-variant)' }}
+                        >
+                          Hủy xác minh
+                        </button>
+                      </div>
+                    ) : (
                       <button
                         type="button"
                         onClick={() => {
                           setPhoneVerificationUser(u);
+                          setPhoneVerificationTarget(true);
                           setPhoneVerificationReason('');
                           setPhoneVerificationError('');
                         }}
@@ -459,6 +559,56 @@ export default function UserManagementClient() {
                   <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs">
                     {roleLabel(u.role)}
                   </td>
+                  <td className="px-4 py-3 text-xs">
+                    {u.role !== 'WORKER' ? (
+                      '—'
+                    ) : u.workerProfile ? (
+                      <div className="space-y-1">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <a
+                            href={`/admin/workers/${u.workerProfile.id}`}
+                            style={{ color: 'var(--primary)' }}
+                            className="font-mono font-semibold hover:underline"
+                          >
+                            {u.workerProfile.userId}
+                          </a>
+                          <span
+                            style={{
+                              background:
+                                u.workerProfile.profileStatus === 'VERIFIED' &&
+                                u.workerProfile.employmentStatus === 'ACTIVE'
+                                  ? '#e8f5e9'
+                                  : '#fff8e1',
+                              color:
+                                u.workerProfile.profileStatus === 'VERIFIED' &&
+                                u.workerProfile.employmentStatus === 'ACTIVE'
+                                  ? '#197a56'
+                                  : '#8d6e00',
+                            }}
+                            className="rounded px-1.5 py-0.5 text-[11px] font-medium"
+                          >
+                            {u.workerProfile.profileStatus === 'VERIFIED' &&
+                            u.workerProfile.employmentStatus === 'ACTIVE'
+                              ? 'NLĐ Đang làm'
+                              : `${u.workerProfile.profileStatus} / ${u.workerProfile.employmentStatus}`}
+                          </span>
+                        </div>
+                        {u.workerProfile.activeAssignment ? (
+                          <div style={{ color: 'var(--on-surface)' }} className="text-[11px]">
+                            Dự án: <strong>{u.workerProfile.activeAssignment.projectCode}</strong> —{' '}
+                            {u.workerProfile.activeAssignment.projectName} (Mã NV:{' '}
+                            <span className="font-mono">{u.workerProfile.activeAssignment.employeeCode}</span>)
+                          </div>
+                        ) : (
+                          <div style={{ color: 'var(--on-surface-variant)' }} className="text-[11px]">
+                            Chưa có phân công dự án
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <span style={{ color: 'var(--on-surface-variant)' }}>Chưa liên kết hồ sơ NLĐ</span>
+                    )}
+                  </td>
                   <td style={{ color: 'var(--on-surface-variant)' }} className="px-4 py-3 text-xs font-mono">
                     {u.vendorId ?? '—'}
                   </td>
@@ -470,6 +620,17 @@ export default function UserManagementClient() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-2">
+                      {u.role === 'WORKER' && u.isActive && (
+                        <button
+                          type="button"
+                          onClick={() => setOnboardUser(u)}
+                          data-testid={`onboard-worker-${u.id}`}
+                          style={{ background: 'var(--primary)', color: 'var(--on-primary)' }}
+                          className="rounded px-2.5 py-1 text-xs font-semibold"
+                        >
+                          Gán dự án / NLĐ
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={() => openEdit(u)}
@@ -560,12 +721,23 @@ export default function UserManagementClient() {
           onClose={closeModal}
         />
       )}
+
+      {/* ─── Modal: Manual Phone Verification / Revocation ─────────────── */}
       {phoneVerificationUser && (
-        <ModalShell title={`Xác nhận SĐT ${phoneVerificationUser.phone ?? ''}`} onClose={() => setPhoneVerificationUser(null)}>
+        <ModalShell
+          title={
+            phoneVerificationTarget
+              ? `Xác nhận SĐT ${phoneVerificationUser.phone ?? ''}`
+              : `Hủy xác minh SĐT ${phoneVerificationUser.phone ?? ''}`
+          }
+          onClose={() => setPhoneVerificationUser(null)}
+        >
           <p className="mb-3 text-sm" style={{ color: 'var(--on-surface-variant)' }}>
-            Thao tác này bỏ qua OTP. Chỉ xác nhận sau khi Admin đã kiểm tra quyền sở hữu số điện thoại; thao tác sẽ được ghi vào nhật ký kiểm toán.
+            {phoneVerificationTarget
+              ? 'Thao tác này xác thực số điện thoại thủ công (bỏ qua bước chờ OTP khi nhà cung cấp gặp sự cố). Mọi thay đổi được ghi vào nhật ký kiểm toán.'
+              : 'Thao tác này thu hồi trạng thái đã xác minh số điện thoại của tài khoản và ghi vào nhật ký kiểm toán.'}
           </p>
-          <Field label="Lý do xác nhận" required>
+          <Field label={phoneVerificationTarget ? 'Lý do xác nhận' : 'Lý do hủy xác minh'} required>
             <input
               value={phoneVerificationReason}
               onChange={(event) => setPhoneVerificationReason(event.target.value)}
@@ -574,20 +746,49 @@ export default function UserManagementClient() {
               className="w-full rounded border px-3 py-2 text-sm"
             />
           </Field>
-          {phoneVerificationError && <p role="alert" className="mt-2 text-sm" style={{ color: 'var(--error)' }}>{phoneVerificationError}</p>}
+          {phoneVerificationError && (
+            <p role="alert" className="mt-2 text-sm" style={{ color: 'var(--error)' }}>
+              {phoneVerificationError}
+            </p>
+          )}
           <div className="mt-4 flex justify-end gap-2">
-            <button type="button" onClick={() => setPhoneVerificationUser(null)} className="rounded border px-3 py-1.5 text-sm">Hủy</button>
+            <button
+              type="button"
+              onClick={() => setPhoneVerificationUser(null)}
+              className="rounded border px-3 py-1.5 text-sm"
+            >
+              Hủy
+            </button>
             <button
               type="button"
               onClick={submitManualPhoneVerification}
               disabled={phoneVerificationLoading || !phoneVerificationReason.trim()}
               className="rounded px-3 py-1.5 text-sm font-semibold disabled:opacity-50"
-              style={{ background: 'var(--primary)', color: 'var(--on-primary)' }}
+              style={{
+                background: phoneVerificationTarget ? 'var(--primary)' : 'var(--error)',
+                color: 'var(--on-primary)',
+              }}
             >
-              {phoneVerificationLoading ? 'Đang xác nhận…' : 'Xác nhận số điện thoại'}
+              {phoneVerificationLoading
+                ? 'Đang xử lý…'
+                : phoneVerificationTarget
+                  ? 'Xác nhận số điện thoại'
+                  : 'Thu hồi xác minh'}
             </button>
           </div>
         </ModalShell>
+      )}
+
+      {/* ─── Modal: Full Admin Onboarding & Project Assignment ─────────── */}
+      {onboardUser && (
+        <OnboardWorkerModal
+          user={onboardUser}
+          onClose={() => setOnboardUser(null)}
+          onSuccess={async () => {
+            setOnboardUser(null);
+            await load();
+          }}
+        />
       )}
     </div>
   );
@@ -600,10 +801,12 @@ export default function UserManagementClient() {
 function ModalShell({
   title,
   onClose,
+  maxWidthClass = 'max-w-md',
   children,
 }: {
   title: string;
   onClose: () => void;
+  maxWidthClass?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -615,7 +818,7 @@ function ModalShell({
     >
       <div
         style={{ background: 'var(--surface)', borderColor: 'var(--outline-variant)' }}
-        className="w-full max-w-md rounded-xl border p-6 shadow-lg"
+        className={`max-h-[90vh] w-full ${maxWidthClass} overflow-y-auto rounded-xl border p-6 shadow-lg`}
       >
         <div className="mb-4 flex items-center justify-between">
           <h2 style={{ color: 'var(--on-surface)' }} className="text-lg font-semibold">
@@ -634,6 +837,363 @@ function ModalShell({
         {children}
       </div>
     </div>
+  );
+}
+
+function OnboardWorkerModal({
+  user,
+  onClose,
+  onSuccess,
+}: {
+  user: UserRow;
+  onClose: () => void;
+  onSuccess: () => Promise<void>;
+}) {
+  const [ctxLoading, setCtxLoading] = useState(true);
+  const [ctxError, setCtxError] = useState('');
+  const [context, setContext] = useState<UserOnboardingContext | null>(null);
+
+  const [selectedWorkerId, setSelectedWorkerId] = useState<string>('');
+  const [slotId, setSlotId] = useState<string>('');
+  const [employeeCode, setEmployeeCode] = useState<string>('');
+  const [employmentType, setEmploymentType] = useState<string>('HRP_EMPLOYED');
+  const [workSetting, setWorkSetting] = useState<string>('PHOTHONG');
+  const [replaceActiveAssignment, setReplaceActiveAssignment] = useState<boolean>(false);
+  const [allowPhoneUpdate, setAllowPhoneUpdate] = useState<boolean>(true);
+  const [reason, setReason] = useState<string>('Admin xác thực thủ công và kích hoạt NLĐ vào dự án');
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      setCtxLoading(true);
+      setCtxError('');
+      try {
+        const res = await fetch(`/api/admin/users/${encodeURIComponent(user.id)}/onboard-worker`, {
+          cache: 'no-store',
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.message || 'Không thể tải dữ liệu kích hoạt NLĐ.');
+        }
+        if (!active) return;
+        const loaded = data as UserOnboardingContext;
+        setContext(loaded);
+        if (loaded.linkedWorker) {
+          setSelectedWorkerId(loaded.linkedWorker.id);
+          if (loaded.linkedWorker.activeAssignment?.employeeCode) {
+            setEmployeeCode(loaded.linkedWorker.activeAssignment.employeeCode);
+          } else {
+            setEmployeeCode(loaded.linkedWorker.userId);
+          }
+        } else if (loaded.matchingWorkers.length === 1) {
+          setSelectedWorkerId(loaded.matchingWorkers[0].id);
+          setEmployeeCode(loaded.matchingWorkers[0].userId);
+        } else if (user.phone) {
+          setEmployeeCode(`NV-${user.phone.slice(-4)}`);
+        }
+      } catch (err) {
+        if (!active) return;
+        setCtxError(err instanceof Error ? err.message : 'Không thể tải dữ liệu kích hoạt NLĐ.');
+      } finally {
+        if (active) setCtxLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [user.id, user.phone]);
+
+  const currentWorker =
+    context?.linkedWorker ??
+    context?.matchingWorkers.find((w) => w.id === selectedWorkerId) ??
+    null;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reason.trim()) return;
+    if (slotId && !employeeCode.trim()) {
+      setSubmitError('Vui lòng nhập Mã nhân viên tại dự án khi chọn phân công vào vị trí tuyển dụng.');
+      return;
+    }
+    setSubmitting(true);
+    setSubmitError('');
+    try {
+      const res = await fetch(`/api/admin/users/${encodeURIComponent(user.id)}/onboard-worker`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          workerId: selectedWorkerId || null,
+          slotId: slotId || null,
+          employeeCode: slotId ? employeeCode.trim() : null,
+          employmentType: slotId ? employmentType : null,
+          workSetting: slotId ? workSetting : null,
+          replaceActiveAssignment,
+          allowPhoneUpdate,
+          reason: reason.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || 'Không thể thực hiện kích hoạt và gán dự án.');
+      }
+      await onSuccess();
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'Không thể thực hiện kích hoạt và gán dự án.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <ModalShell
+      title={`Kích hoạt NLĐ & Gán dự án — ${user.name ?? user.phone ?? user.id}`}
+      onClose={onClose}
+      maxWidthClass="max-w-xl"
+    >
+      {ctxLoading ? (
+        <p style={{ color: 'var(--on-surface-variant)' }} className="py-6 text-center text-sm">
+          Đang tải thông tin hồ sơ và danh sách dự án…
+        </p>
+      ) : ctxError ? (
+        <div
+          style={{
+            background: 'var(--error-container)',
+            color: 'var(--on-error-container)',
+            borderColor: 'var(--error)',
+          }}
+          className="rounded border p-3 text-sm"
+        >
+          {ctxError}
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Bước 1: Trạng thái xác thực tài khoản */}
+          <div
+            style={{ background: 'var(--surface-container)', borderColor: 'var(--outline-variant)' }}
+            className="rounded-lg border p-3 text-xs space-y-1.5"
+          >
+            <div className="font-semibold" style={{ color: 'var(--on-surface)' }}>
+              1. Tài khoản đăng nhập & Xác minh SĐT
+            </div>
+            <div style={{ color: 'var(--on-surface-variant)' }}>
+              Họ tên: <strong>{user.name ?? '—'}</strong> · SĐT: <span className="font-mono">{user.phone ?? '—'}</span>
+            </div>
+            <div>
+              Trạng thái SĐT:{' '}
+              {user.phoneVerified ? (
+                <span style={{ color: '#197a56' }} className="font-semibold">
+                  Đã xác minh
+                </span>
+              ) : (
+                <span style={{ color: '#b26a00' }} className="font-semibold">
+                  Chưa xác minh OTP → Hệ thống sẽ tự động xác nhận thủ công khi lưu
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Bước 2: Hồ sơ NLĐ (Worker) */}
+          <div
+            style={{ background: 'var(--surface-container)', borderColor: 'var(--outline-variant)' }}
+            className="rounded-lg border p-3 text-xs space-y-2"
+          >
+            <div className="font-semibold" style={{ color: 'var(--on-surface)' }}>
+              2. Hồ sơ Người lao động (NLĐ của HRP)
+            </div>
+            {context?.linkedWorker ? (
+              <div style={{ color: 'var(--on-surface-variant)' }}>
+                Đã liên kết hồ sơ:{' '}
+                <strong className="font-mono" style={{ color: 'var(--primary)' }}>
+                  {context.linkedWorker.userId}
+                </strong>{' '}
+                ({context.linkedWorker.fullName ?? '—'}) · Trạng thái sẽ được đảm bảo là{' '}
+                <strong>Đã xác minh / Đang làm việc</strong>.
+              </div>
+            ) : context && context.matchingWorkers.length > 0 ? (
+              <Field label="Chọn hồ sơ NLĐ trùng SĐT hoặc tạo mới">
+                <select
+                  value={selectedWorkerId}
+                  onChange={(e) => setSelectedWorkerId(e.target.value)}
+                  style={{ borderColor: 'var(--outline)', background: 'var(--surface)' }}
+                  className="w-full rounded border px-3 py-2 text-xs"
+                >
+                  <option value="">+ Tạo mới hồ sơ NLĐ chuẩn (USR-EMP-xxx)</option>
+                  {context.matchingWorkers.map((mw) => (
+                    <option key={mw.id} value={mw.id}>
+                      Liên kết hồ sơ sẵn có: {mw.userId} — {mw.fullName ?? mw.phone} ({mw.profileStatus}/{mw.employmentStatus})
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            ) : (
+              <div style={{ color: 'var(--on-surface-variant)' }}>
+                Chưa có hồ sơ NLĐ. Hệ thống sẽ <strong>tự động khởi tạo hồ sơ NLĐ mới</strong> (mã{' '}
+                <span className="font-mono">USR-EMP-xxx</span>), tạo Hồ sơ tiếp nhận và kích hoạt trạng thái{' '}
+                <strong>Đã xác minh / Đang làm việc</strong>.
+              </div>
+            )}
+
+            {!context?.linkedWorker && selectedWorkerId && (
+              <label className="flex items-center gap-2 pt-1">
+                <input
+                  type="checkbox"
+                  checked={allowPhoneUpdate}
+                  onChange={(e) => setAllowPhoneUpdate(e.target.checked)}
+                />
+                <span style={{ color: 'var(--on-surface-variant)' }}>
+                  Đồng bộ SĐT từ tài khoản sang hồ sơ NLĐ nếu khác định dạng
+                </span>
+              </label>
+            )}
+          </div>
+
+          {/* Bước 3: Phân công vào Dự án / Vị trí tuyển dụng */}
+          <div
+            style={{ background: 'var(--surface-container)', borderColor: 'var(--outline-variant)' }}
+            className="rounded-lg border p-3 text-xs space-y-3"
+          >
+            <div className="font-semibold" style={{ color: 'var(--on-surface)' }}>
+              3. Phân công vào Dự án (tùy chọn — có thể gán ngay hoặc chỉ kích hoạt hồ sơ trước)
+            </div>
+
+            {currentWorker?.activeAssignment && (
+              <div
+                style={{ background: '#e8f5e9', color: '#197a56' }}
+                className="rounded p-2 text-xs"
+              >
+                Phân công hiện hành: <strong>{currentWorker.activeAssignment.projectCode}</strong> —{' '}
+                {currentWorker.activeAssignment.projectName} (Mã NV:{' '}
+                <span className="font-mono">{currentWorker.activeAssignment.employeeCode}</span>)
+              </div>
+            )}
+
+            <Field label="Chọn Dự án / Đơn hàng / Vị trí đang mở">
+              <select
+                value={slotId}
+                onChange={(e) => setSlotId(e.target.value)}
+                style={{ borderColor: 'var(--outline)', background: 'var(--surface)' }}
+                className="w-full rounded border px-3 py-2 text-xs"
+              >
+                <option value="">
+                  {currentWorker?.activeAssignment
+                    ? '— Giữ nguyên phân công dự án hiện tại —'
+                    : '— Chưa gán dự án (chỉ xác thực SĐT & kích hoạt hồ sơ NLĐ) —'}
+                </option>
+                {context?.openSlots.map((s) => (
+                  <option key={s.slotId} value={s.slotId}>
+                    [{s.projectCode}] {s.projectName} · Đơn {s.staffingOrderCode}: {s.positionTitle} (Còn {s.remaining}/{s.slotsNeeded} chỗ)
+                  </option>
+                ))}
+              </select>
+            </Field>
+
+            {slotId && (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <Field label="Mã NV tại dự án" required>
+                  <input
+                    value={employeeCode}
+                    onChange={(e) => setEmployeeCode(e.target.value)}
+                    required
+                    maxLength={64}
+                    placeholder="VD: NV-001"
+                    style={{ borderColor: 'var(--outline)', background: 'var(--surface)' }}
+                    className="w-full rounded border px-2.5 py-1.5 text-xs font-mono"
+                  />
+                </Field>
+                <Field label="Hình thức lao động" required>
+                  <select
+                    value={employmentType}
+                    onChange={(e) => setEmploymentType(e.target.value)}
+                    style={{ borderColor: 'var(--outline)', background: 'var(--surface)' }}
+                    className="w-full rounded border px-2.5 py-1.5 text-xs"
+                  >
+                    <option value="HRP_EMPLOYED">Biên chế HRP (HRP_EMPLOYED)</option>
+                    <option value="OUTSOURCED">Thuê ngoài / Khoán (OUTSOURCED)</option>
+                    <option value="REFERRED_OUT">Giới thiệu (REFERRED_OUT)</option>
+                  </select>
+                </Field>
+                <Field label="Môi trường làm việc" required>
+                  <select
+                    value={workSetting}
+                    onChange={(e) => setWorkSetting(e.target.value)}
+                    style={{ borderColor: 'var(--outline)', background: 'var(--surface)' }}
+                    className="w-full rounded border px-2.5 py-1.5 text-xs"
+                  >
+                    <option value="PHOTHONG">Lao động phổ thông</option>
+                    <option value="CONGXUONG">Công xưởng / Nhà máy</option>
+                    <option value="VANPHONG">Văn phòng</option>
+                  </select>
+                </Field>
+              </div>
+            )}
+
+            {slotId && currentWorker?.activeAssignment && (
+              <label className="flex items-center gap-2 pt-1">
+                <input
+                  type="checkbox"
+                  checked={replaceActiveAssignment}
+                  onChange={(e) => setReplaceActiveAssignment(e.target.checked)}
+                />
+                <span style={{ color: 'var(--on-surface)' }}>
+                  Kết thúc phân công hiện tại ({currentWorker.activeAssignment.projectCode}) để chuyển sang vị trí mới
+                </span>
+              </label>
+            )}
+          </div>
+
+          <Field label="Lý do kiểm toán" required>
+            <input
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              required
+              maxLength={500}
+              style={{ borderColor: 'var(--outline)', background: 'var(--surface-container)' }}
+              className="w-full rounded border px-3 py-2 text-sm"
+            />
+          </Field>
+
+          {submitError && (
+            <div
+              role="alert"
+              style={{
+                background: 'var(--error-container)',
+                color: 'var(--on-error-container)',
+                borderColor: 'var(--error)',
+              }}
+              className="rounded border p-2.5 text-xs"
+            >
+              {submitError}
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              style={{ borderColor: 'var(--outline)', color: 'var(--on-surface)' }}
+              className="rounded border px-3 py-1.5 text-sm"
+            >
+              Hủy
+            </button>
+            <button
+              type="submit"
+              disabled={submitting || !reason.trim()}
+              data-testid="submit-onboard-worker"
+              style={{ background: 'var(--primary)', color: 'var(--on-primary)' }}
+              className="rounded px-4 py-1.5 text-sm font-semibold disabled:opacity-50"
+            >
+              {submitting
+                ? 'Đang xử lý…'
+                : slotId
+                  ? 'Xác thực, Kích hoạt & Gán dự án'
+                  : 'Xác thực & Kích hoạt NLĐ'}
+            </button>
+          </div>
+        </form>
+      )}
+    </ModalShell>
   );
 }
 
