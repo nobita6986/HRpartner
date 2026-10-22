@@ -416,6 +416,7 @@ model Project {
   staffingOrders StaffingOrder[]
   submissions    CandidateSubmission[]
   sites          Site[]
+  shifts         ProjectShift[]
   placements     Placement[]      @relation("ProjectPlacements")
   pmUser         User?           @relation("ProjectPm", fields: [pmUserId], references: [id]) // G22
   subPm1         User?           @relation("ProjectSubPm1", fields: [subPmUserId1], references: [id]) // M13
@@ -641,6 +642,29 @@ model Site {
   @@map("sites")
 }
 
+model ProjectShift {
+  id                String   @id @default(uuid())
+  projectId         String   @map("project_id")
+  code              String   // 'CA1' | 'CA2' | 'CA3' | 'CA_SANG' | 'CA_TOI' | 'HC' ...
+  name              String   // 'Ca 1 (Sáng)', 'Ca 2 (Chiều)', 'Ca 3 (Đêm)', ...
+  startTime         String   @map("start_time") // 'HH:mm'
+  endTime           String   @map("end_time")   // 'HH:mm'
+  isOvernight       Boolean  @default(false) @map("is_overnight")
+  breakMinutes      Int      @default(60) @map("break_minutes")
+  standardHours     Decimal  @default(8.00) @map("standard_hours") @db.Decimal(4, 2)
+  graceLateMinutes  Int      @default(15) @map("grace_late_minutes")
+  graceEarlyMinutes Int      @default(15) @map("grace_early_minutes")
+  isActive          Boolean  @default(true) @map("is_active")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, code])
+  @@index([projectId, isActive])
+  @@map("project_shifts")
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // 4. NGUỒN TUYỂN — Submission + SourceClaim (plan v4 §9.3, ADR-012)
 // ═══════════════════════════════════════════════════════════════════════════
@@ -799,6 +823,7 @@ model ProjectAssignment {
   salaryPerDayVnd BigInt   @default(0) @map("salary_per_day_vnd") // F18 — BigInt VND nguyên (ADR-010)
   salaryType     String   @default("DAILY") @map("salary_type") // V4.9 G17 (B3): DAILY | MONTHLY (proration khối văn phòng)
   salaryMonthVnd BigInt?  @map("salary_month_vnd") // V4.9: lương tháng cho MONTHLY
+  shiftCode      String?   @map("shift_code") // Ca mặc định của NLĐ tại dự án (map tới project_shifts.code)
   transferReason String?   @map("transfer_reason")
   // ── MP-3C Assignment placement (additive, nullable/backfill-safe — DEC-02) ──
   // Legacy rows (incl. every transfer-created assignment) keep both NULL: only a

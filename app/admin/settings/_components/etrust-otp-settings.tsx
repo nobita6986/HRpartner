@@ -15,6 +15,8 @@ export function EtrustOtpSettings() {
   const [apiKey, setApiKey] = useState('');
   const [secretKey, setSecretKey] = useState('');
   const [oaid, setOaid] = useState('');
+  const [testPhone, setTestPhone] = useState('');
+  const [testBusy, setTestBusy] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -79,6 +81,33 @@ export function EtrustOtpSettings() {
     }
   }
 
+  async function sendTestOtp() {
+    setTestBusy(true);
+    setError('');
+    setMessage('');
+    try {
+      const response = await fetch('/api/admin/settings/etrust-otp/test-send', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ phone: testPhone.trim() }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.ok) {
+        setError(result?.error?.message ?? 'Gửi thử OTP thất bại.');
+        if (result?.data) {
+          setTemplates(JSON.stringify(result.data, null, 2));
+        }
+        return;
+      }
+      setMessage(`Gửi thử OTP thành công tới ${testPhone.trim()} (CodeResult=${result.data?.codeResult ?? '100'}).`);
+      setTemplates(JSON.stringify(result.data, null, 2));
+    } catch {
+      setError('Không thể kết nối máy chủ khi gửi thử OTP.');
+    } finally {
+      setTestBusy(false);
+    }
+  }
+
   return (
     <section className="mt-6 border-t pt-6" style={{ borderColor: 'var(--outline-variant)' }} aria-label="Cấu hình nhà cung cấp OTP">
       <h3 className="text-base font-semibold" style={{ color: 'var(--on-surface)' }}>Nhà cung cấp OTP ETrust</h3>
@@ -102,12 +131,36 @@ export function EtrustOtpSettings() {
           <input type="text" autoComplete="off" value={oaid} onChange={(event) => setOaid(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') event.preventDefault(); }} className="mt-1 min-h-11 w-full rounded-lg border bg-white px-3 text-sm" style={{ borderColor: 'var(--outline-variant)', color: 'var(--on-surface)' }} />
         </label>
       </div>
-      <button type="button" onClick={save} disabled={busy || !apiKey.trim() || !secretKey.trim() || !oaid.trim()} className="mt-4 min-h-11 rounded-lg px-4 text-sm font-semibold text-white disabled:opacity-50" style={{ background: 'var(--color-primary-dark)' }}>
-        {busy ? 'Đang lưu…' : 'Lưu / thay cặp credentials'}
-      </button>
-      <button type="button" onClick={lookupTemplates} disabled={templatesBusy || !status?.configured || !status.oaid} className="ml-3 mt-4 min-h-11 rounded-lg border px-4 text-sm font-semibold disabled:opacity-50" style={{ borderColor: 'var(--outline-variant)', color: 'var(--on-surface)' }}>
-        {templatesBusy ? 'Đang tra cứu…' : 'Tra cứu template từ ETrust'}
-      </button>
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <button type="button" onClick={save} disabled={busy || !apiKey.trim() || !secretKey.trim() || !oaid.trim()} className="min-h-11 rounded-lg px-4 text-sm font-semibold text-white disabled:opacity-50" style={{ background: 'var(--color-primary-dark)' }}>
+          {busy ? 'Đang lưu…' : 'Lưu / thay cặp credentials'}
+        </button>
+        <button type="button" onClick={lookupTemplates} disabled={templatesBusy || !status?.configured || !status.oaid} className="min-h-11 rounded-lg border px-4 text-sm font-semibold disabled:opacity-50" style={{ borderColor: 'var(--outline-variant)', color: 'var(--on-surface)' }}>
+          {templatesBusy ? 'Đang tra cứu…' : 'Tra cứu template từ ETrust'}
+        </button>
+      </div>
+      <div className="mt-4 flex flex-wrap items-end gap-3 rounded-lg border p-3" style={{ borderColor: 'var(--outline-variant)' }}>
+        <label className="block flex-1 text-sm font-medium" style={{ color: 'var(--on-surface)' }}>
+          Số điện thoại nhận thử OTP (10 số)
+          <input
+            type="tel"
+            placeholder="VD: 0936224490"
+            value={testPhone}
+            onChange={(event) => setTestPhone(event.target.value)}
+            className="mt-1 min-h-10 w-full rounded-lg border bg-white px-3 text-sm"
+            style={{ borderColor: 'var(--outline-variant)', color: 'var(--on-surface)' }}
+          />
+        </label>
+        <button
+          type="button"
+          onClick={sendTestOtp}
+          disabled={testBusy || !status?.configured || !/^0\d{9}$/.test(testPhone.trim())}
+          className="min-h-10 rounded-lg border px-4 text-sm font-semibold disabled:opacity-50"
+          style={{ borderColor: 'var(--outline-variant)', color: 'var(--on-surface)' }}
+        >
+          {testBusy ? 'Đang gửi thử…' : 'Gửi thử OTP'}
+        </button>
+      </div>
       {templates && <pre className="mt-3 max-h-96 overflow-auto rounded-lg border p-3 text-xs" style={{ borderColor: 'var(--outline-variant)', color: 'var(--on-surface)' }}>{templates}</pre>}
       {message && <p role="status" className="mt-3 text-sm" style={{ color: 'var(--color-success, #087f5b)' }}>{message}</p>}
       {error && <p role="alert" className="mt-3 text-sm" style={{ color: 'var(--error)' }}>{error}</p>}
