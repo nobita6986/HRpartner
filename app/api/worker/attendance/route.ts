@@ -3,18 +3,12 @@
  *
  * Returns attendance history for the authenticated WORKER.
  *
- * T1A Android backend mobile contract (TASK DEC-06 / RQ-06):
+ * Đồng bộ với hệ thống Ca làm việc của Dự án (`ProjectShift`) + `TimesheetLine`:
  *  - query `month` (1-12) + `year` (>= 2000): lọc `workDate` trong
  *    [firstDayUtc, nextMonthFirstDayUtc) UTC. Chỉ truyền 1 trong 2 → 400.
- *  - SHIFT/STATUS lấy từ AttendanceEvent (shiftCode + status hiện hành).
- *    GIỜ CHUẨN (regularHours) + OT (ot15+ot20+ot30) lấy từ TimesheetLine —
- *    KHÔNG suy diễn từ giờ vào/ra.
- *  - L1 scope: AttendanceEvent self (hiện hành) + TimesheetLine self builder
- *    `buildTimesheetLineScope` (read-only — mirror RLS migration
- *    20261018120000...). Ownership từ ctx.workerId (server) — DEC-03.
- *  - Response: items (giữ field back-compat + shift/status/regularHours/
- *    otHours) + totals {regularHours, otHours} (aggregate theo tập dates đã
- *    trả, hoặc cả range khi truyền month+year).
+ *  - Giờ công chuẩn (`regularHours`), tăng ca (`otHours`) và mã ca (`shift`)
+ *    ưu tiên lấy từ `TimesheetLine` (đã đồng bộ với dự án), hoặc tính theo
+ *    thời gian thực tế đối chiếu `ProjectShift` của dự án đối với ca GPS.
  */
 import { NextRequest, NextResponse } from 'next/server';
 import type { Prisma } from '@prisma/client';
@@ -22,6 +16,11 @@ import { getAuthContext } from '@/src/shared/auth/auth-context';
 import { getPrisma } from '@/src/lib/db';
 import { withAuthorizedDbReadOnly } from '@/src/shared/auth/with-authorized-db';
 import { AuthScopeError } from '@/src/shared/auth/with-auth-scope';
+import {
+  calculateShiftAttendanceHours,
+  matchProjectShift,
+  type ShiftDefinitionLike,
+} from '@/src/domains/attendance/shift-calculator';
 
 /** Parse + validate optional period: {month, year} hoặc null (không query nào). */
 function parsePeriod(searchParams: URLSearchParams): { month: number; year: number } | null | 'INVALID' {
@@ -76,7 +75,6 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  // Range chỉ áp khi truyền đủ month+year — không period → hành vi hiện hành.
   const workDateRange = period
     ? { gte: periodUtcRange(period.month, period.year).gte, lt: periodUtcRange(period.month, period.year).lt }
     : undefined;
@@ -85,8 +83,6 @@ export async function GET(req: NextRequest) {
   let events;
   let hoursByDate;
   try {
-    // Boundary canonical (L1 AttendanceEvent self-scope + L2 RLS GUC). `workerId`
-    // suy ra từ server (ctx.workerId) — không nhận từ client (DEC-03).
     ({ events, hoursByDate } = await withAuthorizedDbReadOnly(prisma, ctx, async (tx) => {
       const eventRowsRaw = await tx.attendanceEvent.findMany({
         where: { workerId: ctx.workerId, ...(workDateRange ? { workDate: workDateRange } : {}) },
@@ -101,16 +97,45 @@ export async function GET(req: NextRequest) {
           geofenceResult: true,
           status: true,
           shiftCode: true,
+          projectId: true,
           mobileAction: true,
           receivedAt: true,
         },
       });
 
-      type RawEventRow = (typeof eventRowsRaw)[number];
-      type MergedEventRow = RawEventRow & { computedRegularHours?: number | null };
+      const distinctProjectIds = Array.from(
+        new Set(
+          eventRowsRaw
+            .map((e) => (e as { projectId?: string | null }).projectId)
+            .filter((pid): pid is string => typeof pid === 'string' && pid.length > 0),
+        ),
+      );
 
-      // Mobile writes one immutable event per tap; preserve the existing one-row-per-day DTO
-      // and evaluate the 6h-12h reward attendance shift rules from receivedAt timestamps.
+      const shiftDelegate = (tx as unknown as {
+        projectShift?: {
+          findMany: (args: unknown) => Promise<Array<ShiftDefinitionLike & { projectId: string }>>;
+        };
+      }).projectShift;
+
+      const shiftsByProject = new Map<string, ShiftDefinitionLike[]>();
+      if (shiftDelegate?.findMany && distinctProjectIds.length > 0) {
+        const allShifts = await shiftDelegate.findMany({
+          where: { projectId: { in: distinctProjectIds } },
+          orderBy: [{ startTime: 'asc' }, { code: 'asc' }],
+        });
+        for (const s of allShifts) {
+          const list = shiftsByProject.get(s.projectId) ?? [];
+          list.push(s);
+          shiftsByProject.set(s.projectId, list);
+        }
+      }
+
+      type RawEventRow = (typeof eventRowsRaw)[number];
+      type MergedEventRow = RawEventRow & {
+        computedRegularHours?: number | null;
+        computedOtHours?: number | null;
+      };
+
       const mobileGroups = new Map<string, { checkIn?: RawEventRow; checkOut?: RawEventRow }>();
       const eventRows: MergedEventRow[] = eventRowsRaw.filter((event) => {
         if (event.mobileAction !== 'CHECK_IN' && event.mobileAction !== 'CHECK_OUT') return true;
@@ -129,8 +154,6 @@ export async function GET(req: NextRequest) {
         return false;
       });
 
-      const nowMs = Date.now();
-      const HOUR_MS = 3_600_000;
       for (const group of mobileGroups.values()) {
         const inEvt = group.checkIn;
         const rawOutEvt = group.checkOut;
@@ -139,31 +162,45 @@ export async function GET(req: NextRequest) {
             ? undefined
             : rawOutEvt;
         const base = (inEvt ?? outEvt)!;
+        const projectId = (inEvt as { projectId?: string | null } | undefined)?.projectId ??
+          (outEvt as { projectId?: string | null } | undefined)?.projectId ??
+          null;
+        const projectShifts = projectId ? (shiftsByProject.get(projectId) ?? []) : [];
+
+        const rawShiftCode = inEvt?.shiftCode ?? outEvt?.shiftCode ?? null;
+        const matchedShift = matchProjectShift(
+          projectShifts,
+          inEvt?.checkInTime ?? null,
+          rawShiftCode,
+          null,
+        );
 
         let mergedStatus = 'PENDING';
         let computedRegularHours = 0;
+        let computedOtHours = 0;
+        const resolvedShiftCode = matchedShift?.code ?? rawShiftCode;
 
-        if (inEvt?.receivedAt && outEvt?.receivedAt) {
-          const durationHours = (outEvt.receivedAt.getTime() - inEvt.receivedAt.getTime()) / HOUR_MS;
-          if (durationHours >= 6 && durationHours <= 12) {
-            mergedStatus = 'APPROVED';
-            computedRegularHours = Math.round(durationHours * 10) / 10;
-          } else {
-            mergedStatus = 'ABSENT';
-            computedRegularHours = 0;
-          }
-        } else if (inEvt?.receivedAt && !outEvt) {
-          const elapsedHours = (nowMs - inEvt.receivedAt.getTime()) / HOUR_MS;
-          if (elapsedHours > 12) {
-            mergedStatus = 'ABSENT';
-            computedRegularHours = 0;
-          } else {
-            mergedStatus = 'PENDING';
-            computedRegularHours = 0;
-          }
-        } else {
-          mergedStatus = 'ABSENT';
+        if (inEvt && outEvt) {
+          const calc = calculateShiftAttendanceHours({
+            checkInTime: inEvt.checkInTime ?? null,
+            checkOutTime: outEvt.checkOutTime ?? null,
+            checkInAt: inEvt.receivedAt ?? null,
+            checkOutAt: outEvt.receivedAt ?? null,
+            shift: matchedShift,
+            fallbackShiftCode: resolvedShiftCode,
+            workDate: base.workDate,
+          });
+          computedRegularHours = calc.regularHours;
+          computedOtHours = calc.otHours;
+          mergedStatus = calc.regularHours > 0 ? 'APPROVED' : 'APPENDED';
+        } else if (inEvt && !outEvt) {
+          mergedStatus = 'PENDING';
           computedRegularHours = 0;
+          computedOtHours = 0;
+        } else {
+          mergedStatus = 'APPENDED';
+          computedRegularHours = 0;
+          computedOtHours = 0;
         }
 
         eventRows.push({
@@ -171,26 +208,19 @@ export async function GET(req: NextRequest) {
           id: inEvt ? inEvt.id : outEvt!.id,
           checkInTime: inEvt?.checkInTime ?? null,
           checkOutTime: outEvt?.checkOutTime ?? null,
+          shiftCode: resolvedShiftCode,
           geofenceResult:
             inEvt?.geofenceResult === 'OUTSIDE' || outEvt?.geofenceResult === 'OUTSIDE'
               ? 'OUTSIDE'
               : inEvt?.geofenceResult ?? outEvt?.geofenceResult ?? null,
           status: mergedStatus,
           computedRegularHours,
+          computedOtHours,
         });
       }
       eventRows.sort((a, b) => b.workDate.getTime() - a.workDate.getTime());
       eventRows.splice(limit);
 
-      // T1A DEC-06: giờ chuẩn/OT theo TimesheetLine (RQ-06). Self-scope qua L1
-      // builder (TimesheetLine) + RLS (migration 20261018120000...). Aggregate
-      // theo workDate — KHÔNG suy diễn từ check-in/out timestamps.
-      //
-      // T0 CORRECTION (audit round 2 — TASK v1.4): khi KHÔNG có month/year,
-      // chỉ aggregate các ngày CÓ TRONG eventRows đang trả về (≤ limit ngày
-      // distinct) — không quét toàn bộ lịch sử chỉ để tính totals; eventRows
-      // rỗng ⇒ aggregate + totals = 0 (skip query). Có month/year ⇒ giữ
-      // aggregate TRÊN TOÀN RANGE như hiện hành (totals tháng nguyên vẹn).
       const eventDateKeys = Array.from(
         new Set(eventRows.map((e) => e.workDate.toISOString().split('T')[0])),
       );
@@ -226,7 +256,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'INTERNAL' }, { status: 500 });
   }
 
-  // Map hours theo date ISO-YYYY-MM-DD.
   const hoursMap = new Map<string, { regularHours: number; otHours: number }>();
   let totalRegular = 0;
   let totalOt = 0;
@@ -246,15 +275,11 @@ export async function GET(req: NextRequest) {
     let itemRegularHours: number | null;
     let itemOtHours: number | null;
     if (isMobileShift) {
-      if (r.status === 'APPROVED') {
-        itemRegularHours = hours ? hours.regularHours : (r.computedRegularHours ?? 0);
-        itemOtHours = hours ? hours.otHours : 0;
-        if (!hours && itemRegularHours > 0) {
-          totalRegular += itemRegularHours;
-        }
-      } else {
-        itemRegularHours = 0;
-        itemOtHours = 0;
+      itemRegularHours = hours ? hours.regularHours : (r.computedRegularHours ?? 0);
+      itemOtHours = hours ? hours.otHours : (r.computedOtHours ?? 0);
+      if (!hours) {
+        totalRegular += itemRegularHours;
+        totalOt += itemOtHours;
       }
     } else {
       itemRegularHours = hours?.regularHours ?? null;
@@ -268,7 +293,6 @@ export async function GET(req: NextRequest) {
       source: r.source,
       geofenceResult: r.geofenceResult,
       riskFlag: r.geofenceResult === 'OUTSIDE',
-      // T1A DEC-06: shift/status + giờ chuẩn/OT từ TimesheetLine (hoặc ca GPS 6h-12h hợp lệ).
       shift: r.shiftCode,
       status: r.status,
       regularHours: itemRegularHours,

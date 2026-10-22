@@ -1,6 +1,8 @@
 import type { Prisma } from '@prisma/client';
 import type { SiteGpsDto } from './site-gps.service';
 import { listProjectSites } from './site-gps.service';
+import type { ProjectShiftDto } from './project-shift.service';
+import { listProjectShifts } from './project-shift.service';
 
 export interface ProjectDetailStaffingOrderDto {
   id: string;
@@ -126,6 +128,7 @@ export interface ProjectManagementDto {
   // T1A GPS contract (hrp-t1a-android-gps-project-site-config): Site DTO với
   // trạng thái xác nhận GPS (CONFIRMED/UNCONFIRMED/MISSING_GEO) cho admin panel.
   sites: SiteGpsDto[];
+  shifts: ProjectShiftDto[];
 }
 
 /**
@@ -174,10 +177,11 @@ export async function getProjectForManagement(
 
   // T1A GPS contract: fetch sites một lần với trạng thái xác nhận GPS —
   // vừa thay thế cũ `tx.site.count`, vừa nuôi admin GPS section (RQ-02/05).
-  const [assignmentsCount, submissionsCount, sites] = await Promise.all([
+  const [assignmentsCount, submissionsCount, sites, shifts] = await Promise.all([
     tx.projectAssignment.count({ where: { projectId: id } }),
     tx.candidateSubmission.count({ where: { projectId: id } }),
     listProjectSites(tx, id),
+    listProjectShifts(tx, id),
   ]);
 
   return {
@@ -196,5 +200,6 @@ export async function getProjectForManagement(
     staffingOrders: project.staffingOrders,
     metrics: { assignmentsCount, submissionsCount, sitesCount: sites.length },
     sites,
+    shifts,
   };
 }

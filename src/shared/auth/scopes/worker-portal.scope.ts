@@ -143,3 +143,33 @@ export function buildSiteScope(ctx: AuthContext): Prisma.SiteWhereInput {
       });
   }
 }
+
+/**
+ * ProjectShift scope — visibility đi theo project (`hrp_project_visible_for`),
+ * đồng bộ với Site + ACCOUNTANT/HR_STAFF được đọc danh mục ca của dự án.
+ */
+export function buildProjectShiftScope(ctx: AuthContext): Prisma.ProjectShiftWhereInput {
+  switch (ctx.role) {
+    case 'ADMIN':
+    case 'HR_MANAGER':
+    case 'DIRECTOR':
+    case 'SALE':
+    case 'HR_STAFF':
+    case 'ACCOUNTANT':
+      return {};
+
+    case 'PM':
+    case 'WORKER':
+    case 'MKT':
+    case 'VENDOR_ADMIN':
+    case 'VENDOR_STAFF':
+    case 'CTV':
+      return { project: buildProjectScope(ctx) };
+
+    default:
+      throw new AuthScopeError('DENY_BY_DEFAULT', `Role ${ctx.role} không có scope đọc ProjectShift`, {
+        userId: ctx.userId,
+        role: ctx.role,
+      });
+  }
+}

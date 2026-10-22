@@ -202,66 +202,53 @@ describe('GET /api/worker/attendance (AC-07)', () => {
     expect(mocks.findMany).not.toHaveBeenCalled();
   });
 
-  it('mobile GPS events: tính giờ thực tế (6h..12h -> APPROVED), < 6h -> ABSENT (0h), đang trong ca <= 12h -> PENDING (0h), quá 12h chưa Tan ca -> ABSENT (0h)', async () => {
+  it('mobile GPS events: tính giờ công chuẩn & OT theo thực tế và ca dự án (chưa Tan ca -> PENDING 0h, đủ Vào/Ra -> tính regularHours & otHours)', async () => {
     mocks.getAuthContext.mockResolvedValue({ userId: 'u1', role: 'WORKER', workerId: 'w1' });
     mocks.groupBy.mockResolvedValue([]);
 
-    const nowMs = Date.now();
-    const hourMs = 3_600_000;
-
     mocks.findMany.mockResolvedValue([
-      // Day 1 (2026-10-21): open shift 2h ago (<= 12h, no checkout) -> PENDING, 0h
+      // Day 1 (2026-10-21): open shift (only CHECK_IN, no CHECK_OUT) -> PENDING, 0h
       {
         id: 'm-open-in',
         workDate: new Date('2026-10-21T00:00:00.000Z'),
-        checkInTime: '13:00',
+        checkInTime: '08:00',
         checkOutTime: null,
         source: 'GPS',
         geofenceResult: 'INSIDE',
         status: 'APPENDED',
-        shiftCode: null,
+        shiftCode: 'CA1',
+        projectId: 'p1',
         mobileAction: 'CHECK_IN',
-        receivedAt: new Date(nowMs - 2 * hourMs),
+        receivedAt: new Date('2026-10-21T01:00:00.000Z'),
       },
-      // Day 2 (2026-10-20): expired open shift 15h ago (> 12h, no checkout) -> ABSENT, 0h
+      // Day 2 (2026-10-19): 9.5h worked -> 8.0h regular + 1.5h OT
       {
-        id: 'm-expired-in',
-        workDate: new Date('2026-10-20T00:00:00.000Z'),
-        checkInTime: '00:10',
-        checkOutTime: null,
-        source: 'GPS',
-        geofenceResult: 'INSIDE',
-        status: 'APPENDED',
-        shiftCode: null,
-        mobileAction: 'CHECK_IN',
-        receivedAt: new Date(nowMs - 15 * hourMs),
-      },
-      // Day 3 (2026-10-19): invalid short shift (< 6h, e.g. 14:49 -> 14:49) -> ABSENT, 0h
-      {
-        id: 'm-short-in',
+        id: 'm-ot-in',
         workDate: new Date('2026-10-19T00:00:00.000Z'),
-        checkInTime: '14:49',
+        checkInTime: '08:00',
         checkOutTime: null,
         source: 'GPS',
         geofenceResult: 'INSIDE',
         status: 'APPENDED',
-        shiftCode: null,
+        shiftCode: 'CA1',
+        projectId: 'p1',
         mobileAction: 'CHECK_IN',
-        receivedAt: new Date('2026-10-19T07:49:00.000Z'),
+        receivedAt: new Date('2026-10-19T01:00:00.000Z'),
       },
       {
-        id: 'm-short-out',
+        id: 'm-ot-out',
         workDate: new Date('2026-10-19T00:00:00.000Z'),
         checkInTime: null,
-        checkOutTime: '14:49',
+        checkOutTime: '17:30',
         source: 'GPS',
         geofenceResult: 'INSIDE',
         status: 'APPENDED',
-        shiftCode: null,
+        shiftCode: 'CA1',
+        projectId: 'p1',
         mobileAction: 'CHECK_OUT',
-        receivedAt: new Date('2026-10-19T07:49:20.000Z'),
+        receivedAt: new Date('2026-10-19T10:30:00.000Z'),
       },
-      // Day 4 (2026-10-18): valid 7.5h shift (6h..12h) -> APPROVED, 7.5h
+      // Day 3 (2026-10-18): 7.5h worked -> 7.5h regular, 0h OT
       {
         id: 'm-valid-in',
         workDate: new Date('2026-10-18T00:00:00.000Z'),
@@ -270,7 +257,8 @@ describe('GET /api/worker/attendance (AC-07)', () => {
         source: 'GPS',
         geofenceResult: 'INSIDE',
         status: 'APPENDED',
-        shiftCode: null,
+        shiftCode: 'CA1',
+        projectId: 'p1',
         mobileAction: 'CHECK_IN',
         receivedAt: new Date('2026-10-18T01:00:00.000Z'),
       },
@@ -282,7 +270,8 @@ describe('GET /api/worker/attendance (AC-07)', () => {
         source: 'GPS',
         geofenceResult: 'INSIDE',
         status: 'APPENDED',
-        shiftCode: null,
+        shiftCode: 'CA1',
+        projectId: 'p1',
         mobileAction: 'CHECK_OUT',
         receivedAt: new Date('2026-10-18T08:30:00.000Z'),
       },
@@ -292,39 +281,35 @@ describe('GET /api/worker/attendance (AC-07)', () => {
     expect(res.status).toBe(200);
     const json = await res.json();
 
-    expect(json.items).toHaveLength(4);
+    expect(json.items).toHaveLength(3);
     expect(json.items[0]).toMatchObject({
       id: 'm-open-in',
       workDate: '2026-10-21',
+      shift: 'CA1',
       status: 'PENDING',
       regularHours: 0,
       otHours: 0,
     });
     expect(json.items[1]).toMatchObject({
-      id: 'm-expired-in',
-      workDate: '2026-10-20',
-      status: 'ABSENT',
-      regularHours: 0,
-      otHours: 0,
+      id: 'm-ot-in',
+      workDate: '2026-10-19',
+      shift: 'CA1',
+      checkInTime: '08:00',
+      checkOutTime: '17:30',
+      status: 'APPROVED',
+      regularHours: 8,
+      otHours: 1.5,
     });
     expect(json.items[2]).toMatchObject({
-      id: 'm-short-in',
-      workDate: '2026-10-19',
-      checkInTime: '14:49',
-      checkOutTime: '14:49',
-      status: 'ABSENT',
-      regularHours: 0,
-      otHours: 0,
-    });
-    expect(json.items[3]).toMatchObject({
       id: 'm-valid-in',
       workDate: '2026-10-18',
+      shift: 'CA1',
       checkInTime: '08:00',
       checkOutTime: '15:30',
       status: 'APPROVED',
       regularHours: 7.5,
       otHours: 0,
     });
-    expect(json.totals).toEqual({ regularHours: 7.5, otHours: 0 });
+    expect(json.totals).toEqual({ regularHours: 15.5, otHours: 1.5 });
   });
 });

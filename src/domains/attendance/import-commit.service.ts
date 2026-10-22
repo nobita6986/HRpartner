@@ -20,6 +20,12 @@ import type { AuthContext } from '@/src/shared/auth/auth-context';
 import { createHash } from 'node:crypto';
 import { enqueueOutbox } from '@/src/shared/integrity/outbox';
 import { ImportServiceError } from './import.service';
+import {
+  calculateShiftAttendanceHours,
+  matchProjectShift,
+  syncWorkerDayTimesheetLine,
+  type ShiftDefinitionLike,
+} from './shift-calculator';
 
 // Re-export so callers can import from one file
 export { ImportServiceError };
@@ -186,6 +192,64 @@ export async function commitBatch(
   // ── Create AttendanceEvents ───────────────────────────────────────────
   const now = new Date();
 
+  const matchedWorkerIds = Array.from(
+    new Set(rows.map((r) => r.matchedWorkerId).filter((w): w is string => Boolean(w))),
+  );
+  const assignmentDelegate = (tx as unknown as {
+    projectAssignment?: {
+      findMany?: (args: unknown) => Promise<Array<{ id: string; workerId: string; projectId: string; shiftCode?: string | null }>>;
+    };
+  }).projectAssignment;
+
+  const assignmentsByWorker = new Map<string, { id: string; projectId: string; shiftCode: string | null }>();
+  if (assignmentDelegate?.findMany && matchedWorkerIds.length > 0) {
+    const assignments = await assignmentDelegate.findMany({
+      where: { workerId: { in: matchedWorkerIds }, status: 'ACTIVE' },
+      select: { id: true, workerId: true, projectId: true, shiftCode: true },
+    });
+    for (const a of assignments) {
+      if (!assignmentsByWorker.has(a.workerId)) {
+        assignmentsByWorker.set(a.workerId, {
+          id: a.id,
+          projectId: a.projectId,
+          shiftCode: a.shiftCode ?? null,
+        });
+      }
+    }
+  }
+
+  const projectIds = Array.from(new Set(Array.from(assignmentsByWorker.values()).map((a) => a.projectId)));
+  const shiftDelegate = (tx as unknown as {
+    projectShift?: {
+      findMany?: (args: unknown) => Promise<Array<ShiftDefinitionLike & { projectId: string }>>;
+    };
+  }).projectShift;
+  const shiftsByProject = new Map<string, ShiftDefinitionLike[]>();
+  if (shiftDelegate?.findMany && projectIds.length > 0) {
+    const allShifts = await shiftDelegate.findMany({
+      where: { projectId: { in: projectIds }, isActive: true },
+      orderBy: [{ startTime: 'asc' }, { code: 'asc' }],
+    });
+    for (const s of allShifts) {
+      const list = shiftsByProject.get(s.projectId) ?? [];
+      list.push(s);
+      shiftsByProject.set(s.projectId, list);
+    }
+  }
+
+  const dayPairs = new Map<
+    string,
+    {
+      workerId: string;
+      workDate: Date;
+      projectId: string | null;
+      assignmentId: string | null;
+      defaultShiftCode: string | null;
+      inTime: string | null;
+      outTime: string | null;
+    }
+  >();
+
   for (const row of rows) {
     if (!row.matchedWorkerId || !row.parsedDate) {
       skippedCount++;
@@ -194,8 +258,18 @@ export async function commitBatch(
 
     const workDate = new Date(row.parsedDate);
     const workDateStr = workDate.toISOString().split('T')[0];
+    const workerAssignment = assignmentsByWorker.get(row.matchedWorkerId);
+    const projectShifts = workerAssignment ? (shiftsByProject.get(workerAssignment.projectId) ?? []) : [];
+    const matchedShift = matchProjectShift(
+      projectShifts,
+      row.rawType === 'IN' ? (row.rawTime ?? null) : null,
+      null,
+      workerAssignment?.shiftCode ?? null,
+    );
+    const shiftCode = matchedShift?.code ?? workerAssignment?.shiftCode ?? 'DEFAULT';
+
     const externalEventId = makeExternalEventId('IMPORT', row.rawEmployeeCode, workDateStr, row.rawTime ?? '00:00', row.rawType);
-    const payloadHash = makePayloadHash(row.matchedWorkerId, workDateStr, 'DEFAULT', row.rawTime ?? '00:00', '');
+    const payloadHash = makePayloadHash(row.matchedWorkerId, workDateStr, shiftCode, row.rawTime ?? '00:00', '');
     // TODO(capturedAt): nguon capturedAt (timestamp tu thiet bi/cham cong). Hien tai
     // CSV chua co cot device timestamp -> dung `now` tam thoi. Phase sau se parse
     // cot `captured_at` tu CSV/XLSX device export (AP/QM/EM).
@@ -212,6 +286,20 @@ export async function commitBatch(
       });
     }
 
+    const pairKey = `${row.matchedWorkerId}:${workDateStr}`;
+    const existingPair = dayPairs.get(pairKey) ?? {
+      workerId: row.matchedWorkerId,
+      workDate,
+      projectId: workerAssignment?.projectId ?? null,
+      assignmentId: workerAssignment?.id ?? null,
+      defaultShiftCode: workerAssignment?.shiftCode ?? null,
+      inTime: null,
+      outTime: null,
+    };
+    if (row.rawType === 'IN' && row.rawTime) existingPair.inTime = row.rawTime;
+    if (row.rawType === 'OUT' && row.rawTime) existingPair.outTime = row.rawTime;
+    dayPairs.set(pairKey, existingPair);
+
     // Upsert AttendanceEvent — UNIQUE(source, external_event_id) đảm bảo idempotent
     // Nếu đã tồn tại → skip (không tạo trùng)
     try {
@@ -221,10 +309,12 @@ export async function commitBatch(
           source: 'IMPORTED',
           status: 'APPENDED',
           workerId: row.matchedWorkerId,
+          projectId: workerAssignment?.projectId ?? null,
+          assignmentId: workerAssignment?.id ?? null,
           workDate,
           checkInTime: row.rawType === 'IN' ? row.rawTime ?? null : null,
           checkOutTime: row.rawType === 'OUT' ? row.rawTime ?? null : null,
-          shiftCode: 'DEFAULT',
+          shiftCode,
           payloadHash,
           capturedAt,
           receivedAt: now,
@@ -239,6 +329,34 @@ export async function commitBatch(
         continue;
       }
       throw err;
+    }
+  }
+
+  for (const pair of dayPairs.values()) {
+    if (!pair.projectId || !pair.inTime || !pair.outTime) continue;
+    const projectShifts = shiftsByProject.get(pair.projectId) ?? [];
+    const matchedShift = matchProjectShift(projectShifts, pair.inTime, null, pair.defaultShiftCode);
+    const calc = calculateShiftAttendanceHours({
+      checkInTime: pair.inTime,
+      checkOutTime: pair.outTime,
+      shift: matchedShift,
+      fallbackShiftCode: pair.defaultShiftCode,
+      workDate: pair.workDate,
+    });
+    if (calc.isComplete) {
+      await syncWorkerDayTimesheetLine(tx, {
+        projectId: pair.projectId,
+        workerId: pair.workerId,
+        assignmentId: pair.assignmentId,
+        workDate: pair.workDate,
+        shiftCode: calc.shiftCode ?? 'DEFAULT',
+        regularHours: calc.regularHours,
+        ot15Hours: calc.ot15Hours,
+        ot20Hours: calc.ot20Hours,
+        ot30Hours: calc.ot30Hours,
+        source: 'IMPORTED',
+        anomalyType: calc.isOutsideShift ? 'OUTSIDE_SHIFT' : null,
+      });
     }
   }
 

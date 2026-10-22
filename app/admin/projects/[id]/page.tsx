@@ -39,11 +39,13 @@ import {
   PROJECT_UPDATE_ROLES,
 } from '@/src/domains/crm/project-management.service';
 import { PROJECT_GEO_CONFIG_ROLES } from '@/src/domains/crm/site-gps.service';
+import { PROJECT_SHIFT_CONFIG_ROLES } from '@/src/domains/crm/project-shift.service';
 import {
   ProjectDetailClient,
   type ProjectCapability,
 } from './project-detail-client';
 import { ProjectGpsClient, type GpsConfigCapability } from './project-gps-client';
+import { ProjectShiftsClient, type ShiftConfigCapability } from './project-shifts-client';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -68,6 +70,12 @@ export const metadata = {
 function deriveGpsConfigCapability(role: string): GpsConfigCapability {
   return {
     canConfig: (PROJECT_GEO_CONFIG_ROLES as ReadonlyArray<string>).includes(role),
+  };
+}
+
+function deriveShiftConfigCapability(role: string): ShiftConfigCapability {
+  return {
+    canConfig: (PROJECT_SHIFT_CONFIG_ROLES as ReadonlyArray<string>).includes(role),
   };
 }
 
@@ -129,6 +137,7 @@ export default async function ProjectDetailPage(props: {
 
   const capability = deriveProjectCapability(session.role);
   const gpsCapability = deriveGpsConfigCapability(session.role);
+  const shiftCapability = deriveShiftConfigCapability(session.role);
   const detailRouteExists = await jobOpeningDetailRouteExists();
 
   return (
@@ -139,9 +148,13 @@ export default async function ProjectDetailPage(props: {
         role={session.role}
         jobOpeningDetailRouteExists={detailRouteExists}
       />
-      {/* T1A GPS: section Cấu hình GPS (Geofence) — readonly banner cho role
-          ngoài ADMIN/DIRECTOR. */}
       <div className="px-6 pb-8 lg:px-8 lg:pb-10" style={{ background: 'var(--surface)' }}>
+        <ProjectShiftsClient
+          projectId={project.id}
+          projectCode={project.code}
+          shifts={project.shifts}
+          capability={shiftCapability}
+        />
         <ProjectGpsClient
           projectId={project.id}
           projectCode={project.code}

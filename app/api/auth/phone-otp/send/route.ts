@@ -3,7 +3,19 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getPrisma } from '@/src/lib/db';
 import { getAuthContext } from '@/src/shared/auth/auth-context';
-import { phoneDigest, phoneOtpDigest, newPhoneOtp, readEtrustOtpConfig, sendEtrustOtp, PHONE_OTP_COOLDOWN_SECONDS, PHONE_OTP_MAX_SENDS_PER_WINDOW, PHONE_OTP_SEND_WINDOW_MS, PHONE_OTP_TTL_MS } from '@/src/shared/auth/phone-otp';
+import {
+  DEFAULT_ETRUST_TEMPLATE_ID,
+  phoneDigest,
+  phoneOtpDigest,
+  newPhoneOtp,
+  readEtrustOtpConfig,
+  sendEtrustOtpWithDetails,
+  PHONE_OTP_COOLDOWN_SECONDS,
+  PHONE_OTP_MAX_SENDS_PER_WINDOW,
+  PHONE_OTP_SEND_WINDOW_MS,
+  PHONE_OTP_TTL_MS,
+  type EtrustCallResult,
+} from '@/src/shared/auth/phone-otp';
 import { decryptEtrustCredential } from '@/src/shared/auth/etrust-credential-vault';
 import { SYSTEM_PHONE_OTP, withSystemDb } from '@/src/shared/auth/with-system-db';
 import { getCorrelationId } from '@/src/shared/observability/correlation-id';
@@ -43,7 +55,13 @@ export async function POST(req: NextRequest) {
   try {
     const credentials = await withSystemDb(prisma, SYSTEM_PHONE_OTP, (tx) => tx.etrustOtpCredential.findUnique({ where: { id: 'primary' } }));
     if (!credentials) return fail(503, 'OTP_SERVICE_UNAVAILABLE', 'Quản trị viên chưa cấu hình nhà cung cấp OTP.');
-    config = readEtrustOtpConfig(decryptEtrustCredential(credentials.apiKeyCiphertext), decryptEtrustCredential(credentials.secretKeyCiphertext), credentials.oaid);
+    config = readEtrustOtpConfig(
+      decryptEtrustCredential(credentials.apiKeyCiphertext),
+      decryptEtrustCredential(credentials.secretKeyCiphertext),
+      credentials.oaid,
+      process.env,
+      { templateId: DEFAULT_ETRUST_TEMPLATE_ID, brandname: '' },
+    );
   } catch {
     return fail(503, 'OTP_SERVICE_UNAVAILABLE', 'Dịch vụ xác thực OTP đang tạm thời gián đoạn.');
   }
@@ -53,6 +71,7 @@ export async function POST(req: NextRequest) {
   const codeHash = phoneOtpDigest(secret, ctx.userId, parsed.data.phone, code);
   const phoneHash = phoneDigest(secret, ctx.userId, parsed.data.phone);
   let reservation: 'reserved' | 'already_verified' | 'cooldown' | 'send_limit' | 'phone_mismatch' | 'not_found';
+  let previousSendsInWindow = 0;
   try {
     reservation = await withSystemDb(prisma, SYSTEM_PHONE_OTP, async (tx) => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${ctx.userId}, 0))`;
@@ -66,7 +85,8 @@ export async function POST(req: NextRequest) {
       const inWindow = challenge && now.getTime() - challenge.sendWindowStartedAt.getTime() < PHONE_OTP_SEND_WINDOW_MS;
       if (inWindow && challenge.sendsInWindow >= PHONE_OTP_MAX_SENDS_PER_WINDOW) return 'send_limit';
       const windowStart = inWindow ? challenge.sendWindowStartedAt : now;
-      const sendsInWindow = inWindow ? challenge.sendsInWindow + 1 : 1;
+      previousSendsInWindow = inWindow ? challenge.sendsInWindow : 0;
+      const sendsInWindow = previousSendsInWindow + 1;
       const values = { codeHash, phoneHash, expiresAt: new Date(now.getTime() + PHONE_OTP_TTL_MS), cooldownUntil: new Date(now.getTime() + PHONE_OTP_COOLDOWN_SECONDS * 1000), sendWindowStartedAt: windowStart, sendsInWindow, attempts: 0, isSent: false };
       await tx.phoneOtpChallenge.upsert({ where: { userId: ctx.userId }, create: { userId: ctx.userId, ...values }, update: values });
       return 'reserved';
@@ -81,17 +101,47 @@ export async function POST(req: NextRequest) {
   if (reservation === 'cooldown') return fail(429, 'RATE_LIMIT_EXCEEDED', 'Vui lòng đợi trước khi yêu cầu mã mới.');
   if (reservation === 'send_limit') return fail(429, 'RATE_LIMIT_EXCEEDED', 'Bạn đã yêu cầu quá nhiều mã. Vui lòng thử lại sau một giờ.');
 
-  let delivered = false;
-  try { delivered = await sendEtrustOtp(config, parsed.data.phone, code); } catch { /* Provider errors are deliberately not logged. */ }
-  if (!delivered) {
+  let delivery: EtrustCallResult = {
+    ok: false,
+    codeResult: 'EXCEPTION',
+    errorMessage: 'Không thể kết nối cổng ETrust',
+    endpoint: '',
+  };
+  try {
+    delivery = await sendEtrustOtpWithDetails(config, parsed.data.phone, code);
+  } catch (err) {
+    delivery = {
+      ok: false,
+      codeResult: 'EXCEPTION',
+      errorMessage: err instanceof Error ? err.message : 'Lỗi kết nối cổng ETrust',
+      endpoint: '',
+    };
+  }
+
+  if (!delivery.ok) {
     try {
       await withSystemDb(prisma, SYSTEM_PHONE_OTP, (tx) =>
-        tx.phoneOtpChallenge.updateMany({ where: { userId: ctx.userId, codeHash }, data: { cooldownUntil: now } }),
+        tx.phoneOtpChallenge.updateMany({
+          where: { userId: ctx.userId, codeHash },
+          data: {
+            cooldownUntil: new Date(0),
+            expiresAt: now,
+            sendsInWindow: previousSendsInWindow,
+            isSent: false,
+          },
+        }),
       );
     } catch {
-      /* ignore cooldown reset failure */
+      /* ignore rollback failure */
     }
-    return fail(503, 'OTP_SERVICE_UNAVAILABLE', 'Không gửi được mã xác thực. Vui lòng thử lại sau.');
+    const detail = delivery.errorMessage
+      ? `ETrust Code ${delivery.codeResult}: ${delivery.errorMessage}`
+      : `ETrust Code ${delivery.codeResult}`;
+    return fail(
+      503,
+      'OTP_SERVICE_UNAVAILABLE',
+      `Không gửi được mã xác thực qua Zalo ZNS (${detail}). Vui lòng thử lại sau.`,
+    );
   }
 
   try {
