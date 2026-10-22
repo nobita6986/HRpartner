@@ -83,7 +83,16 @@ export async function POST(req: NextRequest) {
 
   let delivered = false;
   try { delivered = await sendEtrustOtp(config, parsed.data.phone, code); } catch { /* Provider errors are deliberately not logged. */ }
-  if (!delivered) return fail(503, 'OTP_SERVICE_UNAVAILABLE', 'Không gửi được mã xác thực. Vui lòng thử lại sau.');
+  if (!delivered) {
+    try {
+      await withSystemDb(prisma, SYSTEM_PHONE_OTP, (tx) =>
+        tx.phoneOtpChallenge.updateMany({ where: { userId: ctx.userId, codeHash }, data: { cooldownUntil: now } }),
+      );
+    } catch {
+      /* ignore cooldown reset failure */
+    }
+    return fail(503, 'OTP_SERVICE_UNAVAILABLE', 'Không gửi được mã xác thực. Vui lòng thử lại sau.');
+  }
 
   try {
     await withSystemDb(prisma, SYSTEM_PHONE_OTP, (tx) => tx.phoneOtpChallenge.updateMany({ where: { userId: ctx.userId, codeHash }, data: { isSent: true } }));

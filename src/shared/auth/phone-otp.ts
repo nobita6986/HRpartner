@@ -1,7 +1,9 @@
 import { createHmac, randomInt, randomUUID, timingSafeEqual } from 'node:crypto';
 
 export const PHONE_OTP_ENDPOINT = 'https://api-tinnhan.etrust.vn/MainService.svc/json/MultiChannelMessage/';
+export const PHONE_OTP_ZALO_ENDPOINT = 'https://api-tinnhan.etrust.vn/MainService.svc/json/SendZaloMessage_V4_post_json/';
 export const PHONE_OTP_TEMPLATE_ENDPOINT = 'https://api-tinnhan.etrust.vn/MainService.svc/json/GetTemplate/';
+export const DEFAULT_ETRUST_TEMPLATE_ID = '654010';
 export const PHONE_OTP_TTL_MS = 5 * 60 * 1000;
 export const PHONE_OTP_COOLDOWN_SECONDS = 60;
 export const PHONE_OTP_SEND_WINDOW_MS = 60 * 60 * 1000;
@@ -17,9 +19,10 @@ export interface EtrustOtpConfig {
 }
 
 export function readEtrustOtpConfig(apiKey: string, secretKey: string, oaid: string, env: Record<string, string | undefined> = process.env): EtrustOtpConfig | null {
-  const { ETRUST_TEMPLATE_ID: templateId, ETRUST_BRANDNAME: brandname } = env;
-  if (![apiKey, secretKey, oaid, templateId, brandname].every((value) => value?.trim())) return null;
-  return { apiKey: apiKey.trim(), secretKey: secretKey.trim(), oaid: oaid!.trim(), templateId: templateId!.trim(), brandname: brandname!.trim() };
+  const templateId = env.ETRUST_TEMPLATE_ID?.trim() || DEFAULT_ETRUST_TEMPLATE_ID;
+  const brandname = env.ETRUST_BRANDNAME?.trim() || '';
+  if (![apiKey, secretKey, oaid, templateId].every((value) => value?.trim())) return null;
+  return { apiKey: apiKey.trim(), secretKey: secretKey.trim(), oaid: oaid.trim(), templateId, brandname };
 }
 
 export function newPhoneOtp(): string {
@@ -40,11 +43,31 @@ export function matchesPhoneOtpDigest(expected: string, actual: string): boolean
   return expectedBytes.length === 32 && actualBytes.length === 32 && timingSafeEqual(expectedBytes, actualBytes);
 }
 
-export async function sendEtrustOtp(config: EtrustOtpConfig, phone: string, code: string): Promise<boolean> {
-  const response = await fetch(PHONE_OTP_ENDPOINT, {
+async function postEtrustJson(endpoint: string, payload: Record<string, unknown>): Promise<boolean> {
+  const response = await fetch(endpoint, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({
+    body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(8_000),
+  });
+  if (!response.ok) return false;
+  try {
+    const result: unknown = await response.json();
+    const ok = typeof result === 'object' && result !== null && 'CodeResult' in result && String((result as { CodeResult?: unknown }).CodeResult) === '100';
+    if (!ok && typeof result === 'object' && result !== null) {
+      const codeResult = 'CodeResult' in result ? String((result as { CodeResult?: unknown }).CodeResult ?? '') : '';
+      const errorMessage = 'ErrorMessage' in result ? String((result as { ErrorMessage?: unknown }).ErrorMessage ?? '') : '';
+      console.error('[phone-otp] provider rejected request:', { codeResult, errorMessage });
+    }
+    return ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function sendEtrustOtp(config: EtrustOtpConfig, phone: string, code: string): Promise<boolean> {
+  if (config.brandname?.trim()) {
+    return postEtrustJson(PHONE_OTP_ENDPOINT, {
       ApiKey: config.apiKey,
       SecretKey: config.secretKey,
       Phone: phone,
@@ -53,16 +76,19 @@ export async function sendEtrustOtp(config: EtrustOtpConfig, phone: string, code
         { OAID: config.oaid, TempID: config.templateId, Params: [code] },
         { Content: `Ma xac thuc HRP: ${code}. Ma co hieu luc trong 5 phut.`, IsUnicode: 1, SmsType: 2, Brandname: config.brandname, RequestId: randomUUID() },
       ],
-    }),
-    signal: AbortSignal.timeout(8_000),
-  });
-  if (!response.ok) return false;
-  try {
-    const result: unknown = await response.json();
-    return typeof result === 'object' && result !== null && 'CodeResult' in result && (result as { CodeResult?: unknown }).CodeResult === '100';
-  } catch {
-    return false;
+    });
   }
+
+  return postEtrustJson(PHONE_OTP_ZALO_ENDPOINT, {
+    ApiKey: config.apiKey,
+    SecretKey: config.secretKey,
+    Phone: phone,
+    OAID: config.oaid,
+    TempID: config.templateId,
+    Params: [code],
+    Sandbox: '0',
+    RequestId: randomUUID(),
+  });
 }
 
 export async function getEtrustOtpTemplates(apiKey: string, secretKey: string, oaid: string): Promise<{ normal: unknown; priority: unknown }> {

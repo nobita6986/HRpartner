@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 interface Status {
   configured: boolean;
   oaid: string;
+  templateId?: string;
   encryptionKeyConfigured: boolean;
   templateConfigured: boolean;
 }
@@ -85,7 +86,7 @@ export function EtrustOtpSettings() {
         Nhập cả API key và secret key khi cấu hình hoặc thay cặp khóa. Hệ thống mã hóa khi lưu và không trả lại giá trị đã lưu.
       </p>
       <div className="my-4 rounded-lg border p-3 text-sm" style={{ borderColor: 'var(--outline-variant)', color: 'var(--on-surface)' }}>
-        Credentials: {status?.configured ? 'Đã cấu hình' : 'Chưa cấu hình'} · Khóa mã hóa máy chủ: {status?.encryptionKeyConfigured ? 'Sẵn sàng' : 'Chưa cấu hình'} · OAID/template/brandname: {status?.templateConfigured ? 'Sẵn sàng' : 'Chưa cấu hình'}
+        Credentials: {status?.configured ? 'Đã cấu hình' : 'Chưa cấu hình'} · Khóa mã hóa máy chủ: {status?.encryptionKeyConfigured ? 'Sẵn sàng' : 'Chưa cấu hình'} · OAID/ZNS Template ({status?.templateId ?? '654010'}): {status?.templateConfigured ? 'Sẵn sàng' : 'Chưa cấu hình'}
       </div>
       <div className="grid gap-4 md:grid-cols-2">
         <label className="block text-sm font-medium" style={{ color: 'var(--on-surface)' }}>
