@@ -21,9 +21,60 @@ import {
   attendanceSourceLabel,
 } from '@/src/shared/i18n/attendance-labels';
 
-type Tab = 'batches' | 'periods' | 'exceptions';
+type Tab = 'workers' | 'batches' | 'periods' | 'exceptions';
 type BatchStatus = 'PENDING' | 'PREVIEWED' | 'COMMITTED' | 'FAILED';
 type PeriodStatus = 'PENDING' | 'REVIEWED' | 'APPROVED' | 'LOCKED';
+
+interface WorkerAttendanceSummaryItem {
+  stt: number;
+  workerId: string;
+  workerUserId: string;
+  employeeCode: string;
+  workerName: string;
+  workerPhone: string;
+  workerCccd: string;
+  projectId: string;
+  projectCode: string;
+  projectName: string;
+  shiftCode: string;
+  shiftName: string;
+  standardHours: number;
+  totalDays: number;
+  completedDays: number;
+  totalWorkdays: number;
+  totalRegularHours: number;
+  totalOtHours: number;
+  totalHours: number;
+}
+
+interface WorkerAttendanceDetailItem {
+  stt: number;
+  workDate: string;
+  workerId: string;
+  workerUserId: string;
+  employeeCode: string;
+  workerName: string;
+  workerPhone: string;
+  projectCode: string;
+  projectName: string;
+  siteName: string;
+  shiftCode: string;
+  shiftName: string;
+  checkInTime: string;
+  checkOutTime: string;
+  workdays: number;
+  regularHours: number;
+  otHours: number;
+  totalHours: number;
+  source: string;
+  statusNote: string;
+}
+
+interface ProjectOption {
+  id: string;
+  code: string;
+  name: string;
+}
 
 interface Batch {
   id: string;
@@ -227,7 +278,19 @@ function LoadingRow({ cols }: { cols: number }) {
 }
 
 export default function AttendancePage() {
-  const [tab, setTab] = useState<Tab>('batches');
+  const [tab, setTab] = useState<Tab>('workers');
+
+  // Filter & Export state
+  const [filterMonth, setFilterMonth] = useState<string>('');
+  const [filterYear, setFilterYear] = useState<string>(String(new Date().getFullYear()));
+  const [filterProjectId, setFilterProjectId] = useState<string>('');
+  const [projects, setProjects] = useState<ProjectOption[]>([]);
+
+  // Worker Attendance Summary & Detail
+  const [summaryRows, setSummaryRows] = useState<WorkerAttendanceSummaryItem[]>([]);
+  const [detailRows, setDetailRows] = useState<WorkerAttendanceDetailItem[]>([]);
+  const [workersLoading, setWorkersLoading] = useState(false);
+  const [workersError, setWorkersError] = useState('');
 
   // Batches
   const [batches, setBatches] = useState<Batch[]>([]);
@@ -247,6 +310,45 @@ export default function AttendancePage() {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showResolveDrawer, setShowResolveDrawer] = useState<UnmatchedRow | null>(null);
   const [showAdjustmentDrawer, setShowAdjustmentDrawer] = useState<Period | null>(null);
+
+  const buildExportQuery = (format: 'xlsx' | 'json') => {
+    const params = new URLSearchParams();
+    if (filterProjectId) params.set('projectId', filterProjectId);
+    if (filterMonth && filterYear) {
+      params.set('month', filterMonth);
+      params.set('year', filterYear);
+    }
+    if (format === 'json') params.set('format', 'json');
+    const qs = params.toString();
+    return `/api/attendance/export${qs ? `?${qs}` : ''}`;
+  };
+
+  // ── Fetch projects for filter ──────────────────────────────────────────
+  useEffect(() => {
+    fetch('/api/projects?take=100')
+      .then(r => r.json())
+      .then(d => {
+        const list = d.projects ?? d.rows ?? [];
+        if (Array.isArray(list)) {
+          setProjects(list.map((p: ProjectOption) => ({ id: p.id, code: p.code, name: p.name })));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  // ── Fetch worker attendance summary & detail ───────────────────────────
+  const loadWorkerAttendance = () => {
+    setWorkersLoading(true);
+    setWorkersError('');
+    fetch(buildExportQuery('json'))
+      .then(r => r.json())
+      .then(d => {
+        setSummaryRows(Array.isArray(d.summaryRows) ? d.summaryRows : []);
+        setDetailRows(Array.isArray(d.detailRows) ? d.detailRows : []);
+      })
+      .catch(() => setWorkersError('Không tải được dữ liệu bảng công NLĐ.'))
+      .finally(() => setWorkersLoading(false));
+  };
 
   // ── Fetch batches ──────────────────────────────────────────────────────
   const loadBatches = () => {
@@ -321,10 +423,11 @@ export default function AttendancePage() {
   };
 
   useEffect(() => {
-    if (tab === 'batches') loadBatches();
+    if (tab === 'workers') loadWorkerAttendance();
+    else if (tab === 'batches') loadBatches();
     else if (tab === 'periods') loadPeriods();
     else if (tab === 'exceptions') loadExceptions();
-  }, [tab]);
+  }, [tab, filterMonth, filterYear, filterProjectId]);
 
   const handleResolved = (rowId: string) => {
     setExceptions(prev => prev.filter(r => r.id !== rowId));
@@ -332,16 +435,70 @@ export default function AttendancePage() {
 
   return (
     <div className="px-6 py-8 lg:px-8" style={{ background: 'var(--surface)' }}>
-      <header className="mb-6">
-        <h1 className="text-2xl font-semibold" style={{ color: 'var(--on-surface)' }}>{ATTENDANCE_LABELS.heading}</h1>
-        <p className="mt-1 text-sm" style={{ color: 'var(--on-surface-variant)' }}>
-          {ATTENDANCE_LABELS.summary}
-        </p>
+      <header className="mb-6 flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold" style={{ color: 'var(--on-surface)' }}>{ATTENDANCE_LABELS.heading}</h1>
+          <p className="mt-1 text-sm" style={{ color: 'var(--on-surface-variant)' }}>
+            {ATTENDANCE_LABELS.summary}
+          </p>
+        </div>
+
+        {/* Bộ lọc & Nút Xuất Excel chấm công */}
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={filterProjectId}
+            onChange={e => setFilterProjectId(e.target.value)}
+            aria-label="Lọc theo dự án"
+            className="rounded border px-3 py-2 text-sm"
+            style={{ borderColor: 'var(--outline)', background: 'var(--surface)', color: 'var(--on-surface)' }}
+          >
+            <option value="">Tất cả dự án</option>
+            {projects.map(p => (
+              <option key={p.id} value={p.id}>{p.code} — {p.name}</option>
+            ))}
+          </select>
+
+          <select
+            value={filterMonth}
+            onChange={e => setFilterMonth(e.target.value)}
+            aria-label="Lọc theo tháng"
+            className="rounded border px-3 py-2 text-sm"
+            style={{ borderColor: 'var(--outline)', background: 'var(--surface)', color: 'var(--on-surface)' }}
+          >
+            <option value="">Tất cả các tháng</option>
+            {Array.from({ length: 12 }, (_, idx) => idx + 1).map(m => (
+              <option key={m} value={String(m)}>Tháng {String(m).padStart(2, '0')}</option>
+            ))}
+          </select>
+
+          {filterMonth && (
+            <select
+              value={filterYear}
+              onChange={e => setFilterYear(e.target.value)}
+              aria-label="Lọc theo năm"
+              className="rounded border px-3 py-2 text-sm"
+              style={{ borderColor: 'var(--outline)', background: 'var(--surface)', color: 'var(--on-surface)' }}
+            >
+              {[2025, 2026, 2027].map(y => (
+                <option key={y} value={String(y)}>Năm {y}</option>
+              ))}
+            </select>
+          )}
+
+          <a
+            href={buildExportQuery('xlsx')}
+            data-testid="attendance-export-excel-btn"
+            className="inline-flex items-center gap-2 rounded px-4 py-2 text-sm font-semibold text-white transition-colors"
+            style={{ background: '#197a56' }}
+          >
+            Xuất Excel chấm công (.xlsx)
+          </a>
+        </div>
       </header>
 
       {/* Tabs */}
       <div className="mb-6 flex gap-4 border-b" style={{ borderColor: 'var(--outline-variant)' }}>
-        {(['batches', 'periods', 'exceptions'] as Tab[]).map(t => (
+        {(['workers', 'batches', 'periods', 'exceptions'] as Tab[]).map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -352,10 +509,142 @@ export default function AttendancePage() {
               marginBottom: '-1px',
             }}
           >
-            {t === 'batches' ? ATTENDANCE_LABELS.importBatch : t === 'periods' ? ATTENDANCE_LABELS.periods : ATTENDANCE_LABELS.exceptions}
+            {t === 'workers'
+              ? 'Bảng công NLĐ'
+              : t === 'batches'
+                ? ATTENDANCE_LABELS.importBatch
+                : t === 'periods'
+                  ? ATTENDANCE_LABELS.periods
+                  : ATTENDANCE_LABELS.exceptions}
           </button>
         ))}
       </div>
+
+      {/* Workers Attendance Summary & Detail Tab */}
+      {tab === 'workers' && (
+        <div className="space-y-6">
+          <div>
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h2 className="text-lg font-medium" style={{ color: 'var(--on-surface)' }}>
+                  Tổng hợp công NLĐ theo Dự án & Ca làm việc ({summaryRows.length})
+                </h2>
+                <p className="text-xs" style={{ color: 'var(--on-surface-variant)' }}>
+                  Danh sách toàn bộ NLĐ có phát sinh chấm công (GPS / Máy chấm công / Bảng công), tự động khớp ca làm việc của dự án và quy đổi số công chuẩn.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={loadWorkerAttendance}
+                className="rounded border px-3 py-1.5 text-xs font-medium"
+                style={{ borderColor: 'var(--outline)', color: 'var(--on-surface)' }}
+              >
+                Làm mới dữ liệu
+              </button>
+            </div>
+
+            {workersLoading ? (
+              <div className="overflow-hidden rounded-lg border" style={{ borderColor: 'var(--outline-variant)' }}>
+                <table className="w-full text-sm"><tbody><LoadingRow cols={8} /></tbody></table>
+              </div>
+            ) : workersError ? (
+              <p className="text-sm text-red-500">{workersError}</p>
+            ) : summaryRows.length === 0 ? (
+              <div className="rounded-lg border p-8 text-center" style={{ borderColor: 'var(--outline-variant)' }}>
+                <p className="text-sm" style={{ color: 'var(--on-surface-variant)' }}>
+                  Chưa có dữ liệu chấm công của NLĐ trong bộ lọc hiện tại.
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto rounded-lg border" style={{ borderColor: 'var(--outline-variant)' }}>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr style={{ background: 'var(--surface-container)' }}>
+                      <th className="px-3 py-3 text-left font-medium">Mã NLĐ</th>
+                      <th className="px-3 py-3 text-left font-medium">Mã NV Dự án</th>
+                      <th className="px-3 py-3 text-left font-medium">Họ và tên NLĐ</th>
+                      <th className="px-3 py-3 text-left font-medium">SĐT</th>
+                      <th className="px-3 py-3 text-left font-medium">Dự án</th>
+                      <th className="px-3 py-3 text-left font-medium">Ca làm việc</th>
+                      <th className="px-3 py-3 text-right font-medium">Số ngày chấm</th>
+                      <th className="px-3 py-3 text-right font-medium">Tổng số công</th>
+                      <th className="px-3 py-3 text-right font-medium">Giờ chuẩn</th>
+                      <th className="px-3 py-3 text-right font-medium">Giờ OT</th>
+                      <th className="px-3 py-3 text-right font-medium">Tổng giờ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {summaryRows.map(row => (
+                      <tr key={`${row.workerId}-${row.projectId}-${row.shiftCode}`} className="border-t" style={{ borderColor: 'var(--outline-variant)' }}>
+                        <td className="px-3 py-2.5 font-mono text-xs font-semibold" style={{ color: 'var(--primary-dark)' }}>{row.workerUserId || '—'}</td>
+                        <td className="px-3 py-2.5 font-mono text-xs">{row.employeeCode || '—'}</td>
+                        <td className="px-3 py-2.5 font-medium" style={{ color: 'var(--on-surface)' }}>{row.workerName}</td>
+                        <td className="px-3 py-2.5 text-xs">{row.workerPhone || '—'}</td>
+                        <td className="px-3 py-2.5 text-xs">
+                          <span className="font-semibold">{row.projectCode}</span>
+                          {row.projectName ? ` — ${row.projectName}` : ''}
+                        </td>
+                        <td className="px-3 py-2.5 text-xs">{row.shiftName}</td>
+                        <td className="px-3 py-2.5 text-right">{row.totalDays}</td>
+                        <td className="px-3 py-2.5 text-right font-semibold" style={{ color: 'var(--success)' }}>{row.totalWorkdays} công</td>
+                        <td className="px-3 py-2.5 text-right">{row.totalRegularHours}h</td>
+                        <td className="px-3 py-2.5 text-right">{row.totalOtHours}h</td>
+                        <td className="px-3 py-2.5 text-right font-medium">{row.totalHours}h</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {detailRows.length > 0 && (
+            <div>
+              <h3 className="mb-3 text-base font-medium" style={{ color: 'var(--on-surface)' }}>
+                Chi tiết chấm công từng ngày ({detailRows.length} bản ghi)
+              </h3>
+              <div className="overflow-x-auto rounded-lg border" style={{ borderColor: 'var(--outline-variant)' }}>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr style={{ background: 'var(--surface-container)' }}>
+                      <th className="px-3 py-2.5 text-left font-medium">Ngày</th>
+                      <th className="px-3 py-2.5 text-left font-medium">Mã NLĐ</th>
+                      <th className="px-3 py-2.5 text-left font-medium">Họ và tên NLĐ</th>
+                      <th className="px-3 py-2.5 text-left font-medium">Dự án</th>
+                      <th className="px-3 py-2.5 text-left font-medium">Ca làm việc</th>
+                      <th className="px-3 py-2.5 text-left font-medium">Giờ vào</th>
+                      <th className="px-3 py-2.5 text-left font-medium">Giờ ra</th>
+                      <th className="px-3 py-2.5 text-right font-medium">Số công</th>
+                      <th className="px-3 py-2.5 text-right font-medium">Giờ chuẩn</th>
+                      <th className="px-3 py-2.5 text-right font-medium">Giờ OT</th>
+                      <th className="px-3 py-2.5 text-left font-medium">Nguồn</th>
+                      <th className="px-3 py-2.5 text-left font-medium">Trạng thái</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {detailRows.slice(0, 100).map(d => (
+                      <tr key={`${d.workerId}-${d.workDate}-${d.stt}`} className="border-t" style={{ borderColor: 'var(--outline-variant)' }}>
+                        <td className="px-3 py-2 font-mono text-xs">{d.workDate}</td>
+                        <td className="px-3 py-2 font-mono text-xs">{d.workerUserId || d.employeeCode || '—'}</td>
+                        <td className="px-3 py-2 font-medium">{d.workerName}</td>
+                        <td className="px-3 py-2 text-xs">{d.projectCode ? `${d.projectCode} — ${d.projectName}` : d.projectName}</td>
+                        <td className="px-3 py-2 text-xs">{d.shiftName}</td>
+                        <td className="px-3 py-2 font-mono text-xs">{d.checkInTime || '—'}</td>
+                        <td className="px-3 py-2 font-mono text-xs">{d.checkOutTime || '—'}</td>
+                        <td className="px-3 py-2 text-right font-semibold" style={{ color: 'var(--success)' }}>{d.workdays}</td>
+                        <td className="px-3 py-2 text-right">{d.regularHours}h</td>
+                        <td className="px-3 py-2 text-right">{d.otHours}h</td>
+                        <td className="px-3 py-2 text-xs">{d.source}</td>
+                        <td className="px-3 py-2 text-xs">{d.statusNote}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Batches Tab */}
       {tab === 'batches' && (
@@ -444,6 +733,13 @@ export default function AttendancePage() {
                     </div>
                     <div className="flex items-center gap-3">
                       <StatusBadge status={p.status} label={attendancePeriodStatusLabel(p.status)} />
+                      <a
+                        href={`/api/attendance/export?periodId=${encodeURIComponent(p.id)}`}
+                        className="rounded border px-3 py-1 text-xs font-medium"
+                        style={{ borderColor: '#197a56', color: '#197a56' }}
+                      >
+                        Xuất Excel
+                      </a>
                       {p.status !== 'LOCKED' && (
                         <button onClick={() => setShowAdjustmentDrawer(p)} className="rounded border px-3 py-1 text-xs font-medium" style={{ borderColor: 'var(--primary-dark)', color: 'var(--primary-dark)' }}>{ATTENDANCE_LABELS.addAdjustment}</button>
                       )}

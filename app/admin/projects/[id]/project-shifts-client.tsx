@@ -390,35 +390,49 @@ export function ProjectShiftsClient({
           </p>
         </div>
 
-        {capability.canConfig && (
-          <div className="flex flex-wrap items-center gap-2">
-            {Object.entries(PRESETS).map(([key, preset]) => (
+        <div className="flex flex-wrap items-center gap-2">
+          <a
+            href={`/api/attendance/export?projectId=${encodeURIComponent(projectId)}`}
+            data-testid="project-attendance-export-btn"
+            className="rounded border px-3 py-1.5 text-xs font-semibold"
+            style={{
+              borderColor: '#197a56',
+              color: '#197a56',
+              background: '#e8f5e9',
+            }}
+          >
+            Xuất Excel chấm công dự án
+          </a>
+          {capability.canConfig && (
+            <>
+              {Object.entries(PRESETS).map(([key, preset]) => (
+                <button
+                  key={key}
+                  type="button"
+                  disabled={busyPreset}
+                  onClick={() => void applyPreset(key)}
+                  className="rounded border px-3 py-1.5 text-xs font-medium"
+                  style={{
+                    borderColor: 'var(--outline)',
+                    color: 'var(--on-surface)',
+                    background: 'var(--surface)',
+                  }}
+                >
+                  {preset.label}
+                </button>
+              ))}
               <button
-                key={key}
                 type="button"
-                disabled={busyPreset}
-                onClick={() => void applyPreset(key)}
-                className="rounded border px-3 py-1.5 text-xs font-medium"
-                style={{
-                  borderColor: 'var(--outline)',
-                  color: 'var(--on-surface)',
-                  background: 'var(--surface)',
-                }}
+                data-testid="project-shift-add-btn"
+                onClick={() => setModalState({ open: true })}
+                className="rounded px-3 py-1.5 text-xs font-semibold"
+                style={{ background: 'var(--primary)', color: 'var(--on-primary)' }}
               >
-                {preset.label}
+                + Thêm ca tuỳ chỉnh
               </button>
-            ))}
-            <button
-              type="button"
-              data-testid="project-shift-add-btn"
-              onClick={() => setModalState({ open: true })}
-              className="rounded px-3 py-1.5 text-xs font-semibold"
-              style={{ background: 'var(--primary)', color: 'var(--on-primary)' }}
-            >
-              + Thêm ca tuỳ chỉnh
-            </button>
-          </div>
-        )}
+            </>
+          )}
+        </div>
       </div>
 
       {flash && (
