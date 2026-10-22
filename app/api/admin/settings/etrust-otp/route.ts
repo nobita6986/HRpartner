@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { getPrisma } from '@/src/lib/db';
 import { getAuthContext } from '@/src/shared/auth/auth-context';
 import { encryptEtrustCredential } from '@/src/shared/auth/etrust-credential-vault';
-import { readEtrustOtpConfig } from '@/src/shared/auth/phone-otp';
+import { DEFAULT_ETRUST_TEMPLATE_ID, readEtrustOtpConfig } from '@/src/shared/auth/phone-otp';
 import { SYSTEM_PHONE_OTP, withSystemDb } from '@/src/shared/auth/with-system-db';
 import { readCappedJson } from '@/src/shared/security/request-body';
 import { writeAuditLog } from '@/src/shared/integrity/audit';
@@ -31,8 +31,19 @@ export async function GET(req: NextRequest) {
   try {
     const credentials = await withSystemDb(getPrisma(), SYSTEM_PHONE_OTP, (tx) => tx.etrustOtpCredential.findUnique({ where: { id: 'primary' }, select: { oaid: true, updatedAt: true } }));
     const encryptionKeyConfigured = /^[0-9a-f]{64}$/i.test(process.env.ETRUST_CREDENTIALS_ENCRYPTION_KEY ?? '');
-    const templateConfigured = Boolean(readEtrustOtpConfig('configured', 'configured', credentials?.oaid ?? ''));
-    return NextResponse.json({ ok: true, data: { configured: Boolean(credentials), oaid: credentials?.oaid ?? '', encryptionKeyConfigured, templateConfigured, updatedAt: credentials?.updatedAt.toISOString() ?? null } }, { headers: noStore });
+    const resolvedConfig = readEtrustOtpConfig('configured', 'configured', credentials?.oaid ?? '');
+    const templateConfigured = Boolean(resolvedConfig);
+    return NextResponse.json({
+      ok: true,
+      data: {
+        configured: Boolean(credentials),
+        oaid: credentials?.oaid ?? '',
+        templateId: resolvedConfig?.templateId ?? DEFAULT_ETRUST_TEMPLATE_ID,
+        encryptionKeyConfigured,
+        templateConfigured,
+        updatedAt: credentials?.updatedAt.toISOString() ?? null,
+      },
+    }, { headers: noStore });
   } catch {
     return fail(503, 'SETTINGS_UNAVAILABLE', 'Không thể đọc trạng thái cấu hình OTP.');
   }
