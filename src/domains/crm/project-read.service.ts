@@ -1,8 +1,6 @@
 import type { Prisma } from '@prisma/client';
 import type { SiteGpsDto } from './site-gps.service';
-import { listProjectSites } from './site-gps.service';
-import type { ProjectShiftDto } from './project-shift.service';
-import { listProjectShifts } from './project-shift.service';
+import { listProjectSites } from './site-gps.service'; import { listProjectShifts, type ProjectShiftDto } from './project-shift.service';
 
 export interface ProjectDetailStaffingOrderDto {
   id: string;
@@ -125,8 +123,7 @@ export interface ProjectManagementDto {
     submissionsCount: number;
     sitesCount: number;
   };
-  // T1A GPS contract (hrp-t1a-android-gps-project-site-config): Site DTO với
-  // trạng thái xác nhận GPS (CONFIRMED/UNCONFIRMED/MISSING_GEO) cho admin panel.
+  // T1A GPS contract: Site DTO với trạng thái xác nhận GPS (CONFIRMED/UNCONFIRMED/MISSING_GEO) cho admin panel.
   sites: SiteGpsDto[];
   shifts: ProjectShiftDto[];
 }
