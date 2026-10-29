@@ -38,11 +38,14 @@ describe('GlobalFooter — T1A hotfix map embed', () => {
     expect(html).not.toContain('openstreetmap.org/export/embed.html');
   });
 
-  it('AC-10: text địa chỉ cột 1 giữ nguyên nguyên văn', () => {
+  it('AC-10: text địa chỉ cột 1 giữ nguyên nguyên văn và hiển thị MST ngay bên dưới', () => {
     const html = render();
-    expect(html).toContain(
-      'Khu đất DV Tân Ngọc, Thống Nhất, Bắc Kế, Xã Bình Tuyền, Tỉnh Phú Thọ, Việt Nam',
-    );
+    const address =
+      'Địa chỉ: Khu đất DV Tân Ngọc, Thống Nhất, Bắc Kế, Xã Bình Tuyền, Tỉnh Phú Thọ, Việt Nam';
+    const taxCode = 'MST: 2500754513';
+    expect(html).toContain(address);
+    expect(html).toContain(taxCode);
+    expect(html.indexOf(address)).toBeLessThan(html.indexOf(taxCode));
   });
 
   it('AC-11: iframe attributes preserve title, loading, width, height', () => {
