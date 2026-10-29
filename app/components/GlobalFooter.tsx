@@ -54,7 +54,7 @@ export function GlobalFooter() {
       <div className="mx-auto w-full max-w-7xl px-4 md:px-6 py-12">
         {/* RQ-02: 3 cột desktop giữ thứ tự Công ty → Dịch vụ → Liên hệ */}
         <div className="grid w-full grid-cols-1 gap-8 md:grid-cols-[1.1fr_1fr_1.1fr]">
-          {/* Cột 1: Công ty — flat list 7 items, gap-y-2 (8px) đều cho mọi dòng */}
+          {/* Cột 1: Công ty — flat list 8 items, gap-y-2 (8px) đều cho mọi dòng */}
           <div className="flex flex-col gap-y-2">
             <h3 className="font-label text-label-md font-bold uppercase tracking-wider text-on-surface">
               CÔNG TY TNHH HRP VIỆT NAM
@@ -63,6 +63,7 @@ export function GlobalFooter() {
             <p className="font-body text-body-sm text-on-surface-variant">
               Địa chỉ: Khu đất DV Tân Ngọc, Thống Nhất, Bắc Kế, Xã Bình Tuyền, Tỉnh Phú Thọ, Việt Nam
             </p>
+            <p className="font-body text-body-sm text-on-surface-variant">MST: 2500754513</p>
             <a
               href="tel:02112216999"
               className="flex items-center font-body text-body-sm text-on-surface-variant hover:text-primary transition-colors"
