@@ -170,7 +170,9 @@ export async function GET(req: NextRequest) {
     assignment,
     mobileAccess: {
       phoneVerified,
-      mustChangePassword: Boolean(ctx.mustChangePassword),
+      ...(typeof ctx.mustChangePassword === 'boolean'
+        ? { mustChangePassword: ctx.mustChangePassword }
+        : {}),
       hasActiveAssignment,
       hasConfiguredSiteGps,
       siteGeofenceNotConfigured,

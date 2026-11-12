@@ -151,7 +151,9 @@ export async function POST(req: NextRequest) {
       ok: true,
       token,
       role: user.role,
-      mustChangePassword: Boolean(user.mustChangePassword),
+      ...(typeof user.mustChangePassword === 'boolean'
+        ? { mustChangePassword: user.mustChangePassword }
+        : {}),
       user: {
         id: user.id,
         name: user.name,

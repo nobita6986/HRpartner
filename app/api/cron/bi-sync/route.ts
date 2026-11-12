@@ -10,9 +10,11 @@ import {
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-async function handleBiWorkerCronSync(req: NextRequest) {
-  const denied = verifyCronSecret(req);
-  if (denied) return denied;
+export async function GET(req: NextRequest) {
+  const auth = verifyCronSecret(req);
+  if (!auth.ok) {
+    return NextResponse.json({ ok: false, error: auth.code }, { status: auth.status });
+  }
 
   const prisma = getPrisma();
   try {
@@ -47,12 +49,4 @@ async function handleBiWorkerCronSync(req: NextRequest) {
       { status: 500 },
     );
   }
-}
-
-export async function GET(req: NextRequest) {
-  return handleBiWorkerCronSync(req);
-}
-
-export async function POST(req: NextRequest) {
-  return handleBiWorkerCronSync(req);
 }

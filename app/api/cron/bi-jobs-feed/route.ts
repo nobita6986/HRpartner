@@ -1,5 +1,5 @@
 /**
- * GET / POST /api/cron/bi-jobs-feed — hrp-bi-jobs-feed-sync-v1 (RQ-03, DEC-04)
+ * GET /api/cron/bi-jobs-feed — hrp-bi-jobs-feed-sync-v1 (RQ-03, DEC-04)
  *
  * Periodic 30-minute poll endpoint that fetches `https://bi.hrpartner.vn/feeds/jobs.v1.json`
  * and reconciles all published BI recruitment posts into HRP's public job board.
@@ -16,7 +16,7 @@ import { syncBiJobsPublicFeed } from '@/src/domains/integrations/bi/bi-jobs-feed
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-async function handleCronSync(req: NextRequest): Promise<NextResponse> {
+export async function GET(req: NextRequest): Promise<NextResponse> {
   const auth = verifyCronSecret(req);
   if (!auth.ok) {
     return NextResponse.json({ ok: false, error: auth.code }, { status: auth.status });
@@ -49,12 +49,4 @@ async function handleCronSync(req: NextRequest): Promise<NextResponse> {
   }
 
   return NextResponse.json(result, { status: 200 });
-}
-
-export async function GET(req: NextRequest): Promise<NextResponse> {
-  return handleCronSync(req);
-}
-
-export async function POST(req: NextRequest): Promise<NextResponse> {
-  return handleCronSync(req);
 }

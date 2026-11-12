@@ -85,7 +85,7 @@ const EXPECTED_HITS = [
   // ACTIVE của chính worker được đọc (server-derived workerId), predicate
   // `hrp_project_visible_for` RLS backstop; kết quả chỉ dùng nội bộ để gate,
   // KHÔNG trả client.
-  'app/api/worker/checkins/route.ts:118 project',
+  'app/api/worker/checkins/route.ts:129 project',
   'src/domains/applications/application-queue.service.ts:183 project',
   'src/domains/applications/application-queue.service.ts:216 project',
   // AFF-04 STEP-02: re-read canonical ReferralAttribution via LaborProfile on
@@ -107,6 +107,17 @@ const EXPECTED_HITS = [
   // `hrp_client_company_visible_for` đã lọc theo role khi đi qua
   // `withDbContext` (ADMIN/HR_MANAGER/HR_STAFF/PM đều thoả).
   'src/domains/crm/project-read.service.ts:157 clientCompany',
+  // hrp-bi-jobs-feed-sync-v1 & hrp-bi-worker-sync-v1 (2026-11-12):
+  // - `bi-initial-credentials.service.ts:101 worker`, `:115 project`, `:122 project`:
+  //   đọc danh sách mật khẩu ban đầu trong `withSystemDb(prisma, SYSTEM_BI_SYNC, ...)`
+  //   sau khi đã enforce role gate (`ADMIN`/`HR_MANAGER`/`PM`) và `allowedProjectIds`
+  //   cho PM.
+  // - `bi-jobs-feed.service.ts:184 clientCompany`: tham số kiểu `{ id: string; name: string }`
+  //   nằm gần khối `select:` phía trên.
+  'src/domains/integrations/bi/bi-initial-credentials.service.ts:101 worker',
+  'src/domains/integrations/bi/bi-initial-credentials.service.ts:115 project',
+  'src/domains/integrations/bi/bi-initial-credentials.service.ts:122 project',
+  'src/domains/integrations/bi/bi-jobs-feed.service.ts:184 clientCompany',
   // P1-A0.5 STEP-10 (hrp-p1-a0-5-job-opening-readiness): additive DTO fields
   // (`serviceModel`, `placementCount`, order status/deadline, slot validTo/capacity).
   // Line numbers shifted 41 → 86 and 46 → 94 because the new fields were added
@@ -568,7 +579,8 @@ describe('quan hệ BẮT BUỘC trên bảng bị RLS che: tập vị trí sele
     // (`worker-assignment-summary.ts:98 project`) — assignment summary cho
     // login/workers/me đọc dưới GUC WORKER self. Tổng src = 51.
     // hrp-t1a-android-gps-project-site-config (2026-10-19) chỉ thêm entry app/api.
-    expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(51);
+    // hrp-bi-jobs-feed-sync-v1 & hrp-bi-worker-sync-v1 (2026-11-12): +4 entries under src/domains/integrations/bi/. Tổng src = 55.
+    expect(hits.filter((hit) => hit.startsWith('src/'))).toHaveLength(55);
   });
 });
 

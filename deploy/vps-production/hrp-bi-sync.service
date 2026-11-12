@@ -7,6 +7,6 @@ Wants=network-online.target
 Type=oneshot
 User=root
 EnvironmentFile=/opt/hrp/current/.env.production
-ExecStart=/usr/bin/curl --fail --silent --show-error --max-time 180 -X POST -H "x-cron-secret: ${CRON_SECRET}" http://127.0.0.1:3001/api/cron/bi-sync
+ExecStart=/usr/bin/curl --fail --silent --show-error --max-time 180 -H "x-cron-secret: ${CRON_SECRET}" http://127.0.0.1:3001/api/cron/bi-sync
 StandardOutput=journal
 StandardError=journal
