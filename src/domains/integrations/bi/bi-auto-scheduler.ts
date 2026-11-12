@@ -14,6 +14,8 @@
 
 import { revalidatePath } from 'next/cache';
 import { getPrisma } from '@/src/lib/db';
+import { parseBiJobsPublicFeedV1 } from './bi-jobs-feed-contract';
+import biJobsFeedSnapshot from './bi-jobs-feed-snapshot.json';
 import { syncBiJobsPublicFeed } from './bi-jobs-feed.service';
 import {
   BiSyncConfigurationError,
@@ -28,7 +30,7 @@ const SCHEDULED_VN_HOURS = new Set([6, 10, 14, 18]);
 
 interface BiSchedulerGlobalState {
   initialized: boolean;
-  feedSyncInFlight: boolean;
+  feedSyncPromise: Promise<void> | null;
   lastFeedSyncAtMs: number;
   workerSyncInFlight: boolean;
   lastWorkerSlotKey: string | null;
@@ -42,7 +44,7 @@ function getSchedulerState(): BiSchedulerGlobalState {
   if (!globalForBiScheduler.__hrpBiSchedulerState) {
     globalForBiScheduler.__hrpBiSchedulerState = {
       initialized: false,
-      feedSyncInFlight: false,
+      feedSyncPromise: null,
       lastFeedSyncAtMs: 0,
       workerSyncInFlight: false,
       lastWorkerSlotKey: null,
@@ -59,36 +61,88 @@ function isProductionRuntime(): boolean {
   return true;
 }
 
-async function runSafeFeedSync(): Promise<void> {
+async function runBootstrapSnapshotSeedIfNeeded(): Promise<void> {
   const state = getSchedulerState();
-  if (state.feedSyncInFlight) return;
-  state.feedSyncInFlight = true;
-  state.lastFeedSyncAtMs = Date.now();
+  if (state.lastFeedSyncAtMs > 0) return;
 
   try {
+    const parsedSnapshot = parseBiJobsPublicFeedV1(biJobsFeedSnapshot);
+    if (!parsedSnapshot.ok) return;
+
     const prisma = getPrisma();
-    const res = await syncBiJobsPublicFeed(prisma, {
+    const snapRes = await syncBiJobsPublicFeed(prisma, {
       actorId: 'system:cron',
       actorRole: 'ADMIN',
+      prefetchedFeed: parsedSnapshot.data,
     });
-    if (res.ok && (res.created > 0 || res.updated > 0 || res.archived > 0)) {
-      try {
-        revalidatePath('/viec-lam');
-        revalidatePath('/');
-        revalidatePath('/admin/jobs/job-postings');
-      } catch {
-        // Ignore if called outside request context
+    if (snapRes.ok) {
+      state.lastFeedSyncAtMs = Date.now();
+      if (snapRes.created > 0 || snapRes.updated > 0 || snapRes.archived > 0) {
+        try {
+          revalidatePath('/viec-lam');
+          revalidatePath('/');
+          revalidatePath('/admin/jobs/job-postings');
+        } catch {
+          // Ignore if called outside request context
+        }
       }
+    } else {
+      console.error('[bi-auto-scheduler] snapshot seed error:', {
+        code: snapRes.code,
+        message: snapRes.message,
+      });
     }
   } catch (err) {
     const code =
       typeof err === 'object' && err !== null && 'code' in err
         ? String((err as { code: unknown }).code)
-        : 'FEED_SCHEDULER_ERROR';
-    console.error('[bi-auto-scheduler] jobs feed sync error:', { code });
-  } finally {
-    state.feedSyncInFlight = false;
+        : 'SNAPSHOT_SEED_ERROR';
+    console.error('[bi-auto-scheduler] snapshot seed exception:', { code });
   }
+}
+
+function runSafeFeedSync(): Promise<void> {
+  const state = getSchedulerState();
+  if (state.feedSyncPromise) return state.feedSyncPromise;
+
+  const p = (async () => {
+    try {
+      const prisma = getPrisma();
+      const res = await syncBiJobsPublicFeed(prisma, {
+        actorId: 'system:cron',
+        actorRole: 'ADMIN',
+      });
+
+      if (res.ok) {
+        state.lastFeedSyncAtMs = Date.now();
+        if (res.created > 0 || res.updated > 0 || res.archived > 0) {
+          try {
+            revalidatePath('/viec-lam');
+            revalidatePath('/');
+            revalidatePath('/admin/jobs/job-postings');
+          } catch {
+            // Ignore if called outside request context
+          }
+        }
+      } else {
+        console.error('[bi-auto-scheduler] jobs feed sync returned error:', {
+          code: res.code,
+          message: res.message,
+        });
+      }
+    } catch (err) {
+      const code =
+        typeof err === 'object' && err !== null && 'code' in err
+          ? String((err as { code: unknown }).code)
+          : 'FEED_SCHEDULER_ERROR';
+      console.error('[bi-auto-scheduler] jobs feed sync error:', { code });
+    } finally {
+      state.feedSyncPromise = null;
+    }
+  })();
+
+  state.feedSyncPromise = p;
+  return p;
 }
 
 function currentVietnamFourHourSlotKey(nowMs: number = Date.now()): string | null {
@@ -137,7 +191,7 @@ async function runSafeWorkerSyncIfDue(): Promise<void> {
   }
 }
 
-export function ensureBiSchedulersStarted(): void {
+export async function ensureBiSchedulersStarted(): Promise<void> {
   if (!isProductionRuntime()) return;
 
   const state = getSchedulerState();
@@ -161,7 +215,13 @@ export function ensureBiSchedulersStarted(): void {
     }
   }
 
-  if (now - state.lastFeedSyncAtMs >= FEED_POLL_INTERVAL_MS) {
+  if (state.lastFeedSyncAtMs === 0) {
+    await Promise.race([
+      runBootstrapSnapshotSeedIfNeeded(),
+      new Promise<void>((resolve) => setTimeout(resolve, 6_000)),
+    ]);
+    void runSafeFeedSync();
+  } else if (now - state.lastFeedSyncAtMs >= FEED_POLL_INTERVAL_MS) {
     void runSafeFeedSync();
   }
 

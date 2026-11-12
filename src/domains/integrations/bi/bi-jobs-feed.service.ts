@@ -72,7 +72,7 @@ export async function fetchBiJobsPublicFeed(
         Accept: 'application/json',
       },
       cache: 'no-store',
-      signal: AbortSignal.timeout(15_000),
+      signal: AbortSignal.timeout(25_000),
     });
 
     if (!response.ok) {
@@ -629,44 +629,50 @@ export async function syncBiJobsPublicFeed(
         archived,
       };
 
-      await tx.payrollConfig.upsert({
-        where: {
-          key_version: {
+      try {
+        await tx.$executeRawUnsafe('SAVEPOINT sp_bi_feed_meta');
+        await tx.payrollConfig.upsert({
+          where: {
+            key_version: {
+              key: BI_JOBS_FEED_STATE_KEY,
+              version: 1,
+            },
+          },
+          update: {
+            valueJson: stats as unknown as Prisma.InputJsonValue,
+            isActive: true,
+          },
+          create: {
             key: BI_JOBS_FEED_STATE_KEY,
             version: 1,
+            valueType: 'STRING',
+            description: 'Trạng thái đồng bộ BI Public Jobs Feed (30 phút/lần)',
+            effectiveFrom: now,
+            isActive: true,
+            valueJson: stats as unknown as Prisma.InputJsonValue,
           },
-        },
-        update: {
-          valueJson: stats as unknown as Prisma.InputJsonValue,
-          isActive: true,
-        },
-        create: {
-          key: BI_JOBS_FEED_STATE_KEY,
-          version: 1,
-          valueType: 'STRING',
-          description: 'Trạng thái đồng bộ BI Public Jobs Feed (30 phút/lần)',
-          effectiveFrom: now,
-          isActive: true,
-          valueJson: stats as unknown as Prisma.InputJsonValue,
-        },
-      });
+        });
 
-      await tx.auditLog.create({
-        data: {
-          actorId: options.actorId ?? 'system:cron',
-          actorRole: options.actorRole ?? 'ADMIN',
-          entityType: 'BiJobsFeedSync',
-          entityId: BI_JOBS_FEED_STATE_KEY,
-          action: 'SYNC',
-          metadata: stats as unknown as Prisma.InputJsonValue,
-        },
-      });
+        await tx.auditLog.create({
+          data: {
+            actorId: options.actorId ?? 'system:cron',
+            actorRole: options.actorRole ?? 'ADMIN',
+            entityType: 'BiJobsFeedSync',
+            entityId: BI_JOBS_FEED_STATE_KEY,
+            action: 'SYNC',
+            metadata: stats as unknown as Prisma.InputJsonValue,
+          },
+        });
+        await tx.$executeRawUnsafe('RELEASE SAVEPOINT sp_bi_feed_meta');
+      } catch {
+        await tx.$executeRawUnsafe('ROLLBACK TO SAVEPOINT sp_bi_feed_meta').catch(() => undefined);
+      }
 
       return {
         ok: true,
         ...stats,
       };
-    });
+    }, { maxWait: 15_000, timeout: 60_000 });
   } catch (err) {
     return {
       ok: false,

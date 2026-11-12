@@ -95,14 +95,21 @@ export const SYSTEM_BI_SYNC: SystemPrincipal = {
  * @param principal — một trong `SYSTEM_CRON` | `SYSTEM_CHECKIN`.
  * @param cb — business op; nhận transaction client đã set GUC.
  */
+export interface SystemDbTransactionOptions {
+  readonly maxWait?: number;
+  readonly timeout?: number;
+}
+
 export async function withSystemDb<T>(
   prisma: PrismaClient,
   principal: SystemPrincipal,
   cb: DbContextCallback<T>,
+  options?: SystemDbTransactionOptions,
 ): Promise<T> {
   const ctx: AuthContext = { userId: principal.userId, role: principal.role };
-  return prisma.$transaction(async (tx) => {
+  const runner = async (tx: Parameters<DbContextCallback<T>>[0]) => {
     await applyRlsContext(tx, ctx);
     return cb(tx);
-  });
+  };
+  return options ? prisma.$transaction(runner, options) : prisma.$transaction(runner);
 }

@@ -19,8 +19,8 @@ export const metadata: Metadata = {
   title: 'Đăng nhập',
 };
 
-export default function LoginPage() {
-  ensureBiSchedulersStarted();
+export default async function LoginPage() {
+  await ensureBiSchedulersStarted();
   return (
     <main className="min-h-screen flex items-center justify-center px-4" style={{ background: 'var(--background)' }}>
       {/* useSearchParams cần Suspense boundary khi prerender (Next 15) */}
