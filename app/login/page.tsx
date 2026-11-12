@@ -10,13 +10,17 @@
  */
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
+import { ensureBiSchedulersStarted } from '@/src/domains/integrations/bi/bi-auto-scheduler';
 import LoginForm from './login-form';
+
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'Đăng nhập',
 };
 
 export default function LoginPage() {
+  ensureBiSchedulersStarted();
   return (
     <main className="min-h-screen flex items-center justify-center px-4" style={{ background: 'var(--background)' }}>
       {/* useSearchParams cần Suspense boundary khi prerender (Next 15) */}
