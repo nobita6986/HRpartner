@@ -54,6 +54,11 @@ import {
   CreateJobPostingForm,
   type EligibleSlotDto,
 } from './create-job-posting-form';
+import { BiFeedSyncPanel } from './bi-feed-sync-panel';
+import {
+  getBiJobsFeedSyncState,
+  resolveBiJobsFeedUrl,
+} from '@/src/domains/integrations/bi/bi-jobs-feed.service';
 import type { SystemRole } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
@@ -147,6 +152,10 @@ export default async function AdminJobPostingsListPage({ searchParams }: PagePro
   const result = await withDbContext(prisma, ctx, async (tx) => {
     return listJobPostingsForAdmin(tx, { take, skip, status: statusFilter });
   });
+
+  const canSyncBiFeed = session.role === 'ADMIN' || session.role === 'HR_MANAGER';
+  const biFeedSyncState = canSyncBiFeed ? await getBiJobsFeedSyncState(prisma) : null;
+  const biFeedUrl = resolveBiJobsFeedUrl();
 
   /**
    * hrp-p1-a0-1 (DEC-02, DEC-03): load eligible-slot DTO qua service canonical
@@ -282,6 +291,10 @@ export default async function AdminJobPostingsListPage({ searchParams }: PagePro
             CREATE_ROLES (ADMIN/HR_MANAGER/HR_STAFF), dùng POST endpoint hiện hữu,
             idempotency handled ở client form (UUID per submit attempt) + server
             (withIdempotency). */}
+        {canSyncBiFeed ? (
+          <BiFeedSyncPanel feedUrl={biFeedUrl} initialSync={biFeedSyncState} />
+        ) : null}
+
         {CREATE_ROLES.has(session.role) ? (
           <div className="mb-6">
             <CreateJobPostingForm

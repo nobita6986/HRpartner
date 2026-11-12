@@ -1,0 +1,13 @@
+[Unit]
+Description=HRP — Sync BI Public Jobs Feed (https://bi.hrpartner.vn/feeds/jobs.v1.json)
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=-/etc/hrp/secrets/production.env
+EnvironmentFile=-/opt/hrp/.env
+ExecStart=/usr/bin/curl --fail --silent --show-error --max-time 60 -X POST -H "x-cron-secret: ${CRON_SECRET}" http://127.0.0.1:3001/api/cron/bi-jobs-feed
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=hrp-bi-jobs-feed

@@ -1,0 +1,13 @@
+[Unit]
+Description=HRP — Run BI Public Jobs Feed Sync every 30 minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=30min
+OnCalendar=*:0/30
+Persistent=true
+AccuracySec=30s
+Unit=hrp-bi-jobs-feed.service
+
+[Install]
+WantedBy=timers.target

@@ -44,6 +44,7 @@ import type { JobPostingApiErrorSummary } from '@/src/domains/staffing/job-posti
 // `/api/admin/jobs/job-postings/[id]/media` để tránh waterfall.
 import { JobPostingMediaCard, type JobPostingMediaAssignment } from './media-card';
 import { JobPostingYouTubeCard } from './youtube-card';
+import { StandardBriefAssistant } from './standard-brief-assistant';
 
 interface JobPostingEditorShellProps {
   initial: JobPostingDetailDto;
@@ -195,6 +196,7 @@ export function JobPostingEditorShell({ initial, initialMedia, canMutate }: JobP
    */
   const [errorRecoveryHref, setErrorRecoveryHref] = useState<string | null>(null);
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
+  const [editorResetKey, setEditorResetKey] = useState<number>(0);
 
   const initialSnapshotRef = useRef<{
     title: string;
@@ -697,8 +699,24 @@ export function JobPostingEditorShell({ initial, initialMedia, canMutate }: JobP
         }}
       />
 
+      {/* Standard 4-section brief assistant (BI – HRP unified standard) */}
+      <StandardBriefAssistant
+        disabled={!canMutate || isSaving || status !== 'DRAFT'}
+        defaultProjectName={initial.opening?.staffingOrderCode ?? null}
+        onApplyCompiled={(compiled) => {
+          setTitle(compiled.title);
+          setSalaryDisplay(compiled.salaryDisplay);
+          setDescriptionJson(compiled.descriptionJson);
+          setRequirementsJson(compiled.requirementsJson);
+          setBenefitsJson(compiled.benefitsJson);
+          setApplicationInstructionsJson(compiled.applicationInstructionsJson);
+          setEditorResetKey((prev) => prev + 1);
+        }}
+      />
+
       {/* Rich content fields */}
       <RichFieldCard
+        key={`desc-${editorResetKey}`}
         label={RICH_FIELD_LABELS.descriptionJson}
         placeholder={RICH_FIELD_PLACEHOLDERS.descriptionJson}
         value={descriptionJson}
@@ -706,18 +724,21 @@ export function JobPostingEditorShell({ initial, initialMedia, canMutate }: JobP
         requiredForPublish
       />
       <RichFieldCard
+        key={`req-${editorResetKey}`}
         label={RICH_FIELD_LABELS.requirementsJson}
         placeholder={RICH_FIELD_PLACEHOLDERS.requirementsJson}
         value={requirementsJson}
         onChange={setRequirementsJson}
       />
       <RichFieldCard
+        key={`ben-${editorResetKey}`}
         label={RICH_FIELD_LABELS.benefitsJson}
         placeholder={RICH_FIELD_PLACEHOLDERS.benefitsJson}
         value={benefitsJson}
         onChange={setBenefitsJson}
       />
       <RichFieldCard
+        key={`app-${editorResetKey}`}
         label={RICH_FIELD_LABELS.applicationInstructionsJson}
         placeholder={RICH_FIELD_PLACEHOLDERS.applicationInstructionsJson}
         value={applicationInstructionsJson}
