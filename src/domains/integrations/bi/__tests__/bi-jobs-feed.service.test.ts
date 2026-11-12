@@ -450,4 +450,29 @@ describe('syncBiJobsPublicFeed service lifecycle (AC-02)', () => {
       expect(res.code).toBe('SYNC_ALREADY_RUNNING');
     }
   });
+
+  it('assigns exactly 1 stamp badge per job card and normalizes legacy multi-stamp postings to 1 stamp', async () => {
+    const { prisma, postings } = createInMemoryPrismaMock(true);
+    const countStamps = (p: { isHot: boolean; isUrgent: boolean; isHighReward: boolean; isExpiringSoon: boolean }) =>
+      (p.isHot ? 1 : 0) + (p.isUrgent ? 1 : 0) + (p.isHighReward ? 1 : 0) + (p.isExpiringSoon ? 1 : 0);
+
+    await syncBiJobsPublicFeed(prisma, { prefetchedFeed: BASE_FEED });
+    const createdPosting = [...postings.values()][0];
+    expect(countStamps(createdPosting)).toBe(1);
+
+    // Simulate a legacy 2-stamp posting (e.g. HOT + THƯỞNG CAO)
+    postings.set(createdPosting.id, {
+      ...createdPosting,
+      isHot: true,
+      isUrgent: false,
+      isHighReward: true,
+      isExpiringSoon: false,
+    });
+    const res = await syncBiJobsPublicFeed(prisma, { prefetchedFeed: BASE_FEED });
+    expect(res.ok).toBe(true);
+    if (res.ok) {
+      expect(res.updated).toBe(1);
+    }
+    expect(countStamps([...postings.values()][0])).toBe(1);
+  });
 });

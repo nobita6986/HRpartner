@@ -267,10 +267,6 @@ const BI_JOB_STAMP_PRESETS: readonly BiJobStampFlags[] = [
   { isHot: false, isUrgent: true, isHighReward: false, isExpiringSoon: false },
   { isHot: false, isUrgent: false, isHighReward: true, isExpiringSoon: false },
   { isHot: false, isUrgent: false, isHighReward: false, isExpiringSoon: true },
-  { isHot: true, isUrgent: true, isHighReward: false, isExpiringSoon: false },
-  { isHot: true, isUrgent: false, isHighReward: true, isExpiringSoon: false },
-  { isHot: false, isUrgent: true, isHighReward: true, isExpiringSoon: false },
-  { isHot: false, isUrgent: false, isHighReward: true, isExpiringSoon: true },
 ];
 
 export function deriveBiJobStamps(briefId: string): BiJobStampFlags {
@@ -449,11 +445,12 @@ export async function syncBiJobsPublicFeed(
         const existingOpening = existingOrder.jobOpenings[0] ?? null;
         const existingPosting = existingOpening?.posting ?? null;
         const marker = parseBiFeedSyncMarker(existingOrder.description);
-        const existingHasAnyStamp =
-          Boolean(existingPosting?.isHot) ||
-          Boolean(existingPosting?.isUrgent) ||
-          Boolean(existingPosting?.isHighReward) ||
-          Boolean(existingPosting?.isExpiringSoon);
+        const existingStampCount =
+          (existingPosting?.isHot ? 1 : 0) +
+          (existingPosting?.isUrgent ? 1 : 0) +
+          (existingPosting?.isHighReward ? 1 : 0) +
+          (existingPosting?.isExpiringSoon ? 1 : 0);
+        const existingHasSingleStamp = existingStampCount === 1;
 
         const isUpToDate =
           !options.forceUpdate &&
@@ -462,7 +459,7 @@ export async function syncBiJobsPublicFeed(
           existingOrder.status === 'OPEN' &&
           existingOpening?.status === 'OPEN' &&
           existingPosting?.status === 'PUBLISHED' &&
-          existingHasAnyStamp &&
+          existingHasSingleStamp &&
           existingSlot !== null;
 
         if (isUpToDate) {
@@ -567,10 +564,12 @@ export async function syncBiJobsPublicFeed(
               applicationInstructionsJson:
                 compiled.applicationInstructionsJson as unknown as Prisma.InputJsonValue,
               contentSchemaVersion: compiled.contentSchemaVersion,
-              isHot: existingHasAnyStamp ? existingPosting.isHot : stamps.isHot,
-              isUrgent: existingHasAnyStamp ? existingPosting.isUrgent : stamps.isUrgent,
-              isHighReward: existingHasAnyStamp ? existingPosting.isHighReward : stamps.isHighReward,
-              isExpiringSoon: existingHasAnyStamp
+              isHot: existingHasSingleStamp ? existingPosting.isHot : stamps.isHot,
+              isUrgent: existingHasSingleStamp ? existingPosting.isUrgent : stamps.isUrgent,
+              isHighReward: existingHasSingleStamp
+                ? existingPosting.isHighReward
+                : stamps.isHighReward,
+              isExpiringSoon: existingHasSingleStamp
                 ? existingPosting.isExpiringSoon
                 : stamps.isExpiringSoon,
             },
