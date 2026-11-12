@@ -87,10 +87,20 @@ interface SiteGeoRow {
 async function evaluateGeofenceConfig(
   tx: Prisma.TransactionClient,
   workerId: string,
+  now: Date,
 ): Promise<{ status: 'NOT_CONFIGURED' | 'NO_GPS' }> {
   const sites = await tx.site.findMany({
     where: {
-      project: { assignments: { some: { status: 'ACTIVE', workerId } } },
+      project: {
+        assignments: {
+          some: {
+            status: 'ACTIVE',
+            workerId,
+            validFrom: { lte: now },
+            OR: [{ validTo: null }, { validTo: { gt: now } }],
+          },
+        },
+      },
     },
     select: { latitude: true, longitude: true, radiusMeters: true, geoConfirmedAt: true },
   }) as unknown as SiteGeoRow[];
@@ -112,10 +122,20 @@ async function checkGeofenceForConfirmedSites(
   workerId: string,
   lat: number,
   lng: number,
+  now: Date,
 ): Promise<'INSIDE' | 'OUTSIDE'> {
   const sites = await tx.site.findMany({
     where: {
-      project: { assignments: { some: { status: 'ACTIVE', workerId } } },
+      project: {
+        assignments: {
+          some: {
+            status: 'ACTIVE',
+            workerId,
+            validFrom: { lte: now },
+            OR: [{ validTo: null }, { validTo: { gt: now } }],
+          },
+        },
+      },
     },
     select: { latitude: true, longitude: true, radiusMeters: true, geoConfirmedAt: true },
   }) as unknown as SiteGeoRow[];
@@ -151,6 +171,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
   }
 
+  if (ctx.mustChangePassword) {
+    return NextResponse.json(
+      {
+        error: 'PASSWORD_CHANGE_REQUIRED',
+        message: 'Vui lòng đổi mật khẩu ban đầu trước khi chấm công.',
+      },
+      { status: 403 },
+    );
+  }
+
   if (!ctx.workerId) {
     return NextResponse.json({ error: 'NOT_A_WORKER' }, { status: 403 });
   }
@@ -159,14 +189,37 @@ export async function POST(req: NextRequest) {
   const prisma = getPrisma();
   const payloadHash = buildPayloadHash(data);
   const hasGps = data.gpsLatitude != null && data.gpsLongitude != null;
+  const now = new Date();
 
   try {
     // Geofence read (scoped) + attendance INSERT trong CÙNG transaction hệ thống.
     const result = await withSystemDb(prisma, SYSTEM_CHECKIN, async (tx) => {
+      // Gate trạng thái NLĐ (RQ-09 / DEC-15): khi worker ở trạng thái TERMINATED (OFF) hoặc chưa VERIFIED -> chặn 403
+      const workerDelegate = (tx as unknown as {
+        worker?: {
+          findUnique: (args: {
+            where: { id: string };
+            select: { profileStatus: true; employmentStatus: true };
+          }) => Promise<{ profileStatus: string; employmentStatus: string } | null>;
+        };
+      }).worker;
+      if (workerDelegate?.findUnique) {
+        const workerState = await workerDelegate.findUnique({
+          where: { id: workerId },
+          select: { profileStatus: true, employmentStatus: true },
+        });
+        if (
+          workerState &&
+          (workerState.profileStatus !== 'VERIFIED' || workerState.employmentStatus !== 'ACTIVE')
+        ) {
+          return { configStatus: { status: 'WORKER_NOT_ACTIVE' as const } } as const;
+        }
+      }
+
       // Global sites của assignment ACTIVE + config gate (T0 §6 — fail-closed):
       // lat/lng null được lọc bỏ (KHÔNG (0,0)), site chưa Admin xác nhận bị
       // loại ⇒ NONE không bao giờ phát sinh; thiếu config ⇒ NO EVENT + 422.
-      const configStatus = await evaluateGeofenceConfig(tx, workerId);
+      const configStatus = await evaluateGeofenceConfig(tx, workerId, now);
 
       if (configStatus.status === 'NOT_CONFIGURED') {
         return { configStatus } as const;
@@ -174,7 +227,13 @@ export async function POST(req: NextRequest) {
 
       let geofence: 'INSIDE' | 'OUTSIDE' | null = null;
       if (hasGps) {
-        geofence = await checkGeofenceForConfirmedSites(tx, workerId, data.gpsLatitude!, data.gpsLongitude!);
+        geofence = await checkGeofenceForConfirmedSites(
+          tx,
+          workerId,
+          data.gpsLatitude!,
+          data.gpsLongitude!,
+          now,
+        );
       }
       const event = await tx.attendanceEvent.create({
         data: {
@@ -206,6 +265,17 @@ export async function POST(req: NextRequest) {
     // assignment ACTIVE nào có site hợp lệ ⇒ KHÔNG ghi event.
     // HTTP 422 (không dùng 503) vì web worker page hiện coi 503 là tín hiệu
     // OFFLINE (queueOffline). Gap contract đã ghi HANDOFF cho T0 chốt.
+    if (result.configStatus.status === 'WORKER_NOT_ACTIVE') {
+      return NextResponse.json(
+        {
+          error: 'FORBIDDEN_NOT_VERIFIED',
+          message:
+            'Hồ sơ người lao động chưa được xác minh hoặc không còn trong đợt làm việc đang hoạt động (ON).',
+        },
+        { status: 403 },
+      );
+    }
+
     if (result.configStatus.status === 'NOT_CONFIGURED') {
       return NextResponse.json(
         {

@@ -28,6 +28,7 @@ export interface PreAuthLoginUser {
   name: string | null;
   phone: string | null;
   phoneVerified?: boolean;
+  mustChangePassword?: boolean;
   isActive: boolean;
   passwordHash: string | null;
 }
@@ -40,8 +41,52 @@ export async function findUserForLogin(
     await tx.$executeRaw`SELECT set_config('app.role', 'ADMIN', true)`;
     return tx.user.findFirst({
       where: { phone },
-      select: { id: true, role: true, isActive: true, passwordHash: true, name: true, phone: true, phoneVerified: true },
+      select: {
+        id: true,
+        role: true,
+        isActive: true,
+        passwordHash: true,
+        name: true,
+        phone: true,
+        phoneVerified: true,
+        mustChangePassword: true,
+      },
     });
+  });
+}
+
+/**
+ * Tra cứu tài khoản đăng nhập theo số CCCD canonical (9 hoặc 12 chữ số) của NLĐ.
+ * Chỉ dùng ở bước pre-auth login (DEC-05).
+ */
+export async function findUserForLoginByCccd(
+  prisma: PrismaClient,
+  cccdNumber: string,
+): Promise<PreAuthLoginUser | null> {
+  const canonicalCccd = cccdNumber.trim();
+  if (!/^(\d{9}|\d{12})$/.test(canonicalCccd)) {
+    return null;
+  }
+  return prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT set_config('app.role', 'ADMIN', true)`;
+    const worker = await tx.worker.findUnique({
+      where: { cccdNumber: canonicalCccd },
+      select: {
+        account: {
+          select: {
+            id: true,
+            role: true,
+            isActive: true,
+            passwordHash: true,
+            name: true,
+            phone: true,
+            phoneVerified: true,
+            mustChangePassword: true,
+          },
+        },
+      },
+    });
+    return worker?.account ?? null;
   });
 }
 

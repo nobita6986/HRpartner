@@ -1,0 +1,11 @@
+[Unit]
+Description=Run HRP Mini-BI Worker & Project Catalog Sync at 06:00, 10:00, 14:00, 18:00 daily
+
+[Timer]
+OnCalendar=*-*-* 06,10,14,18:00:00
+Persistent=true
+RandomizedDelaySec=20
+Unit=hrp-bi-sync.service
+
+[Install]
+WantedBy=timers.target

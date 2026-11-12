@@ -1,0 +1,12 @@
+[Unit]
+Description=HRP Mini-BI Worker & Project Catalog Sync (06:00, 10:00, 14:00, 18:00)
+After=network-online.target hrp.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+EnvironmentFile=/opt/hrp/current/.env.production
+ExecStart=/usr/bin/curl --fail --silent --show-error --max-time 180 -X POST -H "x-cron-secret: ${CRON_SECRET}" http://127.0.0.1:3001/api/cron/bi-sync
+StandardOutput=journal
+StandardError=journal

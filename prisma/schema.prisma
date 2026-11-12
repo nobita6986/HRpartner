@@ -144,6 +144,7 @@ model User {
   vendorId     String?  @map("vendor_id")
   phoneVerified Boolean @default(false) @map("phone_verified")
   phoneVerifiedAt DateTime? @map("phone_verified_at")
+  mustChangePassword Boolean @default(false) @map("must_change_password")
   isActive     Boolean  @default(true) @map("is_active")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
@@ -199,6 +200,8 @@ model User {
   workerReferrals WorkerReferral[] @relation("WorkerReferrer")
   reviewedWorkerReferrals WorkerReferral[] @relation("WorkerReferralReviewer")
   publishedReferralPolicies ReferralProgramPolicy[] @relation("ReferralPolicyPublisher")
+  workerInitialCredential WorkerInitialCredential?
+  updatedBiSyncCredentials BiSyncCredential[]
 
   @@index([role, isActive])
   @@map("users")
@@ -297,6 +300,7 @@ model Worker {
   assignedToId String? @map("assigned_to_id")
   accountUserId String? @unique @map("account_user_id") // V4.14 G22 — link tài khoản đăng nhập (role WORKER) ↔ hồ sơ lao động; scope WORKER dùng field này
   managerId    String? @map("manager_id") // M13: quản lý trực tiếp (User.id) — phục vụ filter + scope UI về sau
+  selfEditedFields String[] @default([]) @map("self_edited_fields")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -318,6 +322,7 @@ model Worker {
   assignedTo User? @relation("WorkerAssignee", fields: [assignedToId], references: [id])
   account    User? @relation("WorkerAccount", fields: [accountUserId], references: [id])
   manager    User? @relation("WorkerManager", fields: [managerId], references: [id]) // M13
+  initialCredentials WorkerInitialCredential[]
 
   @@index([profileStatus, employmentStatus])
   @@index([ownerId, assignedToId])
@@ -421,6 +426,7 @@ model Project {
   pmUser         User?           @relation("ProjectPm", fields: [pmUserId], references: [id]) // G22
   subPm1         User?           @relation("ProjectSubPm1", fields: [subPmUserId1], references: [id]) // M13
   subPm2         User?           @relation("ProjectSubPm2", fields: [subPmUserId2], references: [id]) // M13
+  workerInitialCredentials WorkerInitialCredential[]
 
   @@index([status, isPublic])
   @@index([pmUserId, status]) // G22 — scope PM (relation filter §9.7)
@@ -632,12 +638,15 @@ model Site {
   // 20261019010000_site_gps_confirmation (additive, ship-only).
   geoConfirmedAt   DateTime? @map("geo_confirmed_at")
   geoConfirmedById String?   @map("geo_confirmed_by_id")
+  sourceSystem     String?   @map("source_system")
+  externalRef      String?   @map("external_ref")
   createdAt     DateTime @default(now()) @map("created_at")
 
   project Project @relation(fields: [projectId], references: [id])
   geoConfirmedBy User? @relation("SiteGeoConfirmedBy", fields: [geoConfirmedById], references: [id], onDelete: SetNull)
   attendanceEvents AttendanceEvent[]
 
+  @@unique([sourceSystem, externalRef])
   @@index([projectId])
   @@map("sites")
 }
@@ -825,6 +834,11 @@ model ProjectAssignment {
   salaryMonthVnd BigInt?  @map("salary_month_vnd") // V4.9: lương tháng cho MONTHLY
   shiftCode      String?   @map("shift_code") // Ca mặc định của NLĐ tại dự án (map tới project_shifts.code)
   transferReason String?   @map("transfer_reason")
+  sourceSystem        String? @map("source_system")
+  externalRef         String? @map("external_ref")
+  recruiterExternalId String? @map("recruiter_external_id")
+  recruiterName       String? @map("recruiter_name")
+  recruiterCode       String? @map("recruiter_code")
   // ── MP-3C Assignment placement (additive, nullable/backfill-safe — DEC-02) ──
   // Legacy rows (incl. every transfer-created assignment) keep both NULL: only a
   // Marketplace placement that starts from a CONVERTED submission fills them.
@@ -848,6 +862,7 @@ model ProjectAssignment {
   tickets       Ticket[]
 
   @@unique([projectId, employeeCode])
+  @@unique([sourceSystem, externalRef])
   @@index([workerId, status])
   @@index([projectId, status]) // G22 — scope PM (relation filter §9.7)
   @@index([staffingOrderSlotId, status]) // MP-3C: slotsFilled ↔ ACTIVE assignment reconciliation
@@ -2159,4 +2174,95 @@ model EvidenceRecord {
   @@index([ownerType, ownerId, createdAt])
   @@index([createdByUserId])
   @@map("evidence_records")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// BI → HRP INTEGRATION (hrp-bi-worker-sync-v1)
+// ═══════════════════════════════════════════════════════════════════════════
+
+model ExternalEntityLink {
+  id              String   @id @default(uuid())
+  sourceSystem    String   @map("source_system") // 'MINI_BI'
+  entityType      String   @map("entity_type")   // 'PROJECT' | 'SITE' | 'RECRUITER' | 'WORKER_EPISODE'
+  externalId      String   @map("external_id")
+  hrpId           String?  @map("hrp_id")        // Nullable for tombstones never materialized in HRP
+  lastSyncVersion BigInt   @default(0) @map("last_sync_version")
+  isTombstoned    Boolean  @default(false) @map("is_tombstoned")
+  metadata        Json?
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@unique([sourceSystem, entityType, externalId])
+  @@index([entityType, hrpId])
+  @@map("external_entity_links")
+}
+
+model BiSyncRun {
+  id                    String    @id @default(uuid())
+  triggerSource         String    @map("trigger_source") // 'CRON' | 'ADMIN_MANUAL'
+  mode                  String    @default("INCREMENTAL") // 'INCREMENTAL' | 'FULL_RESYNC'
+  status                String    // 'RUNNING' | 'SUCCEEDED' | 'PARTIAL_WITH_EXCEPTIONS' | 'FAILED'
+  checkpointBefore      String?   @map("checkpoint_before")
+  checkpointAfter       String?   @map("checkpoint_after")
+  catalogProjectsSynced Int       @default(0) @map("catalog_projects_synced")
+  episodesFetched       Int       @default(0) @map("episodes_fetched")
+  episodesApplied       Int       @default(0) @map("episodes_applied")
+  episodesSkipped       Int       @default(0) @map("episodes_skipped")
+  tombstonesProcessed   Int       @default(0) @map("tombstones_processed")
+  exceptionsOpened      Int       @default(0) @map("exceptions_opened")
+  errorCode             String?   @map("error_code")
+  errorMessage          String?   @map("error_message")
+  startedAt             DateTime  @default(now()) @map("started_at")
+  finishedAt            DateTime? @map("finished_at")
+
+  @@index([startedAt])
+  @@map("bi_sync_runs")
+}
+
+model BiSyncException {
+  id                String    @id @default(uuid())
+  exceptionType     String    @map("exception_type") // 'MISSING_OR_INVALID_CCCD' | 'DUPLICATE_ON' | 'ACCOUNT_CONFLICT' | 'PROJECT_LOCATION_MISSING'
+  externalId        String    @map("external_id")    // episodeId or projectExternalId
+  projectExternalId String?   @map("project_external_id")
+  status            String    @default("OPEN")       // 'OPEN' | 'RESOLVED'
+  lastSyncVersion   BigInt    @default(0) @map("last_sync_version")
+  summary           String
+  details           Json?
+  resolvedAt        DateTime? @map("resolved_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  @@unique([exceptionType, externalId])
+  @@index([status, exceptionType])
+  @@map("bi_sync_exceptions")
+}
+
+model BiSyncCredential {
+  id                   String   @id @default("primary")
+  baseUrl              String   @map("base_url")
+  apiKeyCiphertext     String   @map("api_key_ciphertext")
+  workerSyncCheckpoint String?  @map("worker_sync_checkpoint")
+  updatedByUserId      String?  @map("updated_by_user_id")
+  updatedAt            DateTime @default(now()) @updatedAt @map("updated_at")
+
+  updatedByUser User? @relation(fields: [updatedByUserId], references: [id], onDelete: SetNull)
+
+  @@map("bi_sync_credentials")
+}
+
+model WorkerInitialCredential {
+  userId     String   @id @map("user_id")
+  workerId   String   @map("worker_id")
+  projectId  String?  @map("project_id")
+  ciphertext String
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at")
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  worker  Worker   @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  @@index([projectId])
+  @@index([workerId])
+  @@map("worker_initial_credentials")
 }

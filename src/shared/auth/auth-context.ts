@@ -24,6 +24,8 @@ export interface AuthContext {
   vendorId?: string;
   /** WORKER có workerId = Worker.id (lookup qua Worker.accountUserId). */
   workerId?: string;
+  /** True khi tài khoản NLĐ vừa được đồng bộ mật khẩu ban đầu từ BI và chưa đổi mật khẩu lần đầu. */
+  mustChangePassword?: boolean;
 }
 
 /** Lỗi chuẩn hoá — caller map 401. */
@@ -57,7 +59,7 @@ export async function getAuthContext(req: NextRequest): Promise<AuthContext> {
   const prisma = getPrisma();
   const user = await prisma.user.findUnique({
     where: { id: claims.sub },
-    select: { id: true, role: true, isActive: true, vendorId: true },
+    select: { id: true, role: true, isActive: true, vendorId: true, mustChangePassword: true },
   });
 
   if (!user) {
@@ -72,6 +74,9 @@ export async function getAuthContext(req: NextRequest): Promise<AuthContext> {
   const role = user.role as SystemRole;
 
   const ctx: AuthContext = { userId: user.id, role };
+  if (user.mustChangePassword === true) {
+    ctx.mustChangePassword = true;
+  }
 
   if (user.vendorId) {
     ctx.vendorId = user.vendorId;
@@ -104,12 +109,13 @@ export async function buildAuthContextFromClaims(claims: { sub: string; role: Sy
   const prisma = getPrisma();
   const user = await prisma.user.findUnique({
     where: { id: claims.sub },
-    select: { id: true, role: true, isActive: true, vendorId: true },
+    select: { id: true, role: true, isActive: true, vendorId: true, mustChangePassword: true },
   });
   if (!user) throw new AuthSessionError('USER_NOT_FOUND', 'User not found');
   if (!user.isActive) throw new AuthSessionError('USER_INACTIVE', 'User is inactive');
 
   const ctx: AuthContext = { userId: user.id, role: user.role as SystemRole };
+  if (user.mustChangePassword === true) ctx.mustChangePassword = true;
   if (user.vendorId) ctx.vendorId = user.vendorId;
   if (ctx.role === 'WORKER') {
     // SECURITY (RQ-04, DEC-05): verified self-context bootstrap — real transaction-local

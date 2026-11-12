@@ -13,10 +13,10 @@
 | Audit mode | `LIGHT` |
 | Audit reason | Thay đổi luồng đăng nhập CCCD, quyền chấm công GPS, lưu mật khẩu ban đầu mã hóa và đồng bộ dữ liệu PII hàng loạt từ BI dưới RLS. |
 | Spec version | `v1.1` |
-| Status | `DRAFT` |
+| Status | `READY_TO_CODE` |
 | Planner | `Tier 1` |
 | Baseline | `67b1e3948bffc071f3860cc2ee8562869308fd3e` |
-| Contract gate | `DRAFT` |
+| Contract gate | `READY_TO_CODE` |
 | Decision state | `CLOSED` |
 | Test environment | `READY` |
 | Correction budget | `1` |

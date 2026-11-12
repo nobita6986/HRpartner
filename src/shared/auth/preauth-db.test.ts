@@ -7,7 +7,7 @@
  *   - where theo phone; passthrough kết quả (null nếu không thấy).
  */
 import { describe, expect, it, vi } from 'vitest';
-import { findUserForLogin } from '@/src/shared/auth/preauth-db';
+import { findUserForLogin, findUserForLoginByCccd } from '@/src/shared/auth/preauth-db';
 
 function maketx() {
   const executeRaw = vi.fn().mockResolvedValue(1);
@@ -43,6 +43,7 @@ describe('findUserForLogin (RQ-08 / DEC-13)', () => {
       name: true,
       phone: true,
       phoneVerified: true,
+      mustChangePassword: true,
     });
     expect(user).toMatchObject({ id: 'u1', role: 'WORKER' });
   });
@@ -54,5 +55,37 @@ describe('findUserForLogin (RQ-08 / DEC-13)', () => {
       typeof findUserForLogin
     >[0];
     expect(await findUserForLogin(prisma, 'x')).toBeNull();
+  });
+
+  it('findUserForLoginByCccd tra cứu qua Worker.cccdNumber -> account', async () => {
+    const executeRaw = vi.fn().mockResolvedValue(1);
+    const findUnique = vi.fn().mockResolvedValue({
+      account: {
+        id: 'u-cccd-1',
+        role: 'WORKER',
+        isActive: true,
+        passwordHash: 'h',
+        name: 'Lê Văn B',
+        phone: null,
+        phoneVerified: false,
+        mustChangePassword: true,
+      },
+    });
+    const tx = { $executeRaw: executeRaw, worker: { findUnique } };
+    const prisma = { $transaction: vi.fn((cb: (t: unknown) => unknown) => cb(tx)) } as unknown as Parameters<
+      typeof findUserForLoginByCccd
+    >[0];
+
+    const user = await findUserForLoginByCccd(prisma, '001099012345');
+    expect(executeRaw).toHaveBeenCalledTimes(1);
+    expect(findUnique).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { cccdNumber: '001099012345' },
+      }),
+    );
+    expect(user).toMatchObject({ id: 'u-cccd-1', role: 'WORKER', mustChangePassword: true });
+
+    // Chuỗi không phải 9/12 số -> từ chối sớm không query DB
+    expect(await findUserForLoginByCccd(prisma, 'abc')).toBeNull();
   });
 });

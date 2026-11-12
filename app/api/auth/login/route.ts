@@ -26,7 +26,12 @@ import { getPrisma } from '@/src/lib/db';
 import { verifyPassword } from '@/src/shared/auth/password';
 import { signJwt, JWT_TTL_SECONDS } from '@/src/shared/auth/jwt';
 import { AUTH_COOKIE_NAME } from '@/src/shared/auth/user';
-import { findUserForLogin } from '@/src/shared/auth/preauth-db';
+import { findUserForLogin, findUserForLoginByCccd } from '@/src/shared/auth/preauth-db';
+import {
+  clearLoginFailures,
+  isLoginRateLimited,
+  recordLoginFailure,
+} from '@/src/shared/auth/login-rate-limiter';
 import { loadWorkerSelfSummary } from '@/src/shared/auth/worker-assignment-summary';
 import { getLandingPath } from '@/src/shared/routing/portal-landing';
 import { error as logError, warn as logWarn } from '@/src/shared/observability/logger';
@@ -43,9 +48,17 @@ const UNAUTHORIZED = {
 
 function unauthorizedResponse(): NextResponse {
   return NextResponse.json(
-    { error: 'INVALID_CREDENTIALS', message: 'Sai số điện thoại hoặc mật khẩu' },
+    { error: 'INVALID_CREDENTIALS', message: 'Sai số CCCD/số điện thoại hoặc mật khẩu' },
     UNAUTHORIZED,
   );
+}
+
+function resolveClientIp(req: NextRequest): string {
+  const xff = req.headers.get('x-forwarded-for');
+  if (xff) {
+    return xff.split(',')[0]?.trim() || 'unknown';
+  }
+  return req.headers.get('x-real-ip')?.trim() || 'unknown';
 }
 
 export async function POST(req: NextRequest) {
@@ -61,21 +74,36 @@ export async function POST(req: NextRequest) {
     return unauthorizedResponse();
   }
   const { phone, password } = parsed.data;
+  const clientIp = resolveClientIp(req);
+
+  if (isLoginRateLimited(clientIp, phone)) {
+    return NextResponse.json(
+      {
+        error: 'TOO_MANY_ATTEMPTS',
+        message: 'Bạn đã nhập sai quá nhiều lần. Vui lòng thử lại sau 15 phút.',
+      },
+      { status: 429 },
+    );
+  }
 
   try {
     const prisma = getPrisma();
-    // V5-M1-06d / RQ-08 / DEC-13: login la pre-auth entry-point — CHUA co AuthContext
-    // nen KHONG the dung withDbContext. Doc User qua PREAUTH_DB helper co ten
-    // (findUserForLogin): dong goi $transaction + GUC elevated transaction-local +
-    // projection CO DINH. Route KHONG con raw $transaction/set_config (khong nam
-    // allowlist static gate). verifyPassword + signJwt GIU NGUYEN (DEC-11: khong viet
-    // lai auth flow, chi boc DB access).
-    const exactUser = await findUserForLogin(prisma, phone);
+    // V5-M1-06d / RQ-08 / DEC-13 + hrp-bi-worker-sync-v1 DEC-05:
+    // Chuỗi 9 hoặc 12 chữ số được ưu tiên tra cứu theo CCCD của NLĐ (findUserForLoginByCccd),
+    // sau đó fallback sang số điện thoại (findUserForLogin).
+    const isCccdShape = /^(\d{9}|\d{12})$/.test(phone);
+    const cccdUser =
+      isCccdShape && typeof findUserForLoginByCccd === 'function'
+        ? await findUserForLoginByCccd(prisma, phone)
+        : null;
+    const exactUser = cccdUser ?? (await findUserForLogin(prisma, phone));
     const normalizedPhone = normalizePhone(phone);
-    const user = exactUser ?? (normalizedPhone !== phone ? await findUserForLogin(prisma, normalizedPhone) : null);
+    const user =
+      exactUser ?? (normalizedPhone !== phone ? await findUserForLogin(prisma, normalizedPhone) : null);
 
     // Fail-closed: không có user / isActive=false / chưa có passwordHash → từ chối chung
     if (!user || !user.isActive || !user.passwordHash) {
+      recordLoginFailure(clientIp, phone);
       logWarn('auth.login.denied', null, {
         route: '/api/auth/login',
         outcome: !user
@@ -89,12 +117,15 @@ export async function POST(req: NextRequest) {
 
     const passwordOk = await verifyPassword(password, user.passwordHash);
     if (!passwordOk) {
+      recordLoginFailure(clientIp, phone);
       logWarn('auth.login.denied', null, {
         route: '/api/auth/login',
         outcome: 'password_mismatch',
       });
       return unauthorizedResponse();
     }
+
+    clearLoginFailures(clientIp, phone);
 
     const token = await signJwt(user.id, user.role);
     const redirectTo = getLandingPath(user.role); // same-origin relative path | null (internal roles)
@@ -120,12 +151,14 @@ export async function POST(req: NextRequest) {
       ok: true,
       token,
       role: user.role,
+      mustChangePassword: Boolean(user.mustChangePassword),
       user: {
         id: user.id,
         name: user.name,
         phone: user.phone,
         role: user.role,
         ...(typeof user.phoneVerified === 'boolean' ? { phoneVerified: user.phoneVerified } : {}),
+        ...(typeof user.mustChangePassword === 'boolean' ? { mustChangePassword: user.mustChangePassword } : {}),
       },
       ...(user.role === 'WORKER'
         ? {

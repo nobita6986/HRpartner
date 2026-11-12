@@ -33,7 +33,7 @@ import { applyRlsContext } from './rls-context';
 import type { DbContextCallback } from './with-db-context';
 
 /** Mục đích của tiến trình hệ thống — chỉ để nhãn/telemetry, không đổi hành vi. */
-export type SystemPurpose = 'CRON' | 'CHECKIN' | 'DEDUP' | 'PHONE_OTP';
+export type SystemPurpose = 'CRON' | 'CHECKIN' | 'DEDUP' | 'PHONE_OTP' | 'BI_SYNC';
 
 /**
  * Danh tính hệ thống ổn định. `userId` là id `system:*` (KHÔNG phải user thật);
@@ -77,6 +77,13 @@ export const SYSTEM_PHONE_OTP: SystemPrincipal = {
   userId: 'system:phone-otp',
   role: 'ADMIN',
   purpose: 'PHONE_OTP',
+};
+
+/** Mini-BI -> HRP catalog & worker episode synchronization principal. */
+export const SYSTEM_BI_SYNC: SystemPrincipal = {
+  userId: 'system:bi-sync',
+  role: 'ADMIN',
+  purpose: 'BI_SYNC',
 };
 
 /**

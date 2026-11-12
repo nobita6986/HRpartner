@@ -53,6 +53,13 @@ export async function POST(req: NextRequest) {
   } catch {
     return responseError('UNAUTHORIZED', 'Vui lòng đăng nhập lại.', 401);
   }
+  if (ctx.mustChangePassword) {
+    return responseError(
+      'PASSWORD_CHANGE_REQUIRED',
+      'Vui lòng đổi mật khẩu ban đầu trước khi chấm công.',
+      403,
+    );
+  }
   if (ctx.role !== 'WORKER' || !ctx.workerId) {
     return responseError('FORBIDDEN_NOT_VERIFIED', 'Tài khoản chưa được Admin liên kết với hồ sơ người lao động.', 403);
   }
