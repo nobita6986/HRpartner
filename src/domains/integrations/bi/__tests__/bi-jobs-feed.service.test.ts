@@ -160,6 +160,10 @@ function createInMemoryPrismaMock(lockAvailable = true) {
       archivedAt: Date | null;
       title: string | null;
       salaryDisplay: string | null;
+      isHot: boolean;
+      isUrgent: boolean;
+      isHighReward: boolean;
+      isExpiringSoon: boolean;
     }
   >();
 
@@ -339,6 +343,10 @@ function createInMemoryPrismaMock(lockAvailable = true) {
           archivedAt: null,
           title: (data.title as string | null) ?? null,
           salaryDisplay: (data.salaryDisplay as string | null) ?? null,
+          isHot: Boolean(data.isHot),
+          isUrgent: Boolean(data.isUrgent),
+          isHighReward: Boolean(data.isHighReward),
+          isExpiringSoon: Boolean(data.isExpiringSoon),
         };
         postings.set(id, rec);
         const opening = openings.get(rec.jobOpeningId)!;

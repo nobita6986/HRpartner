@@ -255,6 +255,30 @@ async function ensureBiProject(
   return created;
 }
 
+interface BiJobStampFlags {
+  isHot: boolean;
+  isUrgent: boolean;
+  isHighReward: boolean;
+  isExpiringSoon: boolean;
+}
+
+const BI_JOB_STAMP_PRESETS: readonly BiJobStampFlags[] = [
+  { isHot: true, isUrgent: false, isHighReward: false, isExpiringSoon: false },
+  { isHot: false, isUrgent: true, isHighReward: false, isExpiringSoon: false },
+  { isHot: false, isUrgent: false, isHighReward: true, isExpiringSoon: false },
+  { isHot: false, isUrgent: false, isHighReward: false, isExpiringSoon: true },
+  { isHot: true, isUrgent: true, isHighReward: false, isExpiringSoon: false },
+  { isHot: true, isUrgent: false, isHighReward: true, isExpiringSoon: false },
+  { isHot: false, isUrgent: true, isHighReward: true, isExpiringSoon: false },
+  { isHot: false, isUrgent: false, isHighReward: true, isExpiringSoon: true },
+];
+
+export function deriveBiJobStamps(briefId: string): BiJobStampFlags {
+  const hash = createHash('sha256').update(briefId).digest();
+  const idx = hash[0] % BI_JOB_STAMP_PRESETS.length;
+  return BI_JOB_STAMP_PRESETS[idx];
+}
+
 async function resolveUniquePostingSlug(
   tx: Prisma.TransactionClient,
   desiredSlug: string,
@@ -393,6 +417,7 @@ export async function syncBiJobsPublicFeed(
           });
 
           const slug = await resolveUniquePostingSlug(tx, desiredSlug, newOpening.id);
+          const stamps = deriveBiJobStamps(job.brief_id);
 
           await tx.jobPosting.create({
             data: {
@@ -409,6 +434,10 @@ export async function syncBiJobsPublicFeed(
               applicationInstructionsJson:
                 compiled.applicationInstructionsJson as unknown as Prisma.InputJsonValue,
               contentSchemaVersion: compiled.contentSchemaVersion,
+              isHot: stamps.isHot,
+              isUrgent: stamps.isUrgent,
+              isHighReward: stamps.isHighReward,
+              isExpiringSoon: stamps.isExpiringSoon,
             },
           });
 
@@ -420,6 +449,11 @@ export async function syncBiJobsPublicFeed(
         const existingOpening = existingOrder.jobOpenings[0] ?? null;
         const existingPosting = existingOpening?.posting ?? null;
         const marker = parseBiFeedSyncMarker(existingOrder.description);
+        const existingHasAnyStamp =
+          Boolean(existingPosting?.isHot) ||
+          Boolean(existingPosting?.isUrgent) ||
+          Boolean(existingPosting?.isHighReward) ||
+          Boolean(existingPosting?.isExpiringSoon);
 
         const isUpToDate =
           !options.forceUpdate &&
@@ -428,6 +462,7 @@ export async function syncBiJobsPublicFeed(
           existingOrder.status === 'OPEN' &&
           existingOpening?.status === 'OPEN' &&
           existingPosting?.status === 'PUBLISHED' &&
+          existingHasAnyStamp &&
           existingSlot !== null;
 
         if (isUpToDate) {
@@ -513,6 +548,7 @@ export async function syncBiJobsPublicFeed(
         });
 
         const slug = await resolveUniquePostingSlug(tx, desiredSlug, openingId);
+        const stamps = deriveBiJobStamps(job.brief_id);
 
         if (existingPosting) {
           await tx.jobPosting.update({
@@ -531,6 +567,12 @@ export async function syncBiJobsPublicFeed(
               applicationInstructionsJson:
                 compiled.applicationInstructionsJson as unknown as Prisma.InputJsonValue,
               contentSchemaVersion: compiled.contentSchemaVersion,
+              isHot: existingHasAnyStamp ? existingPosting.isHot : stamps.isHot,
+              isUrgent: existingHasAnyStamp ? existingPosting.isUrgent : stamps.isUrgent,
+              isHighReward: existingHasAnyStamp ? existingPosting.isHighReward : stamps.isHighReward,
+              isExpiringSoon: existingHasAnyStamp
+                ? existingPosting.isExpiringSoon
+                : stamps.isExpiringSoon,
             },
           });
         } else {
@@ -549,6 +591,10 @@ export async function syncBiJobsPublicFeed(
               applicationInstructionsJson:
                 compiled.applicationInstructionsJson as unknown as Prisma.InputJsonValue,
               contentSchemaVersion: compiled.contentSchemaVersion,
+              isHot: stamps.isHot,
+              isUrgent: stamps.isUrgent,
+              isHighReward: stamps.isHighReward,
+              isExpiringSoon: stamps.isExpiringSoon,
             },
           });
         }
